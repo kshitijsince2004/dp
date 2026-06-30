@@ -630,8 +630,22 @@ export default function DynamicForm({
                     const val = e.target.value;
                     handleChange('gd_date_time', val);
                     const parts = val.split(' ');
-                    if (parts[0]) handleChange('gd_date', parts[0]);
-                    if (parts[1]) handleChange('gd_time', parts[1]);
+                    if (parts[0]) {
+                      const dVal = parts[0];
+                      if (recordType === 'UIDB') {
+                        handleChange('dd_date', dVal);
+                      } else {
+                        handleChange('gd_date', dVal);
+                      }
+                    }
+                    if (parts[1]) {
+                      const tVal = parts[1];
+                      if (recordType === 'UIDB') {
+                        handleChange('dd_time', tVal);
+                      } else {
+                        handleChange('gd_time', tVal);
+                      }
+                    }
                   }}
                   className="w-48 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-pointer"
                   placeholder="DD/MM/YYYY HH:MM"
@@ -700,9 +714,17 @@ export default function DynamicForm({
                     const hh = String(pickerHour).padStart(2, '0');
                     const mi = String(pickerMinute).padStart(2, '0');
                     const formatted = `${dd}/${mm}/${pickerYear} ${hh}:${mi}`;
+                    const dVal = `${dd}/${mm}/${pickerYear}`;
+                    const tVal = `${hh}:${mi}`;
+                    
                     handleChange('gd_date_time', formatted);
-                    handleChange('gd_date', `${dd}/${mm}/${pickerYear}`);
-                    handleChange('gd_time', `${hh}:${mi}`);
+                    if (recordType === 'UIDB') {
+                      handleChange('dd_date', dVal);
+                      handleChange('dd_time', tVal);
+                    } else {
+                      handleChange('gd_date', dVal);
+                      handleChange('gd_time', tVal);
+                    }
                     setShowDatePicker(false);
                   };
 
@@ -1110,6 +1132,7 @@ export default function DynamicForm({
 
 
   const renderActsAndSectionsStep = () => {
+    const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
     const isWritten = values.type_of_information !== 'Oral';
     const acts = values.act_name ? values.act_name.split(',').map(s => s.trim()).filter(Boolean) : [];
     const secs = values.sections ? values.sections.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -1147,8 +1170,14 @@ export default function DynamicForm({
                       const val = e.target.value;
                       handleChange('gd_date_time', val);
                       const parts = val.split(' ');
-                      if (parts[0]) handleChange('gd_date', parts[0]);
-                      if (parts[1]) handleChange('gd_time', parts[1]);
+                      if (parts[0]) {
+                        handleChange('gd_date', parts[0]);
+                        handleChange('fir_date', parts[0]);
+                      }
+                      if (parts[1]) {
+                        handleChange('gd_time', parts[1]);
+                        handleChange('fir_time', parts[1]);
+                      }
                     }}
                     className="w-40 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-pointer"
                     placeholder="DD/MM/YYYY HH:MM"
@@ -1217,9 +1246,13 @@ export default function DynamicForm({
                       const hh = String(pickerHour).padStart(2, '0');
                       const mi = String(pickerMinute).padStart(2, '0');
                       const formatted = `${dd}/${mm}/${pickerYear} ${hh}:${mi}`;
+                      const dVal = `${dd}/${mm}/${pickerYear}`;
+                      const tVal = `${hh}:${mi}`;
                       handleChange('gd_date_time', formatted);
-                      handleChange('gd_date', `${dd}/${mm}/${pickerYear}`);
-                      handleChange('gd_time', `${hh}:${mi}`);
+                      handleChange('gd_date', dVal);
+                      handleChange('gd_time', tVal);
+                      handleChange('fir_date', dVal);
+                      handleChange('fir_time', tVal);
                       setShowDatePicker(false);
                     };
 
@@ -1382,6 +1415,25 @@ export default function DynamicForm({
                     />
                     <span>Court Order</span>
                   </label>
+                </td>
+              </tr>
+
+              {/* Row: Case Registration Type */}
+              <tr className="border-b border-[#7a9cc5]">
+                <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
+                  {lang === 'hi' ? 'मामला पंजीकरण प्रकार' : 'Case Registration Type'}
+                </td>
+                <td className="w-2/3 bg-white px-2.5 py-1">
+                  <div className="w-64">
+                    <FieldRenderer
+                      field={allFields.find(f => f.field_key === 'case_type')}
+                      value={values.case_type || ''}
+                      onChange={handleChange}
+                      readOnly={readOnly}
+                      lang={lang}
+                      values={values}
+                    />
+                  </div>
                 </td>
               </tr>
 
@@ -5132,6 +5184,10 @@ const renderActionTakenStep = () => {
       } else {
         seed.gd_date = `${dd}/${mm}/${yyyy}`;
         seed.gd_time = `${hh}:${mi}`;
+        if (recordType === 'CASE') {
+          seed.fir_date = `${dd}/${mm}/${yyyy}`;
+          seed.fir_time = `${hh}:${mi}`;
+        }
       }
     }
 
@@ -5146,7 +5202,16 @@ const renderActionTakenStep = () => {
       } else {
         if (seed.gd_date && seed.gd_time) {
           seed.gd_date_time = `${seed.gd_date} ${seed.gd_time}`;
+          if (recordType === 'CASE') {
+            seed.fir_date = seed.fir_date || seed.gd_date;
+            seed.fir_time = seed.fir_time || seed.gd_time;
+          }
         }
+      }
+    } else {
+      if (recordType === 'CASE') {
+        seed.fir_date = seed.fir_date || seed.gd_date || seed.gd_date_time.split(' ')[0];
+        seed.fir_time = seed.fir_time || seed.gd_time || seed.gd_date_time.split(' ')[1];
       }
     }
     

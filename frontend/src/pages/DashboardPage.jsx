@@ -23,6 +23,21 @@ export const DashboardPage = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
+  const getNotificationDestination = () => {
+    const roleUpper = user?.role?.toUpperCase();
+    const routeMap = {
+      PS: '/records?scrollTo=table',
+      HC: '/records?scrollTo=table',
+      SHO: '/queue',
+      ACP: '/queue',
+      DISTRICT: '/queue',
+      DISTRICT_OFFICER: '/queue',
+    };
+    return routeMap[roleUpper] || null;
+  };
+
+  const targetPath = getNotificationDestination();
+
   const [summary, setSummary] = useState({ CASES: 0, ARREST: 0, PCR: 0, MISSING: 0 });
   const [notifications, setNotifications] = useState([]);
   const [loadingSummary, setLoadingSummary] = useState(true);
@@ -107,20 +122,22 @@ export const DashboardPage = () => {
                   {t('nav.register')}
                 </Button>
               )}
-              <Button
-                icon={<ClipboardList size={16} />}
-                onClick={() => navigate('/queue')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  background: '#1e293b',
-                  color: '#fff',
-                  border: '1px solid #334155'
-                }}
-              >
-                {t('nav.queue')}
-              </Button>
+              {targetPath && (
+                <Button
+                  icon={<ClipboardList size={16} />}
+                  onClick={() => navigate(targetPath)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: '#1e293b',
+                    color: '#fff',
+                    border: '1px solid #334155'
+                  }}
+                >
+                  {targetPath.startsWith('/records') ? t('nav.records') : t('nav.queue')}
+                </Button>
+              )}
             </Space>
           </Col>
         </Row>
@@ -205,14 +222,14 @@ export const DashboardPage = () => {
                           Mark Read
                         </Button>
                       ),
-                      item.record_id && (
+                      item.record_id && targetPath && (
                         <Button
                           key="view"
                           type="link"
-                          onClick={() => navigate('/queue')}
+                          onClick={() => navigate(targetPath)}
                           style={{ display: 'flex', alignItems: 'center', gap: 4 }}
                         >
-                          Open Queue <ArrowRight size={14} />
+                          {targetPath.startsWith('/records') ? t('nav.records') : t('nav.queue')} <ArrowRight size={14} />
                         </Button>
                       )
                     ]}
