@@ -4079,7 +4079,7 @@ const renderActionTakenStep = () => {
           'victim_perm_same', 'victim_perm_house_no', 'victim_perm_street', 'victim_perm_colony',
           'victim_perm_city_town_village', 'victim_perm_tehsil_block_mandal', 'victim_perm_country',
           'victim_perm_state', 'victim_perm_district', 'victim_perm_police_station', 'victim_perm_pincode'
-        ] },
+        ], is_repeater: true, entity_type: 'person', person_type: 'VICTIM', section: 'PERSON_VICTIM' },
         { title_en: 'Accused',          title_hi: 'आरोपी', keys: [
           'accused_npr', 'accused_first_name', 'accused_middle_name', 'accused_last_name', 'accused_nickname',
           'accused_gender', 'accused_marital_status', 'accused_mobile_country_code', 'accused_mobile',
@@ -4091,7 +4091,7 @@ const renderActionTakenStep = () => {
           'accused_perm_same', 'accused_perm_house_no', 'accused_perm_street', 'accused_perm_colony',
           'accused_perm_city_town_village', 'accused_perm_tehsil_block_mandal', 'accused_perm_country',
           'accused_perm_state', 'accused_perm_district', 'accused_perm_police_station', 'accused_perm_pincode'
-        ] },
+        ], is_repeater: true, entity_type: 'person', person_type: 'ACCUSED', section: 'PERSON_ACCUSED' },
         { title_en: 'Property of Interest', title_hi: 'संबद्ध संपत्ति', keys: [
           'property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered'
         ], is_repeater: true, entity_type: 'property', section: 'property_details' },
@@ -4108,6 +4108,7 @@ const renderActionTakenStep = () => {
           fields: fields,
           is_repeater: spec.is_repeater,
           entity_type: spec.entity_type,
+          person_type: spec.person_type,
           section: spec.section
         };
       });
@@ -4396,6 +4397,34 @@ const renderActionTakenStep = () => {
   const [intimationSubTab, setIntimationSubTab]           = useState('personal'); // 'personal' | 'address'
   const [intimationModalErrors, setIntimationModalErrors] = useState({});
   const [intimationModalTouched, setIntimationModalTouched] = useState({});
+
+  // Autosave repeaters on change
+  const isFirstRender = React.useRef(true);
+  React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (activeRecordIdRef.current && !readOnly) {
+      const finalValues = { ...values };
+      const persons = [];
+      const properties = [];
+      for (const section of finalSchema) {
+        if (!section.is_repeater) continue;
+        const entries = repeaterState[section.section] || [];
+        if (section.entity_type === 'person' && section.person_type) {
+          for (const entry of entries) {
+            persons.push({ person_type: section.person_type, data: entry });
+          }
+        } else if (section.entity_type === 'property') {
+          for (const entry of entries) {
+            properties.push(entry);
+          }
+        }
+      }
+      triggerAutosave(finalValues, activeRecordIdRef.current, persons, properties);
+    }
+  }, [repeaterState, finalSchema, readOnly, triggerAutosave, values]);
 
   /* ── Major / Minor Head state ────────────────────────────────────────────── */
   const [selectedMajorHead, setSelectedMajorHead] = useState('');
@@ -5147,16 +5176,29 @@ const renderActionTakenStep = () => {
           p => p.person_type === section.person_type
         );
         if (matching.length > 0) {
-          initial[section.section] = matching.map(p => ({ ...(p.data || {}) }));
+          initial[section.section] = matching.map(p => ({ 
+            ...(p.data || {}),
+            ...p
+          }));
         }
       } else if (section.entity_type === 'property') {
         if (initialProperties.length > 0) {
-          initial[section.section] = initialProperties.map(prop => ({
-            property_major_category: prop.major_category || '',
-            property_minor_category: prop.minor_category || '',
-            property_stolen_recovered: prop.status || 'Stolen',
-            property_details: prop.details || '',
-          }));
+          initial[section.section] = initialProperties.map(prop => {
+            const mapped = {
+              property_major_category: prop.major_category || prop.property_major_category || '',
+              property_minor_category: prop.minor_category || prop.property_minor_category || '',
+              property_stolen_recovered: prop.status || prop.property_stolen_recovered || 'Stolen',
+              property_details: prop.details || prop.property_details || '',
+              property_value_inr: prop.property_value_inr || prop.property_value || '',
+              property_value: prop.property_value || prop.property_value_inr || '',
+              ...prop
+            };
+            if (prop.major_category) mapped.property_major_category = prop.major_category;
+            if (prop.minor_category) mapped.property_minor_category = prop.minor_category;
+            if (prop.status) mapped.property_stolen_recovered = prop.status;
+            if (prop.details) mapped.property_details = prop.details;
+            return mapped;
+          });
         }
       }
     }
@@ -5289,6 +5331,10 @@ const renderActionTakenStep = () => {
       submission_status: initialValues?.current_status || seed.submission_status || 'DRAFT'
     };
 
+    // Ensure complaint_no and fir_no are synced
+    updatedSeed.complaint_no = updatedSeed.complaint_no || updatedSeed.fir_no || '';
+    updatedSeed.fir_no = updatedSeed.fir_no || updatedSeed.complaint_no || '';
+
     // Formulate gd_date_time if missing but gd_date/gd_time exist
     if (!updatedSeed.gd_date_time && updatedSeed.gd_date) {
       let datePart = String(updatedSeed.gd_date).split('T')[0];
@@ -5303,6 +5349,26 @@ const renderActionTakenStep = () => {
     }
     
     setValues(updatedSeed);
+    
+    // Initialize majorMinorRows from seed major_heads / minor_heads
+    const majorsStr = updatedSeed.major_heads || updatedSeed.major_head || '';
+    const minorsStr = updatedSeed.minor_heads || updatedSeed.minor_head || '';
+    if (majorsStr || minorsStr) {
+      const majors = majorsStr.split(',').map(s => s.trim()).filter(Boolean);
+      const minors = minorsStr.split(',').map(s => s.trim()).filter(Boolean);
+      const rows = [];
+      const len = Math.max(majors.length, minors.length);
+      for (let i = 0; i < len; i++) {
+        rows.push({
+          majorHead: majors[i] || '',
+          minorHead: minors[i] || ''
+        });
+      }
+      setMajorMinorRows(rows);
+    } else {
+      setMajorMinorRows([]);
+    }
+
     if (initialValues?.id) {
       activeRecordIdRef.current = initialValues.id;
     } else {
@@ -5509,13 +5575,28 @@ const renderActionTakenStep = () => {
       }
 
       // Auto-save using custom hook (2 seconds debounce)
-      triggerAutosave(next, activeRecordIdRef.current);
+      const persons = [];
+      const properties = [];
+      for (const section of finalSchema) {
+        if (!section.is_repeater) continue;
+        const entries = repeaterState[section.section] || [];
+        if (section.entity_type === 'person' && section.person_type) {
+          for (const entry of entries) {
+            persons.push({ person_type: section.person_type, data: entry });
+          }
+        } else if (section.entity_type === 'property') {
+          for (const entry of entries) {
+            properties.push(entry);
+          }
+        }
+      }
+      triggerAutosave(next, activeRecordIdRef.current, persons, properties);
 
       return next;
     });
 
     setTouched((prev) => ({ ...prev, [key]: true }));
-  }, [readOnly, errors, triggerAutosave]);
+  }, [readOnly, errors, triggerAutosave, repeaterState, finalSchema]);
 
   /** Add a major/minor head row to the table */
   const handleAddMajorMinorRow = useCallback(() => {
@@ -5746,7 +5827,22 @@ const renderActionTakenStep = () => {
     if (finalValues.time_of_occurrence !== undefined) {
       finalValues.occurrence_time = finalValues.time_of_occurrence;
     }
-    saveImmediately(finalValues, activeRecordIdRef.current);
+    const persons = [];
+    const properties = [];
+    for (const section of finalSchema) {
+      if (!section.is_repeater) continue;
+      const entries = repeaterState[section.section] || [];
+      if (section.entity_type === 'person' && section.person_type) {
+        for (const entry of entries) {
+          persons.push({ person_type: section.person_type, data: entry });
+        }
+      } else if (section.entity_type === 'property') {
+        for (const entry of entries) {
+          properties.push(entry);
+        }
+      }
+    }
+    saveImmediately(finalValues, activeRecordIdRef.current, persons, properties);
     toast.success(lang === 'hi' ? 'ड्राफ्ट सहेज लिया गया है।' : 'Draft saved successfully.');
   };
 

@@ -1789,7 +1789,9 @@ export const confirmImportBatch = async (req, res) => {
             if (act.act && act.sections) {
               const condKey = getConditionalSectionKey(act.act);
               if (rowData[condKey]) {
-                rowData[condKey] = [...new Set([...rowData[condKey].split(',').map(s => s.trim()), ...act.sections.split(',').map(s => s.trim())])].join(', ');
+                const existing = String(rowData[condKey]).split(',').map(s => s.trim());
+                const incoming = String(act.sections).split(',').map(s => s.trim());
+                rowData[condKey] = [...new Set([...existing, ...incoming])].join(', ');
               } else {
                 rowData[condKey] = act.sections;
               }
@@ -1871,7 +1873,9 @@ export const confirmImportBatch = async (req, res) => {
             if (act.act && act.sections) {
               const condKey = getConditionalSectionKey(act.act);
               if (itemRowData[condKey]) {
-                itemRowData[condKey] = [...new Set([...itemRowData[condKey].split(',').map(s => s.trim()), ...act.sections.split(',').map(s => s.trim())])].join(', ');
+                const existing = String(itemRowData[condKey]).split(',').map(s => s.trim());
+                const incoming = String(act.sections).split(',').map(s => s.trim());
+                itemRowData[condKey] = [...new Set([...existing, ...incoming])].join(', ');
               } else {
                 itemRowData[condKey] = act.sections;
               }
