@@ -1,5 +1,5 @@
 from classifiers import is_house_theft
-from formatters import format_person_no_age
+from formatters import format_person_no_age, format_occurrence, _complainant_parent
 
 NUM = 3
 TABLE_NAME = 'excel_3ehouse_theft_cases'
@@ -21,12 +21,16 @@ def map_row(r, idx):
         'us': d.get('sections') or '',
         'complainant_details': format_person_no_age(
             d.get('complainant_name'),
-            d.get('complainant_father_husband_name'),
+            _complainant_parent(d),
             d.get('complainant_address'),
             d,
         ),
         'place_of_occurrence': d.get('occurrence_place') or '',
-        'time_of_occurrence': d.get('occurrence_time') or d.get('gd_time') or '',
+        'time_of_occurrence': format_occurrence(
+            d.get('occurrence_date'),
+            d.get('time_of_occurrence') or d.get('occurrence_time') or d.get('gd_time'),
+            d.get('occurrence_end_date'), d.get('occurrence_end_time'),
+        ),
         'stolen_items': d.get('property_description') or d.get('stolen_items') or 'None',
         'place_of_occurrence_1': d.get('occurrence_place') or '',
         'io_name': d.get('io_name') or '',

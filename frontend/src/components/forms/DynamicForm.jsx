@@ -3380,6 +3380,7 @@ const renderActionTakenStep = () => {
         if (recordType === 'CASE') {
           seed.fir_date = `${dd}/${mm}/${yyyy}`;
           seed.fir_time = `${hh}:${mi}`;
+          seed.case_type = 'cctns(manual FIR)';
         }
       }
     }

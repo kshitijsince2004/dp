@@ -1,5 +1,5 @@
 from classifiers import is_mvt
-from formatters import format_person_no_age, fmt_date
+from formatters import format_person_no_age, fmt_date, _complainant_parent
 
 NUM = 5
 TABLE_NAME = 'excel_5mvt_cases'
@@ -25,11 +25,11 @@ def map_row(r, idx):
         'fir_no': d.get('fir_no') or '',
         'us': d.get('sections') or '',
         'date_of_occurrence': fmt_date(d.get('occurrence_date') or r.get('record_date')),
-        'time_of_occurrence': d.get('occurrence_time') or d.get('gd_time') or '',
+        'time_of_occurrence': d.get('time_of_occurrence') or d.get('occurrence_time') or d.get('gd_time') or '',
         'place_of_occurrence': d.get('occurrence_place') or '',
         'complainant_details': format_person_no_age(
             d.get('complainant_name'),
-            d.get('complainant_father_husband_name'),
+            _complainant_parent(d),
             d.get('complainant_address'),
             d,
         ),

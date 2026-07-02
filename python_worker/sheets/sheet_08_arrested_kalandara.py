@@ -1,5 +1,5 @@
 from classifiers import is_preventive_arrest
-from formatters import format_person
+from formatters import format_person, _arrested_parent
 
 NUM = 8
 TABLE_NAME = 'excel_8arrested_kalandara'
@@ -23,7 +23,7 @@ def map_row(r, idx):
         'us': d.get('sections') or '',
         'accused_details': format_person(
             d.get('arrested_name'), d.get('age'),
-            d.get('arrested_father_husband_name') or d.get('father_husband_name'),
+            _arrested_parent(d),
             d.get('arrested_address'), d,
         ),
         'place_of_occurrence': d.get('arrest_place') or '',

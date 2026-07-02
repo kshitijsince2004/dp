@@ -1,4 +1,4 @@
-from formatters import format_person
+from formatters import format_person, _arrested_parent
 
 NUM = 10
 TABLE_NAME = 'excel_10arrested_efir_mv_theft'
@@ -21,7 +21,7 @@ def map_row(r, idx):
         'us': d.get('sections') or '',
         'accused_details': format_person(
             d.get('arrested_name'), d.get('age'),
-            d.get('arrested_father_husband_name') or d.get('father_husband_name'),
+            _arrested_parent(d),
             d.get('arrested_address'), d,
         ),
         'name_of_io': d.get('io_name') or '',
