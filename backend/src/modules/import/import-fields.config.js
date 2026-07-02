@@ -1,3 +1,30 @@
+// ─── Named-range / cascade wiring constants (used by template-builder.service.js) ───────
+
+// Field keys whose option lists are too long for an inline Excel formula (>40 items or
+// strings that would exceed 255 chars). Template builder writes these to the hidden
+// _Lookups sheet and references them via named ranges.
+export const NAMED_RANGE_FIELD_KEYS = new Set([
+  'ipc_sections', 'excise_sections', 'arms_sections', 'gambling_sections', 'sections',
+  'ipc_major_head', 'excise_major_head', 'arms_major_head', 'gambling_major_head',
+  'local_head', 'crime_head', 'beat_no',
+  'theft_minor_head', 'murder_minor_head', 'hurt_minor_head', 'cheating_minor_head',
+  'robbery_minor_head', 'excise_possession_minor_head', 'excise_sale_minor_head',
+  'excise_smuggling_minor_head', 'arms_possession_minor_head', 'arms_use_minor_head',
+  'gambling_house_minor_head', 'gambling_public_minor_head',
+  'property_major_category',
+  'district', 'police_station',
+]);
+
+// Field keys that use INDIRECT()-based cascade validation (the parent's selected value
+// is used to look up the named range for the child's options at run-time in Excel).
+export const INDIRECT_CASCADE_FIELDS = new Set(['property_minor_category']);
+
+// Prefix applied to every named range written to _Lookups.
+// Must be a valid Excel name segment (alphanumeric/underscore only).
+export const NR_PREFIX = 'OPT_';
+
+// ────────────────────────────────────────────────────────────────────────────────────────
+
 export const COUNTRY_OPTS = [
   'Indian', 'Nepalese', 'Bhutanese', 'Bangladeshi', 'Pakistani', 
   'Sri Lankan', 'Afghan', 'Myanmar', 'Tibetan', 'American', 'British', 'Canadian', 'Other'
@@ -98,7 +125,8 @@ export const caseActSectionFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'Must match General Information FIR Number' },
   { field_key: 'act', label_en: 'Act', label_hi: 'अधिनियम', required: true, hint: 'e.g. IPC / BNS' },
   { field_key: 'sections', label_en: 'Sections', label_hi: 'धाराएं', required: true, hint: 'e.g. Sec 379/411' },
-  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching' }
+  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching' },
+  { field_key: 'minor_head', label_en: 'Minor Head', label_hi: 'लघु शीर्ष', required: false, hint: 'e.g. Cycle Theft / Dowry Death' }
 ];
 
 export const caseVictimFields = [
@@ -151,7 +179,9 @@ export const caseAccusedFields = [
 
 export const casePropertyFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'Must match General Information FIR Number' },
-  { field_key: 'property_major_category', label_en: 'Property Major Category', label_hi: 'संपत्ति मुख्य श्रेणी', required: false, options: ['Vehicle', 'Mobile Phone', 'Cash', 'Jewellery', 'Electronics', 'Documents', 'Drugs', 'Arms', 'Others'] },
+  // property_major_category: no static options — template builder fetches live from DB (excel_property_types / excel_other_property_categories).
+  // property_minor_category: uses INDIRECT() cascade in Excel — template builder writes OPT_<category_slug> named ranges on _Lookups sheet.
+  { field_key: 'property_major_category', label_en: 'Property Major Category', label_hi: 'संपत्ति मुख्य श्रेणी', required: false },
   { field_key: 'property_minor_category', label_en: 'Type of property', label_hi: 'संपत्ति का प्रकार', required: false },
   { field_key: 'property_details', label_en: 'Property Details / Description', label_hi: 'संपत्ति का विवरण', required: false },
   { field_key: 'property_stolen_recovered', label_en: 'Property Stolen / Recovered', label_hi: 'संपत्ति चोरी / बरामद स्थिति', required: false, options: ['Stolen', 'Recovered', 'Involved', 'Seized'] },
@@ -176,7 +206,8 @@ export const arrestActSectionFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'Must match General Info sheet' },
   { field_key: 'act', label_en: 'Act', label_hi: 'अधिनियम', required: true, hint: 'e.g. IPC / BNS' },
   { field_key: 'sections', label_en: 'Sections', label_hi: 'धाराएं', required: true, hint: 'e.g. Sec 379/411' },
-  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching' }
+  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching' },
+  { field_key: 'minor_head', label_en: 'Minor Head', label_hi: 'लघु शीर्ष', required: false, hint: 'e.g. Cycle Theft / Dowry Death' }
 ];
 
 export const arrestPersonFields = [
@@ -202,7 +233,9 @@ export const arrestPersonFields = [
 
 export const arrestPropertyFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'Must match General Info sheet' },
-  { field_key: 'property_major_category', label_en: 'Property Major Category', label_hi: 'संपत्ति मुख्य श्रेणी', required: false, options: ['Vehicle', 'Mobile Phone', 'Cash', 'Jewellery', 'Electronics', 'Documents', 'Drugs', 'Arms', 'Others'] },
+  // property_major_category: no static options — template builder fetches live from DB.
+  // property_minor_category: uses INDIRECT() cascade in Excel.
+  { field_key: 'property_major_category', label_en: 'Property Major Category', label_hi: 'संपत्ति मुख्य श्रेणी', required: false },
   { field_key: 'property_details', label_en: 'Property Details / Description', label_hi: 'संपत्ति का विवरण', required: false },
   { field_key: 'property_stolen_recovered', label_en: 'Property Stolen / Recovered', label_hi: 'संपत्ति चोरी / बरामद स्थिति', required: false, options: ['Stolen', 'Recovered', 'Involved', 'Seized'] },
   { field_key: 'property_minor_category', label_en: 'Type of property', label_hi: 'संपत्ति का प्रकार', required: false },

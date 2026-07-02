@@ -811,6 +811,21 @@ const generateImportUID = async (trx, recordType, psId, dateStr) => {
   return `${recordType}-${psCode}-${cleanDate}-${seq}`;
 };
 
+const getHint = (field) => {
+  const reqStr = field.validation_rules?.required ? '[Required] ' : '';
+  if (field.field_type === 'SELECT') {
+    let options = [];
+    try {
+      options = typeof field.options === 'string' ? JSON.parse(field.options) : field.options;
+    } catch (e) {}
+    const optList = Array.isArray(options) ? options.map(o => (o && typeof o === 'object') ? o.value : o).join(', ') : '';
+    return `${reqStr}select: ${optList}`;
+  }
+  if (field.field_type === 'DATE') return `${reqStr}date (DD/MM/YYYY)`;
+  if (field.field_type === 'TIME') return `${reqStr}time (HH:MM)`;
+  if (field.field_type === 'NUMBER') return `${reqStr}number`;
+  return `${reqStr}${field.field_type.toLowerCase()}`;
+};
 
 const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang) => {
   const worksheet = workbook.addWorksheet(sheetName);
@@ -1688,6 +1703,12 @@ export const confirmImportBatch = async (req, res) => {
           rowData.crime_head = [...new Set(acts.map(a => a.crime_head).filter(Boolean))].join(', ');
           rowData.under_section = rowData.sections;
           rowData.local_head = rowData.crime_head;
+          rowData.acts = acts.map(a => ({
+            act_name: a.act || '',
+            sections: a.sections || '',
+            major_head: a.crime_head || '',
+            minor_head: a.minor_head || ''
+          }));
         }
 
         rowsToInsert.push({ rowData, victims, accused, properties, acts });
@@ -1738,6 +1759,12 @@ export const confirmImportBatch = async (req, res) => {
           rowData.sections = [...new Set(acts.map(a => a.sections).filter(Boolean))].join(', ');
           rowData.crime_head = [...new Set(acts.map(a => a.crime_head).filter(Boolean))].join(', ');
           rowData.crimeHead = rowData.crime_head;
+          rowData.acts = acts.map(a => ({
+            act_name: a.act || '',
+            sections: a.sections || '',
+            major_head: a.crime_head || '',
+            minor_head: a.minor_head || ''
+          }));
         }
 
         if (person) {

@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
-set -e
-
+# Disable set -e so npm audit warnings don't abort the script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "==================================================="
 echo "    PHAROS Application Startup Script"
 echo "==================================================="
+echo
+
+# ── [0/6] Clean up any stale processes from a previous run ───────────────────
+echo "[0/6] Cleaning up stale processes and ports..."
+bash "$SCRIPT_DIR/stop.sh"
+sleep 1  # give OS time to release ports
 echo
 
 echo "[1/6] Starting Docker services (PostgreSQL, RabbitMQ, Redis)..."
@@ -14,7 +19,7 @@ echo
 
 echo "[2/6] Installing backend dependencies..."
 cd "$SCRIPT_DIR/backend"
-npm install
+npm install --prefer-offline 2>&1 | grep -v "^npm warn" | grep -v "^$" || true
 echo
 
 echo "[3/6] Running database migrations..."
@@ -31,7 +36,8 @@ echo
 
 echo "[5/6] Installing frontend dependencies and starting frontend in a new terminal..."
 cd "$SCRIPT_DIR/frontend"
-npm install
+npm install --prefer-offline 2>&1 | grep -v "^npm warn" | grep -v "^$" || true
+
 if command -v gnome-terminal &>/dev/null; then
     gnome-terminal --title="PHAROS Frontend" -- bash -c "cd '$SCRIPT_DIR/frontend' && npm run dev; exec bash"
 elif command -v xterm &>/dev/null; then
@@ -44,9 +50,10 @@ echo
 echo "[5.5/6] Installing Python dependencies and starting report worker..."
 cd "$SCRIPT_DIR/python_worker"
 if [ ! -d "venv" ]; then
-    python -m venv venv
+    python3 -m venv venv
 fi
-venv/bin/pip install -r requirements.txt
+venv/bin/pip install -r requirements.txt -q
+
 if command -v gnome-terminal &>/dev/null; then
     gnome-terminal --title="PHAROS Python Worker" -- bash -c "cd '$SCRIPT_DIR/python_worker' && venv/bin/python main.py; exec bash"
 elif command -v xterm &>/dev/null; then
@@ -68,6 +75,6 @@ echo
 
 echo "==================================================="
 echo " PHAROS is starting up!"
-echo " Backend:  http://localhost:3000"
+echo " Backend:  http://localhost:5000"
 echo " Frontend: http://localhost:5173"
 echo "==================================================="
