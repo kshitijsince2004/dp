@@ -18,6 +18,84 @@ import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
 
+
+function NicknameChipsField({ fieldKey, value, onChange, isDisabled, lang }) {
+  const [inputVal, setInputVal] = React.useState('');
+  const nicknames = value ? String(value).split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  const handleAdd = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = inputVal.trim();
+    if (!trimmed) return;
+    if (nicknames.includes(trimmed)) {
+      setInputVal('');
+      return;
+    }
+    const updated = [...nicknames, trimmed].join(', ');
+    onChange(fieldKey, updated);
+    setInputVal('');
+  };
+
+  const handleRemove = (nameToRemove) => {
+    const updated = nicknames.filter(n => n !== nameToRemove).join(', ');
+    onChange(fieldKey, updated);
+  };
+
+  return (
+    <div className="flex flex-col gap-2 py-1 w-full">
+      {/* Chips list */}
+      {nicknames.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 max-w-md">
+          {nicknames.map((name) => (
+            <span
+              key={name}
+              className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[11px] font-bold text-slate-700 shadow-sm"
+            >
+              <span>{name}</span>
+              {!isDisabled && (
+                <button
+                  type="button"
+                  onClick={() => handleRemove(name)}
+                  className="text-slate-400 hover:text-red-500 font-bold hover:bg-slate-200/50 rounded w-3.5 h-3.5 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  ×
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Input to add */}
+      {!isDisabled && (
+        <div className="flex items-center gap-1.5">
+          <input
+            type="text"
+            value={inputVal}
+            onChange={(e) => setInputVal(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAdd();
+              }
+            }}
+            placeholder={lang === 'hi' ? 'उपनाम जोड़ें (उदा. मोंटी)' : 'Add Nickname (e.g. Monty)'}
+            className="w-full max-w-[200px] h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"
+          />
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="h-6 px-2 bg-[#0d2a4a] text-white hover:bg-[#16406d] text-[11px] font-bold rounded flex items-center justify-center transition-colors cursor-pointer"
+          >
+            + {lang === 'hi' ? 'जोड़ें' : 'Add'}
+          </button>
+        </div>
+      )}
+      {isDisabled && nicknames.length === 0 && <span className="text-slate-400">—</span>}
+    </div>
+  );
+}
+
 // Mock registry for Acts & Sections to be loaded dynamically from the backend in the future
 const ACTS_SECTIONS_REGISTRY = [
   {
@@ -1064,15 +1142,25 @@ function renderPersonPersonalInfoSubTab(prefix, allFields, valuesObj, onFieldCha
           {isRequired && <span className="text-red-500 font-bold">*</span>}
         </div>
         <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <FieldRenderer
-            field={f}
-            value={valuesObj[key]}
-            onChange={onFieldChange}
-            readOnly={isDisabled}
-            hasError={touchedObj?.[key] && !!errorsObj?.[key]}
-            lang={lang}
-            values={valuesObj}
-          />
+          {key.endsWith('nickname') ? (
+            <NicknameChipsField
+              fieldKey={key}
+              value={valuesObj[key]}
+              onChange={onFieldChange}
+              isDisabled={isDisabled}
+              lang={lang}
+            />
+          ) : (
+            <FieldRenderer
+              field={f}
+              value={valuesObj[key]}
+              onChange={onFieldChange}
+              readOnly={isDisabled}
+              hasError={touchedObj?.[key] && !!errorsObj?.[key]}
+              lang={lang}
+              values={valuesObj}
+            />
+          )}
           {showInlineErrors && touchedObj?.[key] && errorsObj?.[key] && (
             <p className="text-red-500 text-[10px] mt-0.5">{errorsObj[key]}</p>
           )}
@@ -1926,15 +2014,25 @@ const renderArrestedStep = () => {
           {isRequired && <span className="text-red-500 font-bold">*</span>}
         </div>
         <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <FieldRenderer
-            field={field}
-            value={arrestedTempValues[key]}
-            onChange={handleArrestedModalChange}
-            readOnly={isDisabled}
-            hasError={arrestedModalTouched[key] && !!arrestedModalErrors[key]}
-            lang={lang}
-            values={arrestedTempValues}
-          />
+          {key === 'nick_name' ? (
+            <NicknameChipsField
+              fieldKey={key}
+              value={arrestedTempValues[key]}
+              onChange={handleArrestedModalChange}
+              isDisabled={isDisabled}
+              lang={lang}
+            />
+          ) : (
+            <FieldRenderer
+              field={field}
+              value={arrestedTempValues[key]}
+              onChange={handleArrestedModalChange}
+              readOnly={isDisabled}
+              hasError={arrestedModalTouched[key] && !!arrestedModalErrors[key]}
+              lang={lang}
+              values={arrestedTempValues}
+            />
+          )}
           {arrestedModalTouched[key] && arrestedModalErrors[key] && (
             <p className="text-red-500 text-[10px] mt-0.5">{arrestedModalErrors[key]}</p>
           )}
