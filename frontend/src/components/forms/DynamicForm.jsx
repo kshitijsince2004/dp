@@ -16,7 +16,6 @@ import FormSection from './FormSection.jsx';
 import FormToolbar from './FormToolbar.jsx';
 import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
-import DateTimePickerPopup from './DateTimePickerPopup.jsx';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
 
 // Mock registry for Acts & Sections to be loaded dynamically from the backend in the future
@@ -664,20 +663,16 @@ export default function DynamicForm({
                 {(fieldLabel('gd_no') || (lang === 'hi' ? 'जीडी नंबर, दिनांक और समय' : 'GD Number, Date & Time'))}{' *'}
               </div>
               <div className="px-3 py-1 bg-white flex items-center gap-2 min-h-[40px] relative rounded-br">
-                <input
-                  type="text"
-                  disabled={readOnly}
-                  value={values.gd_no || ''}
-                  onChange={(e) => handleChange('gd_no', e.target.value.replace(/\D/g, ''))}
-                  className="w-24 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500"
-                  placeholder="GD Number"
-                />
-                <DateTimePickerPopup
-                  value={values.gd_date_time || ''}
-                  disabled={readOnly}
-                  inputClassName="w-48 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-pointer"
-                  onDone={(formatted, datePart, timePart) => {
-                    handleChange('gd_date_time', formatted);
+                <FieldRenderer
+                  field={allSchemaFields.find(f => f.field_key === 'gd_no')}
+                  value={values.gd_no}
+                  handleChange={handleChange}
+                  values={values}
+                  readOnly={readOnly}
+                  numberInputClassName="w-24 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500"
+                  numberPlaceholder="GD Number"
+                  dateInputClassName="w-48 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-pointer"
+                  onDateSync={(datePart, timePart) => {
                     if (recordType === 'UIDB') {
                       handleChange('dd_date', datePart);
                       handleChange('dd_time', timePart);
@@ -723,7 +718,6 @@ export default function DynamicForm({
 
   const renderActsAndSectionsStep = () => {
     const allFields = deepFlattenSchema(schema);
-    const isWritten = values.type_of_information !== 'Oral';
 
     return (
       <div className="space-y-3">
@@ -737,19 +731,13 @@ export default function DynamicForm({
                   {fieldLabel('gd_no') || 'GD/SD/DD Number / Date / Time'} <span className="text-red-500">*</span>
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1 flex items-center gap-2" style={{ position: 'relative' }}>
-                  <input
-                    type="text"
-                    disabled={readOnly}
-                    value={values.gd_no || ''}
-                    onChange={(e) => handleChange('gd_no', e.target.value.replace(/\D/g, ''))}
-                    className="w-20 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"
-                    placeholder="Number"
-                  />
-                  <DateTimePickerPopup
-                    value={values.gd_date_time || ''}
-                    disabled={readOnly}
-                    onDone={(formatted, datePart, timePart) => {
-                      handleChange('gd_date_time', formatted);
+                  <FieldRenderer
+                    field={allFields.find(f => f.field_key === 'gd_no')}
+                    value={values.gd_no}
+                    handleChange={handleChange}
+                    values={values}
+                    readOnly={readOnly}
+                    onDateSync={(datePart, timePart) => {
                       handleChange('gd_date', datePart);
                       handleChange('gd_time', timePart);
                       handleChange('fir_date', datePart);
@@ -765,22 +753,22 @@ export default function DynamicForm({
                   {fieldLabel('type_of_information') || 'Type of Information'}
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1 flex items-center gap-4 text-[11px]">
-                  {getFieldOptions(allFields, 'type_of_information').map((opt) => (
-                    <label key={opt.value} className="flex items-center gap-1 cursor-pointer select-none">
-                      <input
-                        type="radio"
-                        disabled={readOnly}
-                        name="type_of_information"
-                        checked={opt.value === 'Written' ? isWritten : !isWritten}
-                        onChange={() => {
-                          handleChange('type_of_information', opt.value);
-                          handleChange('case_type', TYPE_OF_INFO_CASE_TYPE_MAP[opt.value] ?? opt.value);
-                        }}
-                        className="accent-[#0f52ba] cursor-pointer"
-                      />
-                      <span>{lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}</span>
-                    </label>
-                  ))}
+                  <FieldRenderer
+                    field={allFields.find(f => f.field_key === 'type_of_information')}
+                    value={values.type_of_information}
+                    values={values}
+                    readOnly={readOnly}
+                    lang={lang}
+                    radioVariant="native"
+                    radioWrapperClassName="flex items-center gap-4"
+                    radioInputClassName="accent-[#0f52ba] cursor-pointer"
+                    handleChange={(key, val) => {
+                      handleChange(key, val);
+                      if (key === 'type_of_information') {
+                        handleChange('case_type', TYPE_OF_INFO_CASE_TYPE_MAP[val] ?? val);
+                      }
+                    }}
+                  />
                 </td>
               </tr>
 
@@ -809,16 +797,17 @@ export default function DynamicForm({
                   {fieldLabel('complaint_no') || 'Complaint No.'}
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1">
-                  <input
-                    type="text"
-                    disabled={readOnly}
-                    value={values.complaint_no || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      handleChange('complaint_no', val);
-                      handleChange('fir_no', val);
+                  <FieldRenderer
+                    field={allFields.find(f => f.field_key === 'complaint_no')}
+                    value={values.complaint_no}
+                    values={values}
+                    readOnly={readOnly}
+                    lang={lang}
+                    inputClassName="w-64 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"
+                    handleChange={(key, val) => {
+                      handleChange(key, val);
+                      if (key === 'complaint_no') handleChange('fir_no', val);
                     }}
-                    className="w-64 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"
                   />
                 </td>
               </tr>
@@ -829,19 +818,17 @@ export default function DynamicForm({
                   {fieldLabel('source_reference') || 'Source / Reference of Complaint'} <span className="text-red-500">*</span>
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1">
-                  <select
-                    disabled={readOnly}
-                    value={values.source_reference || ''}
-                    onChange={(e) => handleChange('source_reference', e.target.value)}
-                    className="w-64 h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-pointer"
-                  >
-                    <option value="">-----Select-----</option>
-                    {getFieldOptions(allFields, 'source_reference').map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
-                      </option>
-                    ))}
-                  </select>
+                  <FieldRenderer
+                    field={allFields.find(f => f.field_key === 'source_reference')}
+                    value={values.source_reference}
+                    handleChange={handleChange}
+                    values={values}
+                    readOnly={readOnly}
+                    lang={lang}
+                    selectVariant="compact"
+                    selectClassName="w-64 h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-pointer"
+                    selectPlaceholder="-----Select-----"
+                  />
                 </td>
               </tr>
             </tbody>

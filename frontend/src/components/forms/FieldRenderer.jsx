@@ -13,7 +13,18 @@ import { DISTRICTS_AND_STATIONS } from '../../utils/policeData.js';
 
 const inputBase = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
 
-export default function FieldRenderer({ field, value, onChange, readOnly, hasError, lang, values, handleChange }) {
+export default function FieldRenderer({
+  field, value, onChange, readOnly, hasError, lang, values, handleChange,
+  // gd_no composite overrides — different call sites use slightly different sizing
+  // (compact table row vs. taller top card) and need to sync extra date/time fields.
+  wrapperClassName, numberInputClassName, numberPlaceholder, dateInputClassName, onDateSync,
+  // Generic style override for TEXT/TEXTAREA/NUMBER inputs (e.g. dense table rows).
+  inputClassName,
+  // SELECT overrides — 'compact' swaps the searchable-dropdown widget for a plain native <select>.
+  selectVariant, selectClassName, selectPlaceholder,
+  // RADIO overrides — 'native' swaps the custom-circle widget for plain accent-colored radios.
+  radioVariant, radioWrapperClassName, radioInputClassName,
+}) {
   if (!field) return null;
   const key     = field.field_key;
   const type    = (field.field_type || 'TEXT').toUpperCase();
@@ -53,22 +64,27 @@ export default function FieldRenderer({ field, value, onChange, readOnly, hasErr
     const gdDateTimeStr = values?.gd_date_time || '';
 
     return (
-      <div className="flex items-center gap-2 relative w-full max-w-md">
+      <div className={wrapperClassName || "flex items-center gap-2 relative w-full max-w-md"}>
         <input
           type="text"
           disabled={readOnly}
           value={gdNumber}
-          onChange={(e) => handleFieldChange('gd_no', e.target.value)}
-          className="w-20 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"
-          placeholder="Number"
+          onChange={(e) => handleFieldChange('gd_no', e.target.value.replace(/\D/g, ''))}
+          className={numberInputClassName || "w-20 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"}
+          placeholder={numberPlaceholder || 'Number'}
         />
         <DateTimePickerPopup
           value={gdDateTimeStr}
           disabled={readOnly}
+          inputClassName={dateInputClassName}
           onDone={(formatted, datePart, timePart) => {
             handleFieldChange('gd_date_time', formatted);
-            handleFieldChange('gd_date', datePart);
-            handleFieldChange('gd_time', timePart);
+            if (onDateSync) {
+              onDateSync(datePart, timePart);
+            } else {
+              handleFieldChange('gd_date', datePart);
+              handleFieldChange('gd_time', timePart);
+            }
           }}
         />
       </div>
@@ -205,7 +221,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
   }
 
   if (type === 'TEXT') {
-    return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
+    return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} className={inputClassName} />;
   }
 
   if (type === 'NUMBER') {
@@ -229,11 +245,36 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
   }
 
   if (type === 'SELECT' || type === 'DROPDOWN') {
-    return <SelectField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} options={options} lang={lang} />;
+    return (
+      <SelectField
+        id={`field-${key}`}
+        disabled={readOnly}
+        value={value}
+        onChange={(v) => handleFieldChange(key, v)}
+        status={status}
+        placeholder={selectPlaceholder || placeholder}
+        options={options}
+        lang={lang}
+        variant={selectVariant}
+        className={selectClassName}
+      />
+    );
   }
 
   if (type === 'RADIO') {
-    return <RadioField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} options={options} lang={lang} />;
+    return (
+      <RadioField
+        id={`field-${key}`}
+        disabled={readOnly}
+        value={value}
+        onChange={(v) => handleFieldChange(key, v)}
+        options={options}
+        lang={lang}
+        variant={radioVariant}
+        wrapperClassName={radioWrapperClassName}
+        inputClassName={radioInputClassName}
+      />
+    );
   }
 
   if (type === 'BOOLEAN' || type === 'CHECKBOX') {
