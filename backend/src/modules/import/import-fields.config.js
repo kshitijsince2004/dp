@@ -83,7 +83,7 @@ export const caseGeneralFields = [
   { field_key: 'brief_facts', label_en: 'Brief Facts of Case', label_hi: 'मामले के संक्षिप्त तथ्य', required: false, hint: 'Incident narrative' },
   { field_key: 'status_remarks', label_en: 'Status / Remarks', label_hi: ' स्थिति / टिप्पणियाँ', required: false, hint: 'e.g. Under investigation' },
   
-  ...getPersonFieldsList('complainant', 'Complainant', 'शिकायतकर्ता'),
+  ...getPersonFieldsList('complainant', 'Complainant', 'शिकायतकर्ता').filter(f => f.field_key !== 'complainant_npr'),
   { field_key: 'complainant_perm_same', label_en: 'Is Complainant Permanent Same As Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: false, options: ['Yes', 'No'] },
   ...getAddressFieldsList('complainant_perm', 'Complainant Permanent Address', 'शिकायतकर्ता का स्थायी पता'),
   ...getAddressFieldsList('occurrence', 'Place of Occurrence Address', 'घटनास्थल का पता विवरण'),
@@ -165,7 +165,11 @@ export const arrestGeneralFields = [
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
   { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: true, hint: 'YYYY-MM-DD' },
   { field_key: 'time_of_arrest', label_en: 'Time Of Arrest', label_hi: 'गिरफ्तारी का समय', required: false, hint: 'HH:MM' },
-  { field_key: 'place_of_arrest', label_en: 'Place Of Arrest', label_hi: 'गिरफ्तारी का स्थान', required: true, hint: 'e.g. Nizamuddin Platform 3' }
+  { field_key: 'place_of_arrest', label_en: 'Place Of Arrest', label_hi: 'गिरफ्तारी का स्थान', required: true, hint: 'e.g. Nizamuddin Platform 3' },
+  { field_key: 'io_name', label_en: 'IO / Officer Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },
+  { field_key: 'io_pis', label_en: 'PIS No. of IO', label_hi: 'पीआईएस संख्या', required: false, hint: 'e.g. 28080214' },
+  { field_key: 'io_rank', label_en: 'IO Rank', label_hi: 'पद', required: false, hint: 'e.g. SI' },
+  { field_key: 'io_mobile', label_en: 'IO Mobile No.', label_hi: 'मोबाइल नंबर', required: false, hint: 'IO contact number' }
 ];
 
 export const arrestActSectionFields = [
@@ -183,10 +187,13 @@ export const arrestPersonFields = [
   ...getAddressFieldsList('arrested_perm', 'Arrested Person Permanent Address', 'गिरफ्तार व्यक्ति का स्थायी पता'),
   { field_key: 'nafis_prepared', label_en: 'NAFIS Prepared', label_hi: 'नाफिस तैयार किया गया', required: false, options: ['Yes', 'No'] },
   { field_key: 'dossier_prepared', label_en: 'Dossier Prepared', label_hi: 'डोजियर तैयार किया गया', required: false, options: ['Yes', 'No'] },
-  { field_key: 'search_slip_prepared', label_en: 'Search Slip Prepared', label_hi: 'सर्च स्लिप तैयार की गई', required: false, options: ['Yes', 'No'] },
-  { field_key: 'address_verified', label_en: 'Address Verified', label_hi: 'पता सत्यापित', required: false, options: ['Yes', 'No'] },
-  { field_key: 'verifying_officer_name', label_en: 'Verifying Officer Name', label_hi: 'सत्यापन अधिकारी का नाम', required: false },
-  { field_key: 'verifying_officer_rank', label_en: 'Verifying Officer Rank', label_hi: 'सत्यापन अधिकारी का पद', required: false },
+  { field_key: 'prev_involvement', label_en: 'Previous involvement', label_hi: 'पूर्व संलिप्तता', required: false, options: ['Yes', 'No'] },
+  { field_key: 'bad_character', label_en: 'Bad Character (BC)', label_hi: 'बुरा चरित्र (BC)', required: false, options: ['Yes', 'No'] },
+  { field_key: 'proclaimed_offender', label_en: 'Proclaimed Offender (PO)', label_hi: 'घोषित अपराधी (PO)', required: false, options: ['Yes', 'No'] },
+  { field_key: 'verifying_officer_name', label_en: 'Arresting Officer Name', label_hi: 'गिरफ्तार करने वाले अधिकारी का नाम', required: false },
+  { field_key: 'verifying_officer_rank', label_en: 'Arresting Officer Rank', label_hi: 'गिरफ्तार करने वाले अधिकारी का पद', required: false },
+  { field_key: 'status', label_en: 'Custody status', label_hi: 'हिरासत की स्थिति', required: false },
+  { field_key: 'scheme_of_arrest', label_en: 'Scheme of arrest', label_hi: 'गिरफ्तारी की योजना', required: false },
   { field_key: 'kin_name', label_en: 'Relative Name', label_hi: 'रिश्तेदार का नाम', required: false },
   { field_key: 'kin_mobile', label_en: 'Mobile', label_hi: 'मोबाइल', required: false },
   { field_key: 'kin_relationship', label_en: 'Relationship', label_hi: 'संबंध', required: false },
