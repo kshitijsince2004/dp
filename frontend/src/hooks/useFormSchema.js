@@ -34,12 +34,13 @@ function normalizeField(f) {
  * @param {string} recordType - 'CASE' | 'ARREST' | 'PCR_CALL' | 'MISSING' | 'UIDB'
  * @returns {{ schema, isLoading, isError, error }}
  */
-export function useFormSchema(recordType) {
+export function useFormSchema(recordType, caseType) {
   const { data: schema, isLoading, isError, error } = useQuery({
-    queryKey: ['fields', 'form', recordType],
+    queryKey: ['fields', 'form', recordType, caseType],
     queryFn: async () => {
       if (!recordType) return [];
-      const res = await api.get(`/fields/form/${recordType}`);
+      const url = `/fields/form/${recordType}${caseType ? `?caseType=${caseType}` : ''}`;
+      const res = await api.get(url);
       const raw = res.data?.data;
       if (!raw) return [];
 
@@ -47,19 +48,38 @@ export function useFormSchema(recordType) {
       const sections = Array.isArray(raw) ? raw : (raw.sections || []);
 
       // Normalize every field's validation key and add title fallback
-      const normalized = sections.map((sec) => ({
-        ...sec,
-        title_en: sec.title_en || sec.section || 'Details',
-        title_hi: sec.title_hi || sec.title_en || sec.section || 'विवरण',
-        fields: (sec.fields || []).map(normalizeField),
-      }));
+      const normalized = sections.map((sec) => {
+        const normSec = {
+          ...sec,
+          title_en: sec.title_en || sec.section || 'Details',
+          title_hi: sec.title_hi || sec.title_en || sec.section || 'विवरण',
+        };
+        if (sec.sub_tabs) {
+          normSec.sub_tabs = sec.sub_tabs.map((st) => ({
+            ...st,
+            title_en: st.title_en || st.id || 'Details',
+            title_hi: st.title_hi || st.title_en || st.id || 'विवरण',
+            fields: (st.fields || []).map(normalizeField),
+          }));
+        } else {
+          normSec.fields = (sec.fields || []).map(normalizeField);
+        }
+        return normSec;
+      });
 
       // Inject readonly system fields into the first FLAT (non-repeater) section
       const firstFlatSec = normalized.find((sec) => !sec.is_repeater);
       if (firstFlatSec) {
-        const existingKeys = new Set(firstFlatSec.fields.map((f) => f.field_key));
-        const toInject = SYSTEM_FIELDS.filter((f) => !existingKeys.has(f.field_key));
-        firstFlatSec.fields = [...toInject, ...firstFlatSec.fields];
+        if (firstFlatSec.sub_tabs && firstFlatSec.sub_tabs.length > 0) {
+          const firstSubTab = firstFlatSec.sub_tabs[0];
+          const existingKeys = new Set(firstSubTab.fields.map((f) => f.field_key));
+          const toInject = SYSTEM_FIELDS.filter((f) => !existingKeys.has(f.field_key));
+          firstSubTab.fields = [...toInject, ...firstSubTab.fields];
+        } else if (firstFlatSec.fields) {
+          const existingKeys = new Set(firstFlatSec.fields.map((f) => f.field_key));
+          const toInject = SYSTEM_FIELDS.filter((f) => !existingKeys.has(f.field_key));
+          firstFlatSec.fields = [...toInject, ...firstFlatSec.fields];
+        }
       }
 
       return normalized;

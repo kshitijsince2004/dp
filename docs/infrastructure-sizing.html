@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHAROS — Infrastructure Sizing Guide</title>
+<style>
+  :root {
+    --blue: #1a3a5c;
+    --blue-light: #2563a8;
+    --accent: #e8f0fb;
+    --border: #c9d6e8;
+    --warn: #92400e;
+    --warn-bg: #fffbeb;
+    --warn-border: #fcd34d;
+    --green: #065f46;
+    --green-bg: #ecfdf5;
+    --green-border: #6ee7b7;
+    --red: #7f1d1d;
+    --red-bg: #fef2f2;
+    --text: #1e2a3a;
+    --muted: #4b5563;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: #f7f9fc;
+    line-height: 1.5;
+  }
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    background: white;
+    padding: 40px 48px;
+  }
+
+  /* ── Header ── */
+  .doc-header {
+    border-bottom: 3px solid var(--blue);
+    padding-bottom: 16px;
+    margin-bottom: 28px;
+  }
+  .doc-header h1 {
+    font-size: 22px;
+    color: var(--blue);
+    letter-spacing: 0.3px;
+  }
+  .doc-header .subtitle {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .meta-row {
+    display: flex;
+    gap: 24px;
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .meta-row span strong { color: var(--text); }
+
+  /* ── Section headings ── */
+  h2 {
+    font-size: 15px;
+    color: white;
+    background: var(--blue);
+    padding: 7px 14px;
+    margin: 32px 0 0 0;
+    border-radius: 4px 4px 0 0;
+  }
+  h3 {
+    font-size: 13px;
+    color: var(--blue-light);
+    margin: 22px 0 8px 0;
+    border-left: 3px solid var(--blue-light);
+    padding-left: 8px;
+  }
+  h4 {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 14px 0 6px 0;
+  }
+
+  /* ── Tables ── */
+  .section-body {
+    border: 1px solid var(--border);
+    border-top: none;
+    padding: 16px 18px 20px;
+    margin-bottom: 6px;
+    border-radius: 0 0 4px 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0 14px 0;
+    font-size: 12.5px;
+  }
+  th {
+    background: var(--accent);
+    color: var(--blue);
+    font-weight: 600;
+    text-align: left;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafbfd; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.bold { font-weight: 600; }
+  td.role { color: var(--muted); font-size: 11.5px; }
+  td.highlight { background: #fffde7 !important; font-weight: 600; }
+
+  /* ── Summary boxes ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 10px 0 16px 0;
+  }
+  .summary-box {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    background: var(--accent);
+  }
+  .summary-box .label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .summary-box .value { font-size: 18px; font-weight: 700; color: var(--blue); line-height: 1.3; }
+  .summary-box .sub { font-size: 10.5px; color: var(--muted); }
+
+  /* ── Callout boxes ── */
+  .callout {
+    border-radius: 5px;
+    padding: 10px 14px;
+    margin: 12px 0;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .callout.warn {
+    background: var(--warn-bg);
+    border-left: 4px solid var(--warn-border);
+    color: var(--warn);
+  }
+  .callout.info {
+    background: var(--accent);
+    border-left: 4px solid var(--blue-light);
+    color: var(--blue);
+  }
+  .callout.ok {
+    background: var(--green-bg);
+    border-left: 4px solid var(--green-border);
+    color: var(--green);
+  }
+  .callout strong { display: block; margin-bottom: 3px; }
+
+  /* ── RAM breakdown ── */
+  .ram-bar-wrap { margin: 8px 0 14px 0; }
+  .ram-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-size: 12px; }
+  .ram-bar-bg { flex: 1; height: 14px; background: #e9edf3; border-radius: 3px; overflow: hidden; }
+  .ram-bar-fill { height: 100%; border-radius: 3px; }
+  .ram-label { width: 160px; color: var(--muted); }
+  .ram-val { width: 50px; text-align: right; font-variant-numeric: tabular-nums; font-size: 11.5px; color: var(--text); }
+
+  /* ── Tag pills ── */
+  .pill {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .pill.phase2 { background: #e0f2fe; color: #075985; }
+  .pill.critical { background: #fee2e2; color: #991b1b; }
+  .pill.optional { background: #f1f5f9; color: #475569; }
+
+  /* ── Storage timeline ── */
+  .storage-timeline { font-size: 12px; }
+  .storage-timeline td { padding: 5px 10px; }
+
+  /* ── Print ── */
+  @media print {
+    body { background: white; font-size: 11px; }
+    .page { padding: 20px 24px; max-width: 100%; }
+    h2 { break-before: auto; }
+    table { font-size: 11px; }
+    .summary-box .value { font-size: 15px; }
+    .no-break { break-inside: avoid; }
+  }
+
+  p { margin: 6px 0; color: var(--muted); font-size: 12.5px; }
+  ul { margin: 6px 0 6px 18px; color: var(--muted); font-size: 12.5px; }
+  ul li { margin: 2px 0; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════ HEADER -->
+<div class="doc-header">
+  <h1>PHAROS — Infrastructure Sizing Guide</h1>
+  <div class="subtitle">Police Hierarchical Automated Reporting &amp; Operations System · Node.js / Express · PostgreSQL · RabbitMQ · React/Vite</div>
+  <div class="meta-row">
+    <span><strong>Date:</strong> July 2026</span>
+    <span><strong>Phase:</strong> Phase 1 complete · Phase 2 active</span>
+    <span><strong>Stack:</strong> Node.js + PostgreSQL + RabbitMQ + Redis + Cloudinary + Puppeteer</span>
+    <span><strong>Deployment targets:</strong> District · Delhi-wide</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ WORKLOAD BASELINE -->
+<h2>Workload Baseline &amp; Assumptions</h2>
+<div class="section-body">
+
+  <h3>Concurrency Model</h3>
+  <table>
+    <tr>
+      <th>Tier</th><th>Total Users</th><th>Peak Concurrent (Delhi)</th><th>Peak Concurrent (1 District)</th><th>Primary Action</th>
+    </tr>
+    <tr><td>House Clerks (HC)</td><td class="num">~1,200</td><td class="num">~600</td><td class="num">~38</td><td>Record entry, submit</td></tr>
+    <tr><td>SHO</td><td class="num">300</td><td class="num">~120</td><td class="num">~10</td><td>Queue review, approve/send-back</td></tr>
+    <tr><td>ACP (District Officer)</td><td class="num">47</td><td class="num">~24</td><td class="num">~3</td><td>Compilation, district review</td></tr>
+    <tr><td>District Admin</td><td class="num">~336</td><td class="num">~60</td><td class="num">~6</td><td>Reports, analytics</td></tr>
+    <tr><td>PHQ (HQ Admin/Analyst)</td><td class="num">~48</td><td class="num">~24</td><td class="num">—</td><td>Analytics, audit, config</td></tr>
+    <tr><td class="bold highlight" colspan="2">Total peak concurrent</td><td class="num bold highlight">~828</td><td class="num bold highlight">~57</td><td></td></tr>
+  </table>
+
+  <h3>Daily Transaction Volume</h3>
+  <table>
+    <tr><th>Record Type</th><th>Estimate / PS / day</th><th>Delhi / day</th><th>1 District / day</th></tr>
+    <tr><td>Case records</td><td class="num">54</td><td class="num">~13,500</td><td class="num">~900</td></tr>
+    <tr><td>Arrest records</td><td class="num">~36</td><td class="num">~9,000</td><td class="num">~600</td></tr>
+    <tr><td>PCR / Missing / UIDB</td><td class="num">~12</td><td class="num">~3,000</td><td class="num">~204</td></tr>
+    <tr><td class="bold">Total records / day</td><td class="num bold">~102</td><td class="num bold">~25,200</td><td class="num bold">~1,704</td></tr>
+    <tr><td>Workflow transitions (approvals etc.)</td><td>—</td><td class="num">~18,000</td><td class="num">~1,200</td></tr>
+    <tr><td>Audit log rows written</td><td>—</td><td class="num">~120,000+</td><td class="num">~8,400</td></tr>
+  </table>
+
+  <div class="callout warn">
+    <strong>Puppeteer / Report Generation — key CPU spike driver</strong>
+    Each PDF report spawns a headless Chromium instance: ~512 MB RAM + 1–2 CPUs for 5–30 seconds per report. Must be isolated to a dedicated worker to prevent app server OOM. Report concurrency should be capped (2–3 simultaneous) via queue.
+  </div>
+
+  <div class="callout info">
+    <strong>File storage (Cloudinary)</strong>
+    The current stack uses Cloudinary for uploaded files (evidence photos, documents). This offloads binary file storage entirely — local storage sizing below covers only the database, logs, reports temp dir, and OS.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ STORAGE PROJECTIONS -->
+<h2>Storage Growth Projections</h2>
+<div class="section-body">
+  <p>PostgreSQL only. Files go to Cloudinary. Puppeteer PDFs are ephemeral (30-day rolling window).</p>
+  <table class="storage-timeline">
+    <tr>
+      <th>Horizon</th>
+      <th>Delhi DB (with indexes)</th>
+      <th>Delhi Logs + Reports</th>
+      <th>Delhi Total (local)</th>
+      <th>District DB</th>
+      <th>District Total (local)</th>
+    </tr>
+    <tr><td>Year 1</td><td class="num">~324 GB</td><td class="num">~48 GB</td><td class="num bold">~372 GB</td><td class="num">~22 GB</td><td class="num bold">~30 GB</td></tr>
+    <tr><td>Year 3</td><td class="num">~840 GB</td><td class="num">~120 GB</td><td class="num bold">~960 GB</td><td class="num">~60 GB</td><td class="num bold">~78 GB</td></tr>
+    <tr><td>Year 5</td><td class="num">~1.44 TB</td><td class="num">~180 GB</td><td class="num bold">~1.62 TB</td><td class="num">~102 GB</td><td class="num bold">~132 GB</td></tr>
+    <tr><td>Year 5 + Phase 2 features</td><td class="num">~2.16 TB</td><td class="num">~240 GB</td><td class="num bold highlight">~2.4 TB</td><td class="num">~156 GB</td><td class="num bold highlight">~192 GB</td></tr>
+  </table>
+  <p style="font-size:11.5px;">Phase 2 additions (legacy import batches, filter presets, level data contracts, MinIO if adopted) will inflate DB size by ~30–50% over base projections.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ SECTION 1: DISTRICT MINIMAL -->
+<h2>1-A · District Level — Minimal Working Server</h2>
+<div class="section-body">
+
+  <p>Single server running all services. Suitable for a pilot district or budget deployment. No redundancy — a server failure means downtime.</p>
+
+  <div class="summary-grid no-break">
+    <div class="summary-box"><div class="label">CPU</div><div class="value">5 vCPU</div><div class="sub">or 6-core physical</div></div>
+    <div class="summary-box"><div class="label">RAM</div><div class="value">10 GB</div><div class="sub">minimum; 14 GB comfortable</div></div>
+    <div class="summary-box"><div class="label">Storage</div><div class="value">240 GB</div><div class="sub">SSD (not HDD)</div></div>
+    <div class="summary-box"><div class="label">Network</div><div class="value">120 Mbps</div><div class="sub">dedicated leased line / MPLS</div></div>
+  </div>
+
+  <h4>Services on this server</h4>
+  <table>
+    <tr><th>Service</th><th>RAM Alloc.</th><th>Notes</th></tr>
+    <tr><td>OS (Ubuntu 22.04 LTS)</td><td class="num">~960 MB</td><td>—</td></tr>
+    <tr><td>nginx (reverse proxy + static)</td><td class="num">~96 MB</td><td>SSL termination, serves React build</td></tr>
+    <tr><td>Node.js via PM2 (4 workers)</td><td class="num">~1.1 GB</td><td>~360 MB per worker; 4 workers enough for ~60 concurrent</td></tr>
+    <tr><td>PostgreSQL 16</td><td class="num">~3 GB</td><td>shared_buffers=1.8 GB, work_mem=20 MB</td></tr>
+    <tr><td>RabbitMQ</td><td class="num">~308 MB</td><td>single node, classic queues fine at this scale</td></tr>
+    <tr><td>Redis 7</td><td class="num">~308 MB</td><td>session store, rate limiting (already in stack via ioredis)</td></tr>
+    <tr><td>Puppeteer burst (2 × Chromium)</td><td class="num">~1.2 GB</td><td>peak only; capped at 2 concurrent PDF jobs</td></tr>
+    <tr><td>OS buffers + headroom</td><td class="num">~1.4 GB</td><td>—</td></tr>
+    <tr><td class="bold">Total</td><td class="num bold">~8.4 GB</td><td class="bold">10 GB RAM is the safe minimum</td></tr>
+  </table>
+
+  <h4>Storage breakdown</h4>
+  <table>
+    <tr><th>Purpose</th><th>Size</th></tr>
+    <tr><td>OS + packages + app + node_modules</td><td class="num">30 GB</td></tr>
+    <tr><td>PostgreSQL data (5-year headroom)</td><td class="num">144 GB</td></tr>
+    <tr><td>Report PDFs temp (30-day rolling)</td><td class="num">6 GB</td></tr>
+    <tr><td>Application logs (90-day retention)</td><td class="num">12 GB</td></tr>
+    <tr><td>Local DB backup (7-day rolling)</td><td class="num">36 GB</td></tr>
+    <tr><td>Buffer / unplanned growth</td><td class="num">12 GB</td></tr>
+    <tr><td class="bold">Total</td><td class="num bold">240 GB SSD</td></tr>
+  </table>
+
+  <div class="callout warn">
+    <strong>Limitations of this setup</strong>
+    Single point of failure. No DR. A disk failure or OS crash halts all district operations. Acceptable only for a proof-of-concept or non-critical pilot. Do not use for production rollout.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ SECTION 2: DISTRICT HA -->
+<h2>1-B · District Level — Full Fallback &amp; Secure Deployment</h2>
+<div class="section-body">
+
+  <p>5-node setup. Full database failover, HA load balancer, encrypted disks, VPN admin access, WAF. Handles a district going fully live with all PS.</p>
+
+  <table>
+    <tr>
+      <th>#</th><th>Node</th><th>CPU</th><th>RAM</th><th>Storage</th><th>Role</th>
+    </tr>
+    <tr>
+      <td class="bold">1</td>
+      <td class="bold">LB / Bastion</td>
+      <td class="num">2 vCPU</td>
+      <td class="num">5 GB</td>
+      <td class="num">60 GB SSD</td>
+      <td class="role">nginx + ModSecurity WAF, SSL termination (Let's Encrypt / NIC CA), Fail2ban, WireGuard VPN jump host</td>
+    </tr>
+    <tr>
+      <td class="bold">2</td>
+      <td class="bold">App Server 1</td>
+      <td class="num">5 vCPU</td>
+      <td class="num">10 GB</td>
+      <td class="num">96 GB SSD</td>
+      <td class="role">Node.js PM2 primary (5 workers), RabbitMQ, Redis</td>
+    </tr>
+    <tr>
+      <td class="bold">3</td>
+      <td class="bold">App Server 2</td>
+      <td class="num">5 vCPU</td>
+      <td class="num">10 GB</td>
+      <td class="num">96 GB SSD</td>
+      <td class="role">Node.js PM2 secondary (5 workers), Puppeteer report worker</td>
+    </tr>
+    <tr>
+      <td class="bold">4</td>
+      <td class="bold">DB Primary</td>
+      <td class="num">5 vCPU</td>
+      <td class="num">20 GB</td>
+      <td class="num">360 GB NVMe</td>
+      <td class="role">PostgreSQL 16 primary + pgBouncer, LUKS encrypted, WAL archiving to replica</td>
+    </tr>
+    <tr>
+      <td class="bold">5</td>
+      <td class="bold">DB Replica</td>
+      <td class="num">5 vCPU</td>
+      <td class="num">10 GB</td>
+      <td class="num">360 GB NVMe</td>
+      <td class="role">PostgreSQL streaming replica (hot standby), daily backup to offsite / NAS, audit read queries</td>
+    </tr>
+    <tr>
+      <td class="bold highlight" colspan="2">Total</td>
+      <td class="num bold highlight">22 vCPU</td>
+      <td class="num bold highlight">55 GB RAM</td>
+      <td class="num bold highlight">~972 GB</td>
+      <td></td>
+    </tr>
+  </table>
+
+  <h4>Security measures included</h4>
+  <ul>
+    <li>LUKS full-disk encryption on both DB nodes (prevents data extraction from stolen drives)</li>
+    <li>WireGuard VPN — all admin SSH access goes through bastion only; DB nodes have no public IP</li>
+    <li>ModSecurity WAF on nginx (OWASP Core Rule Set) — blocks SQLi, XSS, scanner probes</li>
+    <li>Fail2ban on all nodes — auto-bans repeated auth failures</li>
+    <li>PostgreSQL streaming replication with WAL archiving — RPO &lt; 1 minute, RTO &lt; 5 minutes on failover</li>
+    <li>Automated nightly pg_dump encrypted with GPG, rotated weekly to offsite NAS or object store</li>
+    <li>UFW firewall rules: LB accepts 443/80 from internet; app nodes accept only from LB; DB nodes accept only from app nodes on port 5432</li>
+    <li>All inter-node traffic on a private VLAN / internal subnet (no public IPs on app/DB nodes)</li>
+    <li>Redis password-protected, bound to localhost or private NIC only</li>
+  </ul>
+
+  <div class="callout ok">
+    <strong>Failover behaviour</strong>
+    If App Server 1 dies: nginx upstream marks it unhealthy, all traffic shifts to App Server 2 — zero manual intervention.
+    If DB Primary dies: promote Replica via pg_ctl promote (or Patroni for fully automatic), update pgBouncer target — estimated manual RTO ~5 minutes, or ~30 seconds with Patroni.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ SECTION 3: DELHI MINIMAL -->
+<h2>2-A · Delhi-wide — Minimal Working Setup</h2>
+<div class="section-body">
+
+  <p>3 servers. Handles ~828 peak concurrent users, ~25,200 records/day. Single point of failure on each tier but functionally sufficient for a phased rollout before full HA is provisioned.</p>
+
+  <div class="summary-grid no-break">
+    <div class="summary-box"><div class="label">Nodes</div><div class="value">3</div><div class="sub">App · DB · Report Worker</div></div>
+    <div class="summary-box"><div class="label">Total vCPU</div><div class="value">25</div><div class="sub">App 10 + DB 10 + Worker 5</div></div>
+    <div class="summary-box"><div class="label">Total RAM</div><div class="value">70 GB</div><div class="sub">App 20 + DB 40 + Worker 10</div></div>
+    <div class="summary-box"><div class="label">Total Storage</div><div class="value">~1.8 TB</div><div class="sub">NVMe SSD on DB node</div></div>
+  </div>
+
+  <table>
+    <tr>
+      <th>Node</th><th>CPU</th><th>RAM</th><th>Storage</th><th>Services &amp; Config</th>
+    </tr>
+    <tr>
+      <td class="bold">App Server</td>
+      <td class="num">10 vCPU</td>
+      <td class="num">20 GB</td>
+      <td class="num">240 GB SSD</td>
+      <td class="role">nginx reverse proxy + static files · Node.js PM2 cluster (7 workers) · RabbitMQ · Redis · Fail2ban</td>
+    </tr>
+    <tr>
+      <td class="bold">DB Server</td>
+      <td class="num">10 vCPU</td>
+      <td class="num">40 GB</td>
+      <td class="num">1.44 TB NVMe SSD</td>
+      <td class="role">PostgreSQL 16 (shared_buffers=10 GB, effective_cache=29 GB) · pgBouncer (pool_size=30) · WAL archiving to separate disk</td>
+    </tr>
+    <tr>
+      <td class="bold">Report Worker</td>
+      <td class="num">5 vCPU</td>
+      <td class="num">10 GB</td>
+      <td class="num">120 GB SSD</td>
+      <td class="role">Dedicated Puppeteer process pool (max 3 concurrent Chromium) · Consumes report jobs from RabbitMQ queue · Writes PDFs to shared NFS or uploads to Cloudinary</td>
+    </tr>
+  </table>
+
+  <h4>Why pgBouncer is mandatory at this scale</h4>
+  <p>Node.js with 7 workers × ~50 pg-pool connections each = up to 350 DB connections. PostgreSQL forks a process per connection; 350 processes at 10 MB each = 3.5 GB RAM just for connection overhead. pgBouncer multiplexes all 350 app connections onto ~30 actual PostgreSQL connections, keeping DB RAM usage in check.</p>
+
+  <h4>App Server RAM breakdown</h4>
+  <div class="ram-bar-wrap">
+    <div class="ram-row"><div class="ram-label">OS + nginx</div><div class="ram-bar-bg"><div class="ram-bar-fill" style="width:9%;background:#94a3b8;"></div></div><div class="ram-val">~1.8 GB</div></div>
+    <div class="ram-row"><div class="ram-label">Node.js (7 × 512 MB)</div><div class="ram-bar-bg"><div class="ram-bar-fill" style="width:18%;background:#3b82f6;"></div></div><div class="ram-val">~3.6 GB</div></div>
+    <div class="ram-row"><div class="ram-label">RabbitMQ</div><div class="ram-bar-bg"><div class="ram-bar-fill" style="width:3%;background:#f59e0b;"></div></div><div class="ram-val">~615 MB</div></div>
+    <div class="ram-row"><div class="ram-label">Redis</div><div class="ram-bar-bg"><div class="ram-bar-fill" style="width:3%;background:#10b981;"></div></div><div class="ram-val">~615 MB</div></div>
+    <div class="ram-row"><div class="ram-label">OS buffers + headroom</div><div class="ram-bar-bg"><div class="ram-bar-fill" style="width:63%;background:#e2e8f0;"></div></div><div class="ram-val">~13.4 GB</div></div>
+  </div>
+
+  <div class="callout warn">
+    <strong>Limitations</strong>
+    DB Server is a single point of failure. A crash halts all 300 PS simultaneously. Acceptable for an early Delhi rollout (Phase 2 ramp-up), but upgrade to 2-B before full production.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ SECTION 4: DELHI HA -->
+<h2>2-B · Delhi-wide — Full Fallback &amp; Secure Deployment</h2>
+<div class="section-body">
+
+  <p>Production-grade multi-tier HA. Full DB failover, 3-node RabbitMQ quorum cluster, dual load balancers with VIP failover, dedicated report workers, encrypted disks, VPN, WAF, and offline backup. Built to absorb Phase 2 feature additions without re-architecting.</p>
+
+  <table>
+    <tr>
+      <th>Node / Group</th><th>Count</th><th>CPU ea.</th><th>RAM ea.</th><th>Storage ea.</th><th>Purpose</th>
+    </tr>
+    <tr>
+      <td class="bold">Load Balancer</td>
+      <td class="num">2</td>
+      <td class="num">2 vCPU</td>
+      <td class="num">5 GB</td>
+      <td class="num">60 GB SSD</td>
+      <td class="role">nginx + ModSecurity WAF · keepalived VIP failover (active/passive pair) · SSL termination · rate limiting · serves React static build</td>
+    </tr>
+    <tr>
+      <td class="bold">App Server</td>
+      <td class="num">2</td>
+      <td class="num">10 vCPU</td>
+      <td class="num">20 GB</td>
+      <td class="num">180 GB SSD</td>
+      <td class="role">Node.js PM2 (7 workers each) · both behind LB upstream pool · Redis client · pgBouncer client</td>
+    </tr>
+    <tr>
+      <td class="bold">Report Worker</td>
+      <td class="num">2</td>
+      <td class="num">5 vCPU</td>
+      <td class="num">10 GB</td>
+      <td class="num">120 GB SSD</td>
+      <td class="role">Puppeteer pool (4 concurrent max each) · pulls from RabbitMQ report queue · horizontal scale: add nodes as report templates grow in Phase 2</td>
+    </tr>
+    <tr>
+      <td class="bold">DB Primary</td>
+      <td class="num">1</td>
+      <td class="num">20 vCPU</td>
+      <td class="num">80 GB</td>
+      <td class="num">2.4 TB NVMe RAID-1</td>
+      <td class="role">PostgreSQL 16 (shared_buffers=20 GB, effective_cache=58 GB) · pgBouncer · LUKS · WAL streaming to replica</td>
+    </tr>
+    <tr>
+      <td class="bold">DB Replica</td>
+      <td class="num">1</td>
+      <td class="num">10 vCPU</td>
+      <td class="num">40 GB</td>
+      <td class="num">2.4 TB NVMe</td>
+      <td class="role">Streaming hot standby · read queries (analytics, audit) offloaded here · Patroni for automatic failover promotion</td>
+    </tr>
+    <tr>
+      <td class="bold">RabbitMQ Cluster</td>
+      <td class="num">3</td>
+      <td class="num">2 vCPU</td>
+      <td class="num">5 GB</td>
+      <td class="num">60 GB SSD</td>
+      <td class="role">Quorum queues · 3-node cluster (1 failure tolerated) · management UI behind VPN only</td>
+    </tr>
+    <tr>
+      <td class="bold">Redis</td>
+      <td class="num">1</td>
+      <td class="num">2 vCPU</td>
+      <td class="num">5 GB</td>
+      <td class="num">60 GB SSD</td>
+      <td class="role">Session store · rate limiter counters · notification badge cache (from ioredis already in stack)</td>
+    </tr>
+    <tr>
+      <td class="bold">Bastion / VPN</td>
+      <td class="num">1</td>
+      <td class="num">1 vCPU</td>
+      <td class="num">3 GB</td>
+      <td class="num">36 GB</td>
+      <td class="role">WireGuard VPN endpoint · only node with public SSH port · all other nodes accessible from VPN tunnel only</td>
+    </tr>
+    <tr>
+      <td class="bold">Backup Server</td>
+      <td class="num">1</td>
+      <td class="num">2 vCPU</td>
+      <td class="num">5 GB</td>
+      <td class="num">7.2 TB HDD</td>
+      <td class="role">Nightly pg_basebackup + pg_dump · GPG-encrypted · 90-day retention · also stores log archives</td>
+    </tr>
+    <tr>
+      <td class="bold pill phase2">Keycloak <span class="pill phase2">Phase 2</span></td>
+      <td class="num">2</td>
+      <td class="num">5 vCPU</td>
+      <td class="num">10 GB</td>
+      <td class="num">60 GB SSD</td>
+      <td class="role">MFA / SSO · active/passive cluster · backed by its own PostgreSQL schema on DB Primary</td>
+    </tr>
+    <tr>
+      <td class="bold pill phase2">MinIO Cluster <span class="pill phase2">Phase 2</span></td>
+      <td class="num">4</td>
+      <td class="num">2 vCPU</td>
+      <td class="num">5 GB</td>
+      <td class="num">4.8 TB HDD ea.</td>
+      <td class="role">S3-compatible object storage for evidence files / attachments if migrating off Cloudinary · erasure coded (EC:2) = 9.6 TB usable from 19.2 TB raw</td>
+    </tr>
+    <tr style="background:#f0fdf4;">
+      <td class="bold">Total (core, no Phase 2)</td>
+      <td class="num bold">13 nodes</td>
+      <td class="num bold">~78 vCPU</td>
+      <td class="num bold">~234 GB</td>
+      <td class="num bold">~12 TB</td>
+      <td></td>
+    </tr>
+    <tr style="background:#eff6ff;">
+      <td class="bold">Total (with Phase 2)</td>
+      <td class="num bold">19 nodes</td>
+      <td class="num bold">~108 vCPU</td>
+      <td class="num bold">~312 GB</td>
+      <td class="num bold">~31 TB</td>
+      <td></td>
+    </tr>
+  </table>
+
+  <h4>Security architecture</h4>
+  <table>
+    <tr><th>Control</th><th>Applies To</th><th>Implementation</th></tr>
+    <tr><td>Encryption at rest</td><td>DB Primary, DB Replica, Backup Server</td><td>LUKS2 with AES-256-XTS; keys stored in hardware (TPM) or HSM</td></tr>
+    <tr><td>Encryption in transit</td><td>All external traffic</td><td>TLS 1.2+ via nginx; internal inter-node via WireGuard tunnel</td></tr>
+    <tr><td>WAF</td><td>Load Balancers</td><td>ModSecurity + OWASP CRS; blocks SQLi, XSS, path traversal, scanner signatures</td></tr>
+    <tr><td>Network segmentation</td><td>All nodes</td><td>3 VLANs: DMZ (LBs), App (app+workers+rabbit+redis), Data (DB+backup); UFW rules enforce zone boundaries</td></tr>
+    <tr><td>Admin access</td><td>All nodes</td><td>SSH only via Bastion over WireGuard VPN; port 22 closed on all other nodes; SSH key auth only, password disabled</td></tr>
+    <tr><td>Intrusion detection</td><td>All nodes</td><td>Wazuh agent on each node → Wazuh Manager on Bastion; alerts on privilege escalation, unexpected listening ports, config tampering</td></tr>
+    <tr><td>Secrets management</td><td>App, DB</td><td>Secrets in environment files (600 permissions); consider HashiCorp Vault for Phase 2</td></tr>
+    <tr><td>Audit trail integrity</td><td>DB Replica</td><td>Audit queries served from read-only replica; app server has no UPDATE/DELETE on audit_logs or record_revisions (Postgres role restriction)</td></tr>
+    <tr><td>Backup integrity</td><td>Backup Server</td><td>GPG-encrypted pg_dump; SHA-256 checksums verified on restore test; weekly automated restore drill to staging</td></tr>
+    <tr><td>Rate limiting</td><td>LB + Redis</td><td>nginx limit_req (IP-level) + Redis counters (user-level via existing rate limiter middleware)</td></tr>
+  </table>
+
+  <div class="callout ok">
+    <strong>Failover behaviour</strong>
+    <strong>LB failure:</strong> keepalived moves VIP to standby LB within 2 seconds — transparent to users.<br>
+    <strong>App Server failure:</strong> nginx upstream health check marks node down; traffic shifts to remaining app server — zero manual intervention.<br>
+    <strong>DB Primary failure:</strong> Patroni detects failure, promotes Replica, updates pgBouncer config — RTO ~30 seconds automatically.<br>
+    <strong>RabbitMQ node failure:</strong> Quorum queues continue on remaining 2 nodes — messages not lost, consumers reconnect automatically.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ COMPARISON SUMMARY -->
+<h2>Quick-Reference Comparison</h2>
+<div class="section-body">
+  <table>
+    <tr>
+      <th>Scenario</th>
+      <th>vCPU</th>
+      <th>RAM</th>
+      <th>Storage</th>
+      <th>Nodes</th>
+      <th>DB Failover</th>
+      <th>App Failover</th>
+      <th>WAF / VPN</th>
+    </tr>
+    <tr>
+      <td class="bold">1-A District Minimal</td>
+      <td class="num">5</td>
+      <td class="num">10 GB</td>
+      <td class="num">240 GB</td>
+      <td class="num">1</td>
+      <td>✗</td><td>✗</td><td>✗</td>
+    </tr>
+    <tr>
+      <td class="bold">1-B District HA</td>
+      <td class="num">22</td>
+      <td class="num">55 GB</td>
+      <td class="num">972 GB</td>
+      <td class="num">5</td>
+      <td>Manual ~5 min</td><td>Auto ~2 s</td><td>✓</td>
+    </tr>
+    <tr>
+      <td class="bold">2-A Delhi Minimal</td>
+      <td class="num">25</td>
+      <td class="num">70 GB</td>
+      <td class="num">1.8 TB</td>
+      <td class="num">3</td>
+      <td>✗</td><td>✗</td><td>✗</td>
+    </tr>
+    <tr class="highlight" style="background:#eff6ff !important;">
+      <td class="bold">2-B Delhi HA (core)</td>
+      <td class="num bold">78</td>
+      <td class="num bold">234 GB</td>
+      <td class="num bold">12 TB</td>
+      <td class="num bold">13</td>
+      <td>Auto ~30 s</td><td>Auto ~2 s</td><td>✓</td>
+    </tr>
+    <tr style="background:#eff6ff !important;">
+      <td class="bold">2-B Delhi HA (+ Phase 2)</td>
+      <td class="num bold">108</td>
+      <td class="num bold">312 GB</td>
+      <td class="num bold">31 TB</td>
+      <td class="num bold">19</td>
+      <td>Auto ~30 s</td><td>Auto ~2 s</td><td>✓</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ RECOMMENDATIONS -->
+<h2>Deployment Recommendations</h2>
+<div class="section-body">
+
+  <h3>Recommended rollout path</h3>
+  <table>
+    <tr><th>Stage</th><th>Deploy</th><th>When</th></tr>
+    <tr><td>Pilot</td><td>1-A (single district, minimal)</td><td>Right now — internal testing, 1–2 districts max</td></tr>
+    <tr><td>District production</td><td>1-B (district HA)</td><td>Before any live PS goes operational on that district</td></tr>
+    <tr><td>Delhi ramp-up</td><td>2-A (Delhi minimal)</td><td>Phase 2 begins, multi-district onboarding starts</td></tr>
+    <tr><td>Delhi production</td><td>2-B (Delhi HA, core)</td><td>Before all 300 PS are onboarded</td></tr>
+    <tr><td>Delhi full Phase 2</td><td>2-B + Keycloak + MinIO</td><td>When legacy import, MFA, and advanced analytics go live</td></tr>
+  </table>
+
+  <h3>Platform choices</h3>
+  <table>
+    <tr><th>Option</th><th>Suitable for</th><th>Notes</th></tr>
+    <tr><td>NIC MeghRaj / NICSI DC</td><td>All scenarios</td><td>Preferred for government deployment; data sovereignty ensured; request VMs via NICSI empanelment</td></tr>
+    <tr><td>Physical servers (on-premise)</td><td>1-B, 2-B</td><td>Lower recurring cost; requires in-house ops team for hardware; use Dell/HP rack servers</td></tr>
+    <tr><td>AWS / Azure / GCP (Govt cloud)</td><td>2-A, 2-B</td><td>Faster to provision; higher recurring cost; check MHA/MeitY cloud policy for police data</td></tr>
+  </table>
+
+  <h3>Phase 2 scaling triggers — watch these metrics</h3>
+  <ul>
+    <li><strong>CPU sustained &gt; 70%</strong> on app servers → add another app node (horizontal scale, zero config change needed)</li>
+    <li><strong>PostgreSQL query p99 latency &gt; 200 ms</strong> → add read replica, offload analytics queries</li>
+    <li><strong>Report queue depth &gt; 20 pending jobs</strong> → add a third report worker node</li>
+    <li><strong>DB storage &gt; 70% full</strong> → provision and online-extend PostgreSQL tablespace to new volume</li>
+    <li><strong>RabbitMQ message redelivery rate rising</strong> → scale consumer workers, not the broker</li>
+  </ul>
+
+  <div class="callout info">
+    <strong>Note on Cloudinary</strong>
+    As long as Cloudinary handles all file uploads (evidence photos, documents), the local storage numbers above stay accurate. If you migrate to MinIO in Phase 2, add 4 × 4.8 TB HDD nodes (MinIO erasure-coded cluster) to the Delhi 2-B setup — this is already reflected in the Phase 2 line.
+  </div>
+</div>
+
+<hr>
+<p style="font-size:11px;color:#9ca3af;text-align:center;margin-top:16px;">PHAROS Infrastructure Sizing · Prepared July 2026 · Internal document — not for public distribution</p>
+
+</div>
+</body>
+</html>

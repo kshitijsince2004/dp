@@ -21,6 +21,7 @@ import {
   FileSignature,
   Layers,
   Upload,
+  LayoutDashboard,
 } from "lucide-react";
 import delhiPoliceLogo from "../../assets/delhi_police_logo.png";
 import useAuthStore from "../../store/authStore.js";
@@ -39,6 +40,7 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
     // ── Head Constable (HC / PS) Desk ──────────────────────────────────────────
     if (role === 'PS' || role === 'HC') {
       items.push(
+        { id: "ps-dashboard", label: t('nav.dashboard',       'Dashboard'),                icon: LayoutDashboard, to: "/ps/dashboard" },
         { id: "records",      label: t('nav.records',         'My Records'),               icon: ClipboardList, to: "/records" },
         { id: "bulk-import",  label: t('nav.bulkImport',      'Bulk Import'),              icon: Upload,        to: "/admin/legacy" },
         { id: "new-case",     label: t('recordTypes.CASE',    'Cases (FIR) Master'),       icon: FileText,      to: "/records/new/CASE" },
@@ -46,6 +48,7 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
         { id: "new-pcr",      label: t('recordTypes.PCR_CALL','PCR'),      icon: PhoneCall,     to: "/records/new/PCR_CALL" },
         { id: "new-missing",  label: t('recordTypes.MISSING', 'Missing Persons Register'), icon: Search,        to: "/records/new/MISSING" },
         { id: "new-uidb",     label: t('recordTypes.UIDB',    'UIDB Unidentified Bodies'), icon: Fingerprint,   to: "/records/new/UIDB" },
+        { id: "compile",      label: t('nav.compile',         'Compile Records'),          icon: FileSpreadsheet, to: "/compile" },
       );
     }
 
@@ -54,6 +57,7 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
       items.push(
         { id: "analytics",     label: t('nav.analytics',    'Analytics Console'), icon: BarChart3,    to: "/analytics" },
         { id: "queue",         label: t('nav.queue',        'Approval Desk'),     icon: ClipboardList, to: "/queue" },
+        { id: "compile",       label: t('nav.compile',      'Compile Records'),   icon: FileSpreadsheet, to: "/compile" },
         { id: "person-search", label: t('nav.personSearch', 'Person Search'),     icon: Search,       to: "/person-search" }
       );
     }
@@ -89,6 +93,7 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
       items.push(
         { id: "hq", label: t('nav.hq', 'Command Center'), icon: Building, to: "/hq" },
         { id: "station-wise", label: t('nav.stationWise', 'Station Wise View'), icon: Building, to: "/hq/stations" },
+        { id: "compile", label: t('nav.compile', 'Compile Records'), icon: FileSpreadsheet, to: "/compile" },
         { id: "analytics", label: t('nav.analytics', 'Analytics Console'), icon: BarChart3, to: "/analytics" },
         { id: "reports",       label: t('nav.reports',      'Excel Export Manager'), icon: FileSpreadsheet, to: "/reports" },
         { id: "person-search", label: t('nav.personSearch', 'Person Search'),         icon: Search,          to: "/person-search" },
