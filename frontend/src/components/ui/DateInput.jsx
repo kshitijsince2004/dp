@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { parseDMY, formatDMY } from '../../utils/dateFormat';
+import { parseDMY, formatDMY, parseAnyDate } from '../../utils/dateFormat';
 
 /**
  * dd/mm/yyyy date input. Displays and commits only dd/mm/yyyy text —
@@ -19,11 +19,17 @@ export default function DateInput({
   className = '',
   inputClassName = '',
 }) {
-  const [text, setText] = useState(value || '');
+  const normalizeText = (val) => {
+    if (!val) return '';
+    const d = parseAnyDate(val);
+    return d ? formatDMY(d) : val;
+  };
+
+  const [text, setText] = useState(normalizeText(value));
   const hiddenRef = useRef(null);
 
   useEffect(() => {
-    setText(value || '');
+    setText(normalizeText(value));
   }, [value]);
 
   const commit = (raw) => {

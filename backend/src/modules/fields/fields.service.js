@@ -48,6 +48,19 @@ export const getMinorHeadsForMajorHeads = async (majorHeadCodes) => {
     .orderBy('minor_head', 'asc');
 };
 
+// Every minor head joined to its major head's label, for every major head that has at
+// least one minor head — not scoped to any single act. Used to build a fully DB-driven
+// major-head -> minor-head cascade (one named range per major head label) instead of a
+// hand-curated list of per-crime-type minor_head field_keys.
+export const getAllMinorHeadsByMajorHead = async () => {
+  return db('excel_minor_heads as mn')
+    .join('excel_major_heads as mh', 'mh.major_head_code', 'mn.major_head_code')
+    .select('mh.major_head', 'mn.minor_head_cd', 'mn.minor_head')
+    .distinct()
+    .orderBy('mh.major_head', 'asc')
+    .orderBy('mn.minor_head', 'asc');
+};
+
 export const getPropertyCategories = async () => {
   const standard = await db('excel_property_types').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property');
   const others = await db('excel_other_property_categories').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property');

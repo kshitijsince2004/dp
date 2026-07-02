@@ -247,6 +247,33 @@ export const arrestPropertyFields = [
   // { field_key: 'phone_color', label_en: 'Phone Color', label_hi: 'फोन का रंग', required: false }
 ];
 
+// UIDB's "Act and Sections" sheet — mirrors caseActSectionFields/arrestActSectionFields.
+// act_name/sections are real field_registry rows (their labels/options come from there);
+// major_head/minor_head are synthetic canonical columns (same approach as CASE's 'crime_head'/
+// 'minor_head') that the Excel cascade writes directly, matching the field names
+// records.service.js's mergeConditionalFields already treats as canonical for every record
+// type — this sidesteps needing the reader to fill in per-act conditional fields
+// (ipc_major_head, theft_minor_head, ...) that the import path never merges on its own.
+export const uidbActSectionFields = [
+  { field_key: 'gd_no', label_en: 'GD Number', label_hi: 'जीडी संख्या', required: true, hint: 'Must match Import Template sheet GD Number' },
+  { field_key: 'act_name', label_en: 'Act', label_hi: 'अधिनियम', required: false, hint: 'e.g. IPC / BNS' },
+  { field_key: 'sections', label_en: 'Sections', label_hi: 'धाराएं', required: false, hint: 'e.g. Sec 302' },
+  { field_key: 'major_head', label_en: 'Major Head', label_hi: 'मुख्य शीर्ष', required: false, hint: 'e.g. Murder / Theft' },
+  { field_key: 'minor_head', label_en: 'Minor Head', label_hi: 'लघु शीर्ष', required: false, hint: 'e.g. Cycle Theft / Dowry Death' }
+];
+
+// Raw conditional per-act/per-crime-type fields that back the interactive form's
+// show-only-the-matching-one behaviour — never meaningful as their own Excel columns
+// (nothing merges them for imported rows), so they're excluded from UIDB's flat sheet.
+export const UIDB_ACT_SECTION_EXCLUDE_KEYS = new Set([
+  'act_name', 'sections', 'other_major_head', 'ipc_major_head', 'excise_major_head',
+  'arms_major_head', 'gambling_major_head', 'theft_minor_head', 'murder_minor_head',
+  'hurt_minor_head', 'cheating_minor_head', 'robbery_minor_head',
+  'excise_possession_minor_head', 'excise_sale_minor_head', 'excise_smuggling_minor_head',
+  'arms_possession_minor_head', 'arms_use_minor_head', 'gambling_house_minor_head',
+  'gambling_public_minor_head', 'arms_minor_head', 'gambling_minor_head', 'other_minor_head',
+]);
+
 export const CASE_SHEETS_CONFIG = {
   general: caseGeneralFields.map(f => f.field_key),
   victim: caseVictimFields.map(f => f.field_key),
