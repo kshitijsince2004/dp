@@ -97,6 +97,17 @@ function flattenSectionFields(section) {
   return section.fields || [];
 }
 
+/**
+ * Flat list of every field across every schema section, INCLUDING sub_tab-nested
+ * fields (Complainant/Victim/Accused/Arrested/Intimation sections carry their fields
+ * under `sub_tabs[].fields`, not a top-level `.fields` array — a plain
+ * `sec.fields || []` reduce silently drops all of them).
+ */
+function deepFlattenSchema(schema) {
+  if (!schema) return [];
+  return schema.reduce((acc, sec) => [...acc, ...flattenSectionFields(sec)], []);
+}
+
 /* ─── StepDot ─────────────────────────────────────────────────────────────── */
 function StepDot({ index, active, completed, hasError, title, onClick }) {
   return (
@@ -626,15 +637,15 @@ export default function DynamicForm({
       <div className="space-y-4">
         {/* Top card fields */}
         <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-visible mt-2">
-            {renderReadOnlyRow(lang === 'hi' ? 'रिकॉर्ड यूआईडी (UID)' : 'Record UID', values.uid || 'NEW_DRAFT_PENDING', true)}
-            {renderReadOnlyRow(lang === 'hi' ? 'जिला' : 'District', values.district || user?.district)}
-            {renderReadOnlyRow(lang === 'hi' ? 'थाना' : 'Police Station', values.police_station || user?.police_station)}
-            {renderReadOnlyRow(lang === 'hi' ? 'प्रस्तुति स्थिति' : 'Submission Status', values.status || 'DRAFT')}
-            
+            {renderReadOnlyRow(fieldLabel('uid') || (lang === 'hi' ? 'रिकॉर्ड यूआईडी (UID)' : 'Record UID'), values.uid || 'NEW_DRAFT_PENDING', true)}
+            {renderReadOnlyRow(fieldLabel('district') || (lang === 'hi' ? 'जिला' : 'District'), values.district || user?.district)}
+            {renderReadOnlyRow(fieldLabel('police_station') || (lang === 'hi' ? 'थाना' : 'Police Station'), values.police_station || user?.police_station)}
+            {renderReadOnlyRow(fieldLabel('submission_status') || (lang === 'hi' ? 'प्रस्तुति स्थिति' : 'Submission Status'), values.status || 'DRAFT')}
+
             {/* Case Type field */}
             <React.Fragment>
               <div className="bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center border-b border-[#c7d8ea] min-h-[40px]">
-                {lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE'}
+                {fieldLabel('case_type') || (lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE')}
               </div>
               <div className="px-3 py-1 bg-white flex items-center border-b border-[#c7d8ea] min-h-[40px]">
                 <input
@@ -650,7 +661,7 @@ export default function DynamicForm({
             {/* GD Number, Date & Time */}
             <React.Fragment>
               <div className="bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center min-h-[40px] rounded-bl">
-                {lang === 'hi' ? 'जीडी नंबर, दिनांक और समय *' : 'GD Number, Date & Time *'}
+                {(fieldLabel('gd_no') || (lang === 'hi' ? 'जीडी नंबर, दिनांक और समय' : 'GD Number, Date & Time'))}{' *'}
               </div>
               <div className="px-3 py-1 bg-white flex items-center gap-2 min-h-[40px] relative rounded-br">
                 <input
@@ -711,7 +722,7 @@ export default function DynamicForm({
 
 
   const renderActsAndSectionsStep = () => {
-    const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
+    const allFields = deepFlattenSchema(schema);
     const isWritten = values.type_of_information !== 'Oral';
 
     return (
@@ -723,7 +734,7 @@ export default function DynamicForm({
               {/* Row 1: GD/SD/DD Number / Date / Time */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
-                  GD/SD/DD Number / Date / Time <span className="text-red-500">*</span>
+                  {fieldLabel('gd_no') || 'GD/SD/DD Number / Date / Time'} <span className="text-red-500">*</span>
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1 flex items-center gap-2" style={{ position: 'relative' }}>
                   <input
@@ -751,7 +762,7 @@ export default function DynamicForm({
               {/* Row 2: Type of Information */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
-                  Type of Information
+                  {fieldLabel('type_of_information') || 'Type of Information'}
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1 flex items-center gap-4 text-[11px]">
                   {getFieldOptions(allFields, 'type_of_information').map((opt) => (
@@ -776,7 +787,7 @@ export default function DynamicForm({
               {/* Row: Case Registration Type */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
-                  {lang === 'hi' ? 'मामला पंजीकरण प्रकार' : 'Case Registration Type'}
+                  {fieldLabel('case_type') || (lang === 'hi' ? 'मामला पंजीकरण प्रकार' : 'Case Registration Type')}
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1">
                   <div className="w-64">
@@ -795,7 +806,7 @@ export default function DynamicForm({
               {/* Row 3: Complaint No. */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
-                  Complaint No.
+                  {fieldLabel('complaint_no') || 'Complaint No.'}
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1">
                   <input
@@ -815,7 +826,7 @@ export default function DynamicForm({
               {/* Row 4: Source / Reference of Complaint */}
               <tr>
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
-                  Source / Reference of Complaint <span className="text-red-500">*</span>
+                  {fieldLabel('source_reference') || 'Source / Reference of Complaint'} <span className="text-red-500">*</span>
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1">
                   <select
@@ -867,7 +878,7 @@ export default function DynamicForm({
   };
 
 const renderOccurrenceStep = () => {
-  const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
+  const allFields = deepFlattenSchema(schema);
 
   const occurrenceInfoKeys = [
     'occurrence_time_type',
@@ -1285,7 +1296,7 @@ function renderPersonAddressSubTab(prefix, allFields, valuesObj, onFieldChange, 
 }
 
 const renderComplainantStep = () => {
-  const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
+  const allFields = deepFlattenSchema(schema);
 
   return (
     <div className="space-y-4">
@@ -1304,7 +1315,7 @@ const renderComplainantStep = () => {
 
 const renderVictimStep = () => {
   const victims = repeaterState?.PERSON_VICTIM || [];
-  const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
+  const allFields = deepFlattenSchema(schema);
 
   // Build name & address strings for the summary table
   const getVictimName = (v) => [v.victim_first_name, v.victim_middle_name, v.victim_last_name].filter(Boolean).join(' ') || '—';
@@ -1435,7 +1446,7 @@ const renderVictimStep = () => {
 
 const renderAccusedStep = () => {
   const accusedList = repeaterState?.PERSON_ACCUSED || [];
-  const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
+  const allFields = deepFlattenSchema(schema);
 
   // Build name & address strings for the summary table
   const getAccusedName = (v) => [v.accused_first_name, v.accused_middle_name, v.accused_last_name].filter(Boolean).join(' ') || '—';
@@ -1566,7 +1577,7 @@ const renderAccusedStep = () => {
 
 const renderPropertyStep = () => {
   const propertyList = repeaterState?.property_details || [];
-  const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
+  const allFields = deepFlattenSchema(schema);
   const majorCategoryField = allFields.find(f => f.field_key === 'property_major_category');
 
   const majorCategoryOptions = (() => {
@@ -1891,7 +1902,7 @@ const renderPropertyStep = () => {
 
 const renderArrestedStep = () => {
   const arrestedList = repeaterState?.arrested_info || [];
-  const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
+  const allFields = deepFlattenSchema(schema);
 
   const renderArrestedModalField = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
     const field = allFields.find(f => f.field_key === key);
@@ -2224,7 +2235,7 @@ const renderArrestedStep = () => {
 
 const renderIntimationStep = () => {
   const intimationList = repeaterState?.intimation_details || [];
-  const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
+  const allFields = deepFlattenSchema(schema);
 
   const renderIntimationModalField = (key, customLabel = null, isLast = false) => {
     const field = allFields.find(f => f.field_key === key);
@@ -2581,13 +2592,17 @@ const renderActionTakenStep = () => {
    * Helper: extract all fields from the schema (flat list).
    * Used to look up field options dynamically — no hardcoding.
    */
-  const allSchemaFields = React.useMemo(() => {
-    if (!schema || schema.length === 0) return [];
-    return schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []);
-  }, [schema]);
+  const allSchemaFields = React.useMemo(() => deepFlattenSchema(schema), [schema]);
 
   /** Backend-provided sub-tab list (id/title_en/title_hi) for a repeater section, e.g. arrested_info's 4 modal tabs. */
   const getSectionSubTabs = (sectionKey) => schema?.find((s) => s.section === sectionKey)?.sub_tabs || [];
+
+  /** Backend label for a field key, or null if the field isn't in schema (caller supplies a fallback). */
+  const fieldLabel = (key) => {
+    const f = allSchemaFields.find((x) => x.field_key === key);
+    if (!f) return null;
+    return lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en;
+  };
 
   /** Shared orange/navy sub-tab bar used by every person repeater's edit modal. */
   const renderSubTabBar = (sectionKey, activeTab, setActiveTab, extraWrapperClass = '') => (

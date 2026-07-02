@@ -201,43 +201,43 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
 }
 
   if (key.endsWith('_nickname') || key.endsWith('_nick_name') || key.endsWith('_alias')) {
-    return <NicknameChipsField disabled={readOnly} value={value} onChange={handleChange} lang={lang} placeholder={placeholder} />;
+    return <NicknameChipsField disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} lang={lang} placeholder={placeholder} />;
   }
 
   if (type === 'TEXT') {
-    return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={handleChange} status={status} placeholder={placeholder} />;
+    return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
   }
 
   if (type === 'NUMBER') {
-    return <NumberField id={`field-${key}`} disabled={readOnly} value={value} onChange={handleChange} status={status} placeholder={placeholder} />;
+    return <NumberField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
   }
 
   if (type === 'DATE') {
-    return <DateField id={`field-${key}`} disabled={readOnly} value={value} onChange={handleChange} status={status} placeholder={placeholder} showTime={false} />;
+    return <DateField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} showTime={false} />;
   }
 
   if (type === 'DATETIME') {
-    return <DateField id={`field-${key}`} disabled={readOnly} value={value} onChange={handleChange} status={status} placeholder={placeholder} showTime={true} />;
+    return <DateField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} showTime={true} />;
   }
 
   if (type === 'TIME') {
-    return <TimeField id={`field-${key}`} disabled={readOnly} value={value} onChange={handleChange} status={status} placeholder={placeholder} />;
+    return <TimeField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
   }
 
   if (type === 'TEXTAREA') {
-    return <TextAreaField id={`field-${key}`} disabled={readOnly} value={value} onChange={handleChange} status={status} placeholder={placeholder} />;
+    return <TextAreaField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
   }
 
   if (type === 'SELECT' || type === 'DROPDOWN') {
-    return <SelectField id={`field-${key}`} disabled={readOnly} value={value} onChange={handleChange} status={status} placeholder={placeholder} options={options} lang={lang} />;
+    return <SelectField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} options={options} lang={lang} />;
   }
 
   if (type === 'RADIO') {
-    return <RadioField id={`field-${key}`} disabled={readOnly} value={value} onChange={handleChange} options={options} lang={lang} />;
+    return <RadioField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} options={options} lang={lang} />;
   }
 
   if (type === 'BOOLEAN' || type === 'CHECKBOX') {
-    return <CheckboxField id={`field-${key}`} disabled={readOnly} value={value} onChange={handleChange} label="" />;
+    return <CheckboxField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} label="" />;
   }
 
   if (type === 'PHONE' || type === 'EMAIL') {
@@ -247,7 +247,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
         type={type === 'PHONE' ? 'tel' : 'email'}
         disabled={readOnly}
         value={value ?? ''}
-        onChange={(e) => handleChange(e.target.value)}
+        onChange={(e) => handleFieldChange(key, e.target.value)}
         placeholder={placeholder || ''}
         className={`${inputBase} ${status === 'error' ? 'border-red-400 bg-red-50' : ''}`}
       />
@@ -260,12 +260,12 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
         id={`field-${key}`}
         type="file"
         disabled={readOnly}
-        onChange={(e) => handleChange(e.target.files?.[0]?.name || '')}
+        onChange={(e) => handleFieldChange(key, e.target.files?.[0]?.name || '')}
         className="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[var(--accent-glow)] file:text-[var(--accent-color)] hover:file:bg-[var(--accent-color)]/20 file:cursor-pointer cursor-pointer disabled:opacity-50"
       />
     );
   }
 
   // Fallback — render as plain text input
-  return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={handleChange} status={status} placeholder={placeholder} />;
+  return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
 }
