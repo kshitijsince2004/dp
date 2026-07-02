@@ -243,10 +243,21 @@ export default function DynamicForm({
 
     // Filter unified list
     const filtered = unifiedCases.filter(c => {
-      // Date exact match
-      const cDate = c.fir_date ? c.fir_date.substring(0, 10) : '';
-      const sDate = searchDate.substring(0, 10);
-      if (cDate !== sDate) return false;
+      // Date exact match (handles both YYYY-MM-DD and DD/MM/YYYY formats)
+      const sDate = searchDate.substring(0, 10); // "YYYY-MM-DD"
+      let cNormalized = '';
+      if (c.fir_date) {
+        const parts = c.fir_date.split('/');
+        if (parts.length === 3) {
+          const dd = parts[0].padStart(2, '0');
+          const mm = parts[1].padStart(2, '0');
+          const yyyy = parts[2];
+          cNormalized = `${yyyy}-${mm}-${dd}`;
+        } else {
+          cNormalized = c.fir_date.substring(0, 10);
+        }
+      }
+      if (cNormalized !== sDate) return false;
 
       // Query (complainant name or FIR no) match
       if (searchQuery) {
@@ -410,6 +421,7 @@ export default function DynamicForm({
                             let ioRank = '';
                             let ioPis = '';
                             let ioMobile = '';
+                            let caseTypeVal = 'cctns(manual FIR)';
 
                             if (row.isBackend) {
                               const matched = (casesData || []).find(c => {
@@ -425,6 +437,7 @@ export default function DynamicForm({
                                 ioRank = cData.io_rank || '';
                                 ioPis = cData.io_pis || '';
                                 ioMobile = cData.io_mobile || '';
+                                caseTypeVal = cData.case_type || matched.case_type || 'cctns(manual FIR)';
                               }
                             } else {
                               // It's a mock case
@@ -434,6 +447,7 @@ export default function DynamicForm({
                               ioRank = 'Inspector';
                               ioPis = '28081234';
                               ioMobile = '9876543210';
+                              caseTypeVal = 'cctns(manual FIR)';
                             }
 
                             // Directly update values
@@ -446,7 +460,8 @@ export default function DynamicForm({
                               io_name: ioName,
                               io_rank: ioRank,
                               io_pis: ioPis,
-                              io_mobile: ioMobile
+                              io_mobile: ioMobile,
+                              case_type: caseTypeVal
                             }));
                           }}
                           className={`group cursor-pointer hover:bg-slate-50/80 transition-all ${
@@ -647,13 +662,16 @@ export default function DynamicForm({
                 {fieldLabel('case_type') || (lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE')}
               </div>
               <div className="px-3 py-1 bg-white flex items-center border-b border-[#c7d8ea] min-h-[40px]">
-                <input
-                  type="text"
-                  disabled={readOnly}
-                  value={values.case_type || ''}
-                  onChange={(e) => handleChange('case_type', e.target.value)}
-                  className="w-full max-w-md h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500"
-                />
+                <div className="w-full max-w-md">
+                  <FieldRenderer
+                    field={allFields.find(f => f.field_key === 'case_type')}
+                    value={values.case_type || ''}
+                    onChange={handleChange}
+                    readOnly={readOnly}
+                    lang={lang}
+                    values={values}
+                  />
+                </div>
               </div>
             </React.Fragment>
 
@@ -747,7 +765,7 @@ export default function DynamicForm({
                 </td>
               </tr>
 
-              {/* Row 2: Type of Information */}
+              {/* Row 2: Type of Information
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
                   {fieldLabel('type_of_information') || 'Type of Information'}
@@ -770,7 +788,7 @@ export default function DynamicForm({
                     }}
                   />
                 </td>
-              </tr>
+              </tr> */}
 
               {/* Row: Case Registration Type */}
               <tr className="border-b border-[#7a9cc5]">
@@ -1894,6 +1912,21 @@ const renderArrestedStep = () => {
   const renderArrestedModalField = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
     const field = allFields.find(f => f.field_key === key);
     if (!field) return null;
+
+    if (field.show_when) {
+      try {
+        const cond = typeof field.show_when === 'string' ? JSON.parse(field.show_when) : field.show_when;
+        if (cond && cond.field) {
+          const val = arrestedTempValues[cond.field];
+          const checkVals = Array.isArray(cond.value) ? cond.value : [cond.value];
+          const isShown = checkVals.some(v => String(v || '').toLowerCase() === String(val || '').toLowerCase());
+          if (!isShown) return null;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
     const label = customLabel || (lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en);
     const rules = parseRules(field.validation_rules);
     const isRequired = !!rules.required || key === 'arrested_first_name' || key === 'arrested_gender';
@@ -1986,7 +2019,8 @@ const renderArrestedStep = () => {
                   </div>
                 </div>
               </React.Fragment>
-
+              {renderArrestedModalField('arrested_qualification')}
+              {renderArrestedModalField('scheme_of_arrest')}
               {renderArrestedModalField('arrested_landline')}
               {renderArrestedModalField('arrested_email', null, true)}
             </div>
@@ -2013,9 +2047,7 @@ const renderArrestedStep = () => {
               {renderArrestedModalField('arrested_dob')}
               {renderArrestedModalField('arrested_age_year')}
               {renderArrestedModalField('arrested_age_month')}
-              {renderArrestedModalField('arrested_birth_year', null, false, true)}
-              {renderArrestedModalField('arrested_age_range_from')}
-              {renderArrestedModalField('arrested_age_range_to', null, true)}
+              {renderArrestedModalField('arrested_birth_year', null, true, true)}
             </div>
           </fieldset>
         </div>
@@ -2031,7 +2063,27 @@ const renderArrestedStep = () => {
         </legend>
         <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
           {renderArrestedModalField('prev_involvement')}
-          {renderArrestedModalField('proclaimed_offender', null, true)}
+          {renderArrestedModalField('proclaimed_offender')}
+          {renderArrestedModalField('nafis_prepared')}
+          {renderArrestedModalField('dossier_prepared')}
+          {renderArrestedModalField('arresting_officer')}
+          {renderArrestedModalField('arresting_officer_mobile')}
+          {renderArrestedModalField('listed_criminal', null, true)}
+        </div>
+      </fieldset>
+    );
+  };
+
+  const renderArrestedCustodyStatusSubTab = () => {
+    return (
+      <fieldset className="bg-white">
+        <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+          {lang === 'hi' ? 'हिरासत की स्थिति' : 'Custody Status'}
+        </legend>
+        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
+          {renderArrestedModalField('status')}
+          {renderArrestedModalField('other_status_reason')}
+          {renderArrestedModalField('recovery', null, true)}
         </div>
       </fieldset>
     );
@@ -2192,6 +2244,7 @@ const renderArrestedStep = () => {
               {arrestedSubTab === 'arrest_details' && renderArrestedDetailsSubTab()}
               {arrestedSubTab === 'person_particulars' && renderArrestedPersonalInfoSubTab()}
               {arrestedSubTab === 'particular_details' && renderArrestedParticularDetailsSubTab()}
+              {arrestedSubTab === 'custody_status' && renderArrestedCustodyStatusSubTab()}
               {arrestedSubTab === 'address' && renderArrestedAddressSubTab()}
             </div>
 
@@ -2963,7 +3016,7 @@ const renderActionTakenStep = () => {
   };
 
   const saveArrestedEntry = () => {
-    const arrestedFields = allSchemaFields.filter(f => f.field_key?.startsWith('arrested_') || f.field_key?.startsWith('arrest_') || f.section === 'arrestee_info' || f.section === 'arrested_personal_info' || f.section === 'arrested_address' || f.section === 'arrest_details');
+    const arrestedFields = allSchemaFields.filter(f => f.field_key?.startsWith('arrested_') || f.field_key?.startsWith('arrest_') || f.section === 'arrestee_info' || f.section === 'arrested_personal_info' || f.section === 'arrested_address' || f.section === 'arrest_details' || f.field_key === 'scheme_of_arrest' || f.section === 'custody_status' || f.field_key === 'status');
     const errs = {};
     const touchedFields = {};
 
@@ -3751,6 +3804,7 @@ const renderActionTakenStep = () => {
             io_rank: cData.io_rank || '',
             io_pis: cData.io_pis || '',
             io_mobile: cData.io_mobile || '',
+            case_type: cData.case_type || matchedBackendCase.case_type || 'cctns(manual FIR)',
           };
         } else if (matchedMockCase) {
           autofilled = {
@@ -3760,6 +3814,7 @@ const renderActionTakenStep = () => {
             io_rank: 'Inspector',
             io_pis: '28081234',
             io_mobile: '9876543210',
+            case_type: 'cctns(manual FIR)',
           };
         }
         setValues(prev => ({
@@ -3771,6 +3826,7 @@ const renderActionTakenStep = () => {
           io_rank: prev.io_rank || autofilled.io_rank || '',
           io_pis: prev.io_pis || autofilled.io_pis || '',
           io_mobile: prev.io_mobile || autofilled.io_mobile || '',
+          case_type: prev.case_type || autofilled.case_type || 'cctns(manual FIR)',
         }));
       }
     }

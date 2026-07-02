@@ -340,7 +340,7 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
                 onChange={(e) => setRecordType(e.target.value)}
                 className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl px-3 py-2 text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer shadow-sm font-bold"
               >
-                {['CASE', 'ARREST', 'PCR_CALL'].map((rt) => (
+                {['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB'].map((rt) => (
                   <option key={rt} value={rt} className="bg-[var(--bg-page-main)] text-[var(--text-main-theme)]">{rt}</option>
                 ))}
               </select>
