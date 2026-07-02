@@ -29,6 +29,19 @@ export default function PoliceNavbar({
   const { t, i18n } = useTranslation();
   const lang = i18n.language || 'en';
 
+  const getNotificationDestination = () => {
+    const roleUpper = user?.role?.toUpperCase();
+    const routeMap = {
+      PS: '/records?scrollTo=table',
+      HC: '/records?scrollTo=table',
+      SHO: '/queue',
+      ACP: '/queue',
+      DISTRICT: '/queue',
+      DISTRICT_OFFICER: '/queue',
+    };
+    return routeMap[roleUpper] || null;
+  };
+
   // Live localized clock as per i18n instructions
   useEffect(() => {
     const updateTime = () => {
@@ -173,28 +186,28 @@ export default function PoliceNavbar({
                 <span className="text-slate-400 font-medium text-[11px] ml-0.5">/ {user?.role === 'DISTRICT_OFFICER' ? 15 : 215}</span>
               </span>
             </div>
-            
+
             <div className="w-[1px] h-7 bg-slate-200"></div>
-            
+
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-display">Pending</span>
               <span className="text-[13px] font-bold text-rose-500 leading-tight">{unreadCount > 0 ? unreadCount : 12}</span>
             </div>
-            
+
             <div className="w-[1px] h-7 bg-slate-200"></div>
-            
+
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-display">System</span>
               <div className="flex items-center gap-1.5 mt-[1px]">
-                 <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
-                 <span className={`text-[12px] font-bold leading-tight ${isConnected ? 'text-emerald-600' : 'text-slate-500'}`}>
-                   {isConnected ? 'ONLINE' : 'OFFLINE'}
-                 </span>
+                <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
+                <span className={`text-[12px] font-bold leading-tight ${isConnected ? 'text-emerald-600' : 'text-slate-500'}`}>
+                  {isConnected ? 'ONLINE' : 'OFFLINE'}
+                </span>
               </div>
             </div>
-            
+
             <div className="w-[1px] h-7 bg-slate-200"></div>
-            
+
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-display">Sync</span>
               <span className="text-[13px] font-bold text-[#0d2a4a] leading-tight">
@@ -219,11 +232,11 @@ export default function PoliceNavbar({
               if (roleUpper === 'HQ_ANALYST' || roleUpper === 'HQ_ADMIN') {
                 return <span className="console-switcher-role">{t('views.HQ')}</span>;
               }
-              
+
               const isHi = lang === 'hi';
               if (roleUpper === 'HC' || roleUpper === 'SHO') {
-                const name = isHi 
-                  ? (jurisdiction?.station?.name_hi || jurisdiction?.station?.name_en) 
+                const name = isHi
+                  ? (jurisdiction?.station?.name_hi || jurisdiction?.station?.name_en)
                   : (jurisdiction?.station?.name_en?.toUpperCase() || 'POLICE STATION');
                 const displayName = cleanName(name, roleUpper);
                 return (
@@ -235,8 +248,8 @@ export default function PoliceNavbar({
                 );
               }
               if (roleUpper === 'ACP') {
-                const name = isHi 
-                  ? (jurisdiction?.sub_division?.name_hi || jurisdiction?.sub_division?.name_en) 
+                const name = isHi
+                  ? (jurisdiction?.sub_division?.name_hi || jurisdiction?.sub_division?.name_en)
                   : (jurisdiction?.sub_division?.name_en?.toUpperCase() || 'SUB-DIVISION');
                 const displayName = cleanName(name, roleUpper);
                 return (
@@ -248,8 +261,8 @@ export default function PoliceNavbar({
                 );
               }
               if (roleUpper === 'DISTRICT_OFFICER') {
-                const name = isHi 
-                  ? (jurisdiction?.district?.name_hi || jurisdiction?.district?.name_en) 
+                const name = isHi
+                  ? (jurisdiction?.district?.name_hi || jurisdiction?.district?.name_en)
                   : (jurisdiction?.district?.name_en?.toUpperCase() || 'DISTRICT');
                 const displayName = cleanName(name, roleUpper);
                 return (
@@ -356,79 +369,88 @@ export default function PoliceNavbar({
                     <p style={{ margin: 0, fontSize: '13px' }}>No notifications</p>
                   </div>
                 ) : (
-                  notifications.map((notif) => (
-                    <div
-                      key={notif.id}
-                      className="notification-item"
-                      style={{
-                        padding: '12px 14px',
-                        borderBottom: '1px solid rgba(255,255,255,0.06)',
-                        background: hoveredNotifId === notif.id
-                          ? (notif.is_read ? 'rgba(0, 0, 0, 0.04)' : 'rgba(96, 165, 250, 0.12)')
-                          : (notif.is_read ? 'transparent' : 'rgba(96, 165, 250, 0.05)'),
-                        borderLeft: notif.is_read ? 'none' : '3px solid #60a5fa',
-                        transition: 'background 0.2s',
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={() => setHoveredNotifId(notif.id)}
-                      onMouseLeave={() => setHoveredNotifId(null)}
-                      onClick={() => {
-                        navigate('/queue');
-                        setNotificationsOpen(false);
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{
-                            margin: '0 0 4px 0',
-                            fontSize: '13px',
-                            fontWeight: notif.is_read ? 400 : 600,
-                            color: notif.is_read ? '#94a3b8' : '#f1f5f9',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}>
-                            {notif.title_en || notif.message_en || 'Notification'}
-                          </p>
-                          {notif.message_en && notif.title_en && (
+                  notifications.map((notif) => {
+                    const destination = getNotificationDestination();
+                    const isClickable = !!destination;
+                    return (
+                      <div
+                        key={notif.id}
+                        className="notification-item"
+                        style={{
+                          padding: '12px 14px',
+                          borderBottom: '1px solid rgba(255,255,255,0.06)',
+                          background: hoveredNotifId === notif.id
+                            ? (notif.is_read ? 'rgba(0, 0, 0, 0.04)' : 'rgba(96, 165, 250, 0.12)')
+                            : (notif.is_read ? 'transparent' : 'rgba(96, 165, 250, 0.05)'),
+                          borderLeft: notif.is_read ? 'none' : '3px solid #60a5fa',
+                          transition: 'background 0.2s',
+                          cursor: isClickable ? 'pointer' : 'default',
+                        }}
+                        onMouseEnter={() => setHoveredNotifId(notif.id)}
+                        onMouseLeave={() => setHoveredNotifId(null)}
+                        onClick={() => {
+                          if (!isClickable) return;
+                          navigate(destination);
+                          setNotificationsOpen(false);
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{
-                              margin: '0 0 6px 0',
-                              fontSize: '11px',
-                              color: '#64748b',
-                              lineHeight: '1.4',
+                              margin: '0 0 4px 0',
+                              fontSize: '13px',
+                              fontWeight: notif.is_read ? 400 : 600,
+                              color: notif.is_read ? '#94a3b8' : '#0f172a',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
                             }}>
-                              {notif.message_en}
+                              {notif.title_en || notif.message_en || 'Notification'}
                             </p>
-                          )}
-                          <span style={{ fontSize: '10px', color: '#475569' }}>
-                            {formatRelativeTime(notif.created_at)}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>
-                          {!notif.is_read && (
-                            <button
-                              type="button"
-                              onClick={(e) => handleMarkRead(notif.id, e)}
-                              title="Mark as read"
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#60a5fa', padding: '2px', borderRadius: '3px' }}
-                            >
-                              <CheckCheck size={14} />
-                            </button>
-                          )}
-                          {notif.record_id && (
-                            <button
-                              type="button"
-                              onClick={() => { navigate('/queue'); setNotificationsOpen(false); }}
-                              title="Go to queue"
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px', fontSize: '10px', borderRadius: '3px' }}
-                            >
-                              →
-                            </button>
-                          )}
+                            {notif.message_en && notif.title_en && (
+                              <p style={{
+                                margin: '0 0 6px 0',
+                                fontSize: '11px',
+                                color: '#64748b',
+                                lineHeight: '1.4',
+                              }}>
+                                {notif.message_en}
+                              </p>
+                            )}
+                            <span style={{ fontSize: '10px', color: '#475569' }}>
+                              {formatRelativeTime(notif.created_at)}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>
+                            {!notif.is_read && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleMarkRead(notif.id, e)}
+                                title="Mark as read"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#60a5fa', padding: '2px', borderRadius: '3px' }}
+                              >
+                                <CheckCheck size={14} />
+                              </button>
+                            )}
+                            {notif.record_id && isClickable && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(destination);
+                                  setNotificationsOpen(false);
+                                }}
+                                title="Go to page"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px', fontSize: '10px', borderRadius: '3px' }}
+                              >
+                                →
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
