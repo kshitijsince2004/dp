@@ -46,6 +46,7 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
         { id: "new-pcr",      label: t('recordTypes.PCR_CALL','PCR'),      icon: PhoneCall,     to: "/records/new/PCR_CALL" },
         { id: "new-missing",  label: t('recordTypes.MISSING', 'Missing Persons Register'), icon: Search,        to: "/records/new/MISSING" },
         { id: "new-uidb",     label: t('recordTypes.UIDB',    'UIDB Unidentified Bodies'), icon: Fingerprint,   to: "/records/new/UIDB" },
+        { id: "compile",      label: t('nav.compile',         'Compile Records'),          icon: FileSpreadsheet, to: "/compile" },
       );
     }
 
@@ -54,6 +55,7 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
       items.push(
         { id: "analytics",     label: t('nav.analytics',    'Analytics Console'), icon: BarChart3,    to: "/analytics" },
         { id: "queue",         label: t('nav.queue',        'Approval Desk'),     icon: ClipboardList, to: "/queue" },
+        { id: "compile",       label: t('nav.compile',      'Compile Records'),   icon: FileSpreadsheet, to: "/compile" },
         { id: "person-search", label: t('nav.personSearch', 'Person Search'),     icon: Search,       to: "/person-search" }
       );
     }
@@ -89,6 +91,7 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
       items.push(
         { id: "hq", label: t('nav.hq', 'Command Center'), icon: Building, to: "/hq" },
         { id: "station-wise", label: t('nav.stationWise', 'Station Wise View'), icon: Building, to: "/hq/stations" },
+        { id: "compile", label: t('nav.compile', 'Compile Records'), icon: FileSpreadsheet, to: "/compile" },
         { id: "analytics", label: t('nav.analytics', 'Analytics Console'), icon: BarChart3, to: "/analytics" },
         { id: "reports",       label: t('nav.reports',      'Excel Export Manager'), icon: FileSpreadsheet, to: "/reports" },
         { id: "person-search", label: t('nav.personSearch', 'Person Search'),         icon: Search,          to: "/person-search" },
