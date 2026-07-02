@@ -98,7 +98,10 @@ export const caseActSectionFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'Must match General Information FIR Number' },
   { field_key: 'act', label_en: 'Act', label_hi: 'अधिनियम', required: true, hint: 'e.g. IPC / BNS' },
   { field_key: 'sections', label_en: 'Sections', label_hi: 'धाराएं', required: true, hint: 'e.g. Sec 379/411' },
-  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching' }
+  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching' },
+  { field_key: 'major_head', label_en: 'Major Head', label_hi: 'मुख्य शीर्ष', required: false },
+  { field_key: 'minor_head', label_en: 'Minor Head', label_hi: 'लघु शीर्ष', required: false },
+  { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: false, hint: 'e.g. Snatching / Theft' }
 ];
 
 export const caseVictimFields = [
@@ -176,7 +179,10 @@ export const arrestActSectionFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'Must match General Info sheet' },
   { field_key: 'act', label_en: 'Act', label_hi: 'अधिनियम', required: true, hint: 'e.g. IPC / BNS' },
   { field_key: 'sections', label_en: 'Sections', label_hi: 'धाराएं', required: true, hint: 'e.g. Sec 379/411' },
-  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching' }
+  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching' },
+  { field_key: 'major_head', label_en: 'Major Head', label_hi: 'मुख्य शीर्ष', required: false },
+  { field_key: 'minor_head', label_en: 'Minor Head', label_hi: 'लघु शीर्ष', required: false },
+  { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: false, hint: 'e.g. Snatching / Theft' }
 ];
 
 export const arrestPersonFields = [

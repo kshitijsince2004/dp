@@ -29,6 +29,10 @@ import {
 // Synonyms map to handle template label variations and offsets
 const CASE_SYNONYMS = {
   "FIR Number": "fir_no",
+  "Complainant No.": "fir_no",
+  "Complainant No": "fir_no",
+  "Complainant no.": "fir_no",
+  "Complainant no": "fir_no",
   "FIR Date and time": "fir_date",
   "Disposal Type": "disposal_type",
   "District": "district",
@@ -56,7 +60,9 @@ const CASE_SYNONYMS = {
   "Property Minor Category": "property_minor_category",
   "Property Description": "property_details",
   "Property Status (stolen/recovered/involved/seized)": "property_stolen_recovered",
-  "Property Value in inr": "property_value"
+  "Property Value in inr": "property_value",
+  "Major Head": "major_head",
+  "Minor Head": "minor_head"
 };
 
 const ARREST_SYNONYMS = {
@@ -81,7 +87,9 @@ const ARREST_SYNONYMS = {
   "Property Description": "property_details",
   "Property Status (stolen/recovered/involved/seized)": "property_stolen_recovered",
   "Property Value in inr": "property_value",
-  "Previous involvement": "prev_involvement"
+  "Previous involvement": "prev_involvement",
+  "Major Head": "major_head",
+  "Minor Head": "minor_head"
 };
 
 // Sentinel error_code used to persist invalid parent keys (FIR / linked_fir_dd_no) from
@@ -273,6 +281,16 @@ const splitName = (fullName) => {
     first_name: parts[0],
     last_name: parts.slice(1).join(' ')
   };
+};
+
+const getConditionalSectionKey = (actName) => {
+  if (!actName) return 'other_sections';
+  const clean = String(actName).trim().toLowerCase();
+  if (clean.includes('ipc') || clean.includes('penal code')) return 'ipc_sections';
+  if (clean.includes('arms')) return 'arms_sections';
+  if (clean.includes('excise')) return 'excise_sections';
+  if (clean.includes('gambling')) return 'gambling_sections';
+  return 'other_sections';
 };
 
 const getRecordDate = (recordType, rowData) => {
@@ -599,6 +617,40 @@ const extractRowData = (row, colMap, registryFieldsMap, recordType) => {
       const { arrested_name, arrested_address } = splitAccused(cellVal);
       rowData.arrested_name = arrested_name;
       rowData.arrested_address = arrested_address;
+      return;
+    }
+
+    if (key.endsWith('_date') || key === 'fir_date') {
+      const timeKey = key.replace('_date', '_time');
+      let dateVal = null;
+      let timeVal = null;
+      
+      if (cellVal instanceof Date) {
+        if (!isNaN(cellVal.getTime())) {
+          dateVal = cellVal.toISOString().split('T')[0];
+          const hours = cellVal.getUTCHours();
+          const minutes = cellVal.getUTCMinutes();
+          timeVal = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+      } else if (cellVal) {
+        const s = String(cellVal).trim();
+        const parts = s.split(/\s+/);
+        dateVal = coerceDate(parts[0]);
+        if (parts[1]) {
+          timeVal = coerceTime(parts[1]);
+        }
+      }
+      
+      rowData[key] = dateVal;
+      if (timeVal && (!rowData[timeKey] || rowData[timeKey] === '')) {
+        rowData[timeKey] = timeVal;
+      }
+      
+      // Special case: if key is fir_date, also set gd_date and gd_time for database / validation consistency if empty
+      if (key === 'fir_date') {
+        if (!rowData.gd_date) rowData.gd_date = dateVal;
+        if (timeVal && !rowData.gd_time) rowData.gd_time = timeVal;
+      }
       return;
     }
 
@@ -1344,19 +1396,43 @@ export const validateImportBatch = async (req, res) => {
 
       // Check duplicate arrests in excel sheet
       const sheetArrests = new Set();
+      let tempPersonRows = [];
+      if (personWorksheet) {
+        tempPersonRows = parseWorksheet(personWorksheet, recordType, arrestPersonFields).rows.map(r => r.rowData);
+      }
+
       for (const pr of parentRows) {
         const fir = pr.rowData.linked_fir_dd_no;
         if (fir) {
-          if (sheetArrests.has(fir)) {
-            errors.push({
-              row: pr.rowIdx,
-              field_key: 'linked_fir_dd_no',
-              code: 'DUPLICATE_IN_SHEET',
-              message: `Duplicate Arrest general info row for FIR "${fir}" found in General Info sheet.`
-            });
-            invalidParentKeys.add(fir);
+          const matchingPs = tempPersonRows.filter(p => p.linked_fir_dd_no === fir);
+          if (matchingPs.length > 0) {
+            for (const pData of matchingPs) {
+              const name = `${pData.arrested_first_name || ''} ${pData.arrested_last_name || ''}`.trim().toLowerCase();
+              const aKey = `${fir.trim().toLowerCase()}|${name}`;
+              if (sheetArrests.has(aKey)) {
+                errors.push({
+                  row: pr.rowIdx,
+                  field_key: 'linked_fir_dd_no',
+                  code: 'DUPLICATE_IN_SHEET',
+                  message: `Duplicate Arrest row for "${pData.arrested_first_name || ''}" under FIR "${fir}" found in sheet.`
+                });
+                invalidParentKeys.add(fir);
+              } else {
+                sheetArrests.add(aKey);
+              }
+            }
           } else {
-            sheetArrests.add(fir);
+            if (sheetArrests.has(fir)) {
+              errors.push({
+                row: pr.rowIdx,
+                field_key: 'linked_fir_dd_no',
+                code: 'DUPLICATE_IN_SHEET',
+                message: `Duplicate Arrest general info row for FIR "${fir}" found in sheet.`
+              });
+              invalidParentKeys.add(fir);
+            } else {
+              sheetArrests.add(fir);
+            }
           }
         }
       }
@@ -1375,16 +1451,11 @@ export const validateImportBatch = async (req, res) => {
           }
         }
 
-        let tempPersonRows = [];
-        if (personWorksheet) {
-          tempPersonRows = parseWorksheet(personWorksheet, recordType, arrestPersonFields).rows.map(r => r.rowData);
-        }
-
         for (const pr of parentRows) {
           const fir = pr.rowData.linked_fir_dd_no;
           if (fir) {
-            const pData = tempPersonRows.find(p => p.linked_fir_dd_no === fir);
-            if (pData) {
+            const matchingPs = tempPersonRows.filter(p => p.linked_fir_dd_no === fir);
+            for (const pData of matchingPs) {
               const name = `${pData.arrested_first_name || ''} ${pData.arrested_last_name || ''}`.trim().toLowerCase();
               const aKey = `${fir.trim().toLowerCase()}|${name}`;
               if (existingArrestKeys.has(aKey)) {
@@ -1688,11 +1759,42 @@ export const confirmImportBatch = async (req, res) => {
         const properties = propertyRows.filter(p => p.fir_no === firNo);
 
         if (acts.length > 0) {
-          rowData.act = [...new Set(acts.map(a => a.act).filter(Boolean))].join(', ');
-          rowData.sections = [...new Set(acts.map(a => a.sections).filter(Boolean))].join(', ');
-          rowData.crime_head = [...new Set(acts.map(a => a.crime_head).filter(Boolean))].join(', ');
+          const actVal = [...new Set(acts.map(a => a.act).filter(Boolean))].join(', ');
+          const secVal = [...new Set(acts.map(a => a.sections).filter(Boolean))].join(', ');
+          const majorHeads = acts.map(a => a.major_head || a.crime_head).filter(Boolean);
+          const minorHeads = acts.map(a => a.minor_head).filter(Boolean);
+          
+          rowData.act = actVal;
+          rowData.act_name = actVal;
+          rowData.sections = secVal;
+          rowData.major_heads = [...new Set(majorHeads)].join(', ');
+          rowData.minor_heads = [...new Set(minorHeads)].join(', ');
+          rowData.major_head = rowData.major_heads;
+          rowData.minor_head = rowData.minor_heads;
+          
+          rowData.crime_head = rowData.major_head;
           rowData.under_section = rowData.sections;
-          rowData.local_head = rowData.crime_head;
+          if (!rowData.local_head) {
+            const actLocalHeads = acts.map(a => a.local_head).filter(Boolean);
+            if (actLocalHeads.length > 0) {
+              rowData.local_head = [...new Set(actLocalHeads)].join(', ');
+            } else {
+              rowData.local_head = rowData.crime_head;
+            }
+          }
+          rowData.complaint_no = rowData.fir_no;
+          
+          // Map to conditional section keys for the form UI
+          for (const act of acts) {
+            if (act.act && act.sections) {
+              const condKey = getConditionalSectionKey(act.act);
+              if (rowData[condKey]) {
+                rowData[condKey] = [...new Set([...rowData[condKey].split(',').map(s => s.trim()), ...act.sections.split(',').map(s => s.trim())])].join(', ');
+              } else {
+                rowData[condKey] = act.sections;
+              }
+            }
+          }
         }
 
         rowsToInsert.push({ rowData, victims, accused, properties, acts });
@@ -1729,7 +1831,7 @@ export const confirmImportBatch = async (req, res) => {
         if (invalidParentKeys.has(String(linkedFirDdNo))) continue;
 
         const acts = actSectionRows.filter(a => a.linked_fir_dd_no === linkedFirDdNo);
-        const person = personRows.find(p => p.linked_fir_dd_no === linkedFirDdNo);
+        const matchingPersons = personRows.filter(p => p.linked_fir_dd_no === linkedFirDdNo);
         const properties = propertyRows.filter(p => p.linked_fir_dd_no === linkedFirDdNo);
 
         const isYes = (val) => {
@@ -1738,55 +1840,88 @@ export const confirmImportBatch = async (req, res) => {
           return s === 'yes' || s === 'true' || s === '1' || s === 'हाँ';
         };
 
+        const itemRowData = { ...rowData };
+
         if (acts.length > 0) {
-          rowData.act = [...new Set(acts.map(a => a.act).filter(Boolean))].join(', ');
-          rowData.sections = [...new Set(acts.map(a => a.sections).filter(Boolean))].join(', ');
-          rowData.crime_head = [...new Set(acts.map(a => a.crime_head).filter(Boolean))].join(', ');
-          rowData.crimeHead = rowData.crime_head;
+          const actVal = [...new Set(acts.map(a => a.act).filter(Boolean))].join(', ');
+          const secVal = [...new Set(acts.map(a => a.sections).filter(Boolean))].join(', ');
+          const majorHeads = acts.map(a => a.major_head || a.crime_head).filter(Boolean);
+          const minorHeads = acts.map(a => a.minor_head).filter(Boolean);
+
+          itemRowData.act = actVal;
+          itemRowData.act_name = actVal;
+          itemRowData.sections = secVal;
+          itemRowData.major_heads = [...new Set(majorHeads)].join(', ');
+          itemRowData.minor_heads = [...new Set(minorHeads)].join(', ');
+          itemRowData.major_head = itemRowData.major_heads;
+          itemRowData.minor_head = itemRowData.minor_heads;
+
+          itemRowData.crime_head = [...new Set(acts.map(a => a.crime_head || a.major_head).filter(Boolean))].join(', ');
+          itemRowData.crimeHead = itemRowData.crime_head;
+          
+          const actLocalHeads = acts.map(a => a.local_head).filter(Boolean);
+          if (actLocalHeads.length > 0) {
+            itemRowData.local_head = [...new Set(actLocalHeads)].join(', ');
+          } else {
+            itemRowData.local_head = itemRowData.crime_head;
+          }
+
+          // Map to conditional section keys for the form UI
+          for (const act of acts) {
+            if (act.act && act.sections) {
+              const condKey = getConditionalSectionKey(act.act);
+              if (itemRowData[condKey]) {
+                itemRowData[condKey] = [...new Set([...itemRowData[condKey].split(',').map(s => s.trim()), ...act.sections.split(',').map(s => s.trim())])].join(', ');
+              } else {
+                itemRowData[condKey] = act.sections;
+              }
+            }
+          }
         }
 
-        if (person) {
-          Object.assign(rowData, person);
+        if (matchingPersons.length > 0) {
+          const person = matchingPersons[0];
+          Object.assign(itemRowData, person);
 
-          rowData.fullName = person.arrested_first_name || person.full_name;
-          rowData.full_name = person.arrested_first_name || person.full_name;
-          rowData.arrested_name = person.arrested_first_name || person.full_name;
-          rowData.fatherName = person.arrested_relative_name || person.father_name;
-          rowData.father_name = person.arrested_relative_name || person.father_name;
-          rowData.age = person.arrested_age_year || person.age;
-          rowData.gender = person.arrested_gender || person.gender;
-          rowData.address = person.arrested_present_address || person.address;
-          rowData.arrested_address = person.arrested_present_address || person.address;
-          rowData.nafisPrepared = isYes(person.nafis_prepared);
-          rowData.nafis_prepared = person.nafis_prepared;
-          rowData.dossierPrepared = isYes(person.dossier_prepared);
-          rowData.dossier_prepared = person.dossier_prepared;
-          rowData.searchSlipPrepared = isYes(person.search_slip_prepared);
-          rowData.search_slip_prepared = person.search_slip_prepared;
-          rowData.addressVerified = isYes(person.address_verified);
-          rowData.address_verified = person.address_verified;
-          rowData.verifyingOfficerName = person.verifying_officer_name;
-          rowData.verifyingOfficerRank = person.verifying_officer_rank;
-          rowData.kinName = person.kin_name;
-          rowData.kinMobile = person.kin_mobile;
-          rowData.kinRelationship = person.kin_relationship;
-          rowData.photoPath = person.photo_path;
+          itemRowData.fullName = person.arrested_first_name || person.full_name;
+          itemRowData.full_name = person.arrested_first_name || person.full_name;
+          itemRowData.arrested_name = person.arrested_first_name || person.full_name;
+          itemRowData.fatherName = person.arrested_relative_name || person.father_name;
+          itemRowData.father_name = person.arrested_relative_name || person.father_name;
+          itemRowData.age = person.arrested_age_year || person.age;
+          itemRowData.gender = person.arrested_gender || person.gender;
+          itemRowData.address = person.arrested_present_address || person.address;
+          itemRowData.arrested_address = person.arrested_present_address || person.address;
+          itemRowData.nafisPrepared = isYes(person.nafis_prepared);
+          itemRowData.nafis_prepared = person.nafis_prepared;
+          itemRowData.dossierPrepared = isYes(person.dossier_prepared);
+          itemRowData.dossier_prepared = person.dossier_prepared;
+          itemRowData.searchSlipPrepared = isYes(person.search_slip_prepared);
+          itemRowData.search_slip_prepared = person.search_slip_prepared;
+          itemRowData.addressVerified = isYes(person.address_verified);
+          itemRowData.address_verified = person.address_verified;
+          itemRowData.verifyingOfficerName = person.verifying_officer_name;
+          itemRowData.verifyingOfficerRank = person.verifying_officer_rank;
+          itemRowData.kinName = person.kin_name;
+          itemRowData.kinMobile = person.kin_mobile;
+          itemRowData.kinRelationship = person.kin_relationship;
+          itemRowData.photoPath = person.photo_path;
         }
 
         if (properties.length > 0) {
-          rowData.property_major_category = properties[0].property_major_category;
-          rowData.property_minor_category = properties[0].property_minor_category;
-          rowData.property_stolen_recovered = properties[0].property_stolen_recovered;
-          rowData.property_details = properties.map(p => p.property_details).filter(Boolean).join(', ');
+          itemRowData.property_major_category = properties[0].property_major_category;
+          itemRowData.property_minor_category = properties[0].property_minor_category;
+          itemRowData.property_stolen_recovered = properties[0].property_stolen_recovered;
+          itemRowData.property_details = properties.map(p => p.property_details).filter(Boolean).join(', ');
         }
 
-        rowData.firDdNumber = rowData.linked_fir_dd_no;
-        rowData.firDate = rowData.fir_date;
-        rowData.dateOfArrest = rowData.date_of_arrest;
-        rowData.timeOfArrest = rowData.time_of_arrest;
-        rowData.placeOfArrest = rowData.place_of_arrest;
+        itemRowData.firDdNumber = itemRowData.linked_fir_dd_no;
+        itemRowData.firDate = itemRowData.fir_date;
+        itemRowData.dateOfArrest = itemRowData.date_of_arrest;
+        itemRowData.timeOfArrest = itemRowData.time_of_arrest;
+        itemRowData.placeOfArrest = itemRowData.place_of_arrest;
 
-        rowsToInsert.push({ rowData, person, properties, acts });
+        rowsToInsert.push({ rowData: itemRowData, persons: matchingPersons, properties, acts });
       }
 
     } else {
@@ -2014,6 +2149,13 @@ export const confirmImportBatch = async (req, res) => {
             const propertiesBatch = [];
             for (let idx = 0; idx < item.properties.length; idx++) {
               const prop = item.properties[idx];
+              const mappedKeys = new Set(['property_major_category', 'property_minor_category', 'property_stolen_recovered', 'property_details', 'fir_no']);
+              const extraData = {};
+              for (const [k, v] of Object.entries(prop)) {
+                if (!mappedKeys.has(k) && v !== null && v !== undefined && v !== '') {
+                  extraData[k] = v;
+                }
+              }
               propertiesBatch.push({
                 id: uuidv4(),
                 record_id: recordId,
@@ -2021,6 +2163,7 @@ export const confirmImportBatch = async (req, res) => {
                 minor_category: truncate(prop.property_minor_category, 100) || null,
                 status: truncate(prop.property_stolen_recovered || 'Stolen', 20),
                 details: prop.property_details || null,
+                extra_data: Object.keys(extraData).length > 0 ? JSON.stringify(extraData) : null,
                 sort_order: idx,
                 created_at: now
               });
@@ -2031,9 +2174,10 @@ export const confirmImportBatch = async (req, res) => {
 
           // 5. Arrest child tables
           } else if (batch.record_type === 'ARREST') {
-            const pRow = item.person;
-            if (pRow) {
-              await trx('record_persons').insert({
+            const personsBatch = [];
+            for (let idx = 0; idx < item.persons.length; idx++) {
+              const pRow = item.persons[idx];
+              personsBatch.push({
                 id: uuidv4(),
                 record_id: recordId,
                 person_type: 'ARRESTED',
@@ -2043,14 +2187,24 @@ export const confirmImportBatch = async (req, res) => {
                 city: truncate(pRow.arrested_city_town_village || pRow.address, 100) || null,
                 district: truncate(pRow.arrested_district || pRow.district, 100) || null,
                 data: JSON.stringify(pRow),
-                sort_order: 0,
+                sort_order: idx,
                 created_at: now
               });
+            }
+            if (personsBatch.length > 0) {
+              await trx('record_persons').insert(personsBatch);
             }
 
             const propertiesBatch = [];
             for (let idx = 0; idx < item.properties.length; idx++) {
               const prop = item.properties[idx];
+              const mappedKeys = new Set(['property_major_category', 'property_minor_category', 'property_stolen_recovered', 'property_details', 'linked_fir_dd_no']);
+              const extraData = {};
+              for (const [k, v] of Object.entries(prop)) {
+                if (!mappedKeys.has(k) && v !== null && v !== undefined && v !== '') {
+                  extraData[k] = v;
+                }
+              }
               propertiesBatch.push({
                 id: uuidv4(),
                 record_id: recordId,
@@ -2058,6 +2212,7 @@ export const confirmImportBatch = async (req, res) => {
                 minor_category: truncate(prop.property_minor_category, 100) || null,
                 status: truncate(prop.property_stolen_recovered || 'Recovered', 20),
                 details: prop.property_details || null,
+                extra_data: Object.keys(extraData).length > 0 ? JSON.stringify(extraData) : null,
                 sort_order: idx,
                 created_at: now
               });

@@ -229,6 +229,39 @@ export class TemplateBuilderService {
       } while (colIdxToDelete !== -1);
     });
 
+    // Ensure local_head is present on Act and Sections sheet
+    const actSectionSheet = workbook.getWorksheet('Act and Sections');
+    if (actSectionSheet) {
+      let localHeadExists = false;
+      const row1 = actSectionSheet.getRow(1);
+      row1.eachCell({ includeEmpty: true }, (cell) => {
+        if (cell.value === 'local_head') {
+          localHeadExists = true;
+        }
+      });
+      if (!localHeadExists) {
+        let maxCols = 0;
+        actSectionSheet.eachRow({ includeEmpty: true }, r => {
+          maxCols = Math.max(maxCols, r.cellCount);
+        });
+        const targetColIndex = maxCols + 1;
+        actSectionSheet.getRow(1).getCell(targetColIndex).value = 'local_head';
+        actSectionSheet.getRow(2).getCell(targetColIndex).value = 'Act and Sections';
+        actSectionSheet.getRow(3).getCell(targetColIndex).value = lang === 'hi' ? 'स्थानीय शीर्ष' : 'Local Head';
+        actSectionSheet.getRow(4).getCell(targetColIndex).value = 'e.g. Snatching / Theft';
+        
+        // Copy cell format from adjacent column
+        const refColIndex = targetColIndex > 1 ? targetColIndex - 1 : 1;
+        for (let r = 1; r <= 4; r++) {
+          const refCell = actSectionSheet.getRow(r).getCell(refColIndex);
+          const cell = actSectionSheet.getRow(r).getCell(targetColIndex);
+          if (refCell.style) {
+            cell.style = JSON.parse(JSON.stringify(refCell.style));
+          }
+        }
+      }
+    }
+
     const excludedKeys = new Set();
     const filteredTypeFields = typeFields.filter(f => allowedKeys.has(f.field_key));
     const sectionMap = recordType === 'CASE' ? CASE_SECTION_MAP : ARREST_SECTION_MAP;
