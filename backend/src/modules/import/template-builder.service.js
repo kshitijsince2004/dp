@@ -80,7 +80,8 @@ const CASE_SECTION_MAP = {
 
 const ARREST_SECTION_MAP = {
   general_info: { sheet: 'General Info', label: 'General Information' },
-  arrest_details: { sheet: 'General Info', label: 'Arrest Details' },
+  arrest_details: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
+  arrested_info: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
   investigation_officer: { sheet: 'General Info', label: 'IO Details' },
   
   act_section: { sheet: 'Act and Sections', label: 'Act and Sections' },
@@ -233,6 +234,9 @@ export class TemplateBuilderService {
     const sectionMap = recordType === 'CASE' ? CASE_SECTION_MAP : ARREST_SECTION_MAP;
 
     for (const field of filteredTypeFields) {
+      if (recordType === 'ARREST' && field.field_key === 'status') {
+        field.section = 'custody_status';
+      }
       const mapping = sectionMap[field.section];
       if (!mapping) continue;
 
