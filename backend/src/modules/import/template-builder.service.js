@@ -3,6 +3,19 @@ import path from 'path';
 import fs from 'fs';
 import db from '../../config/db.js';
 import { logger } from '../../utils/logger.js';
+import {
+  CASE_SHEETS_CONFIG,
+  ARREST_SHEETS_CONFIG,
+  caseGeneralFields,
+  caseVictimFields,
+  caseActSectionFields,
+  caseAccusedFields,
+  casePropertyFields,
+  arrestGeneralFields,
+  arrestActSectionFields,
+  arrestPersonFields,
+  arrestPropertyFields
+} from './import-fields.config.js';
 
 function colLetterToNum(letter) {
   let num = 0;
@@ -192,18 +205,20 @@ export class TemplateBuilderService {
       }
     });
 
-    const excludedKeys = recordType === 'CASE'
-      ? new Set(['property_phone_number', 'phone_make', 'phone_model', 'phone_imei', 'phone_color', 'phone_status', 'property_major_category', 'property_minor_category'])
-      : new Set(['property_major_category', 'property_minor_category']);
+    const allowedKeys = new Set(
+      recordType === 'CASE'
+        ? Object.values(CASE_SHEETS_CONFIG).flat()
+        : Object.values(ARREST_SHEETS_CONFIG).flat()
+    );
 
-    // Clean up physically existing unwanted columns from the base workbook on the fly
+    // Clean up columns from the base workbook on the fly if they are not in allowedKeys
     workbook.worksheets.forEach(worksheet => {
       let colIdxToDelete = -1;
       do {
         colIdxToDelete = -1;
         const row1 = worksheet.getRow(1);
         row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          if (cell.value && excludedKeys.has(cell.value)) {
+          if (cell.value && !allowedKeys.has(cell.value)) {
             colIdxToDelete = colNumber;
           }
         });
@@ -213,7 +228,8 @@ export class TemplateBuilderService {
       } while (colIdxToDelete !== -1);
     });
 
-    const filteredTypeFields = typeFields.filter(f => !excludedKeys.has(f.field_key));
+    const excludedKeys = new Set();
+    const filteredTypeFields = typeFields.filter(f => allowedKeys.has(f.field_key));
     const sectionMap = recordType === 'CASE' ? CASE_SECTION_MAP : ARREST_SECTION_MAP;
 
     for (const field of filteredTypeFields) {
@@ -292,10 +308,25 @@ export class TemplateBuilderService {
       const r4 = worksheet.getRow(4);
 
       // Set values
+      const configField = recordType === 'CASE'
+        ? caseGeneralFields.find(f => f.field_key === field.field_key) ||
+          caseVictimFields.find(f => f.field_key === field.field_key) ||
+          caseActSectionFields.find(f => f.field_key === field.field_key) ||
+          caseAccusedFields.find(f => f.field_key === field.field_key) ||
+          casePropertyFields.find(f => f.field_key === field.field_key)
+        : arrestGeneralFields.find(f => f.field_key === field.field_key) ||
+          arrestActSectionFields.find(f => f.field_key === field.field_key) ||
+          arrestPersonFields.find(f => f.field_key === field.field_key) ||
+          arrestPropertyFields.find(f => f.field_key === field.field_key);
+
+      const labelEn = configField ? configField.label_en : field.label_en;
+      const labelHi = configField ? configField.label_hi : field.label_hi;
+      const hint = configField && configField.hint ? configField.hint : getHint(field);
+
       r1.getCell(targetColIndex).value = field.field_key;
       r2.getCell(targetColIndex).value = mapping.label;
-      r3.getCell(targetColIndex).value = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-      r4.getCell(targetColIndex).value = getHint(field);
+      r3.getCell(targetColIndex).value = lang === 'hi' ? (labelHi || labelEn) : labelEn;
+      r4.getCell(targetColIndex).value = hint;
 
       // Copy formatting from adjacent column
       for (let rIdx = 1; rIdx <= 4; rIdx++) {
@@ -392,10 +423,7 @@ export class TemplateBuilderService {
   }
 
   static insertColumnAt(worksheet, colIndex) {
-    let maxCols = 0;
-    worksheet.eachRow({ includeEmpty: true }, row => {
-      maxCols = Math.max(maxCols, row.cellCount);
-    });
+    const maxCols = worksheet.columnCount;
 
     // Shift cells backwards
     worksheet.eachRow({ includeEmpty: true }, (row) => {
@@ -443,10 +471,7 @@ export class TemplateBuilderService {
   }
 
   static deleteColumnAt(worksheet, colIndex) {
-    let maxCols = 0;
-    worksheet.eachRow({ includeEmpty: true }, row => {
-      maxCols = Math.max(maxCols, row.cellCount);
-    });
+    const maxCols = worksheet.columnCount;
 
     // Capture each merge's master (top-left) value BEFORE shifting. Shifting left can
     // clobber a master cell when the deleted column IS the master, which would drop the
