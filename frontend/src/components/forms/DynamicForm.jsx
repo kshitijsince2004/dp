@@ -1460,7 +1460,7 @@ export default function DynamicForm({
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1">
                   <input
-                    type="number"
+                    type="text"
                     disabled={readOnly}
                     value={values.complaint_no || ''}
                     onChange={(e) => {
@@ -5211,7 +5211,7 @@ const renderActionTakenStep = () => {
   useEffect(() => {
     if (!readOnly && recordType === 'CASE') {
       const propertyList = repeaterState?.property_details || [];
-      if (propertyList.length === 0) {
+      if (propertyList.length === 0 && (!initialProperties || initialProperties.length === 0)) {
         setRepeaterState(prev => ({
           ...prev,
           property_details: [{
@@ -5224,7 +5224,7 @@ const renderActionTakenStep = () => {
         }));
       }
     }
-  }, [repeaterState?.property_details?.length, readOnly, recordType]);
+  }, [repeaterState?.property_details?.length, readOnly, recordType, initialProperties]);
 
   useEffect(() => {
     const seed = { ...(initialValues?.data || initialValues || {}) };

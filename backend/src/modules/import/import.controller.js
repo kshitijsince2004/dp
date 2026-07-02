@@ -709,7 +709,8 @@ const extractRowData = (row, colMap, registryFieldsMap, recordType) => {
     }
   }
 
-  if (recordType === 'CASE' && (rowData.status === null || rowData.status === undefined || rowData.status === '')) {
+  const hasStatusField = registryFieldsMap.status !== undefined;
+  if (recordType === 'CASE' && hasStatusField && (rowData.status === null || rowData.status === undefined || rowData.status === '')) {
     rowData.status = 'Open';
   }
 
@@ -2181,6 +2182,27 @@ export const confirmImportBatch = async (req, res) => {
             const personsBatch = [];
             for (let idx = 0; idx < item.persons.length; idx++) {
               const pRow = item.persons[idx];
+              
+              // Map arresting officer from parent row if empty
+              if (!pRow.arresting_officer && rowData.io_name) {
+                pRow.arresting_officer = rowData.io_name;
+              }
+              if (!pRow.arresting_officer_mobile && rowData.io_mobile) {
+                pRow.arresting_officer_mobile = rowData.io_mobile;
+              }
+
+              // Fallback parent date/time of arrest from the first arrested person row
+              if (idx === 0) {
+                if (!rowData.date_of_arrest && pRow.date_of_arrest) {
+                  rowData.date_of_arrest = pRow.date_of_arrest;
+                  finalData.date_of_arrest = pRow.date_of_arrest;
+                }
+                if (!rowData.time_of_arrest && pRow.time_of_arrest) {
+                  rowData.time_of_arrest = pRow.time_of_arrest;
+                  finalData.time_of_arrest = pRow.time_of_arrest;
+                }
+              }
+
               personsBatch.push({
                 id: uuidv4(),
                 record_id: recordId,
