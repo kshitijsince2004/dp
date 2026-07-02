@@ -5,6 +5,8 @@ import { DISTRICTS_AND_STATIONS } from "../utils/policeData.js";
 import useAuthStore from "../store/authStore.js";
 import api from "../utils/api.js";
 import toast from "react-hot-toast";
+import DateInput from "../components/ui/DateInput.jsx";
+import { formatDMY } from "../utils/dateFormat.js";
 
 export default function MissingPersonEntry() {
   const { onSubmitReport, addNotification } = useOutletContext();
@@ -15,8 +17,8 @@ export default function MissingPersonEntry() {
     district: "New Delhi District (NDD)",
     policeStation: "Parliament Street",
     ddNumber: "",
-    dateTime: new Date().toISOString().split('T')[0],
-    missingDate: new Date().toISOString().split('T')[0],
+    dateTime: `${formatDMY(new Date())} 00:00`,
+    missingDate: formatDMY(new Date()),
     missingPlace: "",
     name: "",
     age: "",
@@ -73,8 +75,8 @@ export default function MissingPersonEntry() {
       district: "New Delhi District (NDD)",
       policeStation: "Parliament Street",
       ddNumber: "DD-30A",
-      dateTime: "2026-06-12T14:10",
-      missingDate: "2026-06-12",
+      dateTime: "12/06/2026 14:10",
+      missingDate: "12/06/2026",
       missingPlace: "Near Block-C Park, Karol Bagh, Delhi",
       name: "Aditya Verma",
       age: "14",
@@ -86,13 +88,13 @@ export default function MissingPersonEntry() {
       informedBy: "Rajesh Verma (Father)",
       contactNumber: "9876598765",
       trackChildNumber: "TC-M-2026-90412",
-      trackChildDate: "2026-06-12",
+      trackChildDate: "12/06/2026",
       zipnetNumber: "ZIP-MIS-28891A",
       status: "Traced & Recovered",
       foundPlace: "New Delhi Railway Station Platform 1 (with GRP)",
       tracedDdNumber: "DD-08B",
       firNumber: "FIR-228/2026",
-      firDate: "2026-06-13"
+      firDate: "13/06/2026"
     });
     setErrors({});
     addNotification("Missing person mock data injected.", "info");
@@ -152,7 +154,7 @@ export default function MissingPersonEntry() {
     try {
       const res = await api.post('/v1/records', {
         record_type: 'MISSING',
-        record_date: formData.missingDate || formData.dateTime?.split('T')[0] || new Date().toISOString().split('T')[0],
+        record_date: formData.missingDate || formData.dateTime?.split(' ')[0] || formatDMY(new Date()),
         data: formData
       });
       const uid = res.data.data?.uid;
@@ -342,25 +344,36 @@ export default function MissingPersonEntry() {
 
                 <div className="form-group">
                   <label className="form-label" htmlFor="dateTime">Report Date & Time</label>
-                  <input
-                    type="datetime-local"
-                    id="dateTime"
-                    name="dateTime"
-                    className="form-control"
-                    value={formData.dateTime}
-                    onChange={handleInputChange}
-                  />
+                  <div className="flex gap-2">
+                    <DateInput
+                      id="dateTime"
+                      inputClassName="form-control"
+                      className="flex-1"
+                      value={(formData.dateTime || '').split(' ')[0] || ''}
+                      onChange={(val) => {
+                        const time = (formData.dateTime || '').split(' ')[1] || '00:00';
+                        handleInputChange({ target: { name: 'dateTime', value: val ? `${val} ${time}` : '' } });
+                      }}
+                    />
+                    <input
+                      type="time"
+                      className="form-control w-32"
+                      value={(formData.dateTime || '').split(' ')[1] || ''}
+                      onChange={(e) => {
+                        const datePart = (formData.dateTime || '').split(' ')[0] || '';
+                        handleInputChange({ target: { name: 'dateTime', value: datePart ? `${datePart} ${e.target.value}` : '' } });
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label className="form-label" htmlFor="missingDate">Missing Since Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     id="missingDate"
-                    name="missingDate"
-                    className="form-control"
+                    inputClassName="form-control"
                     value={formData.missingDate}
-                    onChange={handleInputChange}
+                    onChange={(val) => handleInputChange({ target: { name: 'missingDate', value: val } })}
                   />
                 </div>
 
@@ -568,13 +581,11 @@ export default function MissingPersonEntry() {
 
                 <div className="form-group">
                   <label className="form-label" htmlFor="trackChildDate">Track Child Registered Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     id="trackChildDate"
-                    name="trackChildDate"
-                    className="form-control"
+                    inputClassName="form-control"
                     value={formData.trackChildDate}
-                    onChange={handleInputChange}
+                    onChange={(val) => handleInputChange({ target: { name: 'trackChildDate', value: val } })}
                   />
                 </div>
 
@@ -661,13 +672,11 @@ export default function MissingPersonEntry() {
 
                 <div className="form-group">
                   <label className="form-label" htmlFor="firDate">Associated FIR Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     id="firDate"
-                    name="firDate"
-                    className="form-control"
+                    inputClassName="form-control"
                     value={formData.firDate}
-                    onChange={handleInputChange}
+                    onChange={(val) => handleInputChange({ target: { name: 'firDate', value: val } })}
                   />
                 </div>
               </div>

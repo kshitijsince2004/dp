@@ -5,6 +5,8 @@ import { DISTRICTS_AND_STATIONS } from "../utils/policeData.js";
 import useAuthStore from "../store/authStore.js";
 import api from "../utils/api.js";
 import toast from "react-hot-toast";
+import DateInput from "../components/ui/DateInput.jsx";
+import { formatDMY } from "../utils/dateFormat.js";
 
 export default function ArrestManagement() {
   const { onSubmitReport, addNotification } = useOutletContext();
@@ -15,7 +17,7 @@ export default function ArrestManagement() {
     district: "New Delhi District (NDD)",
     policeStation: "Parliament Street",
     firDdNumber: "",
-    firDate: new Date().toISOString().split('T')[0],
+    firDate: formatDMY(new Date()),
     act: "",
     sections: "",
     crimeHead: "",
@@ -84,7 +86,7 @@ export default function ArrestManagement() {
       district: "New Delhi District (NDD)",
       policeStation: "Parliament Street",
       firDdNumber: "FIR-104/2026",
-      firDate: "2026-06-08",
+      firDate: "08/06/2026",
       act: "IPC",
       sections: "Sec 379/411 (Theft & Receiving Stolen Property)",
       crimeHead: "Burglary",
@@ -93,7 +95,7 @@ export default function ArrestManagement() {
       age: "28",
       gender: "Male",
       address: "Jhuggi No. 12, Yamuna Bank Khas, Delhi",
-      dateOfArrest: "2026-06-12",
+      dateOfArrest: "12/06/2026",
       timeOfArrest: "23:45",
       placeOfArrest: "Nizamuddin Railway Station, Platform 3",
       nafisPrepared: true,
@@ -205,7 +207,7 @@ export default function ArrestManagement() {
     try {
       const res = await api.post('/v1/records', {
         record_type: 'ARREST',
-        record_date: formData.dateOfArrest || formData.firDate || new Date().toISOString().split('T')[0],
+        record_date: formData.dateOfArrest || formData.firDate || formatDMY(new Date()),
         data: { ...formData, arrest_type: arrestType }
       });
       const arrestRecordId = res.data.data?.id;
@@ -494,13 +496,11 @@ export default function ArrestManagement() {
 
                 <div className="form-group">
                   <label className="form-label" htmlFor="firDate">FIR Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     id="firDate"
-                    name="firDate"
-                    className="form-control"
+                    inputClassName="form-control"
                     value={formData.firDate}
-                    onChange={handleInputChange}
+                    onChange={(val) => handleInputChange({ target: { name: 'firDate', value: val } })}
                   />
                 </div>
 
@@ -557,14 +557,11 @@ export default function ArrestManagement() {
               <div className="form-grid">
                 <div className="form-group">
                   <label className="form-label required" htmlFor="dateOfArrest">Date Of Arrest</label>
-                  <input
-                    type="date"
+                  <DateInput
                     id="dateOfArrest"
-                    name="dateOfArrest"
-                    className={`form-control ${errors.dateOfArrest ? "border-red-500" : ""}`}
+                    inputClassName={`form-control ${errors.dateOfArrest ? "border-red-500" : ""}`}
                     value={formData.dateOfArrest}
-                    onChange={handleInputChange}
-                    required
+                    onChange={(val) => handleInputChange({ target: { name: 'dateOfArrest', value: val } })}
                   />
                   {errors.dateOfArrest && <span className="text-red-500 text-xs mt-1">{errors.dateOfArrest}</span>}
                 </div>

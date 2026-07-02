@@ -34,7 +34,7 @@ const getPersonFieldsList = (prefix, labelPrefixEn, labelPrefixHi) => {
     { field_key: `${prefix}_mobile_country_code`, label_en: `${labelPrefixEn} Mobile Country Code`, label_hi: `${labelPrefixHi} मोबाइल देश कोड`, required: false, hint: 'e.g. +91' },
     { field_key: `${prefix}_mobile`, label_en: `${labelPrefixEn} Mobile No.`, label_hi: `${labelPrefixHi} मोबाइल नंबर`, required: false, hint: '10-digit mobile number' },
     { field_key: `${prefix}_qualification`, label_en: `${labelPrefixEn} Qualification`, label_hi: `${labelPrefixHi} योग्यता`, required: false, options: ['Uneducated', '10th', '10+2', 'Graduate', 'Post-Graduate'] },
-    { field_key: `${prefix}_dob`, label_en: `${labelPrefixEn} Date of Birth`, label_hi: `${labelPrefixHi} जन्म तिथि`, required: false, hint: 'YYYY-MM-DD' },
+    { field_key: `${prefix}_dob`, label_en: `${labelPrefixEn} Date of Birth`, label_hi: `${labelPrefixHi} जन्म तिथि`, required: false, hint: 'DD/MM/YYYY' },
     { field_key: `${prefix}_age_year`, label_en: `${labelPrefixEn} Age (Years)`, label_hi: `${labelPrefixHi} आयु (वर्ष)`, required: false, hint: 'Age in years' },
     { field_key: `${prefix}_birth_year`, label_en: `${labelPrefixEn} Year of Birth`, label_hi: `${labelPrefixHi} जन्म का वर्ष`, required: false, hint: 'e.g. 1995' },
     { field_key: `${prefix}_house_no`, label_en: `${labelPrefixEn} House No.`, label_hi: `${labelPrefixHi} मकान संख्या`, required: false, hint: 'House Number' },
@@ -68,7 +68,7 @@ const getAddressFieldsList = (prefix, labelPrefixEn, labelPrefixHi) => {
 
 export const caseGeneralFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'e.g. FIR-220/2026' },
-  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: true, hint: 'YYYY-MM-DD' },
+  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: true, hint: 'DD/MM/YYYY' },
   { field_key: 'district', label_en: 'District', label_hi: 'जिला', required: true, hint: 'e.g. New Delhi District (NDD)' },
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
   { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: false, hint: 'e.g. Theft / Larceny' },
@@ -77,7 +77,7 @@ export const caseGeneralFields = [
   //{ field_key: 'sid_number', label_en: 'SID Number', label_hi: 'एसआईडी संख्या', required: false, hint: 'e.g. SID-889021' },
   { field_key: 'cctns_number', label_en: 'CCTNS Number', label_hi: 'सीसीटीएनएस संख्या', required: false, hint: 'e.g. CCTNS-202699104' },
   { field_key: 'beat_number', label_en: 'Beat Number', label_hi: 'बीट संख्या', required: false, hint: 'e.g. Beat No. 4' },
-  { field_key: 'occurrence_date', label_en: 'Occurrence Date', label_hi: 'घटना की तिथि', required: false, hint: 'YYYY-MM-DD' },
+  { field_key: 'occurrence_date', label_en: 'Occurrence Date', label_hi: 'घटना की तिथि', required: false, hint: 'DD/MM/YYYY' },
   { field_key: 'occurrence_time', label_en: 'Occurrence Time', label_hi: 'घटना का समय', required: false, hint: 'HH:MM' },
   { field_key: 'occurrence_place', label_en: 'Occurrence Place', label_hi: 'घटना का स्थान', required: false, hint: 'e.g. Patel Chowk Metro parking' },
   { field_key: 'brief_facts', label_en: 'Brief Facts of Case', label_hi: 'मामले के संक्षिप्त तथ्य', required: false, hint: 'Incident narrative' },
@@ -91,7 +91,7 @@ export const caseGeneralFields = [
   { field_key: 'io_name', label_en: 'IO Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },
   { field_key: 'io_pis', label_en: 'PIS Number', label_hi: 'पीआईएस संख्या', required: false, hint: 'e.g. 28080214' },
   { field_key: 'io_mobile', label_en: 'Mobile Number', label_hi: 'मोबाइल नंबर', required: false, hint: 'IO contact number' },
-  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'YYYY-MM-DD' }
+  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'DD/MM/YYYY' }
 ];
 
 export const caseActSectionFields = [
@@ -117,7 +117,7 @@ export const caseVictimFields = [
   { field_key: 'victim_mobile_country_code', label_en: 'Victim Mobile Country Code', label_hi: 'पीड़ित मोबाइल देश कोड', required: false },
   { field_key: 'victim_mobile', label_en: 'Victim Mobile No.', label_hi: 'पीड़ित मोबाइल नंबर', required: false, hint: '10-digit mobile number' },
   { field_key: 'victim_qualification', label_en: 'Victim Qualification', label_hi: 'पीड़ित योग्यता', required: false, options: ['Uneducated', '10th', '10+2', 'Graduate', 'Post-Graduate'] },
-  { field_key: 'victim_dob', label_en: 'Victim Date of Birth', label_hi: 'पीड़ित जन्म तिथि', required: false, hint: 'YYYY-MM-DD' },
+  { field_key: 'victim_dob', label_en: 'Victim Date of Birth', label_hi: 'पीड़ित जन्म तिथि', required: false, hint: 'DD/MM/YYYY' },
   { field_key: 'victim_age_year', label_en: 'Victim Age (Years)', label_hi: 'पीड़ित आयु (वर्ष)', required: false },
   { field_key: 'victim_birth_year', label_en: 'Victim Year of Birth', label_hi: 'पीड़ित जन्म का वर्ष', required: false },
   
@@ -160,10 +160,10 @@ export const casePropertyFields = [
 
 export const arrestGeneralFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'e.g. FIR-104/2026' },
-  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: false, hint: 'YYYY-MM-DD' },
+  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: false, hint: 'DD/MM/YYYY' },
   { field_key: 'district', label_en: 'District', label_hi: 'जिला', required: true, hint: 'e.g. New Delhi District (NDD)' },
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
-  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: true, hint: 'YYYY-MM-DD' },
+  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: true, hint: 'DD/MM/YYYY' },
   { field_key: 'time_of_arrest', label_en: 'Time Of Arrest', label_hi: 'गिरफ्तारी का समय', required: false, hint: 'HH:MM' },
   { field_key: 'place_of_arrest', label_en: 'Place Of Arrest', label_hi: 'गिरफ्तारी का स्थान', required: true, hint: 'e.g. Nizamuddin Platform 3' },
   { field_key: 'io_name', label_en: 'IO / Officer Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },

@@ -112,7 +112,7 @@ const getHint = (field) => {
     return `${reqStr}select: ${optList}`;
   }
   if (field.field_type === 'DATE') {
-    return `${reqStr}date (YYYY-MM-DD)`;
+    return `${reqStr}date (DD/MM/YYYY)`;
   }
   if (field.field_type === 'TIME') {
     return `${reqStr}time (HH:MM)`;

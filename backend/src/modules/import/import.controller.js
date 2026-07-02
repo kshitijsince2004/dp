@@ -9,6 +9,7 @@ import { logger } from '../../utils/logger.js';
 import { TYPE_CODES } from '../records/records.service.js';
 import { createLink } from '../record-links/record-links.service.js';
 import { TemplateBuilderService } from './template-builder.service.js';
+import { toISO, toDMY } from '../../utils/dateFormat.js';
 import {
   COUNTRY_OPTS,
   STATE_OPTS,
@@ -505,32 +506,26 @@ const parseFirAndYear = (str) => {
   return { firNo: seqToken != null ? String(parseInt(seqToken, 10)) : '', year };
 };
 
+// Normalizes any incoming Excel cell value to dd/mm/yyyy — the format
+// records.data stores date fields in going forward. Delegates the actual
+// parsing to the shared backend dateFormat util so import, legacy import,
+// and everything else agree on what formats are accepted.
 const coerceDate = (val) => {
   if (val === null || val === undefined || val === '') return null;
-  if (val instanceof Date) {
-    return isNaN(val.getTime()) ? null : val.toISOString().split('T')[0];
+  let s = val;
+  if (typeof val === 'string') {
+    s = val.trim();
+    const range = s.split(/\s+TO\s+/i);
+    if (range.length > 1) s = range[0].trim();
   }
-  let s = String(val).trim();
-  if (!s) return null;
+  return toDMY(s);
+};
 
-  const range = s.split(/\s+TO\s+/i);
-  if (range.length > 1) s = range[0].trim();
-
-  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-
-  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
-  if (m) {
-    let d = m[1], mo = m[2], y = m[3];
-    if (y.length === 2) y = '20' + y;
-    d = d.padStart(2, '0');
-    mo = mo.padStart(2, '0');
-    if (+mo >= 1 && +mo <= 12 && +d >= 1 && +d <= 31) return `${y}-${mo}-${d}`;
-  }
-
-  const dt = new Date(s);
-  if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
-  return null;
+// Extracts the calendar year from any supported date input (dd/mm/yyyy,
+// yyyy-mm-dd, Date object) — used for UID year-bucketing.
+const yearOf = (val) => {
+  const iso = toISO(val);
+  return iso ? parseInt(iso.slice(0, 4), 10) : null;
 };
 
 const coerceTime = (val) => {
@@ -679,7 +674,7 @@ const runAutoLinkageForArrests = async (trx, arrestRecords, psId, userId) => {
     } catch(e) {}
     const firNo = dataObj.fir_no || '';
     const firDate = dataObj.fir_date || '';
-    const firYear = firDate ? new Date(firDate).getFullYear() : null;
+    const firYear = firDate ? yearOf(firDate) : null;
     return {
       id: c.id,
       data: dataObj,
@@ -1849,8 +1844,8 @@ export const confirmImportBatch = async (req, res) => {
     for (const rc of existingCounts) {
       seqByYear[parseInt(rc.yr, 10)] = parseInt(rc.c, 10);
     }
-    const nextUid = (recordDate) => {
-      const yr = parseInt(String(recordDate).slice(0, 4), 10);
+    const nextUid = (recordDateISO) => {
+      const yr = yearOf(recordDateISO);
       seqByYear[yr] = (seqByYear[yr] || 0) + 1;
       const seq = String(seqByYear[yr]).padStart(6, '0');
       return `${typeCode}/${yr}/${psCode}/${seq}`;
@@ -1871,12 +1866,10 @@ export const confirmImportBatch = async (req, res) => {
       const isCaseOrArrest = (batch.record_type === 'CASE' || batch.record_type === 'ARREST');
       const rowData = isCaseOrArrest ? item.rowData : item;
 
-      let recordDate = getRecordDate(batch.record_type, rowData) || new Date().toISOString().split('T')[0];
-      if (recordDate instanceof Date) {
-        recordDate = recordDate.toISOString().split('T')[0];
-      } else if (typeof recordDate === 'string' && recordDate.includes('T')) {
-        recordDate = recordDate.split('T')[0];
-      }
+      // rowData's own date fields (fir_date, occurrence_date, etc.) are
+      // already dd/mm/yyyy via coerceDate; record_date is a native Postgres
+      // DATE column and always needs the ISO form.
+      const recordDate = toISO(getRecordDate(batch.record_type, rowData)) || new Date().toISOString().split('T')[0];
 
       const recordId = uuidv4();
       const uid = nextUid(recordDate);

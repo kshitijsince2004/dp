@@ -8,6 +8,7 @@ import TimeField     from './TimeField.jsx';
 import SelectField   from './SelectField.jsx';
 import CheckboxField from './CheckboxField.jsx';
 import RadioField    from './RadioField.jsx';
+import DateInput     from '../ui/DateInput.jsx';
 import { DISTRICTS_AND_STATIONS } from '../../utils/policeData.js';
 
 const inputBase = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
@@ -57,12 +58,12 @@ export default function FieldRenderer({ field, value, onChange, readOnly, hasErr
           />
         </div>
         <div className="w-full sm:w-[180px] flex items-center min-w-0">
-          <input
-            type="date"
+          <DateInput
+            id="field-gd_date"
             disabled={readOnly}
             value={values?.gd_date || ''}
-            onChange={(e) => onChange('gd_date', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+            onChange={(val) => onChange('gd_date', val)}
+            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
           />
         </div>
         <div className="w-full sm:w-[140px] flex items-center min-w-0">
@@ -84,12 +85,12 @@ export default function FieldRenderer({ field, value, onChange, readOnly, hasErr
     return (
       <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
         <div className="flex-1 flex items-center min-w-0">
-          <input
-            type="date"
+          <DateInput
+            id="field-arrest_date"
             disabled={readOnly}
             value={values?.arrest_date || ''}
-            onChange={(e) => onChange('arrest_date', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+            onChange={(val) => onChange('arrest_date', val)}
+            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
           />
         </div>
         <div className="w-full sm:w-[220px] flex items-center min-w-0">
@@ -121,12 +122,12 @@ export default function FieldRenderer({ field, value, onChange, readOnly, hasErr
           />
         </div>
         <div className="w-full sm:w-[220px] flex items-center min-w-0">
-          <input
-            type="date"
+          <DateInput
+            id="field-fir_date"
             disabled={readOnly}
             value={values?.fir_date || ''}
-            onChange={(e) => onChange('fir_date', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+            onChange={(val) => onChange('fir_date', val)}
+            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
           />
         </div>
         <div className="w-full sm:w-[140px] flex items-center min-w-0">

@@ -15,6 +15,7 @@ router.get('/lookup/acts', authMiddleware, fieldsController.listActs);
 router.get('/lookup/acts/:act_cd/sections', authMiddleware, fieldsController.listSectionsForAct);
 router.get('/lookup/major-heads', authMiddleware, fieldsController.listMajorHeads);
 router.get('/lookup/major-heads/:major_head_code/minor-heads', authMiddleware, fieldsController.listMinorHeadsForMajorHead);
+router.get('/lookup/sections/:section_code/major-heads', authMiddleware, fieldsController.listMajorHeadsForSection);
 router.get('/lookup/property-categories', authMiddleware, fieldsController.listPropertyCategories);
 router.get('/lookup/property-items/:parent_cd', authMiddleware, fieldsController.listPropertyItems);
 router.get('/lookup/beats', authMiddleware, fieldsController.listBeats);

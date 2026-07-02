@@ -5,6 +5,8 @@ import { DISTRICTS_AND_STATIONS } from "../utils/policeData.js";
 import useAuthStore from "../store/authStore.js";
 import api from "../utils/api.js";
 import toast from "react-hot-toast";
+import DateInput from "../components/ui/DateInput.jsx";
+import { formatDMY } from "../utils/dateFormat.js";
 
 export default function UIDBManagement() {
   const { onSubmitReport, addNotification } = useOutletContext();
@@ -16,7 +18,7 @@ export default function UIDBManagement() {
     district: "New Delhi District (NDD)",
     policeStation: "Parliament Street",
     ddNumber: "",
-    ddDate: new Date().toISOString().split('T')[0],
+    ddDate: formatDMY(new Date()),
     dutyOfficer: "",
     ioName: "",
     informantName: "",
@@ -72,13 +74,13 @@ export default function UIDBManagement() {
       district: "New Delhi District (NDD)",
       policeStation: "Parliament Street",
       ddNumber: "DD-12A",
-      ddDate: "2026-06-12",
+      ddDate: "12/06/2026",
       dutyOfficer: "ASI Krishan Dutt",
       ioName: "Inspector Ravindra Singh",
       informantName: "Satish Chand (Metro Sweeper)",
       informantMobile: "9812981298",
       foundPlace: "Behind electrical transformer, red-light crossing, Patel Chowk",
-      uidbDate: "2026-06-12",
+      uidbDate: "12/06/2026",
       name: "Unidentified Male",
       age: "35-40",
       gender: "Male",
@@ -149,7 +151,7 @@ export default function UIDBManagement() {
     try {
       const res = await api.post('/v1/records', {
         record_type: 'UIDB',
-        record_date: formData.uidbDate || formData.ddDate || new Date().toISOString().split('T')[0],
+        record_date: formData.uidbDate || formData.ddDate || formatDMY(new Date()),
         data: formData
       });
       const uid = res.data.data?.uid;
@@ -352,13 +354,11 @@ export default function UIDBManagement() {
 
                 <div className="form-group">
                   <label className="form-label" htmlFor="ddDate">DD Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     id="ddDate"
-                    name="ddDate"
-                    className="form-control"
+                    inputClassName="form-control"
                     value={formData.ddDate}
-                    onChange={handleInputChange}
+                    onChange={(val) => handleInputChange({ target: { name: 'ddDate', value: val } })}
                   />
                 </div>
               </div>
@@ -455,13 +455,11 @@ export default function UIDBManagement() {
 
                 <div className="form-group">
                   <label className="form-label" htmlFor="uidbDate">Discovery Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     id="uidbDate"
-                    name="uidbDate"
-                    className="form-control"
+                    inputClassName="form-control"
                     value={formData.uidbDate}
-                    onChange={handleInputChange}
+                    onChange={(val) => handleInputChange({ target: { name: 'uidbDate', value: val } })}
                   />
                 </div>
               </div>

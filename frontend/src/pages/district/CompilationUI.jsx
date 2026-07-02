@@ -5,6 +5,8 @@ import { ArrowLeft, BookOpen, Send, Calendar, CheckCircle, Database, AlertTriang
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
+import DateInput from '../../components/ui/DateInput.jsx';
+import { formatDMY, parseDMY } from '../../utils/dateFormat.js';
 
 const REPORTS = [
   { tableName: "excel_1manual_fir",                label: "Manual FIR",                        type: "list",    num: 1  },
@@ -105,7 +107,7 @@ export default function CompilationUI() {
   const userLevel = getUserLevel(user?.role);
   const availableDiaries = DIARIES.filter(d => d.levels.includes(userLevel));
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatDMY(new Date());
   const [dateFrom, setDateFrom] = useState(today);
   const [dateTo, setDateTo]   = useState(today);      // defaults to same as dateFrom (single-day export)
   const [exporting, setExporting] = useState(false);
@@ -304,9 +306,9 @@ export default function CompilationUI() {
     //    handles the download natively with the correct .xlsx Content-Disposition.
     //    The /reports/download/:id/:filename? endpoint has no auth guard, so no credentials needed.
     try {
-      const fmtDate = (iso) => {
-        if (!iso) return '';
-        const [y, m, d] = iso.split('-');
+      const fmtDate = (dmy) => {
+        if (!dmy) return '';
+        const [d, m, y] = dmy.split('/');
         const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m,10)-1];
         return `${d}${mon}${y}`;
       };
@@ -344,11 +346,9 @@ export default function CompilationUI() {
 
   const formatPeriod = (period) => {
     if (!period) return 'Unknown';
-    try {
-      return new Date(period).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
-    } catch {
-      return period;
-    }
+    const d = parseDMY(period);
+    if (!d) return period;
+    return d.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
   const backTo = userLevel === 'HQ' ? '/hq' : userLevel === 'DISTRICT' ? '/district' : '/records';
@@ -478,16 +478,15 @@ export default function CompilationUI() {
               <Calendar size={10} className="text-slate-400" />
               <span>From Date</span>
             </span>
-            <input
-              type="date"
+            <DateInput
               value={dateFrom}
-              max={today}
-              onChange={(e) => {
-                const val = e.target.value;
+              onChange={(val) => {
                 setDateFrom(val);
-                if (dateTo < val) setDateTo(val);
+                const from = parseDMY(val);
+                const to = parseDMY(dateTo);
+                if (from && to && from > to) setDateTo(val);
               }}
-              className="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
+              inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
             />
           </div>
 
@@ -496,13 +495,15 @@ export default function CompilationUI() {
               <Calendar size={10} className="text-slate-400" />
               <span>To Date</span>
             </span>
-            <input
-              type="date"
+            <DateInput
               value={dateTo}
-              min={dateFrom}
-              max={today}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
+              onChange={(val) => {
+                const from = parseDMY(dateFrom);
+                const to = parseDMY(val);
+                if (from && to && to < from) return;
+                setDateTo(val);
+              }}
+              inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
             />
           </div>
  
