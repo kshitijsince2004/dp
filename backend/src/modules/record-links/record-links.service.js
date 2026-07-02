@@ -155,24 +155,31 @@ export const deleteLink = async (linkId, userId) => {
 };
 
 export const searchPersonAcrossArrests = async ({ searchTerm, fatherName, psId, districtId, limit = 50 }) => {
+  const pg = isPostgres();
+  const jsonExtract = (field) => {
+    return pg
+      ? `CAST(records.data AS jsonb)->>'${field}'`
+      : `json_extract(records.data, '$.${field}')`;
+  };
+
   let query = db('records')
     .select(
       'records.id',
       'records.current_status',
       'records.record_date',
       'records.ps_id',
-      db.raw("records.data->>'arrested_name' AS arrested_name"),
-      db.raw("records.data->>'fullName' AS full_name"),
-      db.raw("records.data->>'father_name' AS father_name"),
-      db.raw("records.data->>'fatherName' AS father_name_alt"),
-      db.raw("records.data->>'parents_name' AS parents_name"),
-      db.raw("records.data->>'arrested_address' AS address"),
-      db.raw("records.data->>'address' AS address_alt"),
-      db.raw("records.data->>'arrest_date' AS arrest_date"),
-      db.raw("records.data->>'dateOfArrest' AS arrest_date_alt"),
-      db.raw("records.data->>'crime_head' AS crime_head"),
-      db.raw("records.data->>'crimeHead' AS crime_head_alt"),
-      db.raw("records.data->>'uid' AS uid"),
+      db.raw(`${jsonExtract('arrested_name')} AS arrested_name`),
+      db.raw(`${jsonExtract('fullName')} AS full_name`),
+      db.raw(`${jsonExtract('father_name')} AS father_name`),
+      db.raw(`${jsonExtract('fatherName')} AS father_name_alt`),
+      db.raw(`${jsonExtract('parents_name')} AS parents_name`),
+      db.raw(`${jsonExtract('arrested_address')} AS address`),
+      db.raw(`${jsonExtract('address')} AS address_alt`),
+      db.raw(`${jsonExtract('arrest_date')} AS arrest_date`),
+      db.raw(`${jsonExtract('dateOfArrest')} AS arrest_date_alt`),
+      db.raw(`${jsonExtract('crime_head')} AS crime_head`),
+      db.raw(`${jsonExtract('crimeHead')} AS crime_head_alt`),
+      db.raw(`${jsonExtract('uid')} AS uid`),
       'ps.name_en AS ps_name'
     )
     .join('hierarchy_nodes as ps', 'records.ps_id', 'ps.id')
@@ -181,7 +188,6 @@ export const searchPersonAcrossArrests = async ({ searchTerm, fatherName, psId, 
   if (psId) query = query.where('records.ps_id', psId);
   if (districtId) query = query.where('records.district_id', districtId);
 
-  const pg = isPostgres();
   if (searchTerm) {
     if (pg) {
       query = query.whereRaw('records.data::text ILIKE ?', [`%${searchTerm}%`]);
@@ -191,7 +197,7 @@ export const searchPersonAcrossArrests = async ({ searchTerm, fatherName, psId, 
   }
   if (fatherName) {
     if (pg) {
-      query = query.whereRaw("(records.data->>'father_name' ILIKE ? OR records.data->>'fatherName' ILIKE ? OR records.data->>'parents_name' ILIKE ?)", [`%${fatherName}%`, `%${fatherName}%`, `%${fatherName}%`]);
+      query = query.whereRaw(`(${jsonExtract('father_name')} ILIKE ? OR ${jsonExtract('fatherName')} ILIKE ? OR ${jsonExtract('parents_name')} ILIKE ?)`, [`%${fatherName}%`, `%${fatherName}%`, `%${fatherName}%`]);
     } else {
       query = query.where('records.data', 'LIKE', `%${fatherName}%`);
     }

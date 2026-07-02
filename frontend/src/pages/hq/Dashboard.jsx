@@ -39,9 +39,9 @@ export default function HQDashboard() {
   });
 
   const cards = [
-    { label: 'Delhi-wide FIR cases', value: (stats.cases_today || 0) * 15, color: 'text-amber-500', icon: Building },
-    { label: 'Total PCR emergency calls', value: (stats.pcr_today || 0) * 20, color: 'text-blue-500', icon: PhoneCall },
-    { label: 'Accused arrests processed', value: (stats.arrests_today || 0) * 12, color: 'text-emerald-500', icon: FileCheck },
+    { label: 'Delhi-wide FIR cases', value: (stats.cases_today || 0) , color: 'text-amber-500', icon: Building },
+    { label: 'Total PCR emergency calls', value: (stats.pcr_today || 0) , color: 'text-blue-500', icon: PhoneCall },
+    { label: 'Accused arrests processed', value: (stats.arrests_today || 0) , color: 'text-emerald-500', icon: FileCheck },
   ];
 
   const activeFilterCount = [filterDistrict, filterType].filter(v => v !== 'All').length;

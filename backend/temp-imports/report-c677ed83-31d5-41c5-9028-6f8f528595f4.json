@@ -1,0 +1,35 @@
+{
+  "total_processed": 2,
+  "imported_count": 1,
+  "linked_count": 0,
+  "unmatched_arrests_count": 1,
+  "failed_count": 1,
+  "linked_details": [],
+  "unmatched_arrest_details": [
+    {
+      "arrest_uid": "ARR/2026/PS_NDD_PARLIAMENTSTREET/000010",
+      "linked_fir_dd_no": "FIR/2026/9001",
+      "reason": "Case found but year mismatch (Expected FIR year: 9001)"
+    }
+  ],
+  "failed_details": [
+    {
+      "row": 5,
+      "field_key": "arrest_date",
+      "code": "INVALID_TYPE",
+      "message": "Must be a valid date (YYYY-MM-DD)"
+    },
+    {
+      "row": 5,
+      "field_key": "crime_head",
+      "code": "INVALID_VALUE",
+      "message": "'IPC' is not valid. Valid options: Simple Hurt, Other IPC, Other SLL, Kidnapping, Pick Pocketing, Gambling Act, Cruelty by Husband, Simple Accident, Narcotics Drugs & Psychotropic Substances Act, Robbery, Snatching, Murder, Delhi Excise Act, Att. to Murder, Burglary, Arms Act, Other Theft, House Theft, Night Burglary, Rape, Copyright Act, Cheating, Fatal Accident, Child Labour Act 1986, Att. to Culpable Homicide not Amounting to Murder, Dowry Prohibition Act 1961, Electricity Theft, Information Technology Act 2000, Grievous Hurt, Electricity Act 2003, Other Act, Eve Teasing, Trade & Merchandise Marks Act, 1958, Mobile Phone Theft, M.O. Women, Theft In Shop, POCSO Act 2012, Wild Life (Protection) Act 1972, Mischief, Day Burglary, Encroachment on Govt. Land, Servant Theft, Ext. For Ransom, Extortion, Counterfeiting, Criminal Breach of Trust, Criminal Intimidation, Threatening, Environment (Protection) Act 1986, Affray, Arson, Abetment of Suicide, Juvenile Justice Act 2015, Adultery, The Delhi Prevention of Touting and Malpractices Against Tourists Ordinance Act 2010, Att. to Commit Suicide, Acid Attack, Explosive Act 1884, Acid Attack Attempt, Immoral Traffic(Prev.) Act, 1956 (SIT Act (Immoral)), Trespass, Delhi Police Act 1978, Culpable Homicide not Amounting to Murder, Fire Incident, Dowry Death, Organised Crime, Maharashtra Control of Organised Crime Act 1999, Misappropriation of property & cruelty by inlaws, Forgery, Receiver of Stolen Property, Explosive Substances Act 1908, Foreigners Act 1946, Juvenile Justice Act 2000, Miscarriage Etc., Prevention of Atrocities SC/ST Act 1989, House/Criminal Trespass, Abduction, Protection of Women Domestic Violence Act 2005, Dacoity, Concealment of birth, Riot, Offence against Public Servant, Stereo Theft, wrongful Confinement/restraint, Public Nuisance, National Security Act 1980, Impersonation, Assault on Public Servant, Passport Act 1967, Terrorist Act, Prevention of Damage of Public Property Act 1984, M.V. Theft, Drugging/ Poisoning, Escape from Police Custody, Civil Rights Act, Election Offences, Drugs and Cosmetics Act 1940, Offences Relating to religion, Essential Commodities Act 1955, Central Motor Vehicles Rules 1989, Motor Vehicle Act,1988, Delhi Control of vehicular and Other Traffic on Road Act, Prevention of Corruption Act 1988, Delhi Preservation of Trees Act, 1994, Juvenile Justice Act 2010, Pre-conception and pre-natal diagnostic [pndt], Protection of human rights Act 1993, Cycle Theft, Sedition or Offences against State, Poisons Act 1919, Bombay Prevention of Begging Act 1959, Child Marriage Restraint Act 1929, Official Secrets Act,1923, Un-Natural Death / Inquest Report, Cattle Theft, M.V. Accessories Theft, Unlawful Activities (Prevention) Act 1967, Personating public servant, Unnatural Offences(SODOMY)"
+    },
+    {
+      "row": 5,
+      "field_key": "status",
+      "code": "INVALID_VALUE",
+      "message": "'INVALID_STATUS' is not valid. Valid options: judicial_custody, police_custody, bail, released, others"
+    }
+  ]
+}

@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.get('/template/:record_type', importController.downloadImportTemplate);
-router.post('/validate', allow('HC', 'DISTRICT_OFFICER', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'), upload.single('file'), importController.validateImportBatch);
+router.post('/validate', allow('HC', 'DISTRICT_OFFICER', 'HQ_ADMIN', 'SYSTEM_ADMIN', 'HQ_ANALYST'), upload.single('file'), importController.validateImportBatch);
 router.post('/confirm/:batchId', importController.confirmImportBatch);
 router.get('/batches', importController.listBatches);
 router.get('/batches/:batchId', importController.getBatchDetail);

@@ -548,6 +548,14 @@ def generate_linked_workbook(definition, user_filters, engine):
 
 def render_pdf(df, definition, filters, file_path):
     title = definition.get('header', {}).get('title_en', 'PHAROS REPORT')
+    headers_html = "".join(f"<th>{col}</th>" for col in df.columns)
+    
+    body_rows = []
+    for row in df.itertuples(index=False):
+        cells_html = "".join(f"<td>{str(val or '')}</td>" for val in row)
+        body_rows.append(f"<tr>{cells_html}</tr>")
+    body_html = "".join(body_rows)
+
     html_content = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -568,14 +576,11 @@ def render_pdf(df, definition, filters, file_path):
     <table>
         <thead>
             <tr>
-                {"".join(f"<th>{col}</th>" for col in df.columns)}
+                {headers_html}
             </tr>
         </thead>
         <tbody>
-            {"".join(
-                f"<tr>{''.join(f'<td>{str(val or "")}</td>' for val in row)}</tr>"
-                for row in df.itertuples(index=False)
-            )}
+            {body_html}
         </tbody>
     </table>
 </body>
@@ -689,6 +694,55 @@ def _fetch_records(filters):
         elif raw_data is None:
             r['data'] = {}
         records.append(r)
+
+    # Fetch linked arrested persons for CASES
+    case_ids = [r['id'] for r in records if r.get('record_type') in ('CASE', 'CASES')]
+    if case_ids:
+        placeholders = ", ".join(f":id_{i}" for i in range(len(case_ids)))
+        sql_links = f"""
+            SELECT rl.source_record_id, r.data
+            FROM record_links rl
+            JOIN records r ON rl.target_record_id = r.id
+            JOIN link_type_registry ltr ON rl.link_type_id = ltr.id
+            WHERE ltr.code = 'CASE_ARREST'
+              AND rl.source_record_id IN ({placeholders})
+        """
+        params_links = {f"id_{i}": cid for i, cid in enumerate(case_ids)}
+        try:
+            with engine.connect() as conn:
+                rows_links = conn.execute(text(sql_links), params_links).mappings().all()
+            
+            links_map = {}
+            for row in rows_links:
+                source_id = row['source_record_id']
+                raw_data = row['data']
+                if isinstance(raw_data, str):
+                    try:
+                        arr_data = json.loads(raw_data)
+                    except Exception:
+                        arr_data = {}
+                else:
+                    arr_data = raw_data or {}
+                
+                name = arr_data.get('arrested_name') or arr_data.get('accused_name')
+                if name:
+                    age = arr_data.get('age')
+                    father = arr_data.get('arrested_father_husband_name') or arr_data.get('father_husband_name')
+                    address = arr_data.get('arrested_address')
+                    
+                    from formatters import format_person
+                    details = format_person(name, age, father, address, arr_data)
+                    
+                    if source_id not in links_map:
+                        links_map[source_id] = []
+                    links_map[source_id].append(details)
+            
+            for r in records:
+                if r.get('record_type') in ('CASE', 'CASES') and r['id'] in links_map:
+                    # Update the record's data directly in memory so sheet_01_manual_fir uses it
+                    r['data']['arrested_person'] = ", ".join(links_map[r['id']])
+        except Exception as e:
+            print(f"[Worker] Failed to resolve linked arrested persons: {e}")
 
     return records
 

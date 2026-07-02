@@ -29,7 +29,7 @@ export default function DebugBar() {
       <div className="flex items-center gap-2">
         <ShieldAlert size={14} className="text-amber-500 animate-pulse" />
         <span className="font-bold tracking-wide text-zinc-100 uppercase" translate="no">
-          PHAROS Visual Testing Console
+          PRISM Visual Testing Console
         </span>
       </div>
 

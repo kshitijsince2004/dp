@@ -57,7 +57,7 @@ const BOOL_OPS = ['IS_TRUE', 'IS_FALSE', 'EQ'];
 
 // Shared crime head options (single source — referenced by CASE, ARREST, PCR_CALL)
 const CRIME_HEAD_OPTIONS = [
-  'Simple Hurt','Other IPC','Other SLL','Kidnapping','Pick Pocketing','Gambling Act',
+  'Simple Hurt','Other IPC','Other BNS','Other SLL','Kidnapping','Pick Pocketing','Gambling Act',
   'Cruelty by Husband','Simple Accident','Narcotics Drugs & Psychotropic Substances Act',
   'Robbery','Snatching','Murder','Delhi Excise Act','Att. to Murder','Burglary','Arms Act',
   'Other Theft','House Theft','Night Burglary','Rape','Copyright Act','Cheating',

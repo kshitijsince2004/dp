@@ -19,6 +19,7 @@ router.delete('/:id/attachments/:aid', authMiddleware, allow('HC'), recordsContr
 
 router.post('/', authMiddleware, allow('HC'), recordsController.create);
 router.put('/:id', authMiddleware, allow('HC'), recordsController.update);
+router.delete('/:id', authMiddleware, allow('HC'), recordsController.deleteRecord);
 router.post('/:id/submit', authMiddleware, allow('HC'), recordsController.submit);
 router.put('/:id/submit', authMiddleware, allow('HC'), recordsController.submit);
 

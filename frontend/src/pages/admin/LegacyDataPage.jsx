@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Archive, Upload, Eye, CheckCircle2, XCircle,
   AlertTriangle, Loader2, Clock, RefreshCw, ChevronDown, FileSpreadsheet,
+  Link, AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore.js';
@@ -209,12 +210,13 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
   const { t, i18n } = useTranslation();
   const currentLng = i18n.language || 'en';
   
-  const [step, setStep] = useState(1); // 1 | 2
+  const [step, setStep] = useState(1); // 1 | 2 | 3
   const [recordType, setRecordType] = useState('CASE');
   const [psId, setPsId] = useState(isHC ? (user?.ps_id || user?.station_id || '') : '');
   const [isLegacy, setIsLegacy] = useState(false);
   const [file, setFile] = useState(null);
   const [validationResult, setValidationResult] = useState(null);
+  const [importReport, setImportReport] = useState(null);
   
   // Fetch active stations dynamically
   const { data: stations = [] } = useQuery({
@@ -256,6 +258,9 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
       }
       const res = await api.post('/import/validate', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        // Bulk validation parses the whole sheet (30k+ rows) — override the global
+        // 15s axios timeout so the request isn't aborted mid-parse.
+        timeout: 0,
       });
       return res.data?.data;
     },
@@ -271,12 +276,16 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
 
   const confirmMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.post(`/import/confirm/${validationResult?.batch_id}`);
+      // Importing 30k+ rows can take well over the global 15s axios timeout; disable
+      // the timeout for this request so the browser waits for the import to finish
+      // instead of aborting and leaving the user to retry into an "already imported" error.
+      const res = await api.post(`/import/confirm/${validationResult?.batch_id}`, {}, { timeout: 0 });
       return res.data?.data;
     },
     onSuccess: (data) => {
       toast.success(t('import.importSuccess', `Successfully imported ${data?.imported_rows} rows!`));
-      resetWizard();
+      setImportReport(data.report);
+      setStep(3);
       if (!isHC) {
         onImported?.();
       }
@@ -290,6 +299,7 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
     setStep(1);
     setFile(null);
     setValidationResult(null);
+    setImportReport(null);
   };
 
   return (
@@ -305,9 +315,14 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">2</span>
           <span className="text-xs font-bold">{t('import.stepConfirm', 'Review & Confirm')}</span>
         </div>
+        <div className="h-px w-12 bg-[var(--border-card-theme)]"></div>
+        <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${step === 3 ? 'bg-[var(--accent-color)] text-white border-transparent shadow-md' : 'bg-[var(--bg-page-main)] border-[var(--border-card-theme)] text-[var(--text-main-theme)]/70'}`}>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">3</span>
+          <span className="text-xs font-bold">{t('import.stepReport', 'Import Report')}</span>
+        </div>
       </div>
 
-      {step === 1 ? (
+      {step === 1 && (
         <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-6 space-y-6 text-xs shadow-sm">
           <h3 className="font-bold text-[var(--text-main-theme)] flex items-center gap-2 text-sm font-display">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--bg-page-main)]/80 border border-[var(--border-card-theme)]/85">
@@ -404,7 +419,9 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
             </button>
           </div>
         </div>
-      ) : (
+      )}
+
+      {step === 2 && (
         <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-6 space-y-6 text-xs shadow-sm">
           <h3 className="font-bold text-[var(--text-main-theme)] flex items-center gap-2 text-sm font-display">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--bg-page-main)]/80 border border-[var(--border-card-theme)]/85">
@@ -499,6 +516,162 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
             >
               {confirmMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
               {t('import.confirmImportButton', 'Confirm and Import Valid Rows')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && importReport && (
+        <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-6 space-y-6 text-xs shadow-sm font-sans">
+          <div className="text-center py-4 space-y-2">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+              <CheckCircle2 size={30} className="animate-pulse" />
+            </div>
+            <h3 className="text-lg font-bold text-[var(--text-main-theme)] font-display">
+              {t('import.reportTitle', 'Import Process Completed!')}
+            </h3>
+            <p className="text-[var(--text-main-theme)] opacity-60 text-xs">
+              Batch ID: <span className="font-mono text-[10px] bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] px-2 py-0.5 rounded">{validationResult?.batch_id}</span>
+            </p>
+          </div>
+
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 rounded-2xl p-4 text-center">
+              <div className="text-[var(--text-main-theme)] opacity-60 text-[10px] font-bold uppercase tracking-wider mb-1">
+                {t('import.totalProcessed', 'Processed')}
+              </div>
+              <div className="text-[var(--text-main-theme)] font-bold text-lg tabular-numbers">
+                {importReport.total_processed ?? 0}
+              </div>
+            </div>
+            <div className="border border-emerald-500/20 bg-emerald-500/5 rounded-2xl p-4 text-center">
+              <div className="text-emerald-600 dark:text-emerald-400 opacity-80 text-[10px] font-bold uppercase tracking-wider mb-1">
+                {t('import.imported', 'Imported')}
+              </div>
+              <div className="text-emerald-600 dark:text-emerald-400 font-bold text-lg tabular-numbers">
+                {importReport.imported_count ?? 0}
+              </div>
+            </div>
+            <div className="border border-sky-500/20 bg-sky-500/5 rounded-2xl p-4 text-center">
+              <div className="text-sky-600 dark:text-sky-400 opacity-80 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center justify-center gap-1">
+                <Link size={10} />
+                {t('import.linked', 'Linked')}
+              </div>
+              <div className="text-sky-600 dark:text-sky-400 font-bold text-lg tabular-numbers">
+                {importReport.linked_count ?? 0}
+              </div>
+            </div>
+            <div className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4 text-center">
+              <div className="text-amber-600 dark:text-amber-400 opacity-80 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center justify-center gap-1">
+                <AlertCircle size={10} />
+                {t('import.unmatched', 'Unmatched')}
+              </div>
+              <div className="text-amber-600 dark:text-amber-400 font-bold text-lg tabular-numbers">
+                {importReport.unmatched_arrests_count ?? 0}
+              </div>
+            </div>
+            <div className="border border-rose-500/20 bg-rose-500/5 rounded-2xl p-4 text-center col-span-2 md:col-span-1">
+              <div className="text-rose-600 dark:text-rose-400 opacity-80 text-[10px] font-bold uppercase tracking-wider mb-1">
+                {t('import.failed', 'Failed Rows')}
+              </div>
+              <div className="text-rose-600 dark:text-rose-400 font-bold text-lg tabular-numbers">
+                {importReport.failed_count ?? 0}
+              </div>
+            </div>
+          </div>
+
+          {/* Details Sections */}
+          <div className="space-y-4 pt-2">
+            {/* Linked Records List */}
+            {importReport.linked_details?.length > 0 && (
+              <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/30 rounded-2xl p-4 space-y-2">
+                <h4 className="font-bold text-[var(--text-main-theme)] flex items-center gap-2">
+                  <Link size={14} className="text-sky-500" />
+                  Auto-Linked Records ({importReport.linked_details.length})
+                </h4>
+                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-2">
+                  {importReport.linked_details.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] px-3 py-2 rounded-xl text-[10px] font-mono">
+                      <div className="flex items-center gap-1.5">
+                        <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-1.5 py-0.5 rounded font-bold">ARREST</span>
+                        <span className="text-[var(--text-main-theme)] font-bold">{item.arrest_uid}</span>
+                      </div>
+                      <span className="text-[var(--text-main-theme)] opacity-40 font-bold">linked to</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="bg-sky-500/10 border border-sky-500/20 text-sky-500 px-1.5 py-0.5 rounded font-bold">CASE</span>
+                        <span className="text-[var(--text-main-theme)] font-bold">{item.case_uid}</span>
+                        <span className="text-[var(--text-main-theme)] opacity-60">(FIR No: {item.fir_no})</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Unmatched Arrests Warning List */}
+            {importReport.unmatched_arrest_details?.length > 0 && (
+              <div className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4 space-y-2">
+                <h4 className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  <AlertCircle size={14} />
+                  Unmatched Arrests ({importReport.unmatched_arrest_details.length})
+                </h4>
+                <p className="text-[var(--text-main-theme)]/70 text-[10px] font-semibold">
+                  These arrest records were successfully imported, but could not be automatically linked because no corresponding CASE record could be found.
+                </p>
+                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-2">
+                  {importReport.unmatched_arrest_details.map((item, idx) => (
+                    <div key={idx} className="bg-[var(--bg-page-main)] border border-amber-500/20 text-amber-700 dark:text-amber-300 px-3 py-2 rounded-xl text-[10px] font-mono flex justify-between items-center">
+                      <div>
+                        <span className="font-bold">UID:</span> {item.arrest_uid || '—'} | <span className="font-bold">FIR Referer:</span> {item.linked_fir_dd_no || '—'}
+                      </div>
+                      <span className="text-[9px] bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded font-bold uppercase">
+                        {item.reason}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Failed Rows List */}
+            {importReport.failed_details?.length > 0 && (
+              <div className="border border-rose-500/20 bg-rose-500/5 rounded-2xl p-4 space-y-2">
+                <h4 className="font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                  <AlertTriangle size={14} />
+                  Skipped / Failed Rows ({importReport.failed_details.length})
+                </h4>
+                <p className="text-[var(--text-main-theme)]/70 text-[10px] font-semibold">
+                  These rows failed spreadsheet validations and were not imported.
+                </p>
+                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-2">
+                  {importReport.failed_details.map((item, idx) => (
+                    <div key={idx} className="bg-[var(--bg-page-main)] border border-rose-500/20 text-rose-700 dark:text-rose-300 px-3 py-2 rounded-xl text-[10px] font-mono flex justify-between items-start gap-4">
+                      <div>
+                        <span className="font-bold text-rose-600 dark:text-rose-400 mr-2">Row {item.row}:</span>
+                        <span>{item.message}</span>
+                      </div>
+                      {item.field_key && (
+                        <span className="bg-rose-500/10 border border-rose-500/20 text-[8px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                          {item.field_key}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Action Bar */}
+          <div className="flex justify-end border-t border-[var(--border-card-theme)]/40 pt-4">
+            <button
+              type="button"
+              onClick={resetWizard}
+              className="flex items-center gap-1.5 bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-bold px-6 py-2.5 rounded-xl transition-all duration-200 cursor-pointer border-none shadow-sm active:scale-95"
+            >
+              <Upload size={12} />
+              {t('import.newImportButton', 'Start New Import')}
             </button>
           </div>
         </div>

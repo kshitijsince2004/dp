@@ -24,7 +24,7 @@ const start = async () => {
     httpServer.on('error', (e) => { logger.error(`[Server] HTTP server error: ${e.message}`); process.exit(1); });
     httpServer.listen(env.PORT, () => {
       logger.info('===================================================');
-      logger.info(`  🚀 PHAROS API Server is ONLINE`);
+      logger.info(`  🚀 PRISM API Server is ONLINE`);
       logger.info(`  🌐 URL:  http://localhost:${env.PORT}`);
       logger.info(`  🔧 Mode: ${env.NODE_ENV}`);
       logger.info('===================================================');

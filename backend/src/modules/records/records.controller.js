@@ -289,6 +289,19 @@ export const deleteAttachment = async (req, res) => {
   }
 };
 
+export const deleteRecord = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await verifyRecordAccess(id, req.user);
+    await recordsService.deleteRecord(id, req.user);
+    return res.status(200).json({ success: true, message: 'Record deleted successfully' });
+  } catch (error) {
+    const status = error.message.includes('Access denied') ? 403 : (error.status || 500);
+    return res.status(status).json({ success: false, message: error.message });
+  }
+};
+
 export const downloadAttachment = async (req, res) => {
   const { filename } = req.params;
   const filePath = path.resolve('uploads', filename);

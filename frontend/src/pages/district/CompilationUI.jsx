@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Send, Calendar, CheckCircle, Database, AlertTriangle, FileText, Shield, Phone, UserX, Fingerprint, ChevronDown } from 'lucide-react';
+import { ArrowLeft, BookOpen, Send, Calendar, CheckCircle, Database, AlertTriangle, FileText, Shield, Phone, UserX, Fingerprint, ChevronDown, Clock, ChevronRight, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
@@ -33,6 +33,52 @@ const REPORTS = [
   { tableName: "excel_28fir_goswara_summary",      label: "FIR Goswara Summary",               type: "summary", num: 28 },
 ];
 
+// Diary catalogue: each diary bundles its own set of selectable reports, and is
+// only offered to users whose hierarchy level is in `levels` (PS -> HC/SHO,
+// DISTRICT -> DISTRICT_OFFICER, HQ -> HQ_ANALYST/HQ_ADMIN/SYSTEM_ADMIN).
+// Only DAILY_DIARY has a working export pipeline (backend /daily-diary/export) today;
+// other diaries are listed as "coming_soon" so the flow is ready to accept them without
+// another UI rework once their report sets and export endpoints exist.
+const DIARIES = [
+  {
+    key: 'DAILY_DIARY',
+    label: 'Daily Diary',
+    description: 'Station-wise daily operations log — 24 report sheets',
+    icon: BookOpen,
+    status: 'active',
+    levels: ['PS', 'DISTRICT', 'HQ'],
+    reports: REPORTS,
+  },
+  {
+    key: 'DISTRICT_DIARY',
+    label: 'District Diary',
+    description: 'District-level compiled diary',
+    icon: Layers,
+    status: 'coming_soon',
+    levels: ['DISTRICT', 'HQ'],
+    reports: [],
+  },
+  {
+    key: 'PHQ_DIARY',
+    label: 'PHQ Diary',
+    description: 'Police Headquarters consolidated diary',
+    icon: Shield,
+    status: 'coming_soon',
+    levels: ['HQ'],
+    reports: [],
+  },
+];
+
+const DISTRICT_ROLES = ['DISTRICT', 'DISTRICT_OFFICER'];
+const HQ_ROLES = ['HQ', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'];
+
+// Anything not explicitly DISTRICT/HQ (HC, SHO, ACP, etc.) is treated as PS-level.
+const getUserLevel = (role) => {
+  if (HQ_ROLES.includes(role)) return 'HQ';
+  if (DISTRICT_ROLES.includes(role)) return 'DISTRICT';
+  return 'PS';
+};
+
 const MOCK_PS_LIST = [
   { id: "PS_NDD_01", name: "Connaught Place",    code: "CP"  },
   { id: "PS_NDD_02", name: "Tilak Marg",         code: "TM"  },
@@ -56,43 +102,73 @@ export default function CompilationUI() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
+  const userLevel = getUserLevel(user?.role);
+  const availableDiaries = DIARIES.filter(d => d.levels.includes(userLevel));
+
   const today = new Date().toISOString().split('T')[0];
   const [dateFrom, setDateFrom] = useState(today);
   const [dateTo, setDateTo]   = useState(today);      // defaults to same as dateFrom (single-day export)
   const [exporting, setExporting] = useState(false);
+
+  // Step 1: which diary is being compiled
+  const [selectedDiary, setSelectedDiary] = useState(null);
+  const diaryReports = selectedDiary?.reports || [];
 
   // Dropdown UI states
   const [selectedPSIds, setSelectedPSIds] = useState(new Set());
   const [psDropOpen, setPsDropOpen] = useState(false);
   const [psSearch, setPsSearch] = useState('');
 
-  const [selectedFields, setSelectedFields] = useState(new Set(REPORTS.map(r => r.tableName)));
+  // Step 2: which reports within the selected diary
+  const [selectedFields, setSelectedFields] = useState(new Set());
   const [reportsDropOpen, setReportsDropOpen] = useState(false);
   const [reportSearch, setReportSearch] = useState('');
+
+  const handleSelectDiary = (diary) => {
+    if (diary.status !== 'active') {
+      toast('This diary is coming soon.', { icon: '🚧' });
+      return;
+    }
+    setSelectedDiary(diary);
+    setSelectedFields(new Set(diary.reports.map(r => r.tableName)));
+  };
+
+  const handleChangeDiary = () => {
+    setSelectedDiary(null);
+    setSelectedFields(new Set());
+  };
 
   const psDropRef = useRef(null);
   const reportsDropRef = useRef(null);
 
-  // Fetch police stations dynamically under target district
+  // Fetch police stations — the backend scopes this by the caller's own
+  // jurisdiction (HC/SHO get only their own PS, DISTRICT_OFFICER only their
+  // own district's PS, HQ gets everything), so no client-side district guess
+  // is needed or trusted here.
   const { data: psList = [], isLoading: psLoading } = useQuery({
-    queryKey: ['hierarchy', 'ps', user?.district_id || user?.districtId],
+    queryKey: ['hierarchy', 'ps', userLevel, user?.ps_id || user?.psId, user?.district_id || user?.districtId],
     queryFn: async () => {
       try {
-        const distId = user?.district_id || user?.districtId || 'DIST_NDD';
-        const res = await api.get(`/hierarchy/nodes?type=PS&districtId=${distId}`);
+        const res = await api.get('/hierarchy/nodes?type=PS');
         const list = (res.data?.data?.nodes || res.data?.data || []).map(n => ({
           id: n.id || n._id,
-          name: n.name || n.ps_name,
+          name: n.name_en || n.name || n.ps_name,
           code: n.code || n.ps_code || "",
         }));
-        return list.length ? list : MOCK_PS_LIST;
+        return list;
       } catch (err) {
-        console.warn('Failed to fetch hierarchy nodes, using fallback mock list:', err.message);
-        return MOCK_PS_LIST;
+        console.warn('Failed to fetch hierarchy nodes:', err.message);
+        // Never fall back to a cross-jurisdiction mock list for PS-level users.
+        return userLevel === 'PS' ? [] : MOCK_PS_LIST;
       }
     },
-    initialData: MOCK_PS_LIST,
+    // placeholderData (not initialData) — shows a placeholder without marking
+    // it "fresh", so the real, jurisdiction-scoped fetch still fires on mount
+    // instead of being skipped for the global staleTime window.
+    placeholderData: userLevel === 'PS' ? [] : MOCK_PS_LIST,
   });
+
+  const myStation = userLevel === 'PS' ? psList[0] : null;
 
   // Handle outside clicks to close dropdowns
   useEffect(() => {
@@ -154,7 +230,7 @@ export default function CompilationUI() {
   });
 
   const handleCompileTrigger = async () => {
-    if (exporting) return;
+    if (exporting || !selectedDiary) return;
     setExporting(true);
 
     // 1. Persist compilation in DB (non-fatal — continues even if no DISTRICT_REVIEW records)
@@ -179,7 +255,7 @@ export default function CompilationUI() {
       params.set('date', dateFrom);
       if (dateTo && dateTo !== dateFrom) params.set('dateTo', dateTo);
       if (selectedPSIds.size > 0) params.set('psId', Array.from(selectedPSIds).join(','));
-      if (selectedFields.size < REPORTS.length) params.set('tableNames', Array.from(selectedFields).join(','));
+      if (selectedFields.size < diaryReports.length) params.set('tableNames', Array.from(selectedFields).join(','));
 
       const exportRes = await fetch(`${BASE_URL}/daily-diary/export?${params}`, {
         headers: authHeaders,
@@ -275,12 +351,32 @@ export default function CompilationUI() {
     }
   };
 
+  const backTo = userLevel === 'HQ' ? '/hq' : userLevel === 'DISTRICT' ? '/district' : '/records';
+  const workspaceTitle = userLevel === 'HQ'
+    ? 'HQ Compilation Workspace'
+    : userLevel === 'DISTRICT'
+      ? 'District Compilation Workspace'
+      : 'Station Compilation Workspace';
+  const workspaceSubtitle = userLevel === 'HQ'
+    ? 'Select a diary and compile records aggregated across districts for Headquarters.'
+    : userLevel === 'DISTRICT'
+      ? (
+        <>
+          Aggregate approved station records for{' '}
+          <span className="text-[var(--accent-color)] font-semibold">
+            {user?.district_id || user?.districtId || 'your district'}
+          </span>{' '}
+          into a unified district operations log before sending to Headquarters.
+        </>
+      )
+      : 'Select a diary and compile your station\'s records before sending them up for review.';
+
   return (
     <div className="space-y-6 w-full theme-district-page p-5 rounded-2xl bg-[var(--bg-page-main)] border border-slate-200 shadow-sm">
       {/* Back Header */}
       <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
         <button
-          onClick={() => navigate('/district')}
+          onClick={() => navigate(backTo)}
           className="hover:bg-slate-100 text-slate-500 hover:text-slate-800 p-2 rounded-lg transition-colors cursor-pointer border border-slate-200 active:scale-95"
         >
           <ArrowLeft size={16} />
@@ -288,27 +384,92 @@ export default function CompilationUI() {
         <div>
           <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2 font-display">
             <BookOpen className="text-[var(--accent-color)]" size={20} />
-            <span>District Compilation Workspace</span>
+            <span>{workspaceTitle}</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1 font-semibold">
-            Aggregate approved station records for{' '}
-            <span className="text-[var(--accent-color)] font-semibold">
-              {user?.district_id || user?.districtId || 'your district'}
-            </span>{' '}
-            into a unified district operations log before sending to Headquarters.
+            {workspaceSubtitle}
           </p>
         </div>
       </div>
- 
-      {/* Date trigger card */}
+
+      {/* Step 1: Diary selector */}
+      <div className="border border-slate-200 bg-white rounded-xl p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
+            <Layers size={14} className="text-[var(--accent-color)]" />
+            <span>Step 1 — Select Diary</span>
+          </h3>
+          {selectedDiary && (
+            <button
+              type="button"
+              onClick={handleChangeDiary}
+              className="text-[10px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
+            >
+              Change Diary
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {availableDiaries.map((diary) => {
+            const Icon = diary.icon;
+            const isSelected = selectedDiary?.key === diary.key;
+            const isDisabled = diary.status !== 'active';
+            return (
+              <button
+                key={diary.key}
+                type="button"
+                onClick={() => handleSelectDiary(diary)}
+                disabled={isDisabled}
+                className={`text-left border rounded-xl p-4 transition-all flex flex-col gap-2 ${
+                  isSelected
+                    ? 'border-[var(--accent-color)] bg-red-50/40 shadow-sm'
+                    : isDisabled
+                      ? 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'
+                      : 'border-slate-200 bg-white hover:border-[var(--accent-color)] cursor-pointer'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <Icon size={18} className={isSelected ? 'text-[var(--accent-color)]' : 'text-slate-500'} />
+                  {isDisabled ? (
+                    <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300 text-slate-500 bg-white">
+                      <Clock size={9} />
+                      <span>Coming Soon</span>
+                    </span>
+                  ) : isSelected ? (
+                    <CheckCircle size={16} className="text-[var(--accent-color)]" />
+                  ) : (
+                    <ChevronRight size={14} className="text-slate-300" />
+                  )}
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-slate-800">{diary.label}</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">{diary.description}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {!selectedDiary ? (
+        <div className="border border-dashed border-slate-300 rounded-xl p-8 text-center text-slate-500 space-y-2">
+          <FileText size={28} className="mx-auto text-slate-300" />
+          <p className="text-sm font-semibold text-slate-500">Select a diary above to choose its reports.</p>
+        </div>
+      ) : (
+      <>
+      {/* Step 2: Date range + Police Station + Report selection */}
       <div className="border border-slate-200 bg-white rounded-xl p-5 shadow-sm space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
           <Calendar size={14} className="text-[var(--accent-color)]" />
-          <span>Select Compilation Date Range</span>
+          <span>Step 2 — {selectedDiary.label}: Select Reports &amp; Date Range</span>
         </h3>
- 
+
         <p className="text-xs text-slate-500 font-medium">
-          This will bundle all records currently at <span className="text-[var(--accent-color)] font-semibold">DISTRICT_REVIEW</span> status in your district into a single compilation packet.
+          {userLevel === 'PS'
+            ? <>This will export today's records for <span className="text-[var(--accent-color)] font-semibold">{myStation?.name || 'your station'}</span> only.</>
+            : <>This will bundle all records currently at <span className="text-[var(--accent-color)] font-semibold">DISTRICT_REVIEW</span> status in your district into a single compilation packet.</>}
         </p>
  
         <div className="flex flex-col sm:flex-row gap-3 items-end relative">
@@ -345,7 +506,21 @@ export default function CompilationUI() {
             />
           </div>
  
-          {/* POLICE STATION DROPDOWN */}
+          {/* POLICE STATION — PS-level users are locked to their own station (no cross-station browsing) */}
+          {userLevel === 'PS' ? (
+            <div className="relative flex-1 min-w-[200px] w-full flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                <Shield size={10} className="text-slate-400" />
+                <span>Police Station</span>
+              </span>
+              <div className="w-full flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 px-3 py-2.5 font-semibold">
+                <Shield size={14} className="text-[var(--accent-color)] shrink-0" />
+                <span className="truncate">
+                  {psLoading ? 'Loading station...' : (myStation?.name || 'Your Station')}
+                </span>
+              </div>
+            </div>
+          ) : (
           <div ref={psDropRef} className="relative flex-1 min-w-[200px] w-full flex flex-col gap-1">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
               <Shield size={10} className="text-slate-400" />
@@ -428,9 +603,6 @@ export default function CompilationUI() {
                             className="rounded border-slate-200 bg-white text-[var(--accent-color)] focus:ring-0 focus:ring-offset-0 focus:outline-none w-3.5 h-3.5 cursor-pointer accent-[var(--accent-color)]"
                           />
                           <div className="flex items-center gap-1.5 overflow-hidden">
-                            <span className="text-[10px] text-slate-400 font-mono w-6 text-left shrink-0">
-                              {ps.code}
-                            </span>
                             <span className="truncate">{ps.name}</span>
                           </div>
                         </label>
@@ -440,7 +612,8 @@ export default function CompilationUI() {
               </div>
             )}
           </div>
- 
+          )}
+
           {/* REPORTS DROPDOWN */}
           <div ref={reportsDropRef} className="relative flex-1 min-w-[200px] w-full flex flex-col gap-1">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
@@ -455,14 +628,14 @@ export default function CompilationUI() {
               <div className="flex items-center gap-2 overflow-hidden">
                 <FileText size={14} className="text-[var(--accent-color)] shrink-0" />
                 <span className="truncate text-left">
-                  {selectedFields.size === REPORTS.length 
-                    ? 'All Reports (24/24)' 
+                  {selectedFields.size === diaryReports.length
+                    ? `All Reports (${diaryReports.length}/${diaryReports.length})`
                     : `${selectedFields.size} Reports Selected`}
                 </span>
               </div>
               <ChevronDown size={14} className="text-zinc-500 shrink-0" />
             </button>
-            
+
             {reportsDropOpen && (
               <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden flex flex-col max-h-72">
                 <div className="p-2 border-b border-slate-100 bg-slate-50 flex flex-col gap-2">
@@ -477,21 +650,21 @@ export default function CompilationUI() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (selectedFields.size === REPORTS.length) {
+                        if (selectedFields.size === diaryReports.length) {
                           setSelectedFields(new Set());
                         } else {
-                          setSelectedFields(new Set(REPORTS.map(r => r.tableName)));
+                          setSelectedFields(new Set(diaryReports.map(r => r.tableName)));
                         }
                       }}
                       className="hover:text-[var(--accent-color)] transition-colors cursor-pointer font-bold"
                     >
-                      {selectedFields.size === REPORTS.length ? 'Deselect All' : 'Select All'}
+                      {selectedFields.size === diaryReports.length ? 'Deselect All' : 'Select All'}
                     </button>
-                    <span>{selectedFields.size} of {REPORTS.length} selected</span>
+                    <span>{selectedFields.size} of {diaryReports.length} selected</span>
                   </div>
                 </div>
                 <div className="overflow-y-auto flex-1 max-h-52 scrollbar-thin">
-                  {REPORTS
+                  {diaryReports
                     .filter(r => r.label.toLowerCase().includes(reportSearch.toLowerCase()))
                     .map(report => {
                       const isSelected = selectedFields.has(report.tableName);
@@ -556,12 +729,14 @@ export default function CompilationUI() {
           </div>
         </div>
       </div>
-  
+      </>
+      )}
+
         {/* Compiled Records List */}
         <div className="space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
             <Database size={14} className="text-[var(--accent-color)]" />
-            <span>Compiled District Archives</span>
+            <span>Compiled {userLevel === 'HQ' ? 'HQ' : userLevel === 'DISTRICT' ? 'District' : 'Station'} Archives</span>
           </h3>
 
         {isLoading ? (

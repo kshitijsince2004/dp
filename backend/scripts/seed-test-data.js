@@ -65,7 +65,7 @@ const USERS = [
 const LOCS_NDD = ['Connaught Place', 'Parliament Street', 'Janpath', 'Patel Chowk', 'Rajpath'];
 const LOCS_NWD = ['Adarsh Nagar', 'Shalimar Bagh', 'Mukherji Nagar', 'Model Town', 'Subhash Place'];
 const IO_NAMES  = ['Insp. Sharma', 'Insp. Verma', 'SI Gupta', 'Insp. Singh', 'SI Tiwari'];
-const CRIME_HEADS = ['Theft', 'Robbery', 'Murder', 'MVCT', 'Cyber'];
+const CRIME_HEADS = ['Theft', 'Robbery', 'Murder', 'M.V. Theft', 'Snatching'];
 const IPC_SECS    = ['302', '420', '379', '392', '66C'];
 
 const pad  = n => String(n).padStart(2, '0');
@@ -77,6 +77,31 @@ function caseData(i, ps) {
   const caseType = ['cctns(manual FIR)', 'eTheft', 'eMVT', 'NCRP', 'zero FIR'][i%5];
   const complainantNames = ['Rahul Kumar','Priya Singh','Amit Jain','Meera Patel','Suresh Verma'];
   const parentNames = ['Rajesh Kumar','Harpal Singh','Mohan Jain','Ramesh Patel','Dinesh Verma'];
+  
+  const localHead = CRIME_HEADS[i%5];
+
+  // Phone details conditional on local_head: 'Mobile Theft', 'Snatching', 'Robbery'
+  const phoneFields = {};
+  if (['Mobile Theft', 'Snatching', 'Robbery'].includes(localHead)) {
+    phoneFields.phone_make = ['Apple', 'Samsung', 'OnePlus', 'Google'][i%4];
+    phoneFields.phone_model = ['iPhone 15', 'Galaxy S24', '12', 'Pixel 8'][i%4];
+    phoneFields.phone_imei = `35876510${pad8(i*77)}`;
+    phoneFields.phone_color = ['Black', 'Silver', 'Blue', 'Green'][i%4];
+    phoneFields.phone_status = ['RECOVERED', 'NOT_RECOVERED', 'PARTIAL'][i%3];
+  }
+
+  // Vehicle details conditional on local_head: 'M.V. Theft', 'M.V. Accessories Theft', 'Cycle Theft', 'Robbery', 'Snatching'
+  const vehicleFields = {};
+  if (['M.V. Theft', 'M.V. Accessories Theft', 'Cycle Theft', 'Robbery', 'Snatching'].includes(localHead)) {
+    vehicleFields.vehicle_no = `DL-${i%9+1}C-AQ-${1000+i}`;
+    vehicleFields.vehicle_type = ['Car', 'Motorcycle', 'Scooter', 'Cycle'][i%4];
+    
+    // cd_uploaded_24h conditional on local_head: 'M.V. Theft', 'M.V. Accessories Theft'
+    if (['M.V. Theft', 'M.V. Accessories Theft'].includes(localHead)) {
+      vehicleFields.cd_uploaded_24h = i%2 === 0 ? 'Yes' : 'No';
+    }
+  }
+
   return {
     case_type: caseType,
     fir_no: `FIR/2026/${1000+i}`,   fir_date: `2026-05-${pad(i%28+1)}`,
@@ -84,19 +109,31 @@ function caseData(i, ps) {
     gd_time: `${pad((i*3)%24)}:${pad((i*7)%60)}`, beat_no: `B-${(i%10)+1}`,
     occurrence_date: `2026-05-${pad(i%28+1)}`,
     time_of_occurrence: `${pad((i*2+8)%24)}:${pad((i*13)%60)}`,
+    occurrence_time: `${pad((i*2+8)%24)}:${pad((i*13)%60)}`,
     occurrence_place: `${loc}, New Delhi`,
-    local_head: CRIME_HEADS[i%5], act_name: ['IPC','NDPS Act','IPC'][i%3],
+    local_head: localHead, act_name: ['IPC','NDPS Act','IPC'][i%3],
     sections: IPC_SECS[i%5],
     brief_facts: `Complaint received from complainant. ${loc} area. Police reached scene and registered FIR. Investigation ongoing.`,
     complainant_name: complainantNames[i%5],
     complainant_parent_name: parentNames[i%5],
+    complainant_father_husband_name: parentNames[i%5],
     complainant_address: `${100+i}, ${loc}, New Delhi - 110001`,
-    accused_name: i%3===0 ? '' : `Accused-${i}`, accused_address: i%3===0 ? '' : `Unknown, New Delhi`,
+    accused_name: i%3===0 ? '' : `Accused-${i}`, 
+    accused_father_name: i%3===0 ? '' : `AccusedParent-${i}`,
+    accused_address: i%3===0 ? '' : `Unknown, New Delhi`,
     io_name: IO_NAMES[i%5], io_pis: `PIS${10000+i}`, io_mobile: `98${pad8(10000000+i*7)}`,
     property_description: i%2===0 ? `Mobile phone, cash Rs.${(i+1)*500}` : '',
     property_status: ['Stolen','Recovered','NA'][i%3],
     status: ['Open','Chargesheeted','Open','Closed','Open'][i%5],
     cctns_flag: caseType === 'cctns(manual FIR)', zero_fir_flag: caseType === 'zero FIR', remarks: '',
+    footage_collected: i%2 === 0 ? 'Yes' : 'No',
+    rc_no: `RC-${100000+i}`,
+    disposal_type: ['Challan', 'Untrace', 'Cancel'][i%3],
+    cause_of_death: localHead === 'Murder' ? 'Murder' : 'Accidental',
+    deceased_father_husband_name: `DeceasedParent-${i}`,
+    is_important: i%4 === 0,
+    ...phoneFields,
+    ...vehicleFields,
   };
 }
 
@@ -112,7 +149,9 @@ function arrestData(i, ps) {
     sections: IPC_SECS[i%5],
     arrested_name: `${firstNames[i%5]} ${lastNames[i%5]}`,
     parents_name: `${parentFirstNames[i%5]} ${lastNames[i%5]}`,
+    arrested_father_husband_name: `${parentFirstNames[i%5]} ${lastNames[i%5]}`,
     age_gender: `${25+(i*3)%30} / ${['Male','Female','Male','Male','Female'][i%5]}`,
+    age: 25+(i*3)%30,
     arrested_address: `${50+i}, ${loc}, Delhi`,
     arrest_date: `2026-05-${pad(i%28+1)}`, arrest_place: `Near market, ${loc}`,
     crime_head: ['IPC','LOCAL','PREVENTIVE'][i%3],
@@ -120,6 +159,25 @@ function arrestData(i, ps) {
     other_status_reason: i%5===4 ? 'Surrendered voluntarily' : '',
     io_name: IO_NAMES[i%5], io_rank: RANKS[i%5], io_mobile: `98${pad8(20000000+i*11)}`,
     nafis_prepared: i%2===0, dossier_prepared: i%3===0,
+    
+    // New fields:
+    bad_character: i%3 === 0 ? 'Yes' : 'No',
+    proclaimed_offender: i%4 === 0,
+    listed_criminal: i%5 === 0,
+    stolen_property: i%2 === 0 ? `Stolen gold chain value approx Rs.${(i+1)*5000}` : '',
+    fir_date: `2026-05-${pad(i%28+1)}`,
+    
+    // Schemes
+    integrated_pi: i%2 === 0 ? 'Yes' : 'No',
+    group_patrolling: i%3 === 0 ? 'Yes' : 'No',
+    cycle_patrolling: i%4 === 0 ? 'Yes' : 'No',
+    by_antisnatching_team: i%5 === 0 ? 'Yes' : 'No',
+    by_prahari: i%2 === 0 ? 'Yes' : 'No',
+    by_eyes_ears_scheme_members: i%3 === 0 ? 'Yes' : 'No',
+
+    // Financial
+    cheated_amount: i%3 === 0 ? `Rs. ${50000 + i*15000}` : '',
+    modus_operandi: i%3 === 0 ? 'Created fake website and lured victim into investing money.' : '',
   };
 }
 
@@ -150,6 +208,10 @@ function missingData(i) {
     informant_mobile: `91${pad8(10000000+i*13)}`,
     io_name: IO_NAMES[i%5], zipnet_no: `ZN2026${pad4(1000+i)}`,
     status: ['Missing','Traced','Missing','Closed','Missing'][i%5],
+    
+    // New fields:
+    missing_address: `${10+i}, Sector-${i%10}, Rohini, Delhi`,
+    source: i%2 === 0 ? 'PCR' : 'DD',
   };
 }
 

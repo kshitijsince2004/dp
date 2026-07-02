@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import PoliceSidebar from "./PoliceSidebar.jsx";
 import PoliceNavbar from "./PoliceNavbar.jsx";
@@ -6,7 +6,7 @@ import ReportModal from "../ui/ReportModal.jsx";
 import { useNotifications } from "../../hooks/useNotifications.js";
 
 export default function DashboardLayout() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   // ── Real-time notifications from SSE + REST ──────────────────────────────
   const {

@@ -19,11 +19,19 @@ async function run() {
 
   const { default: app } = await import('../src/app.js');
   const eventBus = await import('../src/events/eventBus.js');
+  const importHandler = await import('../src/events/handlers/importHandler.js');
 
   try {
     await eventBus.connect();
   } catch (err) {
     console.warn('[Test] RabbitMQ not connected, proceeding in mock event mode...', err.message);
+  }
+
+  try {
+    await importHandler.init();
+  } catch (err) {
+    console.error('[Test] Failed to initialize import handler:', err.message);
+    process.exit(1);
   }
 
   let server;
@@ -185,10 +193,30 @@ async function run() {
     const confirmRes = await axios.post(`${baseURL}/import/confirm/${batchId}`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    assert(confirmRes.status === 200, 'Confirm batch returns status 200');
-    assert(confirmRes.data.data.imported_rows === 1, 'Correct imported rows committed: 1');
-    assert(confirmRes.data.data.skipped_rows === 1, 'Correct skipped rows from errors: 1');
-    assert(confirmRes.data.data.status === 'COMPLETED', 'Batch status updated to COMPLETED');
+    assert(confirmRes.status === 202, 'Confirm batch returns status 202 (Accepted)');
+    assert(confirmRes.data.data.status === 'IMPORTING', 'Batch status is IMPORTING');
+
+    // Poll for status to be COMPLETED
+    console.log('[Test] Polling batch status for background processing completion...');
+    let isCompleted = false;
+    let pollRes;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      pollRes = await axios.get(`${baseURL}/import/batches/${batchId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (pollRes.data.data.status === 'COMPLETED') {
+        isCompleted = true;
+        break;
+      }
+      if (pollRes.data.data.status === 'FAILED') {
+        console.error('[Test] Batch processing status became FAILED:', pollRes.data.data.errors);
+        break;
+      }
+    }
+    assert(isCompleted, 'Batch status updated to COMPLETED within timeout');
+    assert(pollRes?.data?.data?.imported_rows === 1, 'Correct imported rows committed: 1');
+    assert(pollRes?.data?.data?.skipped_rows === 1, 'Correct skipped rows from errors: 1');
 
     // 9. Verify that details are stored correctly in DB
     console.log('\n--- Test 9: Verify DB record contents ---');

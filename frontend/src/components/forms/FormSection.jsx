@@ -429,9 +429,20 @@ function RepeaterSection({
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                   {section.fields.map((field) => {
                     const key = field.field_key;
+                    if (field.show_when) {
+                      const { field: triggerKey, value: triggerValue, operator } = field.show_when;
+                      const currentValue = entry[triggerKey];
+                      let isMatch = false;
+                      if (operator === 'filled') {
+                        isMatch = currentValue !== undefined && currentValue !== null && String(currentValue).trim() !== '';
+                      } else {
+                        isMatch = Array.isArray(triggerValue)
+                          ? triggerValue.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase())
+                          : String(currentValue || '').toLowerCase() === String(triggerValue || '').toLowerCase();
+                      }
+                      if (!isMatch) return null;
+                    }
 
-                    // Evaluate show_when against this row's own values (not top-level form)
-                    if (!evaluateShowWhen(field.show_when, entry)) return null;
 
                     const rules = parseRules(field.validation_rules);
                     const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;

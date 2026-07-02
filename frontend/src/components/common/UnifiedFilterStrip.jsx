@@ -60,7 +60,7 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
           value={filters.type || 'ALL'} 
           onChange={handleTypeChange}
           style={{ width: 160 }}
-          bordered={false}
+          variant="borderless"
           className="bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-slate-700"
           popupMatchSelectWidth={false}
         >
@@ -80,7 +80,7 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
             value={filters.status || 'ALL'} 
             onChange={handleStatusChange}
             style={{ minWidth: 160 }}
-            bordered={false}
+            variant="borderless"
             className="bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-slate-700"
             popupMatchSelectWidth={false}
           >
