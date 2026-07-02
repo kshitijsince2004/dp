@@ -1,18 +1,22 @@
 import db from '../../config/db.js';
 import * as dailyDiaryService from './daily-diary.service.js';
 import { logger } from '../../utils/logger.js';
+import { toISO } from '../../utils/dateFormat.js';
 
-// Helper to validate and default date
+// Helper to validate and default date; frontend sends dd/mm/yyyy, record_date
+// is a native DATE column so we resolve to ISO for the actual query.
 const getValidatedDate = (req) => {
   let dateStr = req.query.date;
   if (dateStr) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const iso = toISO(dateStr);
+    if (!iso) {
       throw {
         status: 400,
         code: 'BAD_REQUEST',
-        message: 'Invalid date format. Expected YYYY-MM-DD.'
+        message: 'Invalid date format. Expected DD/MM/YYYY.'
       };
     }
+    dateStr = iso;
   } else {
     // Today's date in local server time format YYYY-MM-DD
     const localDate = new Date();
@@ -106,7 +110,7 @@ export const exportExcel = async (req, res, next) => {
     const { fromDate, toDate } = req.query;
     const scope = await resolveScope(req.user, req.query);
     const tableNames = req.query.tableNames ? req.query.tableNames.split(',') : null;
-    const dateTo = req.query.dateTo || null;
+    const dateTo = toISO(req.query.dateTo) || null;
 
     const { jobId } = await dailyDiaryService.queueDailyDiaryExport(
       req.user,

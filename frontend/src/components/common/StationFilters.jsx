@@ -1,4 +1,5 @@
 import React from "react";
+import DateInput from "../ui/DateInput.jsx";
 
 export default function StationFilters({
   districts = [],
@@ -125,24 +126,20 @@ export default function StationFilters({
         {/* Date From */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Date From</label>
-          <input
-            type="date"
+          <DateInput
             value={filters.dateFrom || ""}
-            onChange={(e) => handleChange("dateFrom", e.target.value)}
-            className="w-full border border-[var(--border-light)] bg-white rounded p-2 text-sm text-slate-900 font-semibold"
-            style={{ minHeight: '38px', borderColor: 'var(--border-light)', colorScheme: 'light' }}
+            onChange={(val) => handleChange("dateFrom", val)}
+            inputClassName="w-full border border-[var(--border-light)] bg-white rounded p-2 pr-9 text-sm text-slate-900 font-semibold"
           />
         </div>
 
         {/* Date To */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Date To</label>
-          <input
-            type="date"
+          <DateInput
             value={filters.dateTo || ""}
-            onChange={(e) => handleChange("dateTo", e.target.value)}
-            className="w-full border border-[var(--border-light)] bg-white rounded p-2 text-sm text-slate-900 font-semibold"
-            style={{ minHeight: '38px', borderColor: 'var(--border-light)', colorScheme: 'light' }}
+            onChange={(val) => handleChange("dateTo", val)}
+            inputClassName="w-full border border-[var(--border-light)] bg-white rounded p-2 pr-9 text-sm text-slate-900 font-semibold"
           />
         </div>
       </div>

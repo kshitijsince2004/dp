@@ -4,6 +4,8 @@ import { FileSpreadsheet, Calendar, Download, RefreshCw, FileText, CheckCircle2 
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
+import DateInput from '../../components/ui/DateInput.jsx';
+import { formatDMY } from '../../utils/dateFormat.js';
 
 export default function ReportBuilder() {
   const queryClient = useQueryClient();
@@ -27,8 +29,8 @@ export default function ReportBuilder() {
   };
 
   const [templateId, setTemplateId] = useState('');
-  const [fromDate, setFromDate] = useState(() => new Date(Date.now() - 3600000 * 24 * 7).toISOString().split('T')[0]);
-  const [toDate, setToDate]     = useState(() => new Date().toISOString().split('T')[0]);
+  const [fromDate, setFromDate] = useState(() => formatDMY(new Date(Date.now() - 3600000 * 24 * 7)));
+  const [toDate, setToDate]     = useState(() => formatDMY(new Date()));
   const [format, setFormat]     = useState('EXCEL');
   const [generating, setGenerating] = useState(false);
   const [reportResult, setReportResult] = useState(null);
@@ -195,22 +197,20 @@ export default function ReportBuilder() {
               {/* From Date */}
               <div className="col-span-1 md:col-span-3 space-y-1.5">
                 <label className="text-[var(--text-main-theme)]/80 font-bold">From Date:</label>
-                <input
-                  type="date"
+                <DateInput
                   value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl p-2 text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all font-semibold shadow-sm text-sm"
+                  onChange={setFromDate}
+                  inputClassName="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl p-2 pr-9 text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all font-semibold shadow-sm text-sm"
                 />
               </div>
 
               {/* To Date */}
               <div className="col-span-1 md:col-span-3 space-y-1.5">
                 <label className="text-[var(--text-main-theme)]/80 font-bold">To Date:</label>
-                <input
-                  type="date"
+                <DateInput
                   value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl p-2 text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all font-semibold shadow-sm text-sm"
+                  onChange={setToDate}
+                  inputClassName="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl p-2 pr-9 text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all font-semibold shadow-sm text-sm"
                 />
               </div>
             </div>

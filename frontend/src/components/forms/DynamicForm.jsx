@@ -17,84 +17,8 @@ import FormToolbar from './FormToolbar.jsx';
 import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
-
-
-function NicknameChipsField({ fieldKey, value, onChange, isDisabled, lang }) {
-  const [inputVal, setInputVal] = React.useState('');
-  const nicknames = value ? String(value).split(',').map(s => s.trim()).filter(Boolean) : [];
-
-  const handleAdd = (e) => {
-    if (e) e.preventDefault();
-    const trimmed = inputVal.trim();
-    if (!trimmed) return;
-    if (nicknames.includes(trimmed)) {
-      setInputVal('');
-      return;
-    }
-    const updated = [...nicknames, trimmed].join(', ');
-    onChange(fieldKey, updated);
-    setInputVal('');
-  };
-
-  const handleRemove = (nameToRemove) => {
-    const updated = nicknames.filter(n => n !== nameToRemove).join(', ');
-    onChange(fieldKey, updated);
-  };
-
-  return (
-    <div className="flex flex-col gap-2 py-1 w-full">
-      {/* Chips list */}
-      {nicknames.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 max-w-md">
-          {nicknames.map((name) => (
-            <span
-              key={name}
-              className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[11px] font-bold text-slate-700 shadow-sm"
-            >
-              <span>{name}</span>
-              {!isDisabled && (
-                <button
-                  type="button"
-                  onClick={() => handleRemove(name)}
-                  className="text-slate-400 hover:text-red-500 font-bold hover:bg-slate-200/50 rounded w-3.5 h-3.5 flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  ×
-                </button>
-              )}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Input to add */}
-      {!isDisabled && (
-        <div className="flex items-center gap-1.5">
-          <input
-            type="text"
-            value={inputVal}
-            onChange={(e) => setInputVal(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAdd();
-              }
-            }}
-            placeholder={lang === 'hi' ? 'उपनाम जोड़ें (उदा. मोंटी)' : 'Add Nickname (e.g. Monty)'}
-            className="w-full max-w-[200px] h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"
-          />
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="h-6 px-2 bg-[#0d2a4a] text-white hover:bg-[#16406d] text-[11px] font-bold rounded flex items-center justify-center transition-colors cursor-pointer"
-          >
-            + {lang === 'hi' ? 'जोड़ें' : 'Add'}
-          </button>
-        </div>
-      )}
-      {isDisabled && nicknames.length === 0 && <span className="text-slate-400">—</span>}
-    </div>
-  );
-}
+import DateInput from '../ui/DateInput.jsx';
+import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
 
 // Mock registry for Acts & Sections to be loaded dynamically from the backend in the future
 const ACTS_SECTIONS_REGISTRY = [
@@ -217,13 +141,13 @@ function StepDot({ index, active, completed, hasError, title, onClick }) {
 }
 
 const MOCK_FIR_LIST = [
-  { fir_no: '104/2026', fir_date: '2026-06-20', complainant_name: 'Ramesh Singh', police_station: 'Parliament Street', crime_head: 'House Theft', sections: 'Sec 379 IPC' },
-  { fir_no: '112/2026', fir_date: '2026-06-19', complainant_name: 'Sunita Devi', police_station: 'Chanakyapuri', crime_head: 'Murder', sections: 'Sec 302 IPC' },
-  { fir_no: '125/2026', fir_date: '2026-06-18', complainant_name: 'Amit Kumar', police_station: 'Mandir Marg', crime_head: 'Simple Hurt', sections: 'Sec 323 IPC' },
-  { fir_no: '150/2026', fir_date: '2026-06-21', complainant_name: 'Gurpreet Singh', police_station: 'Tughlak Road', crime_head: 'Cheating', sections: 'Sec 406 IPC' },
-  { fir_no: '201/2026', fir_date: '2026-06-21', complainant_name: 'Vikram Singh', police_station: 'Parliament Street', crime_head: 'Robbery', sections: 'Sec 392 IPC' },
-  { fir_no: '88/2026', fir_date: '2026-06-20', complainant_name: 'Manish Sharma', police_station: 'Chanakyapuri', crime_head: 'Delhi Excise Act', sections: 'Sec 33/38 Excise Act' },
-  { fir_no: '92/2026', fir_date: '2026-06-20', complainant_name: 'Priyanka Sen', police_station: 'Mandir Marg', crime_head: 'Snatching', sections: 'Sec 356/379 IPC' },
+  { fir_no: '104/2026', fir_date: '20/06/2026', complainant_name: 'Ramesh Singh', police_station: 'Parliament Street', crime_head: 'House Theft', sections: 'Sec 379 IPC' },
+  { fir_no: '112/2026', fir_date: '19/06/2026', complainant_name: 'Sunita Devi', police_station: 'Chanakyapuri', crime_head: 'Murder', sections: 'Sec 302 IPC' },
+  { fir_no: '125/2026', fir_date: '18/06/2026', complainant_name: 'Amit Kumar', police_station: 'Mandir Marg', crime_head: 'Simple Hurt', sections: 'Sec 323 IPC' },
+  { fir_no: '150/2026', fir_date: '21/06/2026', complainant_name: 'Gurpreet Singh', police_station: 'Tughlak Road', crime_head: 'Cheating', sections: 'Sec 406 IPC' },
+  { fir_no: '201/2026', fir_date: '21/06/2026', complainant_name: 'Vikram Singh', police_station: 'Parliament Street', crime_head: 'Robbery', sections: 'Sec 392 IPC' },
+  { fir_no: '88/2026', fir_date: '20/06/2026', complainant_name: 'Manish Sharma', police_station: 'Chanakyapuri', crime_head: 'Delhi Excise Act', sections: 'Sec 33/38 Excise Act' },
+  { fir_no: '92/2026', fir_date: '20/06/2026', complainant_name: 'Priyanka Sen', police_station: 'Mandir Marg', crime_head: 'Snatching', sections: 'Sec 356/379 IPC' },
 ];
 
 // Maps UI act display names -> schema show_when values used in major_head fields
@@ -321,21 +245,10 @@ export default function DynamicForm({
 
     // Filter unified list
     const filtered = unifiedCases.filter(c => {
-      // Date exact match (handles both YYYY-MM-DD and DD/MM/YYYY formats)
-      const sDate = searchDate.substring(0, 10); // "YYYY-MM-DD"
-      let cNormalized = '';
-      if (c.fir_date) {
-        const parts = c.fir_date.split('/');
-        if (parts.length === 3) {
-          const dd = parts[0].padStart(2, '0');
-          const mm = parts[1].padStart(2, '0');
-          const yyyy = parts[2];
-          cNormalized = `${yyyy}-${mm}-${dd}`;
-        } else {
-          cNormalized = c.fir_date.substring(0, 10);
-        }
-      }
-      if (cNormalized !== sDate) return false;
+      // Date exact match — both sides are dd/mm/yyyy
+      const sDate = formatDMY(parseDMY(searchDate)) || searchDate;
+      const cDate = formatDMY(parseDMY(c.fir_date)) || c.fir_date;
+      if (cDate !== sDate) return false;
 
       // Query (complainant name or FIR no) match
       if (searchQuery) {
@@ -397,15 +310,15 @@ export default function DynamicForm({
                   <Calendar size={14} className="text-slate-400" />
                   <span>{dateLabel}</span>
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   disabled={readOnly}
                   value={searchDate}
-                  onChange={(e) => {
-                    setSearchDate(e.target.value);
+                  onChange={(val) => {
+                    setSearchDate(val);
                     if (searchError) setSearchError('');
                   }}
-                  className={`w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all ${
+                  status={searchError ? 'error' : undefined}
+                  inputClassName={`w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 pr-9 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all ${
                     searchError ? 'border-red-400 focus:border-red-500 bg-red-50' : ''
                   }`}
                 />
@@ -1142,25 +1055,15 @@ function renderPersonPersonalInfoSubTab(prefix, allFields, valuesObj, onFieldCha
           {isRequired && <span className="text-red-500 font-bold">*</span>}
         </div>
         <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          {key.endsWith('nickname') ? (
-            <NicknameChipsField
-              fieldKey={key}
-              value={valuesObj[key]}
-              onChange={onFieldChange}
-              isDisabled={isDisabled}
-              lang={lang}
-            />
-          ) : (
-            <FieldRenderer
-              field={f}
-              value={valuesObj[key]}
-              onChange={onFieldChange}
-              readOnly={isDisabled}
-              hasError={touchedObj?.[key] && !!errorsObj?.[key]}
-              lang={lang}
-              values={valuesObj}
-            />
-          )}
+          <FieldRenderer
+            field={f}
+            value={valuesObj[key]}
+            onChange={onFieldChange}
+            readOnly={isDisabled}
+            hasError={touchedObj?.[key] && !!errorsObj?.[key]}
+            lang={lang}
+            values={valuesObj}
+          />
           {showInlineErrors && touchedObj?.[key] && errorsObj?.[key] && (
             <p className="text-red-500 text-[10px] mt-0.5">{errorsObj[key]}</p>
           )}
@@ -2014,25 +1917,15 @@ const renderArrestedStep = () => {
           {isRequired && <span className="text-red-500 font-bold">*</span>}
         </div>
         <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          {key === 'nick_name' ? (
-            <NicknameChipsField
-              fieldKey={key}
-              value={arrestedTempValues[key]}
-              onChange={handleArrestedModalChange}
-              isDisabled={isDisabled}
-              lang={lang}
-            />
-          ) : (
-            <FieldRenderer
-              field={field}
-              value={arrestedTempValues[key]}
-              onChange={handleArrestedModalChange}
-              readOnly={isDisabled}
-              hasError={arrestedModalTouched[key] && !!arrestedModalErrors[key]}
-              lang={lang}
-              values={arrestedTempValues}
-            />
-          )}
+          <FieldRenderer
+            field={field}
+            value={arrestedTempValues[key]}
+            onChange={handleArrestedModalChange}
+            readOnly={isDisabled}
+            hasError={arrestedModalTouched[key] && !!arrestedModalErrors[key]}
+            lang={lang}
+            values={arrestedTempValues}
+          />
           {arrestedModalTouched[key] && arrestedModalErrors[key] && (
             <p className="text-red-500 text-[10px] mt-0.5">{arrestedModalErrors[key]}</p>
           )}
@@ -2881,8 +2774,8 @@ const renderActionTakenStep = () => {
       if (key === 'victim_dob') {
         const dateStr = val;
         if (dateStr && dateStr.length >= 4) {
-          const dobDate = new Date(dateStr);
-          if (!isNaN(dobDate.getTime())) {
+          const dobDate = parseDMY(dateStr);
+          if (dobDate && !isNaN(dobDate.getTime())) {
             const birthY = dobDate.getFullYear();
             next.victim_birth_year = birthY;
             const diffMs = Date.now() - dobDate.getTime();
@@ -2976,8 +2869,8 @@ const renderActionTakenStep = () => {
       if (key === 'accused_dob') {
         const dateStr = val;
         if (dateStr && dateStr.length >= 4) {
-          const dobDate = new Date(dateStr);
-          if (!isNaN(dobDate.getTime())) {
+          const dobDate = parseDMY(dateStr);
+          if (dobDate && !isNaN(dobDate.getTime())) {
             const birthY = dobDate.getFullYear();
             next.accused_birth_year = birthY;
             const diffMs = Date.now() - dobDate.getTime();
@@ -3118,8 +3011,8 @@ const renderActionTakenStep = () => {
   const handleArrestedDobChange = (dobVal, currentTemp) => {
     if (!dobVal) return currentTemp;
     const next = { ...currentTemp, arrested_dob: dobVal };
-    const dobDate = new Date(dobVal);
-    if (!isNaN(dobDate.getTime())) {
+    const dobDate = parseDMY(dobVal);
+    if (dobDate && !isNaN(dobDate.getTime())) {
       const today = new Date();
       let age = today.getFullYear() - dobDate.getFullYear();
       const m = today.getMonth() - dobDate.getMonth();
@@ -3703,17 +3596,11 @@ const renderActionTakenStep = () => {
       submission_status: initialValues?.current_status || seed.submission_status || 'DRAFT'
     };
 
-    // Formulate gd_date_time if missing but gd_date/gd_time exist
+    // Formulate gd_date_time if missing but gd_date/gd_time exist.
+    // gd_date is stored as dd/mm/yyyy, so no format conversion is needed here.
     if (!updatedSeed.gd_date_time && updatedSeed.gd_date) {
-      let datePart = String(updatedSeed.gd_date).split('T')[0];
-      if (datePart.includes('-')) {
-        const parts = datePart.split('-');
-        if (parts.length === 3) {
-          datePart = `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
-        }
-      }
       const timePart = updatedSeed.gd_time || '00:00';
-      updatedSeed.gd_date_time = `${datePart} ${timePart.substring(0, 5)}`;
+      updatedSeed.gd_date_time = `${updatedSeed.gd_date} ${timePart.substring(0, 5)}`;
     }
     
     setValues(updatedSeed);
@@ -3824,8 +3711,8 @@ const renderActionTakenStep = () => {
       if (key.endsWith('_dob')) {
         const prefix = key.substring(0, key.lastIndexOf('_dob'));
         if (val) {
-          const dobDate = new Date(val);
-          if (!isNaN(dobDate.getTime())) {
+          const dobDate = parseDMY(val);
+          if (dobDate && !isNaN(dobDate.getTime())) {
             const birthYear = dobDate.getFullYear();
             const currentYear = new Date().getFullYear();
             next[`${prefix}_birth_year`] = birthYear;

@@ -1,4 +1,5 @@
 import * as compilationService from './compilation.service.js';
+import { toISO } from '../../utils/dateFormat.js';
 
 /**
  * GET /compilations
@@ -9,8 +10,8 @@ export const getCompilations = async (req, res, next) => {
     // Prefer JWT-bound district_id; fall back to query param for HQ/admin overrides
     const districtId = req.user?.district_id || req.user?.districtId || req.query.districtId;
     const { period, status } = req.query;
-
-    const compilations = await compilationService.getCompilations(districtId, period, status);
+    // compilations.period is a native DATE column; frontend sends dd/mm/yyyy.
+    const compilations = await compilationService.getCompilations(districtId, toISO(period) || period, status);
     res.status(200).json({ status: 'success', success: true, data: compilations });
   } catch (error) {
     next(error);
@@ -26,7 +27,7 @@ export const createCompilation = async (req, res, next) => {
     const userId = req.user?.id || req.user?.userId;
     // Resolve district from JWT first (authoritative), fall back to request body for admin overrides
     const districtId = req.user?.district_id || req.user?.districtId || req.body.district_id;
-    const period = req.body.period || req.body.date;
+    const period = toISO(req.body.period || req.body.date);
     const { fromDate, toDate } = req.body;
 
     if (!period) {
@@ -36,7 +37,7 @@ export const createCompilation = async (req, res, next) => {
       return res.status(400).json({ status: 'error', success: false, message: 'User is not bound to a district' });
     }
 
-    const compilation = await compilationService.createCompilation(districtId, period, userId, fromDate, toDate);
+    const compilation = await compilationService.createCompilation(districtId, period, userId, toISO(fromDate), toISO(toDate));
     res.status(201).json({ status: 'success', success: true, data: compilation });
   } catch (error) {
     // Return 400 for validation errors (no records, bad input), 500 for DB errors

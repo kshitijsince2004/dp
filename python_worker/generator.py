@@ -2,9 +2,10 @@ import json
 import os
 import pandas as pd
 import openpyxl
-from datetime import datetime
+from datetime import datetime, date
 from db import engine
 from sqlalchemy import text
+from formatters import fmt_date, parse_date
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), 'templates')
 
@@ -116,10 +117,12 @@ def query_records(definition, user_filters, engine):
         WHERE records.record_type = :record_type
     """
     
+    # date_from/date_to arrive as dd/mm/yyyy from the frontend; record_date is
+    # a native DATE column, so parse into real date objects before binding.
     params = {
         'record_type': record_type,
-        'date_from': user_filters.get('date_from', user_filters.get('from_date', '2020-01-01')),
-        'date_to': user_filters.get('date_to', user_filters.get('to_date', '2030-01-01'))
+        'date_from': parse_date(user_filters.get('date_from') or user_filters.get('from_date')) or date(2020, 1, 1),
+        'date_to': parse_date(user_filters.get('date_to') or user_filters.get('to_date')) or date(2030, 1, 1)
     }
     
     # Date filters
@@ -156,10 +159,14 @@ def query_records(definition, user_filters, engine):
 
     with engine.connect() as conn:
         df = pd.read_sql(text(sql), conn, params=params)
-        
+
+    # record_date is a native DATE column (comes back as Timestamp/date, not text)
+    if 'record_date' in df.columns:
+        df['record_date'] = df['record_date'].apply(fmt_date)
+
     # Load field registry metadata for header renames
     fields_meta = load_field_registry(field_keys, engine)
-    
+
     # Add Sr. No. column at the start
     if not df.empty:
         df.insert(0, 'Sr. No.', range(1, len(df) + 1))
@@ -366,8 +373,10 @@ def query_linked_records(definition, user_filters, engine):
         return f"({col}::jsonb)->>'{key}'"
 
     params = {
-        'date_from': user_filters.get('date_from', user_filters.get('from_date', '2020-01-01')),
-        'date_to':   user_filters.get('date_to',   user_filters.get('to_date',   '2030-01-01')),
+        # date_from/date_to arrive as dd/mm/yyyy from the frontend; record_date is a
+        # native DATE column so parse into real date objects before binding.
+        'date_from': parse_date(user_filters.get('date_from') or user_filters.get('from_date')) or date(2020, 1, 1),
+        'date_to':   parse_date(user_filters.get('date_to')   or user_filters.get('to_date'))   or date(2030, 1, 1),
         'link_code': link_code,
     }
 
@@ -631,8 +640,10 @@ from builder import build_workbook
 
 def _fetch_records(filters):
     """Query records + hierarchy join for daily-diary generation."""
-    date = filters.get('date')
-    date_to = filters.get('date_to') or filters.get('dateTo') or date
+    # date/date_to may arrive as dd/mm/yyyy or yyyy-mm-dd depending on caller;
+    # record_date is a native DATE column so parse into a real date object.
+    date = parse_date(filters.get('date'))
+    date_to = parse_date(filters.get('date_to') or filters.get('dateTo')) or date
     ps_id = filters.get('ps_id') or filters.get('psId')
     district_id = filters.get('district_id') or filters.get('districtId')
     sub_div_id = filters.get('sub_div_id') or filters.get('subDivId')

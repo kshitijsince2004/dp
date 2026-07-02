@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Search, Filter, ListFilter } from 'lucide-react';
 import { DatePicker, Input, Select } from 'antd';
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -32,10 +35,10 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
 
   const handleDateRangeChange = (dates) => {
     if (dates && dates.length === 2) {
-      onFilterChange({ 
-        ...filters, 
-        dateFrom: dates[0].format('YYYY-MM-DD'), 
-        dateTo: dates[1].format('YYYY-MM-DD') 
+      onFilterChange({
+        ...filters,
+        dateFrom: dates[0].format('DD/MM/YYYY'),
+        dateTo: dates[1].format('DD/MM/YYYY')
       });
     } else {
       onFilterChange({ ...filters, dateFrom: null, dateTo: null });
@@ -98,7 +101,7 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
       <div className="flex items-center gap-2 flex-grow sm:flex-grow-0">
         <RangePicker 
           onChange={handleDateRangeChange}
-          value={filters.dateFrom && filters.dateTo ? [dayjs(filters.dateFrom), dayjs(filters.dateTo)] : null}
+          value={filters.dateFrom && filters.dateTo ? [dayjs(filters.dateFrom, 'DD/MM/YYYY'), dayjs(filters.dateTo, 'DD/MM/YYYY')] : null}
           className="bg-slate-50 border-transparent hover:bg-slate-100 hover:border-[var(--accent-color)] transition-colors shadow-none rounded-lg w-full sm:w-auto font-medium"
           format="DD/MM/YYYY"
         />

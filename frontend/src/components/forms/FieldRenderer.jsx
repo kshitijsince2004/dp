@@ -9,6 +9,7 @@ import TimeField     from './TimeField.jsx';
 import SelectField   from './SelectField.jsx';
 import CheckboxField from './CheckboxField.jsx';
 import RadioField    from './RadioField.jsx';
+import DateInput     from '../ui/DateInput.jsx';
 import { DISTRICTS_AND_STATIONS } from '../../utils/policeData.js';
 
 const inputBase = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
@@ -64,29 +65,36 @@ export default function FieldRenderer({
     const gdDateTimeStr = values?.gd_date_time || '';
 
     return (
-      <div className={wrapperClassName || "flex items-center gap-2 relative w-full max-w-md"}>
-        <input
-          type="text"
-          disabled={readOnly}
-          value={gdNumber}
-          onChange={(e) => handleFieldChange('gd_no', e.target.value.replace(/\D/g, ''))}
-          className={numberInputClassName || "w-20 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"}
-          placeholder={numberPlaceholder || 'Number'}
-        />
-        <DateTimePickerPopup
-          value={gdDateTimeStr}
-          disabled={readOnly}
-          inputClassName={dateInputClassName}
-          onDone={(formatted, datePart, timePart) => {
-            handleFieldChange('gd_date_time', formatted);
-            if (onDateSync) {
-              onDateSync(datePart, timePart);
-            } else {
-              handleFieldChange('gd_date', datePart);
-              handleFieldChange('gd_time', timePart);
-            }
-          }}
-        />
+      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
+        <div className="flex-1 flex items-center min-w-0">
+          <input
+            type="text"
+            disabled={readOnly}
+            value={values?.gd_no || ''}
+            onChange={(e) => onChange('gd_no', e.target.value)}
+            placeholder={lang === 'hi' ? 'जीडी नंबर' : 'GD Number'}
+            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
+          />
+        </div>
+        <div className="w-full sm:w-[180px] flex items-center min-w-0">
+          <DateInput
+            id="field-gd_date"
+            disabled={readOnly}
+            value={values?.gd_date || ''}
+            onChange={(val) => onChange('gd_date', val)}
+            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+        <div className="w-full sm:w-[140px] flex items-center min-w-0">
+          <input
+            type="time"
+            disabled={readOnly}
+            value={values?.gd_time || ''}
+            onChange={(e) => onChange('gd_time', e.target.value)}
+            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+
       </div>
     );
   }
@@ -95,16 +103,26 @@ export default function FieldRenderer({
     const arrestDateTimeStr = values?.arrest_date_time || '';
 
     return (
-      <div className="flex items-center gap-2 relative w-full max-w-xs">
-        <DateTimePickerPopup
-          value={arrestDateTimeStr}
-          disabled={readOnly}
-          onDone={(formatted, datePart, timePart) => {
-            handleFieldChange('arrest_date_time', formatted);
-            handleFieldChange('arrest_date', datePart);
-            handleFieldChange('arrest_time', timePart);
-          }}
-        />
+      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
+        <div className="flex-1 flex items-center min-w-0">
+          <DateInput
+            id="field-arrest_date"
+            disabled={readOnly}
+            value={values?.arrest_date || ''}
+            onChange={(val) => onChange('arrest_date', val)}
+            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+        <div className="w-full sm:w-[220px] flex items-center min-w-0">
+          <input
+            type="time"
+            disabled={readOnly}
+            value={values?.arrest_time || ''}
+            onChange={(e) => onChange('arrest_time', e.target.value)}
+            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+
       </div>
     );
   }
@@ -114,24 +132,36 @@ export default function FieldRenderer({
     const firDateTimeStr = values?.fir_date_time || '';
 
     return (
-      <div className="flex items-center gap-2 relative w-full max-w-md">
-        <input
-          type="text"
-          disabled={readOnly}
-          value={firNumber}
-          onChange={(e) => handleFieldChange('fir_no', e.target.value)}
-          className="w-20 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"
-          placeholder="Number"
-        />
-        <DateTimePickerPopup
-          value={firDateTimeStr}
-          disabled={readOnly}
-          onDone={(formatted, datePart, timePart) => {
-            handleFieldChange('fir_date_time', formatted);
-            handleFieldChange('fir_date', datePart);
-            handleFieldChange('fir_time', timePart);
-          }}
-        />
+      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
+        <div className="flex-1 flex items-center min-w-0">
+          <input
+            type="text"
+            disabled={readOnly}
+            value={values?.fir_no || ''}
+            onChange={(e) => onChange('fir_no', e.target.value)}
+            placeholder={lang === 'hi' ? 'प्राथमिकी (FIR) संख्या' : 'FIR Number'}
+            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
+          />
+        </div>
+        <div className="w-full sm:w-[220px] flex items-center min-w-0">
+          <DateInput
+            id="field-fir_date"
+            disabled={readOnly}
+            value={values?.fir_date || ''}
+            onChange={(val) => onChange('fir_date', val)}
+            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+        <div className="w-full sm:w-[140px] flex items-center min-w-0">
+          <input
+            type="time"
+            disabled={readOnly}
+            value={values?.fir_time || ''}
+            onChange={(e) => onChange('fir_time', e.target.value)}
+            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+
       </div>
     );
   }
@@ -216,7 +246,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
   );
 }
 
-  if (key.endsWith('_nickname') || key.endsWith('_nick_name') || key.endsWith('_alias')) {
+  if (key.endsWith('_nickname') || key.endsWith('_nick_name') || key.endsWith('_alias') || key === 'nick_name') {
     return <NicknameChipsField disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} lang={lang} placeholder={placeholder} />;
   }
 

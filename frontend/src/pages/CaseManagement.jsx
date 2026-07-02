@@ -5,6 +5,8 @@ import { DISTRICTS_AND_STATIONS } from "../utils/policeData.js";
 import useAuthStore from "../store/authStore.js";
 import api from "../utils/api.js";
 import toast from "react-hot-toast";
+import DateInput from "../components/ui/DateInput.jsx";
+import { formatDMY } from "../utils/dateFormat.js";
 
 export default function CaseManagement() {
   const { onSubmitReport, addNotification } = useOutletContext();
@@ -14,7 +16,7 @@ export default function CaseManagement() {
     uid: "",
     localHead: "",
     firNumber: "",
-    firDate: new Date().toISOString().split('T')[0],
+    firDate: formatDMY(new Date()),
     underSection: "",
     caseType: "",
     sidNumber: "",
@@ -79,7 +81,7 @@ export default function CaseManagement() {
       uid: "UID-2026/DL-4921",
       localHead: "Larceny",
       firNumber: "FIR-220/2026",
-      firDate: "2026-06-10",
+      firDate: "10/06/2026",
       underSection: "Section 379 IPC (Theft)",
       caseType: "Property Theft",
       sidNumber: "SID-889021",
@@ -87,7 +89,7 @@ export default function CaseManagement() {
       district: "New Delhi District (NDD)",
       policeStation: "Parliament Street",
       beatNumber: "Beat No. 4",
-      occurrenceDate: "2026-06-09",
+      occurrenceDate: "09/06/2026",
       occurrenceTime: "14:30",
       occurrencePlace: "Parking Lot, Patel Chowk Metro Station",
       briefFacts: "The complainant reported that his red Honda Activa scooter (DL 3S CY 8821) was parked at the Patel Chowk Metro parking at 14:00 hours. When he returned at 16:30 hours, the scooter was missing. CCTV footage shows two suspects carrying lock picks around the parking bay.",
@@ -105,7 +107,7 @@ export default function CaseManagement() {
       ioName: "Inspector Ravindra Singh",
       ioPisNumber: "28080214",
       ioMobile: "9812345678",
-      dateOfArrest: "2026-06-12"
+      dateOfArrest: "12/06/2026"
     });
     setErrors({});
     addNotification("Mock data loaded! Proceed to verify or submit.", "info");
@@ -188,7 +190,7 @@ export default function CaseManagement() {
     try {
       const res = await api.post('/v1/records', {
         record_type: 'CASE',
-        record_date: formData.firDate || new Date().toISOString().split('T')[0],
+        record_date: formData.firDate || formatDMY(new Date()),
         data: formData
       });
       const uid = res.data.data?.uid;
@@ -340,14 +342,11 @@ export default function CaseManagement() {
 
               <div className="form-group">
                 <label className="form-label required" htmlFor="firDate">FIR Date</label>
-                <input
-                  type="date"
+                <DateInput
                   id="firDate"
-                  name="firDate"
-                  className={`form-control ${errors.firDate ? "border-red-500" : ""}`}
+                  inputClassName={`form-control ${errors.firDate ? "border-red-500" : ""}`}
                   value={formData.firDate}
-                  onChange={handleInputChange}
-                  required
+                  onChange={(val) => handleInputChange({ target: { name: 'firDate', value: val } })}
                 />
                 {errors.firDate && <span className="text-red-500 text-xs mt-1">{errors.firDate}</span>}
               </div>
@@ -481,13 +480,11 @@ export default function CaseManagement() {
 
               <div className="form-group">
                 <label className="form-label" htmlFor="occurrenceDate">Occurrence Date</label>
-                <input
-                  type="date"
+                <DateInput
                   id="occurrenceDate"
-                  name="occurrenceDate"
-                  className="form-control"
+                  inputClassName="form-control"
                   value={formData.occurrenceDate}
-                  onChange={handleInputChange}
+                  onChange={(val) => handleInputChange({ target: { name: 'occurrenceDate', value: val } })}
                 />
               </div>
 
@@ -772,13 +769,11 @@ export default function CaseManagement() {
 
               <div className="form-group">
                 <label className="form-label" htmlFor="dateOfArrest">Date Of Arrest</label>
-                <input
-                  type="date"
+                <DateInput
                   id="dateOfArrest"
-                  name="dateOfArrest"
-                  className="form-control"
+                  inputClassName="form-control"
                   value={formData.dateOfArrest}
-                  onChange={handleInputChange}
+                  onChange={(val) => handleInputChange({ target: { name: 'dateOfArrest', value: val } })}
                 />
               </div>
             </div>

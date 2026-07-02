@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import useAuthStore from "../../store/authStore.js";
 import api from "../../utils/api.js";
 import { Spinner } from "../../components/ui/Spinner.jsx";
+import { parseDMY } from "../../utils/dateFormat.js";
 
 export default function StationDetailView() {
   const { t } = useTranslation();
@@ -111,15 +112,15 @@ export default function StationDetailView() {
 
     // Sort logs descending
     const sortByDate = (arr) => {
-      return [...arr].sort((a, b) => new Date(b.created_at || b.record_date) - new Date(a.created_at || a.record_date)).slice(0, 5);
+      return [...arr].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
     };
 
-    // Group trends by date
+    // Group trends by date (record_date is dd/mm/yyyy)
     const dateMap = {};
     stationRecords.forEach((r) => {
-      const dateStr = r.record_date; // YYYY-MM-DD
+      const dateStr = r.record_date; // DD/MM/YYYY
       if (!dateMap[dateStr]) {
-        dateMap[dateStr] = { date: dateStr, cases: 0, pcr: 0, arrests: 0 };
+        dateMap[dateStr] = { date: dateStr, sortKey: parseDMY(dateStr), cases: 0, pcr: 0, arrests: 0 };
       }
       const type = (r.record_type || "").toUpperCase();
       if (type === "CASE" || type === "CASES") dateMap[dateStr].cases++;
@@ -128,11 +129,11 @@ export default function StationDetailView() {
     });
 
     const trendData = Object.values(dateMap)
-      .sort((a, b) => a.date.localeCompare(b.date))
+      .sort((a, b) => (a.sortKey || 0) - (b.sortKey || 0))
       .slice(-7)
-      .map(d => ({
+      .map(({ sortKey, ...d }) => ({
         ...d,
-        date: new Date(d.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+        date: sortKey ? sortKey.toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : d.date
       }));
 
     return {

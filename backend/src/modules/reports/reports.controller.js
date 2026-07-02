@@ -6,6 +6,7 @@ import puppeteer from 'puppeteer';
 import ExcelJS from 'exceljs';
 import { publish } from '../../events/eventBus.js';
 import { logger } from '../../utils/logger.js';
+import { toISO, toDMY } from '../../utils/dateFormat.js';
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -147,8 +148,8 @@ const getRecordsForReport = async (templateId, filters) => {
 
   const psId = filters.psId || filters.station_id;
   const districtId = filters.districtId || filters.district_id;
-  const from = filters.from || filters.dateFrom || filters.from_date;
-  const to = filters.to || filters.dateTo || filters.to_date;
+  const from = toISO(filters.from || filters.dateFrom || filters.from_date);
+  const to = toISO(filters.to || filters.dateTo || filters.to_date);
 
   if (psId) query = query.where('records.ps_id', psId);
   if (districtId) query = query.where('records.district_id', districtId);
@@ -250,7 +251,8 @@ async function generateExcelFile(template_id, records, parsedFilters, psName, fi
   for (const r of records) {
     const d = r.data || r;
     const rowData = rowKeys.map(key => {
-      if (key === 'record_date') return r.record_date || '';
+      if (key === 'record_date') return toDMY(r.record_date) || '';
+      if (key === 'period') return toDMY(r.period) || '';
       if (key === 'record_type') return r.record_type || '';
       if (key === 'current_status') return r.current_status || '';
       if (key === 'current_level') return r.current_level || '';
@@ -548,7 +550,7 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
           const d = r.data || {};
           tableHtml += `<tr>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${d.uid || r.id}</td>
-            <td style="border: 1px solid #cbd5e0; padding: 8px;">${r.record_date || ''}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px;">${toDMY(r.record_date) || ''}</td>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${d.arrested_name || d.name || ''}</td>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${d.crime_head || d.section_offence || d.offence || ''}</td>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${d.arresting_officer || ''}</td>
@@ -571,7 +573,7 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
           const d = r.data || {};
           tableHtml += `<tr>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${d.uid || r.id}</td>
-            <td style="border: 1px solid #cbd5e0; padding: 8px;">${r.record_date || ''}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px;">${toDMY(r.record_date) || ''}</td>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${d.caller_phone || d.pcr_gd_no || ''}</td>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${d.occurrence_place || d.location || ''}</td>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${d.pcr_head || d.call_type || ''}</td>
@@ -617,7 +619,7 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
           tableHtml += `<tr>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${d.uid || r.id}</td>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${r.record_type || ''}</td>
-            <td style="border: 1px solid #cbd5e0; padding: 8px;">${r.record_date || ''}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px;">${toDMY(r.record_date) || ''}</td>
             <td style="border: 1px solid #cbd5e0; padding: 8px;">${r.current_status || ''}</td>
           </tr>`;
         }
@@ -656,24 +658,24 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
       csvString = 'UID,Record Date,Arrestee Name,Section/Offence,Arresting Officer\n';
       for (const r of records) {
         const d = r.data || {};
-        csvString += `"${d.uid || r.id}","${r.record_date || ''}","${d.arrested_name || d.name || ''}","${d.crime_head || d.section_offence || d.offence || ''}","${d.arresting_officer || ''}"\n`;
+        csvString += `"${d.uid || r.id}","${toDMY(r.record_date) || ''}","${d.arrested_name || d.name || ''}","${d.crime_head || d.section_offence || d.offence || ''}","${d.arresting_officer || ''}"\n`;
       }
     } else if (template_id === 'pcr-call-log') {
       csvString = 'UID,Record Date,Caller Number,Location,Call Type,Status\n';
       for (const r of records) {
         const d = r.data || {};
-        csvString += `"${d.uid || r.id}","${r.record_date || ''}","${d.caller_phone || d.pcr_gd_no || ''}","${d.occurrence_place || d.location || ''}","${d.pcr_head || d.call_type || ''}","${r.current_status || ''}"\n`;
+        csvString += `"${d.uid || r.id}","${toDMY(r.record_date) || ''}","${d.caller_phone || d.pcr_gd_no || ''}","${d.occurrence_place || d.location || ''}","${d.pcr_head || d.call_type || ''}","${r.current_status || ''}"\n`;
       }
     } else if (template_id === 'cases-register') {
       csvString = 'UID,FIR No,FIR Date,Complainant Name,Crime Head,Brief Facts\n';
       for (const r of records) {
         const d = r.data || {};
-        csvString += `"${d.uid || r.id}","${d.fir_no || ''}","${d.fir_date || r.record_date || ''}","${d.complainant_name || ''}","${d.case_head || d.crime_head || ''}","${(d.brief_facts || '').replace(/"/g, '""')}"\n`;
+        csvString += `"${d.uid || r.id}","${d.fir_no || ''}","${d.fir_date || toDMY(r.record_date) || ''}","${d.complainant_name || ''}","${d.case_head || d.crime_head || ''}","${(d.brief_facts || '').replace(/"/g, '""')}"\n`;
       }
     } else {
       csvString = 'ID,Record Type,Record Date,Status,Level\n';
       for (const r of records) {
-        csvString += `"${r.id}","${r.record_type}","${r.record_date}","${r.current_status}","${r.current_level}"\n`;
+        csvString += `"${r.id}","${r.record_type}","${toDMY(r.record_date) || ''}","${r.current_status}","${r.current_level}"\n`;
       }
     }
 
@@ -681,7 +683,7 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
 
   } else if (fmt === 'EXCEL' || fmt === 'XLSX') {
     if (template_id === 'daily-status') {
-      const date = parsedFilters.from || parsedFilters.dateFrom || new Date().toISOString().split('T')[0];
+      const date = toISO(parsedFilters.from || parsedFilters.dateFrom) || new Date().toISOString().split('T')[0];
       const templatePath = path.resolve(__dirname, '../../../../Master/Daily_Diary_ProperHeaders.xlsx');
       const scriptPath = path.resolve(__dirname, '../../../../Master/files/export_daily_report.py');
       
@@ -817,16 +819,18 @@ export const downloadReport = async (req, res) => {
       filterObj = JSON.parse(job.filters || '{}');
     } catch (e) {}
 
+    // Strip any date separator (dd/mm/yyyy or legacy yyyy-mm-dd) for filename safety.
+    const stripSep = (s) => String(s).replace(/[/\-.]/g, '');
     let dateStr = '';
     if (filterObj.date) {
-      dateStr = `_${String(filterObj.date).replace(/-/g, '')}`;
+      dateStr = `_${stripSep(filterObj.date)}`;
     } else if (filterObj.dateFrom) {
-      const from = String(filterObj.dateFrom).replace(/-/g, '');
-      const to = filterObj.dateTo ? `_to_${String(filterObj.dateTo).replace(/-/g, '')}` : '';
+      const from = stripSep(filterObj.dateFrom);
+      const to = filterObj.dateTo ? `_to_${stripSep(filterObj.dateTo)}` : '';
       dateStr = `_${from}${to}`;
     } else if (filterObj.fromDate) {
-      const from = String(filterObj.fromDate).replace(/-/g, '');
-      const to = filterObj.toDate ? `_to_${String(filterObj.toDate).replace(/-/g, '')}` : '';
+      const from = stripSep(filterObj.fromDate);
+      const to = filterObj.toDate ? `_to_${stripSep(filterObj.toDate)}` : '';
       dateStr = `_${from}${to}`;
     }
 

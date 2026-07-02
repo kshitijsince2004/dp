@@ -3,6 +3,9 @@ import { Form, Input, InputNumber, DatePicker, Select, Switch, Button, Card, Spi
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 const { Option } = Select;
 
@@ -43,11 +46,15 @@ export const DynamicForm = ({ recordType, initialValues, onSubmit, onCancel, loa
         if (initialValues) {
           const formattedValues = { ...initialValues };
           
-          // Dates in Ant Design Form need to be dayjs objects
+          // Dates in Ant Design Form need to be dayjs objects. Values arrive
+          // as dd/mm/yyyy (DATE) or 'dd/mm/yyyy HH:mm' (DATETIME) — parse
+          // with an explicit format, since bare dayjs(str) misparses slashes.
           res.data.data.sections.forEach(sec => {
             sec.fields.forEach(field => {
-              if ((field.field_type === 'DATE' || field.field_type === 'DATETIME') && initialValues[field.field_key]) {
-                formattedValues[field.field_key] = dayjs(initialValues[field.field_key]);
+              if (field.field_type === 'DATE' && initialValues[field.field_key]) {
+                formattedValues[field.field_key] = dayjs(initialValues[field.field_key], 'DD/MM/YYYY');
+              } else if (field.field_type === 'DATETIME' && initialValues[field.field_key]) {
+                formattedValues[field.field_key] = dayjs(initialValues[field.field_key], 'DD/MM/YYYY HH:mm');
               }
             });
           });
@@ -67,15 +74,15 @@ export const DynamicForm = ({ recordType, initialValues, onSubmit, onCancel, loa
   }, [recordType, initialValues, form, t]);
 
   const handleFinish = (values) => {
-    // Format values back before submitting (e.g. DatePicker to YYYY-MM-DD string)
+    // Format values back before submitting (DatePicker -> dd/mm/yyyy string)
     const formattedValues = { ...values };
     sections.forEach(sec => {
       sec.fields.forEach(field => {
         if (formattedValues[field.field_key]) {
           if (field.field_type === 'DATE') {
-            formattedValues[field.field_key] = dayjs(formattedValues[field.field_key]).format('YYYY-MM-DD');
+            formattedValues[field.field_key] = dayjs(formattedValues[field.field_key]).format('DD/MM/YYYY');
           } else if (field.field_type === 'DATETIME') {
-            formattedValues[field.field_key] = dayjs(formattedValues[field.field_key]).toISOString();
+            formattedValues[field.field_key] = dayjs(formattedValues[field.field_key]).format('DD/MM/YYYY HH:mm');
           }
         }
       });
@@ -104,9 +111,9 @@ export const DynamicForm = ({ recordType, initialValues, onSubmit, onCancel, loa
       case 'NUMBER':
         return <InputNumber style={{ width: '100%' }} placeholder={label} />;
       case 'DATE':
-        return <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />;
+        return <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />;
       case 'DATETIME':
-        return <DatePicker style={{ width: '100%' }} showTime format="YYYY-MM-DD HH:mm:ss" />;
+        return <DatePicker style={{ width: '100%' }} showTime={{ format: 'HH:mm' }} format="DD/MM/YYYY HH:mm" />;
       case 'SELECT':
       case 'DROPDOWN':
         const options = field.options || [];

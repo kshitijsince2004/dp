@@ -18,6 +18,7 @@ import {
   filterFieldsForRole,
 } from './reportableFields.config.js';
 import { resolveQueryMode, wh, whTable } from '../warehouse/warehouse.db.js';
+import { toISO } from '../../utils/dateFormat.js';
 
 // Map logical table names to warehouse fact tables
 const FACT_TABLE_MAP = {
@@ -48,14 +49,35 @@ function jsonFieldExpr(fieldKey) {
 }
 
 /**
+ * records.data stores date fields as literal dd/mm/yyyy text. Range/relative
+ * -date operators need a real comparable date, not a lexicographic string
+ * compare, so parse the extracted text before comparing.
+ */
+function jsonDateFieldExpr(fieldKey) {
+  if (isPostgres()) {
+    return `to_date(NULLIF(CAST(records.data AS jsonb)->>'${fieldKey}', ''), 'DD/MM/YYYY')`;
+  }
+  const extract = `json_extract(records.data, '$.${fieldKey}')`;
+  return `(substr(${extract}, 7, 4) || '-' || substr(${extract}, 4, 2) || '-' || substr(${extract}, 1, 2))`;
+}
+
+/**
  * Resolve a field to its SQL expression or column reference (for LIVE queries).
  */
 function resolveFieldExpr(fieldDef) {
   if (fieldDef.is_db_col) {
     return fieldDef.db_col; // e.g. 'records.record_date'
   }
+  if (fieldDef.data_type === 'date') {
+    return jsonDateFieldExpr(fieldDef.key);
+  }
   return jsonFieldExpr(fieldDef.key);
 }
+
+// Operators whose value is compared against a date field and needs
+// converting from dd/mm/yyyy (frontend) to ISO before hitting the DB.
+const DATE_VALUE_OPS = new Set(['BETWEEN', 'BEFORE', 'AFTER']);
+const toISOMaybe = (val) => (Array.isArray(val) ? val.map((v) => toISO(v) || v) : (toISO(val) || val));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Condition applicator
@@ -142,9 +164,12 @@ function applyFilterSpec(builder, spec, primaryTable, validatedFieldMap) {
 
         const expr = resolveFieldExpr(fieldDef);
         const isRaw = !fieldDef.is_db_col;
+        const v = fieldDef.data_type === 'date' && DATE_VALUE_OPS.has(String(operator).toUpperCase())
+          ? toISOMaybe(value)
+          : value;
 
         inner[applyFn](function () {
-          applyCondition(this, expr, operator, value, isRaw);
+          applyCondition(this, expr, operator, v, isRaw);
         });
       }
     });
@@ -175,8 +200,11 @@ function applyFilterSpecWarehouse(builder, spec, primaryTable, validatedFieldMap
 
         // In warehouse, all query columns are real columns (no JSON extracts needed)
         const expr = `${factTableAlias}.${fieldDef.wh_col}`;
+        const v = fieldDef.data_type === 'date' && DATE_VALUE_OPS.has(String(operator).toUpperCase())
+          ? toISOMaybe(value)
+          : value;
         inner[applyFn](function () {
-          applyCondition(this, expr, operator, value, false);
+          applyCondition(this, expr, operator, v, false);
         });
       }
     });
