@@ -25,6 +25,7 @@ const MissingPersonEntry = lazy(() => import('../pages/MissingPersonEntry.jsx'))
 // ── NEW PHAROS Pages (Dev 3 Sprint Track) ──────────────────────────────────────
 const MyRecords         = lazy(() => import('../pages/hc/MyRecords.jsx'));
 const NewRecord         = lazy(() => import('../pages/hc/NewRecord.jsx'));
+const PSDashboard       = lazy(() => import('../pages/hc/Dashboard.jsx'));
 const Queue             = lazy(() => import('../pages/sho/Queue.jsx'));
 const RecordDetail      = lazy(() => import('../pages/sho/RecordDetail.jsx'));
 const DistrictDashboard = lazy(() => import('../pages/district/Dashboard.jsx'));
@@ -106,6 +107,7 @@ export const AppRouter = () => (
             <Route path="/dashboard/missing-persons" element={<MissingPersonEntry />} />
 
             {/* NEW PHAROS Pages (Dev 3 Sprint Track) */}
+            <Route path="/ps/dashboard" element={<PSDashboard />} />
             <Route path="/records" element={<MyRecords />} />
             <Route path="/records/new/:type" element={<NewRecord />} />
             <Route path="/records/:id" element={<RecordDetail />} />

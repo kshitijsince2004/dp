@@ -1,5 +1,6 @@
 import React from 'react';
 
+import DateTimePickerPopup from './DateTimePickerPopup.jsx';
 import TextField     from './TextField.jsx';
 import TextAreaField from './TextAreaField.jsx';
 import NumberField   from './NumberField.jsx';
@@ -12,7 +13,7 @@ import { DISTRICTS_AND_STATIONS } from '../../utils/policeData.js';
 
 const inputBase = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
 
-export default function FieldRenderer({ field, value, onChange, readOnly, hasError, lang, values }) {
+export default function FieldRenderer({ field, value, onChange, readOnly, hasError, lang, values, handleChange }) {
   if (!field) return null;
   const key     = field.field_key;
   const type    = (field.field_type || 'TEXT').toUpperCase();
@@ -39,105 +40,82 @@ export default function FieldRenderer({ field, value, onChange, readOnly, hasErr
     }
   }
 
-  const handleChange = (val) => onChange(key, val);
+  const handleFieldChange = (k, v) => {
+    if (handleChange) {
+      handleChange(k, v);
+    } else {
+      onChange(k, v);
+    }
+  };
 
   if (key === 'gd_no') {
-    const containerBg = readOnly ? 'bg-slate-50' : 'bg-white';
-    const disabledClass = readOnly ? 'cursor-not-allowed text-slate-400' : 'text-slate-800';
+    const gdNumber = values?.gd_no || '';
+    const gdDateTimeStr = values?.gd_date_time || '';
+
     return (
-      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
-          <input
-            type="text"
-            disabled={readOnly}
-            value={values?.gd_no || ''}
-            onChange={(e) => onChange('gd_no', e.target.value)}
-            placeholder={lang === 'hi' ? 'जीडी नंबर' : 'GD Number'}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[180px] flex items-center min-w-0">
-          <input
-            type="date"
-            disabled={readOnly}
-            value={values?.gd_date || ''}
-            onChange={(e) => onChange('gd_date', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[140px] flex items-center min-w-0">
-          <input
-            type="time"
-            disabled={readOnly}
-            value={values?.gd_time || ''}
-            onChange={(e) => onChange('gd_time', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
+      <div className="flex items-center gap-2 relative w-full max-w-md">
+        <input
+          type="text"
+          disabled={readOnly}
+          value={gdNumber}
+          onChange={(e) => handleFieldChange('gd_no', e.target.value)}
+          className="w-20 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"
+          placeholder="Number"
+        />
+        <DateTimePickerPopup
+          value={gdDateTimeStr}
+          disabled={readOnly}
+          onDone={(formatted, datePart, timePart) => {
+            handleFieldChange('gd_date_time', formatted);
+            handleFieldChange('gd_date', datePart);
+            handleFieldChange('gd_time', timePart);
+          }}
+        />
       </div>
     );
   }
 
   if (key === 'arrest_date') {
-    const containerBg = readOnly ? 'bg-slate-50' : 'bg-white';
-    const disabledClass = readOnly ? 'cursor-not-allowed text-slate-400' : 'text-slate-800';
+    const arrestDateTimeStr = values?.arrest_date_time || '';
+
     return (
-      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
-          <input
-            type="date"
-            disabled={readOnly}
-            value={values?.arrest_date || ''}
-            onChange={(e) => onChange('arrest_date', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[220px] flex items-center min-w-0">
-          <input
-            type="time"
-            disabled={readOnly}
-            value={values?.arrest_time || ''}
-            onChange={(e) => onChange('arrest_time', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
+      <div className="flex items-center gap-2 relative w-full max-w-xs">
+        <DateTimePickerPopup
+          value={arrestDateTimeStr}
+          disabled={readOnly}
+          onDone={(formatted, datePart, timePart) => {
+            handleFieldChange('arrest_date_time', formatted);
+            handleFieldChange('arrest_date', datePart);
+            handleFieldChange('arrest_time', timePart);
+          }}
+        />
       </div>
     );
   }
 
   if (key === 'fir_no') {
-    const containerBg = readOnly ? 'bg-slate-50' : 'bg-white';
-    const disabledClass = readOnly ? 'cursor-not-allowed text-slate-400' : 'text-slate-800';
+    const firNumber = values?.fir_no || '';
+    const firDateTimeStr = values?.fir_date_time || '';
+
     return (
-      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
-          <input
-            type="text"
-            disabled={readOnly}
-            value={values?.fir_no || ''}
-            onChange={(e) => onChange('fir_no', e.target.value)}
-            placeholder={lang === 'hi' ? 'प्राथमिकी (FIR) संख्या' : 'FIR Number'}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[220px] flex items-center min-w-0">
-          <input
-            type="date"
-            disabled={readOnly}
-            value={values?.fir_date || ''}
-            onChange={(e) => onChange('fir_date', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[140px] flex items-center min-w-0">
-          <input
-            type="time"
-            disabled={readOnly}
-            value={values?.fir_time || ''}
-            onChange={(e) => onChange('fir_time', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
+      <div className="flex items-center gap-2 relative w-full max-w-md">
+        <input
+          type="text"
+          disabled={readOnly}
+          value={firNumber}
+          onChange={(e) => handleFieldChange('fir_no', e.target.value)}
+          className="w-20 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"
+          placeholder="Number"
+        />
+        <DateTimePickerPopup
+          value={firDateTimeStr}
+          disabled={readOnly}
+          onDone={(formatted, datePart, timePart) => {
+            handleFieldChange('fir_date_time', formatted);
+            handleFieldChange('fir_date', datePart);
+            handleFieldChange('fir_time', timePart);
+          }}
+        />
       </div>
     );
   }

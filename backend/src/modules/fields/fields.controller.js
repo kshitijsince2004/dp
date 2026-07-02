@@ -98,6 +98,7 @@ function normalizeRecordType(t) {
 // ── GET /fields/form/:record_type ─────────────────────────────────────────────
 export const getFieldsForForm = async (req, res) => {
   const { record_type } = req.params;
+  const caseType = req.query.caseType || req.query.case_type || null;
   const district_id = req.user.district_id || null;
 
   const normalizedType = normalizeRecordType(record_type);
@@ -316,56 +317,313 @@ export const getFieldsForForm = async (req, res) => {
     // Re-sort to respect overridden sort_orders
     filteredFields.sort((a, b) => a.sort_order - b.sort_order);
 
-    // Group fields: repeater fields by repeater_entity, flat fields by section.
-    // Order is preserved by first-occurrence (fields are already sorted by sort_order).
-    const allSectionKeys = [];
-    const sectionsMap = new Map();
-    const repeaterMap = new Map();
+    let sections = [];
 
-    for (const f of filteredFields) {
-      if (f.repeater_entity) {
-        const key = f.repeater_entity;
-        if (!repeaterMap.has(key)) {
-          repeaterMap.set(key, { fields: [] });
-          allSectionKeys.push({ key, type: 'repeater' });
-        }
-        repeaterMap.get(key).fields.push(f);
-      } else {
-        const secKey = f.section;
-        if (!sectionsMap.has(secKey)) {
-          sectionsMap.set(secKey, { fields: [], dbLabelEn: f.section_label_en, dbLabelHi: f.section_label_hi });
-          allSectionKeys.push({ key: secKey, type: 'flat' });
-        }
-        sectionsMap.get(secKey).fields.push(f);
-      }
-    }
-
-    const sections = allSectionKeys.map(({ key, type }) => {
-      if (type === 'flat') {
-        const { fields, dbLabelEn, dbLabelHi } = sectionsMap.get(key);
-        const hardcoded = SECTION_TITLES[key];
-        return {
-          section: key,
-          title_en: dbLabelEn || hardcoded?.en || toTitleCase(key),
-          title_hi: dbLabelHi || hardcoded?.hi || toTitleCase(key),
+    if (normalizedType === 'CASE') {
+      sections = [
+        {
+          section: 'acts_and_sections',
+          title_en: 'Acts & Sections',
+          title_hi: 'अधिनियम और धाराएं',
           is_repeater: false,
-          fields,
-        };
-      } else {
-        const { fields } = repeaterMap.get(key);
-        const titleInfo = REPEATER_SECTION_TITLES[key] || { en: key, hi: key };
-        const isPerson = key.startsWith('PERSON_');
-        return {
-          section: key.toLowerCase().replace(/_/g, '-'),
-          title_en: titleInfo.en,
-          title_hi: titleInfo.hi,
+          fields: filteredFields.filter(f =>
+            ['general_info', 'incident_details', 'offence_info'].includes(f.section) &&
+            !['occurrence_place', 'brief_facts', 'local_head'].includes(f.field_key) &&
+            !f.repeater_entity
+          )
+        },
+        {
+          section: 'occurrence_info',
+          title_en: 'Occurrence',
+          title_hi: 'घटना',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'occurrence_info' && !f.repeater_entity)
+        },
+        {
+          section: 'complainant_info',
+          title_en: 'Complainant',
+          title_hi: 'शिकायतकर्ता',
+          is_repeater: false,
+          sub_tabs: [
+            {
+              id: 'personal',
+              title_en: 'Personal Information',
+              title_hi: 'व्यक्तिगत जानकारी',
+              fields: filteredFields.filter(f => ['complainant_personal_info', 'complainant_accused_info'].includes(f.section) && !f.repeater_entity)
+            },
+            {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.section === 'complainant_address' && !f.repeater_entity)
+            }
+          ]
+        },
+        {
+          section: 'fir_contents',
+          title_en: 'FIR Contents',
+          title_hi: 'प्राथमिकी विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.field_key === 'brief_facts')
+        },
+        {
+          section: 'victim_info',
+          title_en: 'Victim Information',
+          title_hi: 'पीड़ित का विवरण',
           is_repeater: true,
-          entity_type: isPerson ? 'person' : 'property',
-          person_type: isPerson ? key.replace('PERSON_', '') : null,
-          fields,
-        };
+          entity_type: 'person',
+          person_type: 'PERSON_VICTIM',
+          sub_tabs: [
+            {
+              id: 'personal',
+              title_en: 'Personal Information',
+              title_hi: 'व्यक्तिगत जानकारी',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_VICTIM' && f.section === 'victim_personal_info')
+            },
+            {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_VICTIM' && f.section === 'victim_address')
+            }
+          ]
+        },
+        {
+          section: 'accused_info',
+          title_en: 'Accused',
+          title_hi: 'आरोपी',
+          is_repeater: true,
+          entity_type: 'person',
+          person_type: 'PERSON_ACCUSED',
+          sub_tabs: [
+            {
+              id: 'personal',
+              title_en: 'Personal Information',
+              title_hi: 'व्यक्तिगत जानकारी',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ACCUSED' && f.section === 'accused_personal_info')
+            },
+            {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ACCUSED' && f.section === 'accused_address')
+            }
+          ]
+        },
+        {
+          section: 'property_details',
+          title_en: 'Property of Interest',
+          title_hi: 'संबद्ध संपत्ति',
+          is_repeater: true,
+          entity_type: 'property',
+          fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')
+        },
+        {
+          section: 'action_taken',
+          title_en: 'Action Taken',
+          title_hi: 'की गई कार्रवाई',
+          is_repeater: false,
+          fields: filteredFields.filter(f => ['investigation_officer', 'investigation_details', 'action_taken'].includes(f.section) && !f.repeater_entity)
+        }
+      ];
+    } else if (normalizedType === 'ARREST') {
+      const isAgainstFir = caseType === 'against_fir';
+      if (isAgainstFir) {
+        sections.push({
+          section: 'select_fir',
+          title_en: 'Select FIR',
+          title_hi: 'प्राथमिकी (FIR) चुनें',
+          is_repeater: false,
+          is_virtual: true,
+          fields: [
+            {
+              field_key: 'selected_fir',
+              field_type: 'SELECT',
+              label_en: 'Select FIR Number',
+              label_hi: 'प्राथमिकी (FIR) संख्या चुनें',
+              validation_rules: { required: true },
+              options: []
+            }
+          ]
+        });
       }
-    });
+      sections.push(
+        {
+          section: 'general_info',
+          title_en: 'General Information',
+          title_hi: 'सामान्य जानकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => ['general_info', 'offence_info', 'incident_details'].includes(f.section) && !f.repeater_entity)
+        },
+        {
+          section: 'arrested_info',
+          title_en: 'Arrested',
+          title_hi: 'गिरफ्तार व्यक्ति',
+          is_repeater: true,
+          entity_type: 'person',
+          person_type: 'ARRESTED',
+          sub_tabs: [
+            {
+              id: 'arrest_details',
+              title_en: 'Arrest Details',
+              title_hi: 'गिरफ्तारी का विवरण',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrest_details')
+            },
+            {
+              id: 'person_particulars',
+              title_en: 'Person Particulars',
+              title_hi: 'विशेषताएं',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrested_personal_info')
+            },
+            {
+              id: 'particular_details',
+              title_en: 'Particular Details',
+              title_hi: 'विशेष विवरण',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrestee_info')
+            },
+            {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrested_address')
+            }
+          ]
+        },
+        {
+          section: 'custody_status',
+          title_en: 'Custody Status',
+          title_hi: 'हिरासत की स्थिति',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'custody_status' && !f.repeater_entity)
+        },
+        {
+          section: 'property_details',
+          title_en: 'Particulars',
+          title_hi: 'विवरण',
+          is_repeater: true,
+          entity_type: 'property',
+          fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')
+        },
+        {
+          section: 'intimation_details',
+          title_en: 'Intimation Details',
+          title_hi: 'सूचना का विवरण',
+          is_repeater: true,
+          entity_type: 'person',
+          person_type: 'INTIMATED',
+          sub_tabs: [
+            {
+              id: 'personal',
+              title_en: 'Personal Information',
+              title_hi: 'व्यक्तिगत जानकारी',
+              fields: filteredFields.filter(f => f.section === 'intimation_details')
+            },
+            {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.section === 'intimation_address')
+            }
+          ]
+        },
+        {
+          section: 'procedure_slips',
+          title_en: 'Procedural Slips',
+          title_hi: 'प्रक्रियात्मक पर्ची',
+          is_repeater: false,
+          fields: filteredFields.filter(f => ['procedure_slips', 'procedural_slips'].includes(f.section) && !f.repeater_entity)
+        },
+        {
+          section: 'investigation_officer',
+          title_en: 'Investigating Officer',
+          title_hi: 'जांच अधिकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
+        }
+      );
+    } else if (normalizedType === 'UIDB') {
+      sections = [
+        {
+          section: 'general_info',
+          title_en: 'General Information',
+          title_hi: 'सामान्य जानकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => ['general_info', 'incident_details'].includes(f.section) && !f.repeater_entity)
+        },
+        {
+          section: 'corpse_desc',
+          title_en: 'UIDB Details',
+          title_hi: 'यूआईडीबी विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'corpse_desc' && !f.repeater_entity)
+        },
+        {
+          section: 'inquest_details',
+          title_en: 'Inquest Details',
+          title_hi: 'पूछताछ विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'inquest_details' && !f.repeater_entity)
+        },
+        {
+          section: 'investigation_officer',
+          title_en: 'Investigating Officer',
+          title_hi: 'जांच अधिकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
+        }
+      ];
+    } else {
+      // Group fields: repeater fields by repeater_entity, flat fields by section.
+      // Order is preserved by first-occurrence (fields are already sorted by sort_order).
+      const allSectionKeys = [];
+      const sectionsMap = new Map();
+      const repeaterMap = new Map();
+
+      for (const f of filteredFields) {
+        if (f.repeater_entity) {
+          const key = f.repeater_entity;
+          if (!repeaterMap.has(key)) {
+            repeaterMap.set(key, { fields: [] });
+            allSectionKeys.push({ key, type: 'repeater' });
+          }
+          repeaterMap.get(key).fields.push(f);
+        } else {
+          const secKey = f.section;
+          if (!sectionsMap.has(secKey)) {
+            sectionsMap.set(secKey, { fields: [], dbLabelEn: f.section_label_en, dbLabelHi: f.section_label_hi });
+            allSectionKeys.push({ key: secKey, type: 'flat' });
+          }
+          sectionsMap.get(secKey).fields.push(f);
+        }
+      }
+
+      sections = allSectionKeys.map(({ key, type }) => {
+        if (type === 'flat') {
+          const { fields, dbLabelEn, dbLabelHi } = sectionsMap.get(key);
+          const hardcoded = SECTION_TITLES[key];
+          return {
+            section: key,
+            title_en: dbLabelEn || hardcoded?.en || toTitleCase(key),
+            title_hi: dbLabelHi || hardcoded?.hi || toTitleCase(key),
+            is_repeater: false,
+            fields,
+          };
+        } else {
+          const { fields } = repeaterMap.get(key);
+          const titleInfo = REPEATER_SECTION_TITLES[key] || { en: key, hi: key };
+          const isPerson = key.startsWith('PERSON_');
+          return {
+            section: key.toLowerCase().replace(/_/g, '-'),
+            title_en: titleInfo.en,
+            title_hi: titleInfo.hi,
+            is_repeater: true,
+            entity_type: isPerson ? 'person' : 'property',
+            person_type: isPerson ? key.replace('PERSON_', '') : null,
+            fields,
+          };
+        }
+      });
+    }
 
     return res.status(200).json({ success: true, data: sections });
   } catch (error) {

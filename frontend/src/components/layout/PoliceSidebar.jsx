@@ -23,6 +23,7 @@ import {
   Archive,
   Layers,
   Upload,
+  LayoutDashboard,
 } from "lucide-react";
 import delhiPoliceLogo from "../../assets/delhi_police_logo.png";
 import useAuthStore from "../../store/authStore.js";
@@ -42,6 +43,7 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
     // ── Head Constable (HC / PS) Desk ──────────────────────────────────────────
     if (role === 'PS' || role === 'HC') {
       items.push(
+        { id: "ps-dashboard", label: t('nav.dashboard',       'Dashboard'),                icon: LayoutDashboard, to: "/ps/dashboard" },
         { id: "records",      label: t('nav.records',         'My Records'),               icon: ClipboardList, to: "/records" },
         { id: "new-case",     label: t('recordTypes.CASE',    'Cases (FIR) Master'),       icon: FileText,      to: "/records/new/CASE" },
         { id: "new-arrest",   label: t('recordTypes.ARREST',  'Arrest Person Master'),     icon: UserX,         to: "/records/new/ARREST" },
