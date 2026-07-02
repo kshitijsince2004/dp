@@ -1,0 +1,250 @@
+﻿
+==================================================
+ALIGNMENT DUMP FOR: ../CASE_Import_Template_Final.xlsx
+==================================================
+
+--- Sheet: General Information ---
+Col  1 | R1 (Key): "fir_no"                            | R2 (Sec): "General Information"          | R3 (Lbl): "FIR Number"                        | R4 (Hnt): "e.g. FIR-220/2026"
+Col  2 | R1 (Key): "fir_date"                          | R2 (Sec): "General Information"          | R3 (Lbl): "FIR Date and time"                 | R4 (Hnt): "YYYY-MM-DD"
+Col  3 | R1 (Key):                                     | R2 (Sec): "General Information"          | R3 (Lbl): "Disposal Type"                     | R4 (Hnt): 
+Col  4 | R1 (Key): "district"                          | R2 (Sec): "General Information"          | R3 (Lbl): "District"                          | R4 (Hnt): "e.g. New Delhi District (NDD)"
+Col  5 | R1 (Key): "police_station"                    | R2 (Sec): "General Information"          | R3 (Lbl): "Police Station"                    | R4 (Hnt): "e.g. Parliament Street"
+Col  6 | R1 (Key): "local_head"                        | R2 (Sec): "General Information"          | R3 (Lbl): "Local Head (Crime)"                | R4 (Hnt): "e.g. Theft / Larceny"
+Col  7 | R1 (Key): "under_section"                     | R2 (Sec): "General Information"          | R3 (Lbl): "Case Registration Type"            | R4 (Hnt): "e.g. Section 379 IPC"
+Col  8 | R1 (Key): "case_type"                         | R2 (Sec): "General Information"          | R3 (Lbl): "Beat Number"                       | R4 (Hnt): "e.g. Property Theft"
+Col  9 | R1 (Key): "sid_number"                        | R2 (Sec): "General Information"          | R3 (Lbl): "Date of Occurrence"                | R4 (Hnt): "e.g. SID-889021"
+Col 10 | R1 (Key): "cctns_number"                      | R2 (Sec): "General Information"          | R3 (Lbl): "Occurrence Time"                   | R4 (Hnt): "e.g. CCTNS-202699104"
+Col 11 | R1 (Key): "beat_number"                       | R2 (Sec): "General Information"          | R3 (Lbl): "Brief Facts of the Case"           | R4 (Hnt): "e.g. Beat No. 4"
+Col 12 | R1 (Key): "occurrence_date"                   | R2 (Sec): "General Information"          | R3 (Lbl): "Status "                           | R4 (Hnt): "YYYY-MM-DD"
+Col 13 | R1 (Key): "occurrence_place"                  | R2 (Sec):                                | R3 (Lbl): "Complainant First Name"            | R4 (Hnt): "e.g. Patel Chowk Metro parking"
+Col 14 | R1 (Key): "brief_facts"                       | R2 (Sec):                                | R3 (Lbl): "Complainant Middle Name"           | R4 (Hnt): "Incident narrative"
+Col 15 | R1 (Key): "status_remarks"                    | R2 (Sec):                                | R3 (Lbl): "Complainant Last Name"             | R4 (Hnt): "e.g. Under investigation"
+Col 16 | R1 (Key): "complainant_npr"                   | R2 (Sec):                                | R3 (Lbl): "Complainant Nickname(s)"           | R4 (Hnt): "NPR Number"
+Col 17 | R1 (Key): "complainant_first_name"            | R2 (Sec):                                | R3 (Lbl): "Complainant Gender"                | R4 (Hnt): "First Name"
+Col 18 | R1 (Key): "complainant_middle_name"           | R2 (Sec):                                | R3 (Lbl): "Complainant Marital Status"        | R4 (Hnt): "Middle Name"
+Col 19 | R1 (Key): "complainant_last_name"             | R2 (Sec):                                | R3 (Lbl): "Complainant Relation Type"         | R4 (Hnt): "Last Name"
+Col 20 | R1 (Key): "complainant_nickname"              | R2 (Sec):                                | R3 (Lbl): "Complainant Relative Name"         | R4 (Hnt): "Nickname or alias"
+Col 21 | R1 (Key): "complainant_gender"                | R2 (Sec):                                | R3 (Lbl): "Complainant Mobile Country Code"   | R4 (Hnt): "select: Male, Female, Transgender, Unknown"
+Col 22 | R1 (Key): "complainant_marital_status"        | R2 (Sec):                                | R3 (Lbl): "Complainant Mobile No."            | R4 (Hnt): "select: Married, Unmarried, Divorced, Widowed, Single, Unknown"
+Col 23 | R1 (Key): "complainant_relation_type"         | R2 (Sec):                                | R3 (Lbl): "Complainant Qualification"         | R4 (Hnt): "select: Father, Mother, Husband, Wife, Guardian, Other"
+Col 24 | R1 (Key): "complainant_relative_name"         | R2 (Sec):                                | R3 (Lbl): "Complainant Date of Birth"         | R4 (Hnt): "Father's or Husband's Name"
+Col 25 | R1 (Key): "complainant_mobile_country_code"   | R2 (Sec):                                | R3 (Lbl): "Complainant Age (Years)"           | R4 (Hnt): "e.g. +91"
+Col 26 | R1 (Key): "complainant_mobile"                | R2 (Sec):                                | R3 (Lbl): "Complainant Year of Birth"         | R4 (Hnt): "10-digit mobile number"
+Col 27 | R1 (Key): "complainant_qualification"         | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant House No."             | R4 (Hnt): 
+Col 28 | R1 (Key): "complainant_dob"                   | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant Street"                | R4 (Hnt): "YYYY-MM-DD"
+Col 29 | R1 (Key): "complainant_age_year"              | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant Colony"                | R4 (Hnt): "Min age"
+Col 30 | R1 (Key): "complainant_birth_year"            | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant Village / City / Town" | R4 (Hnt): "Max age"
+Col 31 | R1 (Key): "complainant_age_range_from"        | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant Tehsil / Block / Mandal" | R4 (Hnt): "House Number"
+Col 32 | R1 (Key): "complainant_age_range_to"          | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant Full Present Address"  | R4 (Hnt): "Street name"
+Col 33 | R1 (Key): "complainant_house_no"              | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant Nationality"           | R4 (Hnt): "Colony name"
+Col 34 | R1 (Key): "complainant_street"                | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant State"                 | R4 (Hnt): "Village/City"
+Col 35 | R1 (Key): "complainant_colony"                | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant District"              | R4 (Hnt): "Tehsil"
+Col 36 | R1 (Key): "complainant_city_town_village"     | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant Police Station"        | R4 (Hnt): "Full residential address"
+Col 37 | R1 (Key): "complainant_tehsil_block_mandal"   | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Complainant Pin Code"              | R4 (Hnt): "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other"
+Col 38 | R1 (Key): "complainant_present_address"       | R2 (Sec): "Complainant Present Address"  | R3 (Lbl): "Is Permanent Address same as Present Address?" | R4 (Hnt): "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State"
+Col 39 | R1 (Key): "complainant_country"               | R2 (Sec): "Complainant Permanent Address" | R3 (Lbl): "Complainant Permanent House No."   | R4 (Hnt): "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)"
+Col 40 | R1 (Key): "complainant_state"                 | R2 (Sec): "Complainant Permanent Address" | R3 (Lbl): "Complainant Permanent Street"      | R4 (Hnt): "Police Station"
+Col 41 | R1 (Key): "complainant_district"              | R2 (Sec): "Complainant Permanent Address" | R3 (Lbl): "Complainant Permanent Colony"      | R4 (Hnt): "6-digit PIN code"
+Col 42 | R1 (Key): "complainant_police_station"        | R2 (Sec): "Complainant Permanent Address" | R3 (Lbl): "Complainant Permanent Village / City / Town" | R4 (Hnt): "boolean"
+Col 43 | R1 (Key): "complainant_pincode"               | R2 (Sec): "Complainant Permanent Address" | R3 (Lbl): "Complainant Permanent Tehsil / Block / Mandal" | R4 (Hnt): "House Number"
+Col 44 | R1 (Key): "complainant_perm_same"             | R2 (Sec): "Complainant Permanent Address" | R3 (Lbl): "Complainant Permanent Nationality" | R4 (Hnt): "Street name"
+Col 45 | R1 (Key): "complainant_perm_house_no"         | R2 (Sec): "Complainant Permanent Address" | R3 (Lbl): "Complainant Permanent State"       | R4 (Hnt): "Colony name"
+Col 46 | R1 (Key): "complainant_perm_street"           | R2 (Sec): "Complainant Permanent Address" | R3 (Lbl): "Complainant Permanent District"    | R4 (Hnt): "Village/City"
+Col 47 | R1 (Key): "complainant_perm_colony"           | R2 (Sec): "Complainant Permanent Address" | R3 (Lbl): "Complainant Permanent Police Station" | R4 (Hnt): "Tehsil"
+Col 48 | R1 (Key): "complainant_perm_city_town_village" | R2 (Sec): "Complainant Permanent Address" | R3 (Lbl): "Complainant Permanent Pin Code"    | R4 (Hnt): "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other"
+Col 49 | R1 (Key): "complainant_perm_tehsil_block_mandal" | R2 (Sec): "Place of Occurrence Address"  | R3 (Lbl): "Place of Occurrence House No."     | R4 (Hnt): "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State"
+Col 50 | R1 (Key): "complainant_perm_country"          | R2 (Sec): "Place of Occurrence Address"  | R3 (Lbl): "Place of Occurrence Street"        | R4 (Hnt): "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)"
+Col 51 | R1 (Key): "complainant_perm_state"            | R2 (Sec): "Place of Occurrence Address"  | R3 (Lbl): "Place of Occurrence Colony"        | R4 (Hnt): "Police Station"
+Col 52 | R1 (Key): "complainant_perm_district"         | R2 (Sec): "Place of Occurrence Address"  | R3 (Lbl): "Place of Occurrence Village / City / Town" | R4 (Hnt): "6-digit PIN code"
+Col 53 | R1 (Key): "complainant_perm_police_station"   | R2 (Sec): "Place of Occurrence Address"  | R3 (Lbl): "Place of Occurrence Tehsil / Block / Mandal" | R4 (Hnt): "House Number"
+Col 54 | R1 (Key): "complainant_perm_pincode"          | R2 (Sec): "Place of Occurrence Address"  | R3 (Lbl): "Place of Occurrence Address Nationality" | R4 (Hnt): "Street name"
+Col 55 | R1 (Key): "occurrence_house_no"               | R2 (Sec): "Place of Occurrence Address"  | R3 (Lbl): "Place of Occurrence State"         | R4 (Hnt): "Colony name"
+Col 56 | R1 (Key): "occurrence_street"                 | R2 (Sec): "Place of Occurrence Address"  | R3 (Lbl): "Place of Occurrence District"      | R4 (Hnt): "Village/City"
+Col 57 | R1 (Key): "occurrence_colony"                 | R2 (Sec): "Place of Occurrence Address"  | R3 (Lbl): "Place of Occurrence Police Station" | R4 (Hnt): "Tehsil"
+Col 58 | R1 (Key): "occurrence_city_town_village"      | R2 (Sec): "Place of Occurrence Address"  | R3 (Lbl): "Place of Occurrence Pin Code"      | R4 (Hnt): 
+Col 59 | R1 (Key): "occurrence_tehsil_block_mandal"    | R2 (Sec): "IO Details"                   | R3 (Lbl): "IO / Officer Name"                 | R4 (Hnt): "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State"
+Col 60 | R1 (Key): "occurrence_country"                | R2 (Sec): "IO Details"                   | R3 (Lbl): "PIS No. of IO"                     | R4 (Hnt): "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)"
+Col 61 | R1 (Key):                                     | R2 (Sec): "IO Details"                   | R3 (Lbl): "IO Rank"                           | R4 (Hnt): 
+Col 62 | R1 (Key): "occurrence_state"                  | R2 (Sec): "IO Details"                   | R3 (Lbl): "IO Mobile No."                     | R4 (Hnt): "e.g. Inspector Ravindra Singh"
+Col 63 | R1 (Key): "occurrence_police_station"         | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 
+Col 64 | R1 (Key): "occurrence_pincode"                | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 
+Col 65 | R1 (Key): "io_name"                           | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 
+Col 66 | R1 (Key): "io_pis"                            | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 
+Col 67 | R1 (Key): "io_mobile"                         | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 
+Col 68 | R1 (Key): "date_of_arrest"                    | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 
+
+--- Sheet: Victim Information ---
+Col  1 | R1 (Key): "fir_no"                            | R2 (Sec): "General Information"          | R3 (Lbl): "FIR Number"                        | R4 (Hnt): "Must match General Information FIR Number"
+Col  2 | R1 (Key): "victim_npr"                        | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim NPR No."                    | R4 (Hnt): "NPR Number"
+Col  3 | R1 (Key): "victim_first_name"                 | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim First Name"                 | R4 (Hnt): "First Name"
+Col  4 | R1 (Key): "victim_middle_name"                | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Middle Name"                | R4 (Hnt): "Middle Name"
+Col  5 | R1 (Key): "victim_last_name"                  | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Last Name"                  | R4 (Hnt): "Last Name"
+Col  6 | R1 (Key): "victim_nickname"                   | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Nickname(s)"                | R4 (Hnt): "Nickname or alias"
+Col  7 | R1 (Key): "victim_gender"                     | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Gender"                     | R4 (Hnt): "select: Male, Female, Transgender, Unknown"
+Col  8 | R1 (Key): "victim_marital_status"             | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Marital Status"             | R4 (Hnt): "select: Married, Unmarried, Divorced, Widowed, Single, Unknown"
+Col  9 | R1 (Key): "victim_relation_type"              | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Relation Type"              | R4 (Hnt): "select: Father, Mother, Husband, Wife, Guardian, Other"
+Col 10 | R1 (Key): "victim_relative_name"              | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Relative Name"              | R4 (Hnt): "Father's or Husband's Name"
+Col 11 | R1 (Key): "victim_mobile"                     | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Mobile No."                 | R4 (Hnt): "10-digit mobile number"
+Col 12 | R1 (Key): "victim_qualification"              | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Qualification"              | R4 (Hnt): 
+Col 13 | R1 (Key): "victim_dob"                        | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Date of Birth"              | R4 (Hnt): "YYYY-MM-DD"
+Col 14 | R1 (Key): "victim_age_year"                   | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Age (Years)"                | R4 (Hnt): "Age in years"
+Col 15 | R1 (Key): "victim_birth_year"                 | R2 (Sec): "Victim Personal Details"      | R3 (Lbl): "Victim Year of Birth"              | R4 (Hnt): "e.g. 1995"
+Col 16 | R1 (Key): "victim_house_no"                   | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim House No."                  | R4 (Hnt): "House Number"
+Col 17 | R1 (Key): "victim_street"                     | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim Street"                     | R4 (Hnt): "Street name"
+Col 18 | R1 (Key): "victim_colony"                     | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim Colony"                     | R4 (Hnt): "Colony name"
+Col 19 | R1 (Key): "victim_city_town_village"          | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim Village / City / Town"      | R4 (Hnt): "Village/City"
+Col 20 | R1 (Key): "victim_tehsil_block_mandal"        | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim Tehsil / Block / Mandal"    | R4 (Hnt): "Tehsil"
+Col 21 | R1 (Key): "victim_present_address"            | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim Full Present Address"       | R4 (Hnt): "Full residential address"
+Col 22 | R1 (Key): "victim_country"                    | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim Nationality"                | R4 (Hnt): "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other"
+Col 23 | R1 (Key): "victim_state"                      | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim State"                      | R4 (Hnt): "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State"
+Col 24 | R1 (Key): "victim_district"                   | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim District"                   | R4 (Hnt): "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)"
+Col 25 | R1 (Key): "victim_police_station"             | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim Police Station"             | R4 (Hnt): "Police Station"
+Col 26 | R1 (Key): "victim_pincode"                    | R2 (Sec): "Victim Present Address"       | R3 (Lbl): "Victim Pin Code"                   | R4 (Hnt): "6-digit PIN code"
+Col 27 | R1 (Key): "victim_perm_same"                  | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Is Permanent Address same as Present Address?" | R4 (Hnt): "boolean"
+Col 28 | R1 (Key): "victim_perm_house_no"              | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Victim Permanent House No."        | R4 (Hnt): "House Number"
+Col 29 | R1 (Key): "victim_perm_street"                | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Victim Permanent Street"           | R4 (Hnt): "Street name"
+Col 30 | R1 (Key): "victim_perm_colony"                | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Victim Permanent Colony"           | R4 (Hnt): "Colony name"
+Col 31 | R1 (Key): "victim_perm_city_town_village"     | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Victim Permanent Village / City / Town" | R4 (Hnt): "Village/City"
+Col 32 | R1 (Key): "victim_perm_tehsil_block_mandal"   | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Victim Permanent Tehsil / Block / Mandal" | R4 (Hnt): "Tehsil"
+Col 33 | R1 (Key): "victim_perm_country"               | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Victim Permanent Nationality"      | R4 (Hnt): "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other"
+Col 34 | R1 (Key): "victim_perm_state"                 | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Victim Permanent State"            | R4 (Hnt): "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State"
+Col 35 | R1 (Key): "victim_perm_district"              | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Victim Permanent District"         | R4 (Hnt): "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)"
+Col 36 | R1 (Key): "victim_perm_police_station"        | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Victim Permanent Police Station"   | R4 (Hnt): "Police Station"
+Col 37 | R1 (Key): "victim_perm_pincode"               | R2 (Sec): "Victim Permanent Address"     | R3 (Lbl): "Victim Permanent Pin Code"         | R4 (Hnt): "6-digit PIN code"
+
+--- Sheet: Act and Sections ---
+Col  1 | R1 (Key): "fir_no"                            | R2 (Sec): "General Information"          | R3 (Lbl): "FIR Number"                        | R4 (Hnt): "Must match General Information FIR Number"
+Col  2 | R1 (Key): "act"                               | R2 (Sec): "Act and Sections"             | R3 (Lbl): "Act"                               | R4 (Hnt): "e.g. IPC / BNS"
+Col  3 | R1 (Key): "sections"                          | R2 (Sec): "Act and Sections"             | R3 (Lbl): "Sections"                          | R4 (Hnt): "e.g. Sec 379/411"
+Col  4 | R1 (Key): "crime_head"                        | R2 (Sec): "Major /Minor"                 | R3 (Lbl): "Major Head"                        | R4 (Hnt): "e.g. Burglary / Snatching"
+Col  5 | R1 (Key):                                     | R2 (Sec): "Major /Minor"                 | R3 (Lbl): "Minor Head"                        | R4 (Hnt): 
+
+--- Sheet: Accused Detail ---
+Col  1 | R1 (Key): "fir_no"                            | R2 (Sec): "General Information"          | R3 (Lbl): "FIR Number"                        | R4 (Hnt): "Must match General Information FIR Number"
+Col  2 | R1 (Key): "accused_first_name"                | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused First Name"                | R4 (Hnt): "First Name"
+Col  3 | R1 (Key): "accused_middle_name"               | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Middle Name"               | R4 (Hnt): "Middle Name"
+Col  4 | R1 (Key): "accused_last_name"                 | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Last Name"                 | R4 (Hnt): "Last Name"
+Col  5 | R1 (Key): "accused_nickname"                  | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Nickname(s)"               | R4 (Hnt): "Nickname or alias"
+Col  6 | R1 (Key): "accused_gender"                    | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Gender"                    | R4 (Hnt): "select: Male, Female, Transgender, Unknown"
+Col  7 | R1 (Key): "accused_marital_status"            | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Marital Status"            | R4 (Hnt): "select: Married, Unmarried, Divorced, Widowed, Single, Unknown"
+Col  8 | R1 (Key): "accused_relation_type"             | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Relation Type"             | R4 (Hnt): "select: Father, Mother, Husband, Wife, Guardian, Other"
+Col  9 | R1 (Key): "accused_relative_name"             | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Relative Name"             | R4 (Hnt): "Father's or Husband's Name"
+Col 10 | R1 (Key): "accused_mobile"                    | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Mobile No."                | R4 (Hnt): "10-digit mobile number"
+Col 11 | R1 (Key): "accused_qualification"             | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Qualification"             | R4 (Hnt): 
+Col 12 | R1 (Key): "accused_dob"                       | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Date of Birth"             | R4 (Hnt): "YYYY-MM-DD"
+Col 13 | R1 (Key): "accused_age_year"                  | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Age (Years)"               | R4 (Hnt): "Age in years"
+Col 14 | R1 (Key): "accused_birth_year"                | R2 (Sec): "Accused Personal details"     | R3 (Lbl): "Accused Year of Birth"             | R4 (Hnt): "e.g. 1995"
+Col 15 | R1 (Key): "accused_house_no"                  | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused House No."                 | R4 (Hnt): "House Number"
+Col 16 | R1 (Key): "accused_street"                    | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused Street"                    | R4 (Hnt): "Street name"
+Col 17 | R1 (Key): "accused_colony"                    | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused Colony"                    | R4 (Hnt): "Colony name"
+Col 18 | R1 (Key): "accused_city_town_village"         | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused Village / City / Town"     | R4 (Hnt): "Village/City"
+Col 19 | R1 (Key): "accused_tehsil_block_mandal"       | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused Tehsil / Block / Mandal"   | R4 (Hnt): "Tehsil"
+Col 20 | R1 (Key): "accused_present_address"           | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused Full Present Address"      | R4 (Hnt): "Full residential address"
+Col 21 | R1 (Key): "accused_country"                   | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused Nationality"               | R4 (Hnt): "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other"
+Col 22 | R1 (Key): "accused_state"                     | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused State"                     | R4 (Hnt): "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State"
+Col 23 | R1 (Key): "accused_district"                  | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused District"                  | R4 (Hnt): "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)"
+Col 24 | R1 (Key): "accused_police_station"            | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused Police Station"            | R4 (Hnt): "Police Station"
+Col 25 | R1 (Key): "accused_pincode"                   | R2 (Sec): "Accused Present Address"      | R3 (Lbl): "Accused Pin Code"                  | R4 (Hnt): "6-digit PIN code"
+Col 26 | R1 (Key): "accused_perm_same"                 | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Is Permanent Address same as Present Address?" | R4 (Hnt): "boolean"
+Col 27 | R1 (Key): "accused_perm_house_no"             | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Accused Permanent House No."       | R4 (Hnt): "House Number"
+Col 28 | R1 (Key): "accused_perm_street"               | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Accused Permanent Street"          | R4 (Hnt): "Street name"
+Col 29 | R1 (Key): "accused_perm_colony"               | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Accused Permanent Colony"          | R4 (Hnt): "Colony name"
+Col 30 | R1 (Key): "accused_perm_city_town_village"    | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Accused Permanent Village / City / Town" | R4 (Hnt): "Village/City"
+Col 31 | R1 (Key): "accused_perm_tehsil_block_mandal"  | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Accused Permanent Tehsil / Block / Mandal" | R4 (Hnt): "Tehsil"
+Col 32 | R1 (Key): "accused_perm_country"              | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Accused Permanent Nationality"     | R4 (Hnt): "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other"
+Col 33 | R1 (Key): "accused_perm_state"                | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Accused Permanent State"           | R4 (Hnt): "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State"
+Col 34 | R1 (Key): "accused_perm_district"             | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Accused Permanent District"        | R4 (Hnt): "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)"
+Col 35 | R1 (Key): "accused_perm_police_station"       | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Accused Permanent Police Station"  | R4 (Hnt): "Police Station"
+Col 36 | R1 (Key): "accused_perm_pincode"              | R2 (Sec): "Accused Permanent Address"    | R3 (Lbl): "Accused Permanent Pin Code"        | R4 (Hnt): "6-digit PIN code"
+
+--- Sheet: Property Details ---
+Col  1 | R1 (Key): "fir_no"                            | R2 (Sec): "General Information"          | R3 (Lbl): "FIR Number"                        | R4 (Hnt): "Must match General Information FIR Number"
+Col  2 | R1 (Key): "property_major_category"           | R2 (Sec): "Property Details"             | R3 (Lbl): "Property  Category"                | R4 (Hnt): "select: Vehicle, Mobile Phone, Cash, Jewellery, Electronics, Documents, Drugs, Arms, Others"
+Col  3 | R1 (Key): "property_details"                  | R2 (Sec): "Property Details"             | R3 (Lbl): "Property Description"              | R4 (Hnt): "textarea"
+Col  4 | R1 (Key): "property_stolen_recovered"         | R2 (Sec): "Property Details"             | R3 (Lbl): "Property Status (stolen/recovered/involved/seized)" | R4 (Hnt): "select: Stolen, Recovered, Involved, Seized"
+Col  5 | R1 (Key):                                     | R2 (Sec): "Property Details"             | R3 (Lbl): "Property Value in inr"             | R4 (Hnt): 
+
+==================================================
+ALIGNMENT DUMP FOR: ../ARREST_Import_Template_Final.xlsx
+==================================================
+
+--- Sheet: General Info ---
+Col  1 | R1 (Key): "linked_fir_dd_no"                  | R2 (Sec): "General Information"          | R3 (Lbl): "Linked FIR No."                    | R4 (Hnt): "e.g. FIR-104/2026"
+Col  2 | R1 (Key): "fir_date"                          | R2 (Sec): "General Information"          | R3 (Lbl): "FIR Date"                          | R4 (Hnt): "YYYY-MM-DD"
+Col  3 | R1 (Key): "district"                          | R2 (Sec): "General Information"          | R3 (Lbl): "District"                          | R4 (Hnt): "e.g. New Delhi District (NDD)"
+Col  4 | R1 (Key): "police_station"                    | R2 (Sec): "General Information"          | R3 (Lbl): "Police Station"                    | R4 (Hnt): "e.g. Parliament Street"
+Col  5 | R1 (Key): "date_of_arrest"                    | R2 (Sec): "Arrest Details"               | R3 (Lbl): "Date Of Arrest"                    | R4 (Hnt): "YYYY-MM-DD"
+Col  6 | R1 (Key): "time_of_arrest"                    | R2 (Sec): "Arrest Details"               | R3 (Lbl): "Time Of Arrest"                    | R4 (Hnt): "HH:MM"
+Col  7 | R1 (Key): "place_of_arrest"                   | R2 (Sec): "Arrest Details"               | R3 (Lbl): "Place Of Arrest"                   | R4 (Hnt): "e.g. Nizamuddin Platform 3"
+Col  8 | R1 (Key):                                     | R2 (Sec): "IO Details"                   | R3 (Lbl): "IO / Officer Name"                 | R4 (Hnt): 
+Col  9 | R1 (Key):                                     | R2 (Sec): "IO Details"                   | R3 (Lbl): "PIS No. of IO"                     | R4 (Hnt): 
+Col 10 | R1 (Key):                                     | R2 (Sec): "IO Details"                   | R3 (Lbl): "IO Rank"                           | R4 (Hnt): 
+Col 11 | R1 (Key):                                     | R2 (Sec): "IO Details"                   | R3 (Lbl): "IO Mobile No."                     | R4 (Hnt): 
+
+--- Sheet: Act and Sections ---
+Col  1 | R1 (Key): "linked_fir_dd_no"                  | R2 (Sec): "General Information"          | R3 (Lbl): "Linked FIR no."                    | R4 (Hnt): "Must match General Info sheet"
+Col  2 | R1 (Key): "act"                               | R2 (Sec): "Act and Sections"             | R3 (Lbl): "Act"                               | R4 (Hnt): "e.g. IPC / BNS"
+Col  3 | R1 (Key): "sections"                          | R2 (Sec): "Act and Sections"             | R3 (Lbl): "Sections"                          | R4 (Hnt): "e.g. Sec 379/411"
+Col  4 | R1 (Key):                                     | R2 (Sec): "Major /Minor"                 | R3 (Lbl): "Major Head"                        | R4 (Hnt): 
+Col  5 | R1 (Key):                                     | R2 (Sec): "Major /Minor"                 | R3 (Lbl): "Minor Head"                        | R4 (Hnt): 
+
+--- Sheet: Person Arrested Detail ---
+Col  1 | R1 (Key): "linked_fir_dd_no"                  | R2 (Sec): "General Information"          | R3 (Lbl): "Linked FIR no."                    | R4 (Hnt): "Must match General Info sheet"
+Col  2 | R1 (Key): "arrested_npr"                      | R2 (Sec): "Arreste Details"              | R3 (Lbl): "Arrested Person NPR No."           | R4 (Hnt): "NPR Number"
+Col  3 | R1 (Key): "arrested_first_name"               | R2 (Sec): "Arreste Details"              | R3 (Lbl): "Arrested Person First Name"        | R4 (Hnt): "First Name"
+Col  4 | R1 (Key): "arrested_middle_name"              | R2 (Sec): "Arreste Details"              | R3 (Lbl): "Arrested Person Middle Name"       | R4 (Hnt): "Middle Name"
+Col  5 | R1 (Key): "arrested_last_name"                | R2 (Sec): "Arreste Details"              | R3 (Lbl): "Arrested Person Last Name"         | R4 (Hnt): "Last Name"
+Col  6 | R1 (Key): "arrested_nickname"                 | R2 (Sec): "Arreste Details"              | R3 (Lbl): "Arrested Person Nickname(s)"       | R4 (Hnt): "Nickname or alias"
+Col  7 | R1 (Key): "arrested_gender"                   | R2 (Sec): "Arreste Details"              | R3 (Lbl): "Arrested Person Gender"            | R4 (Hnt): "select: Male, Female, Transgender, Unknown"
+Col  8 | R1 (Key): "arrested_marital_status"           | R2 (Sec): "Arreste Details"              | R3 (Lbl): "Arrested Person Marital Status"    | R4 (Hnt): "select: Married, Unmarried, Divorced, Widowed, Single, Unknown"
+Col  9 | R1 (Key): "arrested_relation_type"            | R2 (Sec): "Relative details"             | R3 (Lbl): "Arrested Person Relation Type"     | R4 (Hnt): "select: Father, Mother, Husband, Wife, Guardian, Other"
+Col 10 | R1 (Key): "arrested_relative_name"            | R2 (Sec): "Relative details"             | R3 (Lbl): "Arrested Person Relative Name"     | R4 (Hnt): "Father's or Husband's Name"
+Col 11 | R1 (Key): "arrested_mobile"                   | R2 (Sec): "Arrested Person Personal Details" | R3 (Lbl): "Arrested Person Mobile No."        | R4 (Hnt): "10-digit mobile number"
+Col 12 | R1 (Key): "arrested_qualification"            | R2 (Sec): "Arrested Person Personal Details" | R3 (Lbl): "Arrested Person Qualification"     | R4 (Hnt): 
+Col 13 | R1 (Key): "arrested_dob"                      | R2 (Sec): "Arrested Person Personal Details" | R3 (Lbl): "Arrested Person Date of Birth"     | R4 (Hnt): "YYYY-MM-DD"
+Col 14 | R1 (Key): "arrested_age_year"                 | R2 (Sec): "Arrested Person Personal Details" | R3 (Lbl): "Arrested Person Age (Years)"       | R4 (Hnt): "Age in years"
+Col 15 | R1 (Key): "arrested_birth_year"               | R2 (Sec): "Arrested Person Personal Details" | R3 (Lbl): "Arrested Person Year of Birth"     | R4 (Hnt): "e.g. 1995"
+Col 16 | R1 (Key): "arrested_house_no"                 | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person House No."         | R4 (Hnt): "House Number"
+Col 17 | R1 (Key): "arrested_street"                   | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person Street"            | R4 (Hnt): "Street name"
+Col 18 | R1 (Key): "arrested_colony"                   | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person Colony"            | R4 (Hnt): "Colony name"
+Col 19 | R1 (Key): "arrested_city_town_village"        | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person Village / City / Town" | R4 (Hnt): "Village/City"
+Col 20 | R1 (Key): "arrested_tehsil_block_mandal"      | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person Tehsil / Block / Mandal" | R4 (Hnt): "Tehsil"
+Col 21 | R1 (Key): "arrested_present_address"          | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person Full Present Address" | R4 (Hnt): "Full residential address"
+Col 22 | R1 (Key): "arrested_country"                  | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person Nationality"       | R4 (Hnt): "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other"
+Col 23 | R1 (Key): "arrested_state"                    | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person State"             | R4 (Hnt): "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State"
+Col 24 | R1 (Key): "arrested_district"                 | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person District"          | R4 (Hnt): "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)"
+Col 25 | R1 (Key): "arrested_police_station"           | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person Police Station"    | R4 (Hnt): "Police Station"
+Col 26 | R1 (Key): "arrested_pincode"                  | R2 (Sec): "Arrested Person Present Address" | R3 (Lbl): "Arrested Person Pin Code"          | R4 (Hnt): "6-digit PIN code"
+Col 27 | R1 (Key): "arrested_perm_same"                | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Is Permanent Address same as Present Address?" | R4 (Hnt): "[Required] boolean"
+Col 28 | R1 (Key): "arrested_perm_address"             | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Full Permanent Address"            | R4 (Hnt): "textarea"
+Col 29 | R1 (Key): "arrested_perm_house_no"            | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Arrested Person Permanent House No." | R4 (Hnt): "House Number"
+Col 30 | R1 (Key): "arrested_perm_street"              | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Arrested Person Permanent Street"  | R4 (Hnt): "Street name"
+Col 31 | R1 (Key): "arrested_perm_colony"              | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Arrested Person Permanent Colony"  | R4 (Hnt): "Colony name"
+Col 32 | R1 (Key): "arrested_perm_city_town_village"   | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Arrested Person Permanent Village / City / Town" | R4 (Hnt): "Village/City"
+Col 33 | R1 (Key): "arrested_perm_tehsil_block_mandal" | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Arrested Person Permanent Tehsil / Block / Mandal" | R4 (Hnt): "Tehsil"
+Col 34 | R1 (Key): "arrested_perm_country"             | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Arrested Person Permanent Nationality" | R4 (Hnt): "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other"
+Col 35 | R1 (Key): "arrested_perm_state"               | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Arrested Person Permanent State"   | R4 (Hnt): "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State"
+Col 36 | R1 (Key): "arrested_perm_district"            | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Arrested Person Permanent District" | R4 (Hnt): "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)"
+Col 37 | R1 (Key): "arrested_perm_police_station"      | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Arrested Person Permanent Police Station" | R4 (Hnt): "Police Station"
+Col 38 | R1 (Key): "arrested_perm_pincode"             | R2 (Sec): "Arrested Person Permanent Address" | R3 (Lbl): "Arrested Person Permanent Pin Code" | R4 (Hnt): "6-digit PIN code"
+Col 39 | R1 (Key): "nafis_prepared"                    | R2 (Sec): "Particular Details"           | R3 (Lbl): "NAFIS Prepared"                    | R4 (Hnt): "radio"
+Col 40 | R1 (Key): "dossier_prepared"                  | R2 (Sec): "Particular Details"           | R3 (Lbl): "Dossier Prepared"                  | R4 (Hnt): "radio"
+Col 41 | R1 (Key): "search_slip_prepared"              | R2 (Sec): "Particular Details"           | R3 (Lbl): "Previous involvement"              | R4 (Hnt): 
+Col 42 | R1 (Key): "address_verified"                  | R2 (Sec): "Particular Details"           | R3 (Lbl): "Bad Character (BC)"                | R4 (Hnt): 
+Col 43 | R1 (Key): "verifying_officer_name"            | R2 (Sec): "Particular Details"           | R3 (Lbl): "Proclaimed Offender (PO)"          | R4 (Hnt): 
+Col 44 | R1 (Key): "verifying_officer_rank"            | R2 (Sec): "Particular Details"           | R3 (Lbl): "Arresting Officer Name"            | R4 (Hnt): 
+Col 45 | R1 (Key): "kin_name"                          | R2 (Sec): "Particular Details"           | R3 (Lbl): "Arresting Officer Rank"            | R4 (Hnt): 
+Col 46 | R1 (Key): "kin_mobile"                        | R2 (Sec): "Particular Details"           | R3 (Lbl): "Custody status"                    | R4 (Hnt): 
+Col 47 | R1 (Key):                                     | R2 (Sec): "Particular Details"           | R3 (Lbl): "Scheme of arrest"                  | R4 (Hnt): 
+
+--- Sheet: Property Details ---
+Col  1 | R1 (Key): "linked_fir_dd_no"                  | R2 (Sec): "General Information"          | R3 (Lbl): "Linked FIR No. "                   | R4 (Hnt): "Must match General Info sheet"
+Col  2 | R1 (Key): "property_major_category"           | R2 (Sec): "Property Details"             | R3 (Lbl): "Property  Category"                | R4 (Hnt): "select: Vehicle, Mobile Phone, Cash, Jewellery, Electronics, Documents, Drugs, Arms, Others"
+Col  3 | R1 (Key): "property_minor_category"           | R2 (Sec): "Property Details"             | R3 (Lbl): "Property Description"              | R4 (Hnt): "textarea"
+Col  4 | R1 (Key): "property_details"                  | R2 (Sec): "Property Details"             | R3 (Lbl): "Property Status (stolen/recovered/involved/seized)" | R4 (Hnt): "select: Stolen, Recovered, Involved, Seized"
+Col  5 | R1 (Key): "property_stolen_recovered"         | R2 (Sec): "Property Details"             | R3 (Lbl): "Property Value in inr"             | R4 (Hnt): 
+Col  6 | R1 (Key): "property_phone_number"             | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 
+Col  7 | R1 (Key): "phone_make"                        | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 
+Col  8 | R1 (Key): "phone_model"                       | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 
+Col  9 | R1 (Key): "phone_imei"                        | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 
+Col 10 | R1 (Key): "phone_color"                       | R2 (Sec):                                | R3 (Lbl):                                     | R4 (Hnt): 

@@ -1291,7 +1291,7 @@ const formSchemas = {
           ],
           validation_rules: { required: false }
         },
-        { field_key: 'dress_color', field_type: 'TEXT', label_en: 'Dress & Color', label_hi: 'पहनावा और रंग', validation_rules: { required: false } },
+        { field_key: 'mental_state', field_type: 'TEXT', label_en: 'Mental State', label_hi: 'मानसिक स्थिति', validation_rules: { required: false } },
         { field_key: 'physical_description', field_type: 'TEXTAREA', label_en: 'Physical Description', label_hi: 'शारीरिक हुलिया', validation_rules: { required: true }, full_width: true }
       ]
     },

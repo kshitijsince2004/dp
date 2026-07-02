@@ -373,6 +373,14 @@ const buildPropertyRow = (prop, i, recordId, hydratedData) => {
 
 export const createRecord = async (user, recordType, recordDate, data, ipAddress, { persons = [], properties = [] } = {}) => {
   const mergedData = mergeConditionalFields({ ...data });
+  if (recordType === 'ARREST' && Array.isArray(persons)) {
+    const arrestedPerson = persons.find(p => p.person_type === 'ARRESTED');
+    if (arrestedPerson && arrestedPerson.data) {
+      if (arrestedPerson.data.status) mergedData.status = arrestedPerson.data.status;
+      if (arrestedPerson.data.other_status_reason) mergedData.other_status_reason = arrestedPerson.data.other_status_reason;
+      if (arrestedPerson.data.recovery) mergedData.recovery = arrestedPerson.data.recovery;
+    }
+  }
   const dbRecord = await db.transaction(async (trx) => {
     await validateSelectFields(trx, recordType, mergedData);
     const id = uuidv4();
@@ -487,6 +495,14 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
 
     const oldData = parseJsonField(record.data);
     const hydratedData = mergeConditionalFields({ ...oldData, ...data });
+    if (record.record_type === 'ARREST' && Array.isArray(persons)) {
+      const arrestedPerson = persons.find(p => p.person_type === 'ARRESTED');
+      if (arrestedPerson && arrestedPerson.data) {
+        if (arrestedPerson.data.status) hydratedData.status = arrestedPerson.data.status;
+        if (arrestedPerson.data.other_status_reason) hydratedData.other_status_reason = arrestedPerson.data.other_status_reason;
+        if (arrestedPerson.data.recovery) hydratedData.recovery = arrestedPerson.data.recovery;
+      }
+    }
 
     await validateSelectFields(trx, record.record_type, hydratedData);
 

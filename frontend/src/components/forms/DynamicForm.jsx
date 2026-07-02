@@ -184,10 +184,21 @@ export default function DynamicForm({
 
     // Filter unified list
     const filtered = unifiedCases.filter(c => {
-      // Date exact match
-      const cDate = c.fir_date ? c.fir_date.substring(0, 10) : '';
-      const sDate = searchDate.substring(0, 10);
-      if (cDate !== sDate) return false;
+      // Date exact match (handles both YYYY-MM-DD and DD/MM/YYYY formats)
+      const sDate = searchDate.substring(0, 10); // "YYYY-MM-DD"
+      let cNormalized = '';
+      if (c.fir_date) {
+        const parts = c.fir_date.split('/');
+        if (parts.length === 3) {
+          const dd = parts[0].padStart(2, '0');
+          const mm = parts[1].padStart(2, '0');
+          const yyyy = parts[2];
+          cNormalized = `${yyyy}-${mm}-${dd}`;
+        } else {
+          cNormalized = c.fir_date.substring(0, 10);
+        }
+      }
+      if (cNormalized !== sDate) return false;
 
       // Query (complainant name or FIR no) match
       if (searchQuery) {
@@ -351,6 +362,7 @@ export default function DynamicForm({
                             let ioRank = '';
                             let ioPis = '';
                             let ioMobile = '';
+                            let caseTypeVal = 'cctns(manual FIR)';
 
                             if (row.isBackend) {
                               const matched = (casesData || []).find(c => {
@@ -366,6 +378,7 @@ export default function DynamicForm({
                                 ioRank = cData.io_rank || '';
                                 ioPis = cData.io_pis || '';
                                 ioMobile = cData.io_mobile || '';
+                                caseTypeVal = cData.case_type || matched.case_type || 'cctns(manual FIR)';
                               }
                             } else {
                               // It's a mock case
@@ -375,6 +388,7 @@ export default function DynamicForm({
                               ioRank = 'Inspector';
                               ioPis = '28081234';
                               ioMobile = '9876543210';
+                              caseTypeVal = 'cctns(manual FIR)';
                             }
 
                             // Directly update values
@@ -387,7 +401,8 @@ export default function DynamicForm({
                               io_name: ioName,
                               io_rank: ioRank,
                               io_pis: ioPis,
-                              io_mobile: ioMobile
+                              io_mobile: ioMobile,
+                              case_type: caseTypeVal
                             }));
                           }}
                           className={`group cursor-pointer hover:bg-slate-50/80 transition-all ${
@@ -567,6 +582,7 @@ export default function DynamicForm({
     const acts = values.act_name ? values.act_name.split(',').map(s => s.trim()).filter(Boolean) : [];
     const secs = values.sections ? values.sections.split(',').map(s => s.trim()).filter(Boolean) : [];
     const maxLen = Math.max(acts.length, secs.length);
+    const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
 
     const chosenActObj = actsSectionsRegistry.find(item => item.act === newAct);
     const availableSections = chosenActObj ? chosenActObj.sections : [];
@@ -594,16 +610,19 @@ export default function DynamicForm({
             {/* Case Type field */}
             <React.Fragment>
               <div className="bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center border-b border-[#c7d8ea] min-h-[40px]">
-                {lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE'}
+                {lang === 'hi' ? 'मामला पंजीकरण प्रकार' : 'Case Registration Type'}
               </div>
               <div className="px-3 py-1 bg-white flex items-center border-b border-[#c7d8ea] min-h-[40px]">
-                <input
-                  type="text"
-                  disabled={readOnly}
-                  value={values.case_type || ''}
-                  onChange={(e) => handleChange('case_type', e.target.value)}
-                  className="w-full max-w-md h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500"
-                />
+                <div className="w-full max-w-md">
+                  <FieldRenderer
+                    field={allFields.find(f => f.field_key === 'case_type')}
+                    value={values.case_type || ''}
+                    onChange={handleChange}
+                    readOnly={readOnly}
+                    lang={lang}
+                    values={values}
+                  />
+                </div>
               </div>
             </React.Fragment>
 
@@ -1367,7 +1386,7 @@ export default function DynamicForm({
                 </td>
               </tr>
 
-              {/* Row 2: Type of Information */}
+              {/* Row 2: Type of Information
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
                   Type of Information
@@ -1413,7 +1432,7 @@ export default function DynamicForm({
                     <span>Court Order</span>
                   </label>
                 </td>
-              </tr>
+              </tr> */}
 
               {/* Row: Case Registration Type */}
               <tr className="border-b border-[#7a9cc5]">
@@ -1441,7 +1460,7 @@ export default function DynamicForm({
                 </td>
                 <td className="w-2/3 bg-white px-2.5 py-1">
                   <input
-                    type="text"
+                    type="number"
                     disabled={readOnly}
                     value={values.complaint_no || ''}
                     onChange={(e) => {
@@ -2121,36 +2140,7 @@ const renderComplainantStep = () => {
                 </div>
               </React.Fragment>
 
-              {renderFieldWithLabel('complainant_birth_year')}
-
-              {/* Age Range */}
-              <React.Fragment>
-                <div className="bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1">
-                  <span>{lang === 'hi' ? 'आयु सीमा (से - तक)' : 'Age Range (From - To)'}</span>
-                </div>
-                <div className="px-2 py-1 flex gap-2">
-                  <div className="flex-1">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'complainant_age_range_from')}
-                      value={values.complainant_age_range_from}
-                      onChange={handleChange}
-                      readOnly={readOnly}
-                      lang={lang}
-                      values={values}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'complainant_age_range_to')}
-                      value={values.complainant_age_range_to}
-                      onChange={handleChange}
-                      readOnly={readOnly}
-                      lang={lang}
-                      values={values}
-                    />
-                  </div>
-                </div>
-              </React.Fragment>
+              {renderFieldWithLabel('complainant_birth_year', null, true)}
             </div>
           </fieldset>
 
@@ -2423,36 +2413,7 @@ const renderVictimStep = () => {
                 </div>
               </React.Fragment>
 
-              {renderVictimModalField('victim_birth_year')}
-
-              {/* Age Range */}
-              <React.Fragment>
-                <div className="bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1">
-                  <span>{lang === 'hi' ? 'आयु सीमा (से - तक)' : 'Age Range (From - To)'}</span>
-                </div>
-                <div className="px-2 py-1 flex gap-2">
-                  <div className="flex-1">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'victim_age_range_from')}
-                      value={victimTempValues.victim_age_range_from}
-                      onChange={handleVictimModalChange}
-                      readOnly={readOnly}
-                      lang={lang}
-                      values={victimTempValues}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'victim_age_range_to')}
-                      value={victimTempValues.victim_age_range_to}
-                      onChange={handleVictimModalChange}
-                      readOnly={readOnly}
-                      lang={lang}
-                      values={victimTempValues}
-                    />
-                  </div>
-                </div>
-              </React.Fragment>
+              {renderVictimModalField('victim_birth_year', null, true)}
             </div>
           </fieldset>
 
@@ -2781,6 +2742,7 @@ const renderAccusedStep = () => {
                 </div>
               </React.Fragment>
 
+              {renderAccusedModalField('accused_qualification')}
               {renderAccusedModalField('accused_email', null, true)}
             </div>
           </div>
@@ -2838,36 +2800,7 @@ const renderAccusedStep = () => {
                 </div>
               </React.Fragment>
 
-              {renderAccusedModalField('accused_birth_year')}
-
-              {/* Age Range */}
-              <React.Fragment>
-                <div className="bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1">
-                  <span>{lang === 'hi' ? 'आयु सीमा (से - तक)' : 'Age Range (From - To)'}</span>
-                </div>
-                <div className="px-2 py-1 flex gap-2">
-                  <div className="flex-1">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'accused_age_range_from')}
-                      value={accusedTempValues.accused_age_range_from}
-                      onChange={handleAccusedModalChange}
-                      readOnly={readOnly}
-                      lang={lang}
-                      values={accusedTempValues}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'accused_age_range_to')}
-                      value={accusedTempValues.accused_age_range_to}
-                      onChange={handleAccusedModalChange}
-                      readOnly={readOnly}
-                      lang={lang}
-                      values={accusedTempValues}
-                    />
-                  </div>
-                </div>
-              </React.Fragment>
+              {renderAccusedModalField('accused_birth_year', null, true)}
             </div>
           </fieldset>
 
@@ -3444,6 +3377,21 @@ const renderArrestedStep = () => {
   const renderArrestedModalField = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
     const field = allFields.find(f => f.field_key === key);
     if (!field) return null;
+
+    if (field.show_when) {
+      try {
+        const cond = typeof field.show_when === 'string' ? JSON.parse(field.show_when) : field.show_when;
+        if (cond && cond.field) {
+          const val = arrestedTempValues[cond.field];
+          const checkVals = Array.isArray(cond.value) ? cond.value : [cond.value];
+          const isShown = checkVals.some(v => String(v || '').toLowerCase() === String(val || '').toLowerCase());
+          if (!isShown) return null;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
     const label = customLabel || (lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en);
     const rules = parseRules(field.validation_rules);
     const isRequired = !!rules.required || key === 'arrested_first_name' || key === 'arrested_gender';
@@ -3536,7 +3484,8 @@ const renderArrestedStep = () => {
                   </div>
                 </div>
               </React.Fragment>
-
+              {renderArrestedModalField('arrested_qualification')}
+              {renderArrestedModalField('scheme_of_arrest')}
               {renderArrestedModalField('arrested_landline')}
               {renderArrestedModalField('arrested_email', null, true)}
             </div>
@@ -3563,9 +3512,7 @@ const renderArrestedStep = () => {
               {renderArrestedModalField('arrested_dob')}
               {renderArrestedModalField('arrested_age_year')}
               {renderArrestedModalField('arrested_age_month')}
-              {renderArrestedModalField('arrested_birth_year', null, false, true)}
-              {renderArrestedModalField('arrested_age_range_from')}
-              {renderArrestedModalField('arrested_age_range_to', null, true)}
+              {renderArrestedModalField('arrested_birth_year', null, true, true)}
             </div>
           </fieldset>
         </div>
@@ -3581,7 +3528,27 @@ const renderArrestedStep = () => {
         </legend>
         <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
           {renderArrestedModalField('prev_involvement')}
-          {renderArrestedModalField('proclaimed_offender', null, true)}
+          {renderArrestedModalField('proclaimed_offender')}
+          {renderArrestedModalField('nafis_prepared')}
+          {renderArrestedModalField('dossier_prepared')}
+          {renderArrestedModalField('arresting_officer')}
+          {renderArrestedModalField('arresting_officer_mobile')}
+          {renderArrestedModalField('listed_criminal', null, true)}
+        </div>
+      </fieldset>
+    );
+  };
+
+  const renderArrestedCustodyStatusSubTab = () => {
+    return (
+      <fieldset className="bg-white">
+        <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+          {lang === 'hi' ? 'हिरासत की स्थिति' : 'Custody Status'}
+        </legend>
+        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
+          {renderArrestedModalField('status')}
+          {renderArrestedModalField('other_status_reason')}
+          {renderArrestedModalField('recovery', null, true)}
         </div>
       </fieldset>
     );
@@ -3740,6 +3707,7 @@ const renderArrestedStep = () => {
                 { id: 'arrest_details', label_en: 'Arrest Details', label_hi: 'गिरफ्तारी का विवरण' },
                 { id: 'person_particulars', label_en: 'Person Particulars', label_hi: 'व्यक्तिगत जानकारी' },
                 { id: 'particular_details', label_en: 'Particular Details', label_hi: 'विवरण' },
+                { id: 'custody_status', label_en: 'Custody Status', label_hi: 'हिरासत की स्थिति' },
                 { id: 'address', label_en: 'Address', label_hi: 'पता' }
               ].map(t => (
                 <button
@@ -3762,6 +3730,7 @@ const renderArrestedStep = () => {
               {arrestedSubTab === 'arrest_details' && renderArrestedDetailsSubTab()}
               {arrestedSubTab === 'person_particulars' && renderArrestedPersonalInfoSubTab()}
               {arrestedSubTab === 'particular_details' && renderArrestedParticularDetailsSubTab()}
+              {arrestedSubTab === 'custody_status' && renderArrestedCustodyStatusSubTab()}
               {arrestedSubTab === 'address' && renderArrestedAddressSubTab()}
             </div>
 
@@ -4091,7 +4060,6 @@ const renderActionTakenStep = () => {
           'complainant_gender', 'complainant_marital_status', 'complainant_mobile_country_code', 'complainant_mobile',
           'complainant_email', 'complainant_same_as_victim', 'complainant_relation_type', 'complainant_relative_name',
           'complainant_dob', 'complainant_age_year', 'complainant_age_month', 'complainant_birth_year',
-          'complainant_age_range_from', 'complainant_age_range_to',
           'complainant_house_no', 'complainant_street', 'complainant_colony', 'complainant_city_town_village',
           'complainant_tehsil_block_mandal', 'complainant_country', 'complainant_state', 'complainant_district',
           'complainant_police_station', 'complainant_pincode',
@@ -4105,7 +4073,6 @@ const renderActionTakenStep = () => {
           'victim_gender', 'victim_marital_status', 'victim_mobile_country_code', 'victim_mobile',
           'victim_email', 'victim_relation_type', 'victim_relative_name',
           'victim_dob', 'victim_age_year', 'victim_age_month', 'victim_birth_year',
-          'victim_age_range_from', 'victim_age_range_to',
           'victim_house_no', 'victim_street', 'victim_colony', 'victim_city_town_village',
           'victim_tehsil_block_mandal', 'victim_country', 'victim_state', 'victim_district',
           'victim_police_station', 'victim_pincode', 'victim_present_address',
@@ -4118,7 +4085,6 @@ const renderActionTakenStep = () => {
           'accused_gender', 'accused_marital_status', 'accused_mobile_country_code', 'accused_mobile',
           'accused_email', 'accused_relation_type', 'accused_relative_name',
           'accused_dob', 'accused_age_year', 'accused_age_month', 'accused_birth_year',
-          'accused_age_range_from', 'accused_age_range_to',
           'accused_house_no', 'accused_street', 'accused_colony', 'accused_city_town_village',
           'accused_tehsil_block_mandal', 'accused_country', 'accused_state', 'accused_district',
           'accused_police_station', 'accused_pincode', 'accused_present_address',
@@ -4147,8 +4113,68 @@ const renderActionTakenStep = () => {
       });
     }
 
-    if (recordType === 'ARREST' && (caseType === 'against_fir' || caseType === 'kalandra' || !caseType)) {
+    if (recordType === 'ARREST') {
       const allFields = schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []);
+      const statusField = allFields.find(f => f.field_key === 'status');
+      if (statusField) {
+        const effectiveCaseType = caseType || 'kalandra';
+        if (effectiveCaseType === 'against_fir') {
+          statusField.options = JSON.stringify([
+            { value: 'JC', label_en: 'JC', label_hi: 'जेसी' },
+            { value: 'PC', label_en: 'PC', label_hi: 'पीसी' },
+            { value: 'Bail', label_en: 'Bail', label_hi: 'जमानत पर रिहा' },
+            { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
+            { value: 'Released', label_en: 'Released', label_hi: 'रिहा' },
+            { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
+            { value: '35(3) BNS Notice', label_en: '35(3) BNS Notice', label_hi: '35(3) BNS Notice' },
+            { value: 'others', label_en: 'Others', label_hi: 'अन्य' }
+          ]);
+        } else {
+          statusField.options = JSON.stringify([
+            { value: 'JC', label_en: 'JC', label_hi: 'जेसी' },
+            { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
+            { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
+            { value: 'Fine', label_en: 'Fine', label_hi: 'Fine' },
+            { value: 'others', label_en: 'Others', label_hi: 'अन्य' }
+          ]);
+        }
+        statusField.label_en = 'Status';
+        statusField.label_hi = 'बंदी की स्थिति';
+      }
+
+      if (!allFields.find(f => f.field_key === 'recovery')) {
+        allFields.push({
+          field_key: 'recovery',
+          field_type: 'TEXTAREA',
+          label_en: 'Recovered Material Items',
+          label_hi: 'बरामद की गई सामग्री',
+          visible_to_levels: ['L1', 'L2', 'L3'],
+          editable_by_levels: ['L1', 'L2', 'L3'],
+          section: 'custody_status',
+          validation_rules: JSON.stringify({ required: false })
+        });
+      }
+
+      if (!allFields.find(f => f.field_key === 'scheme_of_arrest')) {
+        allFields.push({
+          field_key: 'scheme_of_arrest',
+          field_type: 'SELECT',
+          label_en: 'Scheme of Arrest',
+          label_hi: 'गिरफ्तारी की योजना',
+          visible_to_levels: ['L1', 'L2', 'L3'],
+          editable_by_levels: ['L1', 'L2', 'L3'],
+          section: 'arrested_info',
+          validation_rules: JSON.stringify({ required: false }),
+          options: JSON.stringify([
+            { value: 'Integrated Pride', label_en: 'Integrated Pride', label_hi: 'Integrated Pride' },
+            { value: 'Group Patrolling', label_en: 'Group Patrolling', label_hi: 'Group Patrolling' },
+            { value: 'Anti-snatching', label_en: 'Anti-snatching', label_hi: 'Anti-snatching' },
+            { value: 'By Prahari', label_en: 'By Prahari', label_hi: 'By Prahari' },
+            { value: 'By Eyes & Ears Scheme Members', label_en: 'By Eyes & Ears Scheme Members', label_hi: 'By Eyes & Ears Scheme Members' }
+          ])
+        });
+      }
+
       const effectiveCaseType = caseType || 'kalandra'; // null = edit mode, treat as kalandra
       const tabSpecs = [];
       if (effectiveCaseType === 'against_fir') {
@@ -4165,7 +4191,7 @@ const renderActionTakenStep = () => {
           title_hi: 'सामान्य जानकारी',
           keys: [
             'uid', 'district', 'police_station', 'submission_status', 'case_type',
-            'gd_no', 'gd_date', 'gd_time', 'act_name', 'sections', 'crime_head', 'status', 'linked_fir_dd_no'
+            'gd_no', 'gd_date', 'gd_time', 'act_name', 'sections', 'crime_head', 'linked_fir_dd_no'
           ]
         },
         {
@@ -4174,9 +4200,12 @@ const renderActionTakenStep = () => {
           keys: [
             'arrest_date', 'arrest_place',
             'nick_name', 'arrested_mobile_country_code', 'arrested_npr', 'arrested_first_name', 'arrested_middle_name', 'arrested_last_name',
-            'arrested_gender', 'arrested_marital_status', 'arrested_relation_type', 'arrested_relative_name', 'arrested_landline', 'arrested_mobile', 'arrested_email',
-            'arrested_dob', 'arrested_age_year', 'arrested_age_month', 'arrested_birth_year', 'arrested_age_range_from', 'arrested_age_range_to',
+            'arrested_gender', 'arrested_marital_status', 'arrested_relation_type', 'arrested_relative_name', 'arrested_mobile',
+            'scheme_of_arrest',
+            'arrested_dob', 'arrested_age_year', 'arrested_age_month', 'arrested_birth_year',
             'prev_involvement', 'proclaimed_offender',
+            'nafis_prepared', 'dossier_prepared', 'arresting_officer_mobile', 'arresting_officer', 'listed_criminal',
+            'status', 'other_status_reason', 'recovery',
             'arrested_present_address', 'arrested_perm_same', 'arrested_house_no', 'arrested_street', 'arrested_colony', 'arrested_city_town_village',
             'arrested_tehsil_block_mandal', 'arrested_country', 'arrested_state', 'arrested_district', 'arrested_police_station', 'arrested_pincode',
             'arrested_perm_address', 'arrested_perm_country', 'arrested_perm_state', 'arrested_perm_district',
@@ -4187,11 +4216,7 @@ const renderActionTakenStep = () => {
           person_type: 'ARRESTED',
           section: 'arrested_info'
         },
-        {
-          title_en: 'Custody Status',
-          title_hi: 'हिरासत की स्थिति',
-          keys: ['other_status_reason', 'recovery']
-        },
+
         {
           title_en: 'Particulars',
           title_hi: 'विवरण',
@@ -4200,24 +4225,20 @@ const renderActionTakenStep = () => {
           entity_type: 'property',
           section: 'property_details'
         },
-        {
-          title_en: 'Intimation Details',
-          title_hi: 'सूचना का विवरण',
-          keys: [
-            'intimation_date_time', 'intimated_relative_name', 'intimated_relative_relation', 'intimation_mode',
-            'intimation_house_no', 'intimation_street', 'intimation_colony', 'intimation_city_town_village', 'intimation_tehsil_block_mandal',
-            'intimation_country', 'intimation_state', 'intimation_district', 'intimation_police_station', 'intimation_pincode'
-          ],
-          is_repeater: true,
-          entity_type: 'person',
-          person_type: 'INTIMATED',
-          section: 'intimation_details'
-        },
-        {
-          title_en: 'Procedural Slips',
-          title_hi: 'प्रक्रियात्मक पर्ची',
-          keys: ['nafis_prepared', 'dossier_prepared', 'arresting_officer_mobile', 'arresting_officer', 'listed_criminal']
-        },
+        // {
+        //   title_en: 'Intimation Details',
+        //   title_hi: 'सूचना का विवरण',
+        //   keys: [
+        //     'intimation_date_time', 'intimated_relative_name', 'intimated_relative_relation', 'intimation_mode',
+        //     'intimation_house_no', 'intimation_street', 'intimation_colony', 'intimation_city_town_village', 'intimation_tehsil_block_mandal',
+        //     'intimation_country', 'intimation_state', 'intimation_district', 'intimation_police_station', 'intimation_pincode'
+        //   ],
+        //   is_repeater: true,
+        //   entity_type: 'person',
+        //   person_type: 'INTIMATED',
+        //   section: 'intimation_details'
+        // },
+
         {
           title_en: 'Investigating Officer',
           title_hi: 'जांच अधिकारी',
@@ -4324,8 +4345,8 @@ const renderActionTakenStep = () => {
       });
     }
     return schema;
-  }, [schema, recordType, caseType, finalFirOptions]);
-
+  },
+  [schema, recordType, caseType, finalFirOptions]);
   const { triggerAutosave, saveImmediately, saveStatus, savedRecord } = useAutosave(
     recordType,
     initialValues?.id
@@ -4741,7 +4762,7 @@ const renderActionTakenStep = () => {
   };
 
   const saveArrestedEntry = () => {
-    const arrestedFields = allSchemaFields.filter(f => f.field_key?.startsWith('arrested_') || f.field_key?.startsWith('arrest_') || f.section === 'arrestee_info' || f.section === 'arrested_personal_info' || f.section === 'arrested_address' || f.section === 'arrest_details');
+    const arrestedFields = allSchemaFields.filter(f => f.field_key?.startsWith('arrested_') || f.field_key?.startsWith('arrest_') || f.section === 'arrestee_info' || f.section === 'arrested_personal_info' || f.section === 'arrested_address' || f.section === 'arrest_details' || f.field_key === 'scheme_of_arrest' || f.section === 'custody_status' || f.field_key === 'status');
     const errs = {};
     const touchedFields = {};
 
@@ -5553,6 +5574,7 @@ const renderActionTakenStep = () => {
             io_rank: cData.io_rank || '',
             io_pis: cData.io_pis || '',
             io_mobile: cData.io_mobile || '',
+            case_type: cData.case_type || matchedBackendCase.case_type || 'cctns(manual FIR)',
           };
         } else if (matchedMockCase) {
           autofilled = {
@@ -5562,6 +5584,7 @@ const renderActionTakenStep = () => {
             io_rank: 'Inspector',
             io_pis: '28081234',
             io_mobile: '9876543210',
+            case_type: 'cctns(manual FIR)',
           };
         }
         setValues(prev => ({
@@ -5573,6 +5596,7 @@ const renderActionTakenStep = () => {
           io_rank: prev.io_rank || autofilled.io_rank || '',
           io_pis: prev.io_pis || autofilled.io_pis || '',
           io_mobile: prev.io_mobile || autofilled.io_mobile || '',
+          case_type: prev.case_type || autofilled.case_type || 'cctns(manual FIR)',
         }));
       }
     }

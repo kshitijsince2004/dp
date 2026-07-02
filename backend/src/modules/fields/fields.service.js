@@ -143,3 +143,47 @@ export const toggleFieldStatus = async (id, is_active) => {
   if (!updatedField) throw new Error('Field not found');
   return updatedField;
 };
+
+// --- Lookup Table Services ---
+
+export const getActs = async () => {
+  return await db('excel_acts').select('act_cd', 'act_long').orderBy('act_long', 'asc');
+};
+
+export const getSectionsForAct = async (act_cd) => {
+  return await db('excel_sections')
+    .where({ act_sec_cd: String(act_cd) })
+    .select('section_code', 'section', 'section_desc', 'pnsh_gt_7yrs')
+    .orderBy('section_code', 'asc');
+};
+
+export const getMajorHeads = async () => {
+  return await db('excel_major_heads').select('major_head_code', 'major_head').orderBy('major_head', 'asc');
+};
+
+export const getMinorHeadsForMajorHead = async (major_head_code) => {
+  return await db('excel_minor_heads')
+    .where({ major_head_code: parseInt(major_head_code, 10) })
+    .select('minor_head_cd', 'minor_head')
+    .orderBy('minor_head', 'asc');
+};
+
+export const getPropertyCategories = async () => {
+  return await db('excel_property_types').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property').orderBy('code_type', 'asc');
+};
+
+export const getPropertyItemsForCategory = async (parent_cd) => {
+  return await db('excel_other_property_items')
+    .where({ parent_cd: parseInt(parent_cd, 10) })
+    .select('property_cd', 'property_type_srno', 'property')
+    .orderBy('property', 'asc');
+};
+
+export const getBeats = async (ps_cd) => {
+  let query = db('excel_beats').select('beat_cd', 'beat_name', 'ps_cd');
+  if (ps_cd) {
+    query = query.where({ ps_cd: String(ps_cd) });
+  }
+  return await query.orderBy('beat_name', 'asc');
+};
+
