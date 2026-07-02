@@ -32,6 +32,9 @@ export default function FieldRenderer({
   const status  = hasError ? 'error' : '';
   const placeholder = lang === 'hi' ? field.placeholder_hi : field.placeholder_en;
 
+  const containerBg = readOnly ? 'bg-slate-50' : 'bg-white';
+  const disabledClass = readOnly ? 'cursor-not-allowed text-slate-400' : 'text-slate-800';
+
   let options = field.options;
   if (typeof options === 'string') {
     try { options = JSON.parse(options); } catch { options = []; }
