@@ -445,7 +445,7 @@ export const getFieldsForForm = async (req, res) => {
           is_repeater: false,
           fields: filteredFields.filter(f =>
             ['general_info', 'incident_details', 'offence_info'].includes(f.section) &&
-            !['occurrence_place', 'brief_facts', 'local_head'].includes(f.field_key) &&
+            !['occurrence_place', 'brief_facts'].includes(f.field_key) &&
             !f.repeater_entity
           )
         },
