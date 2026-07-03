@@ -127,9 +127,55 @@ export const getFieldsForForm = async (req, res) => {
     // human-readable label, not the underlying numeric code).
     const toValueLabel = (labelCol) => (r) => ({ value: r[labelCol], label_en: r[labelCol], label_hi: r[labelCol] });
 
-    // 1. Acts — no override here; act_name's options come from the seed's own curated static
-    // list via the default `options = parseJsonField(f.options)` path below (see field_key
-    // dispatch), which is exactly what its show_when clauses (act_name === 'IPC', etc.) expect.
+    // 1. Acts — load dynamically from excel_acts and map to expected frontend keys
+    const dbActs = await fieldsService.getActs();
+    const actOptions = dbActs.map(act => {
+      let value = act.act_long;
+      let label_en = act.act_long;
+      let label_hi = act.act_long;
+
+      if (ACT_GROUP_CODES.IPC.includes(act.act_cd)) {
+        value = 'IPC';
+        label_en = 'IPC 1860';
+        label_hi = 'भारतीय दंड संहिता (IPC 1860)';
+      } else if (ACT_GROUP_CODES['Delhi Excise Act'].includes(act.act_cd)) {
+        value = 'Delhi Excise Act';
+        label_en = 'Delhi Excise Act';
+        label_hi = 'दिल्ली उत्पाद शुल्क अधिनियम (Excise)';
+      } else if (ACT_GROUP_CODES['Arms Act'].includes(act.act_cd)) {
+        value = 'Arms Act';
+        label_en = 'Arms Act, 1959';
+        label_hi = 'आयुध अधिनियम (Arms Act)';
+      } else if (ACT_GROUP_CODES['Gambling Act'].includes(act.act_cd)) {
+        value = 'Gambling Act';
+        label_en = 'Delhi Public Gambling Act';
+        label_hi = 'दिल्ली सार्वजनिक जुआ अधिनियम (Gambling)';
+      }
+
+      return { value, label_en, label_hi };
+    });
+
+    const fallbackActs = [
+      { value: 'BNS', label_en: 'BNS (Bharatiya Nyaya Sanhita)', label_hi: 'भारतीय न्याय संहिता (BNS)' },
+      { value: 'BNSS', label_en: 'BNSS (Bharatiya Nagarik Suraksha Sanhita)', label_hi: 'भारतीय नागरिक सुरक्षा संहिता (BNSS)' },
+      { value: 'CrPC', label_en: 'CrPC (Code of Criminal Procedure)', label_hi: 'दंड प्रक्रिया संहिता (CrPC)' },
+      { value: 'Other Act', label_en: 'Other Act', label_hi: 'अन्य अधिनियम (Other Act)' }
+    ];
+
+    const finalActOptions = [];
+    const seenActValues = new Set();
+    for (const opt of actOptions) {
+      if (!seenActValues.has(opt.value)) {
+        seenActValues.add(opt.value);
+        finalActOptions.push(opt);
+      }
+    }
+    for (const opt of fallbackActs) {
+      if (!seenActValues.has(opt.value)) {
+        seenActValues.add(opt.value);
+        finalActOptions.push(opt);
+      }
+    }
 
     // 2. Sections per Act — resolved via ACT_GROUP_CODES, no magic act codes inline.
     const ipcSectionOptions = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES.IPC)).map(toValueLabel('section'));
@@ -183,10 +229,10 @@ export const getFieldsForForm = async (req, res) => {
         let options = parseJsonField(f.options);
 
         // Load lookup options from database dynamically
-        // (act_name intentionally has no override here — its options flow through from the
-        // seed's own curated static list via the `options = parseJsonField(f.options)` default
-        // above, which is what its show_when clauses expect. See fetch block above for why.)
-        if (f.field_key === 'local_head' || f.field_key === 'crime_head') {
+        if (f.field_key === 'act_name') {
+          field_type = 'SELECT';
+          options = finalActOptions;
+        } else if (f.field_key === 'local_head' || f.field_key === 'crime_head') {
           field_type = 'SELECT';
           options = localHeadOptions;
         } else if (f.field_key === 'property_major_category') {
@@ -399,7 +445,7 @@ export const getFieldsForForm = async (req, res) => {
           is_repeater: false,
           fields: filteredFields.filter(f =>
             ['general_info', 'incident_details', 'offence_info'].includes(f.section) &&
-            !['occurrence_place', 'brief_facts', 'local_head'].includes(f.field_key) &&
+            !['occurrence_place', 'brief_facts'].includes(f.field_key) &&
             !f.repeater_entity
           )
         },
@@ -954,8 +1000,78 @@ export const listSectionsForAct = async (req, res) => {
 
 export const listMajorHeads = async (req, res) => {
   try {
-    const data = await db('excel_major_heads').select('major_head_code as value', 'major_head as label').orderBy('major_head', 'asc');
-    return res.status(200).json({ success: true, data });
+    const actNameRaw = req.query.act_name;
+    let data = [];
+
+    if (actNameRaw) {
+      const rawActNames = actNameRaw.split(',').map(a => a.trim()).filter(Boolean);
+      const actNames = [];
+      for (const item of rawActNames) {
+        if (/^\d{4}$/.test(item) && actNames.length > 0) {
+          actNames[actNames.length - 1] = `${actNames[actNames.length - 1]}, ${item}`;
+        } else {
+          actNames.push(item);
+        }
+      }
+      const actCds = [];
+      const customNames = [];
+
+      for (const name of actNames) {
+        if (ACT_GROUP_CODES[name]) {
+          actCds.push(...ACT_GROUP_CODES[name]);
+        } else {
+          customNames.push(name);
+        }
+      }
+
+      if (customNames.length > 0) {
+        const nameVariants = [];
+        for (const name of customNames) {
+          nameVariants.push(name);
+          if (name.includes(',')) {
+            nameVariants.push(name.replace(/,\s*/g, ','));
+            nameVariants.push(name.replace(/,\s*/g, ', '));
+          }
+        }
+        const customActs = await db('excel_acts')
+          .whereIn('act_long', nameVariants)
+          .select('act_cd');
+        actCds.push(...customActs.map(a => a.act_cd));
+      }
+
+      if (actCds.length > 0) {
+        const mappings = await db('excel_major_minor_mapping')
+          .whereIn('act_cd', actCds)
+          .distinct('major_head_code');
+        const majorCds = mappings.map(m => m.major_head_code);
+
+        if (majorCds.length > 0) {
+          data = await db('excel_major_heads')
+            .whereIn('major_head_code', majorCds)
+            .select('major_head as value', 'major_head as label')
+            .orderBy('major_head', 'asc');
+        }
+      }
+    }
+
+    // Fallback: if no acts are requested, return all major heads
+    if (!actNameRaw) {
+      data = await db('excel_major_heads')
+        .select('major_head as value', 'major_head as label')
+        .orderBy('major_head', 'asc');
+    }
+
+    // Deduplicate by value (major_head name) to prevent React duplicate key warnings
+    const seen = new Set();
+    const uniqueData = data.filter(item => {
+      if (!item.value) return false;
+      const val = item.value.trim();
+      if (seen.has(val)) return false;
+      seen.add(val);
+      return true;
+    });
+
+    return res.status(200).json({ success: true, data: uniqueData });
   } catch (error) {
     logger.error('listMajorHeads failed', { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
@@ -966,8 +1082,19 @@ export const listMajorHeadsForSection = async (req, res) => {
   const { section_code } = req.params;
   try {
     const rows = await fieldsService.getMajorHeadsForSection(section_code);
-    const data = rows.map(r => ({ value: r.major_head_code, label: r.major_head }));
-    return res.status(200).json({ success: true, data });
+    const data = rows.map(r => ({ value: r.major_head, label: r.major_head }));
+    
+    // Deduplicate major heads
+    const seen = new Set();
+    const uniqueData = data.filter(item => {
+      if (!item.value) return false;
+      const val = item.value.trim();
+      if (seen.has(val)) return false;
+      seen.add(val);
+      return true;
+    });
+
+    return res.status(200).json({ success: true, data: uniqueData });
   } catch (error) {
     logger.error('listMajorHeadsForSection failed', { section_code, error: error.message });
     return res.status(500).json({ success: false, message: error.message });
@@ -977,9 +1104,35 @@ export const listMajorHeadsForSection = async (req, res) => {
 export const listMinorHeadsForMajorHead = async (req, res) => {
   const { major_head_code } = req.params;
   try {
-    const rows = await fieldsService.getMinorHeadsForMajorHeads([parseInt(major_head_code, 10)]);
-    const data = rows.map(r => ({ value: r.minor_head_cd, label: r.minor_head }));
-    return res.status(200).json({ success: true, data });
+    let code = parseInt(major_head_code, 10);
+    if (isNaN(code)) {
+      // Resolve string name to numeric code
+      const mh = await db('excel_major_heads')
+        .where('major_head', 'ilike', major_head_code)
+        .first();
+      if (mh) {
+        code = mh.major_head_code;
+      }
+    }
+
+    if (isNaN(code)) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    const rows = await fieldsService.getMinorHeadsForMajorHeads([code]);
+    const data = rows.map(r => ({ value: r.minor_head, label: r.minor_head }));
+    
+    // Deduplicate minor heads
+    const seen = new Set();
+    const uniqueData = data.filter(item => {
+      if (!item.value) return false;
+      const val = item.value.trim();
+      if (seen.has(val)) return false;
+      seen.add(val);
+      return true;
+    });
+
+    return res.status(200).json({ success: true, data: uniqueData });
   } catch (error) {
     logger.error('listMinorHeadsForMajorHead failed', { major_head_code, error: error.message });
     return res.status(500).json({ success: false, message: error.message });

@@ -13,6 +13,8 @@ import * as notifyHandler from './events/handlers/notifyHandler.js';
 import * as linkAuditHandler from './events/handlers/linkAuditHandler.js';
 import { initScheduler } from './modules/reports/scheduler.js';
 import { ipAllowlistMiddleware, csrfDoubleSubmitMiddleware } from './middleware/security.middleware.js';
+import { authMiddleware } from './middleware/auth.middleware.js';
+import { getActsSectionsRegistry } from './modules/fields/fields.service.js';
 
 // Import routers
 import authRouter from './modules/auth/auth.router.js';
@@ -79,6 +81,16 @@ app.use('/api/v1/auth', authLimiter);
 // Bind API Routes (Dual Registration for compatibility)
 app.use('/api/v1/auth', authRouter);
 app.use('/api/auth', authRouter);
+
+app.get('/api/acts-sections', authMiddleware, async (req, res) => {
+  try {
+    const data = await getActsSectionsRegistry();
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('Failed to fetch acts-sections registry', { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 app.use('/api/v1/fields', fieldsRouter);
 app.use('/api/fields', fieldsRouter);

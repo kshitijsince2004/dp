@@ -62,14 +62,9 @@ export const getAllMinorHeadsByMajorHead = async () => {
 };
 
 export const getPropertyCategories = async () => {
-  const standard = await db('excel_property_types').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property');
-  const others = await db('excel_other_property_categories').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property');
-
-  const map = new Map();
-  for (const item of [...standard, ...others]) {
-    map.set(item.parent_cd, item);
-  }
-  return Array.from(map.values()).sort((a, b) => a.code_type.localeCompare(b.code_type));
+  return db('excel_property_types')
+    .select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property')
+    .orderBy('code_type', 'asc');
 };
 
 export const getPropertyItemsForCategory = async (parentCd) => {
@@ -105,4 +100,77 @@ export const getBeats = async (psCd) => {
 
 export const getLocalHeads = async () => {
   return db('excel_local_heads').select('local_head_cd', 'local_head').orderBy('local_head', 'asc');
+};
+
+let cachedRegistry = null;
+
+export const getActsSectionsRegistry = async () => {
+  if (cachedRegistry) return cachedRegistry;
+
+  const acts = await db('excel_acts').select('act_cd', 'act_long');
+  const sections = await db('excel_sections').select('act_sec_cd', 'section', 'section_desc');
+
+  const sectionsByActCd = {};
+  for (const s of sections) {
+    if (!sectionsByActCd[s.act_sec_cd]) {
+      sectionsByActCd[s.act_sec_cd] = [];
+    }
+    sectionsByActCd[s.act_sec_cd].push({
+      section: s.section,
+      desc: s.section_desc || ''
+    });
+  }
+
+  // Mappings to frontend expected keys
+  const groupMappings = {
+    43: 'IPC',
+    3032: 'Delhi Excise Act',
+    3270: 'Delhi Excise Act',
+    4: 'Arms Act',
+    2612: 'Gambling Act',
+    68: 'Gambling Act'
+  };
+
+  const registryMap = new Map();
+
+  for (const act of acts) {
+    const actSections = sectionsByActCd[act.act_cd] || [];
+    if (actSections.length === 0) continue;
+
+    // Determine the registry key/act name
+    const actKey = groupMappings[act.act_cd] || act.act_long;
+
+    // If we already have sections for this actKey, merge them
+    if (registryMap.has(actKey)) {
+      const existing = registryMap.get(actKey);
+      const mergedMap = new Map();
+      for (const item of [...existing, ...actSections]) {
+        mergedMap.set(item.section, item);
+      }
+      registryMap.set(actKey, Array.from(mergedMap.values()));
+    } else {
+      registryMap.set(actKey, actSections);
+    }
+  }
+
+  // Convert map to list and sort sections
+  cachedRegistry = Array.from(registryMap.entries()).map(([actName, actSections]) => {
+    actSections.sort((a, b) => {
+      const valA = a.section;
+      const valB = b.section;
+      const numA = parseInt(valA, 10);
+      const numB = parseInt(valB, 10);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numA - numB;
+      }
+      return valA.localeCompare(valB);
+    });
+
+    return {
+      act: actName,
+      sections: actSections
+    };
+  });
+
+  return cachedRegistry;
 };

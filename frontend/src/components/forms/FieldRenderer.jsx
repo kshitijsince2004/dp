@@ -254,7 +254,7 @@ export default function FieldRenderer({
     );
   }
 
-  if (key.endsWith('_nickname') || key.endsWith('_nick_name') || key.endsWith('_alias')) {
+  if (key.endsWith('_nickname') || key.endsWith('_nick_name') || key.endsWith('_alias') || key === 'nick_name') {
     return <NicknameChipsField disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} lang={lang} placeholder={placeholder} />;
   }
 
