@@ -1019,7 +1019,6 @@ export const listMajorHeads = async (req, res) => {
       if (customNames.length > 0) {
         const customActs = await db('excel_acts')
           .whereIn('act_long', customNames)
-          .orWhereIn('act_short', customNames)
           .select('act_cd');
         actCds.push(...customActs.map(a => a.act_cd));
       }

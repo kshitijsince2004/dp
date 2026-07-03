@@ -47,6 +47,21 @@ export const generateUID = async (recordType, psId, dateStr, trx = db) => {
   return `${typeCode}/${year}/${psCode}/${seq}`;
 };
 
+const DYNAMIC_LOOKUP_FIELDS = [
+  'act_name',
+  'sections',
+  'ipc_sections',
+  'excise_sections',
+  'arms_sections',
+  'gambling_sections',
+  'other_sections',
+  'local_head',
+  'crime_head',
+  'property_major_category',
+  'property_minor_category',
+  'beat_no'
+];
+
 const validateSelectFields = async (trx, recordType, data) => {
   const allFields = await trx('field_registry').where('is_active', true);
   const selectFields = allFields.filter(f => {
@@ -62,6 +77,11 @@ const validateSelectFields = async (trx, recordType, data) => {
   });
 
   for (const f of selectFields) {
+    // Exempt dynamic database lookup fields from static validation
+    if (DYNAMIC_LOOKUP_FIELDS.includes(f.field_key)) {
+      continue;
+    }
+
     const val = data[f.field_key];
     if (val !== undefined && val !== null && val !== '') {
       let options = [];
