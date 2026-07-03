@@ -716,8 +716,8 @@ export default function DynamicForm({
           majorMinorRows={majorMinorRows}
           onAddMajorMinorRow={handleAddMajorMinorRow}
           onDeleteMajorMinorRow={handleDeleteMajorMinorRow}
-          getMajorHeadOptions={getMajorHeadOptions}
-          getMinorHeadOptions={getMinorHeadOptions}
+          getMajorHeadOptions={() => dbMajorHeadOptions}
+          getMinorHeadOptions={() => dbMinorHeadOptions}
           getLocalHeadOptions={getLocalHeadOptions}
           localHeadLayout="split"
         />
@@ -865,8 +865,8 @@ export default function DynamicForm({
           majorMinorRows={majorMinorRows}
           onAddMajorMinorRow={handleAddMajorMinorRow}
           onDeleteMajorMinorRow={handleDeleteMajorMinorRow}
-          getMajorHeadOptions={getMajorHeadOptions}
-          getMinorHeadOptions={getMinorHeadOptions}
+          getMajorHeadOptions={() => dbMajorHeadOptions}
+          getMinorHeadOptions={() => dbMinorHeadOptions}
           getLocalHeadOptions={getLocalHeadOptions}
           localHeadLayout="combined"
         />
@@ -2667,6 +2667,8 @@ const renderActionTakenStep = () => {
   const [newSection,   setNewSection  ] = useState('');
   const [newSectionVal, setNewSectionVal] = useState('');
   const [actsSectionsRegistry, setActsSectionsRegistry] = useState(ACTS_SECTIONS_REGISTRY);
+  const [dbMajorHeadOptions, setDbMajorHeadOptions] = useState([]);
+  const [dbMinorHeadOptions, setDbMinorHeadOptions] = useState([]);
   const [showOccurrencePlace, setShowOccurrencePlace] = useState(false);
 
   // Victim Modal state hooks
@@ -3390,6 +3392,76 @@ const renderActionTakenStep = () => {
       active = false;
     };
   }, []);
+
+  // Fetch Major Heads dynamically from the database based on selected sections/acts
+  useEffect(() => {
+    let active = true;
+    const sectionList = (values.sections || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (sectionList.length === 0) {
+      // Fetch all major heads
+      api.get('/fields/lookup/major-heads')
+        .then(res => {
+          if (active && res.data?.success && Array.isArray(res.data.data)) {
+            setDbMajorHeadOptions(res.data.data);
+          }
+        })
+        .catch(err => console.error('Failed to fetch major heads:', err.message));
+      return;
+    }
+
+    // Fetch major heads in parallel for each selected section
+    Promise.all(
+      sectionList.map(sec =>
+        api.get(`/fields/lookup/sections/${sec}/major-heads`)
+          .then(res => res.data?.data || [])
+          .catch(() => [])
+      )
+    ).then(results => {
+      if (!active) return;
+      const seen = new Set();
+      const merged = [];
+      for (const list of results) {
+        for (const item of list) {
+          if (!seen.has(item.value)) {
+            seen.add(item.value);
+            merged.push(item);
+          }
+        }
+      }
+      setDbMajorHeadOptions(merged);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [values.sections]);
+
+  // Fetch Minor Heads dynamically from the database based on selected Major Head
+  useEffect(() => {
+    let active = true;
+    if (!selectedMajorHead) {
+      setDbMinorHeadOptions([]);
+      return;
+    }
+
+    api.get(`/fields/lookup/major-heads/${selectedMajorHead}/minor-heads`)
+      .then(res => {
+        if (active && res.data?.success && Array.isArray(res.data.data)) {
+          setDbMinorHeadOptions(res.data.data);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch minor heads:', err.message);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedMajorHead]);
 
   const formRef = useRef(null);
 

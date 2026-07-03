@@ -1000,7 +1000,9 @@ export const listSectionsForAct = async (req, res) => {
 
 export const listMajorHeads = async (req, res) => {
   try {
-    const data = await db('excel_major_heads').select('major_head_code as value', 'major_head as label').orderBy('major_head', 'asc');
+    const data = await db('excel_major_heads')
+      .select('major_head as value', 'major_head as label')
+      .orderBy('major_head', 'asc');
     return res.status(200).json({ success: true, data });
   } catch (error) {
     logger.error('listMajorHeads failed', { error: error.message });
@@ -1012,7 +1014,7 @@ export const listMajorHeadsForSection = async (req, res) => {
   const { section_code } = req.params;
   try {
     const rows = await fieldsService.getMajorHeadsForSection(section_code);
-    const data = rows.map(r => ({ value: r.major_head_code, label: r.major_head }));
+    const data = rows.map(r => ({ value: r.major_head, label: r.major_head }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
     logger.error('listMajorHeadsForSection failed', { section_code, error: error.message });
@@ -1023,8 +1025,23 @@ export const listMajorHeadsForSection = async (req, res) => {
 export const listMinorHeadsForMajorHead = async (req, res) => {
   const { major_head_code } = req.params;
   try {
-    const rows = await fieldsService.getMinorHeadsForMajorHeads([parseInt(major_head_code, 10)]);
-    const data = rows.map(r => ({ value: r.minor_head_cd, label: r.minor_head }));
+    let code = parseInt(major_head_code, 10);
+    if (isNaN(code)) {
+      // Resolve string name to numeric code
+      const mh = await db('excel_major_heads')
+        .where('major_head', 'ilike', major_head_code)
+        .first();
+      if (mh) {
+        code = mh.major_head_code;
+      }
+    }
+
+    if (isNaN(code)) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    const rows = await fieldsService.getMinorHeadsForMajorHeads([code]);
+    const data = rows.map(r => ({ value: r.minor_head, label: r.minor_head }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
     logger.error('listMinorHeadsForMajorHead failed', { major_head_code, error: error.message });
