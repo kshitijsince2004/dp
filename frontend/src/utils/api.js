@@ -981,7 +981,20 @@ const formSchemas = {
           validation_rules: { required: true }
         },
         { field_key: 'pcr_call_flag', field_type: 'BOOLEAN', label_en: 'PCR Call (Y/N)', label_hi: 'पीसीआर कॉल (हाँ/नहीं)', validation_rules: { required: false } },
-        { field_key: 'operator_name', field_type: 'TEXT', label_en: 'Operator Name to Whom MPS', label_hi: 'ऑपरेटर का नाम जिसे एमपीएस', validation_rules: { required: false } }
+        { field_key: 'operator_name', field_type: 'TEXT', label_en: 'Operator Name to Whom MPS', label_hi: 'ऑपरेटर का नाम जिसे एमपीएस', validation_rules: { required: false } },
+        {
+          field_key: 'status',
+          field_type: 'SELECT',
+          label_en: 'Current Log Status',
+          label_hi: 'वर्तमान रिकॉर्ड स्थिति',
+          options: [
+            { value: 'Active', label_en: 'Active Search Ongoing', label_hi: 'सक्रिय खोज जारी' },
+            { value: 'Traced', label_en: 'Traced & Reunited', label_hi: 'ढूंढ लिया गया / परिजनों से मिलाया गया' },
+            { value: 'Referred', label_en: 'Referred to Missing Persons Bureau', label_hi: 'लापता व्यक्ति ब्यूरो को संदर्भित' },
+            { value: 'Closed', label_en: 'Closed Case', label_hi: 'मामला बंद' }
+          ],
+          validation_rules: { required: true }
+        }
       ]
     },
     {
@@ -1330,17 +1343,34 @@ const formSchemas = {
         { field_key: 'io_mobile', field_type: 'TEXT', label_en: 'IO Mobile No.', label_hi: 'जांच अधिकारी का मोबाइल नंबर', validation_rules: { required: false } },
         { field_key: 'remarks', field_type: 'TEXTAREA', label_en: 'Remarks', label_hi: 'टिप्पणी', validation_rules: { required: false }, full_width: true },
         {
-          field_key: 'status',
+          field_key: 'case_status',
           field_type: 'SELECT',
-          label_en: 'Current Log Status',
-          label_hi: 'वर्तमान रिकॉर्ड स्थिति',
+          label_en: 'Status',
+          label_hi: 'स्थिति',
           options: [
-            { value: 'Active', label_en: 'Active Search Ongoing', label_hi: 'सक्रिय खोज जारी' },
-            { value: 'Traced', label_en: 'Traced & Reunited', label_hi: 'ढूंढ लिया गया / परिजनों से मिलाया गया' },
-            { value: 'Referred', label_en: 'Referred to Missing Persons Bureau', label_hi: 'लापता व्यक्ति ब्यूरो को संदर्भित' },
-            { value: 'Closed', label_en: 'Closed Case', label_hi: 'मामला बंद' }
+            { value: 'CHARGE SHEET', label_en: 'CHARGE SHEET', label_hi: 'आरोप पत्र' },
+            { value: 'POLICE INVESTIGATION REPORT(PIR-JCL)', label_en: 'POLICE INVESTIGATION REPORT(PIR-JCL)', label_hi: 'पुलिस जांच रिपोर्ट (PIR-JCL)' },
+            { value: 'UNTRACED', label_en: 'UNTRACED', label_hi: 'अनट्रेस्ड' },
+            { value: 'PENDING', label_en: 'PENDING', label_hi: 'लंबित' },
+            { value: 'CANCELLATION', label_en: 'CANCELLATION', label_hi: 'रद्दीकरण' },
+            { value: 'QUASHED', label_en: 'QUASHED', label_hi: 'रद्द / क्वैश' },
+            { value: 'CLOSURE REPORT', label_en: 'CLOSURE REPORT', label_hi: 'क्लोजर रिपोर्ट' },
+            { value: 'RELEASED U/S 189 BNSS', label_en: 'RELEASED U/S 189 BNSS', label_hi: 'धारा 189 बीएनएसएस के तहत रिहा' },
+            { value: 'TRANSFER', label_en: 'TRANSFER', label_hi: 'स्थानांतरण' }
           ],
           validation_rules: { required: true }
+        },
+        {
+          field_key: 'transfer_to',
+          field_type: 'RADIO',
+          label_en: 'Transfer To',
+          label_hi: 'स्थानांतरण करें',
+          options: [
+            { value: 'PS', label_en: 'PS', label_hi: 'पुलिस स्टेशन' },
+            { value: 'Agency', label_en: 'Agency', label_hi: 'एजेंसी' }
+          ],
+          validation_rules: { required: false },
+          show_when: { field: 'case_status', value: 'TRANSFER' }
         }
       ]
     }

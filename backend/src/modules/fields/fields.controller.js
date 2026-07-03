@@ -345,8 +345,8 @@ export const getFieldsForForm = async (req, res) => {
           }
         } else if (normalizedType === 'MISSING') {
           if (f.field_key === 'status') {
-            section = 'investigation_officer';
-            sort_order = 60.5;
+            section = 'general_info';
+            sort_order = 10.6;
           } else if (f.section === 'general_info') {
             section = 'general_info';
             if (f.field_key === 'source') sort_order = 10.1;
@@ -735,6 +735,13 @@ export const getFieldsForForm = async (req, res) => {
           title_hi: 'पूछताछ विवरण',
           is_repeater: false,
           fields: filteredFields.filter(f => f.section === 'inquest_details' && !f.repeater_entity)
+        },
+        {
+          section: 'investigation_officer',
+          title_en: 'Investigating Officer',
+          title_hi: 'जांच अधिकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
         }
       ];
     } else {
