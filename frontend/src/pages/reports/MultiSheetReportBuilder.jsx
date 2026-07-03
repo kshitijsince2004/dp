@@ -80,8 +80,8 @@ export const MultiSheetReportBuilder = () => {
     try {
       const filters = {};
       if (dateRange && dateRange.length === 2) {
-        filters.date_from = dateRange[0].format('YYYY-MM-DD');
-        filters.date_to = dateRange[1].format('YYYY-MM-DD');
+        filters.date_from = dateRange[0].format('DD/MM/YYYY');
+        filters.date_to = dateRange[1].format('DD/MM/YYYY');
       }
       if (selectedPs) {
         filters.ps_id = selectedPs;
@@ -202,9 +202,10 @@ export const MultiSheetReportBuilder = () => {
           <Col xs={24} md={8}>
             <div className="space-y-1.5">
               <label className="text-zinc-400 font-semibold text-xs uppercase">Date Range</label>
-              <RangePicker 
+              <RangePicker
                 value={dateRange}
                 onChange={val => setDateRange(val)}
+                format="DD/MM/YYYY"
                 style={{ width: '100%', background: '#181f2a', borderColor: '#2d3748' }}
               />
             </div>

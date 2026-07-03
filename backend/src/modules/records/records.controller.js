@@ -1,6 +1,7 @@
 import * as recordsService from './records.service.js';
 import { verifyRecordAccess } from '../../middleware/rbac.middleware.js';
 import { maskRecordData, maskRecordDetails } from '../level-contracts/levelContracts.service.js';
+import { toISO } from '../../utils/dateFormat.js';
 import path from 'path';
 
 export const getRecords = async (req, res) => {
@@ -10,7 +11,14 @@ export const getRecords = async (req, res) => {
   try {
     const records = await recordsService.listRecords(
       type,
-      { status: status !== 'ALL' ? status : null, dateFrom, dateTo, search, linked_case_id, linked_fir_no },
+      {
+        status: status !== 'ALL' ? status : null,
+        dateFrom: toISO(dateFrom) || dateFrom,
+        dateTo: toISO(dateTo) || dateTo,
+        search,
+        linked_case_id,
+        linked_fir_no
+      },
       req.jurisdictionQuery
     );
     const maskedRecords = await Promise.all(
@@ -43,7 +51,8 @@ export const getRecord = async (req, res) => {
 
 export const create = async (req, res) => {
   const { record_type, data, persons = [], properties = [] } = req.body;
-  const record_date = req.body.record_date || new Date().toISOString().split('T')[0];
+  // record_date is a native DATE column; frontend sends dd/mm/yyyy, parse to ISO.
+  const record_date = toISO(req.body.record_date) || new Date().toISOString().split('T')[0];
   const ipAddress = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
 
   if (!record_type || !record_date || !data) {
@@ -168,7 +177,7 @@ export const getQueue = async (req, res) => {
   try {
     const records = await recordsService.listRecords(
       type,
-      { status: filterStatus, dateFrom, dateTo, search },
+      { status: filterStatus, dateFrom: toISO(dateFrom) || dateFrom, dateTo: toISO(dateTo) || dateTo, search },
       req.jurisdictionQuery
     );
     const maskedRecords = await Promise.all(

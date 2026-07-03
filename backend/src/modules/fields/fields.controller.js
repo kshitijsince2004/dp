@@ -1,6 +1,9 @@
 import db from '../../config/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { publish } from '../../events/eventBus.js';
+import { logger } from '../../utils/logger.js';
+import * as fieldsService from './fields.service.js';
+import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from './classificationSources.config.js';
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -118,91 +121,56 @@ export const getFieldsForForm = async (req, res) => {
 
     const rawFields = await query;
 
-    // 1. Fetch Acts
-    const dbActs = await db('excel_acts').select('act_long').distinct().orderBy('act_long', 'asc');
-    const actOptions = dbActs.map(a => ({ value: a.act_long, label_en: a.act_long, label_hi: a.act_long }));
+    // Small local shaping helper — raw excel_* rows -> {value,label_en,label_hi} option shape,
+    // using labelCol as both the value and the display label (matches the existing, established
+    // convention for these per-act/per-crime fields, whose show_when clauses compare against the
+    // human-readable label, not the underlying numeric code).
+    const toValueLabel = (labelCol) => (r) => ({ value: r[labelCol], label_en: r[labelCol], label_hi: r[labelCol] });
 
-    // 2. Fetch Sections per Act
-    const fetchSections = async (actCd) => {
-      const rows = await db('excel_sections').where({ act_sec_cd: String(actCd) }).select('section').distinct().orderBy('section', 'asc');
-      return rows.map(r => ({ value: r.section, label_en: r.section, label_hi: r.section }));
-    };
-    const ipcSectionOptions = await fetchSections(43); // IPC
-    const armsSectionOptions = await fetchSections(4);  // Arms Act
-    const exciseSectionOptions = await db('excel_sections').whereIn('act_sec_cd', ['3032', '3270']).select('section').distinct().orderBy('section', 'asc').then(rows => rows.map(r => ({ value: r.section, label_en: r.section, label_hi: r.section })));
-    const gamblingSectionOptions = await db('excel_sections').whereIn('act_sec_cd', ['2612', '68']).select('section').distinct().orderBy('section', 'asc').then(rows => rows.map(r => ({ value: r.section, label_en: r.section, label_hi: r.section })));
+    // 1. Acts — no override here; act_name's options come from the seed's own curated static
+    // list via the default `options = parseJsonField(f.options)` path below (see field_key
+    // dispatch), which is exactly what its show_when clauses (act_name === 'IPC', etc.) expect.
 
-    // For general sections field (e.g. in UIDB or CASE), load IPC + CrPC + BNSS sections
-    const generalSectionOptions = await db('excel_sections')
-      .whereIn('act_sec_cd', ['43', '4', '3032', '3270', '2612', '68', '44', '3256'])
-      .select('section')
-      .distinct()
-      .limit(500)
-      .orderBy('section', 'asc')
-      .then(rows => rows.map(r => ({ value: r.section, label_en: r.section, label_hi: r.section })));
+    // 2. Sections per Act — resolved via ACT_GROUP_CODES, no magic act codes inline.
+    const ipcSectionOptions = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES.IPC)).map(toValueLabel('section'));
+    const exciseSectionOptions = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES['Delhi Excise Act'])).map(toValueLabel('section'));
+    const armsSectionOptions = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES['Arms Act'])).map(toValueLabel('section'));
+    const gamblingSectionOptions = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES['Gambling Act'])).map(toValueLabel('section'));
 
-    // 3. Fetch Major Heads per Act
-    const fetchMajorHeadsForAct = async (actCd) => {
-      const rows = await db('excel_major_heads as mh')
-        .join('excel_major_minor_mapping as m', 'mh.major_head_code', 'm.major_head_code')
-        .where('m.act_cd', actCd)
-        .select('mh.major_head')
-        .distinct()
-        .orderBy('mh.major_head', 'asc');
-      return rows.map(r => ({ value: r.major_head, label_en: r.major_head, label_hi: r.major_head }));
-    };
-    const ipcMajorHeadOptions = await fetchMajorHeadsForAct(43);
-    const armsMajorHeadOptions = await fetchMajorHeadsForAct(4);
-    const exciseMajorHeadOptions = await db('excel_major_heads as mh')
-      .join('excel_major_minor_mapping as m', 'mh.major_head_code', 'm.major_head_code')
-      .whereIn('m.act_cd', [3032, 3270])
-      .select('mh.major_head')
-      .distinct()
-      .orderBy('mh.major_head', 'asc')
-      .then(rows => rows.map(r => ({ value: r.major_head, label_en: r.major_head, label_hi: r.major_head })));
-    const gamblingMajorHeadOptions = await fetchMajorHeadsForAct(2612);
+    // For the general sections field (e.g. in UIDB or CASE), load sections for every act that has
+    // a dedicated group above.
+    const allGroupedActCodes = Object.values(ACT_GROUP_CODES).flat();
+    const generalSectionOptions = (await fieldsService.getSectionsForActs(allGroupedActCodes)).map(toValueLabel('section'));
 
-    // 4. Fetch Minor Heads per Major Head Name
-    const fetchMinorHeads = async (majorHeadNames) => {
-      const names = Array.isArray(majorHeadNames) ? majorHeadNames : [majorHeadNames];
-      const mhs = await db('excel_major_heads').whereIn('major_head', names).select('major_head_code');
-      const codes = mhs.map(m => m.major_head_code);
-      if (codes.length === 0) return [];
-      const rows = await db('excel_minor_heads').whereIn('major_head_code', codes).select('minor_head').distinct().orderBy('minor_head', 'asc');
-      return rows.map(r => ({ value: r.minor_head, label_en: r.minor_head, label_hi: r.minor_head }));
-    };
-    const theftMinorHeadOptions = await fetchMinorHeads(['THEFT', 'Theft']);
-    const murderMinorHeadOptions = await fetchMinorHeads(['MURDER (HOMICIDE)', 'Murder']);
-    const hurtMinorHeadOptions = await fetchMinorHeads(['HURT', 'Hurt']);
-    const cheatingMinorHeadOptions = await fetchMinorHeads(['CHEATING', 'Cheating']);
-    const robberyMinorHeadOptions = await fetchMinorHeads(['ROBBERY', 'Robbery']);
-    const excisePossessionMinorHeadOptions = await fetchMinorHeads(['POSSESSION', 'Possession']);
-    const exciseSaleMinorHeadOptions = await fetchMinorHeads(['SALE', 'Sale']);
-    const exciseSmugglingMinorHeadOptions = await fetchMinorHeads(['CUSTOMS (SMUGGLING)', 'Smuggling']);
-    const armsPossessionMinorHeadOptions = await fetchMinorHeads(['POSSESSION OF ILLEGAL ARMS', 'Possession of illegal arms']);
-    const armsUseMinorHeadOptions = await fetchMinorHeads(['USE OF ILLEGAL ARMS', 'Use of illegal arms']);
-    const gamblingHouseMinorHeadOptions = await fetchMinorHeads(['GAMING HOUSE', 'Gaming House']);
-    const gamblingPublicMinorHeadOptions = await fetchMinorHeads(['PUBLIC GAMBLING', 'Public Gambling']);
+    // 3. Major Heads per Act — joins on major_head_code via excel_major_minor_mapping, filtered
+    // by the real act_cd(s), no name-string matching.
+    const ipcMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES.IPC)).map(toValueLabel('major_head'));
+    const exciseMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES['Delhi Excise Act'])).map(toValueLabel('major_head'));
+    const armsMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES['Arms Act'])).map(toValueLabel('major_head'));
+    const gamblingMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES['Gambling Act'])).map(toValueLabel('major_head'));
+
+    // 4. Minor Heads per crime-specific field_key — resolved via MINOR_HEAD_MAJOR_CODES (verified
+    // major_head_code integers), not case-varying name matching. Codes with an empty array
+    // (documented source-data gaps) correctly resolve to an empty option list.
+    const minorHeadOptionsByFieldKey = {};
+    for (const [fieldKey, majorHeadCodes] of Object.entries(MINOR_HEAD_MAJOR_CODES)) {
+      const rows = await fieldsService.getMinorHeadsForMajorHeads(majorHeadCodes);
+      minorHeadOptionsByFieldKey[fieldKey] = rows.map(toValueLabel('minor_head'));
+    }
 
     // 5. Beats
-    const dbBeats = await db('excel_beats').select('beat_name').distinct().orderBy('beat_name', 'asc');
-    const beatOptions = dbBeats.map(b => ({ value: b.beat_name, label_en: b.beat_name, label_hi: b.beat_name }));
+    const beatOptions = (await fieldsService.getBeats()).map(toValueLabel('beat_name'));
 
     // 6. Local Heads
-    const dbLocalHeads = await db('excel_local_heads').select('local_head').distinct().orderBy('local_head', 'asc');
-    const localHeadOptions = dbLocalHeads.map(lh => ({ value: lh.local_head, label_en: lh.local_head, label_hi: lh.local_head }));
+    const localHeadOptions = (await fieldsService.getLocalHeads()).map(toValueLabel('local_head'));
 
-    // 7. Property Categories & Items
-    const dbPropCats = await db('excel_property_types').select('code_type').distinct().orderBy('code_type', 'asc');
-    const dbOtherPropCats = await db('excel_other_property_categories').select('code_type').distinct().orderBy('code_type', 'asc');
-    const propertyCategoryOptions = Array.from(new Set([...dbPropCats.map(c => c.code_type), ...dbOtherPropCats.map(c => c.code_type)])).sort().map(name => ({
-      value: name,
-      label_en: name,
-      label_hi: name
-    }));
-
-    const dbPropItems = await db('excel_other_property_items').select('property').distinct().orderBy('property', 'asc');
-    const propertyItemOptions = dbPropItems.map(item => ({ value: item.property, label_en: item.property, label_hi: item.property }));
+    // 7. Property Categories — numeric parent_cd as value, giving a stable join key into
+    // /lookup/property-items/:parent_cd. property_minor_category's options are intentionally NOT
+    // precomputed here (see field_key dispatch below) — its correct option set depends on a live
+    // sibling selection among 10 categories, which cannot be flattened into one static list.
+    const propertyCategoryOptions = (await fieldsService.getPropertyCategories())
+      .map(c => ({ value: c.parent_cd, label_en: c.code_type, label_hi: c.code_type }))
+      .sort((a, b) => a.label_en.localeCompare(b.label_en));
 
     // Filter by applicable_record_types (JS-side, handles both native array and JSON-string storage)
     const filteredFields = rawFields
@@ -215,18 +183,21 @@ export const getFieldsForForm = async (req, res) => {
         let options = parseJsonField(f.options);
 
         // Load lookup options from database dynamically
-        if (f.field_key === 'act_name') {
-          field_type = 'SELECT';
-          options = actOptions;
-        } else if (f.field_key === 'local_head' || f.field_key === 'crime_head') {
+        // (act_name intentionally has no override here — its options flow through from the
+        // seed's own curated static list via the `options = parseJsonField(f.options)` default
+        // above, which is what its show_when clauses expect. See fetch block above for why.)
+        if (f.field_key === 'local_head' || f.field_key === 'crime_head') {
           field_type = 'SELECT';
           options = localHeadOptions;
         } else if (f.field_key === 'property_major_category') {
           field_type = 'SELECT';
           options = propertyCategoryOptions;
         } else if (f.field_key === 'property_minor_category') {
+          // Options are inherently dependent on a live sibling selection (property_major_category)
+          // and cannot be precomputed in this single-shot response — see depends_on/options_source
+          // on the returned field object below.
           field_type = 'SELECT';
-          options = propertyItemOptions;
+          options = [];
         } else if (f.field_key === 'beat_no') {
           field_type = 'SELECT';
           options = beatOptions;
@@ -257,42 +228,9 @@ export const getFieldsForForm = async (req, res) => {
         } else if (f.field_key === 'gambling_major_head') {
           field_type = 'SELECT';
           options = gamblingMajorHeadOptions;
-        } else if (f.field_key === 'theft_minor_head') {
+        } else if (Object.prototype.hasOwnProperty.call(minorHeadOptionsByFieldKey, f.field_key)) {
           field_type = 'SELECT';
-          options = theftMinorHeadOptions;
-        } else if (f.field_key === 'murder_minor_head') {
-          field_type = 'SELECT';
-          options = murderMinorHeadOptions;
-        } else if (f.field_key === 'hurt_minor_head') {
-          field_type = 'SELECT';
-          options = hurtMinorHeadOptions;
-        } else if (f.field_key === 'cheating_minor_head') {
-          field_type = 'SELECT';
-          options = cheatingMinorHeadOptions;
-        } else if (f.field_key === 'robbery_minor_head') {
-          field_type = 'SELECT';
-          options = robberyMinorHeadOptions;
-        } else if (f.field_key === 'excise_possession_minor_head') {
-          field_type = 'SELECT';
-          options = excisePossessionMinorHeadOptions;
-        } else if (f.field_key === 'excise_sale_minor_head') {
-          field_type = 'SELECT';
-          options = exciseSaleMinorHeadOptions;
-        } else if (f.field_key === 'excise_smuggling_minor_head') {
-          field_type = 'SELECT';
-          options = exciseSmugglingMinorHeadOptions;
-        } else if (f.field_key === 'arms_possession_minor_head') {
-          field_type = 'SELECT';
-          options = armsPossessionMinorHeadOptions;
-        } else if (f.field_key === 'arms_use_minor_head') {
-          field_type = 'SELECT';
-          options = armsUseMinorHeadOptions;
-        } else if (f.field_key === 'gambling_house_minor_head') {
-          field_type = 'SELECT';
-          options = gamblingHouseMinorHeadOptions;
-        } else if (f.field_key === 'gambling_public_minor_head') {
-          field_type = 'SELECT';
-          options = gamblingPublicMinorHeadOptions;
+          options = minorHeadOptionsByFieldKey[f.field_key];
         }
 
         if (f.field_key === 'status') {
@@ -436,6 +374,8 @@ export const getFieldsForForm = async (req, res) => {
           readonly: f.readonly || false,
           full_width: f.full_width || false,
           show_when: parseJsonField(f.show_when) || null,
+          depends_on: f.depends_on || null,
+          options_source: f.options_source || null,
           section,
           repeater_entity: f.repeater_entity || null,
           section_label_en: f.section_label_en || null,
@@ -758,6 +698,7 @@ export const getFieldsForForm = async (req, res) => {
 
     return res.status(200).json({ success: true, data: sections });
   } catch (error) {
+    logger.error('getFieldsForForm failed', { record_type, error: error.message, stack: error.stack });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -986,12 +927,15 @@ export const toggleRegistryField = async (req, res) => {
 };
 
 // --- Excel Lookup Controllers ---
+// Thin wrappers over fieldsService — no direct db access, no hardcoded table/column dispatch.
 
 export const listActs = async (req, res) => {
   try {
-    const data = await db('excel_acts').select('act_cd as value', 'act_long as label').orderBy('act_long', 'asc');
+    const rows = await fieldsService.getActs();
+    const data = rows.map(r => ({ value: r.act_cd, label: r.act_long }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    logger.error('listActs failed', { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -999,12 +943,11 @@ export const listActs = async (req, res) => {
 export const listSectionsForAct = async (req, res) => {
   const { act_cd } = req.params;
   try {
-    const data = await db('excel_sections')
-      .where({ act_sec_cd: String(act_cd) })
-      .select('section_code as value', 'section as label', 'section_desc as desc', 'pnsh_gt_7yrs')
-      .orderBy('section_code', 'asc');
+    const rows = await fieldsService.getSectionsForActs([act_cd]);
+    const data = rows.map(r => ({ value: r.section_code, label: r.section, desc: r.section_desc, pnsh_gt_7yrs: r.pnsh_gt_7yrs }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    logger.error('listSectionsForAct failed', { act_cd, error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1014,6 +957,19 @@ export const listMajorHeads = async (req, res) => {
     const data = await db('excel_major_heads').select('major_head_code as value', 'major_head as label').orderBy('major_head', 'asc');
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    logger.error('listMajorHeads failed', { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const listMajorHeadsForSection = async (req, res) => {
+  const { section_code } = req.params;
+  try {
+    const rows = await fieldsService.getMajorHeadsForSection(section_code);
+    const data = rows.map(r => ({ value: r.major_head_code, label: r.major_head }));
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listMajorHeadsForSection failed', { section_code, error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1021,69 +977,51 @@ export const listMajorHeads = async (req, res) => {
 export const listMinorHeadsForMajorHead = async (req, res) => {
   const { major_head_code } = req.params;
   try {
-    const data = await db('excel_minor_heads')
-      .where({ major_head_code: parseInt(major_head_code, 10) })
-      .select('minor_head_cd as value', 'minor_head as label')
-      .orderBy('minor_head', 'asc');
+    const rows = await fieldsService.getMinorHeadsForMajorHeads([parseInt(major_head_code, 10)]);
+    const data = rows.map(r => ({ value: r.minor_head_cd, label: r.minor_head }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    logger.error('listMinorHeadsForMajorHead failed', { major_head_code, error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const listPropertyCategories = async (req, res) => {
   try {
-    const standard = await db('excel_property_types').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property');
-    const others = await db('excel_other_property_categories').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property');
-    
-    const map = new Map();
-    for (const item of [...standard, ...others]) {
-      map.set(item.parent_cd, item);
-    }
-    const data = Array.from(map.values())
+    const rows = await fieldsService.getPropertyCategories();
+    const data = rows
       .map(item => ({ value: item.parent_cd, label: item.code_type, parent_type: item.parent_type, major_property: item.major_property }))
       .sort((a, b) => a.label.localeCompare(b.label));
-      
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    logger.error('listPropertyCategories failed', { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const listPropertyItems = async (req, res) => {
   const { parent_cd } = req.params;
-  const pCd = parseInt(parent_cd, 10);
   try {
-    let data = [];
-    if (pCd === 4) { // ARMS AND AMMUNITION
-      const made = await db('excel_arms_made').select('arms_made_cd as value', 'arms_made as label');
-      const cats = await db('excel_arms_categories').select('arms_category_cd as value', 'arms_category as label');
-      const fireArms = await db('excel_fire_arms').select('fire_arms_cd as value', 'fire_arms as label', 'arms_category_cd as parent_id');
-      data = { type: 'ARMS', made, categories: cats, fireArms };
-    } else if (pCd === 9) { // AUTOMOBILES
-      data = await db('excel_automobiles').select('automobile_cd as value', 'automobile as label').orderBy('automobile', 'asc');
-    } else if (pCd === 8) { // CURRENCY
-      data = await db('excel_currency_types').select('currency_type_cd as value', 'currency_type as label').orderBy('currency_type', 'asc');
-    } else if (pCd === 6) { // CULTURAL
-      data = await db('excel_cultural_properties').select('cultural_prop_cd as value', 'cultural_prop as label').orderBy('cultural_prop', 'asc');
-    } else if (pCd === 7) { // DOCUMENTS
-      data = await db('excel_document_types').select('document_type_cd as value', 'document_type as label').orderBy('document_type', 'asc');
-    } else if (pCd === 11) { // DRUGS
-      data = await db('excel_drug_types').select('drug_type_cd as value', 'drug_type as label').orderBy('drug_type', 'asc');
-    } else if (pCd === 12) { // ELECTRICAL
-      data = await db('excel_electric_goods').select('electric_goods_cd as value', 'electric_goods as label').orderBy('electric_goods', 'asc');
-    } else if (pCd === 13) { // EXPLOSIVES
-      data = await db('excel_explosive_types').select('explosive_type_cd as value', 'explosive_type as label').orderBy('explosive_type', 'asc');
-    } else if (pCd === 14) { // JEWELLERY
-      data = await db('excel_jewelry_types').select('jewelry_type_cd as value', 'jewelry_type as label').orderBy('jewelry_type', 'asc');
+    const raw = await fieldsService.getPropertyItemsForCategory(parent_cd);
+    // The GENERIC branch (fieldsService) already returns {value,label} rows. The ARMS branch
+    // returns raw column names for its three sub-lists, and the default (excel_other_property_items)
+    // branch returns raw {property_cd,property} rows — both are shaped into {value,label} here.
+    let data;
+    if (raw?.type === 'ARMS') {
+      data = {
+        type: 'ARMS',
+        made: raw.made.map(r => ({ value: r.arms_made_cd, label: r.arms_made })),
+        categories: raw.categories.map(r => ({ value: r.arms_category_cd, label: r.arms_category })),
+        fireArms: raw.fireArms.map(r => ({ value: r.fire_arms_cd, label: r.fire_arms, parent_id: r.arms_category_cd })),
+      };
+    } else if (Array.isArray(raw) && raw.length > 0 && 'property_cd' in raw[0]) {
+      data = raw.map(r => ({ value: r.property_cd, label: r.property }));
     } else {
-      data = await db('excel_other_property_items')
-        .where({ parent_cd: pCd })
-        .select('property_cd as value', 'property as label')
-        .orderBy('property', 'asc');
+      data = raw;
     }
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    logger.error('listPropertyItems failed', { parent_cd, error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1091,22 +1029,22 @@ export const listPropertyItems = async (req, res) => {
 export const listBeats = async (req, res) => {
   const ps_cd = req.query.ps_cd || null;
   try {
-    let query = db('excel_beats').select('beat_cd as value', 'beat_name as label', 'ps_cd');
-    if (ps_cd) {
-      query = query.where({ ps_cd: String(ps_cd) });
-    }
-    const data = await query.orderBy('beat_name', 'asc');
+    const rows = await fieldsService.getBeats(ps_cd);
+    const data = rows.map(r => ({ value: r.beat_cd, label: r.beat_name, ps_cd: r.ps_cd }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    logger.error('listBeats failed', { ps_cd, error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const listLocalHeads = async (req, res) => {
   try {
-    const data = await db('excel_local_heads').select('local_head_cd as value', 'local_head as label').orderBy('local_head', 'asc');
+    const rows = await fieldsService.getLocalHeads();
+    const data = rows.map(r => ({ value: r.local_head_cd, label: r.local_head }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    logger.error('listLocalHeads failed', { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };

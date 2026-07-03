@@ -1,12 +1,13 @@
 import { format, formatDistanceToNow, parseISO, isValid } from 'date-fns';
+import { parseAnyDate } from './dateFormat';
 
 /**
- * Format an ISO date string or Date object.
+ * Format a dd/mm/yyyy business date, ISO timestamp string, or Date object.
  * @param {string|Date} date
- * @param {string} [fmt='MMM d, yyyy']
+ * @param {string} [fmt='dd/MM/yyyy']
  */
-export const formatDate = (date, fmt = 'MMM d, yyyy') => {
-  const d = typeof date === 'string' ? parseISO(date) : date;
+export const formatDate = (date, fmt = 'dd/MM/yyyy') => {
+  const d = typeof date === 'string' ? parseAnyDate(date) : date;
   return isValid(d) ? format(d, fmt) : 'Invalid date';
 };
 

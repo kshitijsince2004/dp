@@ -1,5 +1,6 @@
 import db from '../../config/db.js';
 import ExcelJS from 'exceljs';
+import { toDMY } from '../../utils/dateFormat.js';
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -10,6 +11,13 @@ const parseJsonField = (val) => {
 };
 
 const jsonbPath = (column, path) => `(${column})::jsonb->>'${path}'`;
+
+// 'YYYY-MM' bucket key -> 'MM/YYYY' display label
+const formatMonthLabel = (ym) => {
+  if (!ym || typeof ym !== 'string') return ym;
+  const [y, m] = ym.split('-');
+  return y && m ? `${m}/${y}` : ym;
+};
 
 export const getSummary = async (req, res) => {
   const jq = req.jurisdictionQuery;
@@ -80,7 +88,7 @@ export const getTrends = async (req, res) => {
       data: {
         trends: trends.map(t => ({
           classification: t.classification || 'UNKNOWN',
-          period: t.month,
+          period: formatMonthLabel(t.month),
           count: parseInt(t.count, 10) || 0
         }))
       }
@@ -254,7 +262,9 @@ export const getCombinedTrends = async (req, res) => {
       else if (type === 'ARREST') dayMap[name].arrests = count;
     });
 
-    const data = Object.values(dayMap).sort((a, b) => a.name.localeCompare(b.name));
+    const data = Object.values(dayMap)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(d => ({ ...d, name: d.name === 'Unknown' ? d.name : (toDMY(d.name) || d.name) }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -305,7 +315,7 @@ export const exportSpreadsheet = async (req, res) => {
         uid: dataObj?.uid || r.id,
         district_name: r.district_name,
         ps_name: r.ps_name,
-        record_date: r.record_date,
+        record_date: toDMY(r.record_date) || '',
         current_status: r.current_status,
         data_json: JSON.stringify(dataObj)
       });

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FileText, UserPlus, PhoneCall, ShieldAlert } from 'lucide-react';
 import DynamicForm from '../../components/DynamicForm/DynamicForm';
+import { formatDMY } from '../../utils/dateFormat.js';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
@@ -19,7 +20,7 @@ export const RegistrationPage = () => {
     setLoading(true);
     try {
       // Set record_date to current date, or pick occurrence_date/record_date if configured
-      const recordDate = formData.fir_date || formData.occurrence_date || new Date().toISOString().split('T')[0];
+      const recordDate = formData.fir_date || formData.occurrence_date || formatDMY(new Date());
       
       const payload = {
         record_type: recordType,

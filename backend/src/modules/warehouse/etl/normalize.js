@@ -5,6 +5,8 @@
  * referential integrity and clean grouping in reports.
  */
 
+import { toISO } from '../../../utils/dateFormat.js';
+
 export function normalizeOfficerName(name) {
   if (!name || typeof name !== 'string') return 'UNKNOWN';
   let clean = name.trim().replace(/\s+/g, ' ').replace(/[.,]/g, '');
@@ -36,6 +38,11 @@ export function safeParseInt(val) {
 
 export function safeParseDate(val) {
   if (!val) return null;
-  const d = new Date(val);
+  // records.data stores date fields as dd/mm/yyyy text; record_date itself
+  // comes back from Postgres as yyyy-mm-dd. toISO() handles both explicitly
+  // rather than relying on native Date parsing, which misreads dd/mm/yyyy.
+  const iso = toISO(val);
+  if (!iso) return null;
+  const d = new Date(iso);
   return isNaN(d.getTime()) ? null : d;
 }

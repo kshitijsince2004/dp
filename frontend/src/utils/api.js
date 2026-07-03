@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { findNodeById, POLICE_HIERARCHY } from './hierarchyData.js';
+import { formatDMY } from './dateFormat.js';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -2315,7 +2316,7 @@ api.interceptors.request.use(
         source_level: 'DISTRICT',
         target_level: 'HQ',
         route: 'DIRECT_HQ',
-        period: period || new Date().toISOString().split('T')[0],
+        period: period || formatDMY(new Date()),
         source_entity_id: district_id || 'DIST_NDD',
         status: 'DRAFT',
         record_ids: matched.map(r => r.id),

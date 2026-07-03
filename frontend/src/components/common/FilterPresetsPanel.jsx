@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Bookmark, Trash2, Save, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFilterPresets } from '../../hooks/useFilterPresets.js';
+import { formatDMY } from '../../utils/dateFormat.js';
 
 /**
  * FilterPresetsPanel
@@ -40,8 +41,8 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
 
     if (preset.id === 'sys_preset_today') {
       mapped.type = 'CASE';
-      mapped.dateFrom = new Date().toISOString().split('T')[0];
-      mapped.dateTo = new Date().toISOString().split('T')[0];
+      mapped.dateFrom = formatDMY(new Date());
+      mapped.dateTo = formatDMY(new Date());
     } else {
       conditions.forEach(cond => {
         if (cond.field === '_status') {
@@ -55,8 +56,8 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
             const days = parseInt(cond.value || 1, 10);
             const d = new Date();
             d.setDate(d.getDate() - days + 1);
-            mapped.dateFrom = d.toISOString().split('T')[0];
-            mapped.dateTo = new Date().toISOString().split('T')[0];
+            mapped.dateFrom = formatDMY(d);
+            mapped.dateTo = formatDMY(new Date());
           }
         } else if (cond.field === '_search') {
           mapped.search = cond.value;

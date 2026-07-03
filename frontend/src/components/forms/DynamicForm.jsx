@@ -16,6 +16,8 @@ import FormSection from './FormSection.jsx';
 import FormToolbar from './FormToolbar.jsx';
 import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
+import DateInput from '../ui/DateInput.jsx';
+import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
 
 // Mock registry for Acts & Sections to be loaded dynamically from the backend in the future
@@ -70,7 +72,7 @@ function getFieldOptions(fieldsArr, key) {
  */
 const SECTION_KEY_ORDER = {
   CASE:   ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'custody_status', 'property_details', 'intimation_details', 'procedure_slips', 'investigation_officer'],
+  ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
   UIDB:   ['general_info', 'corpse_desc', 'inquest_details', 'investigation_officer'],
 };
 
@@ -139,13 +141,13 @@ function StepDot({ index, active, completed, hasError, title, onClick }) {
 }
 
 const MOCK_FIR_LIST = [
-  { fir_no: '104/2026', fir_date: '2026-06-20', complainant_name: 'Ramesh Singh', police_station: 'Parliament Street', crime_head: 'House Theft', sections: 'Sec 379 IPC' },
-  { fir_no: '112/2026', fir_date: '2026-06-19', complainant_name: 'Sunita Devi', police_station: 'Chanakyapuri', crime_head: 'Murder', sections: 'Sec 302 IPC' },
-  { fir_no: '125/2026', fir_date: '2026-06-18', complainant_name: 'Amit Kumar', police_station: 'Mandir Marg', crime_head: 'Simple Hurt', sections: 'Sec 323 IPC' },
-  { fir_no: '150/2026', fir_date: '2026-06-21', complainant_name: 'Gurpreet Singh', police_station: 'Tughlak Road', crime_head: 'Cheating', sections: 'Sec 406 IPC' },
-  { fir_no: '201/2026', fir_date: '2026-06-21', complainant_name: 'Vikram Singh', police_station: 'Parliament Street', crime_head: 'Robbery', sections: 'Sec 392 IPC' },
-  { fir_no: '88/2026', fir_date: '2026-06-20', complainant_name: 'Manish Sharma', police_station: 'Chanakyapuri', crime_head: 'Delhi Excise Act', sections: 'Sec 33/38 Excise Act' },
-  { fir_no: '92/2026', fir_date: '2026-06-20', complainant_name: 'Priyanka Sen', police_station: 'Mandir Marg', crime_head: 'Snatching', sections: 'Sec 356/379 IPC' },
+  { fir_no: '104/2026', fir_date: '20/06/2026', complainant_name: 'Ramesh Singh', police_station: 'Parliament Street', crime_head: 'House Theft', sections: 'Sec 379 IPC' },
+  { fir_no: '112/2026', fir_date: '19/06/2026', complainant_name: 'Sunita Devi', police_station: 'Chanakyapuri', crime_head: 'Murder', sections: 'Sec 302 IPC' },
+  { fir_no: '125/2026', fir_date: '18/06/2026', complainant_name: 'Amit Kumar', police_station: 'Mandir Marg', crime_head: 'Simple Hurt', sections: 'Sec 323 IPC' },
+  { fir_no: '150/2026', fir_date: '21/06/2026', complainant_name: 'Gurpreet Singh', police_station: 'Tughlak Road', crime_head: 'Cheating', sections: 'Sec 406 IPC' },
+  { fir_no: '201/2026', fir_date: '21/06/2026', complainant_name: 'Vikram Singh', police_station: 'Parliament Street', crime_head: 'Robbery', sections: 'Sec 392 IPC' },
+  { fir_no: '88/2026', fir_date: '20/06/2026', complainant_name: 'Manish Sharma', police_station: 'Chanakyapuri', crime_head: 'Delhi Excise Act', sections: 'Sec 33/38 Excise Act' },
+  { fir_no: '92/2026', fir_date: '20/06/2026', complainant_name: 'Priyanka Sen', police_station: 'Mandir Marg', crime_head: 'Snatching', sections: 'Sec 356/379 IPC' },
 ];
 
 // Maps UI act display names -> schema show_when values used in major_head fields
@@ -243,21 +245,10 @@ export default function DynamicForm({
 
     // Filter unified list
     const filtered = unifiedCases.filter(c => {
-      // Date exact match (handles both YYYY-MM-DD and DD/MM/YYYY formats)
-      const sDate = searchDate.substring(0, 10); // "YYYY-MM-DD"
-      let cNormalized = '';
-      if (c.fir_date) {
-        const parts = c.fir_date.split('/');
-        if (parts.length === 3) {
-          const dd = parts[0].padStart(2, '0');
-          const mm = parts[1].padStart(2, '0');
-          const yyyy = parts[2];
-          cNormalized = `${yyyy}-${mm}-${dd}`;
-        } else {
-          cNormalized = c.fir_date.substring(0, 10);
-        }
-      }
-      if (cNormalized !== sDate) return false;
+      // Date exact match — both sides are dd/mm/yyyy
+      const sDate = formatDMY(parseDMY(searchDate)) || searchDate;
+      const cDate = formatDMY(parseDMY(c.fir_date)) || c.fir_date;
+      if (cDate !== sDate) return false;
 
       // Query (complainant name or FIR no) match
       if (searchQuery) {
@@ -319,15 +310,15 @@ export default function DynamicForm({
                   <Calendar size={14} className="text-slate-400" />
                   <span>{dateLabel}</span>
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   disabled={readOnly}
                   value={searchDate}
-                  onChange={(e) => {
-                    setSearchDate(e.target.value);
+                  onChange={(val) => {
+                    setSearchDate(val);
                     if (searchError) setSearchError('');
                   }}
-                  className={`w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all ${
+                  status={searchError ? 'error' : undefined}
+                  inputClassName={`w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 pr-9 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all ${
                     searchError ? 'border-red-400 focus:border-red-500 bg-red-50' : ''
                   }`}
                 />
@@ -809,7 +800,7 @@ export default function DynamicForm({
                 </td>
               </tr>
 
-              {/* Row 3: Complaint No. */}
+              {/* Row 3: Complaint No. -->
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
                   {fieldLabel('complaint_no') || 'Complaint No.'}
@@ -1175,18 +1166,7 @@ function renderPersonPersonalInfoSubTab(prefix, allFields, valuesObj, onFieldCha
               </div>
             </React.Fragment>
 
-            {field(`${prefix}_birth_year`)}
-
-            {/* Age Range */}
-            <React.Fragment>
-              <div className="bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1">
-                <span>{lang === 'hi' ? 'आयु सीमा (से - तक)' : 'Age Range (From - To)'}</span>
-              </div>
-              <div className="px-2 py-1 flex gap-2">
-                <div className="flex-1">{rawField(`${prefix}_age_range_from`)}</div>
-                <div className="flex-1">{rawField(`${prefix}_age_range_to`)}</div>
-              </div>
-            </React.Fragment>
+            {field(`${prefix}_birth_year`, null, true)}
           </div>
         </fieldset>
 
@@ -1195,7 +1175,6 @@ function renderPersonPersonalInfoSubTab(prefix, allFields, valuesObj, onFieldCha
   );
 }
 
-/** Shared "Address" sub-tab body for Complainant/Victim/Accused. */
 function renderPersonAddressSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, showInlineErrors, lang, readOnly) {
   const isSame = valuesObj[`${prefix}_perm_same`] === 'Yes' || valuesObj[`${prefix}_perm_same`] === true;
 
@@ -1322,7 +1301,6 @@ const renderVictimStep = () => {
   const victims = repeaterState?.PERSON_VICTIM || [];
   const allFields = deepFlattenSchema(schema);
 
-  // Build name & address strings for the summary table
   const getVictimName = (v) => [v.victim_first_name, v.victim_middle_name, v.victim_last_name].filter(Boolean).join(' ') || '—';
   const getVictimAddress = (v) => [v.victim_house_no, v.victim_street, v.victim_colony, v.victim_city_town_village, v.victim_district, v.victim_state].filter(Boolean).join(', ') || '—';
 
@@ -1453,7 +1431,6 @@ const renderAccusedStep = () => {
   const accusedList = repeaterState?.PERSON_ACCUSED || [];
   const allFields = deepFlattenSchema(schema);
 
-  // Build name & address strings for the summary table
   const getAccusedName = (v) => [v.accused_first_name, v.accused_middle_name, v.accused_last_name].filter(Boolean).join(' ') || '—';
   const getAccusedAddress = (v) => [v.accused_house_no, v.accused_street, v.accused_colony, v.accused_city_town_village, v.accused_district, v.accused_state].filter(Boolean).join(', ') || '—';
 
@@ -2697,8 +2674,8 @@ const renderActionTakenStep = () => {
       if (key === 'victim_dob') {
         const dateStr = val;
         if (dateStr && dateStr.length >= 4) {
-          const dobDate = new Date(dateStr);
-          if (!isNaN(dobDate.getTime())) {
+          const dobDate = parseDMY(dateStr);
+          if (dobDate && !isNaN(dobDate.getTime())) {
             const birthY = dobDate.getFullYear();
             next.victim_birth_year = birthY;
             const diffMs = Date.now() - dobDate.getTime();
@@ -2792,8 +2769,8 @@ const renderActionTakenStep = () => {
       if (key === 'accused_dob') {
         const dateStr = val;
         if (dateStr && dateStr.length >= 4) {
-          const dobDate = new Date(dateStr);
-          if (!isNaN(dobDate.getTime())) {
+          const dobDate = parseDMY(dateStr);
+          if (dobDate && !isNaN(dobDate.getTime())) {
             const birthY = dobDate.getFullYear();
             next.accused_birth_year = birthY;
             const diffMs = Date.now() - dobDate.getTime();
@@ -2934,8 +2911,8 @@ const renderActionTakenStep = () => {
   const handleArrestedDobChange = (dobVal, currentTemp) => {
     if (!dobVal) return currentTemp;
     const next = { ...currentTemp, arrested_dob: dobVal };
-    const dobDate = new Date(dobVal);
-    if (!isNaN(dobDate.getTime())) {
+    const dobDate = parseDMY(dobVal);
+    if (dobDate && !isNaN(dobDate.getTime())) {
       const today = new Date();
       let age = today.getFullYear() - dobDate.getFullYear();
       const m = today.getMonth() - dobDate.getMonth();
@@ -3256,8 +3233,10 @@ const renderActionTakenStep = () => {
         f => f.field_key?.includes('major_head') && f.show_when?.value === actKey
       );
       for (const mf of majorFields) {
-        if (mf.options && Array.isArray(mf.options)) {
-          for (const opt of mf.options) {
+        let opts = mf.options;
+        if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch {} }
+        if (opts && Array.isArray(opts)) {
+          for (const opt of opts) {
             if (!seen.has(opt.value)) {
               seen.add(opt.value);
               allOptions.push(opt);
@@ -3279,8 +3258,10 @@ const renderActionTakenStep = () => {
     const minorField = allSchemaFields.find(
       f => f.field_key?.includes('minor_head') && f.show_when?.value === selectedMajorHead
     );
-    if (minorField?.options && Array.isArray(minorField.options)) {
-      return minorField.options;
+    let opts = minorField?.options;
+    if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch {} }
+    if (opts && Array.isArray(opts)) {
+      return opts;
     }
     return [];
   }, [allSchemaFields, selectedMajorHead]);
@@ -3290,8 +3271,10 @@ const renderActionTakenStep = () => {
    */
   const getLocalHeadOptions = useCallback(() => {
     const localField = allSchemaFields.find(f => f.field_key === 'local_head');
-    if (localField?.options && Array.isArray(localField.options)) {
-      return localField.options;
+    let opts = localField?.options;
+    if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch {} }
+    if (opts && Array.isArray(opts)) {
+      return opts;
     }
     return [];
   }, [allSchemaFields]);
@@ -3519,17 +3502,11 @@ const renderActionTakenStep = () => {
       submission_status: initialValues?.current_status || seed.submission_status || 'DRAFT'
     };
 
-    // Formulate gd_date_time if missing but gd_date/gd_time exist
+    // Formulate gd_date_time if missing but gd_date/gd_time exist.
+    // gd_date is stored as dd/mm/yyyy, so no format conversion is needed here.
     if (!updatedSeed.gd_date_time && updatedSeed.gd_date) {
-      let datePart = String(updatedSeed.gd_date).split('T')[0];
-      if (datePart.includes('-')) {
-        const parts = datePart.split('-');
-        if (parts.length === 3) {
-          datePart = `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
-        }
-      }
       const timePart = updatedSeed.gd_time || '00:00';
-      updatedSeed.gd_date_time = `${datePart} ${timePart.substring(0, 5)}`;
+      updatedSeed.gd_date_time = `${updatedSeed.gd_date} ${timePart.substring(0, 5)}`;
     }
     
     setValues(updatedSeed);
@@ -3640,8 +3617,8 @@ const renderActionTakenStep = () => {
       if (key.endsWith('_dob')) {
         const prefix = key.substring(0, key.lastIndexOf('_dob'));
         if (val) {
-          const dobDate = new Date(val);
-          if (!isNaN(dobDate.getTime())) {
+          const dobDate = parseDMY(val);
+          if (dobDate && !isNaN(dobDate.getTime())) {
             const birthYear = dobDate.getFullYear();
             const currentYear = new Date().getFullYear();
             next[`${prefix}_birth_year`] = birthYear;
