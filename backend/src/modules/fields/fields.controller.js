@@ -370,6 +370,11 @@ export const getFieldsForForm = async (req, res) => {
             section = 'investigation_officer';
             sort_order = 60.0 + f.sort_order * 0.1;
           }
+        } else if (normalizedType === 'PCR_CALL') {
+          if (f.field_key === 'occurrence_landmark') {
+            section = 'incident_details';
+            sort_order = 8.05;
+          }
         } else if (normalizedType === 'UIDB') {
           if (f.field_key === 'uidb_no') {
             section = 'general_info';
@@ -388,10 +393,15 @@ export const getFieldsForForm = async (req, res) => {
             sort_order = 10.5;
           } else if ([
             'height', 'built', 'complexion', 'face', 'hair', 'moustache', 'beard',
-            'upper_dress_color', 'lower_dress_color', 'zipnet_no', 'identified', 'gender'
+            'upper_dress_color', 'lower_dress_color', 'description'
+          ].includes(f.field_key)) {
+            section = 'corpse_physical';
+            sort_order = 25.0 + f.sort_order * 0.1;
+          } else if ([
+            'zipnet_no', 'identified', 'gender'
           ].includes(f.field_key) || f.section === 'corpse_desc') {
             section = 'corpse_desc';
-            sort_order = 20 + f.sort_order;
+            sort_order = 20.0 + f.sort_order * 0.1;
           } else if (['cause_of_death', 'deceased_relative_name', 'deceased_relation_type', 'filed_by_acp_sdm', 'filed_by_acp_sdm_date', 'informant_name', 'informant_relation', 'informant_mobile'].includes(f.field_key)) {
             section = 'inquest_details';
             if (f.field_key === 'cause_of_death') sort_order = 40.1;
@@ -728,6 +738,13 @@ export const getFieldsForForm = async (req, res) => {
           title_hi: 'यूआईडीबी विवरण',
           is_repeater: false,
           fields: filteredFields.filter(f => f.section === 'corpse_desc' && !f.repeater_entity)
+        },
+        {
+          section: 'corpse_physical',
+          title_en: 'Physical Description',
+          title_hi: 'शारीरिक हुलिया',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'corpse_physical' && !f.repeater_entity)
         },
         {
           section: 'inquest_details',

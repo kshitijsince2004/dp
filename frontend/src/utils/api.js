@@ -949,6 +949,18 @@ const formSchemas = {
         { field_key: 'gd_no', field_type: 'TEXT', label_en: 'GD Entry Number', label_hi: 'जी.डी. प्रविष्टि संख्या', validation_rules: { required: true } },
         { field_key: 'record_date', field_type: 'DATE', label_en: 'Diary Record Date', label_hi: 'दैनिक डायरी तिथि', validation_rules: { required: true } }
       ]
+    },
+    {
+      section: 'incident_details',
+      title_en: 'Incident Details',
+      title_hi: 'घटना विवरण',
+      fields: [
+        { field_key: 'occurrence_place', field_type: 'TEXT', label_en: 'Place of Occurrence', label_hi: 'घटना का स्थान', validation_rules: { required: false } },
+        { field_key: 'occurrence_landmark', field_type: 'TEXT', label_en: 'Place of Occurrence Landmark', label_hi: 'घटनास्थल लैंडमार्क', validation_rules: { required: false } },
+        { field_key: 'latitude', field_type: 'TEXT', label_en: 'Latitude', label_hi: 'अक्षांश', validation_rules: { required: false } },
+        { field_key: 'longitude', field_type: 'TEXT', label_en: 'Longitude', label_hi: 'रेखांश', validation_rules: { required: false } },
+        { field_key: 'arrival_time', field_type: 'TIME', label_en: 'Arrival Time', label_hi: 'आगमन का समय', validation_rules: { required: false } }
+      ]
     }
   ],
   MISSING: [
@@ -1625,6 +1637,13 @@ const formSchemas = {
         { field_key: 'found_latitude', field_type: 'TEXT', label_en: 'Place Body Found Latitude', label_hi: 'शव मिलने का स्थान अक्षांश', validation_rules: { required: false } },
         { field_key: 'found_longitude', field_type: 'TEXT', label_en: 'Place Body Found Longitude', label_hi: 'शव मिलने का स्थान रेखांश', validation_rules: { required: false } },
         { field_key: 'zipnet_no', field_type: 'TEXT', label_en: 'ZIPNET Number', label_hi: 'ज़िपनेट नंबर', validation_rules: { required: false } },
+      ]
+    },
+    {
+      section: 'corpse_physical',
+      title_en: 'Physical Description',
+      title_hi: 'शारीरिक हुलिया',
+      fields: [
         { field_key: 'height', field_type: 'TEXT', label_en: 'Height', label_hi: 'ऊंचाई', validation_rules: { required: false } },
         {
           field_key: 'built',
@@ -1699,7 +1718,8 @@ const formSchemas = {
         },
         { field_key: 'upper_dress_color', field_type: 'TEXT', label_en: 'Upper Dress Color', label_hi: 'ऊपरी पहनावे का रंग', validation_rules: { required: false } },
         { field_key: 'lower_dress_color', field_type: 'TEXT', label_en: 'Lower Dress Color', label_hi: 'निचले पहनावे का रंग', validation_rules: { required: false } },
-        { field_key: 'identification_marks', field_type: 'TEXT', label_en: 'Identification Marks', label_hi: 'पहचान चिन्ह', validation_rules: { required: false } }
+        { field_key: 'identification_marks', field_type: 'TEXT', label_en: 'Identification Marks', label_hi: 'पहचान चिन्ह', validation_rules: { required: false } },
+        { field_key: 'description', field_type: 'TEXTAREA', label_en: 'Physical Description', label_hi: 'शारीरिक हुलिया', validation_rules: { required: false }, full_width: true }
       ]
     },
     {
