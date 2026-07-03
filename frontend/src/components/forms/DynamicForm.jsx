@@ -192,6 +192,9 @@ export default function DynamicForm({
 
   const { user } = useAuthStore();
   const { schema, isLoading, isError, schemaError } = useFormSchema(recordType);
+  // Always fetch ARREST schema so the arrested-persons modal has access to all ARREST fields
+  // regardless of what the main form's recordType is (e.g. CASE form embedding arrest modal).
+  const { schema: arrestSchema } = useFormSchema('ARREST');
   const activeRecordIdRef = useRef(initialValues?.id || null);
 
   // FIR Search State
@@ -1897,7 +1900,9 @@ const renderPropertyStep = () => {
 
 const renderArrestedStep = () => {
   const arrestedList = repeaterState?.arrested_info || [];
-  const allFields = deepFlattenSchema(schema);
+  // Use the dedicated ARREST schema so ARREST-specific fields (nafis_dossier, bad_character, etc.)
+  // are always available, even when this modal is embedded inside a CASE or other form.
+  const allFields = deepFlattenSchema(arrestSchema || schema);
 
   const renderArrestedModalField = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
     const field = allFields.find(f => f.field_key === key);
