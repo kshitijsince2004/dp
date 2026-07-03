@@ -100,14 +100,17 @@ export const getActsSectionsRegistry = async () => {
   if (cachedRegistry) return cachedRegistry;
 
   const acts = await db('excel_acts').select('act_cd', 'act_long');
-  const sections = await db('excel_sections').select('act_sec_cd', 'section');
+  const sections = await db('excel_sections').select('act_sec_cd', 'section', 'section_desc');
 
   const sectionsByActCd = {};
   for (const s of sections) {
     if (!sectionsByActCd[s.act_sec_cd]) {
       sectionsByActCd[s.act_sec_cd] = [];
     }
-    sectionsByActCd[s.act_sec_cd].push(s.section);
+    sectionsByActCd[s.act_sec_cd].push({
+      section: s.section,
+      desc: s.section_desc || ''
+    });
   }
 
   // Mappings to frontend expected keys
@@ -132,8 +135,11 @@ export const getActsSectionsRegistry = async () => {
     // If we already have sections for this actKey, merge them
     if (registryMap.has(actKey)) {
       const existing = registryMap.get(actKey);
-      const merged = Array.from(new Set([...existing, ...actSections]));
-      registryMap.set(actKey, merged);
+      const mergedMap = new Map();
+      for (const item of [...existing, ...actSections]) {
+        mergedMap.set(item.section, item);
+      }
+      registryMap.set(actKey, Array.from(mergedMap.values()));
     } else {
       registryMap.set(actKey, actSections);
     }
@@ -142,12 +148,14 @@ export const getActsSectionsRegistry = async () => {
   // Convert map to list and sort sections
   cachedRegistry = Array.from(registryMap.entries()).map(([actName, actSections]) => {
     actSections.sort((a, b) => {
-      const numA = parseInt(a, 10);
-      const numB = parseInt(b, 10);
+      const valA = a.section;
+      const valB = b.section;
+      const numA = parseInt(valA, 10);
+      const numB = parseInt(valB, 10);
       if (!isNaN(numA) && !isNaN(numB)) {
         return numA - numB;
       }
-      return a.localeCompare(b);
+      return valA.localeCompare(valB);
     });
 
     return {

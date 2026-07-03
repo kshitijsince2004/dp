@@ -388,11 +388,15 @@ export default function ActsSectionsTable({
                     className="w-full h-8 px-2 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-[#ea580c] cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
                   >
                     <option value="">----select----</option>
-                    {availableSections.map((sec) => (
-                      <option key={sec} value={sec}>
-                        {sec}
-                      </option>
-                    ))}
+                    {availableSections.map((sec) => {
+                      const value = sec && typeof sec === 'object' ? sec.section : sec;
+                      const desc = sec && typeof sec === 'object' && sec.desc ? ` - ${sec.desc}` : '';
+                      return (
+                        <option key={value} value={value}>
+                          {value}{desc}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
