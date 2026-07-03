@@ -2569,18 +2569,16 @@ const renderActionTakenStep = () => {
                   { value: 'PC', label_en: 'PC', label_hi: 'पीसी' },
                   { value: 'Bail', label_en: 'Bail', label_hi: 'जमानत पर रिहा' },
                   { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
-                  { value: 'Released', label_en: 'Released', label_hi: 'रिहा' },
+                  { value: 'Release', label_en: 'Release', label_hi: 'रिहा' },
                   { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
-                  { value: '35(3) BNS Notice', label_en: '35(3) BNS Notice', label_hi: '35(3) BNS Notice' },
-                  { value: 'others', label_en: 'Others', label_hi: 'अन्य' }
+                  { value: '35(3) BNS Notice', label_en: '35(3) BNS Notice', label_hi: '35(3) BNS Notice' }
                 ]);
               } else {
                 statusField.options = JSON.stringify([
                   { value: 'JC', label_en: 'JC', label_hi: 'जेसी' },
                   { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
                   { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
-                  { value: 'Fine', label_en: 'Fine', label_hi: 'Fine' },
-                  { value: 'others', label_en: 'Others', label_hi: 'अन्य' }
+                  { value: 'Fine', label_en: 'Fine', label_hi: 'Fine' }
                 ]);
               }
               statusField.label_en = 'Status';

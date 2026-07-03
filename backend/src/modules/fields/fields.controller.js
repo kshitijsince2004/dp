@@ -293,12 +293,20 @@ export const getFieldsForForm = async (req, res) => {
               { value: 'TRANSFER', label_en: 'Transfer', label_hi: 'स्थानांतरण' }
             ];
           } else if (normalizedType === 'ARREST') {
-            options = [
-              { value: 'police_custody', label_en: 'Police Custody', label_hi: 'पुलिस हिरासत' },
-              { value: 'bail', label_en: 'Bail', label_hi: 'जमानत' },
-              { value: 'judicial_custody', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
-              { value: 'released', label_en: 'Released', label_hi: 'रिहा' },
-              { value: 'others', label_en: 'Others', label_hi: 'अन्य' }
+            const isAgainstFir = caseType === 'against_fir';
+            options = isAgainstFir ? [
+              { value: 'JC', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
+              { value: 'PC', label_en: 'Police Custody', label_hi: 'पुलिस हिरासत' },
+              { value: 'Bail', label_en: 'Bail', label_hi: 'जमानत' },
+              { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
+              { value: 'Release', label_en: 'Release', label_hi: 'रिहा' },
+              { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
+              { value: '35(3) BNS Notice', label_en: '35(3) BNS Notice', label_hi: '35(3) BNS Notice' }
+            ] : [
+              { value: 'JC', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
+              { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
+              { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
+              { value: 'Fine', label_en: 'Fine', label_hi: 'Fine' }
             ];
           } else if (normalizedType === 'PCR_CALL') {
             options = [
