@@ -653,8 +653,54 @@ const extractRowData = (row, colMap, registryFieldsMap, recordType) => {
 
     const field = registryFieldsMap[key];
     if (field) {
-      if (field.field_type === 'DATE') cellVal = coerceDate(cellVal);
-      else if (field.field_type === 'TIME') cellVal = coerceTime(cellVal);
+      if (field.field_type === 'DATE') {
+        cellVal = coerceDate(cellVal);
+      } else if (field.field_type === 'TIME') {
+        cellVal = coerceTime(cellVal);
+      } else if (field.field_type === 'SELECT' || field.field_type === 'RADIO') {
+        if (cellVal !== null && cellVal !== undefined && cellVal !== '') {
+          let options = [];
+          try {
+            options = typeof field.options === 'string' ? JSON.parse(field.options) : field.options;
+          } catch (e) {}
+
+          if (!options || options.length === 0) {
+            if (key === 'state' || key.endsWith('_state')) {
+              options = STATE_OPTS;
+            } else if (key === 'district' || key.endsWith('_district')) {
+              options = DISTRICT_OPTS;
+            } else if (key === 'country' || key.endsWith('_country')) {
+              options = COUNTRY_OPTS;
+            } else if (key === 'status') {
+              if (recordType === 'MISSING') {
+                options = ['Un-traced', 'Traced', 'Referred', 'Closed'];
+              } else if (recordType === 'UIDB') {
+                options = ['Referred to district hospital', 'Identified', 'Body Claimed', 'Unidentified', 'Held in Mortuary'];
+              } else if (recordType === 'PCR_CALL') {
+                options = ['Action Taken', 'Pending', 'Referred', 'Closed'];
+              }
+            } else if (key.endsWith('_prepared') || key.endsWith('_verified') || key.endsWith('_same')) {
+              options = ['Yes', 'No'];
+            } else if (key.includes('gender')) {
+              options = ['Male', 'Female', 'Transgender', 'Unknown'];
+            }
+          }
+
+          if (Array.isArray(options) && options.length > 0) {
+            const matchedOpt = options.find(o => {
+              if (!o) return false;
+              const oVal = String(o.value || o).trim().toLowerCase();
+              const oLabelEn = String(o.label_en || o.label || o.value || o).trim().toLowerCase();
+              const oLabelHi = String(o.label_hi || o.label || o.value || o).trim().toLowerCase();
+              const inputVal = String(cellVal).trim().toLowerCase();
+              return oVal === inputVal || oLabelEn === inputVal || oLabelHi === inputVal;
+            });
+            if (matchedOpt) {
+              cellVal = matchedOpt.value || matchedOpt;
+            }
+          }
+        }
+      }
     } else {
       if (key.includes('date')) cellVal = coerceDate(cellVal);
       else if (key.includes('time')) cellVal = coerceTime(cellVal);
@@ -882,7 +928,19 @@ const getHint = (field) => {
   return `${reqStr}${field.field_type.toLowerCase()}`;
 };
 
-const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang) => {
+const SECTION_SUBHEADING_MAP = {
+  general_info: { en: 'General Information', hi: 'सामान्य जानकारी' },
+  incident_details: { en: 'Incident Details', hi: 'घटना का विवरण' },
+  person_details: { en: 'Person Details', hi: 'व्यक्तिगत विवरण' },
+  contacts_assigned: { en: 'Informant & Contact Details', hi: 'सूचना देने वाले का विवरण' },
+  investigation_officer: { en: 'IO Details', hi: 'जांच अधिकारी का विवरण' },
+  inquest_details: { en: 'Inquest Details', hi: 'पूछताछ का विवरण' },
+  corpse_desc: { en: 'Corpse Physical Description', hi: 'शव का शारीरिक विवरण' },
+  informant_contact: { en: 'Informant Contact', hi: 'सूचना देने वाले का संपर्क' },
+  complaint_details: { en: 'Complaint Details', hi: 'शिकायत का विवरण' }
+};
+
+const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, recordType) => {
   const worksheet = workbook.addWorksheet(sheetName);
 
   const row1 = fieldsList.map(f => f.field_key);
@@ -891,6 +949,12 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang) =>
 
   const subheadings = fieldsList.map(f => {
     const key = f.field_key;
+    if (recordType === 'MISSING' || recordType === 'UIDB' || recordType === 'PCR_CALL') {
+      const sectionInfo = SECTION_SUBHEADING_MAP[f.section];
+      if (sectionInfo) {
+        return lang === 'hi' ? sectionInfo.hi : sectionInfo.en;
+      }
+    }
     if (key.startsWith('complainant_perm_')) return lang === 'hi' ? 'शिकायतकर्ता का स्थायी पता' : 'Complainant Permanent Address';
     if (key.startsWith('complainant_')) {
       if (key.includes('house_no') || key.includes('street') || key.includes('colony') || key.includes('city') || key.includes('village') || key.includes('tehsil') || key.includes('state') || key.includes('district') || key.includes('pincode') || key.includes('address') || key.includes('police_station') || key.includes('country')) {
@@ -955,6 +1019,9 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang) =>
   }
 
   const row3 = fieldsList.map(f => {
+    if (recordType === 'MISSING' && f.field_key === 'informant_relation') {
+      return lang === 'hi' ? 'लापता व्यक्ति से संबंध' : 'Relation with Missing Person';
+    }
     const matched = allFields.find(dbF => dbF.field_key === f.field_key);
     if (matched) {
       return lang === 'hi' ? matched.label_hi : matched.label_en;
@@ -989,11 +1056,7 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang) =>
     const matched = allFields.find(dbF => dbF.field_key === f.field_key);
     
     let options = [];
-    if (matched && matched.options) {
-      // Parse regardless of field_type (SELECT, RADIO, and any other picker type all
-      // store their options the same way in field_registry) — gating this on
-      // field_type === 'SELECT' silently dropped the dropdown for RADIO-type boolean
-      // fields (e.g. UIDB's `identified`) even though options were present in the DB.
+    if (matched && (matched.field_type === 'SELECT' || matched.field_type === 'RADIO')) {
       try {
         options = typeof matched.options === 'string' ? JSON.parse(matched.options) : matched.options;
       } catch (e) {}
@@ -1009,8 +1072,31 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang) =>
       options = ['Male', 'Female', 'Transgender', 'Unknown'];
     }
 
+    if ((!options || options.length === 0) && matched) {
+      if (matched.field_key === 'state' || matched.field_key.endsWith('_state')) {
+        options = STATE_OPTS;
+      } else if (matched.field_key === 'district' || matched.field_key.endsWith('_district')) {
+        options = DISTRICT_OPTS;
+      } else if (matched.field_key === 'country' || matched.field_key.endsWith('_country')) {
+        options = COUNTRY_OPTS;
+      } else if (matched.field_key === 'status') {
+        if (recordType === 'MISSING') {
+          options = ['Un-traced', 'Traced', 'Referred', 'Closed'];
+        } else if (recordType === 'UIDB') {
+          options = ['Referred to district hospital', 'Identified', 'Body Claimed', 'Unidentified', 'Held in Mortuary'];
+        } else if (recordType === 'PCR_CALL') {
+          options = ['Action Taken', 'Pending', 'Referred', 'Closed'];
+        }
+      }
+    }
+
     if (Array.isArray(options) && options.length > 0) {
-      const validValues = options.map(o => (o && typeof o === 'object') ? o.value : o);
+      const validValues = options.map(o => {
+        if (o && typeof o === 'object') {
+          return lang === 'hi' ? (o.label_hi || o.label || o.value) : (o.label_en || o.label || o.value);
+        }
+        return o;
+      });
       const formulaVal = `"${validValues.join(',')}"`;
       for (let rIdx = 5; rIdx <= 1000; rIdx++) {
         const cell = worksheet.getCell(rIdx, colIdx + 1);
@@ -1088,7 +1174,7 @@ export const downloadImportTemplate = async (req, res) => {
       return (a.sort_order || 0) - (b.sort_order || 0);
     });
 
-    addSheetToWorkbook(workbook, 'Import Template', fields, allFields, lang);
+    addSheetToWorkbook(workbook, 'Import Template', fields, allFields, lang, recordType);
 
     if (recordType === 'UIDB') {
       // Separate "Act and Sections" sheet, same workbook — matches CASE's multi-sheet

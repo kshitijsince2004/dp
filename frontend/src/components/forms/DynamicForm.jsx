@@ -16,9 +16,9 @@ import FormSection from './FormSection.jsx';
 import FormToolbar from './FormToolbar.jsx';
 import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
+import ActsSectionsTable from './ActsSectionsTable.jsx';
 import DateInput from '../ui/DateInput.jsx';
 import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
-import ActsSectionsTable from './ActsSectionsTable.jsx';
 
 // Mock registry for Acts & Sections to be loaded dynamically from the backend in the future
 const ACTS_SECTIONS_REGISTRY = [
@@ -194,6 +194,9 @@ export default function DynamicForm({
 
   const { user } = useAuthStore();
   const { schema, isLoading, isError, schemaError } = useFormSchema(recordType);
+  // Always fetch ARREST schema so the arrested-persons modal has access to all ARREST fields
+  // regardless of what the main form's recordType is (e.g. CASE form embedding arrest modal).
+  const { schema: arrestSchema } = useFormSchema('ARREST');
   const activeRecordIdRef = useRef(initialValues?.id || null);
 
   // FIR Search State
@@ -718,8 +721,8 @@ export default function DynamicForm({
           majorMinorRows={majorMinorRows}
           onAddMajorMinorRow={handleAddMajorMinorRow}
           onDeleteMajorMinorRow={handleDeleteMajorMinorRow}
-          getMajorHeadOptions={getMajorHeadOptions}
-          getMinorHeadOptions={getMinorHeadOptions}
+          getMajorHeadOptions={() => dbMajorHeadOptions}
+          getMinorHeadOptions={() => dbMinorHeadOptions}
           getLocalHeadOptions={getLocalHeadOptions}
           localHeadLayout="split"
         />
@@ -803,7 +806,7 @@ export default function DynamicForm({
                 </td>
               </tr>
 
-              {/* Row 3: Complaint No. -->
+              {/* Row 3: Complaint No. */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
                   {fieldLabel('complaint_no') || 'Complaint No.'}
@@ -867,8 +870,8 @@ export default function DynamicForm({
           majorMinorRows={majorMinorRows}
           onAddMajorMinorRow={handleAddMajorMinorRow}
           onDeleteMajorMinorRow={handleDeleteMajorMinorRow}
-          getMajorHeadOptions={getMajorHeadOptions}
-          getMinorHeadOptions={getMinorHeadOptions}
+          getMajorHeadOptions={() => dbMajorHeadOptions}
+          getMinorHeadOptions={() => dbMinorHeadOptions}
           getLocalHeadOptions={getLocalHeadOptions}
           localHeadLayout="combined"
         />
@@ -1579,28 +1582,7 @@ const renderPropertyStep = () => {
 
   const getMinorCategoryOptions = (majorCategory) => {
     if (!majorCategory) return [];
-    let targetKey = null;
-    const cat = String(majorCategory).toLowerCase().trim();
-    if (cat === 'vehicle') targetKey = 'prop_vehicle_type';
-    else if (cat === 'jewellery' || cat === 'gold/jewellery') targetKey = 'prop_gold_item_type';
-    else if (cat === 'electronics' || cat === 'electronics/gadgets') targetKey = 'prop_elec_device_type';
-    else if (cat === 'documents' || cat === 'official/personal documents') targetKey = 'prop_doc_type';
-    else if (cat === 'drugs' || cat === 'drugs/narcotics') targetKey = 'prop_drug_type';
-    else if (cat === 'arms' || cat === 'arms/ammunition') targetKey = 'prop_arms_type';
-    else if (cat === 'cash') targetKey = 'prop_cash_currency';
-
-    if (targetKey) {
-      const field = allFields.find(f => f.field_key === targetKey);
-      if (field) {
-        try {
-          const opts = typeof field.options === 'string' ? JSON.parse(field.options) : field.options;
-          return Array.isArray(opts) ? opts : [];
-        } catch (e) {
-          return Array.isArray(field.options) ? field.options : [];
-        }
-      }
-    }
-    return [];
+    return propertyMinorOptionsMap[majorCategory] || [];
   };
 
   // ── Extra detail field helpers ─────────────────────────────────────────────
@@ -1618,8 +1600,37 @@ const renderPropertyStep = () => {
     if (!cond) return true;
     if (cond.and) return cond.and.every(c => evalPropCond(c, row));
     const { field: tf, value: tv, operator } = cond;
-    const cv = row[tf];
+    let cv = row[tf];
     if (operator === 'filled') return cv !== undefined && cv !== null && String(cv).trim() !== '';
+
+    if (tf === 'property_major_category' && cv) {
+      const matchOpt = majorCategoryOptions.find(o => String(o.value) === String(cv));
+      if (matchOpt) {
+        const label = String(matchOpt.label_en || matchOpt.value).toUpperCase();
+        if (label === 'ELECTRICAL AND ELECTRONIC GOODS') {
+          if (String(row.property_minor_category) === '470') {
+            cv = 'Mobile Phone';
+          } else {
+            cv = 'Electronics';
+          }
+        } else if (label === 'AUTOMOBILES AND OTHERS') {
+          cv = 'Vehicle';
+        } else if (label === 'COIN AND CURRENCY') {
+          cv = 'Cash';
+        } else if (label === 'JEWELLERY') {
+          cv = 'Jewellery';
+        } else if (label === 'ARMS AND AMMUNITION') {
+          cv = 'Arms';
+        } else if (label === 'DOCUMENTS AND VALUABLE SECURITIES') {
+          cv = 'Documents';
+        } else if (label === 'DRUGS/NARCOTIC DRUGS') {
+          cv = 'Drugs';
+        } else {
+          cv = matchOpt.label_en || matchOpt.value;
+        }
+      }
+    }
+
     return Array.isArray(tv)
       ? tv.map(v => String(v || '').toLowerCase()).includes(String(cv || '').toLowerCase())
       : String(cv || '').toLowerCase() === String(tv || '').toLowerCase();
@@ -1713,6 +1724,10 @@ const renderPropertyStep = () => {
       const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
       Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
       updatedRow.property_minor_category = '';
+    } else if (key === 'property_minor_category') {
+      // Clear any category-specific extra detail fields
+      const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
+      Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
     }
     list[idx] = updatedRow;
     setRepeaterState(prev => ({ ...prev, property_details: list }));
@@ -1887,7 +1902,9 @@ const renderPropertyStep = () => {
 
 const renderArrestedStep = () => {
   const arrestedList = repeaterState?.arrested_info || [];
-  const allFields = deepFlattenSchema(schema);
+  // Use the dedicated ARREST schema so ARREST-specific fields (nafis_dossier, bad_character, etc.)
+  // are always available, even when this modal is embedded inside a CASE or other form.
+  const allFields = deepFlattenSchema(arrestSchema || schema);
 
   const renderArrestedModalField = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
     const field = allFields.find(f => f.field_key === key);
@@ -2044,8 +2061,8 @@ const renderArrestedStep = () => {
         <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
           {renderArrestedModalField('prev_involvement')}
           {renderArrestedModalField('proclaimed_offender')}
-          {renderArrestedModalField('nafis_prepared')}
-          {renderArrestedModalField('dossier_prepared')}
+          {renderArrestedModalField('nafis_dossier')}
+          {renderArrestedModalField('bad_character')}
           {renderArrestedModalField('arresting_officer')}
           {renderArrestedModalField('arresting_officer_mobile')}
           {renderArrestedModalField('listed_criminal', null, true)}
@@ -2664,11 +2681,57 @@ const renderActionTakenStep = () => {
   const [currentStep,  setCurrentStep ] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [repeaterState, setRepeaterState] = useState({});
+  const [propertyMinorOptionsMap, setPropertyMinorOptionsMap] = useState({});
+
+  useEffect(() => {
+    const list = repeaterState?.property_details || [];
+    const majorCategories = Array.from(new Set(
+      list.map(row => row.property_major_category).filter(Boolean)
+    ));
+
+    majorCategories.forEach(cat => {
+      if (propertyMinorOptionsMap[cat]) return; // already loaded or loading
+
+      // Pre-populate to avoid multiple requests in flight
+      setPropertyMinorOptionsMap(prev => ({ ...prev, [cat]: [] }));
+
+      api.get(`/fields/lookup/property-items/${cat}`)
+        .then(res => {
+          if (res.data?.success) {
+            const data = res.data.data;
+            let options = [];
+            if (data?.type === 'ARMS') {
+              options = (data.categories || []).map(c => ({
+                value: c.arms_category_cd ?? c.value ?? c,
+                label_en: c.arms_category ?? c.label ?? c,
+                label_hi: c.arms_category ?? c.label ?? c
+              }));
+            } else if (Array.isArray(data)) {
+              options = data.map(o => ({
+                value: o.value ?? o.property_cd ?? o,
+                label_en: o.label ?? o.property ?? o,
+                label_hi: o.label ?? o.property ?? o
+              }));
+            }
+            setPropertyMinorOptionsMap(prev => ({
+              ...prev,
+              [cat]: options
+            }));
+          }
+        })
+        .catch(err => {
+          console.error(`Failed to fetch items for property category ${cat}:`, err);
+        });
+    });
+  }, [repeaterState?.property_details, propertyMinorOptionsMap]);
+
   const [showAddRow,   setShowAddRow  ] = useState(false);
   const [newAct,       setNewAct      ] = useState('');
   const [newSection,   setNewSection  ] = useState('');
   const [newSectionVal, setNewSectionVal] = useState('');
   const [actsSectionsRegistry, setActsSectionsRegistry] = useState(ACTS_SECTIONS_REGISTRY);
+  const [dbMajorHeadOptions, setDbMajorHeadOptions] = useState([]);
+  const [dbMinorHeadOptions, setDbMinorHeadOptions] = useState([]);
   const [showOccurrencePlace, setShowOccurrencePlace] = useState(false);
 
   // Victim Modal state hooks
@@ -3349,16 +3412,24 @@ const renderActionTakenStep = () => {
     if (!actNameRaw) return [];
 
     // Split comma-separated acts and normalise to schema keys
-    const actKeys = actNameRaw
+    const rawActKeys = actNameRaw
       .split(',')
       .map(a => a.trim())
-      .filter(Boolean)
-      .map(a => ACT_NAME_ALIAS[a] || a);
+      .filter(Boolean);
+    const actKeys = [];
+    for (const item of rawActKeys) {
+      if (/^\d{4}$/.test(item) && actKeys.length > 0) {
+        actKeys[actKeys.length - 1] = `${actKeys[actKeys.length - 1]}, ${item}`;
+      } else {
+        actKeys.push(item);
+      }
+    }
+    const normalizedActKeys = actKeys.map(a => ACT_NAME_ALIAS[a] || a);
 
     // Collect options from all matching major-head schema fields
     const seen = new Set();
     const allOptions = [];
-    for (const actKey of actKeys) {
+    for (const actKey of normalizedActKeys) {
       const majorFields = allSchemaFields.filter(
         f => f.field_key?.includes('major_head') && f.show_when?.value === actKey
       );
@@ -3426,6 +3497,52 @@ const renderActionTakenStep = () => {
       active = false;
     };
   }, []);
+
+  // Fetch Major Heads dynamically from the database based on selected acts
+  useEffect(() => {
+    let active = true;
+    if (!values.act_name) {
+      setDbMajorHeadOptions([]);
+      return;
+    }
+
+    api.get('/fields/lookup/major-heads', { params: { act_name: values.act_name } })
+      .then(res => {
+        if (active && res.data?.success && Array.isArray(res.data.data)) {
+          setDbMajorHeadOptions(res.data.data);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch major heads:', err.message);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [values.act_name]);
+
+  // Fetch Minor Heads dynamically from the database based on selected Major Head
+  useEffect(() => {
+    let active = true;
+    if (!selectedMajorHead) {
+      setDbMinorHeadOptions([]);
+      return;
+    }
+
+    api.get(`/fields/lookup/major-heads/${selectedMajorHead}/minor-heads`)
+      .then(res => {
+        if (active && res.data?.success && Array.isArray(res.data.data)) {
+          setDbMinorHeadOptions(res.data.data);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch minor heads:', err.message);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedMajorHead]);
 
   const formRef = useRef(null);
 
