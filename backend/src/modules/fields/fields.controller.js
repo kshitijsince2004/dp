@@ -623,8 +623,8 @@ export const getFieldsForForm = async (req, res) => {
         },
         {
           section: 'property_details',
-          title_en: 'Particulars',
-          title_hi: 'विवरण',
+          title_en: 'Property of Interest',
+          title_hi: 'संबद्ध संपत्ति',
           is_repeater: true,
           entity_type: 'property',
           fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')

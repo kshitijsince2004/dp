@@ -74,7 +74,7 @@ const SECTION_KEY_ORDER = {
   CASE:   ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
   // For ARREST keep only the main flow tabs. Custody/status and particulars
   // will be surfaced inside the arrested-person modal to avoid repetition.
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'investigation_officer'],
+  ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
   UIDB:   ['general_info', 'corpse_desc', 'inquest_details', 'investigation_officer'],
 };
 
@@ -1902,9 +1902,7 @@ const renderPropertyStep = () => {
 
 const renderArrestedStep = () => {
   const arrestedList = repeaterState?.arrested_info || [];
-  // Use the dedicated ARREST schema so ARREST-specific fields (nafis_dossier, bad_character, etc.)
-  // are always available, even when this modal is embedded inside a CASE or other form.
-  const allFields = deepFlattenSchema(arrestSchema || schema);
+  const allFields = processedArrestFields;
 
   const renderArrestedModalField = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
     const field = allFields.find(f => f.field_key === key);
@@ -2558,84 +2556,94 @@ const renderActionTakenStep = () => {
 
   const finalFirOptions = firOptions.length > 0 ? firOptions : mockOptions;
 
+  const processSchemaStatusOptions = React.useCallback((schemaToProcess, currentRecordType, currentCaseType) => {
+    if (!schemaToProcess || schemaToProcess.length === 0) return [];
+    return schemaToProcess.map(sec => {
+      if (sec.section === 'general_info' || sec.section === 'custody_status' || sec.section === 'arrested_info') {
+        const fields = (sec.fields || []).map(f => {
+          if (f.field_key === 'status') {
+            const statusField = { ...f };
+            const effectiveCaseType = currentRecordType === 'CASE' ? 'against_fir' : (currentCaseType || 'kalandra');
+            if (effectiveCaseType === 'against_fir') {
+              statusField.options = JSON.stringify([
+                { value: 'JC', label_en: 'JC (Judicial custody)', label_hi: 'जेसी (न्यायिक हिरासत)' },
+                { value: 'PC', label_en: 'PC (Police custody)', label_hi: 'पीसी (पुलिस हिरासत)' },
+                { value: 'Bail', label_en: 'Bail', label_hi: 'जमानत' },
+                { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'बाउंड डाउन' },
+                { value: 'Release', label_en: 'Release', label_hi: 'रिहा' },
+                { value: 'Lockup', label_en: 'Lockup', label_hi: 'हवालात/जेल' },
+                { value: '35(3) BNS Notice', label_en: '35(3) BNS noticee', label_hi: '35(3) BNS noticee' }
+              ]);
+            } else {
+              statusField.options = JSON.stringify([
+                { value: 'JC', label_en: 'JC', label_hi: 'जेसी' },
+                { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'बाउंड डाउन' },
+                { value: 'Lockup', label_en: 'Lockup', label_hi: 'हवालात/जेल' },
+                { value: 'Fine', label_en: 'Fine', label_hi: 'जुर्माना' }
+              ]);
+            }
+            statusField.label_en = 'Status';
+            statusField.label_hi = 'बंदी की स्थिति';
+            return statusField;
+          }
+          return f;
+        });
+
+        // Ensure recovery is in custody_status section
+        if (sec.section === 'custody_status' && !fields.find(f => f.field_key === 'recovery')) {
+          fields.push({
+            field_key: 'recovery',
+            field_type: 'TEXTAREA',
+            label_en: 'Recovered Material Items',
+            label_hi: 'बरामद की गई सामग्री',
+            visible_to_levels: ['L1', 'L2', 'L3'],
+            editable_by_levels: ['L1', 'L2', 'L3'],
+            section: 'custody_status',
+            validation_rules: JSON.stringify({ required: false })
+          });
+        }
+
+        // Ensure scheme_of_arrest is in arrested_info section
+        if (sec.section === 'arrested_info' && !fields.find(f => f.field_key === 'scheme_of_arrest')) {
+          fields.push({
+            field_key: 'scheme_of_arrest',
+            field_type: 'SELECT',
+            label_en: 'Scheme of Arrest',
+            label_hi: 'गिरफ्तारी की योजना',
+            visible_to_levels: ['L1', 'L2', 'L3'],
+            editable_by_levels: ['L1', 'L2', 'L3'],
+            section: 'arrested_info',
+            validation_rules: JSON.stringify({ required: false }),
+            options: JSON.stringify([
+              { value: 'Integrated Pride', label_en: 'Integrated Pride', label_hi: 'Integrated Pride' },
+              { value: 'Group Patrolling', label_en: 'Group Patrolling', label_hi: 'Group Patrolling' },
+              { value: 'Anti-snatching', label_en: 'Anti-snatching', label_hi: 'Anti-snatching' },
+              { value: 'By Prahari', label_en: 'By Prahari', label_hi: 'By Prahari' },
+              { value: 'By Eyes & Ears Scheme Members', label_en: 'By Eyes & Ears Scheme Members', label_hi: 'By Eyes & Ears Scheme Members' }
+            ])
+          });
+        }
+
+        return { ...sec, fields };
+      }
+      return sec;
+    });
+  }, []);
+
+  const processedArrestFields = React.useMemo(() => {
+    const rawSchema = arrestSchema || schema;
+    if (!rawSchema) return [];
+    const processedSchema = processSchemaStatusOptions(rawSchema, recordType, caseType);
+    return deepFlattenSchema(processedSchema);
+  }, [arrestSchema, schema, recordType, caseType, processSchemaStatusOptions]);
+
   const finalSchema = React.useMemo(() => {
     if (!schema || schema.length === 0) return [];
 
     let processedSchema = schema;
 
     if (recordType === 'ARREST') {
-      // Create a shallow copy of schema so we don't mutate props
-      processedSchema = schema.map(sec => {
-        if (sec.section === 'general_info' || sec.section === 'custody_status' || sec.section === 'arrested_info') {
-          // Clone the fields array
-          const fields = (sec.fields || []).map(f => {
-            if (f.field_key === 'status') {
-              const statusField = { ...f };
-              const effectiveCaseType = caseType || 'kalandra';
-              if (effectiveCaseType === 'against_fir') {
-                statusField.options = JSON.stringify([
-                  { value: 'JC', label_en: 'JC', label_hi: 'जेसी' },
-                  { value: 'PC', label_en: 'PC', label_hi: 'पीसी' },
-                  { value: 'Bail', label_en: 'Bail', label_hi: 'जमानत पर रिहा' },
-                  { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
-                  { value: 'Release', label_en: 'Release', label_hi: 'रिहा' },
-                  { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
-                  { value: '35(3) BNS Notice', label_en: '35(3) BNS Notice', label_hi: '35(3) BNS Notice' }
-                ]);
-              } else {
-                statusField.options = JSON.stringify([
-                  { value: 'JC', label_en: 'JC', label_hi: 'जेसी' },
-                  { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
-                  { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
-                  { value: 'Fine', label_en: 'Fine', label_hi: 'Fine' }
-                ]);
-              }
-              statusField.label_en = 'Status';
-              statusField.label_hi = 'बंदी की स्थिति';
-              return statusField;
-            }
-            return f;
-          });
-
-          // Ensure recovery is in custody_status section
-          if (sec.section === 'custody_status' && !fields.find(f => f.field_key === 'recovery')) {
-            fields.push({
-              field_key: 'recovery',
-              field_type: 'TEXTAREA',
-              label_en: 'Recovered Material Items',
-              label_hi: 'बरामद की गई सामग्री',
-              visible_to_levels: ['L1', 'L2', 'L3'],
-              editable_by_levels: ['L1', 'L2', 'L3'],
-              section: 'custody_status',
-              validation_rules: JSON.stringify({ required: false })
-            });
-          }
-
-          // Ensure scheme_of_arrest is in arrested_info section
-          if (sec.section === 'arrested_info' && !fields.find(f => f.field_key === 'scheme_of_arrest')) {
-            fields.push({
-              field_key: 'scheme_of_arrest',
-              field_type: 'SELECT',
-              label_en: 'Scheme of Arrest',
-              label_hi: 'गिरफ्तारी की योजना',
-              visible_to_levels: ['L1', 'L2', 'L3'],
-              editable_by_levels: ['L1', 'L2', 'L3'],
-              section: 'arrested_info',
-              validation_rules: JSON.stringify({ required: false }),
-              options: JSON.stringify([
-                { value: 'Integrated Pride', label_en: 'Integrated Pride', label_hi: 'Integrated Pride' },
-                { value: 'Group Patrolling', label_en: 'Group Patrolling', label_hi: 'Group Patrolling' },
-                { value: 'Anti-snatching', label_en: 'Anti-snatching', label_hi: 'Anti-snatching' },
-                { value: 'By Prahari', label_en: 'By Prahari', label_hi: 'By Prahari' },
-                { value: 'By Eyes & Ears Scheme Members', label_en: 'By Eyes & Ears Scheme Members', label_hi: 'By Eyes & Ears Scheme Members' }
-              ])
-            });
-          }
-
-          return { ...sec, fields };
-        }
-        return sec;
-      });
+      processedSchema = processSchemaStatusOptions(schema, recordType, caseType);
     }
 
     const order = SECTION_KEY_ORDER[recordType];
@@ -3598,7 +3606,7 @@ const renderActionTakenStep = () => {
 
   // Auto-populate 1 empty row for property details if empty and not read-only
   useEffect(() => {
-    if (!readOnly && recordType === 'CASE') {
+    if (!readOnly && (recordType === 'CASE' || recordType === 'ARREST')) {
       const propertyList = repeaterState?.property_details || [];
       if (propertyList.length === 0) {
         setRepeaterState(prev => ({
