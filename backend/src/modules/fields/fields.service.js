@@ -49,14 +49,9 @@ export const getMinorHeadsForMajorHeads = async (majorHeadCodes) => {
 };
 
 export const getPropertyCategories = async () => {
-  const standard = await db('excel_property_types').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property');
-  const others = await db('excel_other_property_categories').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property');
-
-  const map = new Map();
-  for (const item of [...standard, ...others]) {
-    map.set(item.parent_cd, item);
-  }
-  return Array.from(map.values()).sort((a, b) => a.code_type.localeCompare(b.code_type));
+  return db('excel_property_types')
+    .select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property')
+    .orderBy('code_type', 'asc');
 };
 
 export const getPropertyItemsForCategory = async (parentCd) => {
