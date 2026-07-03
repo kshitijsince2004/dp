@@ -74,7 +74,10 @@ export default function FieldRenderer({
             type="text"
             disabled={readOnly}
             value={values?.gd_no || ''}
-            onChange={(e) => onChange('gd_no', e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, ''); // type sirf numeric rkhna
+              handleFieldChange('gd_no', val);
+            }}
             placeholder={lang === 'hi' ? 'जीडी नंबर' : 'GD Number'}
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
           />
@@ -84,7 +87,7 @@ export default function FieldRenderer({
             id="field-gd_date"
             disabled={readOnly}
             value={values?.gd_date || ''}
-            onChange={(val) => onChange('gd_date', val)}
+            onChange={(val) => handleFieldChange('gd_date', val)}
             inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
           />
         </div>
@@ -93,7 +96,7 @@ export default function FieldRenderer({
             type="time"
             disabled={readOnly}
             value={values?.gd_time || ''}
-            onChange={(e) => onChange('gd_time', e.target.value)}
+            onChange={(e) => handleFieldChange('gd_time', e.target.value)}
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
           />
         </div>
@@ -112,7 +115,7 @@ export default function FieldRenderer({
             id="field-arrest_date"
             disabled={readOnly}
             value={values?.arrest_date || ''}
-            onChange={(val) => onChange('arrest_date', val)}
+            onChange={(val) => handleFieldChange('arrest_date', val)}
             inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
           />
         </div>
@@ -121,7 +124,7 @@ export default function FieldRenderer({
             type="time"
             disabled={readOnly}
             value={values?.arrest_time || ''}
-            onChange={(e) => onChange('arrest_time', e.target.value)}
+            onChange={(e) => handleFieldChange('arrest_time', e.target.value)}
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
           />
         </div>
@@ -141,7 +144,7 @@ export default function FieldRenderer({
             type="text"
             disabled={readOnly}
             value={values?.fir_no || ''}
-            onChange={(e) => onChange('fir_no', e.target.value)}
+            onChange={(e) => handleFieldChange('fir_no', e.target.value)}
             placeholder={lang === 'hi' ? 'प्राथमिकी (FIR) संख्या' : 'FIR Number'}
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
           />
@@ -151,7 +154,7 @@ export default function FieldRenderer({
             id="field-fir_date"
             disabled={readOnly}
             value={values?.fir_date || ''}
-            onChange={(val) => onChange('fir_date', val)}
+            onChange={(val) => handleFieldChange('fir_date', val)}
             inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
           />
         </div>
@@ -160,7 +163,7 @@ export default function FieldRenderer({
             type="time"
             disabled={readOnly}
             value={values?.fir_time || ''}
-            onChange={(e) => onChange('fir_time', e.target.value)}
+            onChange={(e) => handleFieldChange('fir_time', e.target.value)}
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
           />
         </div>

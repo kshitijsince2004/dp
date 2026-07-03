@@ -801,7 +801,7 @@ export default function DynamicForm({
                 </td>
               </tr>
 
-              {/* Row 3: Complaint No. -->
+              {/* Row 3: Complaint No. */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
                   {fieldLabel('complaint_no') || 'Complaint No.'}
@@ -1602,8 +1602,12 @@ const renderPropertyStep = () => {
       const matchOpt = majorCategoryOptions.find(o => String(o.value) === String(cv));
       if (matchOpt) {
         const label = String(matchOpt.label_en || matchOpt.value).toUpperCase();
-        if (label === 'ELECTRICAL AND ELECTRONIC GOODS' || String(row.property_minor_category) === '470') {
-          cv = 'Mobile Phone';
+        if (label === 'ELECTRICAL AND ELECTRONIC GOODS') {
+          if (String(row.property_minor_category) === '470') {
+            cv = 'Mobile Phone';
+          } else {
+            cv = 'Electronics';
+          }
         } else if (label === 'AUTOMOBILES AND OTHERS') {
           cv = 'Vehicle';
         } else if (label === 'COIN AND CURRENCY') {
@@ -1715,6 +1719,10 @@ const renderPropertyStep = () => {
       const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
       Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
       updatedRow.property_minor_category = '';
+    } else if (key === 'property_minor_category') {
+      // Clear any category-specific extra detail fields
+      const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
+      Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
     }
     list[idx] = updatedRow;
     setRepeaterState(prev => ({ ...prev, property_details: list }));
