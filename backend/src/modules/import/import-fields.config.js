@@ -95,7 +95,7 @@ const getAddressFieldsList = (prefix, labelPrefixEn, labelPrefixHi) => {
 
 export const caseGeneralFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'e.g. FIR-220/2026' },
-  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: true, hint: 'DD/MM/YYYY' },
+  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: true, hint: 'YYYY-MM-DD' },
   { field_key: 'district', label_en: 'District', label_hi: 'जिला', required: true, hint: 'e.g. New Delhi District (NDD)' },
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
   { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: false, hint: 'e.g. Theft / Larceny' },
@@ -110,7 +110,7 @@ export const caseGeneralFields = [
   { field_key: 'brief_facts', label_en: 'Brief Facts of Case', label_hi: 'मामले के संक्षिप्त तथ्य', required: false, hint: 'Incident narrative' },
   { field_key: 'status_remarks', label_en: 'Status / Remarks', label_hi: ' स्थिति / टिप्पणियाँ', required: false, hint: 'e.g. Under investigation' },
   
-  ...getPersonFieldsList('complainant', 'Complainant', 'शिकायतकर्ता').filter(f => f.field_key !== 'complainant_npr'),
+  ...getPersonFieldsList('complainant', 'Complainant', 'शिकायतकर्ता').filter(f => f.field_key !== 'complainant_npr'&& f.field_key !== 'complainant_present_address'),
   { field_key: 'complainant_perm_same', label_en: 'Is Complainant Permanent Same As Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: false, options: ['Yes', 'No'] },
   ...getAddressFieldsList('complainant_perm', 'Complainant Permanent Address', 'शिकायतकर्ता का स्थायी पता'),
   ...getAddressFieldsList('occurrence', 'Place of Occurrence Address', 'घटनास्थल का पता विवरण'),
@@ -144,10 +144,10 @@ export const caseVictimFields = [
   { field_key: 'victim_relative_name', label_en: 'Victim Relative Name', label_hi: 'पीड़ित रिश्तेदार का नाम', required: false, hint: 'Father\'s or Husband\'s Name' },
   { field_key: 'victim_mobile_country_code', label_en: 'Victim Mobile Country Code', label_hi: 'पीड़ित मोबाइल देश कोड', required: false },
   { field_key: 'victim_mobile', label_en: 'Victim Mobile No.', label_hi: 'पीड़ित मोबाइल नंबर', required: false, hint: '10-digit mobile number' },
-  { field_key: 'victim_qualification', label_en: 'Victim Qualification', label_hi: 'पीड़ित योग्यता', required: false, options: ['Uneducated', '10th', '10+2', 'Graduate', 'Post-Graduate'] },
-  { field_key: 'victim_dob', label_en: 'Victim Date of Birth', label_hi: 'पीड़ित जन्म तिथि', required: false, hint: 'DD/MM/YYYY' },
+  //{ field_key: 'victim_qualification', label_en: 'Victim Qualification', label_hi: 'पीड़ित योग्यता', required: false, options: ['Uneducated', '10th', '10+2', 'Graduate', 'Post-Graduate'] },
+  //{ field_key: 'victim_dob', label_en: 'Victim Date of Birth', label_hi: 'पीड़ित जन्म तिथि', required: false, hint: 'DD/MM/YYYY' },
   { field_key: 'victim_age_year', label_en: 'Victim Age (Years)', label_hi: 'पीड़ित आयु (वर्ष)', required: false },
-  { field_key: 'victim_birth_year', label_en: 'Victim Year of Birth', label_hi: 'पीड़ित जन्म का वर्ष', required: false },
+  //{ field_key: 'victim_birth_year', label_en: 'Victim Year of Birth', label_hi: 'पीड़ित जन्म का वर्ष', required: false },
   
   // --- Victim Present Address ---
   { field_key: 'victim_house_no', label_en: 'Victim House No.', label_hi: 'पीड़ित मकान संख्या', required: false },
@@ -155,7 +155,7 @@ export const caseVictimFields = [
   { field_key: 'victim_colony', label_en: 'Victim Colony', label_hi: 'पीड़ित कॉलोनी', required: false },
   { field_key: 'victim_city_town_village', label_en: 'Victim Village / City / Town', label_hi: 'पीड़ित गांव / शहर / नगर', required: false },
   { field_key: 'victim_tehsil_block_mandal', label_en: 'Victim Tehsil / Block / Mandal', label_hi: 'पीड़ित तहसील / ब्लॉक / मंडल', required: false },
-  { field_key: 'victim_present_address', label_en: 'Victim Full Present Address', label_hi: 'पीड़ित वर्तमान पता', required: false },
+  //{ field_key: 'victim_present_address', label_en: 'Victim Full Present Address', label_hi: 'पीड़ित वर्तमान पता', required: false },
   { field_key: 'victim_country', label_en: 'Victim Nationality', label_hi: 'पीड़ित राष्ट्रीयता', required: false, options: COUNTRY_OPTS },
   { field_key: 'victim_state', label_en: 'Victim State', label_hi: 'पीड़ित राज्य', required: false, options: STATE_OPTS },
   { field_key: 'victim_district', label_en: 'Victim District', label_hi: 'पीड़ित जिला', required: false, options: DISTRICT_OPTS },
@@ -172,7 +172,8 @@ export const caseVictimFields = [
 
 export const caseAccusedFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'Must match General Information FIR Number' },
-  ...getPersonFieldsList('accused', 'Accused', 'अभियुक्त'),
+  ...getPersonFieldsList('accused', 'Accused', 'अभियुक्त')
+    .filter(f => f.field_key !== 'accused_dob' && f.field_key !== 'accused_birth_year'),
   { field_key: 'accused_perm_same', label_en: 'Is Accused Permanent Address Same As Present?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: false, options: ['Yes', 'No'] },
   ...getAddressFieldsList('accused_perm', 'Accused Permanent Address', 'अभियुक्त का स्थायी पता')
 ];
@@ -190,10 +191,10 @@ export const casePropertyFields = [
 
 export const arrestGeneralFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'e.g. FIR-104/2026' },
-  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: false, hint: 'DD/MM/YYYY' },
+  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: false, hint: 'YYYY-MM-DD' },
   { field_key: 'district', label_en: 'District', label_hi: 'जिला', required: true, hint: 'e.g. New Delhi District (NDD)' },
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
-  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: true, hint: 'DD/MM/YYYY' },
+  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: true, hint: 'YYYY-MM-DD' },
   { field_key: 'time_of_arrest', label_en: 'Time Of Arrest', label_hi: 'गिरफ्तारी का समय', required: false, hint: 'HH:MM' },
   { field_key: 'place_of_arrest', label_en: 'Place Of Arrest', label_hi: 'गिरफ्तारी का स्थान', required: true, hint: 'e.g. Nizamuddin Platform 3' },
   { field_key: 'io_name', label_en: 'IO / Officer Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },
@@ -214,7 +215,8 @@ export const arrestPersonFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'Must match General Info sheet' },
   { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'YYYY-MM-DD' },
   { field_key: 'time_of_arrest', label_en: 'Time Of Arrest', label_hi: 'गिरफ्तारी का समय', required: false, hint: 'HH:MM' },
-  ...getPersonFieldsList('arrested', 'Arrested Person', 'गिरफ्तार व्यक्ति'),
+  ...getPersonFieldsList('arrested', 'Arrested Person', 'गिरफ्तार व्यक्ति')
+    .filter(f => f.field_key !== 'arrested_dob' && f.field_key !== 'arrested_birth_year'),
   { field_key: 'arrested_perm_same', label_en: 'Is Permanent Address same as Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: true, options: ['Yes', 'No'] },
   { field_key: 'arrested_perm_address', label_en: 'Full Permanent Address', label_hi: 'स्थायी पता', required: false },
   ...getAddressFieldsList('arrested_perm', 'Arrested Person Permanent Address', 'गिरफ्तार व्यक्ति का स्थायी पता'),
@@ -276,6 +278,122 @@ export const UIDB_ACT_SECTION_EXCLUDE_KEYS = new Set([
   'gambling_public_minor_head', 'arms_minor_head', 'gambling_minor_head', 'other_minor_head',
 ]);
 
+export const uidbGeneralFields = [
+  // --- General Information (general_info) ---
+  { field_key: 'gd_no', label_en: 'GD Number, Date & Time', label_hi: 'जीडी नंबर, दिनांक और समय', required: true, section: 'general_info' },
+  { field_key: 'status', label_en: 'Current Status / Mortuary Remarks', label_hi: 'वर्तमान स्थिति', required: false, options: ['Referred to district hospital', 'Identified', 'Body Claimed', 'Unidentified', 'Held in Mortuary'], section: 'general_info' },
+
+  // --- Corpse Details (corpse_desc) ---
+  { field_key: 'identified', label_en: 'Body Identified', label_hi: 'शव की पहचान हुई', required: true, options: ['Yes', 'No'], section: 'corpse_desc' },
+  { field_key: 'deceased_name', label_en: 'Name of Deceased', label_hi: 'मृतक का नाम', required: true, section: 'corpse_desc' },
+  { field_key: 'deceased_house_no', label_en: 'Deceased Present House No.', label_hi: 'मृतक का मकान संख्या', required: false, section: 'corpse_desc' },
+  { field_key: 'deceased_street', label_en: 'Deceased Present Street', label_hi: 'मृतक का गली / सड़क', required: false, section: 'corpse_desc' },
+  { field_key: 'deceased_colony', label_en: 'Deceased Present Colony', label_hi: 'मृतक का कॉलोनी', required: false, section: 'corpse_desc' },
+  { field_key: 'deceased_city_town_village', label_en: 'Deceased Present Village / City / Town', label_hi: 'मृतक का गांव / शहर / नगर', required: false, section: 'corpse_desc' },
+  { field_key: 'deceased_state', label_en: 'Deceased Present State', label_hi: 'मृतक का राज्य', required: false, options: STATE_OPTS, section: 'corpse_desc' },
+  { field_key: 'deceased_district', label_en: 'Deceased Present District', label_hi: 'मृतक का जिला', required: false, options: DISTRICT_OPTS, section: 'corpse_desc' },
+  { field_key: 'deceased_pincode', label_en: 'Deceased Present Pin Code', label_hi: 'मृतक का पिन कोड', required: false, section: 'corpse_desc' },
+  { field_key: 'deceased_perm_same', label_en: 'Is Permanent Address same as Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: true, options: ['Yes', 'No'], section: 'corpse_desc' },
+  { field_key: 'deceased_perm_house_no', label_en: 'Deceased Permanent House No.', label_hi: 'मृतक का स्थायी मकान संख्या', required: false, section: 'corpse_desc' },
+  { field_key: 'deceased_perm_street', label_en: 'Deceased Permanent Street', label_hi: 'मृतक का स्थायी गली / सड़क', required: false, section: 'corpse_desc' },
+  { field_key: 'deceased_perm_colony', label_en: 'Deceased Permanent Colony', label_hi: 'मृतक का स्थायी कॉलोनी', required: false, section: 'corpse_desc' },
+  { field_key: 'deceased_perm_city_town_village', label_en: 'Deceased Permanent Village / City / Town', label_hi: 'मृतक का स्थायी गांव / शहर / नगर', required: false, section: 'corpse_desc' },
+  { field_key: 'deceased_perm_state', label_en: 'Deceased Permanent State', label_hi: 'मृतक का स्थायी राज्य', required: false, options: STATE_OPTS, section: 'corpse_desc' },
+  { field_key: 'deceased_perm_district', label_en: 'Deceased Permanent District', label_hi: 'मृतक का स्थायी जिला', required: false, options: DISTRICT_OPTS, section: 'corpse_desc' },
+  { field_key: 'deceased_perm_pincode', label_en: 'Deceased Permanent Pin Code', label_hi: 'मृतक का स्थायी पिन कोड', required: false, section: 'corpse_desc' },
+  { field_key: 'found_date', label_en: 'Date Body Found', label_hi: 'शव मिलने की तिथि', required: false, section: 'corpse_desc' },
+  { field_key: 'found_place', label_en: 'Place Body Found', label_hi: 'शव मिलने का स्थान', required: false, section: 'corpse_desc' },
+  { field_key: 'found_time', label_en: 'Time Body Found', label_hi: 'शव मिलने का समय', required: false, section: 'corpse_desc' },
+  { field_key: 'found_latitude', label_en: 'Place Body Found Latitude', label_hi: 'शव मिलने का स्थान अक्षांश', required: false, section: 'corpse_desc' },
+  { field_key: 'found_longitude', label_en: 'Place Body Found Longitude', label_hi: 'शव मिलने का स्थान रेखांश', required: false, section: 'corpse_desc' },
+  { field_key: 'approx_age', label_en: 'Approximate Age', label_hi: 'अनुमानित उम्र', required: false, section: 'corpse_desc' },
+  { field_key: 'description', label_en: 'Physical Description', label_hi: 'शारीरिक हुलिया', required: false, section: 'corpse_desc' },
+  { field_key: 'identification_marks', label_en: 'Identification Marks', label_hi: 'पहचान चिन्ह', required: false, section: 'corpse_desc' },
+
+  // --- Physical Description / Person Details (person_details) ---
+  { field_key: 'gender', label_en: 'Gender', label_hi: 'लिंग', required: false, options: ['Male', 'Female', 'Transgender', 'Unknown'], section: 'person_details' },
+  { field_key: 'height', label_en: 'Height', label_hi: 'कद', required: false, section: 'person_details' },
+  { field_key: 'built', label_en: 'Built', label_hi: 'शरीर की बनावट', required: false, section: 'person_details' },
+  { field_key: 'complexion', label_en: 'Complexion', label_hi: 'रंग', required: false, section: 'person_details' },
+  { field_key: 'upper_dress_color', label_en: 'Upper Dress Color', label_hi: 'ऊपरी पोशाक का रंग', required: false, section: 'person_details' },
+  { field_key: 'lower_dress_color', label_en: 'Lower Dress Color', label_hi: 'निचली पोशाक का रंग', required: false, section: 'person_details' },
+  { field_key: 'face', label_en: 'Face', label_hi: 'चेहरा', required: false, section: 'person_details' },
+  { field_key: 'hair', label_en: 'Hair', label_hi: 'बाल', required: false, section: 'person_details' },
+  { field_key: 'moustache', label_en: 'Moustache', label_hi: 'मूंछ', required: false, section: 'person_details' },
+  { field_key: 'beard', label_en: 'Beard', label_hi: 'दाढ़ी', required: false, section: 'person_details' },
+
+  // --- Informant & Contact Details (contacts_assigned) ---
+  { field_key: 'informant_name', label_en: 'Informant Name', label_hi: 'सूचना देने वाले का नाम', required: false, section: 'contacts_assigned' },
+  { field_key: 'informant_relation', label_en: 'Relation with Deceased', label_hi: 'मृतक से संबंध', required: false, options: ['Father', 'Mother', 'Husband', 'Wife', 'Brother', 'Sister', 'Son', 'Daughter', 'Guardian', 'Friend', 'Neighbor', 'Other'], section: 'contacts_assigned' },
+  { field_key: 'informant_mobile', label_en: 'Informant Mobile', label_hi: 'सूचना देने वाले का मोबाइल', required: false, section: 'contacts_assigned' },
+  { field_key: 'zipnet_no', label_en: 'ZIPNET No.', label_hi: 'जिपनेट संख्या', required: false, section: 'contacts_assigned' },
+
+  // --- Inquest Details (inquest_details) ---
+  { field_key: 'cause_of_death', label_en: 'Cause of Death', label_hi: 'मौत का कारण', required: false, section: 'inquest_details' },
+  { field_key: 'deceased_relative_name', label_en: 'Relative Name', label_hi: 'रिश्तेदार का नाम', required: false, section: 'inquest_details' },
+  { field_key: 'deceased_relation_type', label_en: 'Relation with Deceased', label_hi: 'मृतक से संबंध', required: false, section: 'inquest_details' },
+  { field_key: 'filed_by_acp_sdm', label_en: 'Inquest Filed by ACP / SDM', label_hi: 'एसीपी / एसडीएम द्वारा दायर पूछताछ', required: false, section: 'inquest_details' },
+  { field_key: 'filed_by_acp_sdm_date', label_en: 'Date of Filed by ACP/SDM', label_hi: 'एसीपी / एसडीएम द्वारा दायर करने की तिथि', required: false, section: 'inquest_details' },
+
+  // --- IO Details (investigation_officer) ---
+  { field_key: 'io_name', label_en: 'IO / Officer Name', label_hi: 'जांच अधिकारी का नाम', required: false, section: 'investigation_officer' },
+  { field_key: 'io_rank', label_en: 'IO Rank', label_hi: 'जांच अधिकारी का पद', required: false, options: ['Constable', 'Head Constable', 'Assistant Sub Inspector', 'Sub Inspector', 'Inspector', 'Deputy Superintendent of Police', 'Superintendent of Police'], section: 'investigation_officer' },
+  { field_key: 'io_pis', label_en: 'PIS No. of IO', label_hi: 'जांच अधिकारी का पीआईएस नंबर', required: false, section: 'investigation_officer' },
+  { field_key: 'io_mobile', label_en: 'IO Mobile No.', label_hi: 'जांच अधिकारी का मोबाइल', required: false, section: 'investigation_officer' }
+];
+
+export const missingGeneralFields = [
+  { field_key: 'source', label_en: 'Source of Information', label_hi: 'जानकारी का स्रोत', required: false, section: 'general_info' },
+  { field_key: 'gd_no', label_en: 'GD Number, Date & Time', label_hi: 'जीडी नंबर, दिनांक और समय', required: true, section: 'general_info' },
+  { field_key: 'missing_type', label_en: 'Missing / Found Type', label_hi: 'लापता / मिला प्रकार', required: false, options: ['Missing', 'Found'], section: 'general_info' },
+  { field_key: 'status', label_en: 'Status', label_hi: 'स्थिति', required: false, options: ['Un-traced', 'Traced', 'Referred', 'Closed'], section: 'general_info' },
+  { field_key: 'mp_known', label_en: 'Is Missing Person Identified / Known?', label_hi: 'क्या लापता व्यक्ति की पहचान हुई है?', required: false, options: ['Yes', 'No'], section: 'person_details' },
+  { field_key: 'missing_name', label_en: 'Name of Missing Person', label_hi: 'लापता व्यक्ति का नाम', required: true, section: 'person_details' },
+  { field_key: 'mp_house_no', label_en: 'Present House No.', label_hi: 'मकान संख्या', required: false, section: 'person_details' },
+  { field_key: 'mp_street', label_en: 'Present Street', label_hi: 'गली / सड़क', required: false, section: 'person_details' },
+  { field_key: 'mp_colony', label_en: 'Present Colony', label_hi: 'कॉलोनी', required: false, section: 'person_details' },
+  { field_key: 'mp_city_town_village', label_en: 'Present Village / City / Town', label_hi: 'गांव / शहर / नगर', required: false, section: 'person_details' },
+  { field_key: 'mp_state', label_en: 'Present State', label_hi: 'राज्य', required: false, options: STATE_OPTS, section: 'person_details' },
+  { field_key: 'mp_district', label_en: 'Present District', label_hi: 'जिला', required: false, options: DISTRICT_OPTS, section: 'person_details' },
+  { field_key: 'mp_pincode', label_en: 'Present Pin Code', label_hi: 'पिन कोड', required: false, section: 'person_details' },
+  //{ field_key: 'mp_address', label_en: 'Present Full Address', label_hi: 'वर्तमान पता (विस्तृत)', required: false, section: 'person_details' },
+  { field_key: 'mp_perm_same', label_en: 'Is Permanent Address same as Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: false, options: ['Yes', 'No'], section: 'person_details' },
+  { field_key: 'mp_perm_house_no', label_en: 'Permanent House No.', label_hi: 'स्थायी मकान संख्या', required: false, section: 'person_details' },
+  { field_key: 'mp_perm_street', label_en: 'Permanent Street', label_hi: 'स्थायी गली / सड़क', required: false, section: 'person_details' },
+  { field_key: 'mp_perm_colony', label_en: 'Permanent Colony', label_hi: 'स्थायी कॉलोनी', required: false, section: 'person_details' },
+  { field_key: 'mp_perm_city_town_village', label_en: 'Permanent Village / City / Town', label_hi: 'स्थायी गांव / शहर / नगर', required: false, section: 'person_details' },
+  { field_key: 'mp_perm_state', label_en: 'Permanent State', label_hi: 'स्थायी राज्य', required: false, options: STATE_OPTS, section: 'person_details' },
+  { field_key: 'mp_perm_district', label_en: 'Permanent District', label_hi: 'स्थायी जिला', required: false, options: DISTRICT_OPTS, section: 'person_details' },
+  { field_key: 'mp_perm_pincode', label_en: 'Permanent Pin Code', label_hi: 'स्थायी पिन कोड', required: false, section: 'person_details' },
+  //{ field_key: 'missing_address', label_en: 'Full Permanent Address', label_hi: 'स्थायी पता विवरण', required: false, section: 'person_details' },
+  { field_key: 'gender', label_en: 'Gender', label_hi: 'लिंग', required: false, options: ['Male', 'Female', 'Transgender', 'Unknown'], section: 'person_details' },
+  { field_key: 'age', label_en: 'Age', label_hi: 'उम्र', required: false, section: 'person_details' },
+  { field_key: 'major_minor', label_en: 'Major / Minor', label_hi: 'वयस्क / अवयस्क', required: false, options: ['Major', 'Minor'], section: 'person_details' },
+  { field_key: 'missing_date', label_en: 'Date Missing Since', label_hi: 'लापता होने की तिथि', required: false, section: 'person_details' },
+  { field_key: 'missing_place', label_en: 'Last Seen Place', label_hi: 'अंतिम बार देखे जाने का स्थान', required: false, section: 'person_details' },
+  { field_key: 'Mental State', label_en: 'Mental State', label_hi: 'मानसिक स्थिति', required: false, section: 'person_details' },
+  { field_key: 'physical_description', label_en: 'Physical Description', label_hi: 'शारीरिक हुलिया', required: false, section: 'person_details' },
+  //{ field_key: 'operator_name', label_en: 'Operator Name to Whom MPS', label_hi: 'ऑपरेटर का नाम जिसे एमपीएस भेजा गया', required: false, section: 'general_info' },
+  { field_key: 'informant_name', label_en: 'Informant Name', label_hi: 'सूचना देने वाले का नाम', required: false, section: 'contacts_assigned' },
+  { field_key: 'informant_relation', label_en: 'Relation with Missing Person', label_hi: 'लापता व्यक्ति से संबंध', required: false, options: ['Father', 'Mother', 'Husband', 'Wife', 'Brother', 'Sister', 'Son', 'Daughter', 'Guardian', 'Friend', 'Neighbor', 'Other'], section: 'contacts_assigned' },
+  { field_key: 'informant_mobile', label_en: 'Informant Mobile', label_hi: 'सूचना देने वाले का मोबाइल', required: false, section: 'contacts_assigned' },
+  { field_key: 'zipnet_no', label_en: 'ZIPNET No.', label_hi: 'जिपनेट संख्या', required: false, section: 'contacts_assigned' },
+  { field_key: 'height', label_en: 'Height', label_hi: 'कद', required: false, section: 'person_details' },
+  { field_key: 'built', label_en: 'Built', label_hi: 'शरीर की बनावट', required: false, section: 'person_details' },
+  { field_key: 'complexion', label_en: 'Complexion', label_hi: 'रंग', required: false, section: 'person_details' },
+  { field_key: 'missing_relation_type', label_en: 'Relation Type', label_hi: 'संबंध का प्रकार', required: false, options: ['Father', 'Mother', 'Husband', 'Wife', 'Guardian', 'Other'], section: 'person_details' },
+  { field_key: 'upper_dress_color', label_en: 'Upper Dress Color', label_hi: 'ऊपरी पोशाक का रंग', required: false, section: 'person_details' },
+  { field_key: 'lower_dress_color', label_en: 'Lower Dress Color', label_hi: 'निचली पोशाक का रंग', required: false, section: 'person_details' },
+  { field_key: 'face', label_en: 'Face', label_hi: 'चेहरा', required: false, section: 'person_details' },
+  { field_key: 'hair', label_en: 'Hair', label_hi: 'बाल', required: false, section: 'person_details' },
+  { field_key: 'moustache', label_en: 'Moustache', label_hi: 'मूंछ', required: false, section: 'person_details' },
+  { field_key: 'beard', label_en: 'Beard', label_hi: 'दाढ़ी', required: false, section: 'person_details' },
+  { field_key: 'io_name', label_en: 'IO / Officer Name', label_hi: 'जांच अधिकारी का नाम', required: false, section: 'investigation_officer' },
+  { field_key: 'io_rank', label_en: 'IO Rank', label_hi: 'जांच अधिकारी का पद', required: false, options: ['Constable', 'Head Constable', 'Assistant Sub Inspector', 'Sub Inspector', 'Inspector', 'Deputy Superintendent of Police', 'Superintendent of Police'], section: 'investigation_officer' },
+  { field_key: 'io_pis', label_en: 'PIS No. of IO', label_hi: 'जांच अधिकारी का पीआईएस नंबर', required: false, section: 'investigation_officer' },
+  { field_key: 'io_mobile', label_en: 'IO Mobile No.', label_hi: 'जांच अधिकारी का मोबाइल', required: false, section: 'investigation_officer' }
+];
+
 export const CASE_SHEETS_CONFIG = {
   general: caseGeneralFields.map(f => f.field_key),
   victim: caseVictimFields.map(f => f.field_key),
@@ -289,4 +407,13 @@ export const ARREST_SHEETS_CONFIG = {
   act_section: arrestActSectionFields.map(f => f.field_key),
   person: arrestPersonFields.map(f => f.field_key),
   property: arrestPropertyFields.map(f => f.field_key)
+};
+
+export const UIDB_SHEETS_CONFIG = {
+  general: uidbGeneralFields.map(f => f.field_key),
+  act_section: uidbActSectionFields.map(f => f.field_key)
+};
+
+export const MISSING_SHEETS_CONFIG = {
+  general: missingGeneralFields.map(f => f.field_key)
 };

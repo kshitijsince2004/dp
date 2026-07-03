@@ -496,38 +496,7 @@ export class TemplateBuilderService {
       } while (colIdxToDelete !== -1);
     });
 
-    // Ensure local_head is present on Act and Sections sheet
-    const actSectionSheet = workbook.getWorksheet('Act and Sections');
-    if (actSectionSheet) {
-      let localHeadExists = false;
-      const row1 = actSectionSheet.getRow(1);
-      row1.eachCell({ includeEmpty: true }, (cell) => {
-        if (cell.value === 'local_head') {
-          localHeadExists = true;
-        }
-      });
-      if (!localHeadExists) {
-        let maxCols = 0;
-        actSectionSheet.eachRow({ includeEmpty: true }, r => {
-          maxCols = Math.max(maxCols, r.cellCount);
-        });
-        const targetColIndex = maxCols + 1;
-        actSectionSheet.getRow(1).getCell(targetColIndex).value = 'local_head';
-        actSectionSheet.getRow(2).getCell(targetColIndex).value = 'Act and Sections';
-        actSectionSheet.getRow(3).getCell(targetColIndex).value = lang === 'hi' ? 'स्थानीय शीर्ष' : 'Local Head';
-        actSectionSheet.getRow(4).getCell(targetColIndex).value = 'e.g. Snatching / Theft';
-        
-        // Copy cell format from adjacent column
-        const refColIndex = targetColIndex > 1 ? targetColIndex - 1 : 1;
-        for (let r = 1; r <= 4; r++) {
-          const refCell = actSectionSheet.getRow(r).getCell(refColIndex);
-          const cell = actSectionSheet.getRow(r).getCell(targetColIndex);
-          if (refCell.style) {
-            cell.style = JSON.parse(JSON.stringify(refCell.style));
-          }
-        }
-      }
-    }
+    // Ensure local_head is present on Act and Sections sheet - REMOVED
 
     const excludedKeys = new Set();
     const filteredTypeFields = typeFields.filter(f => allowedKeys.has(f.field_key));
@@ -536,6 +505,10 @@ export class TemplateBuilderService {
     for (const field of filteredTypeFields) {
       if (recordType === 'ARREST' && field.field_key === 'status') {
         field.section = 'custody_status';
+      }
+      // Force sections and act to the act_section sheet to prevent them from slipping into General Information
+      if (field.field_key === 'sections' || field.field_key === 'act') {
+        field.section = 'act_section';
       }
       const mapping = sectionMap[field.section];
       if (!mapping) continue;
@@ -618,6 +591,20 @@ export class TemplateBuilderService {
             maxCols = Math.max(maxCols, r.cellCount);
           });
           targetColIndex = maxCols + 1;
+        }
+
+        // Keep country code columns immediately to the left of their respective mobile columns
+        if (field.field_key && field.field_key.endsWith('_mobile_country_code')) {
+          const targetMobileKey = field.field_key.replace('_mobile_country_code', '_mobile');
+          let mobileColIdx = -1;
+          row1.eachCell({ includeEmpty: true }, (cell, colNum) => {
+            if (cell.value === targetMobileKey) {
+              mobileColIdx = colNum;
+            }
+          });
+          if (mobileColIdx !== -1) {
+            targetColIndex = mobileColIdx;
+          }
         }
 
         // 3. Insert the new column

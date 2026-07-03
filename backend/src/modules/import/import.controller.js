@@ -25,7 +25,11 @@ import {
   arrestPropertyFields,
   CASE_SHEETS_CONFIG,
   ARREST_SHEETS_CONFIG,
+  uidbGeneralFields,
   uidbActSectionFields,
+  missingGeneralFields,
+  UIDB_SHEETS_CONFIG,
+  MISSING_SHEETS_CONFIG,
   UIDB_ACT_SECTION_EXCLUDE_KEYS
 } from './import-fields.config.js';
 
@@ -306,6 +310,12 @@ const getRecordDate = (recordType, rowData) => {
   if (recordType === 'PCR_CALL') {
     return rowData.gd_date;
   }
+  if (recordType === 'UIDB') {
+    return rowData.found_date;
+  }
+  if (recordType === 'MISSING') {
+    return rowData.missing_date;
+  }
   return null;
 };
 
@@ -340,6 +350,13 @@ const SHEET_ALIASES = {
     act: ['Act and Sections', 'Acts and Sections', 'Act & Sections'],
     person: ['Person Arrested Detail', 'Arrested Person Detail', 'Arrested Person', 'Person Detail', 'Person Arrested Details'],
     property: ['Property Details', 'Property Detail']
+  },
+  UIDB: {
+    parent: ['General Info', 'General Information', 'Import Template', 'General'],
+    act: ['Act and Sections', 'Acts and Sections', 'Act & Sections']
+  },
+  MISSING: {
+    parent: ['Import Template', 'General Info', 'General Information', 'General']
   }
 };
 
@@ -931,11 +948,11 @@ const getHint = (field) => {
 const SECTION_SUBHEADING_MAP = {
   general_info: { en: 'General Information', hi: 'सामान्य जानकारी' },
   incident_details: { en: 'Incident Details', hi: 'घटना का विवरण' },
-  person_details: { en: 'Person Details', hi: 'व्यक्तिगत विवरण' },
+  person_details: { en: 'Physical Description', hi: 'शारीरिक हुलिया' },
   contacts_assigned: { en: 'Informant & Contact Details', hi: 'सूचना देने वाले का विवरण' },
   investigation_officer: { en: 'IO Details', hi: 'जांच अधिकारी का विवरण' },
   inquest_details: { en: 'Inquest Details', hi: 'पूछताछ का विवरण' },
-  corpse_desc: { en: 'Corpse Physical Description', hi: 'शव का शारीरिक विवरण' },
+  corpse_desc: { en: 'UIDB Details', hi: 'यूआईडीबी का विवरण' },
   informant_contact: { en: 'Informant Contact', hi: 'सूचना देने वाले का संपर्क' },
   complaint_details: { en: 'Complaint Details', hi: 'शिकायत का विवरण' }
 };
@@ -1056,16 +1073,16 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
     const matched = allFields.find(dbF => dbF.field_key === f.field_key);
     
     let options = [];
-    if (matched && (matched.field_type === 'SELECT' || matched.field_type === 'RADIO')) {
-      try {
-        options = typeof matched.options === 'string' ? JSON.parse(matched.options) : matched.options;
-      } catch (e) {}
-    } else if (f.options) {
+    if (f.options) {
       try {
         options = typeof f.options === 'string' ? JSON.parse(f.options) : f.options;
       } catch (e) {
         options = Array.isArray(f.options) ? f.options : [];
       }
+    } else if (matched && (matched.field_type === 'SELECT' || matched.field_type === 'RADIO')) {
+      try {
+        options = typeof matched.options === 'string' ? JSON.parse(matched.options) : matched.options;
+      } catch (e) {}
     } else if (f.field_key.endsWith('_prepared') || f.field_key.endsWith('_verified') || f.field_key.endsWith('_same')) {
       options = ['Yes', 'No'];
     } else if (f.field_key.includes('gender')) {
@@ -1147,38 +1164,8 @@ export const downloadImportTemplate = async (req, res) => {
 
     const workbook = new ExcelJS.Workbook();
 
-    let fields = allFields.filter(f => {
-      try {
-        const types = typeof f.applicable_record_types === 'string'
-          ? JSON.parse(f.applicable_record_types)
-          : f.applicable_record_types;
-        return Array.isArray(types) && types.map(t => t.toUpperCase()).includes(recordType);
-      } catch (e) {
-        return false;
-      }
-    });
-
-    // UIDB's Act & Sections fields move to their own sheet (see below) — the raw per-act
-    // conditional fields (ipc_major_head, theft_minor_head, ...) are never meaningful as
-    // standalone columns since nothing merges them for imported rows, so drop them here.
     if (recordType === 'UIDB') {
-      fields = fields.filter(f => !UIDB_ACT_SECTION_EXCLUDE_KEYS.has(f.field_key));
-    }
-
-    fields.sort((a, b) => {
-      const reqA = isRequired(a) ? 1 : 0;
-      const reqB = isRequired(b) ? 1 : 0;
-      if (reqA !== reqB) {
-        return reqB - reqA;
-      }
-      return (a.sort_order || 0) - (b.sort_order || 0);
-    });
-
-    addSheetToWorkbook(workbook, 'Import Template', fields, allFields, lang, recordType);
-
-    if (recordType === 'UIDB') {
-      // Separate "Act and Sections" sheet, same workbook — matches CASE's multi-sheet
-      // layout instead of cramming the cascade into the flat general sheet.
+      addSheetToWorkbook(workbook, 'General Info', uidbGeneralFields, allFields, lang, recordType);
       addSheetToWorkbook(workbook, 'Act and Sections', uidbActSectionFields, allFields, lang);
       await TemplateBuilderService.wireActSectionCascade(
         workbook,
@@ -1186,6 +1173,30 @@ export const downloadImportTemplate = async (req, res) => {
         'UIDB',
         { act: 'act_name', sections: 'sections', major: 'major_head', minor: 'minor_head' }
       );
+    } else if (recordType === 'MISSING') {
+      addSheetToWorkbook(workbook, 'Import Template', missingGeneralFields, allFields, lang, recordType);
+    } else {
+      let fields = allFields.filter(f => {
+        try {
+          const types = typeof f.applicable_record_types === 'string'
+            ? JSON.parse(f.applicable_record_types)
+            : f.applicable_record_types;
+          return Array.isArray(types) && types.map(t => t.toUpperCase()).includes(recordType);
+        } catch (e) {
+          return false;
+        }
+      });
+
+      fields.sort((a, b) => {
+        const reqA = isRequired(a) ? 1 : 0;
+        const reqB = isRequired(b) ? 1 : 0;
+        if (reqA !== reqB) {
+          return reqB - reqA;
+        }
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
+
+      addSheetToWorkbook(workbook, 'Import Template', fields, allFields, lang, recordType);
     }
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -1217,10 +1228,10 @@ export const validateImportBatch = async (req, res) => {
   }
 
   const recordType = record_type ? record_type.toUpperCase() : null;
-  const validTypes = ['ARREST', 'PCR_CALL', 'CASE'];
+  const validTypes = ['ARREST', 'PCR_CALL', 'CASE', 'UIDB', 'MISSING'];
   if (!recordType || !validTypes.includes(recordType)) {
     try { fs.unlinkSync(req.file.path); } catch (_) {}
-    return res.status(400).json({ success: false, message: 'Invalid or missing record_type. Must be CASE, ARREST or PCR_CALL.' });
+    return res.status(400).json({ success: false, message: 'Invalid or missing record_type. Must be CASE, ARREST, PCR_CALL, UIDB or MISSING.' });
   }
 
   if (req.user.role === 'HC' && isLegacy) {
@@ -1283,6 +1294,13 @@ export const validateImportBatch = async (req, res) => {
       actSectionWorksheet = findWorksheet(workbook, a.act);
       personWorksheet = findWorksheet(workbook, a.person);
       propertyWorksheet = findWorksheet(workbook, a.property);
+    } else if (recordType === 'UIDB') {
+      const a = SHEET_ALIASES.UIDB;
+      parentWorksheet = findWorksheet(workbook, a.parent) || workbook.worksheets[0];
+      actSectionWorksheet = findWorksheet(workbook, a.act);
+    } else if (recordType === 'MISSING') {
+      const a = SHEET_ALIASES.MISSING;
+      parentWorksheet = findWorksheet(workbook, a.parent) || workbook.worksheets[0];
     } else {
       parentWorksheet = workbook.worksheets[0] || workbook.getWorksheet(1);
     }
@@ -1649,6 +1667,74 @@ export const validateImportBatch = async (req, res) => {
 
       for (const pr of parentRows) {
         if (invalidParentKeys.has(pr.rowData.linked_fir_dd_no) || errors.some(e => e.row === pr.rowIdx)) {
+          invalidRowsCount++;
+        } else {
+          validRowsCount++;
+        }
+      }
+
+    } else if (recordType === 'UIDB') {
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, uidbGeneralFields);
+      const parentKeysSet = new Set(parentRows.map(r => r.rowData.gd_no).filter(Boolean));
+      totalRows = parentRows.length;
+
+      invalidParentKeys = new Set();
+
+      // Validate General Info
+      validateSheetRows(parentRows, uidbGeneralFields, 'General Info', errors);
+
+      let actSectionRows = [];
+      if (actSectionWorksheet) {
+        const { rows: actRows } = parseWorksheet(actSectionWorksheet, recordType, uidbActSectionFields);
+        actSectionRows = actRows;
+        validateSheetRows(actRows, uidbActSectionFields, 'Act and Sections', errors);
+      }
+
+      // Check duplicate/orphan acts
+      for (const ar of actSectionRows) {
+        const gd = ar.rowData.gd_no;
+        if (gd && !parentKeysSet.has(gd)) {
+          errors.push({
+            row: ar.rowIdx,
+            field_key: 'gd_no',
+            code: 'ORPHAN_CHILD_ROW',
+            message: `GD number "${gd}" in Act and Sections sheet does not exist in General Info sheet.`,
+            sheet: 'Act and Sections'
+          });
+        }
+      }
+
+      for (const pr of parentRows) {
+        const gd = pr.rowData.gd_no;
+        if (pr.errors && pr.errors.length > 0) {
+          invalidParentKeys.add(String(gd));
+        }
+      }
+
+      for (const ar of actSectionRows) {
+        const gd = ar.rowData.gd_no;
+        if (ar.errors && ar.errors.length > 0) {
+          invalidParentKeys.add(String(gd));
+        }
+      }
+
+      for (const pr of parentRows) {
+        const gd = pr.rowData.gd_no;
+        if (invalidParentKeys.has(String(gd)) || errors.some(e => e.row === pr.rowIdx && e.sheet === 'General Info')) {
+          invalidRowsCount++;
+        } else {
+          validRowsCount++;
+        }
+      }
+
+    } else if (recordType === 'MISSING') {
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, missingGeneralFields);
+      totalRows = parentRows.length;
+
+      validateSheetRows(parentRows, missingGeneralFields, 'Import Template', errors);
+
+      for (const pr of parentRows) {
+        if (pr.errors && pr.errors.length > 0) {
           invalidRowsCount++;
         } else {
           validRowsCount++;
@@ -2072,6 +2158,81 @@ export const confirmImportBatch = async (req, res) => {
         itemRowData.placeOfArrest = itemRowData.place_of_arrest;
 
         rowsToInsert.push({ rowData: itemRowData, persons: matchingPersons, properties, acts });
+      }
+
+    } else if (batch.record_type === 'UIDB') {
+      const a = SHEET_ALIASES.UIDB;
+      const parentWorksheet = findWorksheet(workbook, a.parent) || workbook.worksheets[0];
+      const actSectionWorksheet = findWorksheet(workbook, a.act);
+
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, uidbGeneralFields);
+
+      let actSectionRows = [];
+      if (actSectionWorksheet) {
+        actSectionRows = parseWorksheet(actSectionWorksheet, batch.record_type, uidbActSectionFields).rows.map(r => r.rowData);
+      }
+
+      for (const { rowData, rowIdx } of parentRows) {
+        const gdNo = rowData.gd_no;
+        if (!gdNo) continue;
+        if (invalidParentKeys.has(String(gdNo)) || errorRowsSet.has(rowIdx)) continue;
+
+        const acts = actSectionRows.filter(a => a.gd_no === gdNo);
+
+        const itemRowData = { ...rowData };
+
+        if (acts.length > 0) {
+          const actVal = [...new Set(acts.map(a => a.act_name).filter(Boolean))].join(', ');
+          const secVal = [...new Set(acts.map(a => a.sections).filter(Boolean))].join(', ');
+          const majorHeads = acts.map(a => a.major_head).filter(Boolean);
+          const minorHeads = acts.map(a => a.minor_head).filter(Boolean);
+
+          itemRowData.act = actVal;
+          itemRowData.act_name = actVal;
+          itemRowData.sections = secVal;
+          itemRowData.major_heads = [...new Set(majorHeads)].join(', ');
+          itemRowData.minor_heads = [...new Set(minorHeads)].join(', ');
+          itemRowData.major_head = itemRowData.major_heads;
+          itemRowData.minor_head = itemRowData.minor_heads;
+          itemRowData.crime_head = itemRowData.major_head;
+          itemRowData.local_head = itemRowData.major_head;
+          itemRowData.under_section = itemRowData.sections;
+
+          // Map to conditional section keys for the form UI
+          for (const act of acts) {
+            if (act.act_name && act.sections) {
+              const condKey = getConditionalSectionKey(act.act_name);
+              if (itemRowData[condKey]) {
+                const existing = String(itemRowData[condKey]).split(',').map(s => s.trim());
+                const incoming = String(act.sections).split(',').map(s => s.trim());
+                itemRowData[condKey] = [...new Set([...existing, ...incoming])].join(', ');
+              } else {
+                itemRowData[condKey] = act.sections;
+              }
+            }
+          }
+
+          // Sync structured acts list from main mapped to itemRowData
+          itemRowData.acts = acts.map(a => ({
+            act_name: a.act_name || '',
+            sections: a.sections || '',
+            major_head: a.major_head || '',
+            minor_head: a.minor_head || '',
+            local_head: a.major_head || ''
+          }));
+        }
+
+        rowsToInsert.push(itemRowData);
+      }
+
+    } else if (batch.record_type === 'MISSING') {
+      const a = SHEET_ALIASES.MISSING;
+      const parentWorksheet = findWorksheet(workbook, a.parent) || workbook.worksheets[0];
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, missingGeneralFields);
+
+      for (const { rowData, rowIdx } of parentRows) {
+        if (errorRowsSet.has(rowIdx)) continue;
+        rowsToInsert.push(rowData);
       }
 
     } else {
