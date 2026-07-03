@@ -1046,8 +1046,8 @@ export const listMajorHeads = async (req, res) => {
       }
     }
 
-    // Fallback: if no acts filtered, or no major heads found for filtered acts, return all major heads
-    if (data.length === 0) {
+    // Fallback: if no acts are requested, return all major heads
+    if (!actNameRaw) {
       data = await db('excel_major_heads')
         .select('major_head as value', 'major_head as label')
         .orderBy('major_head', 'asc');
