@@ -583,7 +583,7 @@ export class TemplateBuilderService {
       } else if (configField && Array.isArray(configField.options) && configField.options.length > 0) {
         // Fall back to static config options (e.g. gender, marital_status, country, state...)
         liveOpts = configField.options.map(o => (o && typeof o === 'object') ? o : { value: o, label: o });
-      } else if (field.field_type === 'SELECT') {
+      } else if (field.field_type === 'SELECT' || field.field_type === 'RADIO') {
         // Registry field might have static options in its own options column
         try {
           const raw = typeof field.options === 'string' ? JSON.parse(field.options) : field.options;

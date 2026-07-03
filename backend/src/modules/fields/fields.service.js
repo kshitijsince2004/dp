@@ -93,3 +93,68 @@ export const getBeats = async (psCd) => {
 export const getLocalHeads = async () => {
   return db('excel_local_heads').select('local_head_cd', 'local_head').orderBy('local_head', 'asc');
 };
+
+let cachedRegistry = null;
+
+export const getActsSectionsRegistry = async () => {
+  if (cachedRegistry) return cachedRegistry;
+
+  const acts = await db('excel_acts').select('act_cd', 'act_long');
+  const sections = await db('excel_sections').select('act_sec_cd', 'section');
+
+  const sectionsByActCd = {};
+  for (const s of sections) {
+    if (!sectionsByActCd[s.act_sec_cd]) {
+      sectionsByActCd[s.act_sec_cd] = [];
+    }
+    sectionsByActCd[s.act_sec_cd].push(s.section);
+  }
+
+  // Mappings to frontend expected keys
+  const groupMappings = {
+    43: 'IPC',
+    3032: 'Delhi Excise Act',
+    3270: 'Delhi Excise Act',
+    4: 'Arms Act',
+    2612: 'Gambling Act',
+    68: 'Gambling Act'
+  };
+
+  const registryMap = new Map();
+
+  for (const act of acts) {
+    const actSections = sectionsByActCd[act.act_cd] || [];
+    if (actSections.length === 0) continue;
+
+    // Determine the registry key/act name
+    const actKey = groupMappings[act.act_cd] || act.act_long;
+
+    // If we already have sections for this actKey, merge them
+    if (registryMap.has(actKey)) {
+      const existing = registryMap.get(actKey);
+      const merged = Array.from(new Set([...existing, ...actSections]));
+      registryMap.set(actKey, merged);
+    } else {
+      registryMap.set(actKey, actSections);
+    }
+  }
+
+  // Convert map to list and sort sections
+  cachedRegistry = Array.from(registryMap.entries()).map(([actName, actSections]) => {
+    actSections.sort((a, b) => {
+      const numA = parseInt(a, 10);
+      const numB = parseInt(b, 10);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numA - numB;
+      }
+      return a.localeCompare(b);
+    });
+
+    return {
+      act: actName,
+      sections: actSections
+    };
+  });
+
+  return cachedRegistry;
+};

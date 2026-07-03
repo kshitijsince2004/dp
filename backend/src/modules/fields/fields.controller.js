@@ -127,9 +127,55 @@ export const getFieldsForForm = async (req, res) => {
     // human-readable label, not the underlying numeric code).
     const toValueLabel = (labelCol) => (r) => ({ value: r[labelCol], label_en: r[labelCol], label_hi: r[labelCol] });
 
-    // 1. Acts — no override here; act_name's options come from the seed's own curated static
-    // list via the default `options = parseJsonField(f.options)` path below (see field_key
-    // dispatch), which is exactly what its show_when clauses (act_name === 'IPC', etc.) expect.
+    // 1. Acts — load dynamically from excel_acts and map to expected frontend keys
+    const dbActs = await fieldsService.getActs();
+    const actOptions = dbActs.map(act => {
+      let value = act.act_long;
+      let label_en = act.act_long;
+      let label_hi = act.act_long;
+
+      if (ACT_GROUP_CODES.IPC.includes(act.act_cd)) {
+        value = 'IPC';
+        label_en = 'IPC 1860';
+        label_hi = 'भारतीय दंड संहिता (IPC 1860)';
+      } else if (ACT_GROUP_CODES['Delhi Excise Act'].includes(act.act_cd)) {
+        value = 'Delhi Excise Act';
+        label_en = 'Delhi Excise Act';
+        label_hi = 'दिल्ली उत्पाद शुल्क अधिनियम (Excise)';
+      } else if (ACT_GROUP_CODES['Arms Act'].includes(act.act_cd)) {
+        value = 'Arms Act';
+        label_en = 'Arms Act, 1959';
+        label_hi = 'आयुध अधिनियम (Arms Act)';
+      } else if (ACT_GROUP_CODES['Gambling Act'].includes(act.act_cd)) {
+        value = 'Gambling Act';
+        label_en = 'Delhi Public Gambling Act';
+        label_hi = 'दिल्ली सार्वजनिक जुआ अधिनियम (Gambling)';
+      }
+
+      return { value, label_en, label_hi };
+    });
+
+    const fallbackActs = [
+      { value: 'BNS', label_en: 'BNS (Bharatiya Nyaya Sanhita)', label_hi: 'भारतीय न्याय संहिता (BNS)' },
+      { value: 'BNSS', label_en: 'BNSS (Bharatiya Nagarik Suraksha Sanhita)', label_hi: 'भारतीय नागरिक सुरक्षा संहिता (BNSS)' },
+      { value: 'CrPC', label_en: 'CrPC (Code of Criminal Procedure)', label_hi: 'दंड प्रक्रिया संहिता (CrPC)' },
+      { value: 'Other Act', label_en: 'Other Act', label_hi: 'अन्य अधिनियम (Other Act)' }
+    ];
+
+    const finalActOptions = [];
+    const seenActValues = new Set();
+    for (const opt of actOptions) {
+      if (!seenActValues.has(opt.value)) {
+        seenActValues.add(opt.value);
+        finalActOptions.push(opt);
+      }
+    }
+    for (const opt of fallbackActs) {
+      if (!seenActValues.has(opt.value)) {
+        seenActValues.add(opt.value);
+        finalActOptions.push(opt);
+      }
+    }
 
     // 2. Sections per Act — resolved via ACT_GROUP_CODES, no magic act codes inline.
     const ipcSectionOptions = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES.IPC)).map(toValueLabel('section'));
@@ -183,10 +229,10 @@ export const getFieldsForForm = async (req, res) => {
         let options = parseJsonField(f.options);
 
         // Load lookup options from database dynamically
-        // (act_name intentionally has no override here — its options flow through from the
-        // seed's own curated static list via the `options = parseJsonField(f.options)` default
-        // above, which is what its show_when clauses expect. See fetch block above for why.)
-        if (f.field_key === 'local_head' || f.field_key === 'crime_head') {
+        if (f.field_key === 'act_name') {
+          field_type = 'SELECT';
+          options = finalActOptions;
+        } else if (f.field_key === 'local_head' || f.field_key === 'crime_head') {
           field_type = 'SELECT';
           options = localHeadOptions;
         } else if (f.field_key === 'property_major_category') {
