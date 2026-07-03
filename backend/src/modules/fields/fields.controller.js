@@ -599,6 +599,12 @@ export const getFieldsForForm = async (req, res) => {
               fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrestee_info')
             },
             {
+              id: 'custody_status',
+              title_en: 'Custody Status',
+              title_hi: 'हिरासत की स्थिति',
+              fields: filteredFields.filter(f => f.section === 'custody_status' && !f.repeater_entity)
+            },
+            {
               id: 'address',
               title_en: 'Address',
               title_hi: 'पता',
@@ -1166,6 +1172,13 @@ export const listPropertyItems = async (req, res) => {
         made: raw.made.map(r => ({ value: r.arms_made_cd, label: r.arms_made })),
         categories: raw.categories.map(r => ({ value: r.arms_category_cd, label: r.arms_category })),
         fireArms: raw.fireArms.map(r => ({ value: r.fire_arms_cd, label: r.fire_arms, parent_id: r.arms_category_cd })),
+        fireArmsSubtypes: raw.fireArmsSubtypes.map(r => ({ value: r.arms_subtype_cd, label: r.arms_subtype, parent_id: r.arms_type_cd })),
+      };
+    } else if (raw?.type === 'OTHER_PROPERTY') {
+      data = {
+        type: 'OTHER_PROPERTY',
+        categories: raw.categories.map(r => ({ value: r.parent_cd, label: r.code_type })),
+        items: raw.items.map(r => ({ value: r.property_cd, label: r.property, parent_id: r.parent_cd })),
       };
     } else if (Array.isArray(raw) && raw.length > 0 && 'property_cd' in raw[0]) {
       data = raw.map(r => ({ value: r.property_cd, label: r.property }));

@@ -655,7 +655,7 @@ export default function DynamicForm({
               <div className="px-3 py-1 bg-white flex items-center border-b border-[#c7d8ea] min-h-[40px]">
                 <div className="w-full max-w-md">
                   <FieldRenderer
-                    field={allFields.find(f => f.field_key === 'case_type')}
+                    field={allSchemaFields.find(f => f.field_key === 'case_type')}
                     value={values.case_type || ''}
                     onChange={handleChange}
                     readOnly={readOnly}
@@ -756,7 +756,7 @@ export default function DynamicForm({
                 </td>
               </tr>
 
-              {/* Row 2: Type of Information
+              {/* Row 2: Type of Information */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
                   {fieldLabel('type_of_information') || 'Type of Information'}
@@ -779,7 +779,7 @@ export default function DynamicForm({
                     }}
                   />
                 </td>
-              </tr> */}
+              </tr>
 
               {/* Row: Case Registration Type */}
               <tr className="border-b border-[#7a9cc5]">
@@ -874,153 +874,74 @@ export default function DynamicForm({
   };
 
 const renderOccurrenceStep = () => {
-  const allFields = deepFlattenSchema(schema);
+  const sectionFields = activeSection?.fields || [];
+  // Split fields by sort_order: timing/info (< 3), address/place (3.x), extras like lat/lng/area (>= 4)
+  const occInfoFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type !== 'RADIO');
+  const occPlaceFields = sectionFields.filter(f => f.sort_order >= 3 && f.sort_order < 4);
+  const areaField = sectionFields.find(f => f.field_key === 'area_of_crime');
 
-  const occurrenceInfoKeys = [
-    'occurrence_time_type',
-    'occurrence_from_date_time',
-    'occurrence_to_date_time',
-    'info_received_at_ps_date_time'
-  ];
-
-  const occurrencePlaceKeys = [
-    'occurrence_house_no',
-    'occurrence_street',
-    'occurrence_colony',
-    'occurrence_city_town_village',
-    'occurrence_tehsil_block_mandal',
-    'occurrence_pincode',
-    'occurrence_police_station',
-    'Police_district/zone',
-    'occurrence_district' ,
-    'occurrence_state',
-  ];
+  const renderFieldRow = (field, isLast = false) => {
+    const key = field.field_key;
+    const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+    const rules = parseRules(field.validation_rules);
+    const isRequired = !!rules.required;
+    const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+    return (
+      <React.Fragment key={key}>
+        <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <span>{label}</span>
+          {isRequired && <span className="text-red-500 font-bold">*</span>}
+        </div>
+        <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <FieldRenderer field={field} value={values[key]} onChange={handleChange} readOnly={isDisabled} hasError={touched[key] && !!errors[key]} lang={lang} values={values} />
+        </div>
+      </React.Fragment>
+    );
+  };
 
   return (
     <div className="grid grid-cols-2 gap-4 text-sm">
-
       {/* LEFT COLUMN */}
       <div className="space-y-3">
-
-        {/* OCCURRENCE INFORMATION */}
+        {/* OCCURRENCE INFORMATION — driven by backend fields with sort_order < 3 */}
         <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
           <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-            Occurrence Information
+            {lang === 'hi' ? 'घटना की जानकारी' : 'Occurrence Information'}
           </legend>
-
           <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
-            {(() => {
-              const activeFields = occurrenceInfoKeys
-                .map(key => allFields.find(f => f.field_key === key))
-                .filter(Boolean);
-
-              return activeFields.map((field, index) => {
-                const key = field.field_key;
-                const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-                const rules = parseRules(field.validation_rules);
-                const isRequired = !!rules.required;
-                const isLast = index === activeFields.length - 1;
-
-                return (
-                  <React.Fragment key={key}>
-                    <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                      <span>{label}</span>
-                      {isRequired && <span className="text-red-500 font-bold">*</span>}
-                    </div>
-                    <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                      <FieldRenderer
-                        field={field}
-                        value={values[key]}
-                        onChange={handleChange}
-                        readOnly={readOnly || field.readonly === true || field.readonly === 'true'}
-                        hasError={touched[key] && !!errors[key]}
-                        lang={lang}
-                        values={values}
-                      />
-                    </div>
-                  </React.Fragment>
-                );
-              });
-            })()}
+            {occInfoFields.map((f, i) => renderFieldRow(f, i === occInfoFields.length - 1))}
           </div>
         </fieldset>
 
-        {/* FOREST AREA */}
-        <fieldset className="border border-[#7a9cc5] rounded px-2 py-3">
-          <div className="flex items-center gap-6 text-[12px]">
-            {(() => {
-              const areaField = allFields.find(f => f.field_key === 'area_of_crime');
-              return (
-                <React.Fragment>
-                  <span className="font-medium">
-                    {areaField ? (lang === 'hi' ? (areaField.label_hi || areaField.label_en) : areaField.label_en) : 'Area of Crime'}
-                  </span>
-                  {getFieldOptions(allFields, 'area_of_crime').map((opt) => (
-                    <label key={opt.value} className="flex items-center gap-1">
-                      <input
-                        type="radio"
-                        checked={values?.area_of_crime === opt.value}
-                        onChange={() => handleChange('area_of_crime', opt.value)}
-                      />
-                      {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
-                    </label>
-                  ))}
-                </React.Fragment>
-              );
-            })()}
-          </div>
-        </fieldset>
-
+        {/* AREA OF CRIME — radio row driven by backend field */}
+        {areaField && (
+          <fieldset className="border border-[#7a9cc5] rounded px-2 py-3">
+            <div className="flex items-center gap-6 text-[12px]">
+              <span className="font-medium">
+                {lang === 'hi' ? (areaField.label_hi || areaField.label_en) : areaField.label_en}
+              </span>
+              {getFieldOptions(sectionFields, 'area_of_crime').map((opt) => (
+                <label key={opt.value} className="flex items-center gap-1">
+                  <input type="radio" checked={values?.area_of_crime === opt.value} onChange={() => handleChange('area_of_crime', opt.value)} />
+                  {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
       </div>
 
-
-      {/* RIGHT COLUMN */}
+      {/* RIGHT COLUMN — Place of Occurrence driven by backend address fields (sort_order 3.x) */}
       <div>
-
         <fieldset className="border border-[#7a9cc5] rounded px-2 py-2 h-full">
           <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-            Place of Occurrence
+            {lang === 'hi' ? 'घटनास्थल' : 'Place of Occurrence'}
           </legend>
-
           <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
-            {(() => {
-              const activeFields = occurrencePlaceKeys
-                .map(key => allFields.find(f => f.field_key === key))
-                .filter(Boolean);
-
-              return activeFields.map((field, index) => {
-                const key = field.field_key;
-                const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-                const rules = parseRules(field.validation_rules);
-                const isRequired = !!rules.required;
-                const isLast = index === activeFields.length - 1;
-
-                return (
-                  <React.Fragment key={key}>
-                    <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                      <span>{label}</span>
-                      {isRequired && <span className="text-red-500 font-bold">*</span>}
-                    </div>
-                    <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                      <FieldRenderer
-                        field={field}
-                        value={values[key]}
-                        onChange={handleChange}
-                        readOnly={readOnly || field.readonly === true || field.readonly === 'true'}
-                        hasError={touched[key] && !!errors[key]}
-                        lang={lang}
-                        values={values}
-                      />
-                    </div>
-                  </React.Fragment>
-                );
-              });
-            })()}
+            {occPlaceFields.map((f, i) => renderFieldRow(f, i === occPlaceFields.length - 1))}
           </div>
         </fieldset>
-
       </div>
-
     </div>
   );
 };
@@ -1033,6 +954,7 @@ const PERSON_TAB_VARIANTS = {
   complainant: { hasNickname: false, extraContactField: 'complainant_same_as_victim' },
   victim:      { hasNickname: true,  extraContactField: null },
   accused:     { hasNickname: true,  extraContactField: null },
+  arrested:    { hasNickname: true,  extraContactField: null },
 };
 
 /** Shared "Personal Information" sub-tab body for Complainant/Victim/Accused. */
@@ -1654,6 +1576,59 @@ const renderPropertyStep = () => {
               const fieldVal = row[field.field_key] || '';
               const wrapCls = `flex flex-col gap-1${field.full_width ? ' col-span-full' : ''}`;
               const labelEl = <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{label}</label>;
+
+              // Type of Arm — cascades off "Type of Property" (row.property_minor_category,
+              // which holds the selected arms_category_cd), listing only fire_arms rows whose
+              // parent_id matches it. Options come from the live lookup fetch, not field.options.
+              if (field.field_key === 'prop_fire_arms_type') {
+                const fireArmsOpts = (armsLookupMap[row.property_major_category]?.fireArms || [])
+                  .filter(f => String(f.parent_id) === String(row.property_minor_category));
+                const isDisabled = readOnly || !row.property_minor_category;
+                return (
+                  <div key={field.field_key} className={wrapCls}>
+                    {labelEl}
+                    <select value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={isDisabled} className={cls}>
+                      <option value="">---{lang === 'hi' ? 'चुनें' : 'Select'}---</option>
+                      {fireArmsOpts.map(o => <option key={o.value} value={o.value}>{lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}</option>)}
+                    </select>
+                  </div>
+                );
+              }
+
+              // Subtype of Arm — cascades off Type of Arm (row.prop_fire_arms_type, holding
+              // the selected fire_arms_cd) via excel_fire_arms_subtypes.arms_type_cd.
+              if (field.field_key === 'prop_arms_made') {
+                const subtypeOpts = (armsLookupMap[row.property_major_category]?.fireArmsSubtypes || [])
+                  .filter(o => String(o.parent_id) === String(row.prop_fire_arms_type));
+                const isDisabled = readOnly || !row.prop_fire_arms_type;
+                return (
+                  <div key={field.field_key} className={wrapCls}>
+                    {labelEl}
+                    <select value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={isDisabled} className={cls}>
+                      <option value="">---{lang === 'hi' ? 'चुनें' : 'Select'}---</option>
+                      {subtypeOpts.map(o => <option key={o.value} value={o.value}>{lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}</option>)}
+                    </select>
+                  </div>
+                );
+              }
+
+              // Property Subtype ("Others" category) — cascades off "Type of Property"
+              // (row.property_minor_category, holding the selected other-category parent_cd).
+              if (field.field_key === 'prop_other_subtype') {
+                const subtypeOpts = (armsLookupMap[row.property_major_category]?.otherSubtype || [])
+                  .filter(o => String(o.parent_id) === String(row.property_minor_category));
+                const isDisabled = readOnly || !row.property_minor_category;
+                return (
+                  <div key={field.field_key} className={wrapCls}>
+                    {labelEl}
+                    <select value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={isDisabled} className={cls}>
+                      <option value="">---{lang === 'hi' ? 'चुनें' : 'Select'}---</option>
+                      {subtypeOpts.map(o => <option key={o.value} value={o.value}>{lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}</option>)}
+                    </select>
+                  </div>
+                );
+              }
+
               if (field.field_type === 'SELECT') {
                 const opts = (() => { try { return typeof field.options === 'string' ? JSON.parse(field.options) : (field.options || []); } catch { return []; } })();
                 return (
@@ -1722,6 +1697,9 @@ const renderPropertyStep = () => {
       // Clear any category-specific extra detail fields
       const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
       Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
+    } else if (key === 'prop_fire_arms_type') {
+      // Type of Arm changed — reset the dependent Subtype of Arm selection
+      updatedRow.prop_arms_made = '';
     }
     list[idx] = updatedRow;
     setRepeaterState(prev => ({ ...prev, property_details: list }));
@@ -1897,244 +1875,70 @@ const renderPropertyStep = () => {
 const renderArrestedStep = () => {
   const arrestedList = repeaterState?.arrested_info || [];
   const allFields = deepFlattenSchema(schema);
+  const subTabs = getSectionSubTabs('arrested_info');
 
-  const renderArrestedModalField = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
-    const field = allFields.find(f => f.field_key === key);
-    if (!field) return null;
+  /** Generic field grid renderer for a sub-tab's fields (used by arrest_details, particular_details, etc.) */
+  const renderSubTabFieldGrid = (tabId) => {
+    const tab = subTabs.find(t => t.id === tabId);
+    const fields = tab?.fields || [];
+    if (fields.length === 0) return null;
 
-    if (field.show_when) {
+    // Evaluate show_when conditions against arrestedTempValues
+    const evalCond = (cond, vals) => {
+      if (!cond) return true;
       try {
-        const cond = typeof field.show_when === 'string' ? JSON.parse(field.show_when) : field.show_when;
-        if (cond && cond.field) {
-          const val = arrestedTempValues[cond.field];
-          const checkVals = Array.isArray(cond.value) ? cond.value : [cond.value];
-          const isShown = checkVals.some(v => String(v || '').toLowerCase() === String(val || '').toLowerCase());
-          if (!isShown) return null;
+        const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
+        if (parsed.field) {
+          const cv = vals[parsed.field];
+          const checkVals = Array.isArray(parsed.value) ? parsed.value : [parsed.value];
+          return checkVals.some(v => String(v || '').toLowerCase() === String(cv || '').toLowerCase());
         }
-      } catch (e) {
-        // ignore
-      }
-    }
+      } catch { /* ignore */ }
+      return true;
+    };
 
-    const label = customLabel || (lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en);
-    const rules = parseRules(field.validation_rules);
-    const isRequired = !!rules.required || key === 'arrested_first_name' || key === 'arrested_gender';
-    const isDisabled = forceReadOnly || readOnly || field.readonly === true || field.readonly === 'true';
+    const visibleFields = fields.filter(f => evalCond(f.show_when, arrestedTempValues));
 
-    return (
-      <React.Fragment key={key}>
-        <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <span>{label}</span>
-          {isRequired && <span className="text-red-500 font-bold">*</span>}
-        </div>
-        <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <FieldRenderer
-            field={field}
-            value={arrestedTempValues[key]}
-            onChange={handleArrestedModalChange}
-            readOnly={isDisabled}
-            hasError={arrestedModalTouched[key] && !!arrestedModalErrors[key]}
-            lang={lang}
-            values={arrestedTempValues}
-          />
-          {arrestedModalTouched[key] && arrestedModalErrors[key] && (
-            <p className="text-red-500 text-[10px] mt-0.5">{arrestedModalErrors[key]}</p>
-          )}
-        </div>
-      </React.Fragment>
-    );
-  };
-
-  const renderArrestedDetailsSubTab = () => {
     return (
       <fieldset className="bg-white">
         <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-          {lang === 'hi' ? 'गिरफ्तारी का विवरण' : 'Arrest Details'}
+          {lang === 'hi' ? (tab.title_hi || tab.title_en) : tab.title_en}
         </legend>
         <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
-          {renderArrestedModalField('arrest_date')}
-          {renderArrestedModalField('arrest_place', null, true)}
-        </div>
-      </fieldset>
-    );
-  };
-
-  const renderArrestedPersonalInfoSubTab = () => {
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          {/* Left Column - Personal Info */}
-          <div className="space-y-3">
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
-              {renderArrestedModalField('arrested_npr', lang === 'hi' ? 'यूआईडी (UID)' : 'UID')}
-              {renderArrestedModalField('arrested_first_name')}
-              {renderArrestedModalField('arrested_middle_name')}
-              {renderArrestedModalField('arrested_last_name')}
-              {renderArrestedModalField('nick_name', null, true)}
-            </div>
-          </div>
-
-          {/* Right Column - Gender, Marital Status, Mobile */}
-          <div className="border border-[#7a9cc5] rounded px-2 py-2 self-start">
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
-              {renderArrestedModalField('arrested_gender')}
-              {renderArrestedModalField('arrested_marital_status')}
-
-              {/* Mobile with country code */}
-              <React.Fragment>
-                <div className="bg-[#dfeaf5] px-2 py-2 border-b text-[12px] font-medium flex items-center gap-1">
-                  <span>{lang === 'hi' ? 'मोबाइल नंबर' : 'Mobile No.'}</span>
+          {visibleFields.map((field, idx) => {
+            const key = field.field_key;
+            const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+            const rules = parseRules(field.validation_rules);
+            const isRequired = !!rules.required;
+            const isLast = idx === visibleFields.length - 1;
+            const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+            return (
+              <React.Fragment key={key}>
+                <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+                  <span>{label}</span>
+                  {isRequired && <span className="text-red-500 font-bold">*</span>}
                 </div>
-                <div className="px-2 py-1 border-b flex gap-1.5 items-center">
-                  <div className="w-14">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'arrested_mobile_country_code')}
-                      value={arrestedTempValues.arrested_mobile_country_code || '+91'}
-                      onChange={handleArrestedModalChange}
-                      readOnly={readOnly}
-                      lang={lang}
-                      values={arrestedTempValues}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'arrested_mobile')}
-                      value={arrestedTempValues.arrested_mobile}
-                      onChange={handleArrestedModalChange}
-                      readOnly={readOnly}
-                      lang={lang}
-                      values={arrestedTempValues}
-                    />
-                  </div>
+                <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+                  <FieldRenderer field={field} value={arrestedTempValues[key]} onChange={handleArrestedModalChange} readOnly={isDisabled} hasError={arrestedModalTouched[key] && !!arrestedModalErrors[key]} lang={lang} values={arrestedTempValues} />
                 </div>
               </React.Fragment>
-              {renderArrestedModalField('arrested_qualification')}
-              {renderArrestedModalField('scheme_of_arrest')}
-              {renderArrestedModalField('arrested_landline')}
-              {renderArrestedModalField('arrested_email', null, true)}
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom fields: relation + age panel */}
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="border border-[#7a9cc5] rounded px-2 py-2 self-start">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-              {lang === 'hi' ? 'रिश्तेदार का विवरण' : 'Relative Details'}
-            </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
-              {renderArrestedModalField('arrested_relation_type')}
-              {renderArrestedModalField('arrested_relative_name', null, true)}
-            </div>
-          </div>
-
-          <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-              {lang === 'hi' ? 'आयु विवरण' : 'Age Panel'}
-            </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
-              {renderArrestedModalField('arrested_dob')}
-              {renderArrestedModalField('arrested_age_year')}
-              {renderArrestedModalField('arrested_age_month')}
-              {renderArrestedModalField('arrested_birth_year', null, true, true)}
-            </div>
-          </fieldset>
-        </div>
-      </div>
-    );
-  };
-
-  const renderArrestedParticularDetailsSubTab = () => {
-    return (
-      <fieldset className="bg-white">
-        <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-          {lang === 'hi' ? 'विवरण' : 'Particular Details'}
-        </legend>
-        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
-          {renderArrestedModalField('prev_involvement')}
-          {renderArrestedModalField('proclaimed_offender')}
-          {renderArrestedModalField('nafis_prepared')}
-          {renderArrestedModalField('dossier_prepared')}
-          {renderArrestedModalField('arresting_officer')}
-          {renderArrestedModalField('arresting_officer_mobile')}
-          {renderArrestedModalField('listed_criminal', null, true)}
+            );
+          })}
         </div>
       </fieldset>
     );
   };
 
-  const renderArrestedCustodyStatusSubTab = () => {
-    return (
-      <fieldset className="bg-white">
-        <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-          {lang === 'hi' ? 'हिरासत की स्थिति' : 'Custody Status'}
-        </legend>
-        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
-          {renderArrestedModalField('status')}
-          {renderArrestedModalField('other_status_reason')}
-          {renderArrestedModalField('recovery', null, true)}
-        </div>
-      </fieldset>
-    );
-  };
-
-  const renderArrestedAddressSubTab = () => {
-    return (
-      <div className="grid grid-cols-2 gap-4">
-        {/* Present address */}
-        <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-            {lang === 'hi' ? 'वर्तमान पता' : 'Present Address'}
-          </legend>
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
-            {renderArrestedModalField('arrested_present_address')}
-            {renderArrestedModalField('arrested_house_no')}
-            {renderArrestedModalField('arrested_street')}
-            {renderArrestedModalField('arrested_colony')}
-            {renderArrestedModalField('arrested_city_town_village')}
-            {renderArrestedModalField('arrested_tehsil_block_mandal')}
-            {renderArrestedModalField('arrested_country')}
-            {renderArrestedModalField('arrested_state')}
-            {renderArrestedModalField('arrested_district')}
-            {renderArrestedModalField('arrested_police_station')}
-            {renderArrestedModalField('arrested_pincode', null, true)}
-          </div>
-        </fieldset>
-
-        {/* Permanent address */}
-        <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs flex items-center gap-2">
-            <span>{lang === 'hi' ? 'स्थायी पता' : 'Permanent Address'}</span>
-            <div className="flex items-center gap-1 text-[10px] normal-case font-normal text-slate-600 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded cursor-pointer">
-              <input
-                type="checkbox"
-                id="arrested_perm_same"
-                disabled={readOnly}
-                checked={arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'}
-                onChange={(e) => handleArrestedModalChange('arrested_perm_same', e.target.checked)}
-                className="cursor-pointer"
-              />
-              <label htmlFor="arrested_perm_same" className="cursor-pointer">
-                {lang === 'hi' ? 'वर्तमान पते के समान' : 'Same as Present'}
-              </label>
-            </div>
-          </legend>
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
-            {renderArrestedModalField('arrested_perm_address')}
-            {renderArrestedModalField('arrested_perm_house_no')}
-            {renderArrestedModalField('arrested_perm_street')}
-            {renderArrestedModalField('arrested_perm_colony')}
-            {renderArrestedModalField('arrested_perm_city_town_village')}
-            {renderArrestedModalField('arrested_perm_tehsil_block_mandal')}
-            {renderArrestedModalField('arrested_perm_country')}
-            {renderArrestedModalField('arrested_perm_state')}
-            {renderArrestedModalField('arrested_perm_district')}
-            {renderArrestedModalField('arrested_perm_police_station')}
-            {renderArrestedModalField('arrested_perm_pincode', null, true)}
-          </div>
-        </fieldset>
-      </div>
-    );
+  /** Render the active sub-tab content — uses shared person helpers for person_particulars/address, generic grid for others */
+  const renderActiveSubTabContent = () => {
+    if (arrestedSubTab === 'person_particulars') {
+      return renderPersonPersonalInfoSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, true, lang, readOnly);
+    }
+    if (arrestedSubTab === 'address') {
+      return renderPersonAddressSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, true, lang, readOnly);
+    }
+    // arrest_details, particular_details, custody_status — generic flat grid from backend fields
+    return renderSubTabFieldGrid(arrestedSubTab);
   };
 
   const getArrestedName = (v) => [v.arrested_first_name, v.arrested_middle_name, v.arrested_last_name].filter(Boolean).join(' ') || '—';
@@ -2182,18 +1986,10 @@ const renderArrestedStep = () => {
                   <td className="px-3 py-2">{getArrestedName(arr)}</td>
                   <td className="px-3 py-2 text-slate-600">{getArrestedAddress(arr)}</td>
                   <td className="px-3 py-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => openArrestedEditModal(idx)}
-                      className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
-                    >
+                    <button type="button" onClick={() => openArrestedEditModal(idx)} className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors">
                       {lang === 'hi' ? 'संपादन' : 'Edit'}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteArrestedEntry(idx)}
-                      className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
-                    >
+                    <button type="button" onClick={() => deleteArrestedEntry(idx)} className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors">
                       {lang === 'hi' ? 'हटाएं' : 'Delete'}
                     </button>
                   </td>
@@ -2215,42 +2011,23 @@ const renderArrestedStep = () => {
                   ? (lang === 'hi' ? 'गिरफ्तार व्यक्ति की जानकारी संपादित करें' : 'Edit Arrested Person Information')
                   : (lang === 'hi' ? 'गिरफ्तार व्यक्ति की जानकारी' : 'Arrested Person Information')}
               </h2>
-              <button
-                type="button"
-                onClick={() => setIsArrestedModalOpen(false)}
-                className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors"
-                title="Close"
-              >
-                ×
-              </button>
+              <button type="button" onClick={() => setIsArrestedModalOpen(false)} className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors" title="Close">×</button>
             </div>
 
-            {/* Sub-tabs selectors */}
+            {/* Sub-tabs from backend */}
             {renderSubTabBar('arrested_info', arrestedSubTab, setArrestedSubTab)}
 
-            {/* Body */}
+            {/* Body — renders active sub-tab content from schema */}
             <div className="flex-1 overflow-y-auto p-4 border border-t-0 border-[#7a9cc5] bg-white">
-              {arrestedSubTab === 'arrest_details' && renderArrestedDetailsSubTab()}
-              {arrestedSubTab === 'person_particulars' && renderArrestedPersonalInfoSubTab()}
-              {arrestedSubTab === 'particular_details' && renderArrestedParticularDetailsSubTab()}
-              {arrestedSubTab === 'custody_status' && renderArrestedCustodyStatusSubTab()}
-              {arrestedSubTab === 'address' && renderArrestedAddressSubTab()}
+              {renderActiveSubTabContent()}
             </div>
 
             {/* Footer */}
             <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
-              <button
-                type="button"
-                onClick={saveArrestedEntry}
-                className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors"
-              >
+              <button type="button" onClick={saveArrestedEntry} className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors">
                 {lang === 'hi' ? 'सहेजें' : 'Save'}
               </button>
-              <button
-                type="button"
-                onClick={() => setIsArrestedModalOpen(false)}
-                className="px-6 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded hover:bg-slate-300 cursor-pointer transition-colors"
-              >
+              <button type="button" onClick={() => setIsArrestedModalOpen(false)} className="px-6 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded hover:bg-slate-300 cursor-pointer transition-colors">
                 {lang === 'hi' ? 'बंद करें' : 'Close'}
               </button>
             </div>
@@ -2262,39 +2039,55 @@ const renderArrestedStep = () => {
   );
 };
 
+
 const renderIntimationStep = () => {
   const intimationList = repeaterState?.intimation_details || [];
-  const allFields = deepFlattenSchema(schema);
+  const subTabs = getSectionSubTabs('intimation_details');
 
-  const renderIntimationModalField = (key, customLabel = null, isLast = false) => {
-    const field = allFields.find(f => f.field_key === key);
-    if (!field) return null;
-    const label = customLabel || (lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en);
-    const rules = parseRules(field.validation_rules);
-    const isRequired = !!rules.required || key === 'intimated_relative_name';
-    const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+  /** Generic field grid for a sub-tab's fields, entirely driven by the backend's field list. */
+  const renderSubTabFieldGrid = (tabId) => {
+    const tab = subTabs.find(t => t.id === tabId);
+    const fields = tab?.fields || [];
+    if (fields.length === 0) return null;
 
     return (
-      <React.Fragment key={key}>
-        <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <span>{label}</span>
-          {isRequired && <span className="text-red-500 font-bold">*</span>}
+      <fieldset className="bg-white">
+        <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+          {lang === 'hi' ? (tab.title_hi || tab.title_en) : tab.title_en}
+        </legend>
+        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
+          {fields.map((field, idx) => {
+            const key = field.field_key;
+            const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+            const rules = parseRules(field.validation_rules);
+            const isRequired = !!rules.required || key === 'intimated_relative_name';
+            const isLast = idx === fields.length - 1;
+            const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+            return (
+              <React.Fragment key={key}>
+                <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+                  <span>{label}</span>
+                  {isRequired && <span className="text-red-500 font-bold">*</span>}
+                </div>
+                <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+                  <FieldRenderer
+                    field={field}
+                    value={intimationTempValues[key]}
+                    onChange={handleIntimationModalChange}
+                    readOnly={isDisabled}
+                    hasError={intimationModalTouched[key] && !!intimationModalErrors[key]}
+                    lang={lang}
+                    values={intimationTempValues}
+                  />
+                  {intimationModalTouched[key] && intimationModalErrors[key] && (
+                    <p className="text-red-500 text-[10px] mt-0.5">{intimationModalErrors[key]}</p>
+                  )}
+                </div>
+              </React.Fragment>
+            );
+          })}
         </div>
-        <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <FieldRenderer
-            field={field}
-            value={intimationTempValues[key]}
-            onChange={handleIntimationModalChange}
-            readOnly={isDisabled}
-            hasError={intimationModalTouched[key] && !!intimationModalErrors[key]}
-            lang={lang}
-            values={intimationTempValues}
-          />
-          {intimationModalTouched[key] && intimationModalErrors[key] && (
-            <p className="text-red-500 text-[10px] mt-0.5">{intimationModalErrors[key]}</p>
-          )}
-        </div>
-      </React.Fragment>
+      </fieldset>
     );
   };
 
@@ -2386,39 +2179,9 @@ const renderIntimationStep = () => {
             {/* Sub-tabs selectors */}
             {renderSubTabBar('intimation_details', intimationSubTab, setIntimationSubTab)}
 
-            {/* Scrollable Body */}
+            {/* Scrollable Body — driven entirely by the backend's sub_tabs field list */}
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {intimationSubTab === 'personal' ? (
-                <fieldset className="bg-white">
-                  <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-                    {lang === 'hi' ? 'सूचना विवरण' : 'Intimation Details'}
-                  </legend>
-                  <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
-                    {renderIntimationModalField('intimation_date_time')}
-                    {renderIntimationModalField('intimated_relative_name')}
-                    {renderIntimationModalField('intimated_relative_relation')}
-                    {renderIntimationModalField('intimation_mode', null, true)}
-                  </div>
-                </fieldset>
-              ) : (
-                <fieldset className="bg-white">
-                  <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-                    {lang === 'hi' ? 'पता' : 'Address'}
-                  </legend>
-                  <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
-                    {renderIntimationModalField('intimation_house_no')}
-                    {renderIntimationModalField('intimation_street')}
-                    {renderIntimationModalField('intimation_colony')}
-                    {renderIntimationModalField('intimation_city_town_village')}
-                    {renderIntimationModalField('intimation_tehsil_block_mandal')}
-                    {renderIntimationModalField('intimation_country')}
-                    {renderIntimationModalField('intimation_state')}
-                    {renderIntimationModalField('intimation_district')}
-                    {renderIntimationModalField('intimation_police_station')}
-                    {renderIntimationModalField('intimation_pincode', null, true)}
-                  </div>
-                </fieldset>
-              )}
+              {renderSubTabFieldGrid(intimationSubTab)}
             </div>
 
             {/* Footer */}
@@ -2557,6 +2320,7 @@ const renderActionTakenStep = () => {
           title_en: section.title_en,
           title_hi: section.title_hi,
           fields: flattenSectionFields(section),
+          sub_tabs: section.sub_tabs,
           ...REPEATER_SECTION_META[key],
         };
       })
@@ -2575,6 +2339,12 @@ const renderActionTakenStep = () => {
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [repeaterState, setRepeaterState] = useState({});
   const [propertyMinorOptionsMap, setPropertyMinorOptionsMap] = useState({});
+  // Arms & Ammunition has a 3-level structure beyond the minor-category dropdown:
+  // arms_categories (= Type of Property, above) -> fire_arms (= Type of Arm, filtered
+  // by the selected category) -> arms_made (= Subtype of Arm, an unlinked flat list).
+  // Both extra levels come back on the SAME lookup response, so we stash them here
+  // keyed by major category rather than issuing separate requests.
+  const [armsLookupMap, setArmsLookupMap] = useState({});
 
   useEffect(() => {
     const list = repeaterState?.property_details || [];
@@ -2598,6 +2368,46 @@ const renderActionTakenStep = () => {
                 value: c.arms_category_cd ?? c.value ?? c,
                 label_en: c.arms_category ?? c.label ?? c,
                 label_hi: c.arms_category ?? c.label ?? c
+              }));
+              setArmsLookupMap(prev => ({
+                ...prev,
+                [cat]: {
+                  fireArms: (data.fireArms || []).map(f => ({
+                    value: f.fire_arms_cd ?? f.value ?? f,
+                    label_en: f.fire_arms ?? f.label ?? f,
+                    label_hi: f.fire_arms ?? f.label ?? f,
+                    parent_id: f.arms_category_cd ?? f.parent_id
+                  })),
+                  // Subtype of Arm — genuinely linked to Type of Arm via arms_type_cd ->
+                  // fire_arms_cd (the "Sub Type of Fire Arm" sheet section), not the
+                  // unlinked arms_made list.
+                  fireArmsSubtypes: (data.fireArmsSubtypes || []).map(s => ({
+                    value: s.arms_subtype_cd ?? s.value ?? s,
+                    label_en: s.arms_subtype ?? s.label ?? s,
+                    label_hi: s.arms_subtype ?? s.label ?? s,
+                    parent_id: s.arms_type_cd ?? s.parent_id
+                  }))
+                }
+              }));
+            } else if (data?.type === 'OTHER_PROPERTY') {
+              // "Others" is a 2-level structure like Arms: Type of Property (this dropdown)
+              // = excel_other_property_categories; Property Subtype = excel_other_property_items
+              // filtered by the selected category's parent_cd.
+              options = (data.categories || []).map(c => ({
+                value: c.value ?? c.parent_cd ?? c,
+                label_en: c.label ?? c.code_type ?? c,
+                label_hi: c.label ?? c.code_type ?? c
+              }));
+              setArmsLookupMap(prev => ({
+                ...prev,
+                [cat]: {
+                  otherSubtype: (data.items || []).map(i => ({
+                    value: i.value ?? i.property_cd ?? i,
+                    label_en: i.label ?? i.property ?? i,
+                    label_hi: i.label ?? i.property ?? i,
+                    parent_id: i.parent_id
+                  }))
+                }
               }));
             } else if (Array.isArray(data)) {
               options = data.map(o => ({
@@ -4101,6 +3911,24 @@ const renderActionTakenStep = () => {
   const activeSection = finalSchema[currentStep] || finalSchema[0];
   const isLastStep    = currentStep === finalSchema.length - 1;
 
+  // Dispatch by the backend's stable section key (not title_en text or step index) —
+  // a section only gets a bespoke renderer here if its layout can't be reproduced by
+  // the generic <FormSection> fallback (composite rows, repeater modals, etc).
+  // 'select_fir' only ever appears in finalSchema for ARREST+against_fir, so no extra guard needed.
+  const SECTION_RENDERERS = {
+    select_fir: renderFirSearchStep,
+    general_info: renderArrestGeneralInfoStep,
+    acts_and_sections: renderActsAndSectionsStep,
+    occurrence_info: renderOccurrenceStep,
+    complainant_info: renderComplainantStep,
+    victim_info: renderVictimStep,
+    accused_info: renderAccusedStep,
+    arrested_info: renderArrestedStep,
+    intimation_details: renderIntimationStep,
+    property_details: renderPropertyStep,
+    action_taken: renderActionTakenStep,
+  };
+
   const stepHasError = (idx) => {
     const sec = finalSchema[idx];
     return sec?.fields?.some((f) => errors[f.field_key] && touched[f.field_key]);
@@ -4178,29 +4006,8 @@ const renderActionTakenStep = () => {
               when navigating between steps. The submit action is wired via
               an explicit onClick on the Submit button in FormToolbar. */}
           <form onSubmit={(e) => e.preventDefault()} noValidate>
-            {recordType === 'ARREST' && caseType === 'against_fir' && currentStep === 0 ? (
-              renderFirSearchStep()
-            ) : (recordType === 'ARREST' || recordType === 'UIDB') && activeSection?.title_en === 'General Information' ? (
-              renderArrestGeneralInfoStep()
-            ) : recordType === 'ARREST' && activeSection?.title_en === 'Arrested' ? (
-              renderArrestedStep()
-            ) : recordType === 'ARREST' && activeSection?.title_en === 'Intimation Details' ? (
-              renderIntimationStep()
-            ) : recordType === 'CASE' && currentStep === 0 ? (
-              renderActsAndSectionsStep()
-              ) : recordType === 'CASE' && currentStep === 1 ? ( 
-               renderOccurrenceStep() 
-              ) : recordType === 'CASE' && currentStep === 2 ? ( 
-               renderComplainantStep() 
-              ) : recordType === 'CASE' && currentStep === 4 ? ( 
-               renderVictimStep() 
-              ) : recordType === 'CASE' && currentStep === 5 ? ( 
-               renderAccusedStep() 
-              ) : (recordType === 'CASE' && currentStep === 6) ||
-                  (recordType === 'ARREST' && activeSection?.entity_type === 'property') ? (
-               renderPropertyStep()
-              ) : recordType === 'CASE' && currentStep === 7 ? (
-               renderActionTakenStep() 
+            {SECTION_RENDERERS[activeSection?.section] ? (
+              SECTION_RENDERERS[activeSection.section]()
             ) : (
               <FormSection
                 section={activeSection}

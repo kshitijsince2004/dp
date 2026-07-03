@@ -36,6 +36,9 @@ export default function MyRecords() {
 
   const tableRef = useRef(null);
 
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   useEffect(() => {
     if (location.search.includes('scrollTo=table') || location.hash === '#records-table') {
       setTimeout(() => {
@@ -166,7 +169,7 @@ export default function MyRecords() {
         </span>
         <div className="absolute -top-10 -right-10 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-  
+
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-6">
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold text-white flex items-center gap-3 m-0">
@@ -196,7 +199,7 @@ export default function MyRecords() {
           </div>
         </div>
       </div>
- 
+
       {/* ── Content area overlaid on the light bg ── */}
       <motion.div
         variants={pageVariants}
@@ -204,7 +207,7 @@ export default function MyRecords() {
         animate="show"
         className="mx-auto max-w-7xl px-6 pb-10 -mt-4 space-y-5"
       >
- 
+
         {/* Unified Filter Strip — card floating over the page bg */}
         <motion.div
           variants={itemVariants}
@@ -216,7 +219,7 @@ export default function MyRecords() {
             allowedStatuses={['ALL', 'DRAFT', 'PENDING_SHO', 'ACP_REVIEW', 'DISTRICT_REVIEW', 'SENT_BACK_HC', 'COMPILED']}
           />
         </motion.div>
- 
+
         {/* Saved Filter Presets — card */}
         <motion.div
           variants={itemVariants}
@@ -233,7 +236,7 @@ export default function MyRecords() {
             }}
           />
         </motion.div>
- 
+
         {/* Records Listing */}
         <div ref={tableRef} style={{ scrollMarginTop: '24px' }}>
           {isLoading ? (
@@ -244,140 +247,139 @@ export default function MyRecords() {
               </p>
             </div>
           ) : filteredRecords.length === 0 ? (
-          <motion.div
-            variants={itemVariants}
-            className="bg-white rounded-3xl border border-dashed border-[#CBD5E0] p-16 text-center shadow-md"
-          >
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-[var(--accent-glow)] flex items-center justify-center mb-4 shadow-inner">
-              <FileText size={32} className="text-[var(--accent-color)]" />
-            </div>
-            <p className="text-base font-bold text-[#1A202C]">
-              {t('common.noRecords', 'No Daily Log Entries Found')}
-            </p>
-            <p className="text-sm text-[#718096] mt-1 font-medium">
-              {t('common.noRecordsDetail', 'Select a creation form above to enter your daily general diary records.')}
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div
-            variants={itemVariants}
-            className="bg-white rounded-3xl overflow-hidden shadow-md border border-[#E2E8F0] transition-shadow duration-200 hover:shadow-lg"
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr className="bg-gradient-to-r from-[var(--accent-color-hover)] to-[var(--accent-color)] text-white/80 uppercase font-bold text-xs tracking-wider">
-                    <th className="p-4 pl-6">{t('common.referenceId', 'Ref ID / Number')}</th>
-                    <th className="p-4">{t('common.recordDate', 'Record Date')}</th>
-                    <th className="p-4">{t('common.details', 'Gist')}</th>
-                    <th className="p-4">{t('common.status', 'Status')}</th>
-                    <th className="p-4 pr-6 text-right">{t('common.actions', 'Console Operations')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E2E8F0] text-[#1A202C]">
-                  {filteredRecords.map((rec, index) => {
-                    const refId =
-                      rec.data.fir_no ||
-                      rec.data.gd_no ||
-                      rec.data.linked_fir_dd_no ||
-                      rec.data.dd_fir_no ||
-                      rec.data.uidbNumber ||
-                      'N/A';
- 
-                    const gist =
-                      rec.data.brief_facts ||
-                      rec.data.call_gist ||
-                      rec.data.recovered_material ||
-                      rec.data.physical_description ||
-                      rec.data.description ||
-                      rec.data.foundPlace ||
-                      'No description text logged';
- 
-                    const isSentBack = rec.current_status === 'SENT_BACK_HC' || rec.current_status === 'SENT_BACK';
-                    const isEditable = rec.current_status === 'DRAFT' || isSentBack;
+            <motion.div
+              variants={itemVariants}
+              className="bg-white rounded-3xl border border-dashed border-[#CBD5E0] p-16 text-center shadow-md"
+            >
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-[var(--accent-glow)] flex items-center justify-center mb-4 shadow-inner">
+                <FileText size={32} className="text-[var(--accent-color)]" />
+              </div>
+              <p className="text-base font-bold text-[#1A202C]">
+                {t('common.noRecords', 'No Daily Log Entries Found')}
+              </p>
+              <p className="text-sm text-[#718096] mt-1 font-medium">
+                {t('common.noRecordsDetail', 'Select a creation form above to enter your daily general diary records.')}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              variants={itemVariants}
+              className="bg-white rounded-3xl overflow-hidden shadow-md border border-[#E2E8F0] transition-shadow duration-200 hover:shadow-lg"
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-[var(--accent-color-hover)] to-[var(--accent-color)] text-white/80 uppercase font-bold text-xs tracking-wider">
+                      <th className="p-4 pl-6">{t('common.referenceId', 'Ref ID / Number')}</th>
+                      <th className="p-4">{t('common.recordDate', 'Record Date')}</th>
+                      <th className="p-4">{t('common.details', 'Gist')}</th>
+                      <th className="p-4">{t('common.status', 'Status')}</th>
+                      <th className="p-4 pr-6 text-right">{t('common.actions', 'Console Operations')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E2E8F0] text-[#1A202C]">
+                    {filteredRecords.map((rec, index) => {
+                      const refId =
+                        rec.data.fir_no ||
+                        rec.data.gd_no ||
+                        rec.data.linked_fir_dd_no ||
+                        rec.data.dd_fir_no ||
+                        rec.data.uidbNumber ||
+                        'N/A';
 
-                    return (
-                      <motion.tr
-                        key={rec.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.02, duration: 0.3 }}
-                        className={`transition-colors duration-150 group ${
-                          isSentBack
-                            ? 'bg-rose-50/80 hover:bg-rose-100/70'
-                            : 'hover:bg-[var(--accent-glow)]'
-                        }`}
-                      >
-                        <td className="p-4 pl-6 font-mono font-bold text-[var(--accent-color)] text-sm group-hover:text-[var(--accent-color-hover)] transition-colors">
-                          {refId}
-                        </td>
-                        <td className="p-4 font-mono text-[#4A5568] font-semibold text-xs">
-                          {rec.data.record_date || 'N/A'}
-                        </td>
-                        <td className="p-4 max-w-[280px] truncate text-[#4A5568] font-medium text-sm" title={gist}>
-                          {gist}
-                        </td>
-                        <td className="p-4">{renderStatusBadge(rec.current_status)}</td>
-                        <td className="p-3.5 pr-6 text-right space-x-2 whitespace-nowrap">
- 
-                          {/* View Action */}
-                          <button
-                            onClick={() => navigate(`/records/${rec.id}`)}
-                            className="bg-[var(--accent-glow)] hover:bg-[var(--accent-color)] text-[var(--accent-color)] hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-[var(--accent-color)]/30 hover:border-[var(--accent-color)] hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95"
-                            title="View Details"
-                          >
-                            <Eye size={14} />
-                          </button>
- 
-                          {/* Edit Action */}
-                          {isEditable && (
+                      const gist =
+                        rec.data.brief_facts ||
+                        rec.data.call_gist ||
+                        rec.data.recovered_material ||
+                        rec.data.physical_description ||
+                        rec.data.description ||
+                        rec.data.foundPlace ||
+                        'No description text logged';
+
+                      const isSentBack = rec.current_status === 'SENT_BACK_HC' || rec.current_status === 'SENT_BACK';
+                      const isEditable = rec.current_status === 'DRAFT' || isSentBack;
+
+                      return (
+                        <motion.tr
+                          key={rec.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.02, duration: 0.3 }}
+                          className={`transition-colors duration-150 group ${isSentBack
+                              ? 'bg-rose-50/80 hover:bg-rose-100/70'
+                              : 'hover:bg-[var(--accent-glow)]'
+                            }`}
+                        >
+                          <td className="p-4 pl-6 font-mono font-bold text-[var(--accent-color)] text-sm group-hover:text-[var(--accent-color-hover)] transition-colors">
+                            {refId}
+                          </td>
+                          <td className="p-4 font-mono text-[#4A5568] font-semibold text-xs">
+                            {rec.data.record_date || 'N/A'}
+                          </td>
+                          <td className="p-4 max-w-[280px] truncate text-[#4A5568] font-medium text-sm" title={gist}>
+                            {gist}
+                          </td>
+                          <td className="p-4">{renderStatusBadge(rec.current_status)}</td>
+                          <td className="p-3.5 pr-6 text-right space-x-2 whitespace-nowrap">
+
+                            {/* View Action */}
                             <button
-                              onClick={() => navigate(`/records/new/${rec.record_type}?edit=${rec.id}`)}
-                              className="bg-amber-50 hover:bg-[#cca43b] text-amber-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-amber-200 hover:border-[#cca43b] hover:shadow-lg hover:shadow-amber-500/20 active:scale-95"
-                              title="Edit Record"
+                              onClick={() => navigate(`/records/${rec.id}`)}
+                              className="bg-[var(--accent-glow)] hover:bg-[var(--accent-color)] text-[var(--accent-color)] hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-[var(--accent-color)]/30 hover:border-[var(--accent-color)] hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95"
+                              title="View Details"
                             >
-                              <FileEdit size={14} />
+                              <Eye size={14} />
                             </button>
-                          )}
- 
-                          {/* Submit Action */}
-                          {isEditable && (
-                            <button
-                              onClick={() => {
-                                if (window.confirm(t('actions.confirmSubmit', 'Confirm submission to SHO? This locks the record.'))) {
-                                  submitMutation.mutate(rec.id);
-                                }
-                              }}
-                              className="bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-emerald-200 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95"
-                              title="Submit to SHO"
-                            >
-                              <Send size={14} />
-                            </button>
-                          )}
- 
-                          {/* Delete Action */}
-                          {rec.current_status === 'DRAFT' && (
-                            <button
-                              onClick={() => {
-                                if (window.confirm(t('actions.confirmDelete', 'Delete this draft record forever?'))) {
-                                  deleteMutation.mutate(rec.id);
-                                }
-                              }}
-                              className="bg-rose-50 hover:bg-rose-500 text-rose-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-rose-200 hover:border-rose-500 hover:shadow-lg hover:shadow-rose-500/20 active:scale-95"
-                              title="Delete Draft"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        )}
+
+                            {/* Edit Action */}
+                            {isEditable && (
+                              <button
+                                onClick={() => navigate(`/records/new/${rec.record_type}?edit=${rec.id}`)}
+                                className="bg-amber-50 hover:bg-[#cca43b] text-amber-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-amber-200 hover:border-[#cca43b] hover:shadow-lg hover:shadow-amber-500/20 active:scale-95"
+                                title="Edit Record"
+                              >
+                                <FileEdit size={14} />
+                              </button>
+                            )}
+
+                            {/* Submit Action */}
+                            {isEditable && (
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(t('actions.confirmSubmit', 'Confirm submission to SHO? This locks the record.'))) {
+                                    submitMutation.mutate(rec.id);
+                                  }
+                                }}
+                                className="bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-emerald-200 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95"
+                                title="Submit to SHO"
+                              >
+                                <Send size={14} />
+                              </button>
+                            )}
+
+                            {/* Delete Action */}
+                            {rec.current_status === 'DRAFT' && (
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(t('actions.confirmDelete', 'Delete this draft record forever?'))) {
+                                    deleteMutation.mutate(rec.id);
+                                  }
+                                }}
+                                className="bg-rose-50 hover:bg-rose-500 text-rose-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-rose-200 hover:border-rose-500 hover:shadow-lg hover:shadow-rose-500/20 active:scale-95"
+                                title="Delete Draft"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
         </div>
       </motion.div>
     </div>
