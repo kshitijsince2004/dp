@@ -74,7 +74,7 @@ const SECTION_KEY_ORDER = {
   CASE:   ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
   // For ARREST keep only the main flow tabs. Custody/status and particulars
   // will be surfaced inside the arrested-person modal to avoid repetition.
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
+  ARREST: ['select_fir', 'general_info', 'arrested_info', 'investigation_officer'],
   UIDB:   ['general_info', 'corpse_desc', 'inquest_details', 'investigation_officer'],
 };
 
@@ -899,7 +899,7 @@ const renderOccurrenceStep = () => {
     'occurrence_police_station',
     'Police_district/zone',
     'occurrence_district' ,
-    'occurrence_state',
+    'occurrence_landmark',
   ];
 
   return (
@@ -2059,7 +2059,8 @@ const renderArrestedStep = () => {
         <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
           {renderArrestedModalField('prev_involvement')}
           {renderArrestedModalField('proclaimed_offender')}
-          {renderArrestedModalField('nafis_dossier')}
+          {renderArrestedModalField('nafis_prepared')}
+          {renderArrestedModalField('dossier_prepared')}
           {renderArrestedModalField('bad_character')}
           {renderArrestedModalField('arresting_officer')}
           {renderArrestedModalField('arresting_officer_mobile')}
@@ -2133,19 +2134,334 @@ const renderArrestedStep = () => {
             </div>
           </legend>
           <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
-            {renderArrestedModalField('arrested_perm_address')}
-            {renderArrestedModalField('arrested_perm_house_no')}
-            {renderArrestedModalField('arrested_perm_street')}
-            {renderArrestedModalField('arrested_perm_colony')}
-            {renderArrestedModalField('arrested_perm_city_town_village')}
-            {renderArrestedModalField('arrested_perm_tehsil_block_mandal')}
-            {renderArrestedModalField('arrested_perm_country')}
-            {renderArrestedModalField('arrested_perm_state')}
-            {renderArrestedModalField('arrested_perm_district')}
-            {renderArrestedModalField('arrested_perm_police_station')}
-            {renderArrestedModalField('arrested_perm_pincode', null, true)}
+            {renderArrestedModalField('arrested_perm_address', null, false, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
+            {renderArrestedModalField('arrested_perm_house_no', null, false, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
+            {renderArrestedModalField('arrested_perm_street', null, false, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
+            {renderArrestedModalField('arrested_perm_colony', null, false, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
+            {renderArrestedModalField('arrested_perm_city_town_village', null, false, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
+            {renderArrestedModalField('arrested_perm_tehsil_block_mandal', null, false, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
+            {renderArrestedModalField('arrested_perm_country', null, false, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
+            {renderArrestedModalField('arrested_perm_state', null, false, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
+            {renderArrestedModalField('arrested_perm_district', null, false, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
+            {renderArrestedModalField('arrested_perm_police_station', null, false, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
+            {renderArrestedModalField('arrested_perm_pincode', null, true, (arrestedTempValues.arrested_perm_same === true || arrestedTempValues.arrested_perm_same === 'Yes'))}
           </div>
+
         </fieldset>
+      </div>
+    );
+  };
+
+  const renderArrestedPropertySubTab = () => {
+    const list = arrestedTempValues?.property_details || [];
+    
+    const addRow = () => {
+      const newList = [...list];
+      newList.push({
+        property_major_category: '',
+        property_minor_category: '',
+        property_details: '',
+        property_value_inr: '',
+        property_stolen_recovered: 'Stolen'
+      });
+      setArrestedTempValues(prev => ({ ...prev, property_details: newList }));
+    };
+
+    const clearAll = () => {
+      setArrestedTempValues(prev => ({ ...prev, property_details: [] }));
+    };
+
+    const deleteRow = (idx) => {
+      const newList = list.filter((_, i) => i !== idx);
+      setArrestedTempValues(prev => ({ ...prev, property_details: newList }));
+    };
+
+    const handleChangeRow = (idx, key, val) => {
+      const newList = [...list];
+      if (!newList[idx]) return;
+      const updatedRow = { ...newList[idx], [key]: val };
+      if (key === 'property_major_category') {
+        const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
+        Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
+        updatedRow.property_minor_category = '';
+      } else if (key === 'property_minor_category') {
+        const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
+        Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
+      }
+      newList[idx] = updatedRow;
+      setArrestedTempValues(prev => ({ ...prev, property_details: newList }));
+    };
+
+    // Use property major/minor categories from schema
+    const majorCategoryField = processedArrestFields.find(f => f.field_key === 'property_major_category');
+    const majorCategoryOptions = (() => {
+      if (!majorCategoryField) return [];
+      try {
+        const opts = typeof majorCategoryField.options === 'string'
+          ? JSON.parse(majorCategoryField.options)
+          : majorCategoryField.options;
+        return Array.isArray(opts) ? opts : [];
+      } catch (e) {
+        return Array.isArray(majorCategoryField.options) ? majorCategoryField.options : [];
+      }
+    })();
+
+    const getMinorCategoryOptions = (majorCategory) => {
+      if (!majorCategory) return [];
+      return propertyMinorOptionsMap[majorCategory] || [];
+    };
+
+    const BASE_PROP_KEYS = new Set([
+      'property_major_category', 'property_minor_category',
+      'property_details', 'property_stolen_recovered',
+    ]);
+    const TYPE_COL_KEYS = new Set([
+      'prop_vehicle_type', 'prop_gold_item_type', 'prop_elec_device_type',
+      'prop_doc_type', 'prop_drug_type', 'prop_arms_type', 'prop_cash_currency',
+    ]);
+
+    const evalPropCond = (cond, row) => {
+      if (!cond) return true;
+      if (cond.and) return cond.and.every(c => evalPropCond(c, row));
+      const { field: tf, value: tv, operator } = cond;
+      let cv = row[tf];
+      if (operator === 'filled') return cv !== undefined && cv !== null && String(cv).trim() !== '';
+
+      if (tf === 'property_major_category' && cv) {
+        const matchOpt = majorCategoryOptions.find(o => String(o.value) === String(cv));
+        if (matchOpt) {
+          const label = String(matchOpt.label_en || matchOpt.value).toUpperCase();
+          if (label === 'ELECTRICAL AND ELECTRONIC GOODS') {
+            if (String(row.property_minor_category) === '470') {
+              cv = 'Mobile Phone';
+            } else {
+              cv = 'Electronics';
+            }
+          } else if (label === 'AUTOMOBILES AND OTHERS') {
+            cv = 'Vehicle';
+          } else if (label === 'COIN AND CURRENCY') {
+            cv = 'Cash';
+          } else if (label === 'JEWELLERY') {
+            cv = 'Jewellery';
+          } else if (label === 'ARMS AND AMMUNITION') {
+            cv = 'Arms';
+          } else if (label === 'DOCUMENTS AND VALUABLE SECURITIES') {
+            cv = 'Documents';
+          } else if (label === 'DRUGS/NARCOTIC DRUGS') {
+            cv = 'Drugs';
+          } else {
+            cv = matchOpt.label_en || matchOpt.value;
+          }
+        }
+      }
+
+      return Array.isArray(tv)
+        ? tv.map(v => String(v || '').toLowerCase()).includes(String(cv || '').toLowerCase())
+        : String(cv || '').toLowerCase() === String(tv || '').toLowerCase();
+    };
+
+    const getExtraFields = (row) =>
+      processedArrestFields.filter(f => {
+        if (!f.repeater_entity || f.repeater_entity.toUpperCase() !== 'PROPERTY') return false;
+        if (BASE_PROP_KEYS.has(f.field_key)) return false;
+        if (TYPE_COL_KEYS.has(f.field_key)) return false;
+        const cond = f.show_when
+          ? (typeof f.show_when === 'string' ? JSON.parse(f.show_when) : f.show_when)
+          : null;
+        return evalPropCond(cond, row);
+      });
+
+    const renderExtraFields = (row, idx) => {
+      const extraFields = getExtraFields(row);
+      if (!row.property_major_category || extraFields.length === 0) return null;
+      const cls = 'w-full px-2 py-1.5 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400';
+      return (
+        <tr key={`${idx}-extra`} className="border-t border-[#dce9f4] bg-[#f3f8fd]">
+          <td colSpan={7} className="px-4 py-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {extraFields.map(field => {
+                const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+                const fieldVal = row[field.field_key] || '';
+                const wrapCls = `flex flex-col gap-1${field.full_width ? ' col-span-full' : ''}`;
+                const labelEl = <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{label}</label>;
+                if (field.field_type === 'SELECT') {
+                  const opts = (() => { try { return typeof field.options === 'string' ? JSON.parse(field.options) : (field.options || []); } catch { return []; } })();
+                  return (
+                    <div key={field.field_key} className={wrapCls}>
+                      {labelEl}
+                      <select value={fieldVal} onChange={e => handleChangeRow(idx, field.field_key, e.target.value)} disabled={readOnly} className={cls}>
+                        <option value="">---{lang === 'hi' ? 'चुनें' : 'Select'}---</option>
+                        {opts.map(o => <option key={o.value ?? o} value={o.value ?? o}>{lang === 'hi' ? (o.label_hi || o.label_en || o) : (o.label_en || o.value || o)}</option>)}
+                      </select>
+                    </div>
+                  );
+                }
+                if (field.field_type === 'TEXTAREA') {
+                  return (
+                    <div key={field.field_key} className={wrapCls}>
+                      {labelEl}
+                      <textarea value={fieldVal} onChange={e => handleChangeRow(idx, field.field_key, e.target.value)} disabled={readOnly} rows={2} className={`${cls} resize-none`} />
+                    </div>
+                  );
+                }
+                return (
+                  <div key={field.field_key} className={wrapCls}>
+                    {labelEl}
+                    <input type={field.field_type === 'NUMBER' ? 'number' : 'text'} value={fieldVal} onChange={e => handleChangeRow(idx, field.field_key, e.target.value)} disabled={readOnly} className={cls} />
+                  </div>
+                );
+              })}
+            </div>
+          </td>
+        </tr>
+      );
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={addRow}
+            disabled={readOnly}
+            className="px-4 py-1.5 bg-[#0d2a4a] hover:bg-[#16406d] text-white text-xs font-bold rounded transition-colors cursor-pointer disabled:bg-slate-300 disabled:cursor-not-allowed"
+          >
+            {lang === 'hi' ? 'नया जोड़ें' : 'Add New'}
+          </button>
+          <button
+            type="button"
+            onClick={clearAll}
+            disabled={readOnly}
+            className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded transition-colors cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+          >
+            {lang === 'hi' ? 'सभी साफ़ करें' : 'Clear All'}
+          </button>
+        </div>
+
+        <div className="border border-[#7a9cc5] rounded overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-[#0d2a4a] text-white">
+                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'संपत्ति श्रेणी *' : 'Property Category *'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'संपत्ति का प्रकार *' : 'Type of Property *'}</th>
+                <th className="px-3 py-2 text-left w-32 font-semibold">{lang === 'hi' ? 'स्थिति' : 'Status'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'विवरण' : 'Description'}</th>
+                <th className="px-3 py-2 text-left w-44 font-semibold">{lang === 'hi' ? 'मूल्य (INR में)' : 'Value in INR'}</th>
+                <th className="px-3 py-2 text-center w-16 font-semibold">{lang === 'hi' ? 'हटाएं' : 'Delete'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-6 text-center text-slate-400 italic">
+                    {lang === 'hi' ? 'कोई संपत्ति नहीं जोड़ी गई है।' : 'No property items added yet.'}
+                  </td>
+                </tr>
+              ) : (
+                list.map((row, idx) => (
+                  <React.Fragment key={idx}>
+                    <tr className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
+                      <td className="px-3 py-2 font-medium">{idx + 1}</td>
+                      <td className="px-3 py-2 min-w-[200px]">
+                        <select
+                          value={row.property_major_category || ''}
+                          onChange={(e) => handleChangeRow(idx, 'property_major_category', e.target.value)}
+                          disabled={readOnly}
+                          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
+                        >
+                          <option value="">{lang === 'hi' ? '---चुनें---' : '---Select---'}</option>
+                          {majorCategoryOptions.map(o => (
+                            <option key={o.value} value={o.value}>
+                              {lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-3 py-2">
+                        {(() => {
+                          const opts = getMinorCategoryOptions(row.property_major_category);
+                          const isDisabled = !row.property_major_category || readOnly;
+                          if (opts.length > 0) {
+                            return (
+                              <select
+                                value={row.property_minor_category || ''}
+                                onChange={(e) => handleChangeRow(idx, 'property_minor_category', e.target.value)}
+                                disabled={isDisabled}
+                                className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
+                              >
+                                <option value="">{lang === 'hi' ? '---चुनें---' : '---Select---'}</option>
+                                {opts.map(o => (
+                                  <option key={o.value} value={o.value}>
+                                    {lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}
+                                  </option>
+                                ))}
+                              </select>
+                            );
+                          }
+                          return (
+                            <input
+                              type="text"
+                              value={row.property_minor_category || ''}
+                              onChange={(e) => handleChangeRow(idx, 'property_minor_category', e.target.value)}
+                              disabled={isDisabled}
+                              placeholder={row.property_major_category ? (lang === 'hi' ? 'विवरण दर्ज करें...' : 'Enter details...') : (lang === 'hi' ? 'श्रेणी चुनें' : 'Select Category')}
+                              className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
+                            />
+                          );
+                        })()}
+                      </td>
+                      <td className="px-3 py-2">
+                        <select
+                          value={row.property_stolen_recovered || 'Stolen'}
+                          onChange={(e) => handleChangeRow(idx, 'property_stolen_recovered', e.target.value)}
+                          disabled={readOnly}
+                          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
+                        >
+                          <option value="Stolen">{lang === 'hi' ? 'चोरी हुई' : 'Stolen'}</option>
+                          <option value="Recovered">{lang === 'hi' ? 'बरामद' : 'Recovered'}</option>
+                          <option value="Involved">{lang === 'hi' ? 'शामिल' : 'Involved'}</option>
+                          <option value="Seized">{lang === 'hi' ? 'जब्त' : 'Seized'}</option>
+                        </select>
+                      </td>
+                      <td className="px-3 py-2">
+                        <textarea
+                          value={row.property_details || ''}
+                          onChange={(e) => handleChangeRow(idx, 'property_details', e.target.value)}
+                          disabled={readOnly}
+                          rows={1}
+                          placeholder={lang === 'hi' ? 'विवरण दर्ज करें...' : 'Enter description...'}
+                          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold resize-y min-h-[28px]"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="number"
+                          value={row.property_value_inr || ''}
+                          onChange={(e) => handleChangeRow(idx, 'property_value_inr', e.target.value)}
+                          disabled={readOnly}
+                          placeholder="INR"
+                          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => deleteRow(idx)}
+                          disabled={readOnly}
+                          className="text-red-500 hover:text-red-700 font-bold cursor-pointer transition-colors disabled:text-slate-300 disabled:cursor-not-allowed"
+                        >
+                          {lang === 'hi' ? 'हटाएं' : 'Delete'}
+                        </button>
+                      </td>
+                    </tr>
+                    {renderExtraFields(row, idx)}
+                  </React.Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
@@ -2244,7 +2560,8 @@ const renderArrestedStep = () => {
                 { id: 'person_particulars', label_en: 'Person Particulars', label_hi: 'व्यक्तिगत जानकारी' },
                 { id: 'particular_details', label_en: 'Particular Details', label_hi: 'विवरण' },
                 { id: 'custody_status', label_en: 'Custody Status', label_hi: 'हिरासत की स्थिति' },
-                { id: 'address', label_en: 'Address', label_hi: 'पता' }
+                { id: 'address', label_en: 'Address', label_hi: 'पता' },
+                { id: 'property_interest', label_en: 'Property of Interest', label_hi: 'संबद्ध संपत्ति' }
               ].map(t => (
                 <button
                   key={t.id}
@@ -2268,6 +2585,7 @@ const renderArrestedStep = () => {
               {arrestedSubTab === 'particular_details' && renderArrestedParticularDetailsSubTab()}
               {arrestedSubTab === 'custody_status' && renderArrestedCustodyStatusSubTab()}
               {arrestedSubTab === 'address' && renderArrestedAddressSubTab()}
+              {arrestedSubTab === 'property_interest' && renderArrestedPropertySubTab()}
             </div>
 
             {/* Footer */}
@@ -2696,10 +3014,47 @@ const renderActionTakenStep = () => {
   const [repeaterState, setRepeaterState] = useState({});
   const [propertyMinorOptionsMap, setPropertyMinorOptionsMap] = useState({});
 
+
+
+  const [showAddRow,   setShowAddRow  ] = useState(false);
+  const [newAct,       setNewAct      ] = useState('');
+  const [newSection,   setNewSection  ] = useState('');
+  const [newSectionVal, setNewSectionVal] = useState('');
+  const [actsSectionsRegistry, setActsSectionsRegistry] = useState(ACTS_SECTIONS_REGISTRY);
+  const [dbMajorHeadOptions, setDbMajorHeadOptions] = useState([]);
+  const [dbMinorHeadOptions, setDbMinorHeadOptions] = useState([]);
+  const [showOccurrencePlace, setShowOccurrencePlace] = useState(false);
+
+  // Victim Modal state hooks
+  const [isVictimModalOpen, setIsVictimModalOpen] = useState(false);
+  const [activeVictimIndex, setActiveVictimIndex] = useState(null);
+  const [victimTempValues, setVictimTempValues]   = useState({});
+  const [victimSubTab, setVictimSubTab]           = useState('personal');
+  const [victimModalErrors, setVictimModalErrors] = useState({});
+  const [victimModalTouched, setVictimModalTouched] = useState({});
+
+  // Accused Modal state hooks
+  const [isAccusedModalOpen, setIsAccusedModalOpen] = useState(false);
+  const [activeAccusedIndex, setActiveAccusedIndex] = useState(null);
+  const [accusedTempValues, setAccusedTempValues]   = useState({});
+  const [accusedSubTab, setAccusedSubTab]           = useState('personal');
+  const [accusedModalErrors, setAccusedModalErrors] = useState({});
+  const [accusedModalTouched, setAccusedModalTouched] = useState({});
+
+  // Arrested Modal state hooks
+  const [isArrestedModalOpen, setIsArrestedModalOpen] = useState(false);
+  const [activeArrestedIndex, setActiveArrestedIndex] = useState(null);
+  const [arrestedTempValues, setArrestedTempValues]   = useState({});
+  const [arrestedSubTab, setArrestedSubTab]           = useState('arrest_details'); // 'arrest_details' | 'person_particulars' | 'particular_details' | 'address'
+  const [arrestedModalErrors, setArrestedModalErrors] = useState({});
+  const [arrestedModalTouched, setArrestedModalTouched] = useState({});
+
   useEffect(() => {
     const list = repeaterState?.property_details || [];
+    const arrestedList = arrestedTempValues?.property_details || [];
+    const combinedList = [...list, ...arrestedList];
     const majorCategories = Array.from(new Set(
-      list.map(row => row.property_major_category).filter(Boolean)
+      combinedList.map(row => row.property_major_category).filter(Boolean)
     ));
 
     majorCategories.forEach(cat => {
@@ -2736,40 +3091,7 @@ const renderActionTakenStep = () => {
           console.error(`Failed to fetch items for property category ${cat}:`, err);
         });
     });
-  }, [repeaterState?.property_details, propertyMinorOptionsMap]);
-
-  const [showAddRow,   setShowAddRow  ] = useState(false);
-  const [newAct,       setNewAct      ] = useState('');
-  const [newSection,   setNewSection  ] = useState('');
-  const [newSectionVal, setNewSectionVal] = useState('');
-  const [actsSectionsRegistry, setActsSectionsRegistry] = useState(ACTS_SECTIONS_REGISTRY);
-  const [dbMajorHeadOptions, setDbMajorHeadOptions] = useState([]);
-  const [dbMinorHeadOptions, setDbMinorHeadOptions] = useState([]);
-  const [showOccurrencePlace, setShowOccurrencePlace] = useState(false);
-
-  // Victim Modal state hooks
-  const [isVictimModalOpen, setIsVictimModalOpen] = useState(false);
-  const [activeVictimIndex, setActiveVictimIndex] = useState(null);
-  const [victimTempValues, setVictimTempValues]   = useState({});
-  const [victimSubTab, setVictimSubTab]           = useState('personal');
-  const [victimModalErrors, setVictimModalErrors] = useState({});
-  const [victimModalTouched, setVictimModalTouched] = useState({});
-
-  // Accused Modal state hooks
-  const [isAccusedModalOpen, setIsAccusedModalOpen] = useState(false);
-  const [activeAccusedIndex, setActiveAccusedIndex] = useState(null);
-  const [accusedTempValues, setAccusedTempValues]   = useState({});
-  const [accusedSubTab, setAccusedSubTab]           = useState('personal');
-  const [accusedModalErrors, setAccusedModalErrors] = useState({});
-  const [accusedModalTouched, setAccusedModalTouched] = useState({});
-
-  // Arrested Modal state hooks
-  const [isArrestedModalOpen, setIsArrestedModalOpen] = useState(false);
-  const [activeArrestedIndex, setActiveArrestedIndex] = useState(null);
-  const [arrestedTempValues, setArrestedTempValues]   = useState({});
-  const [arrestedSubTab, setArrestedSubTab]           = useState('arrest_details'); // 'arrest_details' | 'person_particulars' | 'particular_details' | 'address'
-  const [arrestedModalErrors, setArrestedModalErrors] = useState({});
-  const [arrestedModalTouched, setArrestedModalTouched] = useState({});
+  }, [repeaterState?.property_details, arrestedTempValues?.property_details, propertyMinorOptionsMap]);
 
   // Intimation Details tab state
   const [isIntimationModalOpen, setIsIntimationModalOpen] = useState(false);
@@ -3062,7 +3384,15 @@ const renderActionTakenStep = () => {
   };
 
   const openArrestedAddModal = () => {
-    setArrestedTempValues({});
+    setArrestedTempValues({
+      property_details: [{
+        property_major_category: '',
+        property_minor_category: '',
+        property_details: '',
+        property_value_inr: '',
+        property_stolen_recovered: 'Stolen'
+      }]
+    });
     setActiveArrestedIndex(null);
     setArrestedSubTab('arrest_details');
     setArrestedModalErrors({});
@@ -3072,7 +3402,17 @@ const renderActionTakenStep = () => {
 
   const openArrestedEditModal = (idx) => {
     const list = repeaterState.arrested_info || [];
-    setArrestedTempValues({ ...(list[idx] || {}) });
+    const entry = { ...(list[idx] || {}) };
+    if (!entry.property_details || entry.property_details.length === 0) {
+      entry.property_details = [{
+        property_major_category: '',
+        property_minor_category: '',
+        property_details: '',
+        property_value_inr: '',
+        property_stolen_recovered: 'Stolen'
+      }];
+    }
+    setArrestedTempValues(entry);
     setActiveArrestedIndex(idx);
     setArrestedSubTab('arrest_details');
     setArrestedModalErrors({});
@@ -3935,6 +4275,16 @@ const renderActionTakenStep = () => {
         if (key === 'complainant_police_station') next.complainant_perm_police_station = val;
         if (key === 'complainant_pincode') next.complainant_perm_pincode = val;
       }
+      
+      // Auto-set mp_known based on missing_type (Missing -> Known/Identified=true, Found -> Unknown=false)
+      if (key === 'missing_type') {
+        if (val === 'Missing') {
+          next.mp_known = true;
+        } else if (val === 'Found') {
+          next.mp_known = false;
+        }
+      }
+
 
       // Clear error on change
       if (errors[key]) {

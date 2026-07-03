@@ -47,6 +47,7 @@ export async function seed(knex) {
 
   // 1. Truncate all tables in correct dependency order
   const tables = [
+    'excel_heinous_offences',
     'excel_other_property_items',
     'excel_other_property_categories',
     'excel_jewelry_types',
@@ -448,6 +449,23 @@ export async function seed(knex) {
 
     await batchInsert('excel_other_property_categories', catRows);
     await batchInsert('excel_other_property_items', itemRows);
+  }
+
+  // --- 19. Heinous Offences (programmatic seed) ---
+  {
+    console.log("Seeding heinous offences...");
+    const heinousOffences = [
+      { heinous_offence_cd: 1, heinous_offence: 'Murder' },
+      { heinous_offence_cd: 2, heinous_offence: 'Attempt to murder' },
+      { heinous_offence_cd: 3, heinous_offence: 'Rape' },
+      { heinous_offence_cd: 4, heinous_offence: 'Gang rape' },
+      { heinous_offence_cd: 5, heinous_offence: 'Kidnapping for ransom' },
+      { heinous_offence_cd: 6, heinous_offence: 'Robbery' },
+      { heinous_offence_cd: 7, heinous_offence: 'Dacoity' },
+      { heinous_offence_cd: 8, heinous_offence: 'Acid attack' },
+      { heinous_offence_cd: 9, heinous_offence: 'Terrorism-related offences' }
+    ];
+    await batchInsert('excel_heinous_offences', heinousOffences);
   }
 
   console.log("Excel menu tables seeding completed successfully.");
