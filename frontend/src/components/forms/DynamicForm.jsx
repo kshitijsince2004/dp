@@ -72,7 +72,9 @@ function getFieldOptions(fieldsArr, key) {
  */
 const SECTION_KEY_ORDER = {
   CASE:   ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'custody_status', 'property_details', 'investigation_officer'],
+  // For ARREST keep only the main flow tabs. Custody/status and particulars
+  // will be surfaced inside the arrested-person modal to avoid repetition.
+  ARREST: ['select_fir', 'general_info', 'arrested_info', 'investigation_officer'],
   UIDB:   ['general_info', 'corpse_desc', 'inquest_details', 'investigation_officer'],
 };
 
@@ -2064,6 +2066,13 @@ const renderArrestedStep = () => {
           {renderArrestedModalField('arresting_officer')}
           {renderArrestedModalField('arresting_officer_mobile')}
           {renderArrestedModalField('listed_criminal', null, true)}
+          {/* Also render any non-repeater property fields (Particulars) inside the arrested modal
+              so the 'Particulars' section is available per-arrestee and not repeated at top-level. */}
+          {allFields.filter(f => f.section === 'property_details' && !f.repeater_entity).map(f => (
+            <React.Fragment key={`prop-${f.field_key}`}>
+              {renderArrestedModalField(f.field_key)}
+            </React.Fragment>
+          ))}
         </div>
       </fieldset>
     );
