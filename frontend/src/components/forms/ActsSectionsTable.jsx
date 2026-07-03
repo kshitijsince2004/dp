@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 /**
  * Acts & Sections registered-list panel + Major/Minor Head cascading table +
  * Local Head select + "Add Acts & Section" modal.
@@ -32,6 +34,13 @@ export default function ActsSectionsTable({
   getLocalHeadOptions,
   localHeadLayout = 'split',
 }) {
+  const [actSearchInput, setActSearchInput] = useState('');
+  const [actDropdownOpen, setActDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    setActSearchInput(newAct || '');
+  }, [newAct]);
+
   const rawActs = values.act_name ? values.act_name.split(',').map((s) => s.trim()).filter(Boolean) : [];
   const acts = [];
   for (const item of rawActs) {
@@ -43,6 +52,15 @@ export default function ActsSectionsTable({
   }
   const secs = values.sections ? values.sections.split(',').map((s) => s.trim()).filter(Boolean) : [];
   const maxLen = Math.max(acts.length, secs.length);
+
+  // Alphabetically sort the acts registry
+  const sortedActsRegistry = [...actsSectionsRegistry].sort((a, b) =>
+    a.act.localeCompare(b.act)
+  );
+
+  const filteredActs = sortedActsRegistry.filter((item) =>
+    item.act.toLowerCase().includes(actSearchInput.toLowerCase())
+  );
 
   const chosenActObj = actsSectionsRegistry.find((item) => item.act === newAct);
   const availableSections = chosenActObj ? chosenActObj.sections : [];
@@ -308,22 +326,58 @@ export default function ActsSectionsTable({
               <div className="space-y-3">
                 <div className="flex flex-col gap-1 text-[11px] text-left">
                   <label className="text-[#0d2a4a] font-bold">Act / Law Name</label>
-                  <select
-                    value={newAct}
-                    onChange={(e) => {
-                      setNewAct(e.target.value);
-                      setNewSection('');
-                    }}
-                    className="w-full h-8 px-2 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-[#ea580c] cursor-pointer"
-                    autoFocus
-                  >
-                    <option value="">----select----</option>
-                    {actsSectionsRegistry.map((item) => (
-                      <option key={item.act} value={item.act}>
-                        {item.act}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative w-full">
+                    <input
+                      type="text"
+                      value={actSearchInput}
+                      onChange={(e) => {
+                        setActSearchInput(e.target.value);
+                        setActDropdownOpen(true);
+                        if (e.target.value !== newAct) {
+                          setNewAct('');
+                          setNewSection('');
+                        }
+                      }}
+                      onFocus={() => setActDropdownOpen(true)}
+                      onBlur={() => {
+                        // Small timeout to allow click event to register before closing dropdown
+                        setTimeout(() => setActDropdownOpen(false), 200);
+                      }}
+                      placeholder="Search and select Act..."
+                      className="w-full h-8 px-2 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-[#ea580c] cursor-text"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-[8px]">
+                      ▼
+                    </span>
+                    {actDropdownOpen && (
+                      <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto border border-[#7a9cc5] rounded bg-white shadow-lg z-50 text-left">
+                        {filteredActs.length === 0 ? (
+                          <div className="px-2 py-1.5 text-gray-500 italic text-[11px]">
+                            No matching acts found
+                          </div>
+                        ) : (
+                          filteredActs.map((item) => (
+                            <div
+                              key={item.act}
+                              onClick={() => {
+                                setNewAct(item.act);
+                                setActSearchInput(item.act);
+                                setNewSection('');
+                                setActDropdownOpen(false);
+                              }}
+                              className={`px-2 py-1.5 cursor-pointer text-[11px] hover:bg-[#f0f4f8] transition-colors ${
+                                newAct === item.act
+                                  ? 'bg-[#d0e0f8] font-bold text-[#0d2a4a]'
+                                  : 'text-slate-700'
+                              }`}
+                            >
+                              {item.act}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1 text-[11px] text-left">
                   <label className="text-[#0d2a4a] font-bold">Section(s)</label>
