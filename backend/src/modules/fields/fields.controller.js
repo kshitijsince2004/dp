@@ -1004,7 +1004,15 @@ export const listMajorHeads = async (req, res) => {
     let data = [];
 
     if (actNameRaw) {
-      const actNames = actNameRaw.split(',').map(a => a.trim()).filter(Boolean);
+      const rawActNames = actNameRaw.split(',').map(a => a.trim()).filter(Boolean);
+      const actNames = [];
+      for (const item of rawActNames) {
+        if (/^\d{4}$/.test(item) && actNames.length > 0) {
+          actNames[actNames.length - 1] = `${actNames[actNames.length - 1]}, ${item}`;
+        } else {
+          actNames.push(item);
+        }
+      }
       const actCds = [];
       const customNames = [];
 

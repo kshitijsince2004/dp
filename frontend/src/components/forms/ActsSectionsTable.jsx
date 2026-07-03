@@ -32,7 +32,15 @@ export default function ActsSectionsTable({
   getLocalHeadOptions,
   localHeadLayout = 'split',
 }) {
-  const acts = values.act_name ? values.act_name.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const rawActs = values.act_name ? values.act_name.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const acts = [];
+  for (const item of rawActs) {
+    if (/^\d{4}$/.test(item) && acts.length > 0) {
+      acts[acts.length - 1] = `${acts[acts.length - 1]}, ${item}`;
+    } else {
+      acts.push(item);
+    }
+  }
   const secs = values.sections ? values.sections.split(',').map((s) => s.trim()).filter(Boolean) : [];
   const maxLen = Math.max(acts.length, secs.length);
 

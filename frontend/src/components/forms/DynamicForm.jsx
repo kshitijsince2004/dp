@@ -3321,16 +3321,24 @@ const renderActionTakenStep = () => {
     if (!actNameRaw) return [];
 
     // Split comma-separated acts and normalise to schema keys
-    const actKeys = actNameRaw
+    const rawActKeys = actNameRaw
       .split(',')
       .map(a => a.trim())
-      .filter(Boolean)
-      .map(a => ACT_NAME_ALIAS[a] || a);
+      .filter(Boolean);
+    const actKeys = [];
+    for (const item of rawActKeys) {
+      if (/^\d{4}$/.test(item) && actKeys.length > 0) {
+        actKeys[actKeys.length - 1] = `${actKeys[actKeys.length - 1]}, ${item}`;
+      } else {
+        actKeys.push(item);
+      }
+    }
+    const normalizedActKeys = actKeys.map(a => ACT_NAME_ALIAS[a] || a);
 
     // Collect options from all matching major-head schema fields
     const seen = new Set();
     const allOptions = [];
-    for (const actKey of actKeys) {
+    for (const actKey of normalizedActKeys) {
       const majorFields = allSchemaFields.filter(
         f => f.field_key?.includes('major_head') && f.show_when?.value === actKey
       );
