@@ -118,7 +118,7 @@ export const getActsSectionsRegistry = async () => {
   if (cachedRegistry) return cachedRegistry;
 
   const acts = await db('excel_acts').select('act_cd', 'act_long');
-  const sections = await db('excel_sections').select('act_sec_cd', 'section', 'section_desc');
+  const sections = await db('excel_sections').select('act_sec_cd', 'section', 'section_desc', 'section_code');
 
   const sectionsByActCd = {};
   for (const s of sections) {
@@ -127,7 +127,10 @@ export const getActsSectionsRegistry = async () => {
     }
     sectionsByActCd[s.act_sec_cd].push({
       section: s.section,
-      desc: s.section_desc || ''
+      desc: s.section_desc || '',
+      // Exact key into excel_major_minor_mapping.section_code — needed so Major Head can be
+      // filtered by the specific (act, section) pair chosen, not just the act as a whole.
+      section_code: s.section_code
     });
   }
 

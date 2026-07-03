@@ -16,6 +16,7 @@ import FormSection from './FormSection.jsx';
 import FormToolbar from './FormToolbar.jsx';
 import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
+import SearchableSelect from './SearchableSelect.jsx';
 import DateInput from '../ui/DateInput.jsx';
 import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
@@ -521,18 +522,15 @@ export default function DynamicForm({
                   <label className="text-xs font-bold text-slate-700 tracking-wide">
                     {lang === 'hi' ? 'अधिनियम का नाम *' : 'Act Name *'}
                   </label>
-                  <select
+                  <SearchableSelect
                     disabled={readOnly}
                     value={currentAct}
-                    onChange={(e) => handleChange('act_name', e.target.value)}
-                    className="w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer"
-                  >
-                    {getFieldOptions(allSchemaFields, 'act_name').map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => handleChange('act_name', val)}
+                    options={getFieldOptions(allSchemaFields, 'act_name')}
+                    lang={lang}
+                    className="w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all cursor-text"
+                    dropdownClassName="max-h-48 overflow-y-auto border-2 border-slate-200 rounded-xl bg-white shadow-xl text-left"
+                  />
                 </div>
 
                 {/* Act Name Sub-input if Other Act is selected */}
@@ -795,6 +793,8 @@ export default function DynamicForm({
                       readOnly={readOnly}
                       lang={lang}
                       values={values}
+                      selectVariant="compact"
+                      selectClassName="w-64 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-text"
                     />
                   </div>
                 </td>
@@ -1587,10 +1587,7 @@ const renderPropertyStep = () => {
                 return (
                   <div key={field.field_key} className={wrapCls}>
                     {labelEl}
-                    <select value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={isDisabled} className={cls}>
-                      <option value="">---{lang === 'hi' ? 'चुनें' : 'Select'}---</option>
-                      {fireArmsOpts.map(o => <option key={o.value} value={o.value}>{lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}</option>)}
-                    </select>
+                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={fireArmsOpts} lang={lang} />
                   </div>
                 );
               }
@@ -1604,10 +1601,7 @@ const renderPropertyStep = () => {
                 return (
                   <div key={field.field_key} className={wrapCls}>
                     {labelEl}
-                    <select value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={isDisabled} className={cls}>
-                      <option value="">---{lang === 'hi' ? 'चुनें' : 'Select'}---</option>
-                      {subtypeOpts.map(o => <option key={o.value} value={o.value}>{lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}</option>)}
-                    </select>
+                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={subtypeOpts} lang={lang} />
                   </div>
                 );
               }
@@ -1621,10 +1615,7 @@ const renderPropertyStep = () => {
                 return (
                   <div key={field.field_key} className={wrapCls}>
                     {labelEl}
-                    <select value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={isDisabled} className={cls}>
-                      <option value="">---{lang === 'hi' ? 'चुनें' : 'Select'}---</option>
-                      {subtypeOpts.map(o => <option key={o.value} value={o.value}>{lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}</option>)}
-                    </select>
+                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={subtypeOpts} lang={lang} />
                   </div>
                 );
               }
@@ -1634,10 +1625,7 @@ const renderPropertyStep = () => {
                 return (
                   <div key={field.field_key} className={wrapCls}>
                     {labelEl}
-                    <select value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={readOnly} className={cls}>
-                      <option value="">---{lang === 'hi' ? 'चुनें' : 'Select'}---</option>
-                      {opts.map(o => <option key={o.value ?? o} value={o.value ?? o}>{lang === 'hi' ? (o.label_hi || o.label_en || o) : (o.label_en || o.value || o)}</option>)}
-                    </select>
+                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={readOnly} className={cls} options={opts} lang={lang} />
                   </div>
                 );
               }
@@ -1711,19 +1699,14 @@ const renderPropertyStep = () => {
 
     if (opts.length > 0) {
       return (
-        <select
+        <SearchableSelect
           value={row.property_minor_category || ''}
-          onChange={(e) => handlePropertyRowChange(idx, 'property_minor_category', e.target.value)}
+          onChange={(val) => handlePropertyRowChange(idx, 'property_minor_category', val)}
           disabled={isDisabled}
-          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
-        >
-          <option value="">{lang === 'hi' ? '---चुनें---' : '---Select---'}</option>
-          {opts.map(o => (
-            <option key={o.value} value={o.value}>
-              {lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}
-            </option>
-          ))}
-        </select>
+          options={opts}
+          lang={lang}
+          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
+        />
       );
     }
 
@@ -1791,19 +1774,14 @@ const renderPropertyStep = () => {
 
                     {/* Property Category */}
                     <td className="px-3 py-2 min-w-[200px]">
-                      <select
+                      <SearchableSelect
                         value={row.property_major_category || ''}
-                        onChange={(e) => handlePropertyRowChange(idx, 'property_major_category', e.target.value)}
+                        onChange={(val) => handlePropertyRowChange(idx, 'property_major_category', val)}
                         disabled={readOnly}
-                        className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
-                      >
-                        <option value="">{lang === 'hi' ? '---चुनें---' : '---Select---'}</option>
-                        {majorCategoryOptions.map(o => (
-                          <option key={o.value} value={o.value}>
-                            {lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}
-                          </option>
-                        ))}
-                      </select>
+                        options={majorCategoryOptions}
+                        lang={lang}
+                        className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
+                      />
                     </td>
 
                     {/* Type of Property */}
@@ -1813,16 +1791,14 @@ const renderPropertyStep = () => {
 
                     {/* Status (Stolen / Recovered / Involved / Seized) */}
                     <td className="px-3 py-2 w-32">
-                      <select
+                      <SearchableSelect
                         value={row.property_stolen_recovered || 'Stolen'}
-                        onChange={(e) => handlePropertyRowChange(idx, 'property_stolen_recovered', e.target.value)}
+                        onChange={(val) => handlePropertyRowChange(idx, 'property_stolen_recovered', val)}
                         disabled={readOnly}
-                        className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
-                      >
-                        {getFieldOptions(allFields, 'property_stolen_recovered').map(o => (
-                          <option key={o.value} value={o.value}>{lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}</option>
-                        ))}
-                      </select>
+                        options={getFieldOptions(allFields, 'property_stolen_recovered')}
+                        lang={lang}
+                        className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
+                      />
                     </td>
 
                     {/* Description */}
@@ -3173,7 +3149,10 @@ const renderActionTakenStep = () => {
     };
   }, []);
 
-  // Fetch Major Heads dynamically from the database based on selected acts
+  // Fetch Major Heads dynamically from the database, scoped to the specific (act, section)
+  // pairs registered in the Acts & Sections table — not just the act(s) as a whole. Resolves
+  // each registered section label back to its section_code via actsSectionsRegistry (mirrors
+  // the same act_name/sections parsing ActsSectionsTable.jsx uses to render the pairs).
   useEffect(() => {
     let active = true;
     if (!values.act_name) {
@@ -3181,7 +3160,31 @@ const renderActionTakenStep = () => {
       return;
     }
 
-    api.get('/fields/lookup/major-heads', { params: { act_name: values.act_name } })
+    const rawActs = values.act_name.split(',').map((s) => s.trim()).filter(Boolean);
+    const acts = [];
+    for (const item of rawActs) {
+      if (/^\d{4}$/.test(item) && acts.length > 0) {
+        acts[acts.length - 1] = `${acts[acts.length - 1]}, ${item}`;
+      } else {
+        acts.push(item);
+      }
+    }
+    const secs = values.sections ? values.sections.split(',').map((s) => s.trim()).filter(Boolean) : [];
+
+    const sectionCodes = [];
+    acts.forEach((actLabel, i) => {
+      const secLabel = secs[i];
+      if (!secLabel) return;
+      const actEntry = actsSectionsRegistry.find(r => r.act === actLabel);
+      const code = actEntry?.sections.find(s => s.section === secLabel)?.section_code;
+      if (code) sectionCodes.push(code);
+    });
+
+    const params = sectionCodes.length > 0
+      ? { section_codes: sectionCodes.join(',') }
+      : { act_name: values.act_name };
+
+    api.get('/fields/lookup/major-heads', { params })
       .then(res => {
         if (active && res.data?.success && Array.isArray(res.data.data)) {
           setDbMajorHeadOptions(res.data.data);
@@ -3194,7 +3197,7 @@ const renderActionTakenStep = () => {
     return () => {
       active = false;
     };
-  }, [values.act_name]);
+  }, [values.act_name, values.sections, actsSectionsRegistry]);
 
   // Fetch Minor Heads dynamically from the database based on selected Major Head
   useEffect(() => {
