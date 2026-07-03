@@ -344,22 +344,24 @@ export const getFieldsForForm = async (req, res) => {
             sort_order = 429;
           }
         } else if (normalizedType === 'MISSING') {
-          if (f.section === 'general_info') {
+          if (f.field_key === 'status') {
+            section = 'investigation_officer';
+            sort_order = 60.5;
+          } else if (f.section === 'general_info') {
             section = 'general_info';
             if (f.field_key === 'source') sort_order = 10.1;
             else if (f.field_key === 'gd_no') sort_order = 10.2;
             else if (f.field_key === 'missing_type') sort_order = 10.3;
             else if (f.field_key === 'pcr_call_flag') sort_order = 10.4;
             else if (f.field_key === 'operator_name') sort_order = 10.5;
-            else if (f.field_key === 'status') sort_order = 10.6;
           } else if (f.section === 'person_details') {
             section = 'person_details';
             sort_order = 20.0 + f.sort_order * 0.1;
-          } else if (f.section === 'location_particulars') {
-            section = 'location_particulars';
+          } else if (f.section === 'missing_address') {
+            section = 'missing_address';
             sort_order = 30.0 + f.sort_order * 0.1;
-          } else if (f.section === 'physical_description') {
-            section = 'physical_description';
+          } else if (f.section === 'missing_physical') {
+            section = 'missing_physical';
             sort_order = 40.0 + f.sort_order * 0.1;
           } else if (f.section === 'contacts_assigned') {
             section = 'contacts_assigned';
@@ -666,6 +668,51 @@ export const getFieldsForForm = async (req, res) => {
           fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
         }
       );
+    } else if (normalizedType === 'MISSING') {
+      sections = [
+        {
+          section: 'general_info',
+          title_en: 'General Information',
+          title_hi: 'सामान्य जानकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'general_info' && !f.repeater_entity)
+        },
+        {
+          section: 'person_details',
+          title_en: 'Person Details',
+          title_hi: 'व्यक्ति विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'person_details' && !f.repeater_entity)
+        },
+        {
+          section: 'missing_address',
+          title_en: 'Address Details',
+          title_hi: 'पता विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'missing_address' && !f.repeater_entity)
+        },
+        {
+          section: 'missing_physical',
+          title_en: 'Physical Description',
+          title_hi: 'शारीरिक हुलिया',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'missing_physical' && !f.repeater_entity)
+        },
+        {
+          section: 'contacts_assigned',
+          title_en: 'Informant Contact',
+          title_hi: 'सूचना प्रदाता संपर्क',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'contacts_assigned' && !f.repeater_entity)
+        },
+        {
+          section: 'investigation_officer',
+          title_en: 'Investigating Officer',
+          title_hi: 'जांच अधिकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
+        }
+      ];
     } else if (normalizedType === 'UIDB') {
       sections = [
         {

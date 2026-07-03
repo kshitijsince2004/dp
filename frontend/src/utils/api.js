@@ -981,20 +981,7 @@ const formSchemas = {
           validation_rules: { required: true }
         },
         { field_key: 'pcr_call_flag', field_type: 'BOOLEAN', label_en: 'PCR Call (Y/N)', label_hi: 'पीसीआर कॉल (हाँ/नहीं)', validation_rules: { required: false } },
-        { field_key: 'operator_name', field_type: 'TEXT', label_en: 'Operator Name to Whom MPS', label_hi: 'ऑपरेटर का नाम जिसे एमपीएस', validation_rules: { required: false } },
-        {
-          field_key: 'status',
-          field_type: 'SELECT',
-          label_en: 'Current Log Status',
-          label_hi: 'वर्तमान रिकॉर्ड स्थिति',
-          options: [
-            { value: 'Active', label_en: 'Active Search Ongoing', label_hi: 'सक्रिय खोज जारी' },
-            { value: 'Traced', label_en: 'Traced & Reunited', label_hi: 'ढूंढ लिया गया / परिजनों से मिलाया गया' },
-            { value: 'Referred', label_en: 'Referred to Missing Persons Bureau', label_hi: 'लापता व्यक्ति ब्यूरो को संदर्भित' },
-            { value: 'Closed', label_en: 'Closed Case', label_hi: 'मामला बंद' }
-          ],
-          validation_rules: { required: true }
-        }
+        { field_key: 'operator_name', field_type: 'TEXT', label_en: 'Operator Name to Whom MPS', label_hi: 'ऑपरेटर का नाम जिसे एमपीएस', validation_rules: { required: false } }
       ]
     },
     {
@@ -1329,8 +1316,7 @@ const formSchemas = {
       title_hi: 'सूचना प्रदाता संपर्क',
       fields: [
         { field_key: 'informant_name', field_type: 'TEXT', label_en: 'Complainant / Informant Full Name', label_hi: 'शिकायतकर्ता / सूचना प्रदाता का नाम', validation_rules: { required: true } },
-        { field_key: 'informant_contact', field_type: 'TEXT', label_en: 'Informant Contact Telephone/Mobile', label_hi: 'सूचना प्रदाता का संपर्क नंबर', validation_rules: { required: true } },
-        { field_key: 'zipnet_no', field_type: 'TEXT', label_en: 'ZIPNET No.', label_hi: 'जिपनेट संख्या', validation_rules: { required: false } }
+        { field_key: 'informant_contact', field_type: 'TEXT', label_en: 'Informant Contact Telephone/Mobile', label_hi: 'सूचना प्रदाता का संपर्क नंबर', validation_rules: { required: true } }
       ]
     },
     {
@@ -1342,7 +1328,20 @@ const formSchemas = {
         { field_key: 'io_rank', field_type: 'TEXT', label_en: 'IO Rank', label_hi: 'जांच अधिकारी का पद', validation_rules: { required: false } },
         { field_key: 'io_pis', field_type: 'TEXT', label_en: 'IO PIS No.', label_hi: 'जांच अधिकारी का पीआईएस नंबर', validation_rules: { required: false } },
         { field_key: 'io_mobile', field_type: 'TEXT', label_en: 'IO Mobile No.', label_hi: 'जांच अधिकारी का मोबाइल नंबर', validation_rules: { required: false } },
-        { field_key: 'remarks', field_type: 'TEXTAREA', label_en: 'Remarks', label_hi: 'टिप्पणी', validation_rules: { required: false }, full_width: true }
+        { field_key: 'remarks', field_type: 'TEXTAREA', label_en: 'Remarks', label_hi: 'टिप्पणी', validation_rules: { required: false }, full_width: true },
+        {
+          field_key: 'status',
+          field_type: 'SELECT',
+          label_en: 'Current Log Status',
+          label_hi: 'वर्तमान रिकॉर्ड स्थिति',
+          options: [
+            { value: 'Active', label_en: 'Active Search Ongoing', label_hi: 'सक्रिय खोज जारी' },
+            { value: 'Traced', label_en: 'Traced & Reunited', label_hi: 'ढूंढ लिया गया / परिजनों से मिलाया गया' },
+            { value: 'Referred', label_en: 'Referred to Missing Persons Bureau', label_hi: 'लापता व्यक्ति ब्यूरो को संदर्भित' },
+            { value: 'Closed', label_en: 'Closed Case', label_hi: 'मामला बंद' }
+          ],
+          validation_rules: { required: true }
+        }
       ]
     }
   ],

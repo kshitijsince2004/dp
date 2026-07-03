@@ -76,6 +76,7 @@ const SECTION_KEY_ORDER = {
   // will be surfaced inside the arrested-person modal to avoid repetition.
   ARREST: ['select_fir', 'general_info', 'arrested_info', 'investigation_officer'],
   UIDB:   ['general_info', 'corpse_desc', 'inquest_details', 'investigation_officer'],
+  MISSING: ['general_info', 'person_details', 'missing_address', 'missing_physical', 'contacts_assigned', 'investigation_officer'],
 };
 
 // Repeater sections need is_repeater/entity_type/person_type so the person/property
