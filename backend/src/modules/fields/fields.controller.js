@@ -629,28 +629,28 @@ export const getFieldsForForm = async (req, res) => {
           entity_type: 'property',
           fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')
         },
-        {
-          section: 'intimation_details',
-          title_en: 'Intimation Details',
-          title_hi: 'सूचना का विवरण',
-          is_repeater: true,
-          entity_type: 'person',
-          person_type: 'INTIMATED',
-          sub_tabs: [
-            {
-              id: 'personal',
-              title_en: 'Personal Information',
-              title_hi: 'व्यक्तिगत जानकारी',
-              fields: filteredFields.filter(f => f.section === 'intimation_details')
-            },
-            {
-              id: 'address',
-              title_en: 'Address',
-              title_hi: 'पता',
-              fields: filteredFields.filter(f => f.section === 'intimation_address')
-            }
-          ]
-        },
+        // {
+        //   section: 'intimation_details',
+        //   title_en: 'Intimation Details',
+        //   title_hi: 'सूचना का विवरण',
+        //   is_repeater: true,
+        //   entity_type: 'person',
+        //   person_type: 'INTIMATED',
+        //   sub_tabs: [
+        //     {
+        //       id: 'personal',
+        //       title_en: 'Personal Information',
+        //       title_hi: 'व्यक्तिगत जानकारी',
+        //       fields: filteredFields.filter(f => f.section === 'intimation_details')
+        //     },
+        //     {
+        //       id: 'address',
+        //       title_en: 'Address',
+        //       title_hi: 'पता',
+        //       fields: filteredFields.filter(f => f.section === 'intimation_address')
+        //     }
+        //   ]
+        // },
         {
           section: 'procedure_slips',
           title_en: 'Procedural Slips',
@@ -688,13 +688,6 @@ export const getFieldsForForm = async (req, res) => {
           title_hi: 'पूछताछ विवरण',
           is_repeater: false,
           fields: filteredFields.filter(f => f.section === 'inquest_details' && !f.repeater_entity)
-        },
-        {
-          section: 'investigation_officer',
-          title_en: 'Investigating Officer',
-          title_hi: 'जांच अधिकारी',
-          is_repeater: false,
-          fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
         }
       ];
     } else {

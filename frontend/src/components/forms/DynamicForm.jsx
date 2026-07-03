@@ -72,7 +72,7 @@ function getFieldOptions(fieldsArr, key) {
  */
 const SECTION_KEY_ORDER = {
   CASE:   ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
+  ARREST: ['select_fir', 'general_info', 'arrested_info', 'custody_status', 'property_details', 'investigation_officer'],
   UIDB:   ['general_info', 'corpse_desc', 'inquest_details', 'investigation_officer'],
 };
 
@@ -191,10 +191,10 @@ export default function DynamicForm({
   const navigate = useNavigate();
 
   const { user } = useAuthStore();
-  const { schema, isLoading, isError, schemaError } = useFormSchema(recordType);
+  const { schema, isLoading, isError, schemaError } = useFormSchema(recordType, caseType);
   // Always fetch ARREST schema so the arrested-persons modal has access to all ARREST fields
   // regardless of what the main form's recordType is (e.g. CASE form embedding arrest modal).
-  const { schema: arrestSchema } = useFormSchema('ARREST');
+  const { schema: arrestSchema } = useFormSchema('ARREST', caseType);
   const activeRecordIdRef = useRef(initialValues?.id || null);
 
   // FIR Search State
