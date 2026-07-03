@@ -1025,8 +1025,16 @@ export const listMajorHeads = async (req, res) => {
       }
 
       if (customNames.length > 0) {
+        const nameVariants = [];
+        for (const name of customNames) {
+          nameVariants.push(name);
+          if (name.includes(',')) {
+            nameVariants.push(name.replace(/,\s*/g, ','));
+            nameVariants.push(name.replace(/,\s*/g, ', '));
+          }
+        }
         const customActs = await db('excel_acts')
-          .whereIn('act_long', customNames)
+          .whereIn('act_long', nameVariants)
           .select('act_cd');
         actCds.push(...customActs.map(a => a.act_cd));
       }
