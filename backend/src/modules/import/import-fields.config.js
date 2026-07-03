@@ -240,9 +240,9 @@ export const arrestPropertyFields = [
   // property_major_category: no static options — template builder fetches live from DB.
   // property_minor_category: uses INDIRECT() cascade in Excel.
   { field_key: 'property_major_category', label_en: 'Property Major Category', label_hi: 'संपत्ति मुख्य श्रेणी', required: false },
+  { field_key: 'property_minor_category', label_en: 'Type of property', label_hi: 'संपत्ति का प्रकार', required: false },
   { field_key: 'property_details', label_en: 'Property Details / Description', label_hi: 'संपत्ति का विवरण', required: false },
   { field_key: 'property_stolen_recovered', label_en: 'Property Stolen / Recovered', label_hi: 'संपत्ति चोरी / बरामद स्थिति', required: false, options: ['Stolen', 'Recovered', 'Involved', 'Seized'] },
-  { field_key: 'property_minor_category', label_en: 'Type of property', label_hi: 'संपत्ति का प्रकार', required: false },
   { field_key: 'property_value', label_en: 'Property Value in inr', label_hi: 'संपत्ति का मूल्य (INR में)', required: false }
   // { field_key: 'property_phone_number', label_en: 'Phone Number', label_hi: 'फोन नंबर', required: false },
   // { field_key: 'phone_make', label_en: 'Phone Make / Brand', label_hi: 'फोन का ब्रांड', required: false },

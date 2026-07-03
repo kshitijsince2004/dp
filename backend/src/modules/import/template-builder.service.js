@@ -21,6 +21,132 @@ import {
 } from './import-fields.config.js';
 import * as fieldsService from '../fields/fields.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from '../fields/classificationSources.config.js';
+import DataValidationsXform from 'exceljs/lib/xlsx/xform/sheet/data-validations-xform.js';
+import exceljsUtils from 'exceljs/lib/utils/utils.js';
+
+// ── ExcelJS data-validation optimiser patch (ExcelJS 3.10.0) ──────────────────────────────
+// ExcelJS writes one <dataValidation> per cell, then merges alike cells into rectangular
+// ranges. Its stock optimiser (optimiseDataValidations) has two problems for our per-cell
+// cascade writes:
+//   1. It sorts cell addresses as TEXT, so "B10" sorts before "B5". Combined with a downward
+//      merge that does NOT skip already-merged cells, a fully-identical column (e.g. the Act
+//      column, every row = OPT_ACTS_LIST) gets emitted as OVERLAPPING ranges — we observed
+//      "B5:B500" and "B10:B500" both written. Overlapping data-validation ranges are an
+//      invalid-content defect: desktop Excel silently repairs it (dropping validations on
+//      some builds), and Excel-online / LibreOffice strip them outright → empty dropdowns.
+//   2. The per-row cascade formulas ($B5, $B6, …) never merge, leaving ~1,500 single-cell
+//      validations that bloat the file and slow load.
+// This patched optimiser sorts NUMERICALLY (column-major, then row) and makes both the
+// downward and rightward growth skip cells that were already claimed, so every run collapses
+// into exactly one non-overlapping range. It is otherwise a faithful re-implementation of the
+// stock algorithm, so the emitted sqref/formulae are identical in shape to what Excel itself
+// produces on save.
+function patchedOptimiseDataValidations(model) {
+  const parse = (address) => {
+    const m = /^([A-Z]+)(\d+)$/.exec(address);
+    if (!m) return null;
+    let col = 0;
+    for (let i = 0; i < m[1].length; i++) col = col * 26 + (m[1].charCodeAt(i) - 64);
+    return { col, row: parseInt(m[2], 10) };
+  };
+  const encode = (col, row) => {
+    let s = '';
+    let n = col;
+    while (n > 0) { const t = (n - 1) % 26; s = String.fromCharCode(t + 65) + s; n = (n - t - 1) / 26; }
+    return `${s}${row}`;
+  };
+  const deepEqual = (a, b) => {
+    if (a === b) return true;
+    if (typeof a !== typeof b || a === null || b === null || typeof a !== 'object') return false;
+    const ka = Object.keys(a);
+    const kb = Object.keys(b);
+    if (ka.length !== kb.length) return false;
+    return ka.every((k) => deepEqual(a[k], b[k]));
+  };
+
+  const cells = [];
+  for (const address of Object.keys(model)) {
+    const pos = parse(address);
+    if (!pos) continue; // ignore any pre-existing range keys — nothing in our model uses them
+    cells.push({ address, col: pos.col, row: pos.row, dv: model[address], marked: false });
+  }
+  const byAddr = {};
+  cells.forEach((c) => { byAddr[c.address] = c; });
+  cells.sort((a, b) => a.col - b.col || a.row - b.row);
+
+  const alive = (col, row) => {
+    const c = byAddr[encode(col, row)];
+    return c && !c.marked ? c : null;
+  };
+
+  const out = [];
+  for (const cell of cells) {
+    if (cell.marked) continue;
+    // grow downward through unclaimed, identical cells
+    let height = 1;
+    while (true) {
+      const n = alive(cell.col, cell.row + height);
+      if (n && deepEqual(n.dv, cell.dv)) height++;
+      else break;
+    }
+    // grow rightward only while every cell of the current height matches and is unclaimed
+    let width = 1;
+    while (true) {
+      let ok = true;
+      for (let i = 0; i < height; i++) {
+        const n = alive(cell.col + width, cell.row + i);
+        if (!n || !deepEqual(n.dv, cell.dv)) { ok = false; break; }
+      }
+      if (ok) width++; else break;
+    }
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
+        const n = byAddr[encode(cell.col + j, cell.row + i)];
+        if (n) n.marked = true;
+      }
+    }
+    const sqref = (height > 1 || width > 1)
+      ? `${cell.address}:${encode(cell.col + width - 1, cell.row + height - 1)}`
+      : cell.address;
+    out.push({ ...cell.dv, sqref });
+  }
+  return out;
+}
+
+// Replace the xform's render with one that uses the patched optimiser. Serialization below is
+// a verbatim copy of ExcelJS 3.10.0's DataValidationsXform.render body.
+DataValidationsXform.prototype.render = function render(xmlStream, model) {
+  const optimizedModel = patchedOptimiseDataValidations(model);
+  if (optimizedModel.length) {
+    xmlStream.openNode('dataValidations', { count: optimizedModel.length });
+    optimizedModel.forEach((value) => {
+      xmlStream.openNode('dataValidation');
+      if (value.type !== 'any') {
+        xmlStream.addAttribute('type', value.type);
+        if (value.operator && value.type !== 'list' && value.operator !== 'between') {
+          xmlStream.addAttribute('operator', value.operator);
+        }
+        if (value.allowBlank) xmlStream.addAttribute('allowBlank', '1');
+      }
+      if (value.showInputMessage) xmlStream.addAttribute('showInputMessage', '1');
+      if (value.promptTitle) xmlStream.addAttribute('promptTitle', value.promptTitle);
+      if (value.prompt) xmlStream.addAttribute('prompt', value.prompt);
+      if (value.showErrorMessage) xmlStream.addAttribute('showErrorMessage', '1');
+      if (value.errorStyle) xmlStream.addAttribute('errorStyle', value.errorStyle);
+      if (value.errorTitle) xmlStream.addAttribute('errorTitle', value.errorTitle);
+      if (value.error) xmlStream.addAttribute('error', value.error);
+      xmlStream.addAttribute('sqref', value.sqref);
+      (value.formulae || []).forEach((formula, index) => {
+        xmlStream.openNode(`formula${index + 1}`);
+        if (value.type === 'date') xmlStream.writeText(exceljsUtils.dateToExcel(new Date(formula)));
+        else xmlStream.writeText(formula);
+        xmlStream.closeNode();
+      });
+      xmlStream.closeNode();
+    });
+    xmlStream.closeNode();
+  }
+};
 
 function slugify(text) {
   return text.toString().toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]+/g, '');
@@ -195,6 +321,23 @@ async function buildLiveLookups(recordType) {
   // exactly the same options as the interactive form.
   const toOpt = (labelCol) => (r) => ({ value: r[labelCol], label: r[labelCol] });
 
+  // Get all Acts and group Sections per Act dynamically
+  const allActs = await fieldsService.getActs();
+  const dbSections = await db('excel_sections')
+    .select('act_sec_cd', 'section')
+    .distinct()
+    .orderBy('section', 'asc');
+
+  const sectionsByActCd = {};
+  for (const row of dbSections) {
+    if (!row.act_sec_cd) continue;
+    const cd = String(row.act_sec_cd);
+    if (!sectionsByActCd[cd]) {
+      sectionsByActCd[cd] = [];
+    }
+    sectionsByActCd[cd].push({ value: row.section, label: row.section });
+  }
+
   // Sections per act group
   const ipcSections       = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES.IPC)).map(toOpt('section'));
   const exciseSections    = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES['Delhi Excise Act'])).map(toOpt('section'));
@@ -259,14 +402,38 @@ async function buildLiveLookups(recordType) {
         // Default branch (excel_other_property_items) — raw {property_cd, property}
         items = raw.map(r => ({ value: r.property, label: r.property }));
       } else if (Array.isArray(raw)) {
-        // GENERIC branches already return {value, label}
-        items = raw;
+        // GENERIC branches return {value: <numeric code>, label: <display name>} — the
+        // Excel cell must show (and store) the NAME, not the code, so use the label on
+        // both sides. (Leaving the code as value made e.g. DRUGS/NARCOTIC DRUGS render
+        // as 392/393/394… in the Type of property dropdown.)
+        items = raw.map(r => {
+          const name = (r && typeof r === 'object') ? (r.label ?? r.value) : r;
+          return { value: name, label: name };
+        });
       }
       propItemsByCategory[cat.label] = items;
     } catch (err) {
       logger.error(`buildLiveLookups: failed to fetch items for category ${cat.label}`, { err });
       propItemsByCategory[cat.label] = [];
     }
+  }
+
+  // Every section's major heads, DB-driven
+  const sectionMajorMappings = await db('excel_sections as s')
+    .join('excel_major_minor_mapping as m', 's.section_code', 'm.section_code')
+    .join('excel_major_heads as mh', 'm.major_head_code', 'mh.major_head_code')
+    .select('s.section', 'mh.major_head')
+    .distinct()
+    .orderBy('s.section', 'asc')
+    .orderBy('mh.major_head', 'asc');
+
+  const majorHeadsBySectionLabel = {};
+  for (const row of sectionMajorMappings) {
+    if (!row.section) continue;
+    if (!majorHeadsBySectionLabel[row.section]) {
+      majorHeadsBySectionLabel[row.section] = [];
+    }
+    majorHeadsBySectionLabel[row.section].push({ value: row.major_head, label: row.major_head });
   }
 
   // Status options — record-type-specific (each template covers only one record type)
@@ -301,6 +468,10 @@ async function buildLiveLookups(recordType) {
     _propCategoryLabels:         propCategories.map(c => c.label),
     _minorHeadsByMajorLabel:     minorHeadsByMajorLabel,
     _minorHeadMajorLabels:       Object.keys(minorHeadsByMajorLabel),
+    _majorHeadsBySectionLabel:   majorHeadsBySectionLabel,
+    _majorHeadSectionLabels:     Object.keys(majorHeadsBySectionLabel),
+    _allActs:                    allActs,
+    _sectionsByActCd:            sectionsByActCd,
   };
 }
 
@@ -367,17 +538,58 @@ function createLookupsSheet(workbook, liveLookups) {
     writeList(fk, opts, NR_PREFIX + fk.toUpperCase());
   }
 
-  // 2. Write one named range per property category (for the INDIRECT cascade)
-  // Named range name = OPT_ + slugified category label (upper-case, spaces→underscores)
+  // 2. Write one named range per property category (for the INDIRECT cascade) stacked vertically
+  const propItemsCol = col;
+  col++; // reserve column for property type lists
+  const propCatToTypeNRRows = [];
+  let currentPropRow = 2;
+
+  ws.getCell(1, propItemsCol).value = 'PROP_TYPE_VALS';
+
   for (const catLabel of (liveLookups._propCategoryLabels || [])) {
     const items = (liveLookups._propItemsByCategory || {})[catLabel] || [];
     if (items.length === 0) continue;
-    // slugify: upper-case, non-alphanumeric runs → single underscore, trim
+    
+    const values = items.map(o => (o && typeof o === 'object' ? o.value : String(o)));
+    const startRow = currentPropRow;
+    const endRow = currentPropRow + values.length - 1;
+    
+    values.forEach((v, idx) => {
+      ws.getCell(startRow + idx, propItemsCol).value = v;
+    });
+    
+    const colLetter = numToColLetter(propItemsCol);
+    const rangeRef = `'_Lookups'!$${colLetter}$${startRow}:$${colLetter}$${endRow}`;
     const slug = catLabel.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
-    const nrName = NR_PREFIX + slug;
-    const colKey = `__prop_${catLabel}`;
-    writeList(colKey, items, nrName);
+    const nrName = `${NR_PREFIX}PROP_CAT_${slug}`;
+    
+    try {
+      workbook.definedNames.add(rangeRef, nrName);
+    } catch (err) {
+      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+    }
+    
+    propCatToTypeNRRows.push([catLabel, nrName]);
     slugToNR[slug] = nrName;
+    currentPropRow = endRow + 1;
+  }
+
+  if (propCatToTypeNRRows.length > 0) {
+    const labelCol = col;
+    const nrCol = col + 1;
+    propCatToTypeNRRows.forEach((row, i) => {
+      ws.getCell(i + 1, labelCol).value = row[0];
+      ws.getCell(i + 1, nrCol).value = row[1];
+    });
+    const labelLetter = numToColLetter(labelCol);
+    const nrLetter = numToColLetter(nrCol);
+    const tableRef = `'_Lookups'!$${labelLetter}$1:$${nrLetter}$${propCatToTypeNRRows.length}`;
+    try {
+      workbook.definedNames.add(tableRef, 'PROP_CAT_TO_TYPE_NR');
+    } catch (err) {
+      logger.error('createLookupsSheet: failed to register PROP_CAT_TO_TYPE_NR', { err });
+    }
+    col += 2;
   }
 
   // 3. Write one named range per major head (for the minor_head INDIRECT cascade) —
@@ -415,7 +627,122 @@ function createLookupsSheet(workbook, liveLookups) {
     col += 2;
   }
 
-  return { namedRangeMap, slugToNR, hasMinorHeadCascade: majorHeadToNRRows.length > 0 };
+  // 4. Write Section Major Heads stacked vertically in a single column
+  const secMajorCol = col;
+  col++; // reserve column for section major heads
+  const sectionToMHNRRows = [];
+  let currentSecMHRow = 2;
+
+  ws.getCell(1, secMajorCol).value = 'SEC_MAJOR_VALS';
+
+  for (const sectionLabel of (liveLookups._majorHeadSectionLabels || [])) {
+    const items = (liveLookups._majorHeadsBySectionLabel || {})[sectionLabel] || [];
+    if (items.length === 0) continue;
+    
+    const values = items.map(o => (o && typeof o === 'object' ? o.value : String(o)));
+    const startRow = currentSecMHRow;
+    const endRow = currentSecMHRow + values.length - 1;
+    
+    values.forEach((v, idx) => {
+      ws.getCell(startRow + idx, secMajorCol).value = v;
+    });
+    
+    const colLetter = numToColLetter(secMajorCol);
+    const rangeRef = `'_Lookups'!$${colLetter}$${startRow}:$${colLetter}$${endRow}`;
+    const slug = sectionLabel.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
+    const nrName = `${NR_PREFIX}SEC_${slug}`;
+    
+    try {
+      workbook.definedNames.add(rangeRef, nrName);
+    } catch (err) {
+      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+    }
+    
+    sectionToMHNRRows.push([sectionLabel, nrName]);
+    currentSecMHRow = endRow + 1;
+  }
+
+  if (sectionToMHNRRows.length > 0) {
+    const labelCol = col;
+    const nrCol = col + 1;
+    sectionToMHNRRows.forEach((row, i) => {
+      ws.getCell(i + 1, labelCol).value = row[0];
+      ws.getCell(i + 1, nrCol).value = row[1];
+    });
+    const labelLetter = numToColLetter(labelCol);
+    const nrLetter = numToColLetter(nrCol);
+    const tableRef = `'_Lookups'!$${labelLetter}$1:$${nrLetter}$${sectionToMHNRRows.length}`;
+    try {
+      workbook.definedNames.add(tableRef, 'SECTION_TO_MAJOR_NR');
+    } catch (err) {
+      logger.error('createLookupsSheet: failed to register SECTION_TO_MAJOR_NR', { err });
+    }
+    col += 2;
+  }
+
+  // 5. Write dynamic list of all Acts
+  const actNames = (liveLookups._allActs || []).map(r => r.act_long);
+  writeList('__all_acts_list', actNames.map(name => ({ value: name, label: name })), 'OPT_ACTS_LIST');
+
+  // 6. Write Act Sections stacked vertically in a single column
+  const actSectionsCol = col;
+  col++; // reserve column for act sections
+  const actToSecNRRows = [];
+  let currentSecRow = 2;
+
+  ws.getCell(1, actSectionsCol).value = 'ACT_SECTIONS_VALS';
+
+  for (const act of (liveLookups._allActs || [])) {
+    const cd = String(act.act_cd);
+    const items = (liveLookups._sectionsByActCd || {})[cd] || [];
+    if (items.length === 0) continue;
+    
+    const values = items.map(o => (o && typeof o === 'object' ? o.value : String(o)));
+    const startRow = currentSecRow;
+    const endRow = currentSecRow + values.length - 1;
+    
+    values.forEach((v, idx) => {
+      ws.getCell(startRow + idx, actSectionsCol).value = v;
+    });
+    
+    const colLetter = numToColLetter(actSectionsCol);
+    const rangeRef = `'_Lookups'!$${colLetter}$${startRow}:$${colLetter}$${endRow}`;
+    const nrName = `${NR_PREFIX}ACT_${cd}`;
+    
+    try {
+      workbook.definedNames.add(rangeRef, nrName);
+    } catch (err) {
+      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+    }
+    
+    actToSecNRRows.push([act.act_long, nrName]);
+    currentSecRow = endRow + 1;
+  }
+
+  if (actToSecNRRows.length > 0) {
+    const labelCol = col;
+    const nrCol = col + 1;
+    actToSecNRRows.forEach((row, i) => {
+      ws.getCell(i + 1, labelCol).value = row[0];
+      ws.getCell(i + 1, nrCol).value = row[1];
+    });
+    const labelLetter = numToColLetter(labelCol);
+    const nrLetter = numToColLetter(nrCol);
+    const tableRef = `'_Lookups'!$${labelLetter}$1:$${nrLetter}$${actToSecNRRows.length}`;
+    try {
+      workbook.definedNames.add(tableRef, 'ACT_TO_SECTIONS_NR');
+    } catch (err) {
+      logger.error('createLookupsSheet: failed to register ACT_TO_SECTIONS_NR', { err });
+    }
+    col += 2;
+  }
+
+  return { 
+    namedRangeMap, 
+    slugToNR, 
+    hasMinorHeadCascade: majorHeadToNRRows.length > 0,
+    hasSectionMajorCascade: sectionToMHNRRows.length > 0
+  };
 }
 
 
@@ -435,6 +762,17 @@ export class TemplateBuilderService {
 
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(templatePath);
+
+    // Wipe every data validation inherited from the base .xlsx. All real dropdowns are
+    // (re)written below from live DB data, so anything already in the file is stale — and
+    // after the column deletes/inserts below, a leftover can end up on the WRONG column
+    // (e.g. the base Property sheet's status list surfacing as a dropdown on Property
+    // Value, or a hardcoded "Vehicle,Mobile Phone,…" list below row 500 on Category).
+    workbook.worksheets.forEach(ws => {
+      if (ws.dataValidations && ws.dataValidations.model) {
+        ws.dataValidations.model = {};
+      }
+    });
 
     // ── Fetch live lookups from DB ────────────────────────────────────────────────
     let liveLookups = {};
@@ -607,6 +945,19 @@ export class TemplateBuilderService {
           }
         }
 
+        // Keep "Type of property" (minor category) immediately to the right of Property
+        // Category so the dependent pair sits adjacent while filling — otherwise it lands
+        // at the end of the section, several unrelated columns away from its parent.
+        if (field.field_key === 'property_minor_category') {
+          let majorCatIdx = -1;
+          row1.eachCell({ includeEmpty: true }, (cell, colNum) => {
+            if (cell.value === 'property_major_category') majorCatIdx = colNum;
+          });
+          if (majorCatIdx !== -1) {
+            targetColIndex = majorCatIdx + 1;
+          }
+        }
+
         // 3. Insert the new column
         this.insertColumnAt(worksheet, targetColIndex);
 
@@ -773,22 +1124,15 @@ export class TemplateBuilderService {
       if (majorCatCol === -1 || minorCatCol === -1) return; // sheet doesn't have both
 
       const majorColLetter = numToColLetter(majorCatCol);
-      // INDIRECT formula: looks up OPT_<SLUG_OF_SELECTED_CATEGORY>
-      // The slug transform in Excel mirrors the JS slugify: UPPER + replace non-alphanum with _
-      // Excel formula equivalent: SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(UPPER(X5), " ", "_"), "-", "_"), "&", "_")
-      // Simplified: SUBSTITUTE(UPPER(X5),[non-alpha]->"_") is hard in a single Excel formula.
-      // We use: INDIRECT(CONCATENATE("OPT_", SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(UPPER(<ref>)," ","_"),"-","_"),"&","_")))
-      // This covers spaces, hyphens, ampersands (the 3 most common special chars in category names).
+      const propFormula = `INDIRECT(VLOOKUP($${majorColLetter}5,PROP_CAT_TO_TYPE_NR,2,FALSE))`;
       for (let rIdx = 5; rIdx <= 500; rIdx++) {
         const cell = ws.getCell(rIdx, minorCatCol);
         if (cell.dataValidation && cell.dataValidation.formulae && cell.dataValidation.formulae[0] === '"__INDIRECT_PENDING__"') {
-          const majorRef = `$${majorColLetter}${rIdx}`;
-          const formula = `INDIRECT(CONCATENATE("${NR_PREFIX}",SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(UPPER(${majorRef})," ","_"),"-","_"),"&","_")))`;
           cell.dataValidation = {
             type: 'list',
             allowBlank: true,
-            showErrorMessage: false, // INDIRECT can be empty if no category is selected
-            formulae: [formula]
+            showErrorMessage: false,
+            formulae: [propFormula]
           };
         }
       }
@@ -816,53 +1160,31 @@ export class TemplateBuilderService {
 
         const actsList = ['IPC', 'Delhi Excise Act', 'Arms Act', 'Gambling Act', 'Other Act', 'CrPC', 'BNSS', 'BNS'];
 
+        // Every row in a cascade column gets the SAME validation object (parent ref anchored
+        // at the first data row, e.g. $B5). Excel re-anchors that row-relative reference per
+        // row, and because the objects are byte-identical the patched optimiser collapses each
+        // column into a single clean range (C5:C500 …) — the exact shape Excel produces on save.
+        const secFormula = `INDIRECT(VLOOKUP($${actLetter}5,ACT_TO_SECTIONS_NR,2,FALSE))`;
+        const majFormula = `INDIRECT(VLOOKUP($${secLetter}5,SECTION_TO_MAJOR_NR,2,FALSE))`;
+        const minFormula = `INDIRECT(VLOOKUP($${majLetter}5,MAJOR_HEAD_TO_MINOR_NR,2,FALSE))`;
+
         for (let rIdx = 5; rIdx <= 500; rIdx++) {
-          // 1. Act Column Validation (inline list)
+          // 1. Act — flat list of all Acts (OPT_ACTS_LIST named range)
           actSectionWS.getCell(rIdx, actCol).dataValidation = {
-            type: 'list',
-            allowBlank: true,
-            formulae: [`"${actsList.join(',')}"`]
+            type: 'list', allowBlank: true, formulae: ['OPT_ACTS_LIST']
           };
-
-          // 2. Sections Column Validation (dependent on Act)
-          const actRef = `$${actLetter}${rIdx}`;
-          const secFormula = `IF(${actRef}="IPC",OPT_IPC_SECTIONS,IF(${actRef}="Delhi Excise Act",OPT_EXCISE_SECTIONS,IF(${actRef}="Arms Act",OPT_ARMS_SECTIONS,IF(${actRef}="Gambling Act",OPT_GAMBLING_SECTIONS,OPT_SECTIONS))))`;
+          // 2. Sections — dependent on Act (VLOOKUP into ACT_TO_SECTIONS_NR → INDIRECT)
           actSectionWS.getCell(rIdx, secCol).dataValidation = {
-            type: 'list',
-            allowBlank: true,
-            showErrorMessage: false,
-            formulae: [secFormula]
+            type: 'list', allowBlank: true, showErrorMessage: false, formulae: [secFormula]
           };
-
-          // 3. Major Head Column Validation (dependent on Act)
-          const majFormula = `IF(${actRef}="IPC",OPT_IPC_MAJOR_HEAD,IF(${actRef}="Delhi Excise Act",OPT_EXCISE_MAJOR_HEAD,IF(${actRef}="Arms Act",OPT_ARMS_MAJOR_HEAD,IF(${actRef}="Gambling Act",OPT_GAMBLING_MAJOR_HEAD,OPT_CRIME_HEAD))))`;
+          // 3. Major Head — dependent on Section (VLOOKUP into SECTION_TO_MAJOR_NR → INDIRECT)
           actSectionWS.getCell(rIdx, majCol).dataValidation = {
-            type: 'list',
-            allowBlank: true,
-            showErrorMessage: false,
-            formulae: [majFormula]
+            type: 'list', allowBlank: true, showErrorMessage: false, formulae: [majFormula]
           };
-
-          // 4. Minor Head Column Validation (dependent on Major Head) — INDIRECT cascade
-          // driven entirely by whatever major heads actually have minor heads in
-          // excel_minor_heads (via the OPT_MH_<slug> named ranges written in
-          // createLookupsSheet), not a hardcoded list of a handful of crime types.
-          // Looks up the exact named range name via VLOOKUP rather than recomputing the
-          // slug in-formula, since major head labels can contain characters a chain of
-          // SUBSTITUTE() calls can't fold back to the same slug the JS side derived.
+          // 4. Minor Head — dependent on Major Head (VLOOKUP into MAJOR_HEAD_TO_MINOR_NR → INDIRECT)
           if (hasMinorHeadCascade) {
-            const majHeadRef = `$${majLetter}${rIdx}`;
-            // IFERROR(...,"") — when the selected major head has no minor heads (e.g. a
-            // local_head-sourced value under Other Act/CrPC/BNSS/BNS, or the rare IPC head
-            // with none in excel_minor_heads), VLOOKUP finds no match and INDIRECT(#N/A)
-            // would otherwise surface as a raw "#N/A" list item. Degrade to an empty list
-            // instead of an error.
-            const minFormula = `IFERROR(INDIRECT(VLOOKUP(${majHeadRef},MAJOR_HEAD_TO_MINOR_NR,2,FALSE)),"")`;
             actSectionWS.getCell(rIdx, minCol).dataValidation = {
-              type: 'list',
-              allowBlank: true,
-              showErrorMessage: false,
-              formulae: [minFormula]
+              type: 'list', allowBlank: true, showErrorMessage: false, formulae: [minFormula]
             };
           }
         }
@@ -930,30 +1252,32 @@ export class TemplateBuilderService {
     if (actCol === -1 || secCol === -1 || majCol === -1 || minCol === -1) return;
 
     const actLetter = numToColLetter(actCol);
+    const secLetter = numToColLetter(secCol);
     const majLetter = numToColLetter(majCol);
-    const actsList = ['IPC', 'Delhi Excise Act', 'Arms Act', 'Gambling Act', 'Other Act', 'CrPC', 'BNSS', 'BNS'];
+
+    const secFormula = `INDIRECT(VLOOKUP($${actLetter}5,ACT_TO_SECTIONS_NR,2,FALSE))`;
+    const majFormula = `INDIRECT(VLOOKUP($${secLetter}5,SECTION_TO_MAJOR_NR,2,FALSE))`;
+    const minFormula = `INDIRECT(VLOOKUP($${majLetter}5,MAJOR_HEAD_TO_MINOR_NR,2,FALSE))`;
 
     for (let rIdx = 5; rIdx <= 500; rIdx++) {
       worksheet.getCell(rIdx, actCol).dataValidation = {
-        type: 'list', allowBlank: true, formulae: [`"${actsList.join(',')}"`]
+        type: 'list', allowBlank: true, formulae: ['OPT_ACTS_LIST']
       };
 
-      const actRef = `$${actLetter}${rIdx}`;
       worksheet.getCell(rIdx, secCol).dataValidation = {
         type: 'list', allowBlank: true, showErrorMessage: false,
-        formulae: [`IF(${actRef}="IPC",OPT_IPC_SECTIONS,IF(${actRef}="Delhi Excise Act",OPT_EXCISE_SECTIONS,IF(${actRef}="Arms Act",OPT_ARMS_SECTIONS,IF(${actRef}="Gambling Act",OPT_GAMBLING_SECTIONS,OPT_SECTIONS))))`]
+        formulae: [secFormula]
       };
 
       worksheet.getCell(rIdx, majCol).dataValidation = {
         type: 'list', allowBlank: true, showErrorMessage: false,
-        formulae: [`IF(${actRef}="IPC",OPT_IPC_MAJOR_HEAD,IF(${actRef}="Delhi Excise Act",OPT_EXCISE_MAJOR_HEAD,IF(${actRef}="Arms Act",OPT_ARMS_MAJOR_HEAD,IF(${actRef}="Gambling Act",OPT_GAMBLING_MAJOR_HEAD,OPT_CRIME_HEAD))))`]
+        formulae: [majFormula]
       };
 
       if (hasMinorHeadCascade) {
-        const majHeadRef = `$${majLetter}${rIdx}`;
         worksheet.getCell(rIdx, minCol).dataValidation = {
           type: 'list', allowBlank: true, showErrorMessage: false,
-          formulae: [`IFERROR(INDIRECT(VLOOKUP(${majHeadRef},MAJOR_HEAD_TO_MINOR_NR,2,FALSE)),"")`]
+          formulae: [minFormula]
         };
       }
     }
