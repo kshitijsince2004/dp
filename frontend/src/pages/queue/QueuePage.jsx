@@ -220,7 +220,7 @@ export const QueuePage = () => {
       title: t('fields.record_date'),
       dataIndex: 'record_date',
       key: 'record_date',
-      render: (date) => new Date(date).toLocaleDateString()
+      render: (date) => date || 'N/A'
     },
     {
       title: t('common.status'),
@@ -354,7 +354,7 @@ export const QueuePage = () => {
                   <span style={{ color: '#e2e8f0' }}>{recordDetail.record.district_name}</span>
 
                   <span style={{ color: '#718096', fontWeight: 600 }}>Record Date:</span>
-                  <span style={{ color: '#e2e8f0' }}>{new Date(recordDetail.record.record_date).toLocaleDateString()}</span>
+                  <span style={{ color: '#e2e8f0' }}>{recordDetail.record.record_date}</span>
                 </div>
 
                 <Divider style={{ borderColor: '#232d3f' }} />

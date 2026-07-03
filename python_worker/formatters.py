@@ -1,17 +1,55 @@
+import re
 from datetime import date as _date, datetime as _datetime
+
+_DMY_RE = re.compile(r'^\d{2}/\d{2}/\d{4}$')
+_ISO_RE = re.compile(r'^(\d{4})-(\d{2})-(\d{2})')
 
 
 def fmt_date(d_str):
-    """Return DD/MM/YYYY from an ISO date string, date, or datetime."""
+    """Return DD/MM/YYYY from an ISO date string, dd/mm/yyyy string, date, or datetime."""
     if not d_str:
         return ''
     if isinstance(d_str, (_date, _datetime)):
         return d_str.strftime('%d/%m/%Y')
     s = str(d_str).split('T')[0]
-    parts = s.split('-')
-    if len(parts) == 3:
-        return f'{parts[2]}/{parts[1]}/{parts[0]}'
+    if _DMY_RE.match(s):
+        return s
+    m = _ISO_RE.match(s)
+    if m:
+        y, mo, d = m.groups()
+        return f'{d}/{mo}/{y}'
     return str(d_str)
+
+
+_DMY_PARSE_RE = re.compile(r'^(\d{1,2})/(\d{1,2})/(\d{2,4})$')
+
+
+def parse_date(val):
+    """Parse a dd/mm/yyyy or yyyy-mm-dd string (or date/datetime) into a date object, or None."""
+    if not val:
+        return None
+    if isinstance(val, _datetime):
+        return val.date()
+    if isinstance(val, _date):
+        return val
+    s = str(val).strip()
+    m = _DMY_PARSE_RE.match(s)
+    if m:
+        d, mo, y = m.groups()
+        if len(y) == 2:
+            y = f'20{y}'
+        try:
+            return _date(int(y), int(mo), int(d))
+        except ValueError:
+            return None
+    m = _ISO_RE.match(s)
+    if m:
+        y, mo, d = m.groups()
+        try:
+            return _date(int(y), int(mo), int(d))
+        except ValueError:
+            return None
+    return None
 
 
 def parse_age_gender(age_gender_str):

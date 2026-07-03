@@ -5,6 +5,8 @@ import { DISTRICTS_AND_STATIONS } from "../utils/policeData.js";
 import useAuthStore from "../store/authStore.js";
 import api from "../utils/api.js";
 import toast from "react-hot-toast";
+import DateInput from "../components/ui/DateInput.jsx";
+import { formatDMY } from "../utils/dateFormat.js";
 
 export default function PCRCallEntry() {
   const { onSubmitReport, addNotification } = useOutletContext();
@@ -15,7 +17,7 @@ export default function PCRCallEntry() {
     district: "New Delhi District (NDD)",
     policeStation: "Parliament Street",
     gdNumber: "",
-    pcrDate: new Date().toISOString().split('T')[0],
+    pcrDate: formatDMY(new Date()),
     pcrTime: "",
     callerName: "",
     callerMobile: "",
@@ -67,7 +69,7 @@ export default function PCRCallEntry() {
       district: "New Delhi District (NDD)",
       policeStation: "Parliament Street",
       gdNumber: "GD-821A/2026",
-      pcrDate: "2026-06-13",
+      pcrDate: "13/06/2026",
       pcrTime: "08:12",
       callerName: "Sanjay Malhotra",
       callerMobile: "9988776655",
@@ -139,7 +141,7 @@ export default function PCRCallEntry() {
     try {
       const res = await api.post('/v1/records', {
         record_type: 'PCR_CALL',
-        record_date: formData.pcrDate || new Date().toISOString().split('T')[0],
+        record_date: formData.pcrDate || formatDMY(new Date()),
         data: formData
       });
       const uid = res.data.data?.uid;
@@ -279,13 +281,11 @@ export default function PCRCallEntry() {
 
                 <div className="form-group">
                   <label className="form-label" htmlFor="pcrDate">PCR Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     id="pcrDate"
-                    name="pcrDate"
-                    className="form-control"
+                    inputClassName="form-control"
                     value={formData.pcrDate}
-                    onChange={handleInputChange}
+                    onChange={(val) => handleInputChange({ target: { name: 'pcrDate', value: val } })}
                   />
                 </div>
 

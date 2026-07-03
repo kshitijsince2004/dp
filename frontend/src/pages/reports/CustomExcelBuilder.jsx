@@ -7,6 +7,8 @@ import {
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
+import DateInput from '../../components/ui/DateInput.jsx';
+import { formatDMY, parseDMY } from '../../utils/dateFormat.js';
 
 const JOIN_OPTIONS = {
   CASE: [
@@ -23,8 +25,8 @@ const TABLE_LABELS = {
   UIDB:     'Unidentified Bodies (UIDB)',
 };
 
-const today = new Date().toISOString().split('T')[0];
-const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+const today = formatDMY(new Date());
+const sevenDaysAgo = formatDMY(new Date(Date.now() - 7 * 86400000));
 
 const inputCls = [
   'w-full bg-white border border-slate-200 rounded-lg text-xs text-slate-800',
@@ -248,8 +250,8 @@ export default function CustomExcelBuilder() {
     }
   };
 
-  const fmtDate = iso => {
-    const [y, m, d] = iso.split('-');
+  const fmtDate = dmy => {
+    const [d, m, y] = dmy.split('/');
     return `${d}${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]}${y}`;
   };
 
@@ -394,23 +396,28 @@ export default function CustomExcelBuilder() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className={labelCls}>From Date</label>
-            <input
-              type="date"
+            <DateInput
               value={dateFrom}
-              max={dateTo || today}
-              onChange={e => { setDateFrom(e.target.value); if (dateTo < e.target.value) setDateTo(e.target.value); }}
-              className={inputCls}
+              onChange={val => {
+                setDateFrom(val);
+                const from = parseDMY(val);
+                const to = parseDMY(dateTo);
+                if (from && to && from > to) setDateTo(val);
+              }}
+              inputClassName={`${inputCls} pr-9`}
             />
           </div>
           <div>
             <label className={labelCls}>To Date</label>
-            <input
-              type="date"
+            <DateInput
               value={dateTo}
-              min={dateFrom}
-              max={today}
-              onChange={e => setDateTo(e.target.value)}
-              className={inputCls}
+              onChange={val => {
+                const from = parseDMY(dateFrom);
+                const to = parseDMY(val);
+                if (from && to && to < from) return;
+                setDateTo(val);
+              }}
+              inputClassName={inputCls}
             />
           </div>
           {stationsList.length > 0 && (

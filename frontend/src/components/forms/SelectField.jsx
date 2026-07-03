@@ -1,12 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 const base = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed appearance-none cursor-pointer";
 const err  = "border-red-400 focus:border-red-500 bg-red-50";
 
-export default function SelectField({ id, disabled, value, onChange, status, placeholder, options = [], lang = 'en' }) {
+export default function SelectField({ id, disabled, value, onChange, status, placeholder, options = [], lang = 'en', variant = 'default', className }) {
   const getLabel = (opt) => lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en;
 
+  // Hooks below are only used by the default searchable-dropdown widget, but must
+  // still be called unconditionally on every render (Rules of Hooks) even when the
+  // 'compact' variant's early return further down never uses their values.
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [dropdownStyle, setDropdownStyle] = useState({});
@@ -54,6 +57,28 @@ export default function SelectField({ id, disabled, value, onChange, status, pla
       window.removeEventListener('resize', update);
     };
   }, [isOpen]);
+
+  // Compact mode: plain native <select> with caller-supplied styling — used inside
+  // dense table-row layouts where the default searchable-dropdown widget (custom
+  // chevron, portal dropdown) would look out of place.
+  if (variant === 'compact') {
+    return (
+      <select
+        id={id}
+        disabled={disabled}
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        className={className}
+      >
+        <option value="">{placeholder || (lang === 'hi' ? '------चुनें------' : '------Select------')}</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {getLabel(opt)}
+          </option>
+        ))}
+      </select>
+    );
+  }
 
   // Short lists: use a native <select> (no clipping issue)
   if (options.length <= 10) {

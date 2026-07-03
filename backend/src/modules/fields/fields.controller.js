@@ -1,6 +1,9 @@
 import db from '../../config/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { publish } from '../../events/eventBus.js';
+import { logger } from '../../utils/logger.js';
+import * as fieldsService from './fields.service.js';
+import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from './classificationSources.config.js';
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -98,6 +101,7 @@ function normalizeRecordType(t) {
 // ── GET /fields/form/:record_type ─────────────────────────────────────────────
 export const getFieldsForForm = async (req, res) => {
   const { record_type } = req.params;
+  const caseType = req.query.caseType || req.query.case_type || null;
   const district_id = req.user.district_id || null;
 
   const normalizedType = normalizeRecordType(record_type);
@@ -117,6 +121,57 @@ export const getFieldsForForm = async (req, res) => {
 
     const rawFields = await query;
 
+    // Small local shaping helper — raw excel_* rows -> {value,label_en,label_hi} option shape,
+    // using labelCol as both the value and the display label (matches the existing, established
+    // convention for these per-act/per-crime fields, whose show_when clauses compare against the
+    // human-readable label, not the underlying numeric code).
+    const toValueLabel = (labelCol) => (r) => ({ value: r[labelCol], label_en: r[labelCol], label_hi: r[labelCol] });
+
+    // 1. Acts — no override here; act_name's options come from the seed's own curated static
+    // list via the default `options = parseJsonField(f.options)` path below (see field_key
+    // dispatch), which is exactly what its show_when clauses (act_name === 'IPC', etc.) expect.
+
+    // 2. Sections per Act — resolved via ACT_GROUP_CODES, no magic act codes inline.
+    const ipcSectionOptions = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES.IPC)).map(toValueLabel('section'));
+    const exciseSectionOptions = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES['Delhi Excise Act'])).map(toValueLabel('section'));
+    const armsSectionOptions = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES['Arms Act'])).map(toValueLabel('section'));
+    const gamblingSectionOptions = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES['Gambling Act'])).map(toValueLabel('section'));
+
+    // For the general sections field (e.g. in UIDB or CASE), load sections for every act that has
+    // a dedicated group above.
+    const allGroupedActCodes = Object.values(ACT_GROUP_CODES).flat();
+    const generalSectionOptions = (await fieldsService.getSectionsForActs(allGroupedActCodes)).map(toValueLabel('section'));
+
+    // 3. Major Heads per Act — joins on major_head_code via excel_major_minor_mapping, filtered
+    // by the real act_cd(s), no name-string matching.
+    const ipcMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES.IPC)).map(toValueLabel('major_head'));
+    const exciseMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES['Delhi Excise Act'])).map(toValueLabel('major_head'));
+    const armsMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES['Arms Act'])).map(toValueLabel('major_head'));
+    const gamblingMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES['Gambling Act'])).map(toValueLabel('major_head'));
+
+    // 4. Minor Heads per crime-specific field_key — resolved via MINOR_HEAD_MAJOR_CODES (verified
+    // major_head_code integers), not case-varying name matching. Codes with an empty array
+    // (documented source-data gaps) correctly resolve to an empty option list.
+    const minorHeadOptionsByFieldKey = {};
+    for (const [fieldKey, majorHeadCodes] of Object.entries(MINOR_HEAD_MAJOR_CODES)) {
+      const rows = await fieldsService.getMinorHeadsForMajorHeads(majorHeadCodes);
+      minorHeadOptionsByFieldKey[fieldKey] = rows.map(toValueLabel('minor_head'));
+    }
+
+    // 5. Beats
+    const beatOptions = (await fieldsService.getBeats()).map(toValueLabel('beat_name'));
+
+    // 6. Local Heads
+    const localHeadOptions = (await fieldsService.getLocalHeads()).map(toValueLabel('local_head'));
+
+    // 7. Property Categories — numeric parent_cd as value, giving a stable join key into
+    // /lookup/property-items/:parent_cd. property_minor_category's options are intentionally NOT
+    // precomputed here (see field_key dispatch below) — its correct option set depends on a live
+    // sibling selection among 10 categories, which cannot be flattened into one static list.
+    const propertyCategoryOptions = (await fieldsService.getPropertyCategories())
+      .map(c => ({ value: c.parent_cd, label_en: c.code_type, label_hi: c.code_type }))
+      .sort((a, b) => a.label_en.localeCompare(b.label_en));
+
     // Filter by applicable_record_types (JS-side, handles both native array and JSON-string storage)
     const filteredFields = rawFields
       .filter((f) => {
@@ -127,26 +182,55 @@ export const getFieldsForForm = async (req, res) => {
         let field_type = f.field_type;
         let options = parseJsonField(f.options);
 
-        if (f.field_key === 'act_name' && normalizedType === 'UIDB') {
+        // Load lookup options from database dynamically
+        // (act_name intentionally has no override here — its options flow through from the
+        // seed's own curated static list via the `options = parseJsonField(f.options)` default
+        // above, which is what its show_when clauses expect. See fetch block above for why.)
+        if (f.field_key === 'local_head' || f.field_key === 'crime_head') {
           field_type = 'SELECT';
-          options = [
-            { value: 'CrPC', label_en: 'CrPC', label_hi: 'सीआरपीसी' },
-            { value: 'BNSS', label_en: 'BNSS', label_hi: 'बीएनएसएस' },
-            { value: 'IPC', label_en: 'IPC', label_hi: 'आईपीसी' },
-            { value: 'BNS', label_en: 'BNS', label_hi: 'बीएनएस' },
-            { value: 'Other Act', label_en: 'Other Act', label_hi: 'अन्य अधिनियम' }
-          ];
-        }
-
-        if (f.field_key === 'sections' && normalizedType === 'UIDB') {
+          options = localHeadOptions;
+        } else if (f.field_key === 'property_major_category') {
           field_type = 'SELECT';
-          options = [
-            { value: '174 CrPC', label_en: '174 CrPC', label_hi: '174 सीआरपीसी' },
-            { value: '194 BNSS', label_en: '194 BNSS', label_hi: '194 बीएनएसएस' },
-            { value: '176 CrPC', label_en: '176 CrPC', label_hi: '176 सीआरपीसी' },
-            { value: '196 BNSS', label_en: '196 BNSS', label_hi: '196 बीएनएसएस' },
-            { value: 'Others', label_en: 'Others', label_hi: 'अन्य' }
-          ];
+          options = propertyCategoryOptions;
+        } else if (f.field_key === 'property_minor_category') {
+          // Options are inherently dependent on a live sibling selection (property_major_category)
+          // and cannot be precomputed in this single-shot response — see depends_on/options_source
+          // on the returned field object below.
+          field_type = 'SELECT';
+          options = [];
+        } else if (f.field_key === 'beat_no') {
+          field_type = 'SELECT';
+          options = beatOptions;
+        } else if (f.field_key === 'ipc_sections') {
+          field_type = 'SELECT';
+          options = ipcSectionOptions;
+        } else if (f.field_key === 'excise_sections') {
+          field_type = 'SELECT';
+          options = exciseSectionOptions;
+        } else if (f.field_key === 'arms_sections') {
+          field_type = 'SELECT';
+          options = armsSectionOptions;
+        } else if (f.field_key === 'gambling_sections') {
+          field_type = 'SELECT';
+          options = gamblingSectionOptions;
+        } else if (f.field_key === 'sections') {
+          field_type = 'SELECT';
+          options = generalSectionOptions;
+        } else if (f.field_key === 'ipc_major_head') {
+          field_type = 'SELECT';
+          options = ipcMajorHeadOptions;
+        } else if (f.field_key === 'excise_major_head') {
+          field_type = 'SELECT';
+          options = exciseMajorHeadOptions;
+        } else if (f.field_key === 'arms_major_head') {
+          field_type = 'SELECT';
+          options = armsMajorHeadOptions;
+        } else if (f.field_key === 'gambling_major_head') {
+          field_type = 'SELECT';
+          options = gamblingMajorHeadOptions;
+        } else if (Object.prototype.hasOwnProperty.call(minorHeadOptionsByFieldKey, f.field_key)) {
+          field_type = 'SELECT';
+          options = minorHeadOptionsByFieldKey[f.field_key];
         }
 
         if (f.field_key === 'status') {
@@ -238,25 +322,9 @@ export const getFieldsForForm = async (req, res) => {
             section = 'general_info';
             sort_order = 10.2;
           } else if (f.field_key === 'act_name') {
-            field_type = 'SELECT';
-            options = [
-              { value: 'CrPC', label_en: 'CrPC', label_hi: 'सीआरपीसी' },
-              { value: 'BNSS', label_en: 'BNSS', label_hi: 'बीएनएसएस' },
-              { value: 'IPC', label_en: 'IPC', label_hi: 'आईपीसी' },
-              { value: 'BNS', label_en: 'BNS', label_hi: 'बीएनएस' },
-              { value: 'Other Act', label_en: 'Other Act', label_hi: 'अन्य अधिनियम' }
-            ];
             section = 'general_info';
             sort_order = 10.3;
           } else if (f.field_key === 'sections') {
-            field_type = 'SELECT';
-            options = [
-              { value: '174 CrPC', label_en: '174 CrPC', label_hi: '174 सीआरपीसी' },
-              { value: '194 BNSS', label_en: '194 BNSS', label_hi: '194 बीएनएसएस' },
-              { value: '176 CrPC', label_en: '176 CrPC', label_hi: '176 सीआरपीसी' },
-              { value: '196 BNSS', label_en: '196 BNSS', label_hi: '196 बीएनएसएस' },
-              { value: 'Others', label_en: 'Others', label_hi: 'अन्य' }
-            ];
             section = 'general_info';
             sort_order = 10.4;
           } else if (f.field_key === 'status') {
@@ -287,6 +355,8 @@ export const getFieldsForForm = async (req, res) => {
           }
         }
 
+
+
         return {
           id: f.id,
           field_key: f.field_key,
@@ -304,6 +374,8 @@ export const getFieldsForForm = async (req, res) => {
           readonly: f.readonly || false,
           full_width: f.full_width || false,
           show_when: parseJsonField(f.show_when) || null,
+          depends_on: f.depends_on || null,
+          options_source: f.options_source || null,
           section,
           repeater_entity: f.repeater_entity || null,
           section_label_en: f.section_label_en || null,
@@ -316,59 +388,317 @@ export const getFieldsForForm = async (req, res) => {
     // Re-sort to respect overridden sort_orders
     filteredFields.sort((a, b) => a.sort_order - b.sort_order);
 
-    // Group fields: repeater fields by repeater_entity, flat fields by section.
-    // Order is preserved by first-occurrence (fields are already sorted by sort_order).
-    const allSectionKeys = [];
-    const sectionsMap = new Map();
-    const repeaterMap = new Map();
+    let sections = [];
 
-    for (const f of filteredFields) {
-      if (f.repeater_entity) {
-        const key = f.repeater_entity;
-        if (!repeaterMap.has(key)) {
-          repeaterMap.set(key, { fields: [] });
-          allSectionKeys.push({ key, type: 'repeater' });
-        }
-        repeaterMap.get(key).fields.push(f);
-      } else {
-        const secKey = f.section;
-        if (!sectionsMap.has(secKey)) {
-          sectionsMap.set(secKey, { fields: [], dbLabelEn: f.section_label_en, dbLabelHi: f.section_label_hi });
-          allSectionKeys.push({ key: secKey, type: 'flat' });
-        }
-        sectionsMap.get(secKey).fields.push(f);
-      }
-    }
-
-    const sections = allSectionKeys.map(({ key, type }) => {
-      if (type === 'flat') {
-        const { fields, dbLabelEn, dbLabelHi } = sectionsMap.get(key);
-        const hardcoded = SECTION_TITLES[key];
-        return {
-          section: key,
-          title_en: dbLabelEn || hardcoded?.en || toTitleCase(key),
-          title_hi: dbLabelHi || hardcoded?.hi || toTitleCase(key),
+    if (normalizedType === 'CASE') {
+      sections = [
+        {
+          section: 'acts_and_sections',
+          title_en: 'Acts & Sections',
+          title_hi: 'अधिनियम और धाराएं',
           is_repeater: false,
-          fields,
-        };
-      } else {
-        const { fields } = repeaterMap.get(key);
-        const titleInfo = REPEATER_SECTION_TITLES[key] || { en: key, hi: key };
-        const isPerson = key.startsWith('PERSON_');
-        return {
-          section: key.toLowerCase().replace(/_/g, '-'),
-          title_en: titleInfo.en,
-          title_hi: titleInfo.hi,
+          fields: filteredFields.filter(f =>
+            ['general_info', 'incident_details', 'offence_info'].includes(f.section) &&
+            !['occurrence_place', 'brief_facts', 'local_head'].includes(f.field_key) &&
+            !f.repeater_entity
+          )
+        },
+        {
+          section: 'occurrence_info',
+          title_en: 'Occurrence',
+          title_hi: 'घटना',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'occurrence_info' && !f.repeater_entity)
+        },
+        {
+          section: 'complainant_info',
+          title_en: 'Complainant',
+          title_hi: 'शिकायतकर्ता',
+          is_repeater: false,
+          sub_tabs: [
+            {
+              id: 'personal',
+              title_en: 'Personal Information',
+              title_hi: 'व्यक्तिगत जानकारी',
+              fields: filteredFields.filter(f => ['complainant_personal_info', 'complainant_accused_info'].includes(f.section) && !f.repeater_entity)
+            },
+            {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.section === 'complainant_address' && !f.repeater_entity)
+            }
+          ]
+        },
+        {
+          section: 'fir_contents',
+          title_en: 'FIR Contents',
+          title_hi: 'प्राथमिकी विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.field_key === 'brief_facts')
+        },
+        {
+          section: 'victim_info',
+          title_en: 'Victim Information',
+          title_hi: 'पीड़ित का विवरण',
           is_repeater: true,
-          entity_type: isPerson ? 'person' : 'property',
-          person_type: isPerson ? key.replace('PERSON_', '') : null,
-          fields,
-        };
+          entity_type: 'person',
+          person_type: 'PERSON_VICTIM',
+          sub_tabs: [
+            {
+              id: 'personal',
+              title_en: 'Personal Information',
+              title_hi: 'व्यक्तिगत जानकारी',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_VICTIM' && f.section === 'victim_personal_info')
+            },
+            {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_VICTIM' && f.section === 'victim_address')
+            }
+          ]
+        },
+        {
+          section: 'accused_info',
+          title_en: 'Accused',
+          title_hi: 'आरोपी',
+          is_repeater: true,
+          entity_type: 'person',
+          person_type: 'PERSON_ACCUSED',
+          sub_tabs: [
+            {
+              id: 'personal',
+              title_en: 'Personal Information',
+              title_hi: 'व्यक्तिगत जानकारी',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ACCUSED' && f.section === 'accused_personal_info')
+            },
+            {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ACCUSED' && f.section === 'accused_address')
+            }
+          ]
+        },
+        {
+          section: 'property_details',
+          title_en: 'Property of Interest',
+          title_hi: 'संबद्ध संपत्ति',
+          is_repeater: true,
+          entity_type: 'property',
+          fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')
+        },
+        {
+          section: 'action_taken',
+          title_en: 'Action Taken',
+          title_hi: 'की गई कार्रवाई',
+          is_repeater: false,
+          fields: filteredFields.filter(f => ['investigation_officer', 'investigation_details', 'action_taken'].includes(f.section) && !f.repeater_entity)
+        }
+      ];
+    } else if (normalizedType === 'ARREST') {
+      const isAgainstFir = caseType === 'against_fir';
+      if (isAgainstFir) {
+        sections.push({
+          section: 'select_fir',
+          title_en: 'Select FIR',
+          title_hi: 'प्राथमिकी (FIR) चुनें',
+          is_repeater: false,
+          is_virtual: true,
+          fields: [
+            {
+              field_key: 'selected_fir',
+              field_type: 'SELECT',
+              label_en: 'Select FIR Number',
+              label_hi: 'प्राथमिकी (FIR) संख्या चुनें',
+              validation_rules: { required: true },
+              options: []
+            }
+          ]
+        });
       }
-    });
+      sections.push(
+        {
+          section: 'general_info',
+          title_en: 'General Information',
+          title_hi: 'सामान्य जानकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => ['general_info', 'offence_info', 'incident_details'].includes(f.section) && !f.repeater_entity)
+        },
+        {
+          section: 'arrested_info',
+          title_en: 'Arrested',
+          title_hi: 'गिरफ्तार व्यक्ति',
+          is_repeater: true,
+          entity_type: 'person',
+          person_type: 'ARRESTED',
+          sub_tabs: [
+            {
+              id: 'arrest_details',
+              title_en: 'Arrest Details',
+              title_hi: 'गिरफ्तारी का विवरण',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrest_details')
+            },
+            {
+              id: 'person_particulars',
+              title_en: 'Person Particulars',
+              title_hi: 'विशेषताएं',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrested_personal_info')
+            },
+            {
+              id: 'particular_details',
+              title_en: 'Particular Details',
+              title_hi: 'विशेष विवरण',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrestee_info')
+            },
+            {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrested_address')
+            }
+          ]
+        },
+        {
+          section: 'custody_status',
+          title_en: 'Custody Status',
+          title_hi: 'हिरासत की स्थिति',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'custody_status' && !f.repeater_entity)
+        },
+        {
+          section: 'property_details',
+          title_en: 'Particulars',
+          title_hi: 'विवरण',
+          is_repeater: true,
+          entity_type: 'property',
+          fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')
+        },
+        {
+          section: 'intimation_details',
+          title_en: 'Intimation Details',
+          title_hi: 'सूचना का विवरण',
+          is_repeater: true,
+          entity_type: 'person',
+          person_type: 'INTIMATED',
+          sub_tabs: [
+            {
+              id: 'personal',
+              title_en: 'Personal Information',
+              title_hi: 'व्यक्तिगत जानकारी',
+              fields: filteredFields.filter(f => f.section === 'intimation_details')
+            },
+            {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.section === 'intimation_address')
+            }
+          ]
+        },
+        {
+          section: 'procedure_slips',
+          title_en: 'Procedural Slips',
+          title_hi: 'प्रक्रियात्मक पर्ची',
+          is_repeater: false,
+          fields: filteredFields.filter(f => ['procedure_slips', 'procedural_slips'].includes(f.section) && !f.repeater_entity)
+        },
+        {
+          section: 'investigation_officer',
+          title_en: 'Investigating Officer',
+          title_hi: 'जांच अधिकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
+        }
+      );
+    } else if (normalizedType === 'UIDB') {
+      sections = [
+        {
+          section: 'general_info',
+          title_en: 'General Information',
+          title_hi: 'सामान्य जानकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => ['general_info', 'incident_details'].includes(f.section) && !f.repeater_entity)
+        },
+        {
+          section: 'corpse_desc',
+          title_en: 'UIDB Details',
+          title_hi: 'यूआईडीबी विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'corpse_desc' && !f.repeater_entity)
+        },
+        {
+          section: 'inquest_details',
+          title_en: 'Inquest Details',
+          title_hi: 'पूछताछ विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'inquest_details' && !f.repeater_entity)
+        },
+        {
+          section: 'investigation_officer',
+          title_en: 'Investigating Officer',
+          title_hi: 'जांच अधिकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
+        }
+      ];
+    } else {
+      // Group fields: repeater fields by repeater_entity, flat fields by section.
+      // Order is preserved by first-occurrence (fields are already sorted by sort_order).
+      const allSectionKeys = [];
+      const sectionsMap = new Map();
+      const repeaterMap = new Map();
+
+      for (const f of filteredFields) {
+        if (f.repeater_entity) {
+          const key = f.repeater_entity;
+          if (!repeaterMap.has(key)) {
+            repeaterMap.set(key, { fields: [] });
+            allSectionKeys.push({ key, type: 'repeater' });
+          }
+          repeaterMap.get(key).fields.push(f);
+        } else {
+          const secKey = f.section;
+          if (!sectionsMap.has(secKey)) {
+            sectionsMap.set(secKey, { fields: [], dbLabelEn: f.section_label_en, dbLabelHi: f.section_label_hi });
+            allSectionKeys.push({ key: secKey, type: 'flat' });
+          }
+          sectionsMap.get(secKey).fields.push(f);
+        }
+      }
+
+      sections = allSectionKeys.map(({ key, type }) => {
+        if (type === 'flat') {
+          const { fields, dbLabelEn, dbLabelHi } = sectionsMap.get(key);
+          const hardcoded = SECTION_TITLES[key];
+          return {
+            section: key,
+            title_en: dbLabelEn || hardcoded?.en || toTitleCase(key),
+            title_hi: dbLabelHi || hardcoded?.hi || toTitleCase(key),
+            is_repeater: false,
+            fields,
+          };
+        } else {
+          const { fields } = repeaterMap.get(key);
+          const titleInfo = REPEATER_SECTION_TITLES[key] || { en: key, hi: key };
+          const isPerson = key.startsWith('PERSON_');
+          return {
+            section: key.toLowerCase().replace(/_/g, '-'),
+            title_en: titleInfo.en,
+            title_hi: titleInfo.hi,
+            is_repeater: true,
+            entity_type: isPerson ? 'person' : 'property',
+            person_type: isPerson ? key.replace('PERSON_', '') : null,
+            fields,
+          };
+        }
+      });
+    }
 
     return res.status(200).json({ success: true, data: sections });
   } catch (error) {
+    logger.error('getFieldsForForm failed', { record_type, error: error.message, stack: error.stack });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -595,3 +925,128 @@ export const toggleRegistryField = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// --- Excel Lookup Controllers ---
+// Thin wrappers over fieldsService — no direct db access, no hardcoded table/column dispatch.
+
+export const listActs = async (req, res) => {
+  try {
+    const rows = await fieldsService.getActs();
+    const data = rows.map(r => ({ value: r.act_cd, label: r.act_long }));
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listActs failed', { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const listSectionsForAct = async (req, res) => {
+  const { act_cd } = req.params;
+  try {
+    const rows = await fieldsService.getSectionsForActs([act_cd]);
+    const data = rows.map(r => ({ value: r.section_code, label: r.section, desc: r.section_desc, pnsh_gt_7yrs: r.pnsh_gt_7yrs }));
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listSectionsForAct failed', { act_cd, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const listMajorHeads = async (req, res) => {
+  try {
+    const data = await db('excel_major_heads').select('major_head_code as value', 'major_head as label').orderBy('major_head', 'asc');
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listMajorHeads failed', { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const listMajorHeadsForSection = async (req, res) => {
+  const { section_code } = req.params;
+  try {
+    const rows = await fieldsService.getMajorHeadsForSection(section_code);
+    const data = rows.map(r => ({ value: r.major_head_code, label: r.major_head }));
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listMajorHeadsForSection failed', { section_code, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const listMinorHeadsForMajorHead = async (req, res) => {
+  const { major_head_code } = req.params;
+  try {
+    const rows = await fieldsService.getMinorHeadsForMajorHeads([parseInt(major_head_code, 10)]);
+    const data = rows.map(r => ({ value: r.minor_head_cd, label: r.minor_head }));
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listMinorHeadsForMajorHead failed', { major_head_code, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const listPropertyCategories = async (req, res) => {
+  try {
+    const rows = await fieldsService.getPropertyCategories();
+    const data = rows
+      .map(item => ({ value: item.parent_cd, label: item.code_type, parent_type: item.parent_type, major_property: item.major_property }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listPropertyCategories failed', { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const listPropertyItems = async (req, res) => {
+  const { parent_cd } = req.params;
+  try {
+    const raw = await fieldsService.getPropertyItemsForCategory(parent_cd);
+    // The GENERIC branch (fieldsService) already returns {value,label} rows. The ARMS branch
+    // returns raw column names for its three sub-lists, and the default (excel_other_property_items)
+    // branch returns raw {property_cd,property} rows — both are shaped into {value,label} here.
+    let data;
+    if (raw?.type === 'ARMS') {
+      data = {
+        type: 'ARMS',
+        made: raw.made.map(r => ({ value: r.arms_made_cd, label: r.arms_made })),
+        categories: raw.categories.map(r => ({ value: r.arms_category_cd, label: r.arms_category })),
+        fireArms: raw.fireArms.map(r => ({ value: r.fire_arms_cd, label: r.fire_arms, parent_id: r.arms_category_cd })),
+      };
+    } else if (Array.isArray(raw) && raw.length > 0 && 'property_cd' in raw[0]) {
+      data = raw.map(r => ({ value: r.property_cd, label: r.property }));
+    } else {
+      data = raw;
+    }
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listPropertyItems failed', { parent_cd, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const listBeats = async (req, res) => {
+  const ps_cd = req.query.ps_cd || null;
+  try {
+    const rows = await fieldsService.getBeats(ps_cd);
+    const data = rows.map(r => ({ value: r.beat_cd, label: r.beat_name, ps_cd: r.ps_cd }));
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listBeats failed', { ps_cd, error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const listLocalHeads = async (req, res) => {
+  try {
+    const rows = await fieldsService.getLocalHeads();
+    const data = rows.map(r => ({ value: r.local_head_cd, label: r.local_head }));
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listLocalHeads failed', { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+

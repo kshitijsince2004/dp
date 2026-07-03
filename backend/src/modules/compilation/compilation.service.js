@@ -2,6 +2,7 @@ import db from '../../config/db.js';
 import { publish } from '../../events/eventBus.js';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger.js';
+import { toDMY } from '../../utils/dateFormat.js';
 
 /**
  * Parse compiled_summary JSON from DB row.
@@ -10,6 +11,7 @@ const parseSummary = (row) => {
   if (!row) return row;
   return {
     ...row,
+    period: toDMY(row.period) || row.period,
     compiled_summary: typeof row.compiled_summary === 'string'
       ? JSON.parse(row.compiled_summary)
       : (row.compiled_summary || null),

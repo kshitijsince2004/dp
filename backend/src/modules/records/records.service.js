@@ -3,6 +3,7 @@ import db from '../../config/db.js';
 import * as eventBus from '../../events/eventBus.js';
 import { computeRowHash, getPreviousHash } from '../../utils/hash.js';
 import { getLinksForRecord } from '../record-links/record-links.service.js';
+import { toISO } from '../../utils/dateFormat.js';
 
 // Helpers
 const calculateDiff = (oldData, newData) => {
@@ -124,11 +125,12 @@ const mergeConditionalFields = (data) => {
     }
   }
 
-  // Handle occurrence_from_date_time extraction for database/report compatibility
+  // Handle occurrence_from_date_time extraction for database/report compatibility.
+  // DATETIME fields are submitted as 'DD/MM/YYYY HH:mm'.
   if (data.occurrence_from_date_time) {
-    const parts = data.occurrence_from_date_time.split('T');
-    if (parts[0]) data.occurrence_date = parts[0];
-    if (parts[1]) data.occurrence_time = parts[1];
+    const [datePart, timePart] = String(data.occurrence_from_date_time).split(' ');
+    if (datePart) data.occurrence_date = datePart;
+    if (timePart) data.occurrence_time = timePart;
   }
 
   // Construct complainant_name and complainant_address from granular fields for backward compatibility
@@ -919,9 +921,11 @@ export const checkDuplicateRecord = async (recordType, firNumber, accusedName, d
 
   if (accusedName && date) {
     const client = db.client.config.client;
+    // record_date is a native DATE column — always compare in ISO form,
+    // regardless of whether the caller passed dd/mm/yyyy or yyyy-mm-dd.
     let query = db('records')
       .where('record_type', recordType.toUpperCase())
-      .andWhere('record_date', date);
+      .andWhere('record_date', toISO(date) || date);
 
     if (client === 'sqlite3') {
       query = query.andWhere('data', 'like', `%accused_name%${accusedName}%`);
@@ -1009,6 +1013,16 @@ export const removeAttachment = async (recordId, attachmentId, user) => {
 
 const DB_COLUMNS = ['record_type', 'ps_id', 'district_id', 'sub_div_id', 'current_status', 'current_level', 'record_date', 'created_by', 'is_legacy', 'source_system', 'imported_at', 'imported_by', 'legacy_ref', 'created_at', 'updated_at'];
 
+// Operators that only ever apply to date fields — used to decide whether a
+// JSON field's dd/mm/yyyy text needs to be parsed into a comparable date
+// before running range comparisons against it.
+const DATE_ONLY_OPS = new Set(['BETWEEN', 'BEFORE', 'AFTER', 'LAST_N_DAYS', 'THIS_WEEK', 'THIS_MONTH', 'THIS_YEAR']);
+// Of those, only these carry an externally-supplied date value that might
+// arrive as dd/mm/yyyy and needs converting to ISO before comparison.
+const DATE_VALUE_OPS = new Set(['BETWEEN', 'BEFORE', 'AFTER']);
+
+const toISOMaybe = (val) => (Array.isArray(val) ? val.map((v) => toISO(v) || v) : (toISO(val) || val));
+
 const getJsonFieldExpression = (field) => {
   const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
   if (isPostgres) {
@@ -1016,6 +1030,18 @@ const getJsonFieldExpression = (field) => {
   } else {
     return `json_extract(records.data, '$.${field}')`;
   }
+};
+
+// records.data stores date fields as literal dd/mm/yyyy text. Range/relative
+// -date operators need a real comparable date, not a lexicographic string
+// compare, so parse the extracted text before comparing.
+const getJsonDateFieldExpression = (field) => {
+  const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
+  if (isPostgres) {
+    return `to_date(NULLIF(CAST(records.data AS jsonb)->>'${field}', ''), 'DD/MM/YYYY')`;
+  }
+  const extract = `json_extract(records.data, '$.${field}')`;
+  return `(substr(${extract}, 7, 4) || '-' || substr(${extract}, 4, 2) || '-' || substr(${extract}, 1, 2))`;
 };
 
 const applyBasicCondition = (builder, columnExpr, op, value) => {
@@ -1139,7 +1165,8 @@ const VIRTUAL_FIELD_RESOLVERS = {
     builder.where('records.is_legacy', boolVal ? 1 : 0);
   },
   _record_date: (builder, operator, value) => {
-    applyBasicCondition(builder, 'records.record_date', operator, value);
+    const v = DATE_VALUE_OPS.has(operator) ? toISOMaybe(value) : value;
+    applyBasicCondition(builder, 'records.record_date', operator, v);
   },
   _created_at: (builder, operator, value) => {
     applyBasicCondition(builder, 'records.created_at', operator, value);
@@ -1174,6 +1201,8 @@ const VIRTUAL_FIELD_RESOLVERS = {
 
 const applyCondition = (builder, field, operator, value) => {
   const op = operator.toUpperCase();
+  const isDateOp = DATE_ONLY_OPS.has(op);
+  const v = isDateOp && DATE_VALUE_OPS.has(op) ? toISOMaybe(value) : value;
 
   if (field.startsWith('_')) {
     const resolver = VIRTUAL_FIELD_RESOLVERS[field];
@@ -1182,17 +1211,17 @@ const applyCondition = (builder, field, operator, value) => {
     } else {
       const realField = field.substring(1);
       if (DB_COLUMNS.includes(realField)) {
-        applyBasicCondition(builder, `records.${realField}`, op, value);
+        applyBasicCondition(builder, `records.${realField}`, op, realField === 'record_date' ? v : value);
       } else {
-        const expr = getJsonFieldExpression(realField);
-        applyBasicCondition(builder, db.raw(expr), op, value);
+        const expr = isDateOp ? getJsonDateFieldExpression(realField) : getJsonFieldExpression(realField);
+        applyBasicCondition(builder, db.raw(expr), op, v);
       }
     }
   } else if (DB_COLUMNS.includes(field)) {
-    applyBasicCondition(builder, `records.${field}`, op, value);
+    applyBasicCondition(builder, `records.${field}`, op, field === 'record_date' ? v : value);
   } else {
-    const expr = getJsonFieldExpression(field);
-    applyBasicCondition(builder, db.raw(expr), op, value);
+    const expr = isDateOp ? getJsonDateFieldExpression(field) : getJsonFieldExpression(field);
+    applyBasicCondition(builder, db.raw(expr), op, v);
   }
 };
 

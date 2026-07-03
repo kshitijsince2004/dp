@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../utils/api.js';
+import { formatDMY } from '../utils/dateFormat.js';
 
 export function useAutosave(module, recordId) {
   const [saveStatus, setSaveStatus] = useState('idle'); // idle | saving | saved | unsaved
@@ -17,7 +18,7 @@ export function useAutosave(module, recordId) {
         });
         return res.data.data;
       } else {
-        const record_date = data.record_date || new Date().toISOString().split('T')[0];
+        const record_date = data.record_date || formatDMY(new Date());
         const res = await api.post('/records', {
           record_type: module,
           record_date,
@@ -25,6 +26,7 @@ export function useAutosave(module, recordId) {
           ...(persons !== undefined && { persons }),
           ...(properties !== undefined && { properties })
         });
+
         return res.data.data;
       }
     },

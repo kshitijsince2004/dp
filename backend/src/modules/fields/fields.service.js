@@ -1,145 +1,108 @@
-import { db } from '../../config/db.js';
-import { v4 as uuidv4 } from 'uuid';
+import db from '../../config/db.js';
+import { PROPERTY_CATEGORY_SOURCES } from './classificationSources.config.js';
 
-// applicable_record_types is stored as JSON text e.g. '["CASE","ARREST"]'
-// We use a LIKE on the quoted value so "CASE" won't accidentally match "CASES"
-const typeFilter = (query, record_type) =>
-  query.whereRaw('applicable_record_types LIKE ?', [`%"${record_type}"%`]);
+// --- Excel/master-data lookup service (shared by fields.controller.js's standalone
+// /lookup/* endpoints and getFieldsForForm) ---
+//
+// Returns raw domain rows (native column names); HTTP-facing {value,label} shaping happens
+// in the controller. All table/column names for the property-category dispatch are resolved
+// through classificationSources.config.js — no dynamic identifiers are ever built from request
+// input.
 
-const SECTION_TITLES = {
-  general_info: { en: 'General Information', hi: 'सामान्य जानकारी' },
-  identity: { en: 'Identity', hi: 'पहचान' },
-  incident_details: { en: 'Incident Details', hi: 'घटना विवरण' },
-  complainant_accused_info: { en: 'Complainant & Accused', hi: 'शिकायतकर्ता और आरोपी' },
-  investigation_officer: { en: 'Investigation Officer', hi: 'जांच अधिकारी' },
-  property_status: { en: 'Property & Status', hi: 'संपत्ति और स्थिति' },
-  intranet_flags: { en: 'Intranet Flags', hi: 'इंट्रानेट झंडे' },
-  offence_info: { en: 'Offence Information', hi: 'अपराध जानकारी' },
-  arrestee_info: { en: 'Arrested Person Details', hi: 'गिरफ्तार व्यक्ति विवरण' },
-  custody_status: { en: 'Custody Status', hi: 'हिरासत स्थिति' },
-  procedure_slips: { en: 'Procedure & Slips', hi: 'प्रक्रिया और पर्ची' },
-  informant_contact: { en: 'Informant & Contact', hi: 'सूचनाकर्ता और संपर्क' },
-  complaint_details: { en: 'Complaint Details', hi: 'शिकायत विवरण' },
-  response_io: { en: 'Response & IO', hi: 'प्रतिक्रिया और जांच अधिकारी' },
-  arrival_geo: { en: 'Arrival & Location', hi: 'पहुंचना और स्थान' },
-  person_details: { en: 'Person Details', hi: 'व्यक्ति विवरण' },
-  location_particulars: { en: 'Location Particulars', hi: 'स्थान विशेष' },
-  physical_bio: { en: 'Physical Description', hi: 'शारीरिक हुलिया' },
-  contacts_assigned: { en: 'Contacts & Assigned IO', hi: 'संपर्क और आवंटित जांच अधिकारी' },
-  discovery_details: { en: 'Discovery Details', hi: 'खोज विवरण' },
-  corpse_desc: { en: 'Body Description', hi: 'शव विवरण' },
-  officer_informant: { en: 'Officer & Informant', hi: 'अधिकारी और सूचनाकर्ता' },
-  zipnet_status: { en: 'ZIPNET & Status', hi: 'जिपनेट और स्थिति' },
-  linked_case: { en: 'Linked Case', hi: 'संबंधित मामला' },
-  classification: { en: 'Classification', hi: 'वर्गीकरण' },
-  gist: { en: 'Call Gist', hi: 'कॉल का विवरण' },
-  category: { en: 'Category', hi: 'श्रेणी' },
-  stolen_property: { en: 'Stolen Property', hi: 'चोरी की गई संपत्ति' },
-  recovered_property: { en: 'Recovered Property', hi: 'बरामद संपत्ति' },
+export const getActs = async () => {
+  return db('excel_acts').select('act_cd', 'act_long').orderBy('act_long', 'asc');
 };
 
-function sectionTitle(sec) {
-  const t = SECTION_TITLES[sec];
-  if (t) return t;
-  // Convert snake_case to Title Case as fallback
-  const titleEn = sec.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  return { en: titleEn, hi: titleEn };
-}
+export const getSectionsForActs = async (actCds) => {
+  return db('excel_sections')
+    .whereIn('act_sec_cd', actCds.map(String))
+    .select('section_code', 'section', 'section_desc', 'pnsh_gt_7yrs')
+    .distinct()
+    .orderBy('section', 'asc');
+};
 
-export const getFields = async (record_type, is_active) => {
-  let query = db('field_registry').select('*').orderBy('sort_order', 'asc');
+export const getMajorHeadsForActs = async (actCds) => {
+  return db('excel_major_heads as mh')
+    .join('excel_major_minor_mapping as m', 'mh.major_head_code', 'm.major_head_code')
+    .whereIn('m.act_cd', actCds)
+    .select('mh.major_head_code', 'mh.major_head')
+    .distinct()
+    .orderBy('mh.major_head', 'asc');
+};
 
-  if (record_type) {
-    query = typeFilter(query, record_type);
+export const getMajorHeadsForSection = async (sectionCode) => {
+  return db('excel_major_heads as mh')
+    .join('excel_major_minor_mapping as m', 'mh.major_head_code', 'm.major_head_code')
+    .where('m.section_code', sectionCode)
+    .select('mh.major_head_code', 'mh.major_head')
+    .distinct()
+    .orderBy('mh.major_head', 'asc');
+};
+
+export const getMinorHeadsForMajorHeads = async (majorHeadCodes) => {
+  if (!majorHeadCodes || majorHeadCodes.length === 0) return [];
+  return db('excel_minor_heads')
+    .whereIn('major_head_code', majorHeadCodes)
+    .select('minor_head_cd', 'minor_head')
+    .distinct()
+    .orderBy('minor_head', 'asc');
+};
+
+// Every minor head joined to its major head's label, for every major head that has at
+// least one minor head — not scoped to any single act. Used to build a fully DB-driven
+// major-head -> minor-head cascade (one named range per major head label) instead of a
+// hand-curated list of per-crime-type minor_head field_keys.
+export const getAllMinorHeadsByMajorHead = async () => {
+  return db('excel_minor_heads as mn')
+    .join('excel_major_heads as mh', 'mh.major_head_code', 'mn.major_head_code')
+    .select('mh.major_head', 'mn.minor_head_cd', 'mn.minor_head')
+    .distinct()
+    .orderBy('mh.major_head', 'asc')
+    .orderBy('mn.minor_head', 'asc');
+};
+
+export const getPropertyCategories = async () => {
+  const standard = await db('excel_property_types').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property');
+  const others = await db('excel_other_property_categories').select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property');
+
+  const map = new Map();
+  for (const item of [...standard, ...others]) {
+    map.set(item.parent_cd, item);
+  }
+  return Array.from(map.values()).sort((a, b) => a.code_type.localeCompare(b.code_type));
+};
+
+export const getPropertyItemsForCategory = async (parentCd) => {
+  const pCd = parseInt(parentCd, 10);
+  const src = PROPERTY_CATEGORY_SOURCES[pCd];
+
+  if (src?.type === 'ARMS') {
+    const made = await db('excel_arms_made').select('arms_made_cd', 'arms_made');
+    const categories = await db('excel_arms_categories').select('arms_category_cd', 'arms_category');
+    const fireArms = await db('excel_fire_arms').select('fire_arms_cd', 'arms_category_cd', 'fire_arms');
+    return { type: 'ARMS', made, categories, fireArms };
   }
 
-  if (is_active !== undefined) {
-    query = query.where('is_active', is_active === 'true' || is_active === true);
+  if (src?.type === 'GENERIC') {
+    return db(src.table)
+      .select(`${src.valueColumn} as value`, `${src.labelColumn} as label`)
+      .orderBy(src.labelColumn, 'asc');
   }
 
-  return await query;
+  return db('excel_other_property_items')
+    .where({ parent_cd: pCd })
+    .select('property_cd', 'property')
+    .orderBy('property', 'asc');
 };
 
-export const getFormFields = async (record_type) => {
-  const fields = await typeFilter(
-    db('field_registry').select('*').andWhere('is_active', true).orderBy('sort_order', 'asc'),
-    record_type
-  );
-
-  const grouped = {};
-  const normalizedType = record_type.toUpperCase();
-
-  const mappedFields = fields.map(field => {
-    let sec = field.section || 'general_info';
-    let sort_order = field.sort_order;
-
-    if (normalizedType === 'ARREST') {
-      if (field.field_key === 'act_name' || field.field_key === 'sections') {
-        sec = 'offence_info';
-      } else if (field.field_key === 'status') {
-        sec = 'custody_status';
-        sort_order = 429;
-      }
-    } else if (normalizedType === 'UIDB') {
-      if (field.field_key === 'act_name' || field.field_key === 'sections') {
-        sec = 'general_info';
-        sort_order = field.field_key === 'act_name' ? 5.1 : 5.2;
-      } else if (field.field_key === 'status') {
-        sec = 'general_info';
-        sort_order = 5.3;
-      } else if ([
-        'height', 'built', 'complexion', 'face', 'hair', 'moustache', 'beard',
-        'upper_dress_color', 'lower_dress_color', 'zipnet_no', 'identified'
-      ].includes(field.field_key)) {
-        sec = 'corpse_desc';
-      } else if (['informant_name', 'informant_mobile'].includes(field.field_key)) {
-        sec = 'inquest_details';
-      }
-    }
-
-    return { ...field, section: sec, sort_order };
-  });
-
-  // Re-sort by sort_order
-  mappedFields.sort((a, b) => a.sort_order - b.sort_order);
-
-  for (const field of mappedFields) {
-    const sec = field.section;
-    if (!grouped[sec]) {
-      const t = sectionTitle(sec);
-      grouped[sec] = { section: sec, title_en: t.en, title_hi: t.hi, fields: [] };
-    }
-    grouped[sec].fields.push(field);
+export const getBeats = async (psCd) => {
+  let query = db('excel_beats').select('beat_cd', 'beat_name', 'ps_cd');
+  if (psCd) {
+    query = query.where({ ps_cd: String(psCd) });
   }
-
-  return Object.values(grouped);
+  return query.orderBy('beat_name', 'asc');
 };
 
-export const createField = async (fieldData) => {
-  const id = uuidv4();
-  const [newField] = await db('field_registry').insert({
-    id,
-    ...fieldData
-  }).returning('*');
-  return newField;
-};
-
-export const updateField = async (id, fieldData) => {
-  const [updatedField] = await db('field_registry')
-    .where({ id })
-    .update(fieldData)
-    .returning('*');
-
-  if (!updatedField) throw new Error('Field not found');
-  return updatedField;
-};
-
-export const toggleFieldStatus = async (id, is_active) => {
-  const [updatedField] = await db('field_registry')
-    .where({ id })
-    .update({ is_active })
-    .returning('*');
-
-  if (!updatedField) throw new Error('Field not found');
-  return updatedField;
+export const getLocalHeads = async () => {
+  return db('excel_local_heads').select('local_head_cd', 'local_head').orderBy('local_head', 'asc');
 };

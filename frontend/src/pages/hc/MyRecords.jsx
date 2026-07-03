@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { FileText, Plus, FileEdit, Trash2, Send, Filter, Eye } from 'lucide-react';
+import { FileText, Plus, FileEdit, Trash2, Send, Filter, Eye, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
@@ -30,8 +30,35 @@ export default function MyRecords() {
   const { t, i18n } = useTranslation();
   const currentLng = i18n.language || 'en';
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+
+  const tableRef = useRef(null);
+
+  useEffect(() => {
+    if (location.search.includes('scrollTo=table') || location.hash === '#records-table') {
+      setTimeout(() => {
+        tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+  }, [location]);
+
+  // Fetch all records without filters to calculate the hero stats accurately
+  const { data: allRecords = [] } = useQuery({
+    queryKey: ['all-records-stats'],
+    queryFn: async () => {
+      const res = await api.get('/records');
+      const payload = res.data.data;
+      if (payload?.cases) return payload.cases;
+      if (payload?.queue) return payload.queue;
+      if (Array.isArray(payload)) return payload;
+      return [];
+    },
+  });
+
+  const sentBackCount = allRecords.filter(r => r.current_status === 'SENT_BACK' || r.current_status === 'SENT_BACK_HC').length;
+  const draftCount = allRecords.filter(r => r.current_status === 'DRAFT').length;
 
   const [filters, setFilters] = useState({
     type: 'CASE',
@@ -70,6 +97,7 @@ export default function MyRecords() {
     onSuccess: () => {
       toast.success(t('actions.submitSuccess', 'Record submitted to SHO successfully'));
       queryClient.invalidateQueries({ queryKey: ['records'] });
+      queryClient.invalidateQueries({ queryKey: ['all-records-stats'] });
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || 'Failed to submit record');
@@ -85,6 +113,7 @@ export default function MyRecords() {
     onSuccess: () => {
       toast.success(t('actions.deleteSuccess', 'Local draft deleted successfully'));
       queryClient.invalidateQueries({ queryKey: ['records'] });
+      queryClient.invalidateQueries({ queryKey: ['all-records-stats'] });
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || 'Failed to delete draft');
@@ -131,31 +160,42 @@ export default function MyRecords() {
   return (
     /* ── Full-page background matching Dashboard's deep navy gradient ── */
     <div className="min-h-screen theme-hc-page page-bg">
-      <div className="hero-banner-gradient px-8 py-10 relative overflow-hidden shadow-xl">
+      <div className="hero-banner-gradient px-8 pt-6 pb-14 relative overflow-hidden shadow-xl">
         <span className="user-greeting-badge text-3xl font-bold text-white/95 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 shadow-sm">
           Hi, {currentLng === 'hi' ? (user?.name_hi || user?.name_en || user?.username) : (user?.name_en || user?.username || 'User')}
         </span>
         <div className="absolute -top-10 -right-10 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none" />
   
-        <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            {/* <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs text-white/80 border border-white/20 mb-4">
-              <FileText size={13} />
-              RECORDS DESK
-            </span> */}
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-6">
+          <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold text-white flex items-center gap-3 m-0">
-              {/* <div className="bg-white/10 border border-white/20 rounded-xl p-2 shadow-inner">
-                <FileText className="text-white" size={22} />
-              </div> */}
               {t('nav.records', 'My Records Desk')}
             </h1>
-            <p className="mt-2 text-sm text-white/60 font-medium m-0">
+            <p className="text-sm text-white/70 font-medium m-0">
               {t('common.recordsSubtitle', 'Manage and submit your daily diary entries.')}
             </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 md:flex-shrink-0 bg-transparent w-full md:w-auto md:pt-14">
+            {/* Sent Back Box */}
+            <div className="rounded-2xl bg-red-600/25 border border-red-400/40 backdrop-blur-sm px-4 py-2.5 min-w-[100px] text-center transition-all duration-200 hover:scale-105 hover:bg-white/20">
+              <div className="text-2xl font-bold text-red-200 tabular-nums">{sentBackCount}</div>
+              <div className="text-[10px] text-red-100/70 mt-0.5 font-medium uppercase tracking-wider">
+                {t('status.SENT_BACK_LABEL', 'Returned')}
+              </div>
+            </div>
+
+            {/* Drafts Box */}
+            <div className="rounded-2xl bg-sky-500/15 border border-sky-400/30 backdrop-blur-sm px-4 py-2.5 min-w-[100px] text-center transition-all duration-200 hover:scale-105 hover:bg-white/20">
+              <div className="text-2xl font-bold text-sky-300 tabular-nums">{draftCount}</div>
+              <div className="text-[10px] text-sky-100/70 mt-0.5 font-medium uppercase tracking-wider">
+                {t('status.DRAFT', 'Draft')}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
  
       {/* ── Content area overlaid on the light bg ── */}
       <motion.div
@@ -195,14 +235,15 @@ export default function MyRecords() {
         </motion.div>
  
         {/* Records Listing */}
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl shadow-md border border-[#E2E8F0] text-[#4A5568]">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent-color)] mb-4"></div>
-            <p className="text-xs font-semibold tracking-wide text-[#718096]">
-              {t('common.loading', 'Syncing digital registry logs...')}
-            </p>
-          </div>
-        ) : filteredRecords.length === 0 ? (
+        <div ref={tableRef} style={{ scrollMarginTop: '24px' }}>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl shadow-md border border-[#E2E8F0] text-[#4A5568]">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent-color)] mb-4"></div>
+              <p className="text-xs font-semibold tracking-wide text-[#718096]">
+                {t('common.loading', 'Syncing digital registry logs...')}
+              </p>
+            </div>
+          ) : filteredRecords.length === 0 ? (
           <motion.div
             variants={itemVariants}
             className="bg-white rounded-3xl border border-dashed border-[#CBD5E0] p-16 text-center shadow-md"
@@ -337,6 +378,7 @@ export default function MyRecords() {
             </div>
           </motion.div>
         )}
+        </div>
       </motion.div>
     </div>
   );

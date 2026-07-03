@@ -9,6 +9,7 @@ import { logger } from '../../utils/logger.js';
 import { TYPE_CODES } from '../records/records.service.js';
 import { createLink } from '../record-links/record-links.service.js';
 import { TemplateBuilderService } from './template-builder.service.js';
+import { toISO, toDMY } from '../../utils/dateFormat.js';
 import {
   COUNTRY_OPTS,
   STATE_OPTS,
@@ -23,7 +24,9 @@ import {
   arrestPersonFields,
   arrestPropertyFields,
   CASE_SHEETS_CONFIG,
-  ARREST_SHEETS_CONFIG
+  ARREST_SHEETS_CONFIG,
+  uidbActSectionFields,
+  UIDB_ACT_SECTION_EXCLUDE_KEYS
 } from './import-fields.config.js';
 
 // Synonyms map to handle template label variations and offsets
@@ -523,32 +526,26 @@ const parseFirAndYear = (str) => {
   return { firNo: seqToken != null ? String(parseInt(seqToken, 10)) : '', year };
 };
 
+// Normalizes any incoming Excel cell value to dd/mm/yyyy — the format
+// records.data stores date fields in going forward. Delegates the actual
+// parsing to the shared backend dateFormat util so import, legacy import,
+// and everything else agree on what formats are accepted.
 const coerceDate = (val) => {
   if (val === null || val === undefined || val === '') return null;
-  if (val instanceof Date) {
-    return isNaN(val.getTime()) ? null : val.toISOString().split('T')[0];
+  let s = val;
+  if (typeof val === 'string') {
+    s = val.trim();
+    const range = s.split(/\s+TO\s+/i);
+    if (range.length > 1) s = range[0].trim();
   }
-  let s = String(val).trim();
-  if (!s) return null;
+  return toDMY(s);
+};
 
-  const range = s.split(/\s+TO\s+/i);
-  if (range.length > 1) s = range[0].trim();
-
-  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-
-  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
-  if (m) {
-    let d = m[1], mo = m[2], y = m[3];
-    if (y.length === 2) y = '20' + y;
-    d = d.padStart(2, '0');
-    mo = mo.padStart(2, '0');
-    if (+mo >= 1 && +mo <= 12 && +d >= 1 && +d <= 31) return `${y}-${mo}-${d}`;
-  }
-
-  const dt = new Date(s);
-  if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
-  return null;
+// Extracts the calendar year from any supported date input (dd/mm/yyyy,
+// yyyy-mm-dd, Date object) — used for UID year-bucketing.
+const yearOf = (val) => {
+  const iso = toISO(val);
+  return iso ? parseInt(iso.slice(0, 4), 10) : null;
 };
 
 const coerceTime = (val) => {
@@ -732,7 +729,7 @@ const runAutoLinkageForArrests = async (trx, arrestRecords, psId, userId) => {
     } catch(e) {}
     const firNo = dataObj.fir_no || '';
     const firDate = dataObj.fir_date || '';
-    const firYear = firDate ? new Date(firDate).getFullYear() : null;
+    const firYear = firDate ? yearOf(firDate) : null;
     return {
       id: c.id,
       data: dataObj,
@@ -869,6 +866,21 @@ const generateImportUID = async (trx, recordType, psId, dateStr) => {
   return `${recordType}-${psCode}-${cleanDate}-${seq}`;
 };
 
+const getHint = (field) => {
+  const reqStr = field.validation_rules?.required ? '[Required] ' : '';
+  if (field.field_type === 'SELECT' || field.field_type === 'RADIO') {
+    let options = [];
+    try {
+      options = typeof field.options === 'string' ? JSON.parse(field.options) : field.options;
+    } catch (e) {}
+    const optList = Array.isArray(options) ? options.map(o => (o && typeof o === 'object') ? o.value : o).join(', ') : '';
+    return `${reqStr}select: ${optList}`;
+  }
+  if (field.field_type === 'DATE') return `${reqStr}date (DD/MM/YYYY)`;
+  if (field.field_type === 'TIME') return `${reqStr}time (HH:MM)`;
+  if (field.field_type === 'NUMBER') return `${reqStr}number`;
+  return `${reqStr}${field.field_type.toLowerCase()}`;
+};
 
 const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang) => {
   const worksheet = workbook.addWorksheet(sheetName);
@@ -909,7 +921,7 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang) =>
       return lang === 'hi' ? 'गिरफ्तार व्यक्ति का व्यक्तिगत विवरण' : 'Arrested Person Personal Details';
     }
     if (key.startsWith('property_') || key.startsWith('phone_')) return lang === 'hi' ? 'संपत्ति विवरण' : 'Property Details';
-    if (key === 'act' || key === 'sections' || key === 'crime_head') return lang === 'hi' ? 'अधिनियम और धाराएं' : 'Act and Sections';
+    if (['act', 'act_name', 'sections', 'crime_head', 'major_head', 'minor_head'].includes(key)) return lang === 'hi' ? 'अधिनियम और धाराएं' : 'Act and Sections';
     if (key === 'io_name' || key === 'io_pis' || key === 'io_mobile' || key === 'date_of_arrest') return lang === 'hi' ? 'जांच अधिकारी और गिरफ्तारी विवरण' : 'IO and Arrest Details';
     if (['nafis_prepared', 'dossier_prepared', 'search_slip_prepared', 'address_verified', 'verifying_officer_name', 'verifying_officer_rank', 'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path'].includes(key)) {
       return lang === 'hi' ? 'सत्यापन और रिश्तेदार विवरण' : 'Verification and Kin Details';
@@ -977,12 +989,20 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang) =>
     const matched = allFields.find(dbF => dbF.field_key === f.field_key);
     
     let options = [];
-    if (matched && matched.field_type === 'SELECT') {
+    if (matched && matched.options) {
+      // Parse regardless of field_type (SELECT, RADIO, and any other picker type all
+      // store their options the same way in field_registry) — gating this on
+      // field_type === 'SELECT' silently dropped the dropdown for RADIO-type boolean
+      // fields (e.g. UIDB's `identified`) even though options were present in the DB.
       try {
         options = typeof matched.options === 'string' ? JSON.parse(matched.options) : matched.options;
       } catch (e) {}
     } else if (f.options) {
-      options = f.options;
+      try {
+        options = typeof f.options === 'string' ? JSON.parse(f.options) : f.options;
+      } catch (e) {
+        options = Array.isArray(f.options) ? f.options : [];
+      }
     } else if (f.field_key.endsWith('_prepared') || f.field_key.endsWith('_verified') || f.field_key.endsWith('_same')) {
       options = ['Yes', 'No'];
     } else if (f.field_key.includes('gender')) {
@@ -1041,7 +1061,7 @@ export const downloadImportTemplate = async (req, res) => {
 
     const workbook = new ExcelJS.Workbook();
 
-    const fields = allFields.filter(f => {
+    let fields = allFields.filter(f => {
       try {
         const types = typeof f.applicable_record_types === 'string'
           ? JSON.parse(f.applicable_record_types)
@@ -1051,6 +1071,13 @@ export const downloadImportTemplate = async (req, res) => {
         return false;
       }
     });
+
+    // UIDB's Act & Sections fields move to their own sheet (see below) — the raw per-act
+    // conditional fields (ipc_major_head, theft_minor_head, ...) are never meaningful as
+    // standalone columns since nothing merges them for imported rows, so drop them here.
+    if (recordType === 'UIDB') {
+      fields = fields.filter(f => !UIDB_ACT_SECTION_EXCLUDE_KEYS.has(f.field_key));
+    }
 
     fields.sort((a, b) => {
       const reqA = isRequired(a) ? 1 : 0;
@@ -1062,6 +1089,18 @@ export const downloadImportTemplate = async (req, res) => {
     });
 
     addSheetToWorkbook(workbook, 'Import Template', fields, allFields, lang);
+
+    if (recordType === 'UIDB') {
+      // Separate "Act and Sections" sheet, same workbook — matches CASE's multi-sheet
+      // layout instead of cramming the cascade into the flat general sheet.
+      addSheetToWorkbook(workbook, 'Act and Sections', uidbActSectionFields, allFields, lang);
+      await TemplateBuilderService.wireActSectionCascade(
+        workbook,
+        workbook.getWorksheet('Act and Sections'),
+        'UIDB',
+        { act: 'act_name', sections: 'sections', major: 'major_head', minor: 'minor_head' }
+      );
+    }
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${recordType}_Import_Template.xlsx"`);
@@ -1798,6 +1837,16 @@ export const confirmImportBatch = async (req, res) => {
               }
             }
           }
+
+          // Sync structured acts list from main
+          rowData.acts = acts.map(a => ({
+            act_name: a.act || '',
+            sections: a.sections || '',
+            major_head: a.major_head || a.crime_head || '',
+            minor_head: a.minor_head || '',
+            local_head: a.local_head || ''
+          }));
+
         }
 
         rowsToInsert.push({ rowData, victims, accused, properties, acts });
@@ -1882,6 +1931,16 @@ export const confirmImportBatch = async (req, res) => {
               }
             }
           }
+
+          // Sync structured acts list from main mapped to itemRowData
+          itemRowData.acts = acts.map(a => ({
+            act_name: a.act || '',
+            sections: a.sections || '',
+            major_head: a.major_head || a.crime_head || '',
+            minor_head: a.minor_head || '',
+            local_head: a.local_head || ''
+          }));
+
         }
 
         if (matchingPersons.length > 0) {
@@ -1989,8 +2048,8 @@ export const confirmImportBatch = async (req, res) => {
     for (const rc of existingCounts) {
       seqByYear[parseInt(rc.yr, 10)] = parseInt(rc.c, 10);
     }
-    const nextUid = (recordDate) => {
-      const yr = parseInt(String(recordDate).slice(0, 4), 10);
+    const nextUid = (recordDateISO) => {
+      const yr = yearOf(recordDateISO);
       seqByYear[yr] = (seqByYear[yr] || 0) + 1;
       const seq = String(seqByYear[yr]).padStart(6, '0');
       return `${typeCode}/${yr}/${psCode}/${seq}`;
@@ -2011,12 +2070,10 @@ export const confirmImportBatch = async (req, res) => {
       const isCaseOrArrest = (batch.record_type === 'CASE' || batch.record_type === 'ARREST');
       const rowData = isCaseOrArrest ? item.rowData : item;
 
-      let recordDate = getRecordDate(batch.record_type, rowData) || new Date().toISOString().split('T')[0];
-      if (recordDate instanceof Date) {
-        recordDate = recordDate.toISOString().split('T')[0];
-      } else if (typeof recordDate === 'string' && recordDate.includes('T')) {
-        recordDate = recordDate.split('T')[0];
-      }
+      // rowData's own date fields (fir_date, occurrence_date, etc.) are
+      // already dd/mm/yyyy via coerceDate; record_date is a native Postgres
+      // DATE column and always needs the ISO form.
+      const recordDate = toISO(getRecordDate(batch.record_type, rowData)) || new Date().toISOString().split('T')[0];
 
       const recordId = uuidv4();
       const uid = nextUid(recordDate);

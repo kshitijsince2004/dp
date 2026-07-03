@@ -3,6 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '../../config/db.js';
 import { checkDuplicateRecord } from '../records/records.service.js';
 import { publish } from '../../events/eventBus.js';
+import { toISO, toDMY } from '../../utils/dateFormat.js';
+
+const DATE_FIELD_KEYS = new Set(['fir_date', 'gd_date', 'occurrence_date', 'arrest_date']);
 
 const DEFAULT_MAPS = {
   CASES: {
@@ -94,7 +97,8 @@ export const importLegacy = async (req, res) => {
         const header = headers[colNumber];
         const fieldKey = mapping[header];
         if (fieldKey) {
-          rowData[fieldKey] = cell.text ? cell.text.trim() : '';
+          const raw = cell.text ? cell.text.trim() : '';
+          rowData[fieldKey] = DATE_FIELD_KEYS.has(fieldKey) ? (toDMY(raw) || raw) : raw;
         }
       });
       rows.push({ rowNum: rowNumber, data: rowData });
@@ -172,8 +176,8 @@ export const importLegacy = async (req, res) => {
 
       for (const r of validRecords) {
         const id = uuidv4();
-        const recordDate = r.data.fir_date || r.data.arrest_date || new Date().toISOString().split('T')[0];
-        
+        const recordDate = toISO(r.data.fir_date || r.data.arrest_date) || new Date().toISOString().split('T')[0];
+
         await trx('records').insert({
           id,
           record_type: type,
