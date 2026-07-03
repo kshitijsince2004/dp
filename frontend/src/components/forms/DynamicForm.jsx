@@ -1577,28 +1577,7 @@ const renderPropertyStep = () => {
 
   const getMinorCategoryOptions = (majorCategory) => {
     if (!majorCategory) return [];
-    let targetKey = null;
-    const cat = String(majorCategory).toLowerCase().trim();
-    if (cat === 'vehicle') targetKey = 'prop_vehicle_type';
-    else if (cat === 'jewellery' || cat === 'gold/jewellery') targetKey = 'prop_gold_item_type';
-    else if (cat === 'electronics' || cat === 'electronics/gadgets') targetKey = 'prop_elec_device_type';
-    else if (cat === 'documents' || cat === 'official/personal documents') targetKey = 'prop_doc_type';
-    else if (cat === 'drugs' || cat === 'drugs/narcotics') targetKey = 'prop_drug_type';
-    else if (cat === 'arms' || cat === 'arms/ammunition') targetKey = 'prop_arms_type';
-    else if (cat === 'cash') targetKey = 'prop_cash_currency';
-
-    if (targetKey) {
-      const field = allFields.find(f => f.field_key === targetKey);
-      if (field) {
-        try {
-          const opts = typeof field.options === 'string' ? JSON.parse(field.options) : field.options;
-          return Array.isArray(opts) ? opts : [];
-        } catch (e) {
-          return Array.isArray(field.options) ? field.options : [];
-        }
-      }
-    }
-    return [];
+    return propertyMinorOptionsMap[majorCategory] || [];
   };
 
   // ── Extra detail field helpers ─────────────────────────────────────────────
@@ -1616,8 +1595,33 @@ const renderPropertyStep = () => {
     if (!cond) return true;
     if (cond.and) return cond.and.every(c => evalPropCond(c, row));
     const { field: tf, value: tv, operator } = cond;
-    const cv = row[tf];
+    let cv = row[tf];
     if (operator === 'filled') return cv !== undefined && cv !== null && String(cv).trim() !== '';
+
+    if (tf === 'property_major_category' && cv) {
+      const matchOpt = majorCategoryOptions.find(o => String(o.value) === String(cv));
+      if (matchOpt) {
+        const label = String(matchOpt.label_en || matchOpt.value).toUpperCase();
+        if (label === 'ELECTRICAL AND ELECTRONIC GOODS' || String(row.property_minor_category) === '470') {
+          cv = 'Mobile Phone';
+        } else if (label === 'AUTOMOBILES AND OTHERS') {
+          cv = 'Vehicle';
+        } else if (label === 'COIN AND CURRENCY') {
+          cv = 'Cash';
+        } else if (label === 'JEWELLERY') {
+          cv = 'Jewellery';
+        } else if (label === 'ARMS AND AMMUNITION') {
+          cv = 'Arms';
+        } else if (label === 'DOCUMENTS AND VALUABLE SECURITIES') {
+          cv = 'Documents';
+        } else if (label === 'DRUGS/NARCOTIC DRUGS') {
+          cv = 'Drugs';
+        } else {
+          cv = matchOpt.label_en || matchOpt.value;
+        }
+      }
+    }
+
     return Array.isArray(tv)
       ? tv.map(v => String(v || '').toLowerCase()).includes(String(cv || '').toLowerCase())
       : String(cv || '').toLowerCase() === String(tv || '').toLowerCase();
@@ -2662,6 +2666,50 @@ const renderActionTakenStep = () => {
   const [currentStep,  setCurrentStep ] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [repeaterState, setRepeaterState] = useState({});
+  const [propertyMinorOptionsMap, setPropertyMinorOptionsMap] = useState({});
+
+  useEffect(() => {
+    const list = repeaterState?.property_details || [];
+    const majorCategories = Array.from(new Set(
+      list.map(row => row.property_major_category).filter(Boolean)
+    ));
+
+    majorCategories.forEach(cat => {
+      if (propertyMinorOptionsMap[cat]) return; // already loaded or loading
+
+      // Pre-populate to avoid multiple requests in flight
+      setPropertyMinorOptionsMap(prev => ({ ...prev, [cat]: [] }));
+
+      api.get(`/fields/lookup/property-items/${cat}`)
+        .then(res => {
+          if (res.data?.success) {
+            const data = res.data.data;
+            let options = [];
+            if (data?.type === 'ARMS') {
+              options = (data.categories || []).map(c => ({
+                value: c.arms_category_cd ?? c.value ?? c,
+                label_en: c.arms_category ?? c.label ?? c,
+                label_hi: c.arms_category ?? c.label ?? c
+              }));
+            } else if (Array.isArray(data)) {
+              options = data.map(o => ({
+                value: o.value ?? o.property_cd ?? o,
+                label_en: o.label ?? o.property ?? o,
+                label_hi: o.label ?? o.property ?? o
+              }));
+            }
+            setPropertyMinorOptionsMap(prev => ({
+              ...prev,
+              [cat]: options
+            }));
+          }
+        })
+        .catch(err => {
+          console.error(`Failed to fetch items for property category ${cat}:`, err);
+        });
+    });
+  }, [repeaterState?.property_details, propertyMinorOptionsMap]);
+
   const [showAddRow,   setShowAddRow  ] = useState(false);
   const [newAct,       setNewAct      ] = useState('');
   const [newSection,   setNewSection  ] = useState('');
