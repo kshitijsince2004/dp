@@ -2054,8 +2054,8 @@ const renderArrestedStep = () => {
         <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
           {renderArrestedModalField('prev_involvement')}
           {renderArrestedModalField('proclaimed_offender')}
-          {renderArrestedModalField('nafis_prepared')}
-          {renderArrestedModalField('dossier_prepared')}
+          {renderArrestedModalField('nafis_dossier')}
+          {renderArrestedModalField('bad_character')}
           {renderArrestedModalField('arresting_officer')}
           {renderArrestedModalField('arresting_officer_mobile')}
           {renderArrestedModalField('listed_criminal', null, true)}
