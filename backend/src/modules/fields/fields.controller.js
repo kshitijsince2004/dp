@@ -1000,10 +1000,63 @@ export const listSectionsForAct = async (req, res) => {
 
 export const listMajorHeads = async (req, res) => {
   try {
-    const data = await db('excel_major_heads')
-      .select('major_head as value', 'major_head as label')
-      .orderBy('major_head', 'asc');
-    return res.status(200).json({ success: true, data });
+    const actNameRaw = req.query.act_name;
+    let data = [];
+
+    if (actNameRaw) {
+      const actNames = actNameRaw.split(',').map(a => a.trim()).filter(Boolean);
+      const actCds = [];
+      const customNames = [];
+
+      for (const name of actNames) {
+        if (ACT_GROUP_CODES[name]) {
+          actCds.push(...ACT_GROUP_CODES[name]);
+        } else {
+          customNames.push(name);
+        }
+      }
+
+      if (customNames.length > 0) {
+        const customActs = await db('excel_acts')
+          .whereIn('act_long', customNames)
+          .orWhereIn('act_short', customNames)
+          .select('act_cd');
+        actCds.push(...customActs.map(a => a.act_cd));
+      }
+
+      if (actCds.length > 0) {
+        const mappings = await db('excel_major_minor_mapping')
+          .whereIn('act_cd', actCds)
+          .distinct('major_head_code');
+        const majorCds = mappings.map(m => m.major_head_code);
+
+        if (majorCds.length > 0) {
+          data = await db('excel_major_heads')
+            .whereIn('major_head_code', majorCds)
+            .select('major_head as value', 'major_head as label')
+            .orderBy('major_head', 'asc');
+        }
+      }
+    }
+
+    // Fallback: if no acts filtered, or no major heads found for filtered acts, return all major heads
+    if (data.length === 0) {
+      data = await db('excel_major_heads')
+        .select('major_head as value', 'major_head as label')
+        .orderBy('major_head', 'asc');
+    }
+
+    // Deduplicate by value (major_head name) to prevent React duplicate key warnings
+    const seen = new Set();
+    const uniqueData = data.filter(item => {
+      if (!item.value) return false;
+      const val = item.value.trim();
+      if (seen.has(val)) return false;
+      seen.add(val);
+      return true;
+    });
+
+    return res.status(200).json({ success: true, data: uniqueData });
   } catch (error) {
     logger.error('listMajorHeads failed', { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
@@ -1015,7 +1068,18 @@ export const listMajorHeadsForSection = async (req, res) => {
   try {
     const rows = await fieldsService.getMajorHeadsForSection(section_code);
     const data = rows.map(r => ({ value: r.major_head, label: r.major_head }));
-    return res.status(200).json({ success: true, data });
+    
+    // Deduplicate major heads
+    const seen = new Set();
+    const uniqueData = data.filter(item => {
+      if (!item.value) return false;
+      const val = item.value.trim();
+      if (seen.has(val)) return false;
+      seen.add(val);
+      return true;
+    });
+
+    return res.status(200).json({ success: true, data: uniqueData });
   } catch (error) {
     logger.error('listMajorHeadsForSection failed', { section_code, error: error.message });
     return res.status(500).json({ success: false, message: error.message });
@@ -1042,7 +1106,18 @@ export const listMinorHeadsForMajorHead = async (req, res) => {
 
     const rows = await fieldsService.getMinorHeadsForMajorHeads([code]);
     const data = rows.map(r => ({ value: r.minor_head, label: r.minor_head }));
-    return res.status(200).json({ success: true, data });
+    
+    // Deduplicate minor heads
+    const seen = new Set();
+    const uniqueData = data.filter(item => {
+      if (!item.value) return false;
+      const val = item.value.trim();
+      if (seen.has(val)) return false;
+      seen.add(val);
+      return true;
+    });
+
+    return res.status(200).json({ success: true, data: uniqueData });
   } catch (error) {
     logger.error('listMinorHeadsForMajorHead failed', { major_head_code, error: error.message });
     return res.status(500).json({ success: false, message: error.message });
