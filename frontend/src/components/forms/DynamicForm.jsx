@@ -82,6 +82,8 @@ const REPEATER_SECTION_META = {
   property_details:  { is_repeater: true, entity_type: 'property' },
   arrested_info:     { is_repeater: true, entity_type: 'person', person_type: 'ARRESTED' },
   intimation_details:{ is_repeater: true, entity_type: 'person', person_type: 'INTIMATED' },
+  victim_info:       { is_repeater: true, entity_type: 'person', person_type: 'VICTIM' },
+  accused_info:      { is_repeater: true, entity_type: 'person', person_type: 'ACCUSED' },
 };
 
 // When "Type of Information" is Oral/Court Order, Case Registration Type mirrors it
