@@ -78,7 +78,7 @@ export default function ActsSectionsTable({
           <option value="">------Select------</option>
           {getMajorHeadOptions().map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
+              {opt.label || (lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en) || opt.value}
             </option>
           ))}
         </select>
@@ -96,7 +96,7 @@ export default function ActsSectionsTable({
             <option value="">------Select------</option>
             {getMinorHeadOptions().map((opt) => (
               <option key={opt.value} value={opt.value}>
-                {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
+                {opt.label || (lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en) || opt.value}
               </option>
             ))}
           </select>
