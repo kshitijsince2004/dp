@@ -1341,7 +1341,8 @@ const formSchemas = {
       title_hi: 'सूचना प्रदाता संपर्क',
       fields: [
         { field_key: 'informant_name', field_type: 'TEXT', label_en: 'Complainant / Informant Full Name', label_hi: 'शिकायतकर्ता / सूचना प्रदाता का नाम', validation_rules: { required: true } },
-        { field_key: 'informant_contact', field_type: 'TEXT', label_en: 'Informant Contact Telephone/Mobile', label_hi: 'सूचना प्रदाता का संपर्क नंबर', validation_rules: { required: true } }
+        { field_key: 'informant_contact', field_type: 'TEXT', label_en: 'Informant Contact Telephone/Mobile', label_hi: 'सूचना प्रदाता का संपर्क नंबर', validation_rules: { required: true } },
+        { field_key: 'zipnet_no', field_type: 'TEXT', label_en: 'ZIPNET No.', label_hi: 'जिपनेट संख्या', validation_rules: { required: false } }
       ]
     },
     {
