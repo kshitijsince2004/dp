@@ -72,20 +72,20 @@ function getFieldOptions(fieldsArr, key) {
  * 'select_fir' is a synthetic step (see finalSchema) not present in the backend response.
  */
 const SECTION_KEY_ORDER = {
-  CASE:   ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
+  CASE: ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
   // For ARREST keep only the main flow tabs. Custody/status and particulars
   // will be surfaced inside the arrested-person modal to avoid repetition.
   ARREST: ['select_fir', 'general_info', 'arrested_info', 'investigation_officer'],
-  UIDB:   ['general_info', 'corpse_desc', 'corpse_physical', 'inquest_details', 'investigation_officer'],
+  UIDB: ['general_info', 'corpse_desc', 'corpse_physical', 'inquest_details', 'investigation_officer'],
   MISSING: ['general_info', 'person_details', 'missing_address', 'missing_physical', 'contacts_assigned', 'investigation_officer'],
 };
 
 // Repeater sections need is_repeater/entity_type/person_type so the person/property
 // add-edit-delete modals and the final-submit persons/properties builder can find them.
 const REPEATER_SECTION_META = {
-  property_details:  { is_repeater: true, entity_type: 'property' },
-  arrested_info:     { is_repeater: true, entity_type: 'person', person_type: 'ARRESTED' },
-  intimation_details:{ is_repeater: true, entity_type: 'person', person_type: 'INTIMATED' },
+  property_details: { is_repeater: true, entity_type: 'property' },
+  arrested_info: { is_repeater: true, entity_type: 'person', person_type: 'ARRESTED' },
+  intimation_details: { is_repeater: true, entity_type: 'person', person_type: 'INTIMATED' },
 };
 
 // When "Type of Information" is Oral/Court Order, Case Registration Type mirrors it
@@ -135,9 +135,8 @@ function StepDot({ index, active, completed, hasError, title, onClick }) {
       `}>
         {completed && !active ? <CheckCircle2 size={14} /> : index + 1}
       </span>
-      <span className={`text-[11px] font-semibold max-w-[90px] text-center leading-tight hidden sm:block transition-colors ${
-        active ? 'text-[var(--accent-color)]' : hasError ? 'text-red-600' : 'text-slate-400'
-      }`}>
+      <span className={`text-[11px] font-semibold max-w-[90px] text-center leading-tight hidden sm:block transition-colors ${active ? 'text-[var(--accent-color)]' : hasError ? 'text-red-600' : 'text-slate-400'
+        }`}>
         {title}
       </span>
     </button>
@@ -235,7 +234,7 @@ export default function DynamicForm({
       return;
     }
     setSearchError('');
-    
+
     // Combine frontend mock cases & backend casesData
     const unifiedCases = [
       ...MOCK_FIR_LIST,
@@ -281,7 +280,7 @@ export default function DynamicForm({
     const selectedFir = values.selected_fir;
     const currentAct = values.act_name || 'IPC';
     const currentSections = values.sections || '';
-    
+
     // Parse sections list
     const sectionsList = currentSections
       ? currentSections.split(',').map(s => s.trim()).filter(Boolean)
@@ -303,12 +302,12 @@ export default function DynamicForm({
       const updatedList = sectionsList.filter(s => s !== secToRemove);
       handleChange('sections', updatedList.join(', '));
     };
-    
+
     return (
       <div className="space-y-6">
         {/* Search Panel Card */}
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-          
+
           <div className="p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Mandatory Date Field */}
@@ -325,9 +324,8 @@ export default function DynamicForm({
                     if (searchError) setSearchError('');
                   }}
                   status={searchError ? 'error' : undefined}
-                  inputClassName={`w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 pr-9 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all ${
-                    searchError ? 'border-red-400 focus:border-red-500 bg-red-50' : ''
-                  }`}
+                  inputClassName={`w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 pr-9 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all ${searchError ? 'border-red-400 focus:border-red-500 bg-red-50' : ''
+                    }`}
                 />
                 {searchError && (
                   <span className="flex items-center gap-1 text-xs text-red-500 font-medium mt-1">
@@ -411,7 +409,7 @@ export default function DynamicForm({
                           key={row.fir_no}
                           onClick={() => {
                             if (readOnly) return;
-                            
+
                             // Find the full details from row or casesData
                             let actName = 'IPC';
                             let sections = row.sections && row.sections !== 'N/A' ? row.sections : '';
@@ -462,24 +460,21 @@ export default function DynamicForm({
                               case_type: caseTypeVal
                             }));
                           }}
-                          className={`group cursor-pointer hover:bg-slate-50/80 transition-all ${
-                            isSelected
+                          className={`group cursor-pointer hover:bg-slate-50/80 transition-all ${isSelected
                               ? 'bg-[var(--accent-glow)] hover:bg-[var(--accent-glow)]'
                               : ''
-                          }`}
+                            }`}
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
-                                isSelected
+                              <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${isSelected
                                   ? 'border-[var(--accent-color)] bg-[var(--accent-color)] text-white scale-110'
                                   : 'border-slate-300 bg-white group-hover:border-slate-400'
-                              }`}>
+                                }`}>
                                 {isSelected && <Check size={10} className="stroke-[3]" />}
                               </span>
-                              <span className={`text-sm font-bold ${
-                                isSelected ? 'text-[var(--accent-color)] font-extrabold' : 'text-slate-800'
-                              }`}>
+                              <span className={`text-sm font-bold ${isSelected ? 'text-[var(--accent-color)] font-extrabold' : 'text-slate-800'
+                                }`}>
                                 {row.fir_no}
                               </span>
                             </div>
@@ -646,58 +641,58 @@ export default function DynamicForm({
       <div className="space-y-4">
         {/* Top card fields */}
         <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-visible mt-2">
-            {renderReadOnlyRow(fieldLabel('uid') || (lang === 'hi' ? 'रिकॉर्ड यूआईडी (UID)' : 'Record UID'), values.uid || 'NEW_DRAFT_PENDING', true)}
-            {renderReadOnlyRow(fieldLabel('district') || (lang === 'hi' ? 'जिला' : 'District'), values.district || user?.district)}
-            {renderReadOnlyRow(fieldLabel('police_station') || (lang === 'hi' ? 'थाना' : 'Police Station'), values.police_station || user?.police_station)}
-            {renderReadOnlyRow(fieldLabel('submission_status') || (lang === 'hi' ? 'प्रस्तुति स्थिति' : 'Submission Status'), values.status || 'DRAFT')}
+          {renderReadOnlyRow(fieldLabel('uid') || (lang === 'hi' ? 'रिकॉर्ड यूआईडी (UID)' : 'Record UID'), values.uid || 'NEW_DRAFT_PENDING', true)}
+          {renderReadOnlyRow(fieldLabel('district') || (lang === 'hi' ? 'जिला' : 'District'), values.district || user?.district)}
+          {renderReadOnlyRow(fieldLabel('police_station') || (lang === 'hi' ? 'थाना' : 'Police Station'), values.police_station || user?.police_station)}
+          {renderReadOnlyRow(fieldLabel('submission_status') || (lang === 'hi' ? 'प्रस्तुति स्थिति' : 'Submission Status'), values.status || 'DRAFT')}
 
-            {/* Case Type field */}
-            <React.Fragment>
-              <div className="bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center border-b border-[#c7d8ea] min-h-[40px]">
-                {fieldLabel('case_type') || (lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE')}
-              </div>
-              <div className="px-3 py-1 bg-white flex items-center border-b border-[#c7d8ea] min-h-[40px]">
-                <div className="w-full max-w-md">
-                  <FieldRenderer
-                    field={allSchemaFields.find(f => f.field_key === 'case_type')}
-                    value={values.case_type || ''}
-                    onChange={handleChange}
-                    readOnly={readOnly}
-                    lang={lang}
-                    values={values}
-                  />
-                </div>
-              </div>
-            </React.Fragment>
-
-            {/* GD Number, Date & Time */}
-            <React.Fragment>
-              <div className="bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center min-h-[40px] rounded-bl">
-                {(fieldLabel('gd_no') || (lang === 'hi' ? 'जीडी नंबर, दिनांक और समय' : 'GD Number, Date & Time'))}{' *'}
-              </div>
-              <div className="px-3 py-1 bg-white flex items-center gap-2 min-h-[40px] relative rounded-br">
+          {/* Case Type field */}
+          <React.Fragment>
+            <div className="bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center border-b border-[#c7d8ea] min-h-[40px]">
+              {fieldLabel('case_type') || (lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE')}
+            </div>
+            <div className="px-3 py-1 bg-white flex items-center border-b border-[#c7d8ea] min-h-[40px]">
+              <div className="w-full max-w-md">
                 <FieldRenderer
-                  field={allSchemaFields.find(f => f.field_key === 'gd_no')}
-                  value={values.gd_no}
-                  handleChange={handleChange}
-                  values={values}
+                  field={allSchemaFields.find(f => f.field_key === 'case_type')}
+                  value={values.case_type || ''}
+                  onChange={handleChange}
                   readOnly={readOnly}
-                  numberInputClassName="w-24 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500"
-                  numberPlaceholder="GD Number"
-                  dateInputClassName="w-48 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-pointer"
-                  onDateSync={(datePart, timePart) => {
-                    if (recordType === 'UIDB') {
-                      handleChange('dd_date', datePart);
-                      handleChange('dd_time', timePart);
-                    } else {
-                      handleChange('gd_date', datePart);
-                      handleChange('gd_time', timePart);
-                    }
-                  }}
+                  lang={lang}
+                  values={values}
                 />
               </div>
-            </React.Fragment>
-          </div>
+            </div>
+          </React.Fragment>
+
+          {/* GD Number, Date & Time */}
+          <React.Fragment>
+            <div className="bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center min-h-[40px] rounded-bl">
+              {(fieldLabel('gd_no') || (lang === 'hi' ? 'जीडी नंबर, दिनांक और समय' : 'GD Number, Date & Time'))}{' *'}
+            </div>
+            <div className="px-3 py-1 bg-white flex items-center gap-2 min-h-[40px] relative rounded-br">
+              <FieldRenderer
+                field={allSchemaFields.find(f => f.field_key === 'gd_no')}
+                value={values.gd_no}
+                handleChange={handleChange}
+                values={values}
+                readOnly={readOnly}
+                numberInputClassName="w-24 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500"
+                numberPlaceholder="GD Number"
+                dateInputClassName="w-48 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-pointer"
+                onDateSync={(datePart, timePart) => {
+                  if (recordType === 'UIDB') {
+                    handleChange('dd_date', datePart);
+                    handleChange('dd_time', timePart);
+                  } else {
+                    handleChange('gd_date', datePart);
+                    handleChange('gd_time', timePart);
+                  }
+                }}
+              />
+            </div>
+          </React.Fragment>
+        </div>
 
         {/* Acts, Sections, Major/Minor, Local Head Panels */}
         <ActsSectionsTable
@@ -879,1363 +874,1363 @@ export default function DynamicForm({
     );
   };
 
-const renderOccurrenceStep = () => {
-  const sectionFields = activeSection?.fields || [];
-  // Split fields by sort_order: timing/info (< 3), address/place (3.x), extras like lat/lng/area (>= 4)
-  const occInfoFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type !== 'RADIO');
-  const occPlaceFields = sectionFields.filter(f => f.sort_order >= 3 && f.sort_order < 4);
-  const areaField = sectionFields.find(f => f.field_key === 'area_of_crime');
+  const renderOccurrenceStep = () => {
+    const sectionFields = activeSection?.fields || [];
+    // Split fields by sort_order: timing/info (< 3), address/place (3.x), extras like lat/lng/area (>= 4)
+    const occInfoFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type !== 'RADIO');
+    const occPlaceFields = sectionFields.filter(f => f.sort_order >= 3 && f.sort_order < 4);
+    const areaField = sectionFields.find(f => f.field_key === 'area_of_crime');
 
-  const renderFieldRow = (field, isLast = false) => {
-    const key = field.field_key;
-    const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-    const rules = parseRules(field.validation_rules);
-    const isRequired = !!rules.required;
-    const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
-    return (
-      <React.Fragment key={key}>
-        <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <span>{label}</span>
-          {isRequired && <span className="text-red-500 font-bold">*</span>}
-        </div>
-        <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <FieldRenderer field={field} value={values[key]} onChange={handleChange} readOnly={isDisabled} hasError={touched[key] && !!errors[key]} lang={lang} values={values} />
-        </div>
-      </React.Fragment>
-    );
-  };
-
-  return (
-    <div className="grid grid-cols-2 gap-4 text-sm">
-      {/* LEFT COLUMN */}
-      <div className="space-y-3">
-        {/* OCCURRENCE INFORMATION — driven by backend fields with sort_order < 3 */}
-        <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-            {lang === 'hi' ? 'घटना की जानकारी' : 'Occurrence Information'}
-          </legend>
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
-            {occInfoFields.map((f, i) => renderFieldRow(f, i === occInfoFields.length - 1))}
+    const renderFieldRow = (field, isLast = false) => {
+      const key = field.field_key;
+      const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+      const rules = parseRules(field.validation_rules);
+      const isRequired = !!rules.required;
+      const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+      return (
+        <React.Fragment key={key}>
+          <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+            <span>{label}</span>
+            {isRequired && <span className="text-red-500 font-bold">*</span>}
           </div>
-        </fieldset>
+          <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+            <FieldRenderer field={field} value={values[key]} onChange={handleChange} readOnly={isDisabled} hasError={touched[key] && !!errors[key]} lang={lang} values={values} />
+          </div>
+        </React.Fragment>
+      );
+    };
 
-        {/* AREA OF CRIME — radio row driven by backend field */}
-        {areaField && (
-          <fieldset className="border border-[#7a9cc5] rounded px-2 py-3">
-            <div className="flex items-center gap-6 text-[12px]">
-              <span className="font-medium">
-                {lang === 'hi' ? (areaField.label_hi || areaField.label_en) : areaField.label_en}
-              </span>
-              {getFieldOptions(sectionFields, 'area_of_crime').map((opt) => (
-                <label key={opt.value} className="flex items-center gap-1">
-                  <input type="radio" checked={values?.area_of_crime === opt.value} onChange={() => handleChange('area_of_crime', opt.value)} />
-                  {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
-                </label>
-              ))}
+    return (
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        {/* LEFT COLUMN */}
+        <div className="space-y-3">
+          {/* OCCURRENCE INFORMATION — driven by backend fields with sort_order < 3 */}
+          <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+              {lang === 'hi' ? 'घटना की जानकारी' : 'Occurrence Information'}
+            </legend>
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
+              {occInfoFields.map((f, i) => renderFieldRow(f, i === occInfoFields.length - 1))}
             </div>
           </fieldset>
-        )}
-      </div>
 
-      {/* RIGHT COLUMN — Place of Occurrence driven by backend address fields (sort_order 3.x) */}
-      <div>
-        <fieldset className="border border-[#7a9cc5] rounded px-2 py-2 h-full">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-            {lang === 'hi' ? 'घटनास्थल' : 'Place of Occurrence'}
-          </legend>
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
-            {occPlaceFields.map((f, i) => renderFieldRow(f, i === occPlaceFields.length - 1))}
-          </div>
-        </fieldset>
-      </div>
-    </div>
-  );
-};
-
-/**
- * Shared field-metadata suffix conventions between complainant/victim/accused
- * (only complainant lacks a nickname field and has an extra "same as victim" flag).
- */
-const PERSON_TAB_VARIANTS = {
-  complainant: { hasNickname: false, extraContactField: 'complainant_same_as_victim' },
-  victim:      { hasNickname: true,  extraContactField: null },
-  accused:     { hasNickname: true,  extraContactField: null },
-  arrested:    { hasNickname: true,  extraContactField: null },
-};
-
-/** Shared "Personal Information" sub-tab body for Complainant/Victim/Accused. */
-function renderPersonPersonalInfoSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, showInlineErrors, lang, readOnly) {
-  const cfg = PERSON_TAB_VARIANTS[prefix];
-  const extraRequired = prefix === 'complainant' ? [] : [`${prefix}_first_name`, `${prefix}_gender`];
-
-  const field = (key, customLabel = null, isLast = false, forceReadOnly = false, extraRequiredKeys = []) => {
-    const f = allFields.find((x) => x.field_key === key);
-    if (!f) return null;
-    const label = customLabel || (lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en);
-    const rules = parseRules(f.validation_rules);
-    const isRequired = !!rules.required || extraRequiredKeys.includes(key);
-    const isDisabled = forceReadOnly || readOnly || f.readonly === true || f.readonly === 'true';
-    return (
-      <React.Fragment key={key}>
-        <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <span>{label}</span>
-          {isRequired && <span className="text-red-500 font-bold">*</span>}
-        </div>
-        <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <FieldRenderer
-            field={f}
-            value={valuesObj[key]}
-            onChange={onFieldChange}
-            readOnly={isDisabled}
-            hasError={touchedObj?.[key] && !!errorsObj?.[key]}
-            lang={lang}
-            values={valuesObj}
-          />
-          {showInlineErrors && touchedObj?.[key] && errorsObj?.[key] && (
-            <p className="text-red-500 text-[10px] mt-0.5">{errorsObj[key]}</p>
+          {/* AREA OF CRIME — radio row driven by backend field */}
+          {areaField && (
+            <fieldset className="border border-[#7a9cc5] rounded px-2 py-3">
+              <div className="flex items-center gap-6 text-[12px]">
+                <span className="font-medium">
+                  {lang === 'hi' ? (areaField.label_hi || areaField.label_en) : areaField.label_en}
+                </span>
+                {getFieldOptions(sectionFields, 'area_of_crime').map((opt) => (
+                  <label key={opt.value} className="flex items-center gap-1">
+                    <input type="radio" checked={values?.area_of_crime === opt.value} onChange={() => handleChange('area_of_crime', opt.value)} />
+                    {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           )}
         </div>
-      </React.Fragment>
+
+        {/* RIGHT COLUMN — Place of Occurrence driven by backend address fields (sort_order 3.x) */}
+        <div>
+          <fieldset className="border border-[#7a9cc5] rounded px-2 py-2 h-full">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+              {lang === 'hi' ? 'घटनास्थल' : 'Place of Occurrence'}
+            </legend>
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
+              {occPlaceFields.map((f, i) => renderFieldRow(f, i === occPlaceFields.length - 1))}
+            </div>
+          </fieldset>
+        </div>
+      </div>
     );
   };
 
-  const rawField = (key, fallback) => (
-    <FieldRenderer
-      field={allFields.find((x) => x.field_key === key)}
-      value={valuesObj[key] ?? fallback}
-      onChange={onFieldChange}
-      readOnly={readOnly}
-      lang={lang}
-      values={valuesObj}
-    />
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-
-        {/* Left Column - Personal Info (no border outline) */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
-            {field(`${prefix}_npr`, lang === 'hi' ? 'यूआईडी (UID)' : 'UID')}
-            {field(`${prefix}_first_name`, null, false, false, extraRequired)}
-            {field(`${prefix}_middle_name`)}
-            {cfg.hasNickname ? (
-              <React.Fragment>
-                {field(`${prefix}_last_name`)}
-                {field(`${prefix}_nickname`, lang === 'hi' ? 'उपनाम / Alias' : 'Nickname/Alias', true)}
-              </React.Fragment>
-            ) : (
-              field(`${prefix}_last_name`, null, true)
-            )}
-          </div>
-        </div>
-
-        {/* Right Column - Gender, Marital Status, Mobile, Email, extra */}
-        <div className="border border-[#7a9cc5] rounded px-2 py-2 self-start">
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
-            {field(`${prefix}_gender`, null, false, false, extraRequired)}
-            {field(`${prefix}_marital_status`)}
-
-            {/* Mobile number with country code */}
-            <React.Fragment>
-              <div className="bg-[#dfeaf5] px-2 py-2 border-b text-[12px] font-medium flex items-center gap-1">
-                <span>{lang === 'hi' ? 'मोबाइल नंबर' : 'Mobile No.'}</span>
-              </div>
-              <div className="px-2 py-1 border-b flex gap-1.5 items-center">
-                <div className="w-14">{rawField(`${prefix}_mobile_country_code`, '+91')}</div>
-                <div className="flex-1">{rawField(`${prefix}_mobile`)}</div>
-              </div>
-            </React.Fragment>
-
-            {cfg.extraContactField ? (
-              <React.Fragment>
-                {field(`${prefix}_email`)}
-                {field(cfg.extraContactField, null, true)}
-              </React.Fragment>
-            ) : (
-              field(`${prefix}_email`, null, true)
-            )}
-          </div>
-        </div>
-
-      </div>
-
-      {/* Bottom part */}
-      <div className="grid grid-cols-2 gap-4 mt-6">
-
-        {/* Relation Details */}
-        <div className="border border-[#7a9cc5] rounded px-2 py-2 self-start">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-            {lang === 'hi' ? 'रिश्तेदार का विवरण' : 'Relative Details'}
-          </legend>
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
-            {field(`${prefix}_relation_type`)}
-            {field(`${prefix}_relative_name`, null, true)}
-          </div>
-        </div>
-
-        {/* Age Panel */}
-        <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-            {lang === 'hi' ? 'आयु विवरण' : 'Age Panel'}
-          </legend>
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
-            {field(`${prefix}_dob`)}
-
-            {/* Age (Year / Month) */}
-            <React.Fragment>
-              <div className="bg-[#dfeaf5] px-2 py-2 border-b text-[12px] font-medium flex items-center gap-1">
-                <span>{lang === 'hi' ? 'आयु (वर्ष / महीने)' : 'Age (Year / Month)'}</span>
-              </div>
-              <div className="px-2 py-1 border-b flex gap-2">
-                <div className="flex-1">{rawField(`${prefix}_age_year`)}</div>
-                <div className="flex-1">{rawField(`${prefix}_age_month`)}</div>
-              </div>
-            </React.Fragment>
-
-            {field(`${prefix}_birth_year`, null, true)}
-          </div>
-        </fieldset>
-
-      </div>
-    </div>
-  );
-}
-
-function renderPersonAddressSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, showInlineErrors, lang, readOnly) {
-  const isSame = valuesObj[`${prefix}_perm_same`] === 'Yes' || valuesObj[`${prefix}_perm_same`] === true;
-
-  const field = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
-    const f = allFields.find((x) => x.field_key === key);
-    if (!f) return null;
-    const label = customLabel || (lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en);
-    const rules = parseRules(f.validation_rules);
-    const isRequired = !!rules.required;
-    const isDisabled = forceReadOnly || readOnly || f.readonly === true || f.readonly === 'true';
-    return (
-      <React.Fragment key={key}>
-        <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <span>{label}</span>
-          {isRequired && <span className="text-red-500 font-bold">*</span>}
-        </div>
-        <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <FieldRenderer
-            field={f}
-            value={valuesObj[key]}
-            onChange={onFieldChange}
-            readOnly={isDisabled}
-            hasError={touchedObj?.[key] && !!errorsObj?.[key]}
-            lang={lang}
-            values={valuesObj}
-          />
-          {showInlineErrors && touchedObj?.[key] && errorsObj?.[key] && (
-            <p className="text-red-500 text-[10px] mt-0.5">{errorsObj[key]}</p>
-          )}
-        </div>
-      </React.Fragment>
-    );
+  /**
+   * Shared field-metadata suffix conventions between complainant/victim/accused
+   * (only complainant lacks a nickname field and has an extra "same as victim" flag).
+   */
+  const PERSON_TAB_VARIANTS = {
+    complainant: { hasNickname: false, extraContactField: 'complainant_same_as_victim' },
+    victim: { hasNickname: true, extraContactField: null },
+    accused: { hasNickname: true, extraContactField: null },
+    arrested: { hasNickname: true, extraContactField: null },
   };
 
-  return (
-    <div className="space-y-6">
+  /** Shared "Personal Information" sub-tab body for Complainant/Victim/Accused. */
+  function renderPersonPersonalInfoSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, showInlineErrors, lang, readOnly) {
+    const cfg = PERSON_TAB_VARIANTS[prefix];
+    const extraRequired = prefix === 'complainant' ? [] : [`${prefix}_first_name`, `${prefix}_gender`];
 
-      {/* PRESENT ADDRESS PANEL */}
-      <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-        <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-          {lang === 'hi' ? 'वर्तमान पता' : 'Present Address'}
-        </legend>
-
-        <div className="grid grid-cols-2 gap-4 mt-2">
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
-            {field(`${prefix}_house_no`)}
-            {field(`${prefix}_street`)}
-            {field(`${prefix}_colony`)}
-            {field(`${prefix}_city_town_village`)}
-            {field(`${prefix}_tehsil_block_mandal`, null, true)}
+    const field = (key, customLabel = null, isLast = false, forceReadOnly = false, extraRequiredKeys = []) => {
+      const f = allFields.find((x) => x.field_key === key);
+      if (!f) return null;
+      const label = customLabel || (lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en);
+      const rules = parseRules(f.validation_rules);
+      const isRequired = !!rules.required || extraRequiredKeys.includes(key);
+      const isDisabled = forceReadOnly || readOnly || f.readonly === true || f.readonly === 'true';
+      return (
+        <React.Fragment key={key}>
+          <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+            <span>{label}</span>
+            {isRequired && <span className="text-red-500 font-bold">*</span>}
           </div>
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
-            {field(`${prefix}_country`)}
-            {field(`${prefix}_state`)}
-            {field(`${prefix}_district`)}
-            {field(`${prefix}_police_station`)}
-            {field(`${prefix}_pincode`, null, true)}
-          </div>
-        </div>
-      </fieldset>
-
-      {/* PERMANENT ADDRESS PANEL */}
-      <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-        <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-          {lang === 'hi' ? 'स्थायी पता' : 'Permanent Address'}
-        </legend>
-
-        {/* Same as present toggle */}
-        <div className="bg-[#dfeaf5]/50 border border-[#c7d8ea] px-3 py-2 flex items-center justify-between mb-4 text-xs font-semibold rounded">
-          <span>{lang === 'hi' ? 'क्या स्थायी पता वर्तमान पते के समान है?' : 'Is Permanent Address same as Present Address?'}</span>
-          <div className="w-24">
+          <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <FieldRenderer
-              field={allFields.find((x) => x.field_key === `${prefix}_perm_same`)}
-              value={valuesObj[`${prefix}_perm_same`]}
+              field={f}
+              value={valuesObj[key]}
               onChange={onFieldChange}
-              readOnly={readOnly}
+              readOnly={isDisabled}
+              hasError={touchedObj?.[key] && !!errorsObj?.[key]}
               lang={lang}
               values={valuesObj}
             />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
-            {field(`${prefix}_perm_house_no`, null, false, isSame)}
-            {field(`${prefix}_perm_street`, null, false, isSame)}
-            {field(`${prefix}_perm_colony`, null, false, isSame)}
-            {field(`${prefix}_perm_city_town_village`, null, false, isSame)}
-            {field(`${prefix}_perm_tehsil_block_mandal`, null, true, isSame)}
-          </div>
-          <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
-            {field(`${prefix}_perm_country`, null, false, isSame)}
-            {field(`${prefix}_perm_state`, null, false, isSame)}
-            {field(`${prefix}_perm_district`, null, false, isSame)}
-            {field(`${prefix}_perm_police_station`, null, false, isSame)}
-            {field(`${prefix}_perm_pincode`, null, true, isSame)}
-          </div>
-        </div>
-      </fieldset>
-
-    </div>
-  );
-}
-
-const renderComplainantStep = () => {
-  const allFields = deepFlattenSchema(schema);
-
-  return (
-    <div className="space-y-4">
-      {/* Sub-Tab selection bar */}
-      {renderSubTabBar('complainant_info', complainantTab, setComplainantTab, 'rounded-t')}
-
-      {/* Sub-tab content */}
-      <div className="p-2 border border-t-0 border-[#7a9cc5] rounded-b bg-transparent">
-        {complainantTab === 'personal'
-          ? renderPersonPersonalInfoSubTab('complainant', allFields, values, handleChange, touched, errors, false, lang, readOnly)
-          : renderPersonAddressSubTab('complainant', allFields, values, handleChange, touched, errors, false, lang, readOnly)}
-      </div>
-    </div>
-  );
-};
-
-const renderVictimStep = () => {
-  const victims = repeaterState?.PERSON_VICTIM || [];
-  const allFields = deepFlattenSchema(schema);
-
-  const getVictimName = (v) => [v.victim_first_name, v.victim_middle_name, v.victim_last_name].filter(Boolean).join(' ') || '—';
-  const getVictimAddress = (v) => [v.victim_house_no, v.victim_street, v.victim_colony, v.victim_city_town_village, v.victim_district, v.victim_state].filter(Boolean).join(', ') || '—';
-
-  return (
-    <div className="space-y-4">
-
-      {/* Header bar with "+ Add Victim" button at top-right */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
-          {lang === 'hi' ? `पीड़ित सूची (${victims.length})` : `Victim List (${victims.length})`}
-        </h3>
-        <button
-          type="button"
-          onClick={openVictimAddModal}
-          className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
-        >
-          <span className="text-base leading-none">+</span>
-          {lang === 'hi' ? 'पीड़ित जोड़ें' : 'Add Victim'}
-        </button>
-      </div>
-
-      {/* Summary Table */}
-      <div className="border border-[#7a9cc5] rounded overflow-hidden">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-[#0d2a4a] text-white">
-              <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
-              <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {victims.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
-                  {lang === 'hi' ? 'कोई पीड़ित नहीं जोड़ा गया। "+ पीड़ित जोड़ें" पर क्लिक करें।' : 'No victims added yet. Click "+ Add Victim" to add.'}
-                </td>
-              </tr>
-            ) : (
-              victims.map((victim, idx) => (
-                <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
-                  <td className="px-3 py-2 font-medium">{idx + 1}</td>
-                  <td className="px-3 py-2">{getVictimName(victim)}</td>
-                  <td className="px-3 py-2 text-slate-600">{getVictimAddress(victim)}</td>
-                  <td className="px-3 py-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => openVictimEditModal(idx)}
-                      className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
-                    >
-                      {lang === 'hi' ? 'संपादन' : 'Edit'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteVictimEntry(idx)}
-                      className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
-                    >
-                      {lang === 'hi' ? 'हटाएं' : 'Delete'}
-                    </button>
-                  </td>
-                </tr>
-              ))
+            {showInlineErrors && touchedObj?.[key] && errorsObj?.[key] && (
+              <p className="text-red-500 text-[10px] mt-0.5">{errorsObj[key]}</p>
             )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ── Victim Modal Dialog ── */}
-      {isVictimModalOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
-
-            {/* Modal Header */}
-            <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
-              <h2 className="text-sm font-bold uppercase tracking-wide">
-                {activeVictimIndex !== null
-                  ? (lang === 'hi' ? 'पीड़ित जानकारी संपादित करें' : 'Edit Victim Information')
-                  : (lang === 'hi' ? 'पीड़ित जानकारी' : 'Victim Information')}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsVictimModalOpen(false)}
-                className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors"
-                title="Close"
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Sub-tab selection bar */}
-            {renderSubTabBar('victim_info', victimSubTab, setVictimSubTab)}
-
-            {/* Modal Body (scrollable) */}
-            <div className="flex-1 overflow-y-auto p-4 border border-t-0 border-[#7a9cc5] bg-white">
-              {victimSubTab === 'personal'
-                ? renderPersonPersonalInfoSubTab('victim', allFields, victimTempValues, handleVictimModalChange, victimModalTouched, victimModalErrors, true, lang, readOnly)
-                : renderPersonAddressSubTab('victim', allFields, victimTempValues, handleVictimModalChange, victimModalTouched, victimModalErrors, true, lang, readOnly)}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
-              <button
-                type="button"
-                onClick={saveVictimEntry}
-                className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors"
-              >
-                {lang === 'hi' ? 'सहेजें' : 'Save'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsVictimModalOpen(false)}
-                className="px-6 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded hover:bg-slate-300 cursor-pointer transition-colors"
-              >
-                {lang === 'hi' ? 'बंद करें' : 'Close'}
-              </button>
-            </div>
           </div>
-        </div>,
-        document.body
-      )}
-
-    </div>
-  );
-};
-
-const renderAccusedStep = () => {
-  const accusedList = repeaterState?.PERSON_ACCUSED || [];
-  const allFields = deepFlattenSchema(schema);
-
-  const getAccusedName = (v) => [v.accused_first_name, v.accused_middle_name, v.accused_last_name].filter(Boolean).join(' ') || '—';
-  const getAccusedAddress = (v) => [v.accused_house_no, v.accused_street, v.accused_colony, v.accused_city_town_village, v.accused_district, v.accused_state].filter(Boolean).join(', ') || '—';
-
-  return (
-    <div className="space-y-4">
-
-      {/* Header bar with "+ Add Accused" button at top-right */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
-          {lang === 'hi' ? `अभियुक्त सूची (${accusedList.length})` : `Accused List (${accusedList.length})`}
-        </h3>
-        <button
-          type="button"
-          onClick={openAccusedAddModal}
-          className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
-        >
-          <span className="text-base leading-none">+</span>
-          {lang === 'hi' ? 'अभियुक्त जोड़ें' : 'Add Accused'}
-        </button>
-      </div>
-
-      {/* Summary Table */}
-      <div className="border border-[#7a9cc5] rounded overflow-hidden">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-[#0d2a4a] text-white">
-              <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
-              <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {accusedList.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
-                  {lang === 'hi' ? 'कोई अभियुक्त नहीं जोड़ा गया। "+ अभियुक्त जोड़ें" पर क्लिक करें।' : 'No accused added yet. Click "+ Add Accused" to add.'}
-                </td>
-              </tr>
-            ) : (
-              accusedList.map((accused, idx) => (
-                <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
-                  <td className="px-3 py-2 font-medium">{idx + 1}</td>
-                  <td className="px-3 py-2">{getAccusedName(accused)}</td>
-                  <td className="px-3 py-2 text-slate-600">{getAccusedAddress(accused)}</td>
-                  <td className="px-3 py-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => openAccusedEditModal(idx)}
-                      className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
-                    >
-                      {lang === 'hi' ? 'संपादन' : 'Edit'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteAccusedEntry(idx)}
-                      className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
-                    >
-                      {lang === 'hi' ? 'हटाएं' : 'Delete'}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ── Accused Modal Dialog ── */}
-      {isAccusedModalOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
-
-            {/* Modal Header */}
-            <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
-              <h2 className="text-sm font-bold uppercase tracking-wide">
-                {activeAccusedIndex !== null
-                  ? (lang === 'hi' ? 'अभियुक्त जानकारी संपादित करें' : 'Edit Accused Information')
-                  : (lang === 'hi' ? 'अभियुक्त जानकारी' : 'Accused Information')}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsAccusedModalOpen(false)}
-                className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors"
-                title="Close"
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Sub-tab selection bar */}
-            {renderSubTabBar('accused_info', accusedSubTab, setAccusedSubTab)}
-
-            {/* Modal Body (scrollable) */}
-            <div className="flex-1 overflow-y-auto p-4 border border-t-0 border-[#7a9cc5] bg-white">
-              {accusedSubTab === 'personal'
-                ? renderPersonPersonalInfoSubTab('accused', allFields, accusedTempValues, handleAccusedModalChange, accusedModalTouched, accusedModalErrors, true, lang, readOnly)
-                : renderPersonAddressSubTab('accused', allFields, accusedTempValues, handleAccusedModalChange, accusedModalTouched, accusedModalErrors, true, lang, readOnly)}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
-              <button
-                type="button"
-                onClick={saveAccusedEntry}
-                className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors"
-              >
-                {lang === 'hi' ? 'सहेजें' : 'Save'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAccusedModalOpen(false)}
-                className="px-6 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded hover:bg-slate-300 cursor-pointer transition-colors"
-              >
-                {lang === 'hi' ? 'बंद करें' : 'Close'}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-    </div>
-  );
-};
-
-const renderPropertyStep = () => {
-  const propertyList = repeaterState?.property_details || [];
-  const allFields = deepFlattenSchema(schema);
-  const majorCategoryField = allFields.find(f => f.field_key === 'property_major_category');
-
-  const majorCategoryOptions = (() => {
-    if (!majorCategoryField) return [];
-    try {
-      const opts = typeof majorCategoryField.options === 'string'
-        ? JSON.parse(majorCategoryField.options)
-        : majorCategoryField.options;
-      return Array.isArray(opts) ? opts : [];
-    } catch (e) {
-      return Array.isArray(majorCategoryField.options) ? majorCategoryField.options : [];
-    }
-  })();
-
-  const getMinorCategoryOptions = (majorCategory) => {
-    if (!majorCategory) return [];
-    return propertyMinorOptionsMap[majorCategory] || [];
-  };
-
-  // ── Extra detail field helpers ─────────────────────────────────────────────
-  const BASE_PROP_KEYS = new Set([
-    'property_major_category', 'property_minor_category',
-    'property_details', 'property_stolen_recovered',
-  ]);
-  // These supply options for the "Type of Property" column — skip in detail panel
-  const TYPE_COL_KEYS = new Set([
-    'prop_vehicle_type', 'prop_gold_item_type', 'prop_elec_device_type',
-    'prop_doc_type', 'prop_drug_type', 'prop_arms_type', 'prop_cash_currency',
-  ]);
-
-  const evalPropCond = (cond, row) => {
-    if (!cond) return true;
-    if (cond.and) return cond.and.every(c => evalPropCond(c, row));
-    const { field: tf, value: tv, operator } = cond;
-    let cv = row[tf];
-    if (operator === 'filled') return cv !== undefined && cv !== null && String(cv).trim() !== '';
-
-    if (tf === 'property_major_category' && cv) {
-      const matchOpt = majorCategoryOptions.find(o => String(o.value) === String(cv));
-      if (matchOpt) {
-        const label = String(matchOpt.label_en || matchOpt.value).toUpperCase();
-        if (label === 'ELECTRICAL AND ELECTRONIC GOODS') {
-          if (String(row.property_minor_category) === '470') {
-            cv = 'Mobile Phone';
-          } else {
-            cv = 'Electronics';
-          }
-        } else if (label === 'AUTOMOBILES AND OTHERS') {
-          cv = 'Vehicle';
-        } else if (label === 'COIN AND CURRENCY') {
-          cv = 'Cash';
-        } else if (label === 'JEWELLERY') {
-          cv = 'Jewellery';
-        } else if (label === 'ARMS AND AMMUNITION') {
-          cv = 'Arms';
-        } else if (label === 'DOCUMENTS AND VALUABLE SECURITIES') {
-          cv = 'Documents';
-        } else if (label === 'DRUGS/NARCOTIC DRUGS') {
-          cv = 'Drugs';
-        } else {
-          cv = matchOpt.label_en || matchOpt.value;
-        }
-      }
-    }
-
-    return Array.isArray(tv)
-      ? tv.map(v => String(v || '').toLowerCase()).includes(String(cv || '').toLowerCase())
-      : String(cv || '').toLowerCase() === String(tv || '').toLowerCase();
-  };
-
-  const getExtraFields = (row) =>
-    allFields.filter(f => {
-      if (!f.repeater_entity || f.repeater_entity.toUpperCase() !== 'PROPERTY') return false;
-      if (BASE_PROP_KEYS.has(f.field_key)) return false;
-      if (TYPE_COL_KEYS.has(f.field_key)) return false;
-      const cond = f.show_when
-        ? (typeof f.show_when === 'string' ? JSON.parse(f.show_when) : f.show_when)
-        : null;
-      return evalPropCond(cond, row);
-    });
-
-  const renderExtraDetailRow = (row, idx) => {
-    const extraFields = getExtraFields(row);
-    if (!row.property_major_category || extraFields.length === 0) return null;
-    const cls = 'w-full px-2 py-1.5 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400';
-    return (
-      <tr key={`${idx}-extra`} className="border-t border-[#dce9f4] bg-[#f3f8fd]">
-        <td colSpan={7} className="px-4 py-3">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {extraFields.map(field => {
-              const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-              const fieldVal = row[field.field_key] || '';
-              const wrapCls = `flex flex-col gap-1${field.full_width ? ' col-span-full' : ''}`;
-              const labelEl = <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{label}</label>;
-
-              // Type of Arm — cascades off "Type of Property" (row.property_minor_category,
-              // which holds the selected arms_category_cd), listing only fire_arms rows whose
-              // parent_id matches it. Options come from the live lookup fetch, not field.options.
-              if (field.field_key === 'prop_fire_arms_type') {
-                const fireArmsOpts = (armsLookupMap[row.property_major_category]?.fireArms || [])
-                  .filter(f => String(f.parent_id) === String(row.property_minor_category));
-                const isDisabled = readOnly || !row.property_minor_category;
-                return (
-                  <div key={field.field_key} className={wrapCls}>
-                    {labelEl}
-                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={fireArmsOpts} lang={lang} />
-                  </div>
-                );
-              }
-
-              // Subtype of Arm — cascades off Type of Arm (row.prop_fire_arms_type, holding
-              // the selected fire_arms_cd) via excel_fire_arms_subtypes.arms_type_cd.
-              if (field.field_key === 'prop_arms_made') {
-                const subtypeOpts = (armsLookupMap[row.property_major_category]?.fireArmsSubtypes || [])
-                  .filter(o => String(o.parent_id) === String(row.prop_fire_arms_type));
-                const isDisabled = readOnly || !row.prop_fire_arms_type;
-                return (
-                  <div key={field.field_key} className={wrapCls}>
-                    {labelEl}
-                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={subtypeOpts} lang={lang} />
-                  </div>
-                );
-              }
-
-              // Property Subtype ("Others" category) — cascades off "Type of Property"
-              // (row.property_minor_category, holding the selected other-category parent_cd).
-              if (field.field_key === 'prop_other_subtype') {
-                const subtypeOpts = (armsLookupMap[row.property_major_category]?.otherSubtype || [])
-                  .filter(o => String(o.parent_id) === String(row.property_minor_category));
-                const isDisabled = readOnly || !row.property_minor_category;
-                return (
-                  <div key={field.field_key} className={wrapCls}>
-                    {labelEl}
-                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={subtypeOpts} lang={lang} />
-                  </div>
-                );
-              }
-
-              if (field.field_type === 'SELECT') {
-                const opts = (() => { try { return typeof field.options === 'string' ? JSON.parse(field.options) : (field.options || []); } catch { return []; } })();
-                return (
-                  <div key={field.field_key} className={wrapCls}>
-                    {labelEl}
-                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={readOnly} className={cls} options={opts} lang={lang} />
-                  </div>
-                );
-              }
-              if (field.field_type === 'TEXTAREA') {
-                return (
-                  <div key={field.field_key} className={wrapCls}>
-                    {labelEl}
-                    <textarea value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={readOnly} rows={2} className={`${cls} resize-none`} />
-                  </div>
-                );
-              }
-              return (
-                <div key={field.field_key} className={wrapCls}>
-                  {labelEl}
-                  <input type={field.field_type === 'NUMBER' ? 'number' : 'text'} value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={readOnly} className={cls} />
-                </div>
-              );
-            })}
-          </div>
-        </td>
-      </tr>
-    );
-  };
-  // ── End extra detail field helpers ─────────────────────────────────────────
-
-  const addPropertyRow = () => {
-    const list = [...propertyList];
-    list.push({
-      property_major_category: '',
-      property_minor_category: '',
-      property_details: '',
-      property_value_inr: '',
-      property_stolen_recovered: 'Stolen'
-    });
-    setRepeaterState(prev => ({ ...prev, property_details: list }));
-  };
-
-  const clearAllProperties = () => {
-    setRepeaterState(prev => ({ ...prev, property_details: [] }));
-  };
-
-  const deletePropertyRow = (idx) => {
-    const list = propertyList.filter((_, i) => i !== idx);
-    setRepeaterState(prev => ({ ...prev, property_details: list }));
-  };
-
-  const handlePropertyRowChange = (idx, key, val) => {
-    const list = [...propertyList];
-    if (!list[idx]) return;
-    const updatedRow = { ...list[idx], [key]: val };
-    if (key === 'property_major_category') {
-      // Clear minor category and any category-specific extra detail fields
-      const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
-      Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
-      updatedRow.property_minor_category = '';
-    } else if (key === 'property_minor_category') {
-      // Clear any category-specific extra detail fields
-      const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
-      Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
-    } else if (key === 'prop_fire_arms_type') {
-      // Type of Arm changed — reset the dependent Subtype of Arm selection
-      updatedRow.prop_arms_made = '';
-    }
-    list[idx] = updatedRow;
-    setRepeaterState(prev => ({ ...prev, property_details: list }));
-  };
-
-  const renderTypeCell = (row, idx) => {
-    const opts = getMinorCategoryOptions(row.property_major_category);
-    const isDisabled = !row.property_major_category || readOnly;
-
-    if (opts.length > 0) {
-      return (
-        <SearchableSelect
-          value={row.property_minor_category || ''}
-          onChange={(val) => handlePropertyRowChange(idx, 'property_minor_category', val)}
-          disabled={isDisabled}
-          options={opts}
-          lang={lang}
-          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
-        />
+        </React.Fragment>
       );
-    }
+    };
 
-    return (
-      <input
-        type="text"
-        value={row.property_minor_category || ''}
-        onChange={(e) => handlePropertyRowChange(idx, 'property_minor_category', e.target.value)}
-        disabled={isDisabled}
-        placeholder={row.property_major_category ? (lang === 'hi' ? 'विवरण दर्ज करें...' : 'Enter details...') : (lang === 'hi' ? 'श्रेणी चुनें' : 'Select Category')}
-        className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
+    const rawField = (key, fallback) => (
+      <FieldRenderer
+        field={allFields.find((x) => x.field_key === key)}
+        value={valuesObj[key] ?? fallback}
+        onChange={onFieldChange}
+        readOnly={readOnly}
+        lang={lang}
+        values={valuesObj}
       />
     );
-  };
-  return (
-    <div className="space-y-4">
-      {/* Action Buttons bar at the top-right */}
-      <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={addPropertyRow}
-          disabled={readOnly}
-          className="px-4 py-1.5 bg-[#0d2a4a] hover:bg-[#16406d] text-white text-xs font-bold rounded transition-colors cursor-pointer disabled:bg-slate-300 disabled:cursor-not-allowed"
-        >
-          {lang === 'hi' ? 'नया जोड़ें' : 'Add New'}
-        </button>
-        <button
-          type="button"
-          onClick={clearAllProperties}
-          disabled={readOnly}
-          className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded transition-colors cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-        >
-          {lang === 'hi' ? 'सभी साफ़ करें' : 'Clear All'}
-        </button>
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+
+          {/* Left Column - Personal Info (no border outline) */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
+              {field(`${prefix}_npr`, lang === 'hi' ? 'यूआईडी (UID)' : 'UID')}
+              {field(`${prefix}_first_name`, null, false, false, extraRequired)}
+              {field(`${prefix}_middle_name`)}
+              {cfg.hasNickname ? (
+                <React.Fragment>
+                  {field(`${prefix}_last_name`)}
+                  {field(`${prefix}_nickname`, lang === 'hi' ? 'उपनाम / Alias' : 'Nickname/Alias', true)}
+                </React.Fragment>
+              ) : (
+                field(`${prefix}_last_name`, null, true)
+              )}
+            </div>
+          </div>
+
+          {/* Right Column - Gender, Marital Status, Mobile, Email, extra */}
+          <div className="border border-[#7a9cc5] rounded px-2 py-2 self-start">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
+              {field(`${prefix}_gender`, null, false, false, extraRequired)}
+              {field(`${prefix}_marital_status`)}
+
+              {/* Mobile number with country code */}
+              <React.Fragment>
+                <div className="bg-[#dfeaf5] px-2 py-2 border-b text-[12px] font-medium flex items-center gap-1">
+                  <span>{lang === 'hi' ? 'मोबाइल नंबर' : 'Mobile No.'}</span>
+                </div>
+                <div className="px-2 py-1 border-b flex gap-1.5 items-center">
+                  <div className="w-14">{rawField(`${prefix}_mobile_country_code`, '+91')}</div>
+                  <div className="flex-1">{rawField(`${prefix}_mobile`)}</div>
+                </div>
+              </React.Fragment>
+
+              {cfg.extraContactField ? (
+                <React.Fragment>
+                  {field(`${prefix}_email`)}
+                  {field(cfg.extraContactField, null, true)}
+                </React.Fragment>
+              ) : (
+                field(`${prefix}_email`, null, true)
+              )}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom part */}
+        <div className="grid grid-cols-2 gap-4 mt-6">
+
+          {/* Relation Details */}
+          <div className="border border-[#7a9cc5] rounded px-2 py-2 self-start">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+              {lang === 'hi' ? 'रिश्तेदार का विवरण' : 'Relative Details'}
+            </legend>
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
+              {field(`${prefix}_relation_type`)}
+              {field(`${prefix}_relative_name`, null, true)}
+            </div>
+          </div>
+
+          {/* Age Panel */}
+          <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+              {lang === 'hi' ? 'आयु विवरण' : 'Age Panel'}
+            </legend>
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
+              {field(`${prefix}_dob`)}
+
+              {/* Age (Year / Month) */}
+              <React.Fragment>
+                <div className="bg-[#dfeaf5] px-2 py-2 border-b text-[12px] font-medium flex items-center gap-1">
+                  <span>{lang === 'hi' ? 'आयु (वर्ष / महीने)' : 'Age (Year / Month)'}</span>
+                </div>
+                <div className="px-2 py-1 border-b flex gap-2">
+                  <div className="flex-1">{rawField(`${prefix}_age_year`)}</div>
+                  <div className="flex-1">{rawField(`${prefix}_age_month`)}</div>
+                </div>
+              </React.Fragment>
+
+              {field(`${prefix}_birth_year`, null, true)}
+            </div>
+          </fieldset>
+
+        </div>
       </div>
-      {/* Property Repeater Table */}
-      <div className="border border-[#7a9cc5] rounded overflow-hidden">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-[#0d2a4a] text-white">
-              <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'संपत्ति श्रेणी *' : 'Property Category *'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'संपत्ति का प्रकार *' : 'Type of Property *'}</th>
-              <th className="px-3 py-2 text-left w-32 font-semibold">{lang === 'hi' ? 'स्थिति' : 'Status'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'विवरण' : 'Description'}</th>
-              <th className="px-3 py-2 text-left w-44 font-semibold">{lang === 'hi' ? 'मूल्य (INR में)' : 'Value in INR'}</th>
-              <th className="px-3 py-2 text-center w-16 font-semibold">{lang === 'hi' ? 'हटाएं' : 'Delete'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {propertyList.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-3 py-6 text-center text-slate-400 italic">
-                  {lang === 'hi' ? 'कोई संपत्ति नहीं जोड़ी गई है।' : 'No property items added yet.'}
-                </td>
+    );
+  }
+
+  function renderPersonAddressSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, showInlineErrors, lang, readOnly) {
+    const isSame = valuesObj[`${prefix}_perm_same`] === 'Yes' || valuesObj[`${prefix}_perm_same`] === true;
+
+    const field = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
+      const f = allFields.find((x) => x.field_key === key);
+      if (!f) return null;
+      const label = customLabel || (lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en);
+      const rules = parseRules(f.validation_rules);
+      const isRequired = !!rules.required;
+      const isDisabled = forceReadOnly || readOnly || f.readonly === true || f.readonly === 'true';
+      return (
+        <React.Fragment key={key}>
+          <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+            <span>{label}</span>
+            {isRequired && <span className="text-red-500 font-bold">*</span>}
+          </div>
+          <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+            <FieldRenderer
+              field={f}
+              value={valuesObj[key]}
+              onChange={onFieldChange}
+              readOnly={isDisabled}
+              hasError={touchedObj?.[key] && !!errorsObj?.[key]}
+              lang={lang}
+              values={valuesObj}
+            />
+            {showInlineErrors && touchedObj?.[key] && errorsObj?.[key] && (
+              <p className="text-red-500 text-[10px] mt-0.5">{errorsObj[key]}</p>
+            )}
+          </div>
+        </React.Fragment>
+      );
+    };
+
+    return (
+      <div className="space-y-6">
+
+        {/* PRESENT ADDRESS PANEL */}
+        <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
+          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+            {lang === 'hi' ? 'वर्तमान पता' : 'Present Address'}
+          </legend>
+
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
+              {field(`${prefix}_house_no`)}
+              {field(`${prefix}_street`)}
+              {field(`${prefix}_colony`)}
+              {field(`${prefix}_city_town_village`)}
+              {field(`${prefix}_tehsil_block_mandal`, null, true)}
+            </div>
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
+              {field(`${prefix}_country`)}
+              {field(`${prefix}_state`)}
+              {field(`${prefix}_district`)}
+              {field(`${prefix}_police_station`)}
+              {field(`${prefix}_pincode`, null, true)}
+            </div>
+          </div>
+        </fieldset>
+
+        {/* PERMANENT ADDRESS PANEL */}
+        <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
+          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+            {lang === 'hi' ? 'स्थायी पता' : 'Permanent Address'}
+          </legend>
+
+          {/* Same as present toggle */}
+          <div className="bg-[#dfeaf5]/50 border border-[#c7d8ea] px-3 py-2 flex items-center justify-between mb-4 text-xs font-semibold rounded">
+            <span>{lang === 'hi' ? 'क्या स्थायी पता वर्तमान पते के समान है?' : 'Is Permanent Address same as Present Address?'}</span>
+            <div className="w-24">
+              <FieldRenderer
+                field={allFields.find((x) => x.field_key === `${prefix}_perm_same`)}
+                value={valuesObj[`${prefix}_perm_same`]}
+                onChange={onFieldChange}
+                readOnly={readOnly}
+                lang={lang}
+                values={valuesObj}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
+              {field(`${prefix}_perm_house_no`, null, false, isSame)}
+              {field(`${prefix}_perm_street`, null, false, isSame)}
+              {field(`${prefix}_perm_colony`, null, false, isSame)}
+              {field(`${prefix}_perm_city_town_village`, null, false, isSame)}
+              {field(`${prefix}_perm_tehsil_block_mandal`, null, true, isSame)}
+            </div>
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
+              {field(`${prefix}_perm_country`, null, false, isSame)}
+              {field(`${prefix}_perm_state`, null, false, isSame)}
+              {field(`${prefix}_perm_district`, null, false, isSame)}
+              {field(`${prefix}_perm_police_station`, null, false, isSame)}
+              {field(`${prefix}_perm_pincode`, null, true, isSame)}
+            </div>
+          </div>
+        </fieldset>
+
+      </div>
+    );
+  }
+
+  const renderComplainantStep = () => {
+    const allFields = deepFlattenSchema(schema);
+
+    return (
+      <div className="space-y-4">
+        {/* Sub-Tab selection bar */}
+        {renderSubTabBar('complainant_info', complainantTab, setComplainantTab, 'rounded-t')}
+
+        {/* Sub-tab content */}
+        <div className="p-2 border border-t-0 border-[#7a9cc5] rounded-b bg-transparent">
+          {complainantTab === 'personal'
+            ? renderPersonPersonalInfoSubTab('complainant', allFields, values, handleChange, touched, errors, false, lang, readOnly)
+            : renderPersonAddressSubTab('complainant', allFields, values, handleChange, touched, errors, false, lang, readOnly)}
+        </div>
+      </div>
+    );
+  };
+
+  const renderVictimStep = () => {
+    const victims = repeaterState?.PERSON_VICTIM || [];
+    const allFields = deepFlattenSchema(schema);
+
+    const getVictimName = (v) => [v.victim_first_name, v.victim_middle_name, v.victim_last_name].filter(Boolean).join(' ') || '—';
+    const getVictimAddress = (v) => [v.victim_house_no, v.victim_street, v.victim_colony, v.victim_city_town_village, v.victim_district, v.victim_state].filter(Boolean).join(', ') || '—';
+
+    return (
+      <div className="space-y-4">
+
+        {/* Header bar with "+ Add Victim" button at top-right */}
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
+            {lang === 'hi' ? `पीड़ित सूची (${victims.length})` : `Victim List (${victims.length})`}
+          </h3>
+          <button
+            type="button"
+            onClick={openVictimAddModal}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
+          >
+            <span className="text-base leading-none">+</span>
+            {lang === 'hi' ? 'पीड़ित जोड़ें' : 'Add Victim'}
+          </button>
+        </div>
+
+        {/* Summary Table */}
+        <div className="border border-[#7a9cc5] rounded overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-[#0d2a4a] text-white">
+                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
+                <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
               </tr>
-            ) : (
-              propertyList.map((row, idx) => (
-                <React.Fragment key={idx}>
-                  <tr className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
-                    {/* S.No */}
+            </thead>
+            <tbody>
+              {victims.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
+                    {lang === 'hi' ? 'कोई पीड़ित नहीं जोड़ा गया। "+ पीड़ित जोड़ें" पर क्लिक करें।' : 'No victims added yet. Click "+ Add Victim" to add.'}
+                  </td>
+                </tr>
+              ) : (
+                victims.map((victim, idx) => (
+                  <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
                     <td className="px-3 py-2 font-medium">{idx + 1}</td>
-                    {/* Property Category */}
-                    <td className="px-3 py-2 min-w-[200px]">
-                      <SearchableSelect
-                        value={row.property_major_category || ''}
-                        onChange={(val) => handlePropertyRowChange(idx, 'property_major_category', val)}
-                        disabled={readOnly}
-                        options={majorCategoryOptions}
-                        lang={lang}
-                        className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
-                      />
-                    </td>
-                    {/* Type of Property */}
-                    <td className="px-3 py-2 min-w-[180px]">
-                      {renderTypeCell(row, idx)}
-                    </td>
-                    {/* Status (Stolen / Recovered / Involved / Seized) */}
-                    <td className="px-3 py-2 w-32">
-                      <SearchableSelect
-                        value={row.property_stolen_recovered || 'Stolen'}
-                        onChange={(val) => handlePropertyRowChange(idx, 'property_stolen_recovered', val)}
-                        disabled={readOnly}
-                        options={getFieldOptions(allFields, 'property_stolen_recovered')}
-                        lang={lang}
-                        className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
-                      />
-                    </td>
-                    {/* Description */}
-                    <td className="px-3 py-2">
-                      <input
-                        type="text"
-                        value={row.property_details || ''}
-                        onChange={(e) => handlePropertyRowChange(idx, 'property_details', e.target.value)}
-                        disabled={readOnly}
-                        placeholder={lang === 'hi' ? 'संपत्ति का विवरण दर्ज करें...' : 'Enter description details...'}
-                        className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
-                      />
-                    </td>
-                    {/* Value in INR */}
-                    <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        value={row.property_value_inr || ''}
-                        onChange={(e) => handlePropertyRowChange(idx, 'property_value_inr', e.target.value)}
-                        disabled={readOnly}
-                        placeholder={lang === 'hi' ? 'मूल्य दर्ज करें (INR में)' : 'Enter value in INR'}
-                        className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
-                      />
-                    </td>
-                    {/* Delete */}
+                    <td className="px-3 py-2">{getVictimName(victim)}</td>
+                    <td className="px-3 py-2 text-slate-600">{getVictimAddress(victim)}</td>
                     <td className="px-3 py-2 text-center">
                       <button
                         type="button"
-                        onClick={() => deletePropertyRow(idx)}
-                        disabled={readOnly}
-                        className="text-red-500 hover:text-red-700 font-bold transition-colors cursor-pointer disabled:text-slate-300 disabled:cursor-not-allowed"
+                        onClick={() => openVictimEditModal(idx)}
+                        className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
                       >
-                        ✖
+                        {lang === 'hi' ? 'संपादन' : 'Edit'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteVictimEntry(idx)}
+                        className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
+                      >
+                        {lang === 'hi' ? 'हटाएं' : 'Delete'}
                       </button>
                     </td>
                   </tr>
-                  {renderExtraDetailRow(row, idx)}
-                </React.Fragment>
-              ))
-            )}
-          </tbody>
-        </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Victim Modal Dialog ── */}
+        {isVictimModalOpen && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
+
+              {/* Modal Header */}
+              <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
+                <h2 className="text-sm font-bold uppercase tracking-wide">
+                  {activeVictimIndex !== null
+                    ? (lang === 'hi' ? 'पीड़ित जानकारी संपादित करें' : 'Edit Victim Information')
+                    : (lang === 'hi' ? 'पीड़ित जानकारी' : 'Victim Information')}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsVictimModalOpen(false)}
+                  className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors"
+                  title="Close"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Sub-tab selection bar */}
+              {renderSubTabBar('victim_info', victimSubTab, setVictimSubTab)}
+
+              {/* Modal Body (scrollable) */}
+              <div className="flex-1 overflow-y-auto p-4 border border-t-0 border-[#7a9cc5] bg-white">
+                {victimSubTab === 'personal'
+                  ? renderPersonPersonalInfoSubTab('victim', allFields, victimTempValues, handleVictimModalChange, victimModalTouched, victimModalErrors, true, lang, readOnly)
+                  : renderPersonAddressSubTab('victim', allFields, victimTempValues, handleVictimModalChange, victimModalTouched, victimModalErrors, true, lang, readOnly)}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
+                <button
+                  type="button"
+                  onClick={saveVictimEntry}
+                  className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors"
+                >
+                  {lang === 'hi' ? 'सहेजें' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsVictimModalOpen(false)}
+                  className="px-6 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded hover:bg-slate-300 cursor-pointer transition-colors"
+                >
+                  {lang === 'hi' ? 'बंद करें' : 'Close'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-const renderArrestedStep = () => {
-  const arrestedList = repeaterState?.arrested_info || [];
-  const allFields = deepFlattenSchema(schema);
-  const subTabs = getSectionSubTabs('arrested_info');
-  /** Generic field grid renderer for a sub-tab's fields (used by arrest_details, particular_details, etc.) */
-  const renderSubTabFieldGrid = (tabId) => {
-    const tab = subTabs.find(t => t.id === tabId);
-    const fields = tab?.fields || [];
-    if (fields.length === 0) return null;
+  const renderAccusedStep = () => {
+    const accusedList = repeaterState?.PERSON_ACCUSED || [];
+    const allFields = deepFlattenSchema(schema);
 
-    // Evaluate show_when conditions against arrestedTempValues
-    const evalCond = (cond, vals) => {
-      if (!cond) return true;
+    const getAccusedName = (v) => [v.accused_first_name, v.accused_middle_name, v.accused_last_name].filter(Boolean).join(' ') || '—';
+    const getAccusedAddress = (v) => [v.accused_house_no, v.accused_street, v.accused_colony, v.accused_city_town_village, v.accused_district, v.accused_state].filter(Boolean).join(', ') || '—';
+
+    return (
+      <div className="space-y-4">
+
+        {/* Header bar with "+ Add Accused" button at top-right */}
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
+            {lang === 'hi' ? `अभियुक्त सूची (${accusedList.length})` : `Accused List (${accusedList.length})`}
+          </h3>
+          <button
+            type="button"
+            onClick={openAccusedAddModal}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
+          >
+            <span className="text-base leading-none">+</span>
+            {lang === 'hi' ? 'अभियुक्त जोड़ें' : 'Add Accused'}
+          </button>
+        </div>
+
+        {/* Summary Table */}
+        <div className="border border-[#7a9cc5] rounded overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-[#0d2a4a] text-white">
+                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
+                <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {accusedList.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
+                    {lang === 'hi' ? 'कोई अभियुक्त नहीं जोड़ा गया। "+ अभियुक्त जोड़ें" पर क्लिक करें।' : 'No accused added yet. Click "+ Add Accused" to add.'}
+                  </td>
+                </tr>
+              ) : (
+                accusedList.map((accused, idx) => (
+                  <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
+                    <td className="px-3 py-2 font-medium">{idx + 1}</td>
+                    <td className="px-3 py-2">{getAccusedName(accused)}</td>
+                    <td className="px-3 py-2 text-slate-600">{getAccusedAddress(accused)}</td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => openAccusedEditModal(idx)}
+                        className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
+                      >
+                        {lang === 'hi' ? 'संपादन' : 'Edit'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteAccusedEntry(idx)}
+                        className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
+                      >
+                        {lang === 'hi' ? 'हटाएं' : 'Delete'}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Accused Modal Dialog ── */}
+        {isAccusedModalOpen && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
+
+              {/* Modal Header */}
+              <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
+                <h2 className="text-sm font-bold uppercase tracking-wide">
+                  {activeAccusedIndex !== null
+                    ? (lang === 'hi' ? 'अभियुक्त जानकारी संपादित करें' : 'Edit Accused Information')
+                    : (lang === 'hi' ? 'अभियुक्त जानकारी' : 'Accused Information')}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsAccusedModalOpen(false)}
+                  className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors"
+                  title="Close"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Sub-tab selection bar */}
+              {renderSubTabBar('accused_info', accusedSubTab, setAccusedSubTab)}
+
+              {/* Modal Body (scrollable) */}
+              <div className="flex-1 overflow-y-auto p-4 border border-t-0 border-[#7a9cc5] bg-white">
+                {accusedSubTab === 'personal'
+                  ? renderPersonPersonalInfoSubTab('accused', allFields, accusedTempValues, handleAccusedModalChange, accusedModalTouched, accusedModalErrors, true, lang, readOnly)
+                  : renderPersonAddressSubTab('accused', allFields, accusedTempValues, handleAccusedModalChange, accusedModalTouched, accusedModalErrors, true, lang, readOnly)}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
+                <button
+                  type="button"
+                  onClick={saveAccusedEntry}
+                  className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors"
+                >
+                  {lang === 'hi' ? 'सहेजें' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAccusedModalOpen(false)}
+                  className="px-6 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded hover:bg-slate-300 cursor-pointer transition-colors"
+                >
+                  {lang === 'hi' ? 'बंद करें' : 'Close'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      </div>
+    );
+  };
+
+  const renderPropertyStep = () => {
+    const propertyList = repeaterState?.property_details || [];
+    const allFields = deepFlattenSchema(schema);
+    const majorCategoryField = allFields.find(f => f.field_key === 'property_major_category');
+
+    const majorCategoryOptions = (() => {
+      if (!majorCategoryField) return [];
       try {
-        const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
-        if (parsed.field) {
-          const cv = vals[parsed.field];
-          const checkVals = Array.isArray(parsed.value) ? parsed.value : [parsed.value];
-          return checkVals.some(v => String(v || '').toLowerCase() === String(cv || '').toLowerCase());
-        }
-      } catch { /* ignore */ }
-      return true;
+        const opts = typeof majorCategoryField.options === 'string'
+          ? JSON.parse(majorCategoryField.options)
+          : majorCategoryField.options;
+        return Array.isArray(opts) ? opts : [];
+      } catch (e) {
+        return Array.isArray(majorCategoryField.options) ? majorCategoryField.options : [];
+      }
+    })();
+
+    const getMinorCategoryOptions = (majorCategory) => {
+      if (!majorCategory) return [];
+      return propertyMinorOptionsMap[majorCategory] || [];
     };
-    const visibleFields = fields.filter(f => evalCond(f.show_when, arrestedTempValues));
-    return (
-      <fieldset className="bg-white">
-        <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-          {lang === 'hi' ? (tab.title_hi || tab.title_en) : tab.title_en}
-        </legend>
-        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
-          {visibleFields.map((field, idx) => {
-            const key = field.field_key;
-            const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-            const rules = parseRules(field.validation_rules);
-            const isRequired = !!rules.required;
-            const isLast = idx === visibleFields.length - 1;
-            const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
-            return (
-              <React.Fragment key={key}>
-                <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                  <span>{label}</span>
-                  {isRequired && <span className="text-red-500 font-bold">*</span>}
-                </div>
-                <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                  <FieldRenderer field={field} value={arrestedTempValues[key]} onChange={handleArrestedModalChange} readOnly={isDisabled} hasError={arrestedModalTouched[key] && !!arrestedModalErrors[key]} lang={lang} values={arrestedTempValues} />
-                </div>
-              </React.Fragment>
-            );
-          })}
-        </div>
-      </fieldset>
-    );
-  };
 
-  /** Render the active sub-tab content — uses shared person helpers for person_particulars/address, generic grid for others */
-  const renderActiveSubTabContent = () => {
-    if (arrestedSubTab === 'person_particulars') {
-      return renderPersonPersonalInfoSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, true, lang, readOnly);
-    }
-    if (arrestedSubTab === 'address') {
-      return renderPersonAddressSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, true, lang, readOnly);
-    }
-    // arrest_details, particular_details, custody_status — generic flat grid from backend fields
-    return renderSubTabFieldGrid(arrestedSubTab);
-  };
+    // ── Extra detail field helpers ─────────────────────────────────────────────
+    const BASE_PROP_KEYS = new Set([
+      'property_major_category', 'property_minor_category',
+      'property_details', 'property_stolen_recovered',
+    ]);
+    // These supply options for the "Type of Property" column — skip in detail panel
+    const TYPE_COL_KEYS = new Set([
+      'prop_vehicle_type', 'prop_gold_item_type', 'prop_elec_device_type',
+      'prop_doc_type', 'prop_drug_type', 'prop_arms_type', 'prop_cash_currency',
+    ]);
 
+    const evalPropCond = (cond, row) => {
+      if (!cond) return true;
+      if (cond.and) return cond.and.every(c => evalPropCond(c, row));
+      const { field: tf, value: tv, operator } = cond;
+      let cv = row[tf];
+      if (operator === 'filled') return cv !== undefined && cv !== null && String(cv).trim() !== '';
 
+      if (tf === 'property_major_category' && cv) {
+        const matchOpt = majorCategoryOptions.find(o => String(o.value) === String(cv));
+        if (matchOpt) {
+          const label = String(matchOpt.label_en || matchOpt.value).toUpperCase();
+          if (label === 'ELECTRICAL AND ELECTRONIC GOODS') {
+            if (String(row.property_minor_category) === '470') {
+              cv = 'Mobile Phone';
+            } else {
+              cv = 'Electronics';
+            }
+          } else if (label === 'AUTOMOBILES AND OTHERS') {
+            cv = 'Vehicle';
+          } else if (label === 'COIN AND CURRENCY') {
+            cv = 'Cash';
+          } else if (label === 'JEWELLERY') {
+            cv = 'Jewellery';
+          } else if (label === 'ARMS AND AMMUNITION') {
+            cv = 'Arms';
+          } else if (label === 'DOCUMENTS AND VALUABLE SECURITIES') {
+            cv = 'Documents';
+          } else if (label === 'DRUGS/NARCOTIC DRUGS') {
+            cv = 'Drugs';
+          } else {
+            cv = matchOpt.label_en || matchOpt.value;
+          }
+        }
+      }
 
-  const getArrestedName = (v) => [v.arrested_first_name, v.arrested_middle_name, v.arrested_last_name].filter(Boolean).join(' ') || '—';
-  const getArrestedAddress = (v) => [v.arrested_house_no, v.arrested_street, v.arrested_colony, v.arrested_city_town_village, v.arrested_district, v.arrested_state].filter(Boolean).join(', ') || '—';
+      return Array.isArray(tv)
+        ? tv.map(v => String(v || '').toLowerCase()).includes(String(cv || '').toLowerCase())
+        : String(cv || '').toLowerCase() === String(tv || '').toLowerCase();
+    };
 
-  return (
-    <div className="space-y-4">
-      {/* Header bar with Add Button */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
-          {lang === 'hi' ? `गिरफ्तार व्यक्तियों की सूची (${arrestedList.length})` : `Arrested Persons List (${arrestedList.length})`}
-        </h3>
-        <button
-          type="button"
-          onClick={openArrestedAddModal}
-          className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
-        >
-          <span className="text-base leading-none">+</span>
-          {lang === 'hi' ? 'गिरफ्तार व्यक्ति जोड़ें' : 'Add Arrested Person'}
-        </button>
-      </div>
+    const getExtraFields = (row) =>
+      allFields.filter(f => {
+        if (!f.repeater_entity || f.repeater_entity.toUpperCase() !== 'PROPERTY') return false;
+        if (BASE_PROP_KEYS.has(f.field_key)) return false;
+        if (TYPE_COL_KEYS.has(f.field_key)) return false;
+        const cond = f.show_when
+          ? (typeof f.show_when === 'string' ? JSON.parse(f.show_when) : f.show_when)
+          : null;
+        return evalPropCond(cond, row);
+      });
 
-      {/* Summary Table */}
-      <div className="border border-[#7a9cc5] rounded overflow-hidden">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-[#0d2a4a] text-white">
-              <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
-              <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {arrestedList.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
-                  {lang === 'hi' ? 'कोई गिरफ्तार व्यक्ति नहीं जोड़ा गया। "+ गिरफ्तार व्यक्ति जोड़ें" पर क्लिक करें।' : 'No arrested persons added yet. Click "+ Add Arrested Person" to add.'}
-                </td>
-              </tr>
-            ) : (
-              arrestedList.map((arr, idx) => (
-                <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
-                  <td className="px-3 py-2 font-medium">{idx + 1}</td>
-                  <td className="px-3 py-2">{getArrestedName(arr)}</td>
-                  <td className="px-3 py-2 text-slate-600">{getArrestedAddress(arr)}</td>
-                  <td className="px-3 py-2 text-center">
-                    <button type="button" onClick={() => openArrestedEditModal(idx)} className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors">
-                      {lang === 'hi' ? 'संपादन' : 'Edit'}
-                    </button>
-                    <button type="button" onClick={() => deleteArrestedEntry(idx)} className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors">
-                      {lang === 'hi' ? 'हटाएं' : 'Delete'}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+    const renderExtraDetailRow = (row, idx) => {
+      const extraFields = getExtraFields(row);
+      if (!row.property_major_category || extraFields.length === 0) return null;
+      const cls = 'w-full px-2 py-1.5 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400';
+      return (
+        <tr key={`${idx}-extra`} className="border-t border-[#dce9f4] bg-[#f3f8fd]">
+          <td colSpan={7} className="px-4 py-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {extraFields.map(field => {
+                const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+                const fieldVal = row[field.field_key] || '';
+                const wrapCls = `flex flex-col gap-1${field.full_width ? ' col-span-full' : ''}`;
+                const labelEl = <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{label}</label>;
 
-      {/* Modal Dialog */}
-      {isArrestedModalOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
-              <h2 className="text-sm font-bold uppercase tracking-wide">
-                {activeArrestedIndex !== null
-                  ? (lang === 'hi' ? 'गिरफ्तार व्यक्ति की जानकारी संपादित करें' : 'Edit Arrested Person Information')
-                  : (lang === 'hi' ? 'गिरफ्तार व्यक्ति की जानकारी' : 'Arrested Person Information')}
-              </h2>
-              <button type="button" onClick={() => setIsArrestedModalOpen(false)} className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors" title="Close">×</button>
+                // Type of Arm — cascades off "Type of Property" (row.property_minor_category,
+                // which holds the selected arms_category_cd), listing only fire_arms rows whose
+                // parent_id matches it. Options come from the live lookup fetch, not field.options.
+                if (field.field_key === 'prop_fire_arms_type') {
+                  const fireArmsOpts = (armsLookupMap[row.property_major_category]?.fireArms || [])
+                    .filter(f => String(f.parent_id) === String(row.property_minor_category));
+                  const isDisabled = readOnly || !row.property_minor_category;
+                  return (
+                    <div key={field.field_key} className={wrapCls}>
+                      {labelEl}
+                      <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={fireArmsOpts} lang={lang} />
+                    </div>
+                  );
+                }
+
+                // Subtype of Arm — cascades off Type of Arm (row.prop_fire_arms_type, holding
+                // the selected fire_arms_cd) via excel_fire_arms_subtypes.arms_type_cd.
+                if (field.field_key === 'prop_arms_made') {
+                  const subtypeOpts = (armsLookupMap[row.property_major_category]?.fireArmsSubtypes || [])
+                    .filter(o => String(o.parent_id) === String(row.prop_fire_arms_type));
+                  const isDisabled = readOnly || !row.prop_fire_arms_type;
+                  return (
+                    <div key={field.field_key} className={wrapCls}>
+                      {labelEl}
+                      <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={subtypeOpts} lang={lang} />
+                    </div>
+                  );
+                }
+
+                // Property Subtype ("Others" category) — cascades off "Type of Property"
+                // (row.property_minor_category, holding the selected other-category parent_cd).
+                if (field.field_key === 'prop_other_subtype') {
+                  const subtypeOpts = (armsLookupMap[row.property_major_category]?.otherSubtype || [])
+                    .filter(o => String(o.parent_id) === String(row.property_minor_category));
+                  const isDisabled = readOnly || !row.property_minor_category;
+                  return (
+                    <div key={field.field_key} className={wrapCls}>
+                      {labelEl}
+                      <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={subtypeOpts} lang={lang} />
+                    </div>
+                  );
+                }
+
+                if (field.field_type === 'SELECT') {
+                  const opts = (() => { try { return typeof field.options === 'string' ? JSON.parse(field.options) : (field.options || []); } catch { return []; } })();
+                  return (
+                    <div key={field.field_key} className={wrapCls}>
+                      {labelEl}
+                      <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={readOnly} className={cls} options={opts} lang={lang} />
+                    </div>
+                  );
+                }
+                if (field.field_type === 'TEXTAREA') {
+                  return (
+                    <div key={field.field_key} className={wrapCls}>
+                      {labelEl}
+                      <textarea value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={readOnly} rows={2} className={`${cls} resize-none`} />
+                    </div>
+                  );
+                }
+                return (
+                  <div key={field.field_key} className={wrapCls}>
+                    {labelEl}
+                    <input type={field.field_type === 'NUMBER' ? 'number' : 'text'} value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={readOnly} className={cls} />
+                  </div>
+                );
+              })}
             </div>
+          </td>
+        </tr>
+      );
+    };
+    // ── End extra detail field helpers ─────────────────────────────────────────
 
-            {/* Sub-tabs from backend */}
-            {renderSubTabBar('arrested_info', arrestedSubTab, setArrestedSubTab)}
+    const addPropertyRow = () => {
+      const list = [...propertyList];
+      list.push({
+        property_major_category: '',
+        property_minor_category: '',
+        property_details: '',
+        property_value_inr: '',
+        property_stolen_recovered: 'Stolen'
+      });
+      setRepeaterState(prev => ({ ...prev, property_details: list }));
+    };
 
-            {/* Body — renders active sub-tab content from schema */}
-            <div className="flex-1 overflow-y-auto p-4 border border-t-0 border-[#7a9cc5] bg-white">
-              {renderActiveSubTabContent()}
-            </div>
+    const clearAllProperties = () => {
+      setRepeaterState(prev => ({ ...prev, property_details: [] }));
+    };
 
-            {/* Footer */}
-            <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
-              <button type="button" onClick={saveArrestedEntry} className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors">
-                {lang === 'hi' ? 'सहेजें' : 'Save'}
-              </button>
-              <button type="button" onClick={() => setIsArrestedModalOpen(false)} className="px-6 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded hover:bg-slate-300 cursor-pointer transition-colors">
-                {lang === 'hi' ? 'बंद करें' : 'Close'}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-};
+    const deletePropertyRow = (idx) => {
+      const list = propertyList.filter((_, i) => i !== idx);
+      setRepeaterState(prev => ({ ...prev, property_details: list }));
+    };
 
+    const handlePropertyRowChange = (idx, key, val) => {
+      const list = [...propertyList];
+      if (!list[idx]) return;
+      const updatedRow = { ...list[idx], [key]: val };
+      if (key === 'property_major_category') {
+        // Clear minor category and any category-specific extra detail fields
+        const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
+        Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
+        updatedRow.property_minor_category = '';
+      } else if (key === 'property_minor_category') {
+        // Clear any category-specific extra detail fields
+        const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
+        Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
+      } else if (key === 'prop_fire_arms_type') {
+        // Type of Arm changed — reset the dependent Subtype of Arm selection
+        updatedRow.prop_arms_made = '';
+      }
+      list[idx] = updatedRow;
+      setRepeaterState(prev => ({ ...prev, property_details: list }));
+    };
 
-const renderIntimationStep = () => {
-  const intimationList = repeaterState?.intimation_details || [];
-  const subTabs = getSectionSubTabs('intimation_details');
+    const renderTypeCell = (row, idx) => {
+      const opts = getMinorCategoryOptions(row.property_major_category);
+      const isDisabled = !row.property_major_category || readOnly;
 
-  /** Generic field grid for a sub-tab's fields, entirely driven by the backend's field list. */
-  const renderSubTabFieldGrid = (tabId) => {
-    const tab = subTabs.find(t => t.id === tabId);
-    const fields = tab?.fields || [];
-    if (fields.length === 0) return null;
-
-    return (
-      <fieldset className="bg-white">
-        <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-          {lang === 'hi' ? (tab.title_hi || tab.title_en) : tab.title_en}
-        </legend>
-        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
-          {fields.map((field, idx) => {
-            const key = field.field_key;
-            const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-            const rules = parseRules(field.validation_rules);
-            const isRequired = !!rules.required || key === 'intimated_relative_name';
-            const isLast = idx === fields.length - 1;
-            const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
-            return (
-              <React.Fragment key={key}>
-                <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                  <span>{label}</span>
-                  {isRequired && <span className="text-red-500 font-bold">*</span>}
-                </div>
-                <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                  <FieldRenderer
-                    field={field}
-                    value={intimationTempValues[key]}
-                    onChange={handleIntimationModalChange}
-                    readOnly={isDisabled}
-                    hasError={intimationModalTouched[key] && !!intimationModalErrors[key]}
-                    lang={lang}
-                    values={intimationTempValues}
-                  />
-                  {intimationModalTouched[key] && intimationModalErrors[key] && (
-                    <p className="text-red-500 text-[10px] mt-0.5">{intimationModalErrors[key]}</p>
-                  )}
-                </div>
-              </React.Fragment>
-            );
-          })}
-        </div>
-      </fieldset>
-    );
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Header bar with Add Button */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
-          {lang === 'hi' ? `सूचना प्राप्तकर्ताओं की सूची (${intimationList.length})` : `Intimation Details List (${intimationList.length})`}
-        </h3>
-        <button
-          type="button"
-          onClick={openIntimationAddModal}
-          className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
-        >
-          <span className="text-base leading-none">+</span>
-          {lang === 'hi' ? 'सूचना विवरण जोड़ें' : 'Add Intimation Details'}
-        </button>
-      </div>
-
-      {/* Summary Table */}
-      <div className="border border-[#7a9cc5] rounded overflow-hidden">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-[#0d2a4a] text-white">
-              <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
-              <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
-              <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {intimationList.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
-                  {lang === 'hi' ? 'कोई सूचना विवरण नहीं जोड़ा गया। "+ सूचना विवरण जोड़ें" पर क्लिक करें।' : 'No intimation details added yet. Click "+ Add Intimation Details" to add.'}
-                </td>
-              </tr>
-            ) : (
-              intimationList.map((item, idx) => (
-                <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
-                  <td className="px-3 py-2 font-medium">{idx + 1}</td>
-                  <td className="px-3 py-2">{getIntimationName(item)}</td>
-                  <td className="px-3 py-2 text-slate-600">{getIntimationAddress(item)}</td>
-                  <td className="px-3 py-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => openIntimationEditModal(idx)}
-                      className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
-                    >
-                      {lang === 'hi' ? 'संपादन' : 'Edit'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteIntimationEntry(idx)}
-                      className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
-                    >
-                      {lang === 'hi' ? 'हटाएं' : 'Delete'}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Modal Dialog */}
-      {isIntimationModalOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
-              <h2 className="text-sm font-bold uppercase tracking-wide">
-                {activeIntimationIndex !== null
-                  ? (lang === 'hi' ? 'सूचना विवरण संपादित करें' : 'Edit Intimation Details')
-                  : (lang === 'hi' ? 'सूचना विवरण' : 'Intimation Details')}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsIntimationModalOpen(false)}
-                className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors"
-                title="Close"
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Sub-tabs selectors */}
-            {renderSubTabBar('intimation_details', intimationSubTab, setIntimationSubTab)}
-
-            {/* Scrollable Body — driven entirely by the backend's sub_tabs field list */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {renderSubTabFieldGrid(intimationSubTab)}
-            </div>
-
-            {/* Footer */}
-            <div className="bg-slate-100 border-t border-slate-200 px-5 py-3 flex justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setIsIntimationModalOpen(false)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded cursor-pointer transition-colors"
-              >
-                {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
-              </button>
-              <button
-                type="button"
-                onClick={saveIntimationEntry}
-                className="px-4 py-2 bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs font-bold rounded cursor-pointer transition-colors shadow-sm"
-              >
-                {lang === 'hi' ? 'सहेजें' : 'Save'}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-};
-
-const renderActionTakenStep = () => {
-  const actionTakenFields = finalSchema.find(s => s.section === 'action_taken')?.fields || [];
-
-  const evalActionCond = (cond, vals) => {
-    if (!cond) return true;
-    const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
-    if (parsed.and) return parsed.and.every(c => evalActionCond(c, vals));
-    const { field: tf, value: tv, operator } = parsed;
-    const cv = vals[tf];
-    if (operator === 'filled') return cv !== undefined && cv !== null && String(cv).trim() !== '';
-    return Array.isArray(tv)
-      ? tv.map(v => String(v || '').toLowerCase()).includes(String(cv || '').toLowerCase())
-      : String(cv || '').toLowerCase() === String(tv || '').toLowerCase();
-  };
-
-  const activeFields = actionTakenFields.filter(f => evalActionCond(f.show_when, values));
-
-  const renderFieldWithLabel = (field, index) => {
-    const key = field.field_key;
-    const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-    const rules = parseRules(field.validation_rules);
-    const isRequired = !!rules.required;
-    const isLast = index === activeFields.length - 1;
-    const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
-
-    return (
-      <React.Fragment key={key}>
-        <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <span>{label}</span>
-          {isRequired && <span className="text-red-500 font-bold">*</span>}
-        </div>
-        <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-          <FieldRenderer
-            field={field}
-            value={values[key]}
-            onChange={handleChange}
-            readOnly={isDisabled}
-            hasError={touched[key] && !!errors[key]}
+      if (opts.length > 0) {
+        return (
+          <SearchableSelect
+            value={row.property_minor_category || ''}
+            onChange={(val) => handlePropertyRowChange(idx, 'property_minor_category', val)}
+            disabled={isDisabled}
+            options={opts}
             lang={lang}
-            values={values}
+            className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
           />
+        );
+      }
+
+      return (
+        <input
+          type="text"
+          value={row.property_minor_category || ''}
+          onChange={(e) => handlePropertyRowChange(idx, 'property_minor_category', e.target.value)}
+          disabled={isDisabled}
+          placeholder={row.property_major_category ? (lang === 'hi' ? 'विवरण दर्ज करें...' : 'Enter details...') : (lang === 'hi' ? 'श्रेणी चुनें' : 'Select Category')}
+          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
+        />
+      );
+    };
+    return (
+      <div className="space-y-4">
+        {/* Action Buttons bar at the top-right */}
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={addPropertyRow}
+            disabled={readOnly}
+            className="px-4 py-1.5 bg-[#0d2a4a] hover:bg-[#16406d] text-white text-xs font-bold rounded transition-colors cursor-pointer disabled:bg-slate-300 disabled:cursor-not-allowed"
+          >
+            {lang === 'hi' ? 'नया जोड़ें' : 'Add New'}
+          </button>
+          <button
+            type="button"
+            onClick={clearAllProperties}
+            disabled={readOnly}
+            className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded transition-colors cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+          >
+            {lang === 'hi' ? 'सभी साफ़ करें' : 'Clear All'}
+          </button>
         </div>
-      </React.Fragment>
+        {/* Property Repeater Table */}
+        <div className="border border-[#7a9cc5] rounded overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-[#0d2a4a] text-white">
+                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'संपत्ति श्रेणी *' : 'Property Category *'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'संपत्ति का प्रकार *' : 'Type of Property *'}</th>
+                <th className="px-3 py-2 text-left w-32 font-semibold">{lang === 'hi' ? 'स्थिति' : 'Status'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'विवरण' : 'Description'}</th>
+                <th className="px-3 py-2 text-left w-44 font-semibold">{lang === 'hi' ? 'मूल्य (INR में)' : 'Value in INR'}</th>
+                <th className="px-3 py-2 text-center w-16 font-semibold">{lang === 'hi' ? 'हटाएं' : 'Delete'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {propertyList.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-6 text-center text-slate-400 italic">
+                    {lang === 'hi' ? 'कोई संपत्ति नहीं जोड़ी गई है।' : 'No property items added yet.'}
+                  </td>
+                </tr>
+              ) : (
+                propertyList.map((row, idx) => (
+                  <React.Fragment key={idx}>
+                    <tr className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
+                      {/* S.No */}
+                      <td className="px-3 py-2 font-medium">{idx + 1}</td>
+                      {/* Property Category */}
+                      <td className="px-3 py-2 min-w-[200px]">
+                        <SearchableSelect
+                          value={row.property_major_category || ''}
+                          onChange={(val) => handlePropertyRowChange(idx, 'property_major_category', val)}
+                          disabled={readOnly}
+                          options={majorCategoryOptions}
+                          lang={lang}
+                          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
+                        />
+                      </td>
+                      {/* Type of Property */}
+                      <td className="px-3 py-2 min-w-[180px]">
+                        {renderTypeCell(row, idx)}
+                      </td>
+                      {/* Status (Stolen / Recovered / Involved / Seized) */}
+                      <td className="px-3 py-2 w-32">
+                        <SearchableSelect
+                          value={row.property_stolen_recovered || 'Stolen'}
+                          onChange={(val) => handlePropertyRowChange(idx, 'property_stolen_recovered', val)}
+                          disabled={readOnly}
+                          options={getFieldOptions(allFields, 'property_stolen_recovered')}
+                          lang={lang}
+                          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
+                        />
+                      </td>
+                      {/* Description */}
+                      <td className="px-3 py-2">
+                        <input
+                          type="text"
+                          value={row.property_details || ''}
+                          onChange={(e) => handlePropertyRowChange(idx, 'property_details', e.target.value)}
+                          disabled={readOnly}
+                          placeholder={lang === 'hi' ? 'संपत्ति का विवरण दर्ज करें...' : 'Enter description details...'}
+                          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
+                        />
+                      </td>
+                      {/* Value in INR */}
+                      <td className="px-3 py-2">
+                        <input
+                          type="number"
+                          value={row.property_value_inr || ''}
+                          onChange={(e) => handlePropertyRowChange(idx, 'property_value_inr', e.target.value)}
+                          disabled={readOnly}
+                          placeholder={lang === 'hi' ? 'मूल्य दर्ज करें (INR में)' : 'Enter value in INR'}
+                          className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
+                        />
+                      </td>
+                      {/* Delete */}
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => deletePropertyRow(idx)}
+                          disabled={readOnly}
+                          className="text-red-500 hover:text-red-700 font-bold transition-colors cursor-pointer disabled:text-slate-300 disabled:cursor-not-allowed"
+                        >
+                          ✖
+                        </button>
+                      </td>
+                    </tr>
+                    {renderExtraDetailRow(row, idx)}
+                  </React.Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     );
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden">
-        {activeFields.map((field, idx) => renderFieldWithLabel(field, idx))}
+  const renderArrestedStep = () => {
+    const arrestedList = repeaterState?.arrested_info || [];
+    const allFields = deepFlattenSchema(schema);
+    const subTabs = getSectionSubTabs('arrested_info');
+    /** Generic field grid renderer for a sub-tab's fields (used by arrest_details, particular_details, etc.) */
+    const renderSubTabFieldGrid = (tabId) => {
+      const tab = subTabs.find(t => t.id === tabId);
+      const fields = tab?.fields || [];
+      if (fields.length === 0) return null;
+
+      // Evaluate show_when conditions against arrestedTempValues
+      const evalCond = (cond, vals) => {
+        if (!cond) return true;
+        try {
+          const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
+          if (parsed.field) {
+            const cv = vals[parsed.field];
+            const checkVals = Array.isArray(parsed.value) ? parsed.value : [parsed.value];
+            return checkVals.some(v => String(v || '').toLowerCase() === String(cv || '').toLowerCase());
+          }
+        } catch { /* ignore */ }
+        return true;
+      };
+      const visibleFields = fields.filter(f => evalCond(f.show_when, arrestedTempValues));
+      return (
+        <fieldset className="bg-white">
+          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+            {lang === 'hi' ? (tab.title_hi || tab.title_en) : tab.title_en}
+          </legend>
+          <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
+            {visibleFields.map((field, idx) => {
+              const key = field.field_key;
+              const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+              const rules = parseRules(field.validation_rules);
+              const isRequired = !!rules.required;
+              const isLast = idx === visibleFields.length - 1;
+              const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+              return (
+                <React.Fragment key={key}>
+                  <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+                    <span>{label}</span>
+                    {isRequired && <span className="text-red-500 font-bold">*</span>}
+                  </div>
+                  <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+                    <FieldRenderer field={field} value={arrestedTempValues[key]} onChange={handleArrestedModalChange} readOnly={isDisabled} hasError={arrestedModalTouched[key] && !!arrestedModalErrors[key]} lang={lang} values={arrestedTempValues} />
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </fieldset>
+      );
+    };
+
+    /** Render the active sub-tab content — uses shared person helpers for person_particulars/address, generic grid for others */
+    const renderActiveSubTabContent = () => {
+      if (arrestedSubTab === 'person_particulars') {
+        return renderPersonPersonalInfoSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, true, lang, readOnly);
+      }
+      if (arrestedSubTab === 'address') {
+        return renderPersonAddressSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, true, lang, readOnly);
+      }
+      // arrest_details, particular_details, custody_status — generic flat grid from backend fields
+      return renderSubTabFieldGrid(arrestedSubTab);
+    };
+
+
+
+    const getArrestedName = (v) => [v.arrested_first_name, v.arrested_middle_name, v.arrested_last_name].filter(Boolean).join(' ') || '—';
+    const getArrestedAddress = (v) => [v.arrested_house_no, v.arrested_street, v.arrested_colony, v.arrested_city_town_village, v.arrested_district, v.arrested_state].filter(Boolean).join(', ') || '—';
+
+    return (
+      <div className="space-y-4">
+        {/* Header bar with Add Button */}
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
+            {lang === 'hi' ? `गिरफ्तार व्यक्तियों की सूची (${arrestedList.length})` : `Arrested Persons List (${arrestedList.length})`}
+          </h3>
+          <button
+            type="button"
+            onClick={openArrestedAddModal}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
+          >
+            <span className="text-base leading-none">+</span>
+            {lang === 'hi' ? 'गिरफ्तार व्यक्ति जोड़ें' : 'Add Arrested Person'}
+          </button>
+        </div>
+
+        {/* Summary Table */}
+        <div className="border border-[#7a9cc5] rounded overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-[#0d2a4a] text-white">
+                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
+                <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {arrestedList.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
+                    {lang === 'hi' ? 'कोई गिरफ्तार व्यक्ति नहीं जोड़ा गया। "+ गिरफ्तार व्यक्ति जोड़ें" पर क्लिक करें।' : 'No arrested persons added yet. Click "+ Add Arrested Person" to add.'}
+                  </td>
+                </tr>
+              ) : (
+                arrestedList.map((arr, idx) => (
+                  <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
+                    <td className="px-3 py-2 font-medium">{idx + 1}</td>
+                    <td className="px-3 py-2">{getArrestedName(arr)}</td>
+                    <td className="px-3 py-2 text-slate-600">{getArrestedAddress(arr)}</td>
+                    <td className="px-3 py-2 text-center">
+                      <button type="button" onClick={() => openArrestedEditModal(idx)} className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors">
+                        {lang === 'hi' ? 'संपादन' : 'Edit'}
+                      </button>
+                      <button type="button" onClick={() => deleteArrestedEntry(idx)} className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors">
+                        {lang === 'hi' ? 'हटाएं' : 'Delete'}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Modal Dialog */}
+        {isArrestedModalOpen && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
+                <h2 className="text-sm font-bold uppercase tracking-wide">
+                  {activeArrestedIndex !== null
+                    ? (lang === 'hi' ? 'गिरफ्तार व्यक्ति की जानकारी संपादित करें' : 'Edit Arrested Person Information')
+                    : (lang === 'hi' ? 'गिरफ्तार व्यक्ति की जानकारी' : 'Arrested Person Information')}
+                </h2>
+                <button type="button" onClick={() => setIsArrestedModalOpen(false)} className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors" title="Close">×</button>
+              </div>
+
+              {/* Sub-tabs from backend */}
+              {renderSubTabBar('arrested_info', arrestedSubTab, setArrestedSubTab)}
+
+              {/* Body — renders active sub-tab content from schema */}
+              <div className="flex-1 overflow-y-auto p-4 border border-t-0 border-[#7a9cc5] bg-white">
+                {renderActiveSubTabContent()}
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
+                <button type="button" onClick={saveArrestedEntry} className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors">
+                  {lang === 'hi' ? 'सहेजें' : 'Save'}
+                </button>
+                <button type="button" onClick={() => setIsArrestedModalOpen(false)} className="px-6 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded hover:bg-slate-300 cursor-pointer transition-colors">
+                  {lang === 'hi' ? 'बंद करें' : 'Close'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
-    </div>
-  );
-};
+    );
+  };
+
+
+  const renderIntimationStep = () => {
+    const intimationList = repeaterState?.intimation_details || [];
+    const subTabs = getSectionSubTabs('intimation_details');
+
+    /** Generic field grid for a sub-tab's fields, entirely driven by the backend's field list. */
+    const renderSubTabFieldGrid = (tabId) => {
+      const tab = subTabs.find(t => t.id === tabId);
+      const fields = tab?.fields || [];
+      if (fields.length === 0) return null;
+
+      return (
+        <fieldset className="bg-white">
+          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+            {lang === 'hi' ? (tab.title_hi || tab.title_en) : tab.title_en}
+          </legend>
+          <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
+            {fields.map((field, idx) => {
+              const key = field.field_key;
+              const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+              const rules = parseRules(field.validation_rules);
+              const isRequired = !!rules.required || key === 'intimated_relative_name';
+              const isLast = idx === fields.length - 1;
+              const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+              return (
+                <React.Fragment key={key}>
+                  <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+                    <span>{label}</span>
+                    {isRequired && <span className="text-red-500 font-bold">*</span>}
+                  </div>
+                  <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+                    <FieldRenderer
+                      field={field}
+                      value={intimationTempValues[key]}
+                      onChange={handleIntimationModalChange}
+                      readOnly={isDisabled}
+                      hasError={intimationModalTouched[key] && !!intimationModalErrors[key]}
+                      lang={lang}
+                      values={intimationTempValues}
+                    />
+                    {intimationModalTouched[key] && intimationModalErrors[key] && (
+                      <p className="text-red-500 text-[10px] mt-0.5">{intimationModalErrors[key]}</p>
+                    )}
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </fieldset>
+      );
+    };
+
+    return (
+      <div className="space-y-4">
+        {/* Header bar with Add Button */}
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
+            {lang === 'hi' ? `सूचना प्राप्तकर्ताओं की सूची (${intimationList.length})` : `Intimation Details List (${intimationList.length})`}
+          </h3>
+          <button
+            type="button"
+            onClick={openIntimationAddModal}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
+          >
+            <span className="text-base leading-none">+</span>
+            {lang === 'hi' ? 'सूचना विवरण जोड़ें' : 'Add Intimation Details'}
+          </button>
+        </div>
+
+        {/* Summary Table */}
+        <div className="border border-[#7a9cc5] rounded overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-[#0d2a4a] text-white">
+                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
+                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
+                <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {intimationList.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
+                    {lang === 'hi' ? 'कोई सूचना विवरण नहीं जोड़ा गया। "+ सूचना विवरण जोड़ें" पर क्लिक करें।' : 'No intimation details added yet. Click "+ Add Intimation Details" to add.'}
+                  </td>
+                </tr>
+              ) : (
+                intimationList.map((item, idx) => (
+                  <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
+                    <td className="px-3 py-2 font-medium">{idx + 1}</td>
+                    <td className="px-3 py-2">{getIntimationName(item)}</td>
+                    <td className="px-3 py-2 text-slate-600">{getIntimationAddress(item)}</td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => openIntimationEditModal(idx)}
+                        className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
+                      >
+                        {lang === 'hi' ? 'संपादन' : 'Edit'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteIntimationEntry(idx)}
+                        className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
+                      >
+                        {lang === 'hi' ? 'हटाएं' : 'Delete'}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Modal Dialog */}
+        {isIntimationModalOpen && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
+                <h2 className="text-sm font-bold uppercase tracking-wide">
+                  {activeIntimationIndex !== null
+                    ? (lang === 'hi' ? 'सूचना विवरण संपादित करें' : 'Edit Intimation Details')
+                    : (lang === 'hi' ? 'सूचना विवरण' : 'Intimation Details')}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsIntimationModalOpen(false)}
+                  className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors"
+                  title="Close"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Sub-tabs selectors */}
+              {renderSubTabBar('intimation_details', intimationSubTab, setIntimationSubTab)}
+
+              {/* Scrollable Body — driven entirely by the backend's sub_tabs field list */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                {renderSubTabFieldGrid(intimationSubTab)}
+              </div>
+
+              {/* Footer */}
+              <div className="bg-slate-100 border-t border-slate-200 px-5 py-3 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsIntimationModalOpen(false)}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded cursor-pointer transition-colors"
+                >
+                  {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={saveIntimationEntry}
+                  className="px-4 py-2 bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs font-bold rounded cursor-pointer transition-colors shadow-sm"
+                >
+                  {lang === 'hi' ? 'सहेजें' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+      </div>
+    );
+  };
+
+  const renderActionTakenStep = () => {
+    const actionTakenFields = finalSchema.find(s => s.section === 'action_taken')?.fields || [];
+
+    const evalActionCond = (cond, vals) => {
+      if (!cond) return true;
+      const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
+      if (parsed.and) return parsed.and.every(c => evalActionCond(c, vals));
+      const { field: tf, value: tv, operator } = parsed;
+      const cv = vals[tf];
+      if (operator === 'filled') return cv !== undefined && cv !== null && String(cv).trim() !== '';
+      return Array.isArray(tv)
+        ? tv.map(v => String(v || '').toLowerCase()).includes(String(cv || '').toLowerCase())
+        : String(cv || '').toLowerCase() === String(tv || '').toLowerCase();
+    };
+
+    const activeFields = actionTakenFields.filter(f => evalActionCond(f.show_when, values));
+
+    const renderFieldWithLabel = (field, index) => {
+      const key = field.field_key;
+      const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+      const rules = parseRules(field.validation_rules);
+      const isRequired = !!rules.required;
+      const isLast = index === activeFields.length - 1;
+      const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+
+      return (
+        <React.Fragment key={key}>
+          <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+            <span>{label}</span>
+            {isRequired && <span className="text-red-500 font-bold">*</span>}
+          </div>
+          <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+            <FieldRenderer
+              field={field}
+              value={values[key]}
+              onChange={handleChange}
+              readOnly={isDisabled}
+              hasError={touched[key] && !!errors[key]}
+              lang={lang}
+              values={values}
+            />
+          </div>
+        </React.Fragment>
+      );
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden">
+          {activeFields.map((field, idx) => renderFieldWithLabel(field, idx))}
+        </div>
+      </div>
+    );
+  };
 
   const firOptions = React.useMemo(() => {
     return (casesData || []).map(c => {
@@ -2386,10 +2381,10 @@ const renderActionTakenStep = () => {
     initialValues?.id
   );
 
-  const [values,       setValues      ] = useState({});
-  const [errors,       setErrors      ] = useState({});
-  const [touched,      setTouched     ] = useState({});
-  const [currentStep,  setCurrentStep ] = useState(0);
+  const [values, setValues] = useState({});
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [repeaterState, setRepeaterState] = useState({});
   const [propertyMinorOptionsMap, setPropertyMinorOptionsMap] = useState({});
@@ -2402,9 +2397,9 @@ const renderActionTakenStep = () => {
 
 
 
-  const [showAddRow,   setShowAddRow  ] = useState(false);
-  const [newAct,       setNewAct      ] = useState('');
-  const [newSection,   setNewSection  ] = useState('');
+  const [showAddRow, setShowAddRow] = useState(false);
+  const [newAct, setNewAct] = useState('');
+  const [newSection, setNewSection] = useState('');
   const [newSectionVal, setNewSectionVal] = useState('');
   const [actsSectionsRegistry, setActsSectionsRegistry] = useState(ACTS_SECTIONS_REGISTRY);
   const [dbMajorHeadOptions, setDbMajorHeadOptions] = useState([]);
@@ -2414,24 +2409,24 @@ const renderActionTakenStep = () => {
   // Victim Modal state hooks
   const [isVictimModalOpen, setIsVictimModalOpen] = useState(false);
   const [activeVictimIndex, setActiveVictimIndex] = useState(null);
-  const [victimTempValues, setVictimTempValues]   = useState({});
-  const [victimSubTab, setVictimSubTab]           = useState('personal');
+  const [victimTempValues, setVictimTempValues] = useState({});
+  const [victimSubTab, setVictimSubTab] = useState('personal');
   const [victimModalErrors, setVictimModalErrors] = useState({});
   const [victimModalTouched, setVictimModalTouched] = useState({});
 
   // Accused Modal state hooks
   const [isAccusedModalOpen, setIsAccusedModalOpen] = useState(false);
   const [activeAccusedIndex, setActiveAccusedIndex] = useState(null);
-  const [accusedTempValues, setAccusedTempValues]   = useState({});
-  const [accusedSubTab, setAccusedSubTab]           = useState('personal');
+  const [accusedTempValues, setAccusedTempValues] = useState({});
+  const [accusedSubTab, setAccusedSubTab] = useState('personal');
   const [accusedModalErrors, setAccusedModalErrors] = useState({});
   const [accusedModalTouched, setAccusedModalTouched] = useState({});
 
   // Arrested Modal state hooks
   const [isArrestedModalOpen, setIsArrestedModalOpen] = useState(false);
   const [activeArrestedIndex, setActiveArrestedIndex] = useState(null);
-  const [arrestedTempValues, setArrestedTempValues]   = useState({});
-  const [arrestedSubTab, setArrestedSubTab]           = useState('arrest_details'); // 'arrest_details' | 'person_particulars' | 'particular_details' | 'address'
+  const [arrestedTempValues, setArrestedTempValues] = useState({});
+  const [arrestedSubTab, setArrestedSubTab] = useState('arrest_details'); // 'arrest_details' | 'person_particulars' | 'particular_details' | 'address'
   const [arrestedModalErrors, setArrestedModalErrors] = useState({});
   const [arrestedModalTouched, setArrestedModalTouched] = useState({});
 
@@ -2522,15 +2517,15 @@ const renderActionTakenStep = () => {
   // Intimation Details tab state
   const [isIntimationModalOpen, setIsIntimationModalOpen] = useState(false);
   const [activeIntimationIndex, setActiveIntimationIndex] = useState(null);
-  const [intimationTempValues, setIntimationTempValues]   = useState({});
-  const [intimationSubTab, setIntimationSubTab]           = useState('personal'); // 'personal' | 'address'
+  const [intimationTempValues, setIntimationTempValues] = useState({});
+  const [intimationSubTab, setIntimationSubTab] = useState('personal'); // 'personal' | 'address'
   const [intimationModalErrors, setIntimationModalErrors] = useState({});
   const [intimationModalTouched, setIntimationModalTouched] = useState({});
 
   /* ── Major / Minor Head state ────────────────────────────────────────────── */
   const [selectedMajorHead, setSelectedMajorHead] = useState('');
   const [selectedMinorHead, setSelectedMinorHead] = useState('');
-  const [majorMinorRows, setMajorMinorRows]       = useState([]);
+  const [majorMinorRows, setMajorMinorRows] = useState([]);
   /**
    * Helper: extract all fields from the schema (flat list).
    * Used to look up field options dynamically — no hardcoding.
@@ -2555,11 +2550,10 @@ const renderActionTakenStep = () => {
           key={t.id}
           type="button"
           onClick={() => setActiveTab(t.id)}
-          className={`px-4 py-1.5 text-xs font-bold border border-b-0 border-[#7a9cc5] rounded-t cursor-pointer transition-colors ${
-            activeTab === t.id
+          className={`px-4 py-1.5 text-xs font-bold border border-b-0 border-[#7a9cc5] rounded-t cursor-pointer transition-colors ${activeTab === t.id
               ? 'bg-[#ea580c] text-white'
               : 'bg-[#0d2a4a] text-white hover:bg-[#16406d]'
-          }`}
+            }`}
         >
           {lang === 'hi' ? (t.title_hi || t.title_en) : t.title_en}
         </button>
@@ -2952,7 +2946,7 @@ const renderActionTakenStep = () => {
               : [String(cond.value || '').toLowerCase()];
             if (!allowed.includes(currentValue)) return;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       const rules = parseRules(f.validation_rules);
@@ -3059,7 +3053,7 @@ const renderActionTakenStep = () => {
               : [String(cond.value || '').toLowerCase()];
             if (!allowed.includes(currentValue)) return;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       const rules = parseRules(f.validation_rules);
@@ -3158,1005 +3152,1016 @@ const renderActionTakenStep = () => {
    * Alias map: UI display name -> schema show_when value
    */
 
+  // getMajorHeadOptions: returns live DB-fetched major heads for the selected act(s).
+  // dbMajorHeadOptions is populated by the useEffect below whenever values.act_name changes.
+  // This is the single source of truth — no hardcoded schema options are used.
+
   const getMajorHeadOptions = useCallback(() => {
     const actNameRaw = values.act_name || '';
     if (!actNameRaw) return [];
+  // Split comma-separated acts and normalise to schema keys
+  const rawActKeys = actNameRaw
+    .split(',')
+    .map(a => a.trim())
+    .filter(Boolean);
+  const actKeys = [];
+  for (const item of rawActKeys) {
+    if (/^\d{4}$/.test(item) && actKeys.length > 0) {
+      actKeys[actKeys.length - 1] = `${actKeys[actKeys.length - 1]}, ${item}`;
+    } else {
+      actKeys.push(item);
+    }
+  }
+  const normalizedActKeys = actKeys.map(a => ACT_NAME_ALIAS[a] || a);
 
-    // Split comma-separated acts and normalise to schema keys
-    const rawActKeys = actNameRaw
-      .split(',')
-      .map(a => a.trim())
-      .filter(Boolean);
-    const actKeys = [];
-    for (const item of rawActKeys) {
-      if (/^\d{4}$/.test(item) && actKeys.length > 0) {
-        actKeys[actKeys.length - 1] = `${actKeys[actKeys.length - 1]}, ${item}`;
-      } else {
-        actKeys.push(item);
+  // Collect options from all matching major-head schema fields
+  const seen = new Set();
+  const allOptions = [];
+  for (const actKey of normalizedActKeys) {
+    const majorFields = allSchemaFields.filter(
+      f => f.field_key?.includes('major_head') && f.show_when?.value === actKey
+    );
+    for (const mf of majorFields) {
+      let opts = mf.options;
+      if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch { } }
+      if (opts && Array.isArray(opts)) {
+        for (const opt of opts) {
+          if (!seen.has(opt.value)) {
+            seen.add(opt.value);
+            allOptions.push(opt);
+          }
+        }
       }
     }
-    const normalizedActKeys = actKeys.map(a => ACT_NAME_ALIAS[a] || a);
+  }
+  return allOptions;
+}, [allSchemaFields, values.act_name]);
+/**
+ * Fetch minor-head options from the schema.
+ * Looks for fields whose field_key matches `*_minor_head` and whose
+ * show_when condition references the currently selected major head value.
+ * Returns the options array from the matching field, or [] if none found.
+ */
+const getMinorHeadOptions = useCallback(() => {
+  if (!selectedMajorHead) return [];
+  const minorField = allSchemaFields.find(
+    f => f.field_key?.includes('minor_head') && f.show_when?.value === selectedMajorHead
+  );
+  let opts = minorField?.options;
+  if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch { } }
+  if (opts && Array.isArray(opts)) {
+    return opts;
+  }
+  return [];
+}, [allSchemaFields, selectedMajorHead]);
+/**
+ * Fetch local-head options from the schema.
+ * Looks for the field with field_key === 'local_head'.
+ */
+const getLocalHeadOptions = useCallback(() => {
+  const localField = allSchemaFields.find(f => f.field_key === 'local_head');
+  let opts = localField?.options;
+  if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch { } }
+  if (opts && Array.isArray(opts)) {
+    return opts;
+  }
+  return [];
+}, [allSchemaFields]);
 
-    // Collect options from all matching major-head schema fields
-    const seen = new Set();
-    const allOptions = [];
-    for (const actKey of normalizedActKeys) {
-      const majorFields = allSchemaFields.filter(
-        f => f.field_key?.includes('major_head') && f.show_when?.value === actKey
+const [complainantTab, setComplainantTab] = useState('personal');
+
+useEffect(() => {
+  let active = true;
+  api.get('/acts-sections')
+    .then(res => {
+      if (active && res.data?.data && Array.isArray(res.data.data)) {
+        setActsSectionsRegistry(res.data.data);
+      }
+    })
+    .catch((err) => {
+      console.log('Acts & Sections API not available yet, using dynamic local registry:', err.message);
+    });
+  return () => {
+    active = false;
+  };
+}, []);
+
+// Fetch Major Heads dynamically from the database, scoped to the specific (act, section)
+// pairs registered in the Acts & Sections table — not just the act(s) as a whole. Resolves
+// each registered section label back to its section_code via actsSectionsRegistry (mirrors
+// the same act_name/sections parsing ActsSectionsTable.jsx uses to render the pairs).
+useEffect(() => {
+  let active = true;
+
+  // Build act name string from the registered acts list if available, else fall back to act_name
+  let actNamesParam = '';
+  if (Array.isArray(values.act_registered_list) && values.act_registered_list.length > 0) {
+    actNamesParam = values.act_registered_list.map(r => r.act).join(',');
+  } else if (values.act_name) {
+    actNamesParam = values.act_name;
+  }
+
+  if (!actNamesParam) {
+    setDbMajorHeadOptions([]);
+    return;
+  }
+
+  const rawActs = values.act_name.split(',').map((s) => s.trim()).filter(Boolean);
+  const acts = [];
+  for (const item of rawActs) {
+    if (/^\d{4}$/.test(item) && acts.length > 0) {
+      acts[acts.length - 1] = `${acts[acts.length - 1]}, ${item}`;
+    } else {
+      acts.push(item);
+    }
+  }
+  const secs = values.sections ? values.sections.split(',').map((s) => s.trim()).filter(Boolean) : [];
+
+  const sectionCodes = [];
+  acts.forEach((actLabel, i) => {
+    const secLabel = secs[i];
+    if (!secLabel) return;
+    const actEntry = actsSectionsRegistry.find(r => r.act === actLabel);
+    const code = actEntry?.sections.find(s => s.section === secLabel)?.section_code;
+    if (code) sectionCodes.push(code);
+  });
+
+  const params = sectionCodes.length > 0
+    ? { section_codes: sectionCodes.join(',') }
+    : { act_name: values.act_name };
+
+  api.get('/fields/lookup/major-heads', { params })
+    .then(res => {
+      if (active && res.data?.success && Array.isArray(res.data.data)) {
+        setDbMajorHeadOptions(res.data.data);
+      }
+    })
+    .catch(err => {
+      console.error('Failed to fetch major heads:', err.message);
+    });
+
+  return () => {
+    active = false;
+  };
+}, [values.act_name, values.sections, actsSectionsRegistry]);
+
+// Fetch Minor Heads dynamically from the database based on selected Major Head
+useEffect(() => {
+  let active = true;
+  if (!selectedMajorHead) {
+    setDbMinorHeadOptions([]);
+    return;
+  }
+
+  api.get(`/fields/lookup/major-heads/${selectedMajorHead}/minor-heads`)
+    .then(res => {
+      if (active && res.data?.success && Array.isArray(res.data.data)) {
+        setDbMinorHeadOptions(res.data.data);
+      }
+    })
+    .catch(err => {
+      console.error('Failed to fetch minor heads:', err.message);
+    });
+
+  return () => {
+    active = false;
+  };
+}, [selectedMajorHead]);
+
+const formRef = useRef(null);
+
+const prevRecordTypeRef = useRef(recordType);
+const prevCaseTypeRef = useRef(caseType);
+const prevInitialIdRef = useRef(initialValues?.id);
+
+/* ── Sync saved record ID ─────────────────────────────────────────────── */
+useEffect(() => {
+  if (savedRecord?.id) {
+    activeRecordIdRef.current = savedRecord.id;
+  }
+}, [savedRecord]);
+
+/* ── Adjust step bounds if schema changes ───────────────────────────────── */
+useEffect(() => {
+  if (finalSchema.length > 0 && currentStep >= finalSchema.length) {
+    setCurrentStep(finalSchema.length - 1);
+  }
+}, [finalSchema.length, currentStep]);
+
+
+const initialValuesStr = JSON.stringify(initialValues || {});
+const userStr = user ? JSON.stringify({
+  id: user.id,
+  role: user.role,
+  psId: user.psId,
+  districtId: user.districtId,
+  stationName: user.stationName,
+  districtKey: user.districtKey
+}) : '';
+
+/* ── Reset wizard progress and errors when navigating to a different record/form ── */
+useEffect(() => {
+  const typeChanged = prevRecordTypeRef.current !== recordType;
+  const caseTypeChanged = prevCaseTypeRef.current !== caseType;
+  const recordIdChanged = prevInitialIdRef.current !== initialValues?.id;
+
+  // Avoid resetting state if we are just receiving the ID of the new draft we saved ourselves
+  const isAutosaveInit = !prevInitialIdRef.current && initialValues?.id && (initialValues.id === activeRecordIdRef.current);
+
+  if (typeChanged || caseTypeChanged || (recordIdChanged && !isAutosaveInit)) {
+    setCurrentStep(0);
+    setCompletedSteps(new Set());
+    setErrors({});
+    setTouched({});
+  }
+
+  prevRecordTypeRef.current = recordType;
+  prevCaseTypeRef.current = caseType;
+  prevInitialIdRef.current = initialValues?.id;
+}, [recordType, caseType, initialValues?.id]);
+/* ── Seed repeater entries from initialPersons / initialProperties ─────── */
+useEffect(() => {
+  if (!finalSchema.length) return;
+  const initial = {};
+  // Build section-key → entries map for person sections
+  for (const section of finalSchema) {
+    if (!section.is_repeater) continue;
+    if (section.entity_type === 'person' && section.person_type) {
+      const matching = initialPersons.filter(
+        p => p.person_type === section.person_type
       );
-      for (const mf of majorFields) {
-        let opts = mf.options;
-        if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch {} }
-        if (opts && Array.isArray(opts)) {
-          for (const opt of opts) {
-            if (!seen.has(opt.value)) {
-              seen.add(opt.value);
-              allOptions.push(opt);
-            }
-          }
-        }
+      if (matching.length > 0) {
+        initial[section.section] = matching.map(p => ({ ...(p.data || {}) }));
       }
-    }
-    return allOptions;
-  }, [allSchemaFields, values.act_name]);
-  /**
-   * Fetch minor-head options from the schema.
-   * Looks for fields whose field_key matches `*_minor_head` and whose
-   * show_when condition references the currently selected major head value.
-   * Returns the options array from the matching field, or [] if none found.
-   */
-  const getMinorHeadOptions = useCallback(() => {
-    if (!selectedMajorHead) return [];
-    const minorField = allSchemaFields.find(
-      f => f.field_key?.includes('minor_head') && f.show_when?.value === selectedMajorHead
-    );
-    let opts = minorField?.options;
-    if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch {} }
-    if (opts && Array.isArray(opts)) {
-      return opts;
-    }
-    return [];
-  }, [allSchemaFields, selectedMajorHead]);
-  /**
-   * Fetch local-head options from the schema.
-   * Looks for the field with field_key === 'local_head'.
-   */
-  const getLocalHeadOptions = useCallback(() => {
-    const localField = allSchemaFields.find(f => f.field_key === 'local_head');
-    let opts = localField?.options;
-    if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch {} }
-    if (opts && Array.isArray(opts)) {
-      return opts;
-    }
-    return [];
-  }, [allSchemaFields]);
-
-  const [complainantTab, setComplainantTab] = useState('personal');
-
-  useEffect(() => {
-    let active = true;
-    api.get('/acts-sections')
-      .then(res => {
-        if (active && res.data?.data && Array.isArray(res.data.data)) {
-          setActsSectionsRegistry(res.data.data);
-        }
-      })
-      .catch((err) => {
-        console.log('Acts & Sections API not available yet, using dynamic local registry:', err.message);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Fetch Major Heads dynamically from the database, scoped to the specific (act, section)
-  // pairs registered in the Acts & Sections table — not just the act(s) as a whole. Resolves
-  // each registered section label back to its section_code via actsSectionsRegistry (mirrors
-  // the same act_name/sections parsing ActsSectionsTable.jsx uses to render the pairs).
-  useEffect(() => {
-    let active = true;
-    if (!values.act_name) {
-      setDbMajorHeadOptions([]);
-      return;
-    }
-
-    const rawActs = values.act_name.split(',').map((s) => s.trim()).filter(Boolean);
-    const acts = [];
-    for (const item of rawActs) {
-      if (/^\d{4}$/.test(item) && acts.length > 0) {
-        acts[acts.length - 1] = `${acts[acts.length - 1]}, ${item}`;
-      } else {
-        acts.push(item);
-      }
-    }
-    const secs = values.sections ? values.sections.split(',').map((s) => s.trim()).filter(Boolean) : [];
-
-    const sectionCodes = [];
-    acts.forEach((actLabel, i) => {
-      const secLabel = secs[i];
-      if (!secLabel) return;
-      const actEntry = actsSectionsRegistry.find(r => r.act === actLabel);
-      const code = actEntry?.sections.find(s => s.section === secLabel)?.section_code;
-      if (code) sectionCodes.push(code);
-    });
-
-    const params = sectionCodes.length > 0
-      ? { section_codes: sectionCodes.join(',') }
-      : { act_name: values.act_name };
-
-    api.get('/fields/lookup/major-heads', { params })
-      .then(res => {
-        if (active && res.data?.success && Array.isArray(res.data.data)) {
-          setDbMajorHeadOptions(res.data.data);
-        }
-      })
-      .catch(err => {
-        console.error('Failed to fetch major heads:', err.message);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [values.act_name, values.sections, actsSectionsRegistry]);
-
-  // Fetch Minor Heads dynamically from the database based on selected Major Head
-  useEffect(() => {
-    let active = true;
-    if (!selectedMajorHead) {
-      setDbMinorHeadOptions([]);
-      return;
-    }
-
-    api.get(`/fields/lookup/major-heads/${selectedMajorHead}/minor-heads`)
-      .then(res => {
-        if (active && res.data?.success && Array.isArray(res.data.data)) {
-          setDbMinorHeadOptions(res.data.data);
-        }
-      })
-      .catch(err => {
-        console.error('Failed to fetch minor heads:', err.message);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [selectedMajorHead]);
-
-  const formRef = useRef(null);
-
-  const prevRecordTypeRef = useRef(recordType);
-  const prevCaseTypeRef = useRef(caseType);
-  const prevInitialIdRef = useRef(initialValues?.id);
-
-  /* ── Sync saved record ID ─────────────────────────────────────────────── */
-  useEffect(() => {
-    if (savedRecord?.id) {
-      activeRecordIdRef.current = savedRecord.id;
-    }
-  }, [savedRecord]);
-
-  /* ── Adjust step bounds if schema changes ───────────────────────────────── */
-  useEffect(() => {
-    if (finalSchema.length > 0 && currentStep >= finalSchema.length) {
-      setCurrentStep(finalSchema.length - 1);
-    }
-  }, [finalSchema.length, currentStep]);
-
-
-  const initialValuesStr = JSON.stringify(initialValues || {});
-  const userStr = user ? JSON.stringify({
-    id: user.id,
-    role: user.role,
-    psId: user.psId,
-    districtId: user.districtId,
-    stationName: user.stationName,
-    districtKey: user.districtKey
-  }) : '';
-
-  /* ── Reset wizard progress and errors when navigating to a different record/form ── */
-  useEffect(() => {
-    const typeChanged = prevRecordTypeRef.current !== recordType;
-    const caseTypeChanged = prevCaseTypeRef.current !== caseType;
-    const recordIdChanged = prevInitialIdRef.current !== initialValues?.id;
-
-    // Avoid resetting state if we are just receiving the ID of the new draft we saved ourselves
-    const isAutosaveInit = !prevInitialIdRef.current && initialValues?.id && (initialValues.id === activeRecordIdRef.current);
-
-    if (typeChanged || caseTypeChanged || (recordIdChanged && !isAutosaveInit)) {
-      setCurrentStep(0);
-      setCompletedSteps(new Set());
-      setErrors({});
-      setTouched({});
-    }
-
-    prevRecordTypeRef.current = recordType;
-    prevCaseTypeRef.current = caseType;
-    prevInitialIdRef.current = initialValues?.id;
-  }, [recordType, caseType, initialValues?.id]);
-  /* ── Seed repeater entries from initialPersons / initialProperties ─────── */
-  useEffect(() => {
-    if (!finalSchema.length) return;
-    const initial = {};
-    // Build section-key → entries map for person sections
-    for (const section of finalSchema) {
-      if (!section.is_repeater) continue;
-      if (section.entity_type === 'person' && section.person_type) {
-        const matching = initialPersons.filter(
-          p => p.person_type === section.person_type
-        );
-        if (matching.length > 0) {
-          initial[section.section] = matching.map(p => ({ ...(p.data || {}) }));
-        }
-      } else if (section.entity_type === 'property') {
-        if (initialProperties.length > 0) {
-          initial[section.section] = initialProperties.map(prop => ({
-            property_major_category: prop.major_category || '',
-            property_minor_category: prop.minor_category || '',
-            property_stolen_recovered: prop.status || 'Stolen',
-            property_details: prop.details || '',
-          }));
-        }
-      }
-    }
-    if (Object.keys(initial).length > 0) {
-      setRepeaterState(prev => ({ ...prev, ...initial }));
-    }
-  }, [initialPersons, initialProperties, finalSchema.length]);
-
-  // Auto-populate 1 empty row for property details if empty and not read-only
-  useEffect(() => {
-    if (!readOnly && (recordType === 'CASE' || recordType === 'ARREST')) {
-      const propertyList = repeaterState?.property_details || [];
-      if (propertyList.length === 0) {
-        setRepeaterState(prev => ({
-          ...prev,
-          property_details: [{
-            property_major_category: '',
-            property_minor_category: '',
-            property_details: '',
-            property_value_inr: '',
-            property_stolen_recovered: 'Stolen'
-          }]
+    } else if (section.entity_type === 'property') {
+      if (initialProperties.length > 0) {
+        initial[section.section] = initialProperties.map(prop => ({
+          property_major_category: prop.major_category || '',
+          property_minor_category: prop.minor_category || '',
+          property_stolen_recovered: prop.status || 'Stolen',
+          property_details: prop.details || '',
         }));
       }
     }
-  }, [repeaterState?.property_details?.length, readOnly, recordType]);
+  }
+  if (Object.keys(initial).length > 0) {
+    setRepeaterState(prev => ({ ...prev, ...initial }));
+  }
+}, [initialPersons, initialProperties, finalSchema.length]);
 
-  useEffect(() => {
-    const seed = { ...(initialValues?.data || initialValues || {}) };
-    
-    // Auto-populate GD date & time with current local time if creating a new record and gd_date_time is empty
-    if (!initialValues?.id && !seed.gd_date_time) {
-      const now = new Date();
-      const dd = String(now.getDate()).padStart(2, '0');
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const yyyy = now.getFullYear();
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mi = String(now.getMinutes()).padStart(2, '0');
-      seed.gd_date_time = `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
-      if (recordType === 'UIDB') {
-        seed.dd_date = `${dd}/${mm}/${yyyy}`;
-        seed.dd_time = `${hh}:${mi}`;
-      } else {
-        seed.gd_date = `${dd}/${mm}/${yyyy}`;
-        seed.gd_time = `${hh}:${mi}`;
-        if (recordType === 'CASE') {
-          seed.fir_date = `${dd}/${mm}/${yyyy}`;
-          seed.fir_time = `${hh}:${mi}`;
-          seed.case_type = 'cctns(manual FIR)';
-        }
-      }
+// Auto-populate 1 empty row for property details if empty and not read-only
+useEffect(() => {
+  if (!readOnly && (recordType === 'CASE' || recordType === 'ARREST')) {
+    const propertyList = repeaterState?.property_details || [];
+    if (propertyList.length === 0) {
+      setRepeaterState(prev => ({
+        ...prev,
+        property_details: [{
+          property_major_category: '',
+          property_minor_category: '',
+          property_details: '',
+          property_value_inr: '',
+          property_stolen_recovered: 'Stolen'
+        }]
+      }));
     }
+  }
+}, [repeaterState?.property_details?.length, readOnly, recordType]);
 
-    // Combine date and time into gd_date_time for existing records if empty
-    if (!seed.gd_date_time) {
-      if (recordType === 'UIDB') {
-        const dDate = seed.dd_date || seed.ddDate;
-        const dTime = seed.dd_time || seed.ddTime;
-        if (dDate && dTime) {
-          seed.gd_date_time = `${dDate} ${dTime}`;
-        }
-      } else {
-        if (seed.gd_date && seed.gd_time) {
-          seed.gd_date_time = `${seed.gd_date} ${seed.gd_time}`;
-          if (recordType === 'CASE') {
-            seed.fir_date = seed.fir_date || seed.gd_date;
-            seed.fir_time = seed.fir_time || seed.gd_time;
-          }
-        }
-      }
+useEffect(() => {
+  const seed = { ...(initialValues?.data || initialValues || {}) };
+
+  // Auto-populate GD date & time with current local time if creating a new record and gd_date_time is empty
+  if (!initialValues?.id && !seed.gd_date_time) {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mi = String(now.getMinutes()).padStart(2, '0');
+    seed.gd_date_time = `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+    if (recordType === 'UIDB') {
+      seed.dd_date = `${dd}/${mm}/${yyyy}`;
+      seed.dd_time = `${hh}:${mi}`;
     } else {
+      seed.gd_date = `${dd}/${mm}/${yyyy}`;
+      seed.gd_time = `${hh}:${mi}`;
       if (recordType === 'CASE') {
-        seed.fir_date = seed.fir_date || seed.gd_date || seed.gd_date_time.split(' ')[0];
-        seed.fir_time = seed.fir_time || seed.gd_time || seed.gd_date_time.split(' ')[1];
+        seed.fir_date = `${dd}/${mm}/${yyyy}`;
+        seed.fir_time = `${hh}:${mi}`;
+        seed.case_type = 'cctns(manual FIR)';
       }
     }
-    
-    // Resolve station and district dynamically based on record metadata or active user node
-    const recordPsId = initialValues?.ps_id || initialValues?.psId;
-    const recordDistId = initialValues?.district_id || initialValues?.districtId;
+  }
 
-    let resolvedStation = seed.police_station;
-    let resolvedDistrict = seed.district;
-
-    if (!resolvedStation) {
-      if (recordPsId) {
-        const node = findNodeById(recordPsId);
-        if (node && node.type === 'PS') {
-          resolvedStation = node.stationName || node.name;
-        }
-      } else if (user?.stationName) {
-        resolvedStation = user.stationName;
-      } else if (user?.psId) {
-        const node = findNodeById(user.psId);
-        if (node && node.type === 'PS') {
-          resolvedStation = node.stationName || node.name;
-        }
-      } else {
-        // Fallback only for Police Station level roles
-        const isPsLevel = user?.role === 'PS' || user?.role === 'HC' || user?.role === 'SHO';
-        resolvedStation = isPsLevel ? 'Parliament Street' : '';
+  // Combine date and time into gd_date_time for existing records if empty
+  if (!seed.gd_date_time) {
+    if (recordType === 'UIDB') {
+      const dDate = seed.dd_date || seed.ddDate;
+      const dTime = seed.dd_time || seed.ddTime;
+      if (dDate && dTime) {
+        seed.gd_date_time = `${dDate} ${dTime}`;
       }
-    }
-
-    if (!resolvedDistrict) {
-      if (recordDistId) {
-        const node = findNodeById(recordDistId);
-        if (node) {
-          resolvedDistrict = node.districtKey || node.name;
-        }
-      } else if (user?.districtKey) {
-        resolvedDistrict = user.districtKey;
-      } else if (user?.districtId) {
-        const node = findNodeById(user.districtId);
-        if (node) {
-          resolvedDistrict = node.districtKey || node.name;
-        }
-      } else {
-        const isHqLevel = user?.role === 'HQ' || user?.role === 'HQ_ANALYST' || user?.role === 'HQ_ADMIN';
-        resolvedDistrict = isHqLevel ? '' : 'New Delhi District (NDD)';
-      }
-    }
-
-    // Auto-populate readonly system fields from session/metadata
-    const updatedSeed = {
-      ...seed,
-      uid: initialValues?.id || seed.uid || 'NEW_DRAFT_PENDING',
-      district: resolvedDistrict,
-      police_station: resolvedStation,
-      submission_status: initialValues?.current_status || seed.submission_status || 'DRAFT'
-    };
-
-    // Formulate gd_date_time if missing but gd_date/gd_time exist.
-    // gd_date is stored as dd/mm/yyyy, so no format conversion is needed here.
-    if (!updatedSeed.gd_date_time && updatedSeed.gd_date) {
-      const timePart = updatedSeed.gd_time || '00:00';
-      updatedSeed.gd_date_time = `${updatedSeed.gd_date} ${timePart.substring(0, 5)}`;
-    }
-    
-    setValues(updatedSeed);
-    if (initialValues?.id) {
-      activeRecordIdRef.current = initialValues.id;
     } else {
-      activeRecordIdRef.current = null;
+      if (seed.gd_date && seed.gd_time) {
+        seed.gd_date_time = `${seed.gd_date} ${seed.gd_time}`;
+        if (recordType === 'CASE') {
+          seed.fir_date = seed.fir_date || seed.gd_date;
+          seed.fir_time = seed.fir_time || seed.gd_time;
+        }
+      }
     }
-  }, [initialValuesStr, userStr, recordType, caseType]);
+  } else {
+    if (recordType === 'CASE') {
+      seed.fir_date = seed.fir_date || seed.gd_date || seed.gd_date_time.split(' ')[0];
+      seed.fir_time = seed.fir_time || seed.gd_time || seed.gd_date_time.split(' ')[1];
+    }
+  }
 
-  /* ── Validate a single section (step) ─────────────────────────────────── */
-  const validateSection = useCallback((stepIdx, currentValues = values) => {
-    const section = finalSchema[stepIdx];
-    if (!section) return {};
-    if (section.is_repeater) return {}; // repeater sections have no flat-field validation
+  // Resolve station and district dynamically based on record metadata or active user node
+  const recordPsId = initialValues?.ps_id || initialValues?.psId;
+  const recordDistId = initialValues?.district_id || initialValues?.districtId;
 
-    const errs = {};
-    section.fields.forEach((field) => {
-      // Skip validating if field is hidden by condition
-      if (field.show_when) {
-        const isShown = (() => {
-          try {
-            const cond = typeof field.show_when === 'string' ? JSON.parse(field.show_when) : field.show_when;
-            if (!cond || !cond.field) return true;
-            const val = currentValues[cond.field];
-            const checkVals = Array.isArray(cond.value) ? cond.value : [cond.value];
-            return checkVals.some(v => String(v || '').toLowerCase() === String(val || '').toLowerCase());
-          } catch (e) {
-            return true;
-          }
-        })();
-        if (!isShown) return;
+  let resolvedStation = seed.police_station;
+  let resolvedDistrict = seed.district;
+
+  if (!resolvedStation) {
+    if (recordPsId) {
+      const node = findNodeById(recordPsId);
+      if (node && node.type === 'PS') {
+        resolvedStation = node.stationName || node.name;
       }
+    } else if (user?.stationName) {
+      resolvedStation = user.stationName;
+    } else if (user?.psId) {
+      const node = findNodeById(user.psId);
+      if (node && node.type === 'PS') {
+        resolvedStation = node.stationName || node.name;
+      }
+    } else {
+      // Fallback only for Police Station level roles
+      const isPsLevel = user?.role === 'PS' || user?.role === 'HC' || user?.role === 'SHO';
+      resolvedStation = isPsLevel ? 'Parliament Street' : '';
+    }
+  }
 
-      const rules = parseRules(field.validation_rules);
+  if (!resolvedDistrict) {
+    if (recordDistId) {
+      const node = findNodeById(recordDistId);
+      if (node) {
+        resolvedDistrict = node.districtKey || node.name;
+      }
+    } else if (user?.districtKey) {
+      resolvedDistrict = user.districtKey;
+    } else if (user?.districtId) {
+      const node = findNodeById(user.districtId);
+      if (node) {
+        resolvedDistrict = node.districtKey || node.name;
+      }
+    } else {
+      const isHqLevel = user?.role === 'HQ' || user?.role === 'HQ_ANALYST' || user?.role === 'HQ_ADMIN';
+      resolvedDistrict = isHqLevel ? '' : 'New Delhi District (NDD)';
+    }
+  }
 
-      if (field.field_key === 'gd_no') {
-        const num = currentValues.gd_no;
-        const dt = currentValues.gd_date;
-        const tm = currentValues.gd_time;
-        const isAnyFilled = !!(num || dt || tm);
-        const isAllFilled = !!(num && dt && tm);
+  // Auto-populate readonly system fields from session/metadata
+  const updatedSeed = {
+    ...seed,
+    uid: initialValues?.id || seed.uid || 'NEW_DRAFT_PENDING',
+    district: resolvedDistrict,
+    police_station: resolvedStation,
+    submission_status: initialValues?.current_status || seed.submission_status || 'DRAFT'
+  };
 
-        if (rules.required && !isAllFilled) {
-          errs.gd_no = lang === 'hi'
-            ? 'जीडी नंबर, दिनांक और समय तीनों भरना आवश्यक है।'
-            : 'GD Number, Date and Time are all required.';
-        } else if (isAnyFilled && !isAllFilled) {
-          errs.gd_no = lang === 'hi'
-            ? 'जीडी नंबर, दिनांक और समय तीनों भरें।'
-            : 'Please fill all three: GD Number, Date and Time.';
+  // Formulate gd_date_time if missing but gd_date/gd_time exist.
+  // gd_date is stored as dd/mm/yyyy, so no format conversion is needed here.
+  if (!updatedSeed.gd_date_time && updatedSeed.gd_date) {
+    const timePart = updatedSeed.gd_time || '00:00';
+    updatedSeed.gd_date_time = `${updatedSeed.gd_date} ${timePart.substring(0, 5)}`;
+  }
+
+  setValues(updatedSeed);
+  if (initialValues?.id) {
+    activeRecordIdRef.current = initialValues.id;
+  } else {
+    activeRecordIdRef.current = null;
+  }
+}, [initialValuesStr, userStr, recordType, caseType]);
+
+/* ── Validate a single section (step) ─────────────────────────────────── */
+const validateSection = useCallback((stepIdx, currentValues = values) => {
+  const section = finalSchema[stepIdx];
+  if (!section) return {};
+  if (section.is_repeater) return {}; // repeater sections have no flat-field validation
+
+  const errs = {};
+  section.fields.forEach((field) => {
+    // Skip validating if field is hidden by condition
+    if (field.show_when) {
+      const isShown = (() => {
+        try {
+          const cond = typeof field.show_when === 'string' ? JSON.parse(field.show_when) : field.show_when;
+          if (!cond || !cond.field) return true;
+          const val = currentValues[cond.field];
+          const checkVals = Array.isArray(cond.value) ? cond.value : [cond.value];
+          return checkVals.some(v => String(v || '').toLowerCase() === String(val || '').toLowerCase());
+        } catch (e) {
+          return true;
         }
-        return;
+      })();
+      if (!isShown) return;
+    }
+
+    const rules = parseRules(field.validation_rules);
+
+    if (field.field_key === 'gd_no') {
+      const num = currentValues.gd_no;
+      const dt = currentValues.gd_date;
+      const tm = currentValues.gd_time;
+      const isAnyFilled = !!(num || dt || tm);
+      const isAllFilled = !!(num && dt && tm);
+
+      if (rules.required && !isAllFilled) {
+        errs.gd_no = lang === 'hi'
+          ? 'जीडी नंबर, दिनांक और समय तीनों भरना आवश्यक है।'
+          : 'GD Number, Date and Time are all required.';
+      } else if (isAnyFilled && !isAllFilled) {
+        errs.gd_no = lang === 'hi'
+          ? 'जीडी नंबर, दिनांक और समय तीनों भरें।'
+          : 'Please fill all three: GD Number, Date and Time.';
       }
-
-      if (field.field_key === 'fir_no') {
-        const num = currentValues.fir_no;
-        const dt = currentValues.fir_date;
-        const tm = currentValues.fir_time;
-        const isAnyFilled = !!(num || dt || tm);
-        const isAllFilled = !!(num && dt && tm);
-
-        if (rules.required && !isAllFilled) {
-          errs.fir_no = lang === 'hi'
-            ? 'प्राथमिकी संख्या, दिनांक और समय तीनों भरना आवश्यक है।'
-            : 'FIR Number, Date and Time are all required.';
-        } else if (isAnyFilled && !isAllFilled) {
-          errs.fir_no = lang === 'hi'
-            ? 'प्राथमिकी संख्या, दिनांक और समय तीनों भरें।'
-            : 'Please fill all three: FIR Number, Date and Time.';
-        }
-        return;
-      }
-
-      if (!rules.required) return;
-
-      const val = currentValues[field.field_key];
-      const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
-
-      if (isEmpty) {
-        const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-        errs[field.field_key] = lang === 'hi'
-          ? `${label} आवश्यक है`
-          : `${label} is required`;
-      }
-    });
-    return errs;
-  }, [finalSchema, values, lang]);
-
-  /* ── Validate ALL sections ─────────────────────────────────────────────── */
-  const validateAll = useCallback((currentValues = values) => {
-    const allErrs = {};
-    finalSchema.forEach((section, idx) => {
-      const errs = validateSection(idx, currentValues);
-      Object.assign(allErrs, errs);
-    });
-    return allErrs;
-  }, [finalSchema, values, validateSection]);
-
-  /* ── Handle field change ──────────────────────────────────────────────── */
-  const handleChange = useCallback((key, val) => {
-    if (readOnly) return;
-
-    setValues((prev) => {
-      const next = { ...prev, [key]: val };
-
-      // DOB, Age (Years) and Year of Birth interlinking
-      if (key.endsWith('_dob')) {
-        const prefix = key.substring(0, key.lastIndexOf('_dob'));
-        if (val) {
-          const dobDate = parseDMY(val);
-          if (dobDate && !isNaN(dobDate.getTime())) {
-            const birthYear = dobDate.getFullYear();
-            const currentYear = new Date().getFullYear();
-            next[`${prefix}_birth_year`] = birthYear;
-            next[`${prefix}_age_year`] = Math.max(0, currentYear - birthYear);
-          }
-        } else {
-          next[`${prefix}_birth_year`] = '';
-          next[`${prefix}_age_year`] = '';
-        }
-      } else if (key.endsWith('_birth_year')) {
-        const prefix = key.substring(0, key.lastIndexOf('_birth_year'));
-        if (val) {
-          const birthYear = parseInt(val, 10);
-          if (!isNaN(birthYear)) {
-            const currentYear = new Date().getFullYear();
-            next[`${prefix}_age_year`] = Math.max(0, currentYear - birthYear);
-          }
-        } else {
-          next[`${prefix}_age_year`] = '';
-        }
-      } else if (key.endsWith('_age_year')) {
-        const prefix = key.substring(0, key.lastIndexOf('_age_year'));
-        if (val) {
-          const ageYear = parseInt(val, 10);
-          if (!isNaN(ageYear)) {
-            const currentYear = new Date().getFullYear();
-            next[`${prefix}_birth_year`] = currentYear - ageYear;
-          }
-        } else {
-          next[`${prefix}_birth_year`] = '';
-        }
-      }
-
-      if (next.time_of_occurrence !== undefined) {
-        next.occurrence_time = next.time_of_occurrence;
-      }
-
-      if (key === 'arrested_perm_same' && val === true) {
-        next.arrested_perm_house_no = next.arrested_house_no || '';
-        next.arrested_perm_street = next.arrested_street || '';
-        next.arrested_perm_colony = next.arrested_colony || '';
-        next.arrested_perm_city_town_village = next.arrested_city_town_village || '';
-        next.arrested_perm_tehsil_block_mandal = next.arrested_tehsil_block_mandal || '';
-        next.arrested_perm_country = next.arrested_country || 'Indian';
-        next.arrested_perm_state = next.arrested_state || '';
-        next.arrested_perm_district = next.arrested_district || '';
-        next.arrested_perm_police_station = next.arrested_police_station || '';
-        next.arrested_perm_pincode = next.arrested_pincode || '';
-        next.arrested_perm_address = next.arrested_present_address || '';
-      }
-
-      if (next.arrested_perm_same === true) {
-        if (key === 'arrested_house_no') next.arrested_perm_house_no = val;
-        if (key === 'arrested_street') next.arrested_perm_street = val;
-        if (key === 'arrested_colony') next.arrested_perm_colony = val;
-        if (key === 'arrested_city_town_village') next.arrested_perm_city_town_village = val;
-        if (key === 'arrested_tehsil_block_mandal') next.arrested_perm_tehsil_block_mandal = val;
-        if (key === 'arrested_country') next.arrested_perm_country = val;
-        if (key === 'arrested_state') next.arrested_perm_state = val;
-        if (key === 'arrested_district') next.arrested_perm_district = val;
-        if (key === 'arrested_police_station') next.arrested_perm_police_station = val;
-        if (key === 'arrested_pincode') next.arrested_perm_pincode = val;
-        if (key === 'arrested_present_address') next.arrested_perm_address = val;
-      }
-
-      if (key === 'complainant_perm_same' && (val === true || val === 'Yes')) {
-        next.complainant_perm_house_no = next.complainant_house_no || '';
-        next.complainant_perm_street = next.complainant_street || '';
-        next.complainant_perm_colony = next.complainant_colony || '';
-        next.complainant_perm_city_town_village = next.complainant_city_town_village || '';
-        next.complainant_perm_tehsil_block_mandal = next.complainant_tehsil_block_mandal || '';
-        next.complainant_perm_country = next.complainant_country || 'Indian';
-        next.complainant_perm_state = next.complainant_state || '';
-        next.complainant_perm_district = next.complainant_district || '';
-        next.complainant_perm_police_station = next.complainant_police_station || '';
-        next.complainant_perm_pincode = next.complainant_pincode || '';
-      }
-
-      if (next.complainant_perm_same === true || next.complainant_perm_same === 'Yes') {
-        if (key === 'complainant_house_no') next.complainant_perm_house_no = val;
-        if (key === 'complainant_street') next.complainant_perm_street = val;
-        if (key === 'complainant_colony') next.complainant_perm_colony = val;
-        if (key === 'complainant_city_town_village') next.complainant_perm_city_town_village = val;
-        if (key === 'complainant_tehsil_block_mandal') next.complainant_perm_tehsil_block_mandal = val;
-        if (key === 'complainant_country') next.complainant_perm_country = val;
-        if (key === 'complainant_state') next.complainant_perm_state = val;
-        if (key === 'complainant_district') next.complainant_perm_district = val;
-        if (key === 'complainant_police_station') next.complainant_perm_police_station = val;
-        if (key === 'complainant_pincode') next.complainant_perm_pincode = val;
-      }
-      
-      // Auto-set mp_known based on missing_type (Missing -> Known/Identified=true, Found -> Unknown=false)
-      if (key === 'missing_type') {
-        if (val === 'Missing') {
-          next.mp_known = true;
-        } else if (val === 'Found') {
-          next.mp_known = false;
-        }
-      }
-
-
-      // Clear error on change
-      if (errors[key]) {
-        setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
-      }
-
-      // Auto-save using custom hook (2 seconds debounce)
-      triggerAutosave(next, activeRecordIdRef.current);
-
-      return next;
-    });
-
-    setTouched((prev) => ({ ...prev, [key]: true }));
-  }, [readOnly, errors, triggerAutosave]);
-
-  /** Add a major/minor head row to the table */
-  const handleAddMajorMinorRow = useCallback(() => {
-    if (!selectedMajorHead || !selectedMinorHead) return;
-    setMajorMinorRows(prev => [
-      ...prev,
-      { majorHead: selectedMajorHead, minorHead: selectedMinorHead }
-    ]);
-    // Persist to form values as comma-separated strings
-    const updatedMajors = [...majorMinorRows.map(r => r.majorHead), selectedMajorHead].join(', ');
-    const updatedMinors = [...majorMinorRows.map(r => r.minorHead), selectedMinorHead].join(', ');
-    handleChange('major_heads', updatedMajors);
-    handleChange('minor_heads', updatedMinors);
-    setSelectedMajorHead('');
-    setSelectedMinorHead('');
-  }, [selectedMajorHead, selectedMinorHead, majorMinorRows, handleChange]);
-  /** Delete a major/minor head row from the table */
-  const handleDeleteMajorMinorRow = useCallback((index) => {
-    const updated = majorMinorRows.filter((_, i) => i !== index);
-    setMajorMinorRows(updated);
-    handleChange('major_heads', updated.map(r => r.majorHead).join(', '));
-    handleChange('minor_heads', updated.map(r => r.minorHead).join(', '));
-  }, [majorMinorRows, handleChange]);
-
-  /* ── Navigate forward (with step validation) ──────────────────────────── */
-  const handleNext = () => {
-    const stepErrs = validateSection(currentStep);
-    if (Object.keys(stepErrs).length > 0) {
-      console.log('Block handleNext on step:', currentStep, 'Errors:', stepErrs);
-      setErrors((prev) => ({ ...prev, ...stepErrs }));
-      // Mark all fields in this step as touched
-      const section = finalSchema[currentStep];
-      const newTouched = {};
-      section?.fields?.forEach((f) => { newTouched[f.field_key] = true; });
-      setTouched((prev) => ({ ...prev, ...newTouched }));
       return;
     }
 
-    // Auto-populate linked_fir_dd_no and case details when moving from Step 1 (Select FIR)
-    if (recordType === 'ARREST' && caseType === 'against_fir' && currentStep === 0) {
-      const selectedFir = values.selected_fir;
-      if (selectedFir) {
-        const matchedBackendCase = (casesData || []).find(c => {
-          if (!c) return false;
-          const firNo = c.data?.fir_no || c.fir_no || `FIR No. ${c.id}`;
-          return firNo === selectedFir;
-        });
-        const matchedMockCase = MOCK_FIR_LIST.find(c => c.fir_no === selectedFir);
-        let autofilled = {};
-        if (matchedBackendCase) {
-          const cData = matchedBackendCase.data || {};
-          autofilled = {
-            act_name: cData.act_name || '',
-            sections: cData.sections || '',
-            io_name: cData.io_name || '',
-            io_rank: cData.io_rank || '',
-            io_pis: cData.io_pis || '',
-            io_mobile: cData.io_mobile || '',
-            case_type: cData.case_type || matchedBackendCase.case_type || 'cctns(manual FIR)',
-          };
-        } else if (matchedMockCase) {
-          autofilled = {
-            act_name: 'IPC',
-            sections: matchedMockCase.sections || '',
-            io_name: 'Inspector Satish Kumar',
-            io_rank: 'Inspector',
-            io_pis: '28081234',
-            io_mobile: '9876543210',
-            case_type: 'cctns(manual FIR)',
-          };
+    if (field.field_key === 'fir_no') {
+      const num = currentValues.fir_no;
+      const dt = currentValues.fir_date;
+      const tm = currentValues.fir_time;
+      const isAnyFilled = !!(num || dt || tm);
+      const isAllFilled = !!(num && dt && tm);
+
+      if (rules.required && !isAllFilled) {
+        errs.fir_no = lang === 'hi'
+          ? 'प्राथमिकी संख्या, दिनांक और समय तीनों भरना आवश्यक है।'
+          : 'FIR Number, Date and Time are all required.';
+      } else if (isAnyFilled && !isAllFilled) {
+        errs.fir_no = lang === 'hi'
+          ? 'प्राथमिकी संख्या, दिनांक और समय तीनों भरें।'
+          : 'Please fill all three: FIR Number, Date and Time.';
+      }
+      return;
+    }
+
+    if (!rules.required) return;
+
+    const val = currentValues[field.field_key];
+    const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
+
+    if (isEmpty) {
+      const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+      errs[field.field_key] = lang === 'hi'
+        ? `${label} आवश्यक है`
+        : `${label} is required`;
+    }
+  });
+  return errs;
+}, [finalSchema, values, lang]);
+
+/* ── Validate ALL sections ─────────────────────────────────────────────── */
+const validateAll = useCallback((currentValues = values) => {
+  const allErrs = {};
+  finalSchema.forEach((section, idx) => {
+    const errs = validateSection(idx, currentValues);
+    Object.assign(allErrs, errs);
+  });
+  return allErrs;
+}, [finalSchema, values, validateSection]);
+
+/* ── Handle field change ──────────────────────────────────────────────── */
+const handleChange = useCallback((key, val) => {
+  if (readOnly) return;
+
+  setValues((prev) => {
+    const next = { ...prev, [key]: val };
+
+    // DOB, Age (Years) and Year of Birth interlinking
+    if (key.endsWith('_dob')) {
+      const prefix = key.substring(0, key.lastIndexOf('_dob'));
+      if (val) {
+        const dobDate = parseDMY(val);
+        if (dobDate && !isNaN(dobDate.getTime())) {
+          const birthYear = dobDate.getFullYear();
+          const currentYear = new Date().getFullYear();
+          next[`${prefix}_birth_year`] = birthYear;
+          next[`${prefix}_age_year`] = Math.max(0, currentYear - birthYear);
         }
-        setValues(prev => ({
-          ...prev,
-          linked_fir_dd_no: selectedFir,
-          act_name: prev.act_name || autofilled.act_name || '',
-          sections: prev.sections !== undefined ? prev.sections : (autofilled.sections || ''),
-          io_name: prev.io_name || autofilled.io_name || '',
-          io_rank: prev.io_rank || autofilled.io_rank || '',
-          io_pis: prev.io_pis || autofilled.io_pis || '',
-          io_mobile: prev.io_mobile || autofilled.io_mobile || '',
-          case_type: prev.case_type || autofilled.case_type || 'cctns(manual FIR)',
-        }));
+      } else {
+        next[`${prefix}_birth_year`] = '';
+        next[`${prefix}_age_year`] = '';
+      }
+    } else if (key.endsWith('_birth_year')) {
+      const prefix = key.substring(0, key.lastIndexOf('_birth_year'));
+      if (val) {
+        const birthYear = parseInt(val, 10);
+        if (!isNaN(birthYear)) {
+          const currentYear = new Date().getFullYear();
+          next[`${prefix}_age_year`] = Math.max(0, currentYear - birthYear);
+        }
+      } else {
+        next[`${prefix}_age_year`] = '';
+      }
+    } else if (key.endsWith('_age_year')) {
+      const prefix = key.substring(0, key.lastIndexOf('_age_year'));
+      if (val) {
+        const ageYear = parseInt(val, 10);
+        if (!isNaN(ageYear)) {
+          const currentYear = new Date().getFullYear();
+          next[`${prefix}_birth_year`] = currentYear - ageYear;
+        }
+      } else {
+        next[`${prefix}_birth_year`] = '';
       }
     }
 
-    setCompletedSteps((prev) => new Set([...prev, currentStep]));
-    setCurrentStep((s) => Math.min(s + 1, finalSchema.length - 1));
-    // Scroll to top of form
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-  };
+    if (next.time_of_occurrence !== undefined) {
+      next.occurrence_time = next.time_of_occurrence;
+    }
 
-  /* ── Navigate backward ────────────────────────────────────────────────── */
-  const handleBack = () => {
-    setCurrentStep((s) => Math.max(s - 1, 0));
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-  };
+    if (key === 'arrested_perm_same' && val === true) {
+      next.arrested_perm_house_no = next.arrested_house_no || '';
+      next.arrested_perm_street = next.arrested_street || '';
+      next.arrested_perm_colony = next.arrested_colony || '';
+      next.arrested_perm_city_town_village = next.arrested_city_town_village || '';
+      next.arrested_perm_tehsil_block_mandal = next.arrested_tehsil_block_mandal || '';
+      next.arrested_perm_country = next.arrested_country || 'Indian';
+      next.arrested_perm_state = next.arrested_state || '';
+      next.arrested_perm_district = next.arrested_district || '';
+      next.arrested_perm_police_station = next.arrested_police_station || '';
+      next.arrested_perm_pincode = next.arrested_pincode || '';
+      next.arrested_perm_address = next.arrested_present_address || '';
+    }
 
-  /* ── Jump to a specific step (click step dot / tab) ───────────────────── */
-  const handleStepClick = (targetIdx) => {
-    if (targetIdx === currentStep) return;
+    if (next.arrested_perm_same === true) {
+      if (key === 'arrested_house_no') next.arrested_perm_house_no = val;
+      if (key === 'arrested_street') next.arrested_perm_street = val;
+      if (key === 'arrested_colony') next.arrested_perm_colony = val;
+      if (key === 'arrested_city_town_village') next.arrested_perm_city_town_village = val;
+      if (key === 'arrested_tehsil_block_mandal') next.arrested_perm_tehsil_block_mandal = val;
+      if (key === 'arrested_country') next.arrested_perm_country = val;
+      if (key === 'arrested_state') next.arrested_perm_state = val;
+      if (key === 'arrested_district') next.arrested_perm_district = val;
+      if (key === 'arrested_police_station') next.arrested_perm_police_station = val;
+      if (key === 'arrested_pincode') next.arrested_perm_pincode = val;
+      if (key === 'arrested_present_address') next.arrested_perm_address = val;
+    }
 
-    // Validate the step we are leaving (currentStep) and store errors
-    const stepErrs = validateSection(currentStep);
-    setErrors((prev) => {
-      const next = { ...prev };
-      // Clear old errors for this step
-      const currentSec = finalSchema[currentStep];
-      currentSec?.fields?.forEach((f) => delete next[f.field_key]);
-      // Add new errors
-      return { ...next, ...stepErrs };
-    });
+    if (key === 'complainant_perm_same' && (val === true || val === 'Yes')) {
+      next.complainant_perm_house_no = next.complainant_house_no || '';
+      next.complainant_perm_street = next.complainant_street || '';
+      next.complainant_perm_colony = next.complainant_colony || '';
+      next.complainant_perm_city_town_village = next.complainant_city_town_village || '';
+      next.complainant_perm_tehsil_block_mandal = next.complainant_tehsil_block_mandal || '';
+      next.complainant_perm_country = next.complainant_country || 'Indian';
+      next.complainant_perm_state = next.complainant_state || '';
+      next.complainant_perm_district = next.complainant_district || '';
+      next.complainant_perm_police_station = next.complainant_police_station || '';
+      next.complainant_perm_pincode = next.complainant_pincode || '';
+    }
 
-    // Mark current step fields as touched so warning indicators display
-    const currentSec = finalSchema[currentStep];
+    if (next.complainant_perm_same === true || next.complainant_perm_same === 'Yes') {
+      if (key === 'complainant_house_no') next.complainant_perm_house_no = val;
+      if (key === 'complainant_street') next.complainant_perm_street = val;
+      if (key === 'complainant_colony') next.complainant_perm_colony = val;
+      if (key === 'complainant_city_town_village') next.complainant_perm_city_town_village = val;
+      if (key === 'complainant_tehsil_block_mandal') next.complainant_perm_tehsil_block_mandal = val;
+      if (key === 'complainant_country') next.complainant_perm_country = val;
+      if (key === 'complainant_state') next.complainant_perm_state = val;
+      if (key === 'complainant_district') next.complainant_perm_district = val;
+      if (key === 'complainant_police_station') next.complainant_perm_police_station = val;
+      if (key === 'complainant_pincode') next.complainant_perm_pincode = val;
+    }
+
+    // Auto-set mp_known based on missing_type (Missing -> Known/Identified=true, Found -> Unknown=false)
+    if (key === 'missing_type') {
+      if (val === 'Missing') {
+        next.mp_known = true;
+      } else if (val === 'Found') {
+        next.mp_known = false;
+      }
+    }
+
+
+    // Clear error on change
+    if (errors[key]) {
+      setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
+    }
+
+    // Auto-save using custom hook (2 seconds debounce)
+    triggerAutosave(next, activeRecordIdRef.current);
+
+    return next;
+  });
+
+  setTouched((prev) => ({ ...prev, [key]: true }));
+}, [readOnly, errors, triggerAutosave]);
+
+/** Add a major/minor head row to the table */
+const handleAddMajorMinorRow = useCallback(() => {
+  if (!selectedMajorHead || !selectedMinorHead) return;
+  setMajorMinorRows(prev => [
+    ...prev,
+    { majorHead: selectedMajorHead, minorHead: selectedMinorHead }
+  ]);
+  // Persist to form values as comma-separated strings
+  const updatedMajors = [...majorMinorRows.map(r => r.majorHead), selectedMajorHead].join(', ');
+  const updatedMinors = [...majorMinorRows.map(r => r.minorHead), selectedMinorHead].join(', ');
+  handleChange('major_heads', updatedMajors);
+  handleChange('minor_heads', updatedMinors);
+  setSelectedMajorHead('');
+  setSelectedMinorHead('');
+}, [selectedMajorHead, selectedMinorHead, majorMinorRows, handleChange]);
+/** Delete a major/minor head row from the table */
+const handleDeleteMajorMinorRow = useCallback((index) => {
+  const updated = majorMinorRows.filter((_, i) => i !== index);
+  setMajorMinorRows(updated);
+  handleChange('major_heads', updated.map(r => r.majorHead).join(', '));
+  handleChange('minor_heads', updated.map(r => r.minorHead).join(', '));
+}, [majorMinorRows, handleChange]);
+
+/* ── Navigate forward (with step validation) ──────────────────────────── */
+const handleNext = () => {
+  const stepErrs = validateSection(currentStep);
+  if (Object.keys(stepErrs).length > 0) {
+    console.log('Block handleNext on step:', currentStep, 'Errors:', stepErrs);
+    setErrors((prev) => ({ ...prev, ...stepErrs }));
+    // Mark all fields in this step as touched
+    const section = finalSchema[currentStep];
     const newTouched = {};
-    currentSec?.fields?.forEach((f) => { newTouched[f.field_key] = true; });
+    section?.fields?.forEach((f) => { newTouched[f.field_key] = true; });
     setTouched((prev) => ({ ...prev, ...newTouched }));
+    return;
+  }
 
-    // Autofill case details if we leave step 0 in ARREST against_fir
-    if (recordType === 'ARREST' && caseType === 'against_fir' && currentStep === 0) {
-      const selectedFir = values.selected_fir;
-      if (selectedFir) {
-        const matchedBackendCase = (casesData || []).find(c => {
-          if (!c) return false;
-          const firNo = c.data?.fir_no || c.fir_no || `FIR No. ${c.id}`;
-          return firNo === selectedFir;
-        });
-        const matchedMockCase = MOCK_FIR_LIST.find(c => c.fir_no === selectedFir);
-        let autofilled = {};
-        if (matchedBackendCase) {
-          const cData = matchedBackendCase.data || {};
-          autofilled = {
-            act_name: cData.act_name || '',
-            sections: cData.sections || '',
-            io_name: cData.io_name || '',
-            io_rank: cData.io_rank || '',
-            io_pis: cData.io_pis || '',
-            io_mobile: cData.io_mobile || '',
-          };
-        } else if (matchedMockCase) {
-          autofilled = {
-            act_name: 'IPC',
-            sections: matchedMockCase.sections || '',
-            io_name: 'Inspector Satish Kumar',
-            io_rank: 'Inspector',
-            io_pis: '28081234',
-            io_mobile: '9876543210',
-          };
-        }
-        setValues(prev => ({
-          ...prev,
-          linked_fir_dd_no: selectedFir,
-          act_name: prev.act_name || autofilled.act_name || '',
-          sections: prev.sections !== undefined ? prev.sections : (autofilled.sections || ''),
-          io_name: prev.io_name || autofilled.io_name || '',
-          io_rank: prev.io_rank || autofilled.io_rank || '',
-          io_pis: prev.io_pis || autofilled.io_pis || '',
-          io_mobile: prev.io_mobile || autofilled.io_mobile || '',
-        }));
-      }
-    }
-
-    setCompletedSteps((prev) => new Set([...prev, currentStep]));
-    setCurrentStep(targetIdx);
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-  };
-
-  /* ── Final form submission ─────────────────────────────────────────────── */
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    if (readOnly) return;
-
-    const allErrs = validateAll();
-    if (Object.keys(allErrs).length > 0) {
-      setErrors(allErrs);
-      const allTouched = {};
-      finalSchema.forEach((sec) => sec.fields.forEach((f) => { allTouched[f.field_key] = true; }));
-      setTouched(allTouched);
-
-      let firstErrStep = 0;
-      finalSchema.forEach((sec, idx) => {
-        if (sec.is_repeater) return;
-        const hasErr = sec.fields.some((f) => allErrs[f.field_key]);
-        if (hasErr && idx < firstErrStep + 1) firstErrStep = idx;
+  // Auto-populate linked_fir_dd_no and case details when moving from Step 1 (Select FIR)
+  if (recordType === 'ARREST' && caseType === 'against_fir' && currentStep === 0) {
+    const selectedFir = values.selected_fir;
+    if (selectedFir) {
+      const matchedBackendCase = (casesData || []).find(c => {
+        if (!c) return false;
+        const firNo = c.data?.fir_no || c.fir_no || `FIR No. ${c.id}`;
+        return firNo === selectedFir;
       });
-      setCurrentStep(firstErrStep);
-
-      toast.error(lang === 'hi'
-        ? 'कृपया सभी आवश्यक फ़ील्ड भरें।'
-        : 'Please complete all required fields.');
-
-      setTimeout(() => {
-        const firstErrKey = Object.keys(allErrs)[0];
-        document.getElementById(`field-${firstErrKey}`)
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 150);
-      return;
+      const matchedMockCase = MOCK_FIR_LIST.find(c => c.fir_no === selectedFir);
+      let autofilled = {};
+      if (matchedBackendCase) {
+        const cData = matchedBackendCase.data || {};
+        autofilled = {
+          act_name: cData.act_name || '',
+          sections: cData.sections || '',
+          io_name: cData.io_name || '',
+          io_rank: cData.io_rank || '',
+          io_pis: cData.io_pis || '',
+          io_mobile: cData.io_mobile || '',
+          case_type: cData.case_type || matchedBackendCase.case_type || 'cctns(manual FIR)',
+        };
+      } else if (matchedMockCase) {
+        autofilled = {
+          act_name: 'IPC',
+          sections: matchedMockCase.sections || '',
+          io_name: 'Inspector Satish Kumar',
+          io_rank: 'Inspector',
+          io_pis: '28081234',
+          io_mobile: '9876543210',
+          case_type: 'cctns(manual FIR)',
+        };
+      }
+      setValues(prev => ({
+        ...prev,
+        linked_fir_dd_no: selectedFir,
+        act_name: prev.act_name || autofilled.act_name || '',
+        sections: prev.sections !== undefined ? prev.sections : (autofilled.sections || ''),
+        io_name: prev.io_name || autofilled.io_name || '',
+        io_rank: prev.io_rank || autofilled.io_rank || '',
+        io_pis: prev.io_pis || autofilled.io_pis || '',
+        io_mobile: prev.io_mobile || autofilled.io_mobile || '',
+        case_type: prev.case_type || autofilled.case_type || 'cctns(manual FIR)',
+      }));
     }
+  }
 
-    const finalValues = { ...values };
-    if (finalValues.time_of_occurrence !== undefined) {
-      finalValues.occurrence_time = finalValues.time_of_occurrence;
+  setCompletedSteps((prev) => new Set([...prev, currentStep]));
+  setCurrentStep((s) => Math.min(s + 1, finalSchema.length - 1));
+  // Scroll to top of form
+  setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+};
+
+/* ── Navigate backward ────────────────────────────────────────────────── */
+const handleBack = () => {
+  setCurrentStep((s) => Math.max(s - 1, 0));
+  setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+};
+
+/* ── Jump to a specific step (click step dot / tab) ───────────────────── */
+const handleStepClick = (targetIdx) => {
+  if (targetIdx === currentStep) return;
+
+  // Validate the step we are leaving (currentStep) and store errors
+  const stepErrs = validateSection(currentStep);
+  setErrors((prev) => {
+    const next = { ...prev };
+    // Clear old errors for this step
+    const currentSec = finalSchema[currentStep];
+    currentSec?.fields?.forEach((f) => delete next[f.field_key]);
+    // Add new errors
+    return { ...next, ...stepErrs };
+  });
+
+  // Mark current step fields as touched so warning indicators display
+  const currentSec = finalSchema[currentStep];
+  const newTouched = {};
+  currentSec?.fields?.forEach((f) => { newTouched[f.field_key] = true; });
+  setTouched((prev) => ({ ...prev, ...newTouched }));
+
+  // Autofill case details if we leave step 0 in ARREST against_fir
+  if (recordType === 'ARREST' && caseType === 'against_fir' && currentStep === 0) {
+    const selectedFir = values.selected_fir;
+    if (selectedFir) {
+      const matchedBackendCase = (casesData || []).find(c => {
+        if (!c) return false;
+        const firNo = c.data?.fir_no || c.fir_no || `FIR No. ${c.id}`;
+        return firNo === selectedFir;
+      });
+      const matchedMockCase = MOCK_FIR_LIST.find(c => c.fir_no === selectedFir);
+      let autofilled = {};
+      if (matchedBackendCase) {
+        const cData = matchedBackendCase.data || {};
+        autofilled = {
+          act_name: cData.act_name || '',
+          sections: cData.sections || '',
+          io_name: cData.io_name || '',
+          io_rank: cData.io_rank || '',
+          io_pis: cData.io_pis || '',
+          io_mobile: cData.io_mobile || '',
+        };
+      } else if (matchedMockCase) {
+        autofilled = {
+          act_name: 'IPC',
+          sections: matchedMockCase.sections || '',
+          io_name: 'Inspector Satish Kumar',
+          io_rank: 'Inspector',
+          io_pis: '28081234',
+          io_mobile: '9876543210',
+        };
+      }
+      setValues(prev => ({
+        ...prev,
+        linked_fir_dd_no: selectedFir,
+        act_name: prev.act_name || autofilled.act_name || '',
+        sections: prev.sections !== undefined ? prev.sections : (autofilled.sections || ''),
+        io_name: prev.io_name || autofilled.io_name || '',
+        io_rank: prev.io_rank || autofilled.io_rank || '',
+        io_pis: prev.io_pis || autofilled.io_pis || '',
+        io_mobile: prev.io_mobile || autofilled.io_mobile || '',
+      }));
     }
+  }
 
-    // Build persons and properties from repeater sections
-    const persons = [];
-    const properties = [];
-    for (const section of finalSchema) {
-      if (!section.is_repeater) continue;
-      const entries = repeaterState[section.section] || [];
-      if (section.entity_type === 'person' && section.person_type) {
-        for (const entry of entries) {
-          persons.push({ person_type: section.person_type, data: entry });
-        }
-      } else if (section.entity_type === 'property') {
-        for (const entry of entries) {
-          properties.push(entry);
-        }
+  setCompletedSteps((prev) => new Set([...prev, currentStep]));
+  setCurrentStep(targetIdx);
+  setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+};
+
+/* ── Final form submission ─────────────────────────────────────────────── */
+const handleFormSubmit = (e) => {
+  e.preventDefault();
+  if (readOnly) return;
+
+  const allErrs = validateAll();
+  if (Object.keys(allErrs).length > 0) {
+    setErrors(allErrs);
+    const allTouched = {};
+    finalSchema.forEach((sec) => sec.fields.forEach((f) => { allTouched[f.field_key] = true; }));
+    setTouched(allTouched);
+
+    let firstErrStep = 0;
+    finalSchema.forEach((sec, idx) => {
+      if (sec.is_repeater) return;
+      const hasErr = sec.fields.some((f) => allErrs[f.field_key]);
+      if (hasErr && idx < firstErrStep + 1) firstErrStep = idx;
+    });
+    setCurrentStep(firstErrStep);
+
+    toast.error(lang === 'hi'
+      ? 'कृपया सभी आवश्यक फ़ील्ड भरें।'
+      : 'Please complete all required fields.');
+
+    setTimeout(() => {
+      const firstErrKey = Object.keys(allErrs)[0];
+      document.getElementById(`field-${firstErrKey}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+    return;
+  }
+
+  const finalValues = { ...values };
+  if (finalValues.time_of_occurrence !== undefined) {
+    finalValues.occurrence_time = finalValues.time_of_occurrence;
+  }
+
+  // Build persons and properties from repeater sections
+  const persons = [];
+  const properties = [];
+  for (const section of finalSchema) {
+    if (!section.is_repeater) continue;
+    const entries = repeaterState[section.section] || [];
+    if (section.entity_type === 'person' && section.person_type) {
+      for (const entry of entries) {
+        persons.push({ person_type: section.person_type, data: entry });
+      }
+    } else if (section.entity_type === 'property') {
+      for (const entry of entries) {
+        properties.push(entry);
       }
     }
-
-    onSubmit?.(finalValues, persons, properties, activeRecordIdRef.current);
-  };
-
-  /* ── Manual save draft (button click) ────────────────────────────────────*/
-  const handleManualSave = () => {
-    const finalValues = { ...values };
-    if (finalValues.time_of_occurrence !== undefined) {
-      finalValues.occurrence_time = finalValues.time_of_occurrence;
-    }
-    saveImmediately(finalValues, activeRecordIdRef.current);
-    toast.success(lang === 'hi' ? 'ड्राफ्ट सहेज लिया गया है।' : 'Draft saved successfully.');
-  };
-
-  /* ── Render states ─────────────────────────────────────────────────────── */
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-16 text-slate-500 gap-3">
-        <Loader2 size={32} className="animate-spin text-[var(--accent-color)]" />
-        <p className="text-sm font-semibold">{t('common.loading', 'Loading form schema...')}</p>
-      </div>
-    );
   }
 
-  if (isError || finalSchema.length === 0) {
-    const status = schemaError?.response?.status;
-    const hint = status === 401
-      ? 'Session expired — please log out and log back in with your badge credentials.'
-      : status
-        ? `Server returned ${status}. Check that the backend is running.`
-        : 'No fields are configured for this record type. Re-run the database seed or switch to Mock Mode.';
-    return (
-      <div className="flex flex-col items-center justify-center p-16 text-slate-500 gap-4 bg-white border border-dashed border-slate-300 rounded-xl shadow-sm">
-        <AlertTriangle size={32} className="text-amber-500" />
-        <p className="text-sm font-semibold text-slate-700">Form schema not found</p>
-        <p className="text-xs text-slate-400 text-center max-w-xs leading-relaxed">{hint}</p>
-        <p className="text-xs text-slate-500">
-          Record type: <code className="font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{recordType}</code>
-        </p>
-      </div>
-    );
+  onSubmit?.(finalValues, persons, properties, activeRecordIdRef.current);
+};
+
+/* ── Manual save draft (button click) ────────────────────────────────────*/
+const handleManualSave = () => {
+  const finalValues = { ...values };
+  if (finalValues.time_of_occurrence !== undefined) {
+    finalValues.occurrence_time = finalValues.time_of_occurrence;
   }
+  saveImmediately(finalValues, activeRecordIdRef.current);
+  toast.success(lang === 'hi' ? 'ड्राफ्ट सहेज लिया गया है।' : 'Draft saved successfully.');
+};
 
-  const activeSection = finalSchema[currentStep] || finalSchema[0];
-  const isLastStep    = currentStep === finalSchema.length - 1;
-
-  // Dispatch by the backend's stable section key (not title_en text or step index) —
-  // a section only gets a bespoke renderer here if its layout can't be reproduced by
-  // the generic <FormSection> fallback (composite rows, repeater modals, etc).
-  // 'select_fir' only ever appears in finalSchema for ARREST+against_fir, so no extra guard needed.
-  const SECTION_RENDERERS = {
-    select_fir: renderFirSearchStep,
-    general_info: renderArrestGeneralInfoStep,
-    acts_and_sections: renderActsAndSectionsStep,
-    occurrence_info: renderOccurrenceStep,
-    complainant_info: renderComplainantStep,
-    victim_info: renderVictimStep,
-    accused_info: renderAccusedStep,
-    arrested_info: renderArrestedStep,
-    intimation_details: renderIntimationStep,
-    property_details: renderPropertyStep,
-    action_taken: renderActionTakenStep,
-  };
-
-  const stepHasError = (idx) => {
-    const sec = finalSchema[idx];
-    return sec?.fields?.some((f) => errors[f.field_key] && touched[f.field_key]);
-  };
-
+/* ── Render states ─────────────────────────────────────────────────────── */
+if (isLoading) {
   return (
-    <div className="space-y-3" ref={formRef}>
-
-      {/* Horizontal Tabs Navigation */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-[#0d2a4a] mb-2 gap-2 pb-1.5 bg-[#f8fafc]">
-        {finalSchema.length > 1 ? (
-          <div className="flex flex-wrap gap-1.5 py-1">
-            {finalSchema.map((sec, idx) => {
-              const isSelected = idx === currentStep;
-              const title = lang === 'hi' ? (sec.title_hi || sec.title_en) : sec.title_en;
-              const hasError = stepHasError(idx);
-              
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleStepClick(idx)}
-                  className={`px-3 py-1.5 text-[10px] font-bold transition-all rounded-md cursor-pointer uppercase tracking-tight whitespace-nowrap flex items-center gap-1 select-none border border-[#0d2a4a] ${
-                    isSelected
-                      ? 'bg-[#ea580c] border-[#ea580c] text-white shadow-sm'
-                      : 'bg-[#0d2a4a] border-[#0d2a4a] text-white hover:bg-[#16406d] hover:border-[#16406d]'
-                  }`}
-                >
-                  {hasError && <AlertCircle size={10} className="text-red-300 animate-pulse" />}
-                  <span>{title}</span>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <div />
-        )}
-        <div className="flex items-center gap-3 px-2 py-1 self-end md:self-center">
-          <FormAutosave status={saveStatus} lang={lang} />
-          {readOnly && (
-            <span className="text-[10px] font-bold text-slate-500 bg-slate-200 border border-slate-300 px-2 py-0.5 rounded uppercase tracking-wider">
-              {lang === 'hi' ? 'केवल पठन' : 'Read Only'}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* ── Validation summary ── */}
-      {Object.keys(errors).length > 0 && Object.values(touched).some(Boolean) && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600 shadow-sm space-y-2">
-          <div className="flex items-center gap-2 font-bold text-red-700 mb-1">
-            <AlertCircle size={16} />
-            <span>
-              {lang === 'hi'
-                ? `${Object.keys(errors).filter(k => touched[k]).length} फ़ील्ड अपूर्ण हैं`
-                : `${Object.keys(errors).filter(k => touched[k]).length} field(s) need your attention`}
-            </span>
-          </div>
-          {Object.entries(errors)
-            .filter(([k]) => touched[k])
-            .slice(0, 5)
-            .map(([, msg]) => (
-              <div key={msg} className="flex items-center gap-2 text-red-600">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                {msg}
-              </div>
-            ))}
-        </div>
-      )}
-
-      {/* ── Active Section (flat field form OR repeater panel) ── */}
-      {activeSection && (
-        <div className="space-y-3">
-          {/* Wrap ONLY the fields in a form so Enter key doesn't auto-submit
-              when navigating between steps. The submit action is wired via
-              an explicit onClick on the Submit button in FormToolbar. */}
-          <form onSubmit={(e) => e.preventDefault()} noValidate>
-            {SECTION_RENDERERS[activeSection?.section] ? (
-              SECTION_RENDERERS[activeSection.section]()
-            ) : (
-              <FormSection
-                section={activeSection}
-                currentStep={currentStep}
-                totalSteps={finalSchema.length}
-                values={values}
-                errors={errors}
-                touched={touched}
-                handleChange={handleChange}
-                readOnly={readOnly}
-                targetFields={targetFields}
-                lang={lang}
-                saveStatus={saveStatus}
-                hideHeader={true}
-                entries={repeaterState[activeSection?.section] || []}
-                onEntriesChange={(entries) =>
-                  setRepeaterState(prev => ({ ...prev, [activeSection.section]: entries }))
-                }
-              />
-            )}
-          </form>
-
-          <FormToolbar
-            currentStep={currentStep}
-            totalSteps={finalSchema.length}
-            readOnly={readOnly}
-            onBack={onBack || (() => navigate('/records'))}
-            onPrevious={handleBack}
-            onSaveDraft={!readOnly ? handleManualSave : null}
-            onNext={handleNext}
-            onSubmit={handleFormSubmit}
-            isLastStep={isLastStep}
-            lang={lang}
-          />
-        </div>
-      )}
+    <div className="flex flex-col items-center justify-center p-16 text-slate-500 gap-3">
+      <Loader2 size={32} className="animate-spin text-[var(--accent-color)]" />
+      <p className="text-sm font-semibold">{t('common.loading', 'Loading form schema...')}</p>
     </div>
   );
+}
+
+if (isError || finalSchema.length === 0) {
+  const status = schemaError?.response?.status;
+  const hint = status === 401
+    ? 'Session expired — please log out and log back in with your badge credentials.'
+    : status
+      ? `Server returned ${status}. Check that the backend is running.`
+      : 'No fields are configured for this record type. Re-run the database seed or switch to Mock Mode.';
+  return (
+    <div className="flex flex-col items-center justify-center p-16 text-slate-500 gap-4 bg-white border border-dashed border-slate-300 rounded-xl shadow-sm">
+      <AlertTriangle size={32} className="text-amber-500" />
+      <p className="text-sm font-semibold text-slate-700">Form schema not found</p>
+      <p className="text-xs text-slate-400 text-center max-w-xs leading-relaxed">{hint}</p>
+      <p className="text-xs text-slate-500">
+        Record type: <code className="font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{recordType}</code>
+      </p>
+    </div>
+  );
+}
+
+const activeSection = finalSchema[currentStep] || finalSchema[0];
+const isLastStep = currentStep === finalSchema.length - 1;
+
+// Dispatch by the backend's stable section key (not title_en text or step index) —
+// a section only gets a bespoke renderer here if its layout can't be reproduced by
+// the generic <FormSection> fallback (composite rows, repeater modals, etc).
+// 'select_fir' only ever appears in finalSchema for ARREST+against_fir, so no extra guard needed.
+const SECTION_RENDERERS = {
+  select_fir: renderFirSearchStep,
+  general_info: renderArrestGeneralInfoStep,
+  acts_and_sections: renderActsAndSectionsStep,
+  occurrence_info: renderOccurrenceStep,
+  complainant_info: renderComplainantStep,
+  victim_info: renderVictimStep,
+  accused_info: renderAccusedStep,
+  arrested_info: renderArrestedStep,
+  intimation_details: renderIntimationStep,
+  property_details: renderPropertyStep,
+  action_taken: renderActionTakenStep,
+};
+
+const stepHasError = (idx) => {
+  const sec = finalSchema[idx];
+  return sec?.fields?.some((f) => errors[f.field_key] && touched[f.field_key]);
+};
+
+return (
+  <div className="space-y-3" ref={formRef}>
+
+    {/* Horizontal Tabs Navigation */}
+    <div className="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-[#0d2a4a] mb-2 gap-2 pb-1.5 bg-[#f8fafc]">
+      {finalSchema.length > 1 ? (
+        <div className="flex flex-wrap gap-1.5 py-1">
+          {finalSchema.map((sec, idx) => {
+            const isSelected = idx === currentStep;
+            const title = lang === 'hi' ? (sec.title_hi || sec.title_en) : sec.title_en;
+            const hasError = stepHasError(idx);
+
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleStepClick(idx)}
+                className={`px-3 py-1.5 text-[10px] font-bold transition-all rounded-md cursor-pointer uppercase tracking-tight whitespace-nowrap flex items-center gap-1 select-none border border-[#0d2a4a] ${isSelected
+                    ? 'bg-[#ea580c] border-[#ea580c] text-white shadow-sm'
+                    : 'bg-[#0d2a4a] border-[#0d2a4a] text-white hover:bg-[#16406d] hover:border-[#16406d]'
+                  }`}
+              >
+                {hasError && <AlertCircle size={10} className="text-red-300 animate-pulse" />}
+                <span>{title}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div />
+      )}
+      <div className="flex items-center gap-3 px-2 py-1 self-end md:self-center">
+        <FormAutosave status={saveStatus} lang={lang} />
+        {readOnly && (
+          <span className="text-[10px] font-bold text-slate-500 bg-slate-200 border border-slate-300 px-2 py-0.5 rounded uppercase tracking-wider">
+            {lang === 'hi' ? 'केवल पठन' : 'Read Only'}
+          </span>
+        )}
+      </div>
+    </div>
+
+    {/* ── Validation summary ── */}
+    {Object.keys(errors).length > 0 && Object.values(touched).some(Boolean) && (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600 shadow-sm space-y-2">
+        <div className="flex items-center gap-2 font-bold text-red-700 mb-1">
+          <AlertCircle size={16} />
+          <span>
+            {lang === 'hi'
+              ? `${Object.keys(errors).filter(k => touched[k]).length} फ़ील्ड अपूर्ण हैं`
+              : `${Object.keys(errors).filter(k => touched[k]).length} field(s) need your attention`}
+          </span>
+        </div>
+        {Object.entries(errors)
+          .filter(([k]) => touched[k])
+          .slice(0, 5)
+          .map(([, msg]) => (
+            <div key={msg} className="flex items-center gap-2 text-red-600">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+              {msg}
+            </div>
+          ))}
+      </div>
+    )}
+
+    {/* ── Active Section (flat field form OR repeater panel) ── */}
+    {activeSection && (
+      <div className="space-y-3">
+        {/* Wrap ONLY the fields in a form so Enter key doesn't auto-submit
+              when navigating between steps. The submit action is wired via
+              an explicit onClick on the Submit button in FormToolbar. */}
+        <form onSubmit={(e) => e.preventDefault()} noValidate>
+          {SECTION_RENDERERS[activeSection?.section] ? (
+            SECTION_RENDERERS[activeSection.section]()
+          ) : (
+            <FormSection
+              section={activeSection}
+              currentStep={currentStep}
+              totalSteps={finalSchema.length}
+              values={values}
+              errors={errors}
+              touched={touched}
+              handleChange={handleChange}
+              readOnly={readOnly}
+              targetFields={targetFields}
+              lang={lang}
+              saveStatus={saveStatus}
+              hideHeader={true}
+              entries={repeaterState[activeSection?.section] || []}
+              onEntriesChange={(entries) =>
+                setRepeaterState(prev => ({ ...prev, [activeSection.section]: entries }))
+              }
+            />
+          )}
+        </form>
+
+        <FormToolbar
+          currentStep={currentStep}
+          totalSteps={finalSchema.length}
+          readOnly={readOnly}
+          onBack={onBack || (() => navigate('/records'))}
+          onPrevious={handleBack}
+          onSaveDraft={!readOnly ? handleManualSave : null}
+          onNext={handleNext}
+          onSubmit={handleFormSubmit}
+          isLastStep={isLastStep}
+          lang={lang}
+        />
+      </div>
+    )}
+  </div>
+);
 }

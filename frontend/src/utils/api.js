@@ -604,7 +604,34 @@ const formSchemas = {
       title_hi: 'गिरफ्तारी घटना का विवरण',
       fields: [
         { field_key: 'arrest_date', field_type: 'DATE', label_en: 'Date of Arrest', label_hi: 'गिरफ्तारी की तिथि', validation_rules: { required: true } },
-        { field_key: 'arrest_place', field_type: 'TEXT', label_en: 'Place of Arrest', label_hi: 'गिरफ्तारी का स्थान', validation_rules: { required: true } },
+        { field_key: 'arrest_place', field_type: 'TEXT', label_en: 'House No. of Arrest', label_hi: 'गिरफ्तारी का मकान संख्या', validation_rules: { required: true } },
+        { field_key: 'arrest_street', field_type: 'TEXT', label_en: 'Street of Arrest', label_hi: 'गिरफ्तारी का गली / सड़क', validation_rules: { required: false } },
+        { field_key: 'arrest_colony', field_type: 'TEXT', label_en: 'Colony of Arrest', label_hi: 'गिरफ्तारी का कॉलोनी', validation_rules: { required: false } },
+        {
+          field_key: 'arrest_district',
+          field_type: 'SELECT',
+          label_en: 'District of Arrest',
+          label_hi: 'गिरफ्तारी का जिला',
+          options: [
+            { value: "South District (SD)", label_en: "South District (SD)", label_hi: "South District (SD)" },
+            { value: "South East District (SED)", label_en: "South East District (SED)", label_hi: "South East District (SED)" },
+            { value: "New Delhi District (NDD)", label_en: "New Delhi District (NDD)", label_hi: "New Delhi District (NDD)" },
+            { value: "South West District (SWD)", label_en: "South West District (SWD)", label_hi: "South West District (SWD)" },
+            { value: "West District (WD)", label_en: "West District (WD)", label_hi: "West District (WD)" },
+            { value: "Outer District (OD)", label_en: "Outer District (OD)", label_hi: "Outer District (OD)" },
+            { value: "Dwarka District (DW)", label_en: "Dwarka District (DW)", label_hi: "Dwarka District (DW)" },
+            { value: "North West District (NWD)", label_en: "North West District (NWD)", label_hi: "North West District (NWD)" },
+            { value: "Rohini District (RND)", label_en: "Rohini District (RND)", label_hi: "Rohini District (RND)" },
+            { value: "Outer North District (OND)", label_en: "Outer North District (OND)", label_hi: "Outer North District (OND)" },
+            { value: "Central District (CD)", label_en: "Central District (CD)", label_hi: "Central District (CD)" },
+            { value: "North District (ND)", label_en: "North District (ND)", label_hi: "North District (ND)" },
+            { value: "East District (ED)", label_en: "East District (ED)", label_hi: "East District (ED)" },
+            { value: "North East District (NED)", label_en: "North East District (NED)", label_hi: "North East District (NED)" },
+            { value: "Shahdara District (SHD)", label_en: "Shahdara District (SHD)", label_hi: "Shahdara District (SHD)" }
+          ],
+          validation_rules: { required: false }
+        },
+        { field_key: 'arrest_landmark', field_type: 'TEXT', label_en: 'Landmark of Arrest', label_hi: 'गिरफ्तारी का लैंडमार्क', validation_rules: { required: false } }
       ]
     },
     {
@@ -1354,37 +1381,7 @@ const formSchemas = {
         { field_key: 'io_rank', field_type: 'TEXT', label_en: 'IO Rank', label_hi: 'जांच अधिकारी का पद', validation_rules: { required: false } },
         { field_key: 'io_pis', field_type: 'TEXT', label_en: 'IO PIS No.', label_hi: 'जांच अधिकारी का पीआईएस नंबर', validation_rules: { required: false } },
         { field_key: 'io_mobile', field_type: 'TEXT', label_en: 'IO Mobile No.', label_hi: 'जांच अधिकारी का मोबाइल नंबर', validation_rules: { required: false } },
-        { field_key: 'remarks', field_type: 'TEXTAREA', label_en: 'Remarks', label_hi: 'टिप्पणी', validation_rules: { required: false }, full_width: true },
-        {
-          field_key: 'case_status',
-          field_type: 'SELECT',
-          label_en: 'Status',
-          label_hi: 'स्थिति',
-          options: [
-            { value: 'CHARGE SHEET', label_en: 'CHARGE SHEET', label_hi: 'आरोप पत्र' },
-            { value: 'POLICE INVESTIGATION REPORT(PIR-JCL)', label_en: 'POLICE INVESTIGATION REPORT(PIR-JCL)', label_hi: 'पुलिस जांच रिपोर्ट (PIR-JCL)' },
-            { value: 'UNTRACED', label_en: 'UNTRACED', label_hi: 'अनट्रेस्ड' },
-            { value: 'PENDING', label_en: 'PENDING', label_hi: 'लंबित' },
-            { value: 'CANCELLATION', label_en: 'CANCELLATION', label_hi: 'रद्दीकरण' },
-            { value: 'QUASHED', label_en: 'QUASHED', label_hi: 'रद्द / क्वैश' },
-            { value: 'CLOSURE REPORT', label_en: 'CLOSURE REPORT', label_hi: 'क्लोजर रिपोर्ट' },
-            { value: 'RELEASED U/S 189 BNSS', label_en: 'RELEASED U/S 189 BNSS', label_hi: 'धारा 189 बीएनएसएस के तहत रिहा' },
-            { value: 'TRANSFER', label_en: 'TRANSFER', label_hi: 'स्थानांतरण' }
-          ],
-          validation_rules: { required: true }
-        },
-        {
-          field_key: 'transfer_to',
-          field_type: 'RADIO',
-          label_en: 'Transfer To',
-          label_hi: 'स्थानांतरण करें',
-          options: [
-            { value: 'PS', label_en: 'PS', label_hi: 'पुलिस स्टेशन' },
-            { value: 'Agency', label_en: 'Agency', label_hi: 'एजेंसी' }
-          ],
-          validation_rules: { required: false },
-          show_when: { field: 'case_status', value: 'TRANSFER' }
-        }
+        { field_key: 'remarks', field_type: 'TEXTAREA', label_en: 'Remarks', label_hi: 'टिप्पणी', validation_rules: { required: false }, full_width: true }
       ]
     }
   ],
