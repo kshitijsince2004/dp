@@ -3523,9 +3523,12 @@ const renderActionTakenStep = () => {
    * Alias map: UI display name -> schema show_when value
    */
 
+  // getMajorHeadOptions: returns live DB-fetched major heads for the selected act(s).
+  // dbMajorHeadOptions is populated by the useEffect below whenever values.act_name changes.
+  // This is the single source of truth — no hardcoded schema options are used.
   const getMajorHeadOptions = useCallback(() => {
-    const actNameRaw = values.act_name || '';
-    if (!actNameRaw) return [];
+    return dbMajorHeadOptions;
+  }, [dbMajorHeadOptions]);
 
     // Split comma-separated acts and normalise to schema keys
     const rawActKeys = actNameRaw
@@ -3620,7 +3623,16 @@ const renderActionTakenStep = () => {
   // the same act_name/sections parsing ActsSectionsTable.jsx uses to render the pairs).
   useEffect(() => {
     let active = true;
-    if (!values.act_name) {
+
+    // Build act name string from the registered acts list if available, else fall back to act_name
+    let actNamesParam = '';
+    if (Array.isArray(values.act_registered_list) && values.act_registered_list.length > 0) {
+      actNamesParam = values.act_registered_list.map(r => r.act).join(',');
+    } else if (values.act_name) {
+      actNamesParam = values.act_name;
+    }
+
+    if (!actNamesParam) {
       setDbMajorHeadOptions([]);
       return;
     }
