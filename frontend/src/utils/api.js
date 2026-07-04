@@ -604,14 +604,14 @@ const formSchemas = {
       title_hi: 'गिरफ्तारी घटना का विवरण',
       fields: [
         { field_key: 'arrest_date', field_type: 'DATE', label_en: 'Date of Arrest', label_hi: 'गिरफ्तारी की तिथि', validation_rules: { required: true } },
-        { field_key: 'arrest_place', field_type: 'TEXT', label_en: 'Place of Arrest', label_hi: 'गिरफ्तारी का स्थान', validation_rules: { required: true } },
-        { field_key: 'arrest_street', field_type: 'TEXT', label_en: 'Street', label_hi: 'गली / सड़क', validation_rules: { required: false } },
-        { field_key: 'arrest_colony', field_type: 'TEXT', label_en: 'Colony', label_hi: 'कॉलोनी', validation_rules: { required: false } },
+        { field_key: 'arrest_place', field_type: 'TEXT', label_en: 'House No. of Arrest', label_hi: 'गिरफ्तारी का मकान संख्या', validation_rules: { required: true } },
+        { field_key: 'arrest_street', field_type: 'TEXT', label_en: 'Street of Arrest', label_hi: 'गिरफ्तारी का गली / सड़क', validation_rules: { required: false } },
+        { field_key: 'arrest_colony', field_type: 'TEXT', label_en: 'Colony of Arrest', label_hi: 'गिरफ्तारी का कॉलोनी', validation_rules: { required: false } },
         {
           field_key: 'arrest_district',
           field_type: 'SELECT',
-          label_en: 'District',
-          label_hi: 'जिला',
+          label_en: 'District of Arrest',
+          label_hi: 'गिरफ्तारी का जिला',
           options: [
             { value: "South District (SD)", label_en: "South District (SD)", label_hi: "South District (SD)" },
             { value: "South East District (SED)", label_en: "South East District (SED)", label_hi: "South East District (SED)" },
@@ -631,7 +631,7 @@ const formSchemas = {
           ],
           validation_rules: { required: false }
         },
-        { field_key: 'arrest_landmark', field_type: 'TEXT', label_en: 'Landmark', label_hi: 'लैंडमार्क', validation_rules: { required: false } }
+        { field_key: 'arrest_landmark', field_type: 'TEXT', label_en: 'Landmark of Arrest', label_hi: 'गिरफ्तारी का लैंडमार्क', validation_rules: { required: false } }
       ]
     },
     {
