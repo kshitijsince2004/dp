@@ -73,8 +73,11 @@ function getFieldOptions(fieldsArr, key) {
  */
 const SECTION_KEY_ORDER = {
   CASE:   ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
-  UIDB:   ['general_info', 'corpse_desc', 'inquest_details', 'investigation_officer'],
+  // For ARREST keep only the main flow tabs. Custody/status and particulars
+  // will be surfaced inside the arrested-person modal to avoid repetition.
+  ARREST: ['select_fir', 'general_info', 'arrested_info', 'investigation_officer'],
+  UIDB:   ['general_info', 'corpse_desc', 'corpse_physical', 'inquest_details', 'investigation_officer'],
+  MISSING: ['general_info', 'person_details', 'missing_address', 'missing_physical', 'contacts_assigned', 'investigation_officer'],
 };
 
 // Repeater sections need is_repeater/entity_type/person_type so the person/property
@@ -192,7 +195,10 @@ export default function DynamicForm({
   const navigate = useNavigate();
 
   const { user } = useAuthStore();
-  const { schema, isLoading, isError, schemaError } = useFormSchema(recordType);
+  const { schema, isLoading, isError, schemaError } = useFormSchema(recordType, caseType);
+  // Always fetch ARREST schema so the arrested-persons modal has access to all ARREST fields
+  // regardless of what the main form's recordType is (e.g. CASE form embedding arrest modal).
+  const { schema: arrestSchema } = useFormSchema('ARREST', caseType);
   const activeRecordIdRef = useRef(initialValues?.id || null);
 
   // FIR Search State
@@ -1721,7 +1727,6 @@ const renderPropertyStep = () => {
       />
     );
   };
-
   return (
     <div className="space-y-4">
       {/* Action Buttons bar at the top-right */}
@@ -1743,7 +1748,6 @@ const renderPropertyStep = () => {
           {lang === 'hi' ? 'सभी साफ़ करें' : 'Clear All'}
         </button>
       </div>
-
       {/* Property Repeater Table */}
       <div className="border border-[#7a9cc5] rounded overflow-hidden">
         <table className="w-full text-xs">
@@ -1771,7 +1775,6 @@ const renderPropertyStep = () => {
                   <tr className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
                     {/* S.No */}
                     <td className="px-3 py-2 font-medium">{idx + 1}</td>
-
                     {/* Property Category */}
                     <td className="px-3 py-2 min-w-[200px]">
                       <SearchableSelect
@@ -1783,12 +1786,10 @@ const renderPropertyStep = () => {
                         className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
                       />
                     </td>
-
                     {/* Type of Property */}
                     <td className="px-3 py-2 min-w-[180px]">
                       {renderTypeCell(row, idx)}
                     </td>
-
                     {/* Status (Stolen / Recovered / Involved / Seized) */}
                     <td className="px-3 py-2 w-32">
                       <SearchableSelect
@@ -1800,7 +1801,6 @@ const renderPropertyStep = () => {
                         className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
                       />
                     </td>
-
                     {/* Description */}
                     <td className="px-3 py-2">
                       <input
@@ -1812,7 +1812,6 @@ const renderPropertyStep = () => {
                         className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
                       />
                     </td>
-
                     {/* Value in INR */}
                     <td className="px-3 py-2">
                       <input
@@ -1824,7 +1823,6 @@ const renderPropertyStep = () => {
                         className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
                       />
                     </td>
-
                     {/* Delete */}
                     <td className="px-3 py-2 text-center">
                       <button
@@ -1852,7 +1850,6 @@ const renderArrestedStep = () => {
   const arrestedList = repeaterState?.arrested_info || [];
   const allFields = deepFlattenSchema(schema);
   const subTabs = getSectionSubTabs('arrested_info');
-
   /** Generic field grid renderer for a sub-tab's fields (used by arrest_details, particular_details, etc.) */
   const renderSubTabFieldGrid = (tabId) => {
     const tab = subTabs.find(t => t.id === tabId);
@@ -1872,9 +1869,7 @@ const renderArrestedStep = () => {
       } catch { /* ignore */ }
       return true;
     };
-
     const visibleFields = fields.filter(f => evalCond(f.show_when, arrestedTempValues));
-
     return (
       <fieldset className="bg-white">
         <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
@@ -1916,6 +1911,8 @@ const renderArrestedStep = () => {
     // arrest_details, particular_details, custody_status — generic flat grid from backend fields
     return renderSubTabFieldGrid(arrestedSubTab);
   };
+
+
 
   const getArrestedName = (v) => [v.arrested_first_name, v.arrested_middle_name, v.arrested_last_name].filter(Boolean).join(' ') || '—';
   const getArrestedAddress = (v) => [v.arrested_house_no, v.arrested_street, v.arrested_colony, v.arrested_city_town_village, v.arrested_district, v.arrested_state].filter(Boolean).join(', ') || '—';
@@ -2262,6 +2259,87 @@ const renderActionTakenStep = () => {
 
   const finalFirOptions = firOptions.length > 0 ? firOptions : mockOptions;
 
+  const processSchemaStatusOptions = React.useCallback((schemaToProcess, currentRecordType, currentCaseType) => {
+    if (!schemaToProcess || schemaToProcess.length === 0) return [];
+    return schemaToProcess.map(sec => {
+      if (sec.section === 'general_info' || sec.section === 'custody_status' || sec.section === 'arrested_info') {
+        const fields = (sec.fields || []).map(f => {
+          if (f.field_key === 'status') {
+            const statusField = { ...f };
+            const effectiveCaseType = currentRecordType === 'CASE' ? 'against_fir' : (currentCaseType || 'kalandra');
+            if (effectiveCaseType === 'against_fir') {
+              statusField.options = JSON.stringify([
+                { value: 'JC', label_en: 'JC (Judicial custody)', label_hi: 'जेसी (न्यायिक हिरासत)' },
+                { value: 'PC', label_en: 'PC (Police custody)', label_hi: 'पीसी (पुलिस हिरासत)' },
+                { value: 'Bail', label_en: 'Bail', label_hi: 'जमानत' },
+                { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'बाउंड डाउन' },
+                { value: 'Release', label_en: 'Release', label_hi: 'रिहा' },
+                { value: 'Lockup', label_en: 'Lockup', label_hi: 'हवालात/जेल' },
+                { value: '35(3) BNS Notice', label_en: '35(3) BNS noticee', label_hi: '35(3) BNS noticee' }
+              ]);
+            } else {
+              statusField.options = JSON.stringify([
+                { value: 'JC', label_en: 'JC', label_hi: 'जेसी' },
+                { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'बाउंड डाउन' },
+                { value: 'Lockup', label_en: 'Lockup', label_hi: 'हवालात/जेल' },
+                { value: 'Fine', label_en: 'Fine', label_hi: 'जुर्माना' }
+              ]);
+            }
+            statusField.label_en = 'Status';
+            statusField.label_hi = 'बंदी की स्थिति';
+            return statusField;
+          }
+          return f;
+        });
+
+        // Ensure recovery is in custody_status section
+        if (sec.section === 'custody_status' && !fields.find(f => f.field_key === 'recovery')) {
+          fields.push({
+            field_key: 'recovery',
+            field_type: 'TEXTAREA',
+            label_en: 'Recovered Material Items',
+            label_hi: 'बरामद की गई सामग्री',
+            visible_to_levels: ['L1', 'L2', 'L3'],
+            editable_by_levels: ['L1', 'L2', 'L3'],
+            section: 'custody_status',
+            validation_rules: JSON.stringify({ required: false })
+          });
+        }
+
+        // Ensure scheme_of_arrest is in arrested_info section
+        if (sec.section === 'arrested_info' && !fields.find(f => f.field_key === 'scheme_of_arrest')) {
+          fields.push({
+            field_key: 'scheme_of_arrest',
+            field_type: 'SELECT',
+            label_en: 'Scheme of Arrest',
+            label_hi: 'गिरफ्तारी की योजना',
+            visible_to_levels: ['L1', 'L2', 'L3'],
+            editable_by_levels: ['L1', 'L2', 'L3'],
+            section: 'arrested_info',
+            validation_rules: JSON.stringify({ required: false }),
+            options: JSON.stringify([
+              { value: 'Integrated Pride', label_en: 'Integrated Pride', label_hi: 'Integrated Pride' },
+              { value: 'Group Patrolling', label_en: 'Group Patrolling', label_hi: 'Group Patrolling' },
+              { value: 'Anti-snatching', label_en: 'Anti-snatching', label_hi: 'Anti-snatching' },
+              { value: 'By Prahari', label_en: 'By Prahari', label_hi: 'By Prahari' },
+              { value: 'By Eyes & Ears Scheme Members', label_en: 'By Eyes & Ears Scheme Members', label_hi: 'By Eyes & Ears Scheme Members' }
+            ])
+          });
+        }
+
+        return { ...sec, fields };
+      }
+      return sec;
+    });
+  }, []);
+
+  const processedArrestFields = React.useMemo(() => {
+    const rawSchema = arrestSchema || schema;
+    if (!rawSchema) return [];
+    const processedSchema = processSchemaStatusOptions(rawSchema, recordType, caseType);
+    return deepFlattenSchema(processedSchema);
+  }, [arrestSchema, schema, recordType, caseType, processSchemaStatusOptions]);
+
   const finalSchema = React.useMemo(() => {
     if (!schema || schema.length === 0) return [];
 
@@ -2322,10 +2400,47 @@ const renderActionTakenStep = () => {
   // keyed by major category rather than issuing separate requests.
   const [armsLookupMap, setArmsLookupMap] = useState({});
 
+
+
+  const [showAddRow,   setShowAddRow  ] = useState(false);
+  const [newAct,       setNewAct      ] = useState('');
+  const [newSection,   setNewSection  ] = useState('');
+  const [newSectionVal, setNewSectionVal] = useState('');
+  const [actsSectionsRegistry, setActsSectionsRegistry] = useState(ACTS_SECTIONS_REGISTRY);
+  const [dbMajorHeadOptions, setDbMajorHeadOptions] = useState([]);
+  const [dbMinorHeadOptions, setDbMinorHeadOptions] = useState([]);
+  const [showOccurrencePlace, setShowOccurrencePlace] = useState(false);
+
+  // Victim Modal state hooks
+  const [isVictimModalOpen, setIsVictimModalOpen] = useState(false);
+  const [activeVictimIndex, setActiveVictimIndex] = useState(null);
+  const [victimTempValues, setVictimTempValues]   = useState({});
+  const [victimSubTab, setVictimSubTab]           = useState('personal');
+  const [victimModalErrors, setVictimModalErrors] = useState({});
+  const [victimModalTouched, setVictimModalTouched] = useState({});
+
+  // Accused Modal state hooks
+  const [isAccusedModalOpen, setIsAccusedModalOpen] = useState(false);
+  const [activeAccusedIndex, setActiveAccusedIndex] = useState(null);
+  const [accusedTempValues, setAccusedTempValues]   = useState({});
+  const [accusedSubTab, setAccusedSubTab]           = useState('personal');
+  const [accusedModalErrors, setAccusedModalErrors] = useState({});
+  const [accusedModalTouched, setAccusedModalTouched] = useState({});
+
+  // Arrested Modal state hooks
+  const [isArrestedModalOpen, setIsArrestedModalOpen] = useState(false);
+  const [activeArrestedIndex, setActiveArrestedIndex] = useState(null);
+  const [arrestedTempValues, setArrestedTempValues]   = useState({});
+  const [arrestedSubTab, setArrestedSubTab]           = useState('arrest_details'); // 'arrest_details' | 'person_particulars' | 'particular_details' | 'address'
+  const [arrestedModalErrors, setArrestedModalErrors] = useState({});
+  const [arrestedModalTouched, setArrestedModalTouched] = useState({});
+
   useEffect(() => {
     const list = repeaterState?.property_details || [];
+    const arrestedList = arrestedTempValues?.property_details || [];
+    const combinedList = [...list, ...arrestedList];
     const majorCategories = Array.from(new Set(
-      list.map(row => row.property_major_category).filter(Boolean)
+      combinedList.map(row => row.property_major_category).filter(Boolean)
     ));
 
     majorCategories.forEach(cat => {
@@ -2402,40 +2517,7 @@ const renderActionTakenStep = () => {
           console.error(`Failed to fetch items for property category ${cat}:`, err);
         });
     });
-  }, [repeaterState?.property_details, propertyMinorOptionsMap]);
-
-  const [showAddRow,   setShowAddRow  ] = useState(false);
-  const [newAct,       setNewAct      ] = useState('');
-  const [newSection,   setNewSection  ] = useState('');
-  const [newSectionVal, setNewSectionVal] = useState('');
-  const [actsSectionsRegistry, setActsSectionsRegistry] = useState(ACTS_SECTIONS_REGISTRY);
-  const [dbMajorHeadOptions, setDbMajorHeadOptions] = useState([]);
-  const [dbMinorHeadOptions, setDbMinorHeadOptions] = useState([]);
-  const [showOccurrencePlace, setShowOccurrencePlace] = useState(false);
-
-  // Victim Modal state hooks
-  const [isVictimModalOpen, setIsVictimModalOpen] = useState(false);
-  const [activeVictimIndex, setActiveVictimIndex] = useState(null);
-  const [victimTempValues, setVictimTempValues]   = useState({});
-  const [victimSubTab, setVictimSubTab]           = useState('personal');
-  const [victimModalErrors, setVictimModalErrors] = useState({});
-  const [victimModalTouched, setVictimModalTouched] = useState({});
-
-  // Accused Modal state hooks
-  const [isAccusedModalOpen, setIsAccusedModalOpen] = useState(false);
-  const [activeAccusedIndex, setActiveAccusedIndex] = useState(null);
-  const [accusedTempValues, setAccusedTempValues]   = useState({});
-  const [accusedSubTab, setAccusedSubTab]           = useState('personal');
-  const [accusedModalErrors, setAccusedModalErrors] = useState({});
-  const [accusedModalTouched, setAccusedModalTouched] = useState({});
-
-  // Arrested Modal state hooks
-  const [isArrestedModalOpen, setIsArrestedModalOpen] = useState(false);
-  const [activeArrestedIndex, setActiveArrestedIndex] = useState(null);
-  const [arrestedTempValues, setArrestedTempValues]   = useState({});
-  const [arrestedSubTab, setArrestedSubTab]           = useState('arrest_details'); // 'arrest_details' | 'person_particulars' | 'particular_details' | 'address'
-  const [arrestedModalErrors, setArrestedModalErrors] = useState({});
-  const [arrestedModalTouched, setArrestedModalTouched] = useState({});
+  }, [repeaterState?.property_details, arrestedTempValues?.property_details, propertyMinorOptionsMap]);
 
   // Intimation Details tab state
   const [isIntimationModalOpen, setIsIntimationModalOpen] = useState(false);
@@ -2728,7 +2810,15 @@ const renderActionTakenStep = () => {
   };
 
   const openArrestedAddModal = () => {
-    setArrestedTempValues({});
+    setArrestedTempValues({
+      property_details: [{
+        property_major_category: '',
+        property_minor_category: '',
+        property_details: '',
+        property_value_inr: '',
+        property_stolen_recovered: 'Stolen'
+      }]
+    });
     setActiveArrestedIndex(null);
     setArrestedSubTab('arrest_details');
     setArrestedModalErrors({});
@@ -2738,7 +2828,17 @@ const renderActionTakenStep = () => {
 
   const openArrestedEditModal = (idx) => {
     const list = repeaterState.arrested_info || [];
-    setArrestedTempValues({ ...(list[idx] || {}) });
+    const entry = { ...(list[idx] || {}) };
+    if (!entry.property_details || entry.property_details.length === 0) {
+      entry.property_details = [{
+        property_major_category: '',
+        property_minor_category: '',
+        property_details: '',
+        property_value_inr: '',
+        property_stolen_recovered: 'Stolen'
+      }];
+    }
+    setArrestedTempValues(entry);
     setActiveArrestedIndex(idx);
     setArrestedSubTab('arrest_details');
     setArrestedModalErrors({});
@@ -3305,7 +3405,7 @@ const renderActionTakenStep = () => {
 
   // Auto-populate 1 empty row for property details if empty and not read-only
   useEffect(() => {
-    if (!readOnly && recordType === 'CASE') {
+    if (!readOnly && (recordType === 'CASE' || recordType === 'ARREST')) {
       const propertyList = repeaterState?.property_details || [];
       if (propertyList.length === 0) {
         setRepeaterState(prev => ({
@@ -3634,6 +3734,16 @@ const renderActionTakenStep = () => {
         if (key === 'complainant_police_station') next.complainant_perm_police_station = val;
         if (key === 'complainant_pincode') next.complainant_perm_pincode = val;
       }
+      
+      // Auto-set mp_known based on missing_type (Missing -> Known/Identified=true, Found -> Unknown=false)
+      if (key === 'missing_type') {
+        if (val === 'Missing') {
+          next.mp_known = true;
+        } else if (val === 'Found') {
+          next.mp_known = false;
+        }
+      }
+
 
       // Clear error on change
       if (errors[key]) {

@@ -154,6 +154,7 @@ export const REPORTABLE_FIELDS = {
     { key: 'remarks',             label_en: 'Remarks',              label_hi: 'टिप्पणियां',             data_type: 'textarea',operators: ['CONTAINS','IS_EMPTY','IS_NOT_EMPTY'], is_pii: false, is_db_col: false, wh_col: 'remarks' },
     { key: 'cctns_flag',          label_en: 'CCTNS Flag',           label_hi: 'सीसीटीएनएस झंडा',       data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'cctns_flag' },
     { key: 'zero_fir_flag',       label_en: 'Zero FIR',             label_hi: 'जीरो एफआईआर',           data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'zero_fir_flag' },
+    { key: 'heinous_offence',     label_en: 'Heinous Offence',      label_hi: 'जघन्य अपराध',           data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'heinous_offence' },
   ],
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -173,6 +174,7 @@ export const REPORTABLE_FIELDS = {
     { key: 'io_name',            label_en: 'Arresting Officer',     label_hi: 'गिरफ्तार अधिकारी',    data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'officer_name' },
     { key: 'nafis_prepared',     label_en: 'NAFIS Prepared',        label_hi: 'नाफिस तैयार',          data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'nafis_prepared' },
     { key: 'dossier_prepared',   label_en: 'Dossier Prepared',      label_hi: 'डोजियर तैयार',         data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'dossier_prepared' },
+    { key: 'heinous_offence',    label_en: 'Heinous Offence',      label_hi: 'जघन्य अपराध',           data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'heinous_offence' },
   ],
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -228,6 +230,7 @@ export const REPORTABLE_FIELDS = {
     { key: 'zipnet_no',          label_en: 'ZIPNET No.',            label_hi: 'जिपनेट संख्या',         data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'zipnet_no' },
     { key: 'identified',         label_en: 'Body Identified',       label_hi: 'शव पहचाना गया',         data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'identified' },
     { key: 'status',             label_en: 'Current Status / Mortuary Remarks', label_hi: 'वर्तमान स्थिति', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'uidb_status' },
+    { key: 'heinous_offence',    label_en: 'Heinous Offence',      label_hi: 'जघन्य अपराध',           data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'heinous_offence' },
   ],
 };
 

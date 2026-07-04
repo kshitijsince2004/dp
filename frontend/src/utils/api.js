@@ -949,6 +949,18 @@ const formSchemas = {
         { field_key: 'gd_no', field_type: 'TEXT', label_en: 'GD Entry Number', label_hi: 'जी.डी. प्रविष्टि संख्या', validation_rules: { required: true } },
         { field_key: 'record_date', field_type: 'DATE', label_en: 'Diary Record Date', label_hi: 'दैनिक डायरी तिथि', validation_rules: { required: true } }
       ]
+    },
+    {
+      section: 'incident_details',
+      title_en: 'Incident Details',
+      title_hi: 'घटना विवरण',
+      fields: [
+        { field_key: 'occurrence_place', field_type: 'TEXT', label_en: 'Place of Occurrence', label_hi: 'घटना का स्थान', validation_rules: { required: false } },
+        { field_key: 'occurrence_landmark', field_type: 'TEXT', label_en: 'Place of Occurrence Landmark', label_hi: 'घटनास्थल लैंडमार्क', validation_rules: { required: false } },
+        { field_key: 'latitude', field_type: 'TEXT', label_en: 'Latitude', label_hi: 'अक्षांश', validation_rules: { required: false } },
+        { field_key: 'longitude', field_type: 'TEXT', label_en: 'Longitude', label_hi: 'रेखांश', validation_rules: { required: false } },
+        { field_key: 'arrival_time', field_type: 'TIME', label_en: 'Arrival Time', label_hi: 'आगमन का समय', validation_rules: { required: false } }
+      ]
     }
   ],
   MISSING: [
@@ -1002,6 +1014,7 @@ const formSchemas = {
       title_en: 'Person Details',
       title_hi: 'व्यक्तिगत विवरण',
       fields: [
+        // mp_known is hidden — auto-set based on missing_type (Missing=true, Found=false)
         { field_key: 'mp_known', field_type: 'BOOLEAN', label_en: 'Is Missing Person Identified / Known?', label_hi: 'क्या लापता व्यक्ति की पहचान ज्ञात है?', validation_rules: { required: true } },
         {
           field_key: 'missing_name',
@@ -1011,6 +1024,69 @@ const formSchemas = {
           validation_rules: { required: true },
           show_when: { field: 'mp_known', value: true }
         },
+        { field_key: 'age', field_type: 'NUMBER', label_en: 'Age', label_hi: 'उम्र', validation_rules: { required: true } },
+        {
+          field_key: 'gender',
+          field_type: 'SELECT',
+          label_en: 'Gender',
+          label_hi: 'लिंग',
+          options: [
+            { value: 'Male', label_en: 'Male', label_hi: 'पुरुष' },
+            { value: 'Female', label_en: 'Female', label_hi: 'महिला' },
+            { value: 'Transgender', label_en: 'Transgender', label_hi: 'ट्रांसजेंडर' },
+            { value: 'Unknown', label_en: 'Unknown', label_hi: 'अज्ञात' }
+          ],
+          validation_rules: { required: true }
+        },
+        {
+          field_key: 'major_minor',
+          field_type: 'RADIO',
+          label_en: 'Major / Minor',
+          label_hi: 'वयस्क / नाबालिग',
+          options: [
+            { value: 'Major', label_en: 'Major (18+)', label_hi: 'वयस्क (18+)' },
+            { value: 'Minor', label_en: 'Minor (Below 18)', label_hi: 'नाबालिग (18 से कम)' }
+          ],
+          validation_rules: { required: true }
+        },
+        { field_key: 'missing_relative_name', field_type: 'TEXT', label_en: 'Relative Name', label_hi: 'रिश्तेदार का नाम', validation_rules: { required: false } },
+        {
+          field_key: 'missing_relation_type',
+          field_type: 'SELECT',
+          label_en: 'Relation Type',
+          label_hi: 'संबंध का प्रकार',
+          options: [
+            { value: 'Father', label_en: 'Father', label_hi: 'पिता' },
+            { value: 'Mother', label_en: 'Mother', label_hi: 'माता' },
+            { value: 'Husband', label_en: 'Husband', label_hi: 'पति' },
+            { value: 'Wife', label_en: 'Wife', label_hi: 'पत्नी' },
+            { value: 'Guardian', label_en: 'Guardian', label_hi: 'अभिभावक' },
+            { value: 'Other', label_en: 'Other', label_hi: 'अन्य' }
+          ],
+          validation_rules: { required: false },
+          show_when: { field: 'missing_relative_name', operator: 'filled' }
+        },
+        { field_key: 'missing_place', field_type: 'TEXT', label_en: 'Last Seen Place', label_hi: 'अंतिम बार देखा गया स्थान', validation_rules: { required: true } },
+        { field_key: 'missing_date', field_type: 'DATE', label_en: 'Date Missing Since', label_hi: 'लापता होने की तिथि', validation_rules: { required: true } },
+        { field_key: 'missing_recovered_time', field_type: 'TIME', label_en: 'Time Missing / Recovered', label_hi: 'लापता होने / बरामद होने का समय', validation_rules: { required: false } },
+        {
+          field_key: 'Mental State',
+          field_type: 'SELECT',
+          label_en: 'Mental State',
+          label_hi: 'मानसिक स्थिति',
+          options: [
+            { value: 'Normal', label_en: 'Normal', label_hi: 'सामान्य' },
+            { value: 'Abnormal', label_en: 'Abnormal', label_hi: 'असामान्य' }
+          ],
+          validation_rules: { required: false }
+        }
+      ]
+    },
+    {
+      section: 'missing_address',
+      title_en: 'Address Details',
+      title_hi: 'पता विवरण',
+      fields: [
         {
           field_key: 'mp_house_no',
           field_type: 'TEXT',
@@ -1174,52 +1250,14 @@ const formSchemas = {
           validation_rules: { required: false },
           full_width: true,
           show_when: { field: 'mp_perm_same', value: 'No' }
-        },
-        { field_key: 'age', field_type: 'NUMBER', label_en: 'Age', label_hi: 'उम्र', validation_rules: { required: true } },
-        {
-          field_key: 'gender',
-          field_type: 'SELECT',
-          label_en: 'Gender',
-          label_hi: 'लिंग',
-          options: [
-            { value: 'Male', label_en: 'Male', label_hi: 'पुरुष' },
-            { value: 'Female', label_en: 'Female', label_hi: 'महिला' },
-            { value: 'Transgender', label_en: 'Transgender', label_hi: 'ट्रांसजेंडर' },
-            { value: 'Unknown', label_en: 'Unknown', label_hi: 'अज्ञात' }
-          ],
-          validation_rules: { required: true }
-        },
-        {
-          field_key: 'major_minor',
-          field_type: 'RADIO',
-          label_en: 'Major / Minor',
-          label_hi: 'वयस्क / नाबालिग',
-          options: [
-            { value: 'Major', label_en: 'Major (18+)', label_hi: 'वयस्क (18+)' },
-            { value: 'Minor', label_en: 'Minor (Below 18)', label_hi: 'नाबालिग (18 से कम)' }
-          ],
-          validation_rules: { required: true }
-        },
-        { field_key: 'missing_relative_name', field_type: 'TEXT', label_en: 'Relative Name', label_hi: 'रिश्तेदार का नाम', validation_rules: { required: false } },
-        {
-          field_key: 'missing_relation_type',
-          field_type: 'SELECT',
-          label_en: 'Relation Type',
-          label_hi: 'संबंध का प्रकार',
-          options: [
-            { value: 'Father', label_en: 'Father', label_hi: 'पिता' },
-            { value: 'Mother', label_en: 'Mother', label_hi: 'माता' },
-            { value: 'Husband', label_en: 'Husband', label_hi: 'पति' },
-            { value: 'Wife', label_en: 'Wife', label_hi: 'पत्नी' },
-            { value: 'Guardian', label_en: 'Guardian', label_hi: 'अभिभावक' },
-            { value: 'Other', label_en: 'Other', label_hi: 'अन्य' }
-          ],
-          validation_rules: { required: false },
-          show_when: { field: 'missing_relative_name', operator: 'filled' }
-        },
-        { field_key: 'missing_place', field_type: 'TEXT', label_en: 'Last Seen Place', label_hi: 'अंतिम बार देखा गया स्थान', validation_rules: { required: true } },
-        { field_key: 'missing_date', field_type: 'DATE', label_en: 'Date Missing Since', label_hi: 'लापता होने की तिथि', validation_rules: { required: true } },
-        { field_key: 'missing_recovered_time', field_type: 'TIME', label_en: 'Time Missing / Recovered', label_hi: 'लापता होने / बरामद होने का समय', validation_rules: { required: false } },
+        }
+      ]
+    },
+    {
+      section: 'missing_physical',
+      title_en: 'Physical Description',
+      title_hi: 'शारीरिक हुलिया',
+      fields: [
         { field_key: 'height', field_type: 'TEXT', label_en: 'Height', label_hi: 'ऊंचाई', validation_rules: { required: false } },
         {
           field_key: 'built',
@@ -1292,7 +1330,8 @@ const formSchemas = {
           ],
           validation_rules: { required: false }
         },
-        { field_key: 'mental_state', field_type: 'TEXT', label_en: 'Mental State', label_hi: 'मानसिक स्थिति', validation_rules: { required: false } },
+        { field_key: 'upper_dress_color', field_type: 'TEXT', label_en: 'Upper Dress Color', label_hi: 'ऊपरी पोशाक का रंग', validation_rules: { required: false } },
+        { field_key: 'lower_dress_color', field_type: 'TEXT', label_en: 'Lower Dress Color', label_hi: 'निचली पोशाक का रंग', validation_rules: { required: false } },
         { field_key: 'physical_description', field_type: 'TEXTAREA', label_en: 'Physical Description', label_hi: 'शारीरिक हुलिया', validation_rules: { required: true }, full_width: true }
       ]
     },
@@ -1315,7 +1354,37 @@ const formSchemas = {
         { field_key: 'io_rank', field_type: 'TEXT', label_en: 'IO Rank', label_hi: 'जांच अधिकारी का पद', validation_rules: { required: false } },
         { field_key: 'io_pis', field_type: 'TEXT', label_en: 'IO PIS No.', label_hi: 'जांच अधिकारी का पीआईएस नंबर', validation_rules: { required: false } },
         { field_key: 'io_mobile', field_type: 'TEXT', label_en: 'IO Mobile No.', label_hi: 'जांच अधिकारी का मोबाइल नंबर', validation_rules: { required: false } },
-        { field_key: 'remarks', field_type: 'TEXTAREA', label_en: 'Remarks', label_hi: 'टिप्पणी', validation_rules: { required: false }, full_width: true }
+        { field_key: 'remarks', field_type: 'TEXTAREA', label_en: 'Remarks', label_hi: 'टिप्पणी', validation_rules: { required: false }, full_width: true },
+        {
+          field_key: 'case_status',
+          field_type: 'SELECT',
+          label_en: 'Status',
+          label_hi: 'स्थिति',
+          options: [
+            { value: 'CHARGE SHEET', label_en: 'CHARGE SHEET', label_hi: 'आरोप पत्र' },
+            { value: 'POLICE INVESTIGATION REPORT(PIR-JCL)', label_en: 'POLICE INVESTIGATION REPORT(PIR-JCL)', label_hi: 'पुलिस जांच रिपोर्ट (PIR-JCL)' },
+            { value: 'UNTRACED', label_en: 'UNTRACED', label_hi: 'अनट्रेस्ड' },
+            { value: 'PENDING', label_en: 'PENDING', label_hi: 'लंबित' },
+            { value: 'CANCELLATION', label_en: 'CANCELLATION', label_hi: 'रद्दीकरण' },
+            { value: 'QUASHED', label_en: 'QUASHED', label_hi: 'रद्द / क्वैश' },
+            { value: 'CLOSURE REPORT', label_en: 'CLOSURE REPORT', label_hi: 'क्लोजर रिपोर्ट' },
+            { value: 'RELEASED U/S 189 BNSS', label_en: 'RELEASED U/S 189 BNSS', label_hi: 'धारा 189 बीएनएसएस के तहत रिहा' },
+            { value: 'TRANSFER', label_en: 'TRANSFER', label_hi: 'स्थानांतरण' }
+          ],
+          validation_rules: { required: true }
+        },
+        {
+          field_key: 'transfer_to',
+          field_type: 'RADIO',
+          label_en: 'Transfer To',
+          label_hi: 'स्थानांतरण करें',
+          options: [
+            { value: 'PS', label_en: 'PS', label_hi: 'पुलिस स्टेशन' },
+            { value: 'Agency', label_en: 'Agency', label_hi: 'एजेंसी' }
+          ],
+          validation_rules: { required: false },
+          show_when: { field: 'case_status', value: 'TRANSFER' }
+        }
       ]
     }
   ],
@@ -1569,6 +1638,13 @@ const formSchemas = {
         { field_key: 'found_latitude', field_type: 'TEXT', label_en: 'Place Body Found Latitude', label_hi: 'शव मिलने का स्थान अक्षांश', validation_rules: { required: false } },
         { field_key: 'found_longitude', field_type: 'TEXT', label_en: 'Place Body Found Longitude', label_hi: 'शव मिलने का स्थान रेखांश', validation_rules: { required: false } },
         { field_key: 'zipnet_no', field_type: 'TEXT', label_en: 'ZIPNET Number', label_hi: 'ज़िपनेट नंबर', validation_rules: { required: false } },
+      ]
+    },
+    {
+      section: 'corpse_physical',
+      title_en: 'Physical Description',
+      title_hi: 'शारीरिक हुलिया',
+      fields: [
         { field_key: 'height', field_type: 'TEXT', label_en: 'Height', label_hi: 'ऊंचाई', validation_rules: { required: false } },
         {
           field_key: 'built',
@@ -1643,7 +1719,8 @@ const formSchemas = {
         },
         { field_key: 'upper_dress_color', field_type: 'TEXT', label_en: 'Upper Dress Color', label_hi: 'ऊपरी पहनावे का रंग', validation_rules: { required: false } },
         { field_key: 'lower_dress_color', field_type: 'TEXT', label_en: 'Lower Dress Color', label_hi: 'निचले पहनावे का रंग', validation_rules: { required: false } },
-        { field_key: 'identification_marks', field_type: 'TEXT', label_en: 'Identification Marks', label_hi: 'पहचान चिन्ह', validation_rules: { required: false } }
+        { field_key: 'identification_marks', field_type: 'TEXT', label_en: 'Identification Marks', label_hi: 'पहचान चिन्ह', validation_rules: { required: false } },
+        { field_key: 'description', field_type: 'TEXTAREA', label_en: 'Physical Description', label_hi: 'शारीरिक हुलिया', validation_rules: { required: false }, full_width: true }
       ]
     },
     {

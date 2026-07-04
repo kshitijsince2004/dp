@@ -283,19 +283,58 @@ export default function FieldRenderer({
   }
 
   if (type === 'SELECT' || type === 'DROPDOWN') {
+    const isCaseStatus = key === 'case_status';
+    const isTransferSelected = value === 'TRANSFER';
+
     return (
-      <SelectField
-        id={`field-${key}`}
-        disabled={readOnly}
-        value={value}
-        onChange={(v) => handleFieldChange(key, v)}
-        status={status}
-        placeholder={selectPlaceholder || placeholder}
-        options={options}
-        lang={lang}
-        variant={selectVariant}
-        className={selectClassName}
-      />
+      <div className="flex flex-col gap-2 w-full">
+        <SelectField
+          id={`field-${key}`}
+          disabled={readOnly}
+          value={value}
+          onChange={(v) => {
+            handleFieldChange(key, v);
+            if (isCaseStatus && v !== 'TRANSFER') {
+              handleFieldChange('transfer_to', '');
+            }
+          }}
+          status={status}
+          placeholder={selectPlaceholder || placeholder}
+          options={options}
+          lang={lang}
+          variant={selectVariant}
+          className={selectClassName}
+        />
+        {isCaseStatus && isTransferSelected && (
+          <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 mt-1 animate-in slide-in-from-top-1 duration-100">
+            <span className="text-xs font-bold text-[#0d2a4a]">
+              {lang === 'hi' ? 'स्थानांतरण का प्रकार:' : 'Transfer To:'}
+            </span>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+              <input
+                type="radio"
+                name="case_status_transfer_to"
+                disabled={readOnly}
+                checked={values?.transfer_to === 'PS'}
+                onChange={() => handleFieldChange('transfer_to', 'PS')}
+                className="accent-[#0f52ba] cursor-pointer"
+              />
+              <span>{lang === 'hi' ? 'पुलिस स्टेशन (PS)' : 'PS'}</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+              <input
+                type="radio"
+                name="case_status_transfer_to"
+                disabled={readOnly}
+                checked={values?.transfer_to === 'Agency'}
+                onChange={() => handleFieldChange('transfer_to', 'Agency')}
+                className="accent-[#0f52ba] cursor-pointer"
+              />
+              <span>{lang === 'hi' ? 'एजेंसी (Agency)' : 'Agency'}</span>
+            </label>
+          </div>
+        )}
+      </div>
     );
   }
 
