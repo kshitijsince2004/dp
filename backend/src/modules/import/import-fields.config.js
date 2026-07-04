@@ -195,12 +195,12 @@ export const casePropertyFields = [
 
 export const arrestGeneralFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'e.g. FIR-104/2026' },
-  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: false, hint: 'YYYY-MM-DD' },
+  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: false, hint: 'dd-mm-yyyy' },
   { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: false, hint: 'e.g. Theft / Larceny' },
   { field_key: 'heinous_offence', label_en: 'Heinous Offence', label_hi: 'जघन्य अपराध', required: false, options: ['Yes', 'No'] },
   { field_key: 'district', label_en: 'District', label_hi: 'जिला', required: true, hint: 'e.g. New Delhi District (NDD)' },
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
-  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: true, hint: 'YYYY-MM-DD' },
+  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: true, hint: 'dd-mm-yyyy' },
   { field_key: 'time_of_arrest', label_en: 'Time Of Arrest', label_hi: 'गिरफ्तारी का समय', required: false, hint: 'HH:MM' },
   { field_key: 'place_of_arrest', label_en: 'Place Of Arrest', label_hi: 'गिरफ्तारी का स्थान', required: true, hint: 'e.g. Nizamuddin Platform 3' },
   { field_key: 'io_name', label_en: 'IO / Officer Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },
@@ -235,10 +235,10 @@ export const arrestPersonFields = [
   { field_key: 'verifying_officer_rank', label_en: 'Arresting Officer Rank', label_hi: 'गिरफ्तार करने वाले अधिकारी का पद', required: false },
   { field_key: 'status', label_en: 'Custody status', label_hi: 'हिरासत की स्थिति', required: false },
   { field_key: 'scheme_of_arrest', label_en: 'Scheme of arrest', label_hi: 'गिरफ्तारी की योजना', required: false },
-  { field_key: 'kin_name', label_en: 'Relative Name', label_hi: 'रिश्तेदार का नाम', required: false },
-  { field_key: 'kin_mobile', label_en: 'Mobile', label_hi: 'मोबाइल', required: false },
-  { field_key: 'kin_relationship', label_en: 'Relationship', label_hi: 'संबंध', required: false },
-  { field_key: 'photo_path', label_en: 'Mugshot Filename', label_hi: 'फोटो फाइल नाम', required: false }
+  //{ field_key: 'kin_name', label_en: 'Relative Name', label_hi: 'रिश्तेदार का नाम', required: false },
+  //{ field_key: 'kin_mobile', label_en: 'Mobile', label_hi: 'मोबाइल', required: false },
+  //{ field_key: 'kin_relationship', label_en: 'Relationship', label_hi: 'संबंध', required: false },
+  //{ field_key: 'photo_path', label_en: 'Mugshot Filename', label_hi: 'फोटो फाइल नाम', required: false }
 ];
 
 export const arrestPropertyFields = [
@@ -256,6 +256,33 @@ export const arrestPropertyFields = [
   // { field_key: 'phone_imei', label_en: 'IMEI Number', label_hi: 'आईएमईआई नंबर', required: false },
   // { field_key: 'phone_color', label_en: 'Phone Color', label_hi: 'फोन का रंग', required: false }
 ];
+
+// ─── KALANDRA (standalone / preventive arrest) ──────────────────────────────────────────
+// Kalandra is the ARREST form's non-FIR case type (caseType='kalandra' in the frontend):
+// same record shape, keyed by a DD number instead of a linked FIR, custody options
+// JC / Bound Down / Lockup / Fine (fields.controller.js). Its import template reuses the
+// ARREST sheet structures verbatim — only the key column is relabeled and FIR Date is
+// dropped. Imported rows are stored as ARREST records tagged arrest_type='kalandra'.
+const withFieldPatch = (fields, key, patch) =>
+  fields.map(f => (f.field_key === key ? { ...f, ...patch } : f));
+
+const DD_NO_PATCH = { label_en: 'DD No.', label_hi: 'डीडी संख्या', hint: 'e.g. DD-104/2026' };
+const DD_NO_CHILD_PATCH = { label_en: 'DD No.', label_hi: 'डीडी संख्या', hint: 'Must match General Info sheet DD No.' };
+
+export const kalandraGeneralFields = withFieldPatch(
+  arrestGeneralFields.filter(f => f.field_key !== 'fir_date'),
+  'linked_fir_dd_no', DD_NO_PATCH
+);
+
+export const kalandraActSectionFields = withFieldPatch(
+  arrestActSectionFields, 'linked_fir_dd_no', DD_NO_CHILD_PATCH
+);
+
+export const kalandraPersonFields = withFieldPatch(
+  withFieldPatch(arrestPersonFields, 'linked_fir_dd_no', DD_NO_CHILD_PATCH),
+  // Kalandra custody options differ from against-FIR arrests (no PC/Bail/Release/35(3))
+  'status', { options: ['JC', 'Bound Down', 'Lockup', 'Fine'] }
+);
 
 // UIDB's "Act and Sections" sheet — mirrors caseActSectionFields/arrestActSectionFields.
 // act_name/sections are real field_registry rows (their labels/options come from there);
@@ -472,6 +499,7 @@ export const TEMPLATE_EXCLUDE_KEYS = {
     // deliberately dropped person fields (were commented out / .filter()-ed above)
     'arrested_npr', 'nick_name', 'arrested_dob', 'arrested_birth_year',
     'arrested_present_address', 'arrested_perm_address',
+    'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path',
   ]),
   UIDB: new Set([
     'deceased_address', 'deceased_perm_address', 'local_head', 'heinous_offence', 'case_status', 'missing_relation_type',
@@ -503,4 +531,10 @@ export const UIDB_SHEETS_CONFIG = {
 
 export const MISSING_SHEETS_CONFIG = {
   general: missingGeneralFields.map(f => f.field_key)
+};
+
+export const KALANDRA_SHEETS_CONFIG = {
+  general: kalandraGeneralFields.map(f => f.field_key),
+  act_section: kalandraActSectionFields.map(f => f.field_key),
+  person: kalandraPersonFields.map(f => f.field_key)
 };

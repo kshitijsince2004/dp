@@ -1228,7 +1228,7 @@ const renderComplainantStep = () => {
 };
 
 const renderVictimStep = () => {
-  const victims = repeaterState?.PERSON_VICTIM || [];
+  const victims = repeaterState?.victim_info || [];
   const allFields = deepFlattenSchema(schema);
 
   const getVictimName = (v) => [v.victim_first_name, v.victim_middle_name, v.victim_last_name].filter(Boolean).join(' ') || '—';
@@ -1358,7 +1358,7 @@ const renderVictimStep = () => {
 };
 
 const renderAccusedStep = () => {
-  const accusedList = repeaterState?.PERSON_ACCUSED || [];
+  const accusedList = repeaterState?.accused_info || [];
   const allFields = deepFlattenSchema(schema);
 
   const getAccusedName = (v) => [v.accused_first_name, v.accused_middle_name, v.accused_last_name].filter(Boolean).join(' ') || '—';
@@ -2878,6 +2878,9 @@ const renderActionTakenStep = () => {
         if (section.entity_type === 'person' && section.person_type) {
           for (const entry of entries) {
             persons.push({ person_type: section.person_type, data: entry });
+            if (recordType === 'ARREST' && section.person_type === 'ARRESTED' && entry.property_details) {
+              properties.push(...entry.property_details);
+            }
           }
         } else if (section.entity_type === 'property') {
           for (const entry of entries) {
@@ -2939,7 +2942,7 @@ const renderActionTakenStep = () => {
   };
 
   const openVictimEditModal = (idx) => {
-    const list = repeaterState.PERSON_VICTIM || [];
+    const list = repeaterState.victim_info || [];
     setVictimTempValues({ ...(list[idx] || {}) });
     setActiveVictimIndex(idx);
     setVictimSubTab('personal');
@@ -2949,9 +2952,9 @@ const renderActionTakenStep = () => {
   };
 
   const deleteVictimEntry = (idx) => {
-    const list = repeaterState.PERSON_VICTIM || [];
+    const list = repeaterState.victim_info || [];
     const nextList = list.filter((_, i) => i !== idx);
-    setRepeaterState(prev => ({ ...prev, PERSON_VICTIM: nextList }));
+    setRepeaterState(prev => ({ ...prev, victim_info: nextList }));
   };
 
   const handleVictimModalChange = (key, val) => {
@@ -3034,7 +3037,7 @@ const renderActionTakenStep = () => {
   };
 
   const openAccusedEditModal = (idx) => {
-    const list = repeaterState.PERSON_ACCUSED || [];
+    const list = repeaterState.accused_info || [];
     setAccusedTempValues({ ...(list[idx] || {}) });
     setActiveAccusedIndex(idx);
     setAccusedSubTab('personal');
@@ -3044,9 +3047,9 @@ const renderActionTakenStep = () => {
   };
 
   const deleteAccusedEntry = (idx) => {
-    const list = repeaterState.PERSON_ACCUSED || [];
+    const list = repeaterState.accused_info || [];
     const nextList = list.filter((_, i) => i !== idx);
-    setRepeaterState(prev => ({ ...prev, PERSON_ACCUSED: nextList }));
+    setRepeaterState(prev => ({ ...prev, accused_info: nextList }));
   };
 
   const handleAccusedModalChange = (key, val) => {
@@ -3160,14 +3163,14 @@ const renderActionTakenStep = () => {
       return;
     }
 
-    const list = [...(repeaterState.PERSON_ACCUSED || [])];
+    const list = [...(repeaterState.accused_info || [])];
     if (activeAccusedIndex !== null) {
       list[activeAccusedIndex] = accusedTempValues;
     } else {
       list.push(accusedTempValues);
     }
 
-    setRepeaterState(prev => ({ ...prev, PERSON_ACCUSED: list }));
+    setRepeaterState(prev => ({ ...prev, accused_info: list }));
     setIsAccusedModalOpen(false);
   };
 
@@ -3499,14 +3502,14 @@ const renderActionTakenStep = () => {
       return;
     }
 
-    const list = [...(repeaterState.PERSON_VICTIM || [])];
+    const list = [...(repeaterState.victim_info || [])];
     if (activeVictimIndex !== null) {
       list[activeVictimIndex] = victimTempValues;
     } else {
       list.push(victimTempValues);
     }
 
-    setRepeaterState(prev => ({ ...prev, PERSON_VICTIM: list }));
+    setRepeaterState(prev => ({ ...prev, victim_info: list }));
     setIsVictimModalOpen(false);
   };
 
@@ -3747,10 +3750,24 @@ const renderActionTakenStep = () => {
           p => p.person_type === section.person_type
         );
         if (matching.length > 0) {
-          initial[section.section] = matching.map(p => ({ 
-            ...(p.data || {}),
-            ...p
-          }));
+          initial[section.section] = matching.map((p, pIdx) => {
+            const entry = { 
+              ...(p.data || {}),
+              ...p
+            };
+            if (recordType === 'ARREST' && section.person_type === 'ARRESTED' && pIdx === 0 && (!entry.property_details || entry.property_details.length === 0) && initialProperties.length > 0) {
+              entry.property_details = initialProperties.map(prop => ({
+                property_major_category: prop.major_category || prop.property_major_category || '',
+                property_minor_category: prop.minor_category || prop.property_minor_category || '',
+                property_stolen_recovered: prop.status || prop.property_stolen_recovered || 'Stolen',
+                property_details: prop.details || prop.property_details || '',
+                property_value_inr: prop.property_value_inr || prop.property_value || '',
+                property_value: prop.property_value || prop.property_value_inr || '',
+                ...prop
+              }));
+            }
+            return entry;
+          });
         }
       } else if (section.entity_type === 'property') {
         if (initialProperties.length > 0) {
@@ -4160,6 +4177,9 @@ const renderActionTakenStep = () => {
         if (section.entity_type === 'person' && section.person_type) {
           for (const entry of entries) {
             persons.push({ person_type: section.person_type, data: entry });
+            if (recordType === 'ARREST' && section.person_type === 'ARRESTED' && entry.property_details) {
+              properties.push(...entry.property_details);
+            }
           }
         } else if (section.entity_type === 'property') {
           for (const entry of entries) {
@@ -4387,6 +4407,9 @@ const renderActionTakenStep = () => {
       if (section.entity_type === 'person' && section.person_type) {
         for (const entry of entries) {
           persons.push({ person_type: section.person_type, data: entry });
+          if (recordType === 'ARREST' && section.person_type === 'ARRESTED' && entry.property_details) {
+            properties.push(...entry.property_details);
+          }
         }
       } else if (section.entity_type === 'property') {
         for (const entry of entries) {
@@ -4412,6 +4435,9 @@ const renderActionTakenStep = () => {
       if (section.entity_type === 'person' && section.person_type) {
         for (const entry of entries) {
           persons.push({ person_type: section.person_type, data: entry });
+          if (recordType === 'ARREST' && section.person_type === 'ARRESTED' && entry.property_details) {
+            properties.push(...entry.property_details);
+          }
         }
       } else if (section.entity_type === 'property') {
         for (const entry of entries) {

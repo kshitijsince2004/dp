@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Card, Button, Modal, Space, Tag, Input, Form, Checkbox, Row, Col, Timeline, Divider, message, Badge, Select, Alert, Typography } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
@@ -15,13 +16,13 @@ import {
   ClipboardList
 } from 'lucide-react';
 import UnifiedFilterStrip from '../../components/common/UnifiedFilterStrip';
-import DynamicForm from '../../components/DynamicForm/DynamicForm';
 
 const { Title, Paragraph } = Typography;
 
 export const QueuePage = () => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -34,7 +35,6 @@ export const QueuePage = () => {
   const [selectedRecordId, setSelectedRecordId] = useState(null);
   const [recordDetail, setRecordDetail] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   
   // Transition actions state
   const [comment, setComment] = useState('');
@@ -167,23 +167,6 @@ export const QueuePage = () => {
     }
   };
 
-  const handleUpdateRecord = async (formData) => {
-    setActionLoading(true);
-    try {
-      await axios.put(`/api/v1/records/${selectedRecordId}`, { data: formData });
-      message.success('Draft record updated');
-      setEditModalOpen(false);
-      // re-open detail view
-      handleOpenDetail(selectedRecordId);
-      fetchQueue();
-    } catch (err) {
-      console.error('Update failed:', err);
-      message.error(err.response?.data?.message || 'Update failed');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const getStatusTagColor = (status) => {
     switch (status) {
       case 'DRAFT':
@@ -251,12 +234,7 @@ export const QueuePage = () => {
               type="text"
               icon={<FileEdit size={16} />}
               onClick={() => {
-                setSelectedRecordId(record.id);
-                // fetch full details and trigger edit form loading
-                handleOpenDetail(record.id).then(() => {
-                  setDetailModalOpen(false);
-                  setEditModalOpen(true);
-                });
+                navigate(`/records/new/${record.record_type}?edit=${record.id}`);
               }}
               style={{ color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 4 }}
             >
@@ -572,25 +550,6 @@ export const QueuePage = () => {
               )}
             </Col>
           </Row>
-        )}
-      </Modal>
-
-      {/* Edit Form Modal (for HCs) */}
-      <Modal
-        title="Edit Record Draft"
-        open={editModalOpen}
-        onCancel={() => setEditModalOpen(false)}
-        footer={null}
-        width={800}
-      >
-        {recordDetail && (
-          <DynamicForm
-            recordType={recordDetail.record.record_type}
-            initialValues={recordDetail.record.data}
-            onSubmit={handleUpdateRecord}
-            loadingSubmit={actionLoading}
-            onCancel={() => setEditModalOpen(false)}
-          />
         )}
       </Modal>
     </div>

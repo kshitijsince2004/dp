@@ -28,6 +28,10 @@ echo [4.5/6] Seeding dev test data (fresh dummy records)...
 node scripts/seed-test-data.js
 echo.
 
+echo [4.6/6] Auto-updating import template baseline...
+node scripts/template-regression.js baseline
+echo.
+
 echo [5/6] Starting frontend in a new terminal...
 start "PHAROS Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 echo.

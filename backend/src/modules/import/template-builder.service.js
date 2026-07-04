@@ -443,59 +443,139 @@ async function buildLiveLookups(recordType) {
     }
   }
 
-  // Every section's major heads, DB-driven. The mapping table keys rows by a composite
-  // "<act_cd>-<section label>" section_code, but ~20% of its rows don't strict-join to
-  // excel_sections: labels differ in case/punctuation ("66f" vs "66F", "9A" vs "9-A") and
-  // some rows reference a duplicate act row that has no sections (IT Act exists as
-  // act_cd 2625 with sections AND 3293 without; mappings point at 3293). Since the Excel
-  // cascade VLOOKUPs by section LABEL anyway, match in JS on the normalized label instead
-  // of the raw composite, so those rows still surface their major heads.
+  // Every section's major heads, act-aware. excel_major_minor_mapping keys rows by
+  // (act_cd, composite "<act_cd>-<label>" section_code), and neither key is reliable
+  // alone: labels drift in case/punctuation ("66f" vs "66F", "9A" vs "9-A"), ~120 rows'
+  // act_cd disagrees with their composite's prefix, and some acts exist twice (IT Act:
+  // 2625 with sections, 3293 without — mapping rows point at both). Resolve each row in
+  // JS — exact composite match first, then normalized-label match under the composite's
+  // prefix act, the row's act_cd, and finally same-named alias acts. The workbook cascade
+  // looks up "<act_long>|<section label>" (see createLookupsSheet), so heads are scoped
+  // per (act, section): sections sharing a label across acts no longer bleed heads into
+  // each other. Pairs without a specific mapping fall back to the act-level union of
+  // heads, then to the full major-head list, so the dropdown is never empty.
   const mappingRows = await db('excel_major_minor_mapping as m')
     .join('excel_major_heads as mh', 'm.major_head_code', 'mh.major_head_code')
-    .select('m.section_code', 'mh.major_head');
+    .select('m.act_cd', 'm.section_code', 'mh.major_head');
   const allSectionRows = await db('excel_sections')
-    .select('section_code', 'section')
-    .distinct();
+    .select('section_code', 'act_sec_cd', 'section')
+    .whereNotNull('act_sec_cd')
+    .whereNotNull('section');
 
   const normLabel = (s) => String(s).toUpperCase().replace(/[^A-Z0-9()]/g, '');
-  // composite section_code → normalized label, and normalized label → all canonical
-  // spellings of that label across acts (the Sections dropdown shows canonical labels,
-  // so the major heads must be attached to every spelling the user could pick)
-  const codeToNorm = new Map();
-  const normToLabels = new Map();
+  // Loose tier drops parentheses too: the mapping writes "66f" where the section sheet
+  // has "66(F)". Only consulted when every strict candidate failed, because stripping
+  // parens can collide ("12(1)" vs "121") — a strict match must always win.
+  const normLabelLoose = (s) => normLabel(s).replace(/[()]/g, '');
+  const SEP = '\u0000';
+
+  // (act, normalized label) → canonical spellings; composite code → its (act, norm) key
+  const labelsByActNorm = new Map();
+  const labelsByActNormLoose = new Map();
+  const compositeToActNorm = new Map();
   for (const r of allSectionRows) {
-    if (!r.section) continue;
-    const nl = normLabel(r.section);
-    if (r.section_code) codeToNorm.set(String(r.section_code).trim().toUpperCase(), nl);
-    if (!normToLabels.has(nl)) normToLabels.set(nl, new Set());
-    normToLabels.get(nl).add(r.section);
+    const act = String(r.act_sec_cd);
+    const key = act + SEP + normLabel(r.section);
+    if (!labelsByActNorm.has(key)) labelsByActNorm.set(key, new Set());
+    labelsByActNorm.get(key).add(r.section);
+    const looseKey = act + SEP + normLabelLoose(r.section);
+    if (!labelsByActNormLoose.has(looseKey)) labelsByActNormLoose.set(looseKey, new Set());
+    labelsByActNormLoose.get(looseKey).add(r.section);
+    if (r.section_code) compositeToActNorm.set(String(r.section_code).trim().toUpperCase(), key);
   }
 
-  const majorHeadsBySectionLabel = {};
-  const seenPairs = new Set();
+  // Duplicate act rows: a mapping-referenced act with no sections of its own is aliased
+  // (by normalized-name prefix) to same-named acts that DO have sections, e.g. 3293
+  // "INFORMATION TECHNOLOGY (AMENDMENT) ACT 2008" → 2625 IT ACT 2000 / 3274.
+  const actsWithSections = new Set(allSectionRows.map((r) => String(r.act_sec_cd)));
+  const normActName = (s) => String(s).toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^THE/, '');
+  const actAliases = new Map();
+  for (const a of allActs) {
+    if (a.act_cd == null || actsWithSections.has(String(a.act_cd))) continue;
+    const prefix = normActName(a.act_long).slice(0, 15);
+    if (prefix.length < 10) continue;
+    const aliases = allActs
+      .filter((b) => b.act_cd != null && actsWithSections.has(String(b.act_cd)) &&
+                     normActName(b.act_long).startsWith(prefix))
+      .map((b) => String(b.act_cd));
+    if (aliases.length > 0) actAliases.set(String(a.act_cd), aliases);
+  }
+
+  const majorHeadsByActSection = new Map(); // "<act><SEP><canonical label>" → [head labels]
+  const actLevelHeadSets = new Map();       // act → Set(head labels)
+  const addActHead = (act, head) => {
+    if (!actLevelHeadSets.has(act)) actLevelHeadSets.set(act, new Set());
+    actLevelHeadSets.get(act).add(head);
+  };
+  const attachTo = (index, actNormKey, head) => {
+    const labels = index.get(actNormKey);
+    if (!labels) return false;
+    const act = actNormKey.slice(0, actNormKey.indexOf(SEP));
+    for (const label of labels) {
+      const k = act + SEP + label;
+      if (!majorHeadsByActSection.has(k)) majorHeadsByActSection.set(k, []);
+      const list = majorHeadsByActSection.get(k);
+      if (!list.includes(head)) list.push(head);
+    }
+    addActHead(act, head);
+    return true;
+  };
+
   for (const m of mappingRows) {
     if (!m.section_code || !m.major_head) continue;
-    const code = String(m.section_code).trim().toUpperCase();
-    // Resolve the mapping row to a normalized section label: exact composite match first,
-    // then fall back to parsing the label out of the "<act_cd>-<label>" composite.
-    let nl = codeToNorm.get(code);
-    if (!nl) {
-      const dash = code.indexOf('-');
-      const parsed = normLabel(dash >= 0 ? code.slice(dash + 1) : code);
-      if (normToLabels.has(parsed)) nl = parsed;
+    const raw = String(m.section_code).trim();
+    const code = raw.toUpperCase();
+    const dash = raw.indexOf('-');
+    const prefixAct = dash > 0 ? raw.slice(0, dash) : null;
+    const rawLabel = dash >= 0 ? raw.slice(dash + 1) : raw;
+    const rowAct = m.act_cd != null ? String(m.act_cd) : null;
+
+    // Candidate acts in trust order: the composite's prefix, the row's act_cd, then
+    // same-named alias acts of either.
+    const candActs = [];
+    for (const src of [prefixAct, rowAct]) {
+      if (src && !candActs.includes(src)) candActs.push(src);
     }
-    if (!nl) continue; // section doesn't exist in excel_sections under any spelling
-    for (const label of normToLabels.get(nl)) {
-      const pairKey = label + ' ' + m.major_head;
-      if (seenPairs.has(pairKey)) continue;
-      seenPairs.add(pairKey);
-      if (!majorHeadsBySectionLabel[label]) majorHeadsBySectionLabel[label] = [];
-      majorHeadsBySectionLabel[label].push({ value: m.major_head, label: m.major_head });
+    for (const src of [prefixAct, rowAct]) {
+      for (const alias of (src && actAliases.get(src)) || []) {
+        if (!candActs.includes(alias)) candActs.push(alias);
+      }
+    }
+
+    let attached = false;
+    const exact = compositeToActNorm.get(code);
+    if (exact) {
+      attached = attachTo(labelsByActNorm, exact, m.major_head);
+    } else {
+      for (const act of candActs) {
+        if (attachTo(labelsByActNorm, act + SEP + normLabel(rawLabel), m.major_head)) { attached = true; break; }
+      }
+      if (!attached) {
+        for (const act of candActs) {
+          if (attachTo(labelsByActNormLoose, act + SEP + normLabelLoose(rawLabel), m.major_head)) { attached = true; break; }
+        }
+      }
+    }
+    if (!attached) {
+      // Section missing from excel_sections under every spelling/alias (source-data
+      // gap) — still count the head toward the act-level fallback list of every act
+      // the row plausibly belongs to.
+      for (const src of new Set([prefixAct, rowAct].filter(Boolean))) {
+        for (const act of (actsWithSections.has(src) ? [src] : (actAliases.get(src) || []))) {
+          addActHead(act, m.major_head);
+        }
+      }
     }
   }
-  for (const list of Object.values(majorHeadsBySectionLabel)) {
-    list.sort((a, b) => a.label.localeCompare(b.label));
+  for (const list of majorHeadsByActSection.values()) list.sort((a, b) => a.localeCompare(b));
+  const actLevelMajorHeads = new Map();
+  for (const [act, set] of actLevelHeadSets) {
+    actLevelMajorHeads.set(act, [...set].sort((a, b) => a.localeCompare(b)));
   }
+  const allMajorHeadLabels = [...new Set(
+    (await db('excel_major_heads').whereNotNull('major_head').orderBy('major_head', 'asc'))
+      .map((r) => r.major_head)
+  )];
 
   // Status options — record-type-specific (each template covers only one record type)
   const statusOptionsByType = {
@@ -532,8 +612,9 @@ async function buildLiveLookups(recordType) {
     _propCategoryLabels:         propCategories.map(c => c.label),
     _minorHeadsByMajorLabel:     minorHeadsByMajorLabel,
     _minorHeadMajorLabels:       Object.keys(minorHeadsByMajorLabel),
-    _majorHeadsBySectionLabel:   majorHeadsBySectionLabel,
-    _majorHeadSectionLabels:     Object.keys(majorHeadsBySectionLabel),
+    _majorHeadsByActSection:     majorHeadsByActSection,
+    _actLevelMajorHeads:         actLevelMajorHeads,
+    _allMajorHeadLabels:         allMajorHeadLabels,
     _allActs:                    allActs,
     _sectionsByActCd:            sectionsByActCd,
   };
@@ -700,39 +781,59 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     col += 2;
   }
 
-  // 4. Write Section Major Heads stacked vertically in a single column
+  // 4. Section→Major-head cascade, act-aware. One stacked column stores every DISTINCT
+  // head set once (deduped by content); SECTION_TO_MAJOR_NR maps "<act_long>|<section
+  // label>" — exactly the string the DV formula concatenates from the act and section
+  // cells ($act5&"|"&$sec5; COM-verified that Excel 2021 accepts the concatenated lookup
+  // key as a DV list source) — to the named range holding that pair's head set. Pairs
+  // without a specific mapping fall back to the act-level union of heads, then to the
+  // full major-head list, so the Major-head dropdown is never empty. IFERROR must still
+  // never be used in the DV formula (see the optimiser-patch comment at the top).
   const secMajorCol = col;
-  col++; // reserve column for section major heads
-  const sectionToMHNRRows = [];
-  let currentSecMHRow = 2;
-
+  col++; // reserve column for the stacked head-set values
   ws.getCell(1, secMajorCol).value = 'SEC_MAJOR_VALS';
-
-  for (const sectionLabel of (liveLookups._majorHeadSectionLabels || [])) {
-    const items = (liveLookups._majorHeadsBySectionLabel || {})[sectionLabel] || [];
-    if (items.length === 0) continue;
-    
-    const values = items.map(o => (o && typeof o === 'object' ? o.value : String(o)));
+  let currentSecMHRow = 2;
+  const headSetSigToNR = new Map();
+  let headSetSeq = 0;
+  const headSetNR = (values) => {
+    if (!values || values.length === 0) return null;
+    const sig = values.join('\u0000');
+    if (headSetSigToNR.has(sig)) return headSetSigToNR.get(sig);
     const startRow = currentSecMHRow;
-    const endRow = currentSecMHRow + values.length - 1;
-    
-    values.forEach((v, idx) => {
-      ws.getCell(startRow + idx, secMajorCol).value = v;
-    });
-    
+    values.forEach((v, idx) => { ws.getCell(startRow + idx, secMajorCol).value = v; });
+    const endRow = startRow + values.length - 1;
+    currentSecMHRow = endRow + 1;
     const colLetter = numToColLetter(secMajorCol);
-    const rangeRef = `'_Lookups'!$${colLetter}$${startRow}:$${colLetter}$${endRow}`;
-    const slug = sectionLabel.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
-    const nrName = `${NR_PREFIX}SEC_${slug}`;
-    
+    const nrName = `${NR_PREFIX}SECMH_${++headSetSeq}`;
     try {
-      workbook.definedNames.add(rangeRef, nrName);
+      workbook.definedNames.add(`'_Lookups'!$${colLetter}$${startRow}:$${colLetter}$${endRow}`, nrName);
     } catch (err) {
       logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+      return null;
     }
-    
-    sectionToMHNRRows.push([sectionLabel, nrName]);
-    currentSecMHRow = endRow + 1;
+    headSetSigToNR.set(sig, nrName);
+    return nrName;
+  };
+
+  const pairHeads = liveLookups._majorHeadsByActSection || new Map();
+  const actLevelHeads = liveLookups._actLevelMajorHeads || new Map();
+  const allHeadsNR = headSetNR(liveLookups._allMajorHeadLabels || []);
+  const sectionToMHNRRows = [];
+  for (const act of (liveLookups._allActs || [])) {
+    if (act.act_cd == null) continue;
+    const cd = String(act.act_cd);
+    const sections = (liveLookups._sectionsByActCd || {})[cd] || [];
+    if (sections.length === 0) continue;
+    const actNR = actLevelHeads.has(cd) ? headSetNR(actLevelHeads.get(cd)) : null;
+    for (const s of sections) {
+      const label = (s && typeof s === 'object') ? s.value : String(s);
+      const specific = pairHeads.get(cd + '\u0000' + label);
+      const nr = (specific && specific.length > 0 ? headSetNR(specific) : null) || actNR || allHeadsNR;
+      const key = `${act.act_long}|${label}`;
+      // VLOOKUP cannot match lookup values longer than 255 characters
+      if (!nr || key.length > 255) continue;
+      sectionToMHNRRows.push([key, nr]);
+    }
   }
 
   if (sectionToMHNRRows.length > 0) {
@@ -1307,7 +1408,7 @@ export class TemplateBuilderService {
         // row, and because the objects are byte-identical the patched optimiser collapses each
         // column into a single clean range (C5:C500 …) — the exact shape Excel produces on save.
         const secFormula = `INDIRECT(VLOOKUP($${actLetter}5,ACT_TO_SECTIONS_NR,2,FALSE))`;
-        const majFormula = `INDIRECT(VLOOKUP($${secLetter}5,SECTION_TO_MAJOR_NR,2,FALSE))`;
+        const majFormula = `INDIRECT(VLOOKUP($${actLetter}5&"|"&$${secLetter}5,SECTION_TO_MAJOR_NR,2,FALSE))`;
         const minFormula = `INDIRECT(VLOOKUP($${majLetter}5,MAJOR_HEAD_TO_MINOR_NR,2,FALSE))`;
 
         for (let rIdx = 5; rIdx <= 500; rIdx++) {
@@ -1398,7 +1499,7 @@ export class TemplateBuilderService {
     const majLetter = numToColLetter(majCol);
 
     const secFormula = `INDIRECT(VLOOKUP($${actLetter}5,ACT_TO_SECTIONS_NR,2,FALSE))`;
-    const majFormula = `INDIRECT(VLOOKUP($${secLetter}5,SECTION_TO_MAJOR_NR,2,FALSE))`;
+    const majFormula = `INDIRECT(VLOOKUP($${actLetter}5&"|"&$${secLetter}5,SECTION_TO_MAJOR_NR,2,FALSE))`;
     const minFormula = `INDIRECT(VLOOKUP($${majLetter}5,MAJOR_HEAD_TO_MINOR_NR,2,FALSE))`;
 
     for (let rIdx = 5; rIdx <= 500; rIdx++) {

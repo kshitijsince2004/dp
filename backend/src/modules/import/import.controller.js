@@ -23,6 +23,9 @@ import {
   arrestActSectionFields,
   arrestPersonFields,
   arrestPropertyFields,
+  kalandraGeneralFields,
+  kalandraActSectionFields,
+  kalandraPersonFields,
   uidbGeneralFields,
   uidbActSectionFields,
   missingGeneralFields
@@ -71,6 +74,8 @@ const CASE_SYNONYMS = {
 const ARREST_SYNONYMS = {
   "Linked FIR No.": "linked_fir_dd_no",
   "Linked FIR no.": "linked_fir_dd_no",
+  "DD No.": "linked_fir_dd_no",
+  "DD Number": "linked_fir_dd_no",
   "FIR Date": "fir_date",
   "District": "district",
   "Police Station": "police_station",
@@ -300,7 +305,7 @@ const getRecordDate = (recordType, rowData) => {
   if (recordType === 'CASE') {
     return rowData.fir_date || rowData.occurrence_date;
   }
-  if (recordType === 'ARREST') {
+  if (recordType === 'ARREST' || recordType === 'KALANDRA') {
     return rowData.date_of_arrest || rowData.arrest_date;
   }
   if (recordType === 'PCR_CALL') {
@@ -347,6 +352,12 @@ const SHEET_ALIASES = {
     person: ['Person Arrested Detail', 'Arrested Person Detail', 'Arrested Person', 'Person Detail', 'Person Arrested Details'],
     property: ['Property Details', 'Property Detail']
   },
+  KALANDRA: {
+    parent: ['General Info', 'General Information', 'General', 'Kalandra', 'Kalandra Details'],
+    act: ['Act and Sections', 'Acts and Sections', 'Act & Sections'],
+    person: ['Arrested Person', 'Person Arrested Detail', 'Arrested Person Detail', 'Person Detail'],
+    property: ['Property Details', 'Property Detail']
+  },
   UIDB: {
     parent: ['General Info', 'General Information', 'Import Template', 'General'],
     act: ['Act and Sections', 'Acts and Sections', 'Act & Sections']
@@ -355,6 +366,15 @@ const SHEET_ALIASES = {
     parent: ['Import Template', 'General Info', 'General Information', 'General']
   }
 };
+
+// KALANDRA is the ARREST form's standalone (non-FIR) case type. Its batches parse
+// with the kalandra sheet lists, but everything registry-driven (coercion, duplicate
+// checks, stored record_type, UID codes) runs as ARREST.
+const effectiveRecordType = (t) => (t === 'KALANDRA' ? 'ARREST' : t);
+
+const arrestSheetLists = (t) => (t === 'KALANDRA'
+  ? { general: kalandraGeneralFields, act: kalandraActSectionFields, person: kalandraPersonFields, property: arrestPropertyFields }
+  : { general: arrestGeneralFields, act: arrestActSectionFields, person: arrestPersonFields, property: arrestPropertyFields });
 
 // Patterns that identify an instruction/hint row (Row 4 of the official template)
 // so we never mistake it for a data row.
@@ -907,6 +927,11 @@ const runAutoLinkageForArrests = async (trx, arrestRecords, psId, userId) => {
 
   for (const arrest of arrestRecords) {
     const arrestData = arrest.data;
+
+    // Kalandra (standalone) arrests carry a DD number, not an FIR — linking one to a
+    // case whose FIR shares the same sequence would be wrong. Skip them silently.
+    if (eqi(arrestData.arrest_type || arrestData.case_type || '', 'kalandra')) continue;
+
     const firTokens = splitFirTokens(arrestData.linked_fir_dd_no);
 
     if (firTokens.length === 0) {
@@ -1130,9 +1155,14 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
     }
     if (key.startsWith('property_') || key.startsWith('phone_')) return lang === 'hi' ? 'संपत्ति विवरण' : 'Property Details';
     if (['act', 'act_name', 'sections', 'crime_head', 'major_head', 'minor_head'].includes(key)) return lang === 'hi' ? 'अधिनियम और धाराएं' : 'Act and Sections';
-    if (key === 'io_name' || key === 'io_pis' || key === 'io_mobile' || key === 'date_of_arrest') return lang === 'hi' ? 'जांच अधिकारी और गिरफ्तारी विवरण' : 'IO and Arrest Details';
-    if (['nafis_prepared', 'dossier_prepared', 'search_slip_prepared', 'address_verified', 'verifying_officer_name', 'verifying_officer_rank', 'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path'].includes(key)) {
-      return lang === 'hi' ? 'सत्यापन और रिश्तेदार विवरण' : 'Verification and Kin Details';
+    if (['io_name', 'io_pis', 'io_rank', 'io_mobile'].includes(key)) {
+      return lang === 'hi' ? 'जांच अधिकारी विवरण' : 'Investigating Officer Details';
+    }
+    if (['nafis_prepared', 'dossier_prepared', 'search_slip_prepared', 'address_verified', 'verifying_officer_name', 'verifying_officer_rank', 'prev_involvement', 'bad_character', 'proclaimed_offender', 'status', 'scheme_of_arrest'].includes(key)) {
+      return lang === 'hi' ? 'सत्यापन और पुलिस रिकॉर्ड' : 'Verification & Police Record';
+    }
+    if (['kin_name', 'kin_mobile', 'kin_relationship', 'photo_path'].includes(key)) {
+      return lang === 'hi' ? 'रिश्तेदार और फोटो विवरण' : 'Kin & Photo Details';
     }
     return lang === 'hi' ? 'सामान्य जानकारी' : 'General Information';
   });
@@ -1311,7 +1341,7 @@ export const downloadImportTemplate = async (req, res) => {
   }
   const lang = req.query.lang || 'en';
 
-  const validTypes = ['ARREST', 'PCR_CALL', 'CASE', 'MISSING', 'UIDB'];
+  const validTypes = ['ARREST', 'PCR_CALL', 'CASE', 'MISSING', 'UIDB', 'KALANDRA'];
   if (!validTypes.includes(recordType)) {
     return res.status(400).json({ success: false, message: `Invalid record type '${recordType}'` });
   }
@@ -1353,6 +1383,28 @@ export const downloadImportTemplate = async (req, res) => {
       const missingConfigKeys = new Set(missingGeneralFields.map(f => f.field_key));
       const missingAutoFields = autoIncludedRegistryFields('MISSING', allFields, missingConfigKeys);
       addSheetToWorkbook(workbook, 'Import Template', [...missingGeneralFields, ...missingAutoFields], allFields, lang, recordType);
+    } else if (recordType === 'KALANDRA') {
+      // Kalandra = standalone (non-FIR) arrest. Three sheets, same structures as the
+      // ARREST template's act-section and person sheets, keyed by DD No. Registry
+      // auto-inclusion runs against ARREST (the type its fields belong to); the full
+      // arrest curated lists count as "covered" so deliberately dropped columns
+      // (fir_date) don't sneak back in as auto-appends.
+      const kalandraConfigKeys = new Set([
+        ...arrestGeneralFields.map(f => f.field_key),
+        ...arrestActSectionFields.map(f => f.field_key),
+        ...arrestPersonFields.map(f => f.field_key),
+        ...arrestPropertyFields.map(f => f.field_key),
+      ]);
+      const kalandraAutoFields = autoIncludedRegistryFields('ARREST', allFields, kalandraConfigKeys);
+      addSheetToWorkbook(workbook, 'General Info', [...kalandraGeneralFields, ...kalandraAutoFields], allFields, lang, 'ARREST');
+      addSheetToWorkbook(workbook, 'Act and Sections', kalandraActSectionFields, allFields, lang, 'ARREST');
+      addSheetToWorkbook(workbook, 'Arrested Person', kalandraPersonFields, allFields, lang, 'ARREST');
+      await TemplateBuilderService.wireActSectionCascade(
+        workbook,
+        workbook.getWorksheet('Act and Sections'),
+        'ARREST',
+        { act: 'act', sections: 'sections', major: 'crime_head', minor: 'minor_head' }
+      );
     } else {
       let fields = allFields.filter(f => {
         try {
@@ -1406,10 +1458,10 @@ export const validateImportBatch = async (req, res) => {
   }
 
   const recordType = record_type ? record_type.toUpperCase() : null;
-  const validTypes = ['ARREST', 'PCR_CALL', 'CASE', 'UIDB', 'MISSING'];
+  const validTypes = ['ARREST', 'PCR_CALL', 'CASE', 'UIDB', 'MISSING', 'KALANDRA'];
   if (!recordType || !validTypes.includes(recordType)) {
     try { fs.unlinkSync(req.file.path); } catch (_) {}
-    return res.status(400).json({ success: false, message: 'Invalid or missing record_type. Must be CASE, ARREST, PCR_CALL, UIDB or MISSING.' });
+    return res.status(400).json({ success: false, message: 'Invalid or missing record_type. Must be CASE, ARREST, KALANDRA, PCR_CALL, UIDB or MISSING.' });
   }
 
   if (req.user.role === 'HC' && isLegacy) {
@@ -1466,8 +1518,8 @@ export const validateImportBatch = async (req, res) => {
       actSectionWorksheet = findWorksheet(workbook, a.act);
       accusedWorksheet = findWorksheet(workbook, a.accused);
       propertyWorksheet = findWorksheet(workbook, a.property);
-    } else if (recordType === 'ARREST') {
-      const a = SHEET_ALIASES.ARREST;
+    } else if (recordType === 'ARREST' || recordType === 'KALANDRA') {
+      const a = SHEET_ALIASES[recordType];
       parentWorksheet = findWorksheet(workbook, a.parent) || workbook.worksheets[0];
       actSectionWorksheet = findWorksheet(workbook, a.act);
       personWorksheet = findWorksheet(workbook, a.person);
@@ -1490,8 +1542,9 @@ export const validateImportBatch = async (req, res) => {
 
     const allFields = await db('field_registry').where('is_active', true);
     // Tolerant type parse (JSON array, PG array literal, single value) so fields
-    // created via the admin/district UI are recognised too.
-    const registryFields = allFields.filter(f => parseApplicableTypes(f.applicable_record_types).includes(recordType));
+    // created via the admin/district UI are recognised too. KALANDRA fields live
+    // under ARREST in the registry.
+    const registryFields = allFields.filter(f => parseApplicableTypes(f.applicable_record_types).includes(effectiveRecordType(recordType)));
 
     const registryFieldsMap = {};
     for (const f of registryFields) {
@@ -1703,8 +1756,9 @@ export const validateImportBatch = async (req, res) => {
         }
       }
 
-    } else if (recordType === 'ARREST') {
-      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, arrestGeneralFields, registryFieldsMap);
+    } else if (recordType === 'ARREST' || recordType === 'KALANDRA') {
+      const lists = arrestSheetLists(recordType);
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, lists.general, registryFieldsMap);
       const parentIndex = buildParentKeyIndex(parentRows.map(r => r.rowData.linked_fir_dd_no));
       totalRows = parentRows.length;
 
@@ -1715,13 +1769,13 @@ export const validateImportBatch = async (req, res) => {
       };
 
       // Validate General Info
-      validateSheetRows(parentRows, arrestGeneralFields, 'General Info', errors);
+      validateSheetRows(parentRows, lists.general, 'General Info', errors);
 
       // Check duplicate arrests in excel sheet (canonical FIR keys)
       const sheetArrests = new Set();
       let tempPersonRows = [];
       if (personWorksheet) {
-        tempPersonRows = parseWorksheet(personWorksheet, recordType, arrestPersonFields, registryFieldsMap).rows.map(r => r.rowData);
+        tempPersonRows = parseWorksheet(personWorksheet, recordType, lists.person, registryFieldsMap).rows.map(r => r.rowData);
       }
       const personsByParent = groupRowsByParent(tempPersonRows, 'linked_fir_dd_no', parentIndex);
 
@@ -1812,9 +1866,9 @@ export const validateImportBatch = async (req, res) => {
 
       // Validate Act and Sections
       if (actSectionWorksheet) {
-        const { rows: actSectionRows } = parseWorksheet(actSectionWorksheet, recordType, arrestActSectionFields, registryFieldsMap);
+        const { rows: actSectionRows } = parseWorksheet(actSectionWorksheet, recordType, lists.act, registryFieldsMap);
         const childErrors = [];
-        validateSheetRows(actSectionRows, arrestActSectionFields, 'Act and Sections', childErrors, parentIndex, 'linked_fir_dd_no');
+        validateSheetRows(actSectionRows, lists.act, 'Act and Sections', childErrors, parentIndex, 'linked_fir_dd_no');
         for (const err of childErrors) {
           errors.push(err);
           const errRow = actSectionRows.find(ar => ar.rowIdx === err.row);
@@ -1824,9 +1878,9 @@ export const validateImportBatch = async (req, res) => {
 
       // Validate Person Arrested Detail
       if (personWorksheet) {
-        const { rows: personRows } = parseWorksheet(personWorksheet, recordType, arrestPersonFields, registryFieldsMap);
+        const { rows: personRows } = parseWorksheet(personWorksheet, recordType, lists.person, registryFieldsMap);
         const childErrors = [];
-        validateSheetRows(personRows, arrestPersonFields, 'Person Arrested Detail', childErrors, parentIndex, 'linked_fir_dd_no');
+        validateSheetRows(personRows, lists.person, 'Person Arrested Detail', childErrors, parentIndex, 'linked_fir_dd_no');
         for (const err of childErrors) {
           errors.push(err);
           const errRow = personRows.find(pr => pr.rowIdx === err.row);
@@ -1836,9 +1890,9 @@ export const validateImportBatch = async (req, res) => {
 
       // Validate Property Details
       if (propertyWorksheet) {
-        const { rows: propertyRows } = parseWorksheet(propertyWorksheet, recordType, arrestPropertyFields, registryFieldsMap);
+        const { rows: propertyRows } = parseWorksheet(propertyWorksheet, recordType, lists.property, registryFieldsMap);
         const childErrors = [];
-        validateSheetRows(propertyRows, arrestPropertyFields, 'Property Details', childErrors, parentIndex, 'linked_fir_dd_no');
+        validateSheetRows(propertyRows, lists.property, 'Property Details', childErrors, parentIndex, 'linked_fir_dd_no');
         for (const err of childErrors) {
           errors.push(err);
           const errRow = propertyRows.find(pr => pr.rowIdx === err.row);
@@ -2101,7 +2155,7 @@ export const confirmImportBatch = async (req, res) => {
     // (and future registry fields coerce correctly with zero code change).
     const typeRegistryMap = {};
     for (const f of allFields) {
-      if (parseApplicableTypes(f.applicable_record_types).includes(batch.record_type)) {
+      if (parseApplicableTypes(f.applicable_record_types).includes(effectiveRecordType(batch.record_type))) {
         typeRegistryMap[f.field_key] = f;
       }
     }
@@ -2213,29 +2267,30 @@ export const confirmImportBatch = async (req, res) => {
         rowsToInsert.push({ rowData, victims, accused, properties, acts });
       }
 
-    } else if (batch.record_type === 'ARREST') {
-      const a = SHEET_ALIASES.ARREST;
+    } else if (batch.record_type === 'ARREST' || batch.record_type === 'KALANDRA') {
+      const a = SHEET_ALIASES[batch.record_type];
+      const lists = arrestSheetLists(batch.record_type);
       const parentWorksheet = findWorksheet(workbook, a.parent) || workbook.worksheets[0];
       const actSectionWorksheet = findWorksheet(workbook, a.act);
       const personWorksheet = findWorksheet(workbook, a.person);
       const propertyWorksheet = findWorksheet(workbook, a.property);
 
-      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, arrestGeneralFields, typeRegistryMap);
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, lists.general, typeRegistryMap);
       const parentIndex = buildParentKeyIndex(parentRows.map(r => r.rowData.linked_fir_dd_no));
 
       let actSectionRows = [];
       if (actSectionWorksheet) {
-        actSectionRows = parseWorksheet(actSectionWorksheet, batch.record_type, arrestActSectionFields, typeRegistryMap).rows.map(r => r.rowData);
+        actSectionRows = parseWorksheet(actSectionWorksheet, batch.record_type, lists.act, typeRegistryMap).rows.map(r => r.rowData);
       }
 
       let personRows = [];
       if (personWorksheet) {
-        personRows = parseWorksheet(personWorksheet, batch.record_type, arrestPersonFields, typeRegistryMap).rows.map(r => r.rowData);
+        personRows = parseWorksheet(personWorksheet, batch.record_type, lists.person, typeRegistryMap).rows.map(r => r.rowData);
       }
 
       let propertyRows = [];
       if (propertyWorksheet) {
-        propertyRows = parseWorksheet(propertyWorksheet, batch.record_type, arrestPropertyFields, typeRegistryMap).rows.map(r => r.rowData);
+        propertyRows = parseWorksheet(propertyWorksheet, batch.record_type, lists.property, typeRegistryMap).rows.map(r => r.rowData);
       }
 
       const actsByParent = groupRowsByParent(actSectionRows, 'linked_fir_dd_no', parentIndex);
@@ -2354,6 +2409,13 @@ export const confirmImportBatch = async (req, res) => {
         itemRowData.dateOfArrest = itemRowData.date_of_arrest;
         itemRowData.timeOfArrest = itemRowData.time_of_arrest;
         itemRowData.placeOfArrest = itemRowData.place_of_arrest;
+
+        if (batch.record_type === 'KALANDRA') {
+          // Marks the stored ARREST record as the standalone (non-FIR) variant, and
+          // shields it from CASE↔ARREST auto-linkage — a DD number is not an FIR.
+          itemRowData.arrest_type = 'kalandra';
+          itemRowData.case_type = 'kalandra';
+        }
 
         rowsToInsert.push({ rowData: itemRowData, persons: matchingPersons, properties, acts });
       }
@@ -2475,12 +2537,15 @@ export const confirmImportBatch = async (req, res) => {
     const ipAddress = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
     const newlyInsertedRecords = [];
 
+    // KALANDRA batches store ARREST records — UID codes and sequence counting follow
+    // the stored type so kalandras share the arrest number space (matches the form).
+    const storedRecordType = effectiveRecordType(batch.record_type);
     const psNode = await db('hierarchy_nodes').where({ id: batch.ps_id }).first();
     const psCode = psNode?.code || 'PS000';
-    const typeCode = TYPE_CODES[batch.record_type] || batch.record_type.substring(0, 3).toUpperCase();
+    const typeCode = TYPE_CODES[storedRecordType] || storedRecordType.substring(0, 3).toUpperCase();
     const seqByYear = {};
     const existingCounts = await db('records')
-      .where({ ps_id: batch.ps_id, record_type: batch.record_type })
+      .where({ ps_id: batch.ps_id, record_type: storedRecordType })
       .select(db.raw('EXTRACT(YEAR FROM record_date::date) as yr'))
       .count('* as c')
       .groupBy('yr');
@@ -2506,7 +2571,7 @@ export const confirmImportBatch = async (req, res) => {
 
     // Scoped transactions per FIR for CASE and ARREST
     for (const item of rowsToInsert) {
-      const isCaseOrArrest = (batch.record_type === 'CASE' || batch.record_type === 'ARREST');
+      const isCaseOrArrest = ['CASE', 'ARREST', 'KALANDRA'].includes(batch.record_type);
       const rowData = isCaseOrArrest ? item.rowData : item;
 
       // rowData's own date fields (fir_date, occurrence_date, etc.) are
@@ -2526,7 +2591,7 @@ export const confirmImportBatch = async (req, res) => {
           // 1. Insert records table
           await trx('records').insert({
             id: recordId,
-            record_type: batch.record_type,
+            record_type: storedRecordType,
             ps_id: batch.ps_id,
             district_id: batch.district_id,
             sub_div_id: sub_div_id,
@@ -2673,8 +2738,8 @@ export const confirmImportBatch = async (req, res) => {
               await trx('record_properties').insert(propertiesBatch);
             }
 
-          // 5. Arrest child tables
-          } else if (batch.record_type === 'ARREST') {
+          // 5. Arrest / Kalandra child tables
+          } else if (batch.record_type === 'ARREST' || batch.record_type === 'KALANDRA') {
             const personsBatch = [];
             for (let idx = 0; idx < item.persons.length; idx++) {
               const pRow = item.persons[idx];
@@ -2765,10 +2830,13 @@ export const confirmImportBatch = async (req, res) => {
     await db.transaction(async (trx) => {
       let arrestsToLink = [];
       if (batch.record_type === 'ARREST') {
+        // KALANDRA batches deliberately never enter linkage — DD numbers aren't FIRs.
         arrestsToLink = newlyInsertedRecords;
       } else if (batch.record_type === 'CASE') {
         // Re-link every arrest in this PS that has no CASE link yet (an arrest linked
         // to something else — e.g. a missing-person record — must still get its case).
+        // Kalandra arrests are filtered inside runAutoLinkageForArrests (records.data
+        // is a TEXT column here, so no ->> filter in SQL).
         const unmatchedArrests = await trx('records')
           .where({ record_type: 'ARREST', ps_id: batch.ps_id })
           .whereNotExists(function() {

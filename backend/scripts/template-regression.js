@@ -24,10 +24,13 @@ import { downloadImportTemplate } from '../src/modules/import/import.controller.
 import { autoIncludedRegistryFields, isTemplateExcluded, parseApplicableTypes } from '../src/modules/import/registry-sync.util.js';
 import {
   CASE_SHEETS_CONFIG, ARREST_SHEETS_CONFIG, UIDB_SHEETS_CONFIG, MISSING_SHEETS_CONFIG,
+  KALANDRA_SHEETS_CONFIG,
 } from '../src/modules/import/import-fields.config.js';
 
 const BASELINE_PATH = path.join(process.cwd(), 'scripts', 'template-baseline.manifest.json');
-const TYPES = ['CASE', 'ARREST', 'UIDB', 'MISSING'];
+const TYPES = ['CASE', 'ARREST', 'UIDB', 'MISSING', 'KALANDRA'];
+// KALANDRA's registry fields live under ARREST — auto-include/report run against that type.
+const REGISTRY_TYPE = (t) => (t === 'KALANDRA' ? 'ARREST' : t);
 
 const generateTemplates = async (outDir) => {
   fs.mkdirSync(outDir, { recursive: true });
@@ -144,13 +147,20 @@ const runReport = async () => {
     ARREST: new Set(Object.values(ARREST_SHEETS_CONFIG).flat()),
     UIDB: new Set(Object.values(UIDB_SHEETS_CONFIG).flat()),
     MISSING: new Set(Object.values(MISSING_SHEETS_CONFIG).flat()),
+    // Kalandra counts the FULL arrest lists as covered (fir_date is deliberately absent
+    // from its sheet, not up for auto-append) — mirrors downloadImportTemplate.
+    KALANDRA: new Set([
+      ...Object.values(ARREST_SHEETS_CONFIG).flat(),
+      ...Object.values(KALANDRA_SHEETS_CONFIG).flat(),
+    ]),
   };
   for (const t of TYPES) {
-    const auto = autoIncludedRegistryFields(t, rows, CONFIG_KEYS[t]);
+    const rt = REGISTRY_TYPE(t);
+    const auto = autoIncludedRegistryFields(rt, rows, CONFIG_KEYS[t]);
     const excluded = rows.filter((r) =>
-      parseApplicableTypes(r.applicable_record_types).includes(t)
+      parseApplicableTypes(r.applicable_record_types).includes(rt)
       && !CONFIG_KEYS[t].has(r.field_key)
-      && isTemplateExcluded(t, r.field_key));
+      && isTemplateExcluded(rt, r.field_key));
     console.log(`\n=== ${t} ===`);
     console.log(`auto-included in template (${auto.length}):`);
     for (const f of auto) console.log(`  + ${f.field_key.padEnd(38)} "${f.label_en}"`);
