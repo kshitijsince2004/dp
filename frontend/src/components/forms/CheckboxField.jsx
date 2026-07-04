@@ -5,7 +5,6 @@ export default function CheckboxField({ id, disabled, value, onChange, label }) 
 
   return (
     <label
-      htmlFor={id}
       className={`inline-flex items-center gap-3 pt-1 cursor-pointer select-none ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       <div className="relative flex-shrink-0">
