@@ -317,7 +317,7 @@ export const uidbGeneralFields = [
   { field_key: 'status', label_en: 'Current Status / Mortuary Remarks', label_hi: 'वर्तमान स्थिति', required: false, options: ['Referred to district hospital', 'Identified', 'Body Claimed', 'Unidentified', 'Held in Mortuary'], section: 'general_info' },
 
   // --- Corpse Details (corpse_desc) ---
-  { field_key: 'identified', label_en: 'Body Identified', label_hi: 'शव की पहचान हुई', required: true, options: ['Yes', 'No'], section: 'corpse_desc' },
+  { field_key: 'identified', label_en: 'Body Identified', label_hi: 'शव की पहचान हुई', required: true, options: ['True', 'False'], section: 'corpse_desc' },
   { field_key: 'deceased_name', label_en: 'Name of Deceased', label_hi: 'मृतक का नाम', required: true, section: 'corpse_desc' },
   { field_key: 'deceased_house_no', label_en: 'Deceased Present House No.', label_hi: 'मृतक का मकान संख्या', required: false, section: 'corpse_desc' },
   { field_key: 'deceased_street', label_en: 'Deceased Present Street', label_hi: 'मृतक का गली / सड़क', required: false, section: 'corpse_desc' },

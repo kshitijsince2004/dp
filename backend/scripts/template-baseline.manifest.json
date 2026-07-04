@@ -2180,34 +2180,39 @@
         },
         {
           "col": 44,
-          "key": null,
+          "key": "arrest_street",
           "section": "Particular Details",
-          "label": null,
-          "hint": null,
+          "label": "Street of Arrest",
+          "hint": "text",
           "validation": null
         },
         {
           "col": 45,
-          "key": null,
+          "key": "arrest_colony",
           "section": "Particular Details",
-          "label": null,
-          "hint": null,
+          "label": "Colony of Arrest",
+          "hint": "text",
           "validation": null
         },
         {
           "col": 46,
-          "key": null,
+          "key": "arrest_district",
           "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
+          "label": "District of Arrest",
+          "hint": "select (20 options): Central District, Central District, Central District, Central District, Central District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
         },
         {
           "col": 47,
-          "key": null,
+          "key": "arrest_landmark",
           "section": "Particular Details",
-          "label": null,
-          "hint": null,
+          "label": "Landmark of Arrest",
+          "hint": "text",
           "validation": null
         },
         {
@@ -2217,10 +2222,42 @@
           "label": null,
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 49,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 50,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 51,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 52,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
-        "AI2:AV2",
+        "AI2:AZ2",
         "B2:M2",
         "N2:X2",
         "Y2:AH2"
@@ -3428,11 +3465,49 @@
           "label": "IO Mobile No.",
           "hint": "IO contact number",
           "validation": null
+        },
+        {
+          "col": 13,
+          "key": "arrest_street",
+          "section": "General Information",
+          "label": "Street of Arrest",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 14,
+          "key": "arrest_colony",
+          "section": "General Information",
+          "label": "Colony of Arrest",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 15,
+          "key": "arrest_district",
+          "section": "General Information",
+          "label": "District of Arrest",
+          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "'_Lookups'!$B$2:$B$16"
+            ]
+          }
+        },
+        {
+          "col": 16,
+          "key": "arrest_landmark",
+          "section": "General Information",
+          "label": "Landmark of Arrest",
+          "hint": "text",
+          "validation": null
         }
       ],
       "row2Merges": [
         "A2:H2",
-        "I2:L2"
+        "I2:L2",
+        "M2:P2"
       ]
     },
     "Act and Sections": {
@@ -3706,7 +3781,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$C$2:$C$34"
+              "'_Lookups'!$D$2:$D$34"
             ]
           }
         },
@@ -3719,7 +3794,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$D$2:$D$16"
+              "'_Lookups'!$E$2:$E$16"
             ]
           }
         },
@@ -3814,7 +3889,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$E$2:$E$34"
+              "'_Lookups'!$F$2:$F$34"
             ]
           }
         },
@@ -3827,7 +3902,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$F$2:$F$16"
+              "'_Lookups'!$G$2:$G$16"
             ]
           }
         },
