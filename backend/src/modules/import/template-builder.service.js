@@ -428,22 +428,58 @@ async function buildLiveLookups(recordType) {
     }
   }
 
-  // Every section's major heads, DB-driven
-  const sectionMajorMappings = await db('excel_sections as s')
-    .join('excel_major_minor_mapping as m', 's.section_code', 'm.section_code')
+  // Every section's major heads, DB-driven. The mapping table keys rows by a composite
+  // "<act_cd>-<section label>" section_code, but ~20% of its rows don't strict-join to
+  // excel_sections: labels differ in case/punctuation ("66f" vs "66F", "9A" vs "9-A") and
+  // some rows reference a duplicate act row that has no sections (IT Act exists as
+  // act_cd 2625 with sections AND 3293 without; mappings point at 3293). Since the Excel
+  // cascade VLOOKUPs by section LABEL anyway, match in JS on the normalized label instead
+  // of the raw composite, so those rows still surface their major heads.
+  const mappingRows = await db('excel_major_minor_mapping as m')
     .join('excel_major_heads as mh', 'm.major_head_code', 'mh.major_head_code')
-    .select('s.section', 'mh.major_head')
-    .distinct()
-    .orderBy('s.section', 'asc')
-    .orderBy('mh.major_head', 'asc');
+    .select('m.section_code', 'mh.major_head');
+  const allSectionRows = await db('excel_sections')
+    .select('section_code', 'section')
+    .distinct();
+
+  const normLabel = (s) => String(s).toUpperCase().replace(/[^A-Z0-9()]/g, '');
+  // composite section_code → normalized label, and normalized label → all canonical
+  // spellings of that label across acts (the Sections dropdown shows canonical labels,
+  // so the major heads must be attached to every spelling the user could pick)
+  const codeToNorm = new Map();
+  const normToLabels = new Map();
+  for (const r of allSectionRows) {
+    if (!r.section) continue;
+    const nl = normLabel(r.section);
+    if (r.section_code) codeToNorm.set(String(r.section_code).trim().toUpperCase(), nl);
+    if (!normToLabels.has(nl)) normToLabels.set(nl, new Set());
+    normToLabels.get(nl).add(r.section);
+  }
 
   const majorHeadsBySectionLabel = {};
-  for (const row of sectionMajorMappings) {
-    if (!row.section) continue;
-    if (!majorHeadsBySectionLabel[row.section]) {
-      majorHeadsBySectionLabel[row.section] = [];
+  const seenPairs = new Set();
+  for (const m of mappingRows) {
+    if (!m.section_code || !m.major_head) continue;
+    const code = String(m.section_code).trim().toUpperCase();
+    // Resolve the mapping row to a normalized section label: exact composite match first,
+    // then fall back to parsing the label out of the "<act_cd>-<label>" composite.
+    let nl = codeToNorm.get(code);
+    if (!nl) {
+      const dash = code.indexOf('-');
+      const parsed = normLabel(dash >= 0 ? code.slice(dash + 1) : code);
+      if (normToLabels.has(parsed)) nl = parsed;
     }
-    majorHeadsBySectionLabel[row.section].push({ value: row.major_head, label: row.major_head });
+    if (!nl) continue; // section doesn't exist in excel_sections under any spelling
+    for (const label of normToLabels.get(nl)) {
+      const pairKey = label + ' ' + m.major_head;
+      if (seenPairs.has(pairKey)) continue;
+      seenPairs.add(pairKey);
+      if (!majorHeadsBySectionLabel[label]) majorHeadsBySectionLabel[label] = [];
+      majorHeadsBySectionLabel[label].push({ value: m.major_head, label: m.major_head });
+    }
+  }
+  for (const list of Object.values(majorHeadsBySectionLabel)) {
+    list.sort((a, b) => a.label.localeCompare(b.label));
   }
 
   // Status options — record-type-specific (each template covers only one record type)

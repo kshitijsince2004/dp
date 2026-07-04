@@ -969,6 +969,9 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
     if (recordType === 'MISSING' || recordType === 'UIDB' || recordType === 'PCR_CALL') {
       const sectionInfo = SECTION_SUBHEADING_MAP[f.section];
       if (sectionInfo) {
+        if (recordType === 'MISSING' && f.section === 'person_details') {
+          return lang === 'hi' ? 'पता विवरण' : 'Address Details';
+        }
         return lang === 'hi' ? sectionInfo.hi : sectionInfo.en;
       }
     }
@@ -1114,14 +1117,54 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
         }
         return o;
       });
-      const formulaVal = `"${validValues.join(',')}"`;
-      for (let rIdx = 5; rIdx <= 1000; rIdx++) {
-        const cell = worksheet.getCell(rIdx, colIdx + 1);
-        cell.dataValidation = {
-          type: 'list',
-          allowBlank: true,
-          formulae: [formulaVal]
+      const joinedOpts = validValues.join(',');
+      if (joinedOpts.length <= 250) {
+        const formulaVal = `"${joinedOpts}"`;
+        for (let rIdx = 5; rIdx <= 1000; rIdx++) {
+          const cell = worksheet.getCell(rIdx, colIdx + 1);
+          cell.dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: [formulaVal]
+          };
+        }
+      } else {
+        let lookupsSheet = workbook.getWorksheet('_Lookups');
+        if (!lookupsSheet) {
+          lookupsSheet = workbook.addWorksheet('_Lookups');
+          try { lookupsSheet.state = 'veryHidden'; } catch (_) { lookupsSheet.state = 'hidden'; }
+        }
+        
+        let nextLookupCol = 1;
+        while (lookupsSheet.getRow(1).getCell(nextLookupCol).value) {
+          nextLookupCol++;
+        }
+        
+        lookupsSheet.getCell(1, nextLookupCol).value = f.field_key;
+        validValues.forEach((v, idx) => {
+          lookupsSheet.getCell(idx + 2, nextLookupCol).value = v;
+        });
+        
+        const numToColLetter = (num) => {
+          let letter = '';
+          while (num > 0) {
+            let temp = (num - 1) % 26;
+            letter = String.fromCharCode(65 + temp) + letter;
+            num = (num - temp - 1) / 26;
+          }
+          return letter;
         };
+        
+        const colLetter = numToColLetter(nextLookupCol);
+        const formulaVal = `'_Lookups'!$${colLetter}$2:$${colLetter}$${validValues.length + 1}`;
+        for (let rIdx = 5; rIdx <= 1000; rIdx++) {
+          const cell = worksheet.getCell(rIdx, colIdx + 1);
+          cell.dataValidation = {
+            type: 'list',
+            allowBlank: true,
+            formulae: [formulaVal]
+          };
+        }
       }
     }
   }
