@@ -95,10 +95,11 @@ const getAddressFieldsList = (prefix, labelPrefixEn, labelPrefixHi) => {
 
 export const caseGeneralFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'e.g. FIR-220/2026' },
-  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: true, hint: 'YYYY-MM-DD' },
+  { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: true, hint: 'dd-mm-yyyy' },
   { field_key: 'district', label_en: 'District', label_hi: 'जिला', required: true, hint: 'e.g. New Delhi District (NDD)' },
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
   { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: false, hint: 'e.g. Theft / Larceny' },
+  { field_key: 'heinous_offence', label_en: 'Heinous Offence', label_hi: 'जघन्य अपराध', required: false, options: ['Yes', 'No'] },
   { field_key: 'under_section', label_en: 'Under Section', label_hi: 'धारा के अंतर्गत', required: false, hint: 'e.g. Section 379 IPC' },
   { field_key: 'case_type', label_en: 'Case Type', label_hi: 'मामले का प्रकार', required: false, hint: 'e.g. Property Theft' },
   //{ field_key: 'sid_number', label_en: 'SID Number', label_hi: 'एसआईडी संख्या', required: false, hint: 'e.g. SID-889021' },
@@ -107,7 +108,6 @@ export const caseGeneralFields = [
   { field_key: 'occurrence_date', label_en: 'Occurrence Date', label_hi: 'घटना की तिथि', required: false, hint: 'DD/MM/YYYY' },
   { field_key: 'occurrence_time', label_en: 'Occurrence Time', label_hi: 'घटना का समय', required: false, hint: 'HH:MM' },
   { field_key: 'brief_facts', label_en: 'Brief Facts of Case', label_hi: 'मामले के संक्षिप्त तथ्य', required: false, hint: 'Incident narrative' },
-  { field_key: 'status_remarks', label_en: 'Status / Remarks', label_hi: ' स्थिति / टिप्पणियाँ', required: false, hint: 'e.g. Under investigation' },
   
   ...getPersonFieldsList('complainant', 'Complainant', 'शिकायतकर्ता').filter(f => f.field_key !== 'complainant_npr'&& f.field_key !== 'complainant_present_address'&& f.field_key !== 'complainant_birth_year'&& f.field_key !== 'complainant_dob'),
   { field_key: 'complainant_perm_same', label_en: 'Is Complainant Permanent Same As Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: false, options: ['Yes', 'No'] },
@@ -117,7 +117,10 @@ export const caseGeneralFields = [
   { field_key: 'io_name', label_en: 'IO Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },
   { field_key: 'io_pis', label_en: 'PIS Number', label_hi: 'पीआईएस संख्या', required: false, hint: 'e.g. 28080214' },
   { field_key: 'io_mobile', label_en: 'Mobile Number', label_hi: 'मोबाइल नंबर', required: false, hint: 'IO contact number' },
-  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'DD/MM/YYYY' }
+  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'DD/MM/YYYY' },
+  { field_key: 'case_status', label_en: 'Status', label_hi: 'स्थिति', required: false },
+  { field_key: 'disposal_type', label_en: 'Disposal Type', label_hi: 'निपटान प्रकार', required: false },
+  { field_key: 'rc_no', label_en: 'RC No.', label_hi: 'आरसी संख्या', required: false, hint: 'e.g. RC-123/2026' }
 ];
 
 export const caseActSectionFields = [
@@ -171,8 +174,9 @@ export const caseVictimFields = [
 
 export const caseAccusedFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'Must match General Information FIR Number' },
+  //{ field_key: 'accused_npr', label_en: 'Accused NPR No.', label_hi: 'अभियुक्त एनपीआर संख्या', required: false, hint: 'NPR Number' },
   ...getPersonFieldsList('accused', 'Accused', 'अभियुक्त')
-    .filter(f => f.field_key !== 'accused_dob' && f.field_key !== 'accused_birth_year'),
+    .filter(f => f.field_key !== 'accused_dob' && f.field_key !== 'accused_birth_year' && f.field_key !== 'accused_present_address' && f.field_key !== 'accused_npr'),
   { field_key: 'accused_perm_same', label_en: 'Is Accused Permanent Address Same As Present?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: false, options: ['Yes', 'No'] },
   ...getAddressFieldsList('accused_perm', 'Accused Permanent Address', 'अभियुक्त का स्थायी पता')
 ];
@@ -191,6 +195,8 @@ export const casePropertyFields = [
 export const arrestGeneralFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'e.g. FIR-104/2026' },
   { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: false, hint: 'YYYY-MM-DD' },
+  { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: false, hint: 'e.g. Theft / Larceny' },
+  { field_key: 'heinous_offence', label_en: 'Heinous Offence', label_hi: 'जघन्य अपराध', required: false, options: ['Yes', 'No'] },
   { field_key: 'district', label_en: 'District', label_hi: 'जिला', required: true, hint: 'e.g. New Delhi District (NDD)' },
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
   { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: true, hint: 'YYYY-MM-DD' },
@@ -212,12 +218,12 @@ export const arrestActSectionFields = [
 
 export const arrestPersonFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'Must match General Info sheet' },
-  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'YYYY-MM-DD' },
+  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'dd-mm-yyyy' },
   { field_key: 'time_of_arrest', label_en: 'Time Of Arrest', label_hi: 'गिरफ्तारी का समय', required: false, hint: 'HH:MM' },
   ...getPersonFieldsList('arrested', 'Arrested Person', 'गिरफ्तार व्यक्ति')
-    .filter(f => f.field_key !== 'arrested_dob' && f.field_key !== 'arrested_birth_year'),
+    .filter(f => f.field_key !== 'arrested_dob' && f.field_key !== 'arrested_birth_year' && f.field_key !== 'arrested_npr' &&f.field_key !== 'arrested_present_address'),
   { field_key: 'arrested_perm_same', label_en: 'Is Permanent Address same as Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: true, options: ['Yes', 'No'] },
-  { field_key: 'arrested_perm_address', label_en: 'Full Permanent Address', label_hi: 'स्थायी पता', required: false },
+  //{ field_key: 'arrested_perm_address', label_en: 'Full Permanent Address', label_hi: 'स्थायी पता', required: false },
   ...getAddressFieldsList('arrested_perm', 'Arrested Person Permanent Address', 'गिरफ्तार व्यक्ति का स्थायी पता'),
   { field_key: 'nafis_prepared', label_en: 'NAFIS Prepared', label_hi: 'नाफिस तैयार किया गया', required: false, options: ['Yes', 'No'] },
   { field_key: 'dossier_prepared', label_en: 'Dossier Prepared', label_hi: 'डोजियर तैयार किया गया', required: false, options: ['Yes', 'No'] },

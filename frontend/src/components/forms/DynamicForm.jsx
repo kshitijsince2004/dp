@@ -1906,64 +1906,8 @@ const renderArrestedStep = () => {
                   <FieldRenderer field={field} value={arrestedTempValues[key]} onChange={handleArrestedModalChange} readOnly={isDisabled} hasError={arrestedModalTouched[key] && !!arrestedModalErrors[key]} lang={lang} values={arrestedTempValues} />
                 </div>
               </React.Fragment>
-              {renderArrestedModalField('arrested_qualification')}
-              {renderArrestedModalField('scheme_of_arrest')}
-              {renderArrestedModalField('arrested_landline')}
-              {renderArrestedModalField('arrested_email', null, true)}
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom fields: relation + age panel */}
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="border border-[#7a9cc5] rounded px-2 py-2 self-start">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-              {lang === 'hi' ? 'रिश्तेदार का विवरण' : 'Relative Details'}
-            </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
-              {renderArrestedModalField('arrested_relation_type')}
-              {renderArrestedModalField('arrested_relative_name', null, true)}
-            </div>
-          </div>
-
-          <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-              {lang === 'hi' ? 'आयु विवरण' : 'Age Panel'}
-            </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
-              {renderArrestedModalField('arrested_dob')}
-              {renderArrestedModalField('arrested_age_year')}
-              {renderArrestedModalField('arrested_age_month')}
-              {renderArrestedModalField('arrested_birth_year', null, true, true)}
-            </div>
-          </fieldset>
-        </div>
-      </div>
-    );
-  };
-
-  const renderArrestedParticularDetailsSubTab = () => {
-    return (
-      <fieldset className="bg-white">
-        <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-          {lang === 'hi' ? 'विवरण' : 'Particular Details'}
-        </legend>
-        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
-          {renderArrestedModalField('prev_involvement')}
-          {renderArrestedModalField('proclaimed_offender')}
-          {renderArrestedModalField('nafis_prepared')}
-          {renderArrestedModalField('dossier_prepared')}
-          {renderArrestedModalField('bad_character')}
-          {renderArrestedModalField('arresting_officer')}
-          {renderArrestedModalField('arresting_officer_mobile')}
-          {renderArrestedModalField('listed_criminal', null, true)}
-          {/* Also render any non-repeater property fields (Particulars) inside the arrested modal
-              so the 'Particulars' section is available per-arrestee and not repeated at top-level. */}
-          {allFields.filter(f => f.section === 'property_details' && !f.repeater_entity).map(f => (
-            <React.Fragment key={`prop-${f.field_key}`}>
-              {renderArrestedModalField(f.field_key)}
-            </React.Fragment>
-          ))}
+            );
+          })}
         </div>
       </fieldset>
     );
@@ -1976,6 +1920,9 @@ const renderArrestedStep = () => {
     }
     if (arrestedSubTab === 'address') {
       return renderPersonAddressSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, true, lang, readOnly);
+    }
+    if (arrestedSubTab === 'property_interest') {
+      return renderArrestedPropertySubTab();
     }
     // arrest_details, particular_details, custody_status — generic flat grid from backend fields
     return renderSubTabFieldGrid(arrestedSubTab);

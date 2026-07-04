@@ -190,6 +190,7 @@ const CASE_SECTION_MAP = {
   general_info: { sheet: 'General Information', label: 'General Information' },
   incident_details: { sheet: 'General Information', label: 'General Information' },
   investigation_officer: { sheet: 'General Information', label: 'IO Details' },
+  investigation_details: { sheet: 'General Information', label: 'Action Taken' },
   occurrence_info: { sheet: 'General Information', label: 'Place of Occurrence Address' },
   occurrence_address: { sheet: 'General Information', label: 'Place of Occurrence Address' },
   complainant_personal_info: { sheet: 'General Information', label: 'Complainant Personal Details' },
@@ -217,6 +218,7 @@ const CASE_SECTION_MAP = {
 
 const ARREST_SECTION_MAP = {
   general_info: { sheet: 'General Info', label: 'General Information' },
+  incident_details: { sheet: 'General Info', label: 'General Information' },
   arrest_details: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
   arrested_info: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
   investigation_officer: { sheet: 'General Info', label: 'IO Details' },
@@ -266,7 +268,7 @@ const getHint = (field) => {
 // Returns null to mean "carry forward the previous column's section" (used for temporal
 // fields, label-only columns, and anything that belongs with the block before it).
 const ADDR_TOKENS = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'country', 'state', 'district', 'police_station', 'pincode', 'present_address'];
-const PARTICULAR_KEYS = new Set(['nafis_prepared', 'dossier_prepared', 'prev_involvement', 'previous_involvement', 'bad_character', 'proclaimed_offender', 'verifying_officer_name', 'verifying_officer_rank', 'status', 'scheme_of_arrest', 'search_slip_prepared', 'address_verified', 'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path']);
+const PARTICULAR_KEYS = new Set(['nafis_prepared', 'dossier_prepared', 'prev_involvement', 'previous_involvement', 'bad_character', 'proclaimed_offender', 'verifying_officer_name', 'verifying_officer_rank', 'status', 'scheme_of_arrest', 'search_slip_prepared', 'address_verified', 'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path', 'arresting_officer', 'arresting_officer_mobile', 'listed_criminal']);
 
 const sectionLabelForKey = (key, recordType, isParentSheet) => {
   if (!key) return null; // carry forward (label-only column)
@@ -280,6 +282,7 @@ const sectionLabelForKey = (key, recordType, isParentSheet) => {
   }
 
   if (key === 'act' || key === 'sections') return 'Act and Sections';
+  if (['case_status', 'disposal_type', 'rc_no'].includes(key)) return 'Action Taken';
   if (key === 'crime_head') return 'Major / Minor Head';
 
   for (const [prefix, label] of [['complainant', 'Complainant'], ['victim', 'Victim'], ['accused', 'Accused'], ['arrested', 'Arrested Person']]) {
@@ -309,7 +312,7 @@ const sectionLabelForKey = (key, recordType, isParentSheet) => {
 
   if (key.startsWith('property_') || key.startsWith('phone_')) return 'Property Details';
 
-  if (!isParentSheet && PARTICULAR_KEYS.has(key)) return 'Particular Details';
+  if (PARTICULAR_KEYS.has(key)) return 'Particular Details';
 
   if (isParentSheet) {
     return recordType === 'CASE' ? 'General Information' : 'General Info';
@@ -793,17 +796,19 @@ export class TemplateBuilderService {
       logger.error('buildTemplate: failed to build live lookups (dropdowns will be static)', { err: err.message });
     }
 
-    const configKeys = recordType === 'CASE'
-      ? Object.values(CASE_SHEETS_CONFIG).flat()
-      : Object.values(ARREST_SHEETS_CONFIG).flat();
+    const allowedKeys = new Set(
+      recordType === 'CASE'
+        ? Object.values(CASE_SHEETS_CONFIG).flat()
+        : Object.values(ARREST_SHEETS_CONFIG).flat()
+    );
 
     const activeRegistryFields = await db('field_registry')
       .where('is_active', true)
-      .orWhereIn('field_key', configKeys)
+      .orWhereIn('field_key', Array.from(allowedKeys))
       .orderBy('sort_order', 'asc');
 
     const typeFields = activeRegistryFields.filter(f => {
-      if (configKeys.includes(f.field_key)) return true;
+      if (allowedKeys.has(f.field_key)) return true;
       try {
         const types = typeof f.applicable_record_types === 'string'
           ? JSON.parse(f.applicable_record_types)
@@ -813,8 +818,6 @@ export class TemplateBuilderService {
         return false;
       }
     });
-
-    const allowedKeys = new Set([...configKeys, ...typeFields.map(f => f.field_key)]);
 
     typeFields.push(
       { field_key: 'act', field_type: 'SELECT', section: 'act_section', label_en: 'Act', label_hi: 'अधिनियम' },
@@ -826,13 +829,35 @@ export class TemplateBuilderService {
     // Clean up columns from the base workbook on the fly if they are not in allowedKeys
     workbook.worksheets.forEach(worksheet => {
       if (worksheet.name === '_Lookups') return; // Do not touch our hidden lookup sheet!
+      
+      // If CASE general sheet, clear the misplaced disposal_type key in Row 1 so it gets deleted and relocated
+      if (recordType === 'CASE' && worksheet.name === 'General Information') {
+        const row1 = worksheet.getRow(1);
+        row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          if (cell.value === 'disposal_type') {
+            cell.value = null;
+          }
+        });
+      }
+
       let colIdxToDelete = -1;
       do {
         colIdxToDelete = -1;
         const row1 = worksheet.getRow(1);
+        
+        let lastAllowedCol = -1;
         row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          if (cell.value && !allowedKeys.has(cell.value)) {
-            colIdxToDelete = colNumber;
+          if (cell.value && allowedKeys.has(String(cell.value).trim())) {
+            lastAllowedCol = Math.max(lastAllowedCol, colNumber);
+          }
+        });
+
+        row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          if (colNumber <= lastAllowedCol) {
+            const val = cell.value ? String(cell.value).trim() : '';
+            if (!val || !allowedKeys.has(val)) {
+              colIdxToDelete = colNumber;
+            }
           }
         });
         if (colIdxToDelete !== -1) {
@@ -854,6 +879,9 @@ export class TemplateBuilderService {
       // Force sections and act to the act_section sheet to prevent them from slipping into General Information
       if (field.field_key === 'sections' || field.field_key === 'act') {
         field.section = 'act_section';
+      }
+      if (field.field_key === 'case_status') {
+        field.section = 'investigation_details';
       }
       const mapping = sectionMap[field.section];
       if (!mapping) continue;
@@ -894,48 +922,67 @@ export class TemplateBuilderService {
           arrestPropertyFields.find(f => f.field_key === field.field_key);
 
       if (!exists) {
-        // 2. Locate the end of the section by looking at merges or Row 2 labels
-        let lastColOfSection = -1;
+        targetColIndex = -1;
 
-        // Scan Row 2 for matching section subheadings
-        const row2 = worksheet.getRow(2);
-        const row2Values = [];
-        row2.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          row2Values[colNumber] = cell.value;
-        });
-
-        // Find the last column that matches the section label (or resides in its merge)
-        if (worksheet.model.merges) {
-          for (const mergeStr of worksheet.model.merges) {
-            const { startCol, endCol, startRow } = parseRange(mergeStr);
-            if (startRow === 2) {
-              const val = row2.getCell(startCol).value;
-              if (val && String(val).trim().toLowerCase() === mapping.label.toLowerCase()) {
-                lastColOfSection = Math.max(lastColOfSection, endCol);
-              }
-            }
-          }
-        }
-
-        // Fallback: search row2 values directly
-        if (lastColOfSection === -1) {
-          for (let c = 1; c <= row2Values.length; c++) {
-            if (row2Values[c] && String(row2Values[c]).trim().toLowerCase() === mapping.label.toLowerCase()) {
-              lastColOfSection = Math.max(lastColOfSection, c);
-            }
-          }
-        }
-
-        // If section was found, we insert right after its last column (making it part of the section)
-        if (lastColOfSection !== -1) {
-          targetColIndex = lastColOfSection + 1;
+        // Resolve which configuration list corresponds to the current worksheet
+        let currentFieldsList = [];
+        if (recordType === 'CASE') {
+          if (mapping.sheet === 'General Information') currentFieldsList = caseGeneralFields;
+          else if (mapping.sheet === 'Victim Information') currentFieldsList = caseVictimFields;
+          else if (mapping.sheet === 'Act and Sections') currentFieldsList = caseActSectionFields;
+          else if (mapping.sheet === 'Accused Detail') currentFieldsList = caseAccusedFields;
+          else if (mapping.sheet === 'Property Details') currentFieldsList = casePropertyFields;
         } else {
-          // Fallback: append at the end
-          let maxCols = 0;
-          worksheet.eachRow({ includeEmpty: true }, r => {
-            maxCols = Math.max(maxCols, r.cellCount);
+          if (mapping.sheet === 'General Info') currentFieldsList = arrestGeneralFields;
+          else if (mapping.sheet === 'Act and Sections') currentFieldsList = arrestActSectionFields;
+          else if (mapping.sheet === 'Person Arrested Detail') currentFieldsList = arrestPersonFields;
+          else if (mapping.sheet === 'Property Details') currentFieldsList = arrestPropertyFields;
+        }
+
+        // Find position of field in currentFieldsList
+        const fieldIdx = currentFieldsList.findIndex(f => f.field_key === field.field_key);
+        if (fieldIdx !== -1) {
+          // Search for preceding fields in the worksheet Row 1
+          let maxPrecedingColIdx = -1;
+          for (let i = 0; i < fieldIdx; i++) {
+            const precKey = currentFieldsList[i].field_key;
+            row1.eachCell({ includeEmpty: true }, (cell, colNum) => {
+              if (cell.value === precKey) {
+                maxPrecedingColIdx = Math.max(maxPrecedingColIdx, colNum);
+              }
+            });
+          }
+
+          if (maxPrecedingColIdx !== -1) {
+            targetColIndex = maxPrecedingColIdx + 1;
+          } else {
+            // Search for succeeding fields in the worksheet Row 1
+            let minSucceedingColIdx = -1;
+            for (let i = fieldIdx + 1; i < currentFieldsList.length; i++) {
+              const succKey = currentFieldsList[i].field_key;
+              row1.eachCell({ includeEmpty: true }, (cell, colNum) => {
+                if (cell.value === succKey) {
+                  if (minSucceedingColIdx === -1 || colNum < minSucceedingColIdx) {
+                    minSucceedingColIdx = colNum;
+                  }
+                }
+              });
+            }
+            if (minSucceedingColIdx !== -1) {
+              targetColIndex = minSucceedingColIdx;
+            }
+          }
+        }
+
+        if (targetColIndex === -1) {
+          // Fallback: append at the end of allowed columns (ignoring trailing empty columns)
+          let lastAllowedCol = 0;
+          row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            if (cell.value && allowedKeys.has(String(cell.value).trim())) {
+              lastAllowedCol = Math.max(lastAllowedCol, colNumber);
+            }
           });
-          targetColIndex = maxCols + 1;
+          targetColIndex = lastAllowedCol + 1;
         }
 
         // Keep country code columns immediately to the left of their respective mobile columns
