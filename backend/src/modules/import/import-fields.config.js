@@ -505,7 +505,7 @@ export const TEMPLATE_EXCLUDE_KEYS = {
     'deceased_address', 'deceased_perm_address', 'local_head', 'heinous_offence', 'case_status', 'missing_relation_type',
   ]),
   MISSING: new Set([
-    'mp_address', 'missing_address', 'operator_name', 'case_status',
+    'mp_address', 'missing_address', 'operator_name', 'case_status', 'missing_relation_type',
   ]),
 };
 
