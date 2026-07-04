@@ -294,20 +294,27 @@ const sectionLabelForKey = (key, recordType, isParentSheet) => {
   if (key.startsWith('occurrence_')) {
     const rest = key.slice('occurrence_'.length);
     if (ADDR_TOKENS.some(t => rest === t)) return 'Place of Occurrence Address';
-    return null; // occurrence_date/time/place → stay in General Information
+    // occurrence_date/time/place → stay in General Information
+    if (isParentSheet) return recordType === 'CASE' ? 'General Information' : 'General Info';
+    return null;
   }
 
   if (key.startsWith('io_')) return 'IO Details';
 
   if (['date_of_arrest', 'time_of_arrest', 'place_of_arrest', 'arrest_date', 'arrest_place'].includes(key)) {
-    return (recordType === 'ARREST' && isParentSheet) ? 'Arrest Details' : null;
+    if (recordType === 'ARREST' && isParentSheet) return 'Arrest Details';
+    if (isParentSheet) return recordType === 'CASE' ? 'General Information' : 'General Info';
+    return null;
   }
 
   if (key.startsWith('property_') || key.startsWith('phone_')) return 'Property Details';
 
   if (!isParentSheet && PARTICULAR_KEYS.has(key)) return 'Particular Details';
 
-  return null; // General Information fields (fir_date, district, status, etc.) carry forward
+  if (isParentSheet) {
+    return recordType === 'CASE' ? 'General Information' : 'General Info';
+  }
+  return null;
 };
 
 // ────────────────────────────────────────────────────────────────────────────────────────

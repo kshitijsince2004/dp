@@ -106,14 +106,13 @@ export const caseGeneralFields = [
   { field_key: 'beat_number', label_en: 'Beat Number', label_hi: 'बीट संख्या', required: false, hint: 'e.g. Beat No. 4' },
   { field_key: 'occurrence_date', label_en: 'Occurrence Date', label_hi: 'घटना की तिथि', required: false, hint: 'DD/MM/YYYY' },
   { field_key: 'occurrence_time', label_en: 'Occurrence Time', label_hi: 'घटना का समय', required: false, hint: 'HH:MM' },
-  { field_key: 'occurrence_place', label_en: 'Occurrence Place', label_hi: 'घटना का स्थान', required: false, hint: 'e.g. Patel Chowk Metro parking' },
   { field_key: 'brief_facts', label_en: 'Brief Facts of Case', label_hi: 'मामले के संक्षिप्त तथ्य', required: false, hint: 'Incident narrative' },
   { field_key: 'status_remarks', label_en: 'Status / Remarks', label_hi: ' स्थिति / टिप्पणियाँ', required: false, hint: 'e.g. Under investigation' },
   
-  ...getPersonFieldsList('complainant', 'Complainant', 'शिकायतकर्ता').filter(f => f.field_key !== 'complainant_npr'&& f.field_key !== 'complainant_present_address'),
+  ...getPersonFieldsList('complainant', 'Complainant', 'शिकायतकर्ता').filter(f => f.field_key !== 'complainant_npr'&& f.field_key !== 'complainant_present_address'&& f.field_key !== 'complainant_birth_year'&& f.field_key !== 'complainant_dob'),
   { field_key: 'complainant_perm_same', label_en: 'Is Complainant Permanent Same As Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: false, options: ['Yes', 'No'] },
   ...getAddressFieldsList('complainant_perm', 'Complainant Permanent Address', 'शिकायतकर्ता का स्थायी पता'),
-  ...getAddressFieldsList('occurrence', 'Place of Occurrence Address', 'घटनास्थल का पता विवरण'),
+  ...getAddressFieldsList('occurrence', 'Place of Occurrence Address', 'घटनास्थल का पता विवरण').filter(f => f.field_key !== 'occurrence_country'&& f.field_key !== 'occurrence_state'),
 
   { field_key: 'io_name', label_en: 'IO Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },
   { field_key: 'io_pis', label_en: 'PIS Number', label_hi: 'पीआईएस संख्या', required: false, hint: 'e.g. 28080214' },
