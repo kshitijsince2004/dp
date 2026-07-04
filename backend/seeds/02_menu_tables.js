@@ -58,6 +58,7 @@ export async function seed(knex) {
     'excel_cultural_properties',
     'excel_currency_types',
     'excel_automobiles',
+    'excel_fire_arms_subtypes',
     'excel_fire_arms',
     'excel_arms_categories',
     'excel_arms_made',
@@ -230,12 +231,13 @@ export async function seed(knex) {
     const armsMadeRows = [];
     const armsCatRows = [];
     const fireArmsRows = [];
-    
-    let sectionState = null; // 'MADE' | 'CAT' | 'FIRE_ARMS'
+    const fireArmsSubtypeRows = [];
+
+    let sectionState = null; // 'MADE' | 'CAT' | 'FIRE_ARMS' | 'SUBTYPE'
 
     sheet.eachRow((row, rowNum) => {
       const col1Val = cleanVal(row.values[1]);
-      
+
       // State transitions
       if (col1Val === 'arms_made_cd') {
         sectionState = 'MADE';
@@ -247,6 +249,13 @@ export async function seed(knex) {
       }
       if (col1Val === 'fire_arms_cd') {
         sectionState = 'FIRE_ARMS';
+        return;
+      }
+      // "Sub Type of Fire Arm" section (arms_subtype_cd, arms_type_cd, arms_subtype) — without
+      // this transition, its rows fell through to the FIRE_ARMS branch above and got inserted
+      // into excel_fire_arms with a bogus fire_arms_cd/arms_category_cd pairing (e.g. "AK 47").
+      if (col1Val === 'arms_subtype_cd') {
+        sectionState = 'SUBTYPE';
         return;
       }
 
@@ -269,12 +278,20 @@ export async function seed(knex) {
         if (fire_arms_cd !== null && arms_category_cd !== null && fire_arms !== null) {
           fireArmsRows.push({ fire_arms_cd, arms_category_cd, fire_arms });
         }
+      } else if (sectionState === 'SUBTYPE') {
+        const arms_subtype_cd = cleanInt(row.values[1]);
+        const arms_type_cd = cleanInt(row.values[3]);
+        const arms_subtype = cleanVal(row.values[4]);
+        if (arms_subtype_cd !== null && arms_type_cd !== null && arms_subtype !== null) {
+          fireArmsSubtypeRows.push({ arms_subtype_cd, arms_type_cd, arms_subtype });
+        }
       }
     });
 
     await batchInsert('excel_arms_made', armsMadeRows);
     await batchInsert('excel_arms_categories', armsCatRows);
     await batchInsert('excel_fire_arms', fireArmsRows);
+    await batchInsert('excel_fire_arms_subtypes', fireArmsSubtypeRows);
   }
 
   // --- 10. Sheet: AUTOMOBILES AND OTHERS ---

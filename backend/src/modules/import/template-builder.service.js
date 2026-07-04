@@ -793,19 +793,17 @@ export class TemplateBuilderService {
       logger.error('buildTemplate: failed to build live lookups (dropdowns will be static)', { err: err.message });
     }
 
-    const allowedKeys = new Set(
-      recordType === 'CASE'
-        ? Object.values(CASE_SHEETS_CONFIG).flat()
-        : Object.values(ARREST_SHEETS_CONFIG).flat()
-    );
+    const configKeys = recordType === 'CASE'
+      ? Object.values(CASE_SHEETS_CONFIG).flat()
+      : Object.values(ARREST_SHEETS_CONFIG).flat();
 
     const activeRegistryFields = await db('field_registry')
       .where('is_active', true)
-      .orWhereIn('field_key', Array.from(allowedKeys))
+      .orWhereIn('field_key', configKeys)
       .orderBy('sort_order', 'asc');
 
     const typeFields = activeRegistryFields.filter(f => {
-      if (allowedKeys.has(f.field_key)) return true;
+      if (configKeys.includes(f.field_key)) return true;
       try {
         const types = typeof f.applicable_record_types === 'string'
           ? JSON.parse(f.applicable_record_types)
@@ -815,6 +813,8 @@ export class TemplateBuilderService {
         return false;
       }
     });
+
+    const allowedKeys = new Set([...configKeys, ...typeFields.map(f => f.field_key)]);
 
     typeFields.push(
       { field_key: 'act', field_type: 'SELECT', section: 'act_section', label_en: 'Act', label_hi: 'अधिनियम' },

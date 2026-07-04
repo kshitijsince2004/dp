@@ -75,7 +75,8 @@ export const getPropertyItemsForCategory = async (parentCd) => {
     const made = await db('excel_arms_made').select('arms_made_cd', 'arms_made');
     const categories = await db('excel_arms_categories').select('arms_category_cd', 'arms_category');
     const fireArms = await db('excel_fire_arms').select('fire_arms_cd', 'arms_category_cd', 'fire_arms');
-    return { type: 'ARMS', made, categories, fireArms };
+    const fireArmsSubtypes = await db('excel_fire_arms_subtypes').select('arms_subtype_cd', 'arms_type_cd', 'arms_subtype');
+    return { type: 'ARMS', made, categories, fireArms, fireArmsSubtypes };
   }
 
   if (src?.type === 'GENERIC') {
@@ -84,10 +85,19 @@ export const getPropertyItemsForCategory = async (parentCd) => {
       .orderBy(src.labelColumn, 'asc');
   }
 
-  return db('excel_other_property_items')
-    .where({ parent_cd: pCd })
-    .select('property_cd', 'property')
+  // OTHERS (parent_cd 0) is itself a 2-level structure, same shape as ARMS:
+  // excel_other_property_categories (Agriculture Products, Animals, ...) is the Type of
+  // Property list; excel_other_property_items (keyed by THOSE sub-category parent_cds, not
+  // by 0) is the Property Subtype list. Querying excel_other_property_items directly by the
+  // major parent_cd (0) — as a flat fallback would — returns nothing, since no row in that
+  // table is ever keyed 0.
+  const categories = await db('excel_other_property_categories')
+    .select('parent_cd', 'code_type')
+    .orderBy('code_type', 'asc');
+  const items = await db('excel_other_property_items')
+    .select('parent_cd', 'property_cd', 'property')
     .orderBy('property', 'asc');
+  return { type: 'OTHER_PROPERTY', categories, items };
 };
 
 export const getBeats = async (psCd) => {
@@ -108,7 +118,7 @@ export const getActsSectionsRegistry = async () => {
   if (cachedRegistry) return cachedRegistry;
 
   const acts = await db('excel_acts').select('act_cd', 'act_long');
-  const sections = await db('excel_sections').select('act_sec_cd', 'section', 'section_desc');
+  const sections = await db('excel_sections').select('act_sec_cd', 'section', 'section_desc', 'section_code');
 
   const sectionsByActCd = {};
   for (const s of sections) {
@@ -117,7 +127,10 @@ export const getActsSectionsRegistry = async () => {
     }
     sectionsByActCd[s.act_sec_cd].push({
       section: s.section,
-      desc: s.section_desc || ''
+      desc: s.section_desc || '',
+      // Exact key into excel_major_minor_mapping.section_code — needed so Major Head can be
+      // filtered by the specific (act, section) pair chosen, not just the act as a whole.
+      section_code: s.section_code
     });
   }
 

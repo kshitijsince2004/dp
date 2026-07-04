@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import SearchableSelect from './SearchableSelect.jsx';
 
 const base = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed appearance-none cursor-pointer";
 const err  = "border-red-400 focus:border-red-500 bg-red-50";
@@ -58,56 +59,20 @@ export default function SelectField({ id, disabled, value, onChange, status, pla
     };
   }, [isOpen]);
 
-  // Compact mode: plain native <select> with caller-supplied styling — used inside
-  // dense table-row layouts where the default searchable-dropdown widget (custom
-  // chevron, portal dropdown) would look out of place.
+  // Compact mode: searchable input with caller-supplied styling — used inside dense
+  // table-row layouts where the default portal-based dropdown widget's bigger chrome
+  // would look out of place, but a search box is still wanted everywhere.
   if (variant === 'compact') {
     return (
-      <select
-        id={id}
+      <SearchableSelect
+        value={value}
+        onChange={onChange}
         disabled={disabled}
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value)}
+        options={options}
+        lang={lang}
+        placeholder={placeholder}
         className={className}
-      >
-        <option value="">{placeholder || (lang === 'hi' ? '------चुनें------' : '------Select------')}</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {getLabel(opt)}
-          </option>
-        ))}
-      </select>
-    );
-  }
-
-  // Short lists: use a native <select> (no clipping issue)
-  if (options.length <= 10) {
-    return (
-      <div className="relative">
-        <select
-          id={id}
-          disabled={disabled}
-          value={value ?? ''}
-          onChange={(e) => onChange(e.target.value)}
-          className={`${base} ${status === 'error' ? err : ''} pr-10`}
-        >
-          <option value="" disabled>
-            {placeholder || (lang === 'hi' ? 'विकल्प चुनें' : 'Select an option')}
-          </option>
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {getLabel(opt)}
-            </option>
-          ))}
-        </select>
-        <svg
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-          width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </div>
+      />
     );
   }
 
