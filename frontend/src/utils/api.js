@@ -613,8 +613,21 @@ const formSchemas = {
           label_en: 'District',
           label_hi: 'जिला',
           options: [
-            { value: 'New Delhi District (NDD)', label_en: 'New Delhi District (NDD)', label_hi: 'नई दिल्ली जिला' },
-            { value: 'Central District', label_en: 'Central District', label_hi: 'मध्य जिला' }
+            { value: "South District (SD)", label_en: "South District (SD)", label_hi: "South District (SD)" },
+            { value: "South East District (SED)", label_en: "South East District (SED)", label_hi: "South East District (SED)" },
+            { value: "New Delhi District (NDD)", label_en: "New Delhi District (NDD)", label_hi: "New Delhi District (NDD)" },
+            { value: "South West District (SWD)", label_en: "South West District (SWD)", label_hi: "South West District (SWD)" },
+            { value: "West District (WD)", label_en: "West District (WD)", label_hi: "West District (WD)" },
+            { value: "Outer District (OD)", label_en: "Outer District (OD)", label_hi: "Outer District (OD)" },
+            { value: "Dwarka District (DW)", label_en: "Dwarka District (DW)", label_hi: "Dwarka District (DW)" },
+            { value: "North West District (NWD)", label_en: "North West District (NWD)", label_hi: "North West District (NWD)" },
+            { value: "Rohini District (RND)", label_en: "Rohini District (RND)", label_hi: "Rohini District (RND)" },
+            { value: "Outer North District (OND)", label_en: "Outer North District (OND)", label_hi: "Outer North District (OND)" },
+            { value: "Central District (CD)", label_en: "Central District (CD)", label_hi: "Central District (CD)" },
+            { value: "North District (ND)", label_en: "North District (ND)", label_hi: "North District (ND)" },
+            { value: "East District (ED)", label_en: "East District (ED)", label_hi: "East District (ED)" },
+            { value: "North East District (NED)", label_en: "North East District (NED)", label_hi: "North East District (NED)" },
+            { value: "Shahdara District (SHD)", label_en: "Shahdara District (SHD)", label_hi: "Shahdara District (SHD)" }
           ],
           validation_rules: { required: false }
         },
