@@ -19,6 +19,7 @@ import {
   INDIRECT_CASCADE_FIELDS,
   NR_PREFIX,
 } from './import-fields.config.js';
+import { autoIncludedRegistryFields } from './registry-sync.util.js';
 import * as fieldsService from '../fields/fields.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from '../fields/classificationSources.config.js';
 import DataValidationsXform from 'exceljs/lib/xlsx/xform/sheet/data-validations-xform.js';
@@ -221,6 +222,7 @@ const ARREST_SECTION_MAP = {
   incident_details: { sheet: 'General Info', label: 'General Information' },
   arrest_details: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
   arrested_info: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
+  arrestee_info: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
   investigation_officer: { sheet: 'General Info', label: 'IO Details' },
   
   act_section: { sheet: 'Act and Sections', label: 'Act and Sections' },
@@ -333,6 +335,19 @@ async function buildLiveLookups(recordType) {
 
   // Get all Acts and group Sections per Act dynamically
   const allActs = await fieldsService.getActs();
+
+  // The interactive form (fields.controller.js getFieldsForForm) appends these fallback
+  // acts on top of excel_acts — the new criminal codes and the catch-all. Mirror that here
+  // so the Act dropdown offers everything the form does. act_cd: null → they simply have
+  // no sections mapping (the dependent Sections cell stays free-text, same as other
+  // section-less acts).
+  const FALLBACK_ACTS = ['BNS', 'BNSS', 'CrPC', 'Other Act'];
+  const knownActNames = new Set(allActs.map(a => String(a.act_long).trim().toLowerCase()));
+  for (const name of FALLBACK_ACTS) {
+    if (!knownActNames.has(name.toLowerCase())) {
+      allActs.push({ act_cd: null, act_long: name });
+    }
+  }
   const dbSections = await db('excel_sections')
     .select('act_sec_cd', 'section')
     .distinct()
@@ -486,7 +501,10 @@ async function buildLiveLookups(recordType) {
   const statusOptionsByType = {
     CASE:  ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'UNTRACED', 'PENDING',
              'CANCELLATION', 'QUASHED', 'CLOSURE REPORT', 'RELEASED U/S 189 BNSS', 'TRANSFER'],
-    ARREST: ['police_custody', 'bail', 'judicial_custody', 'released', 'others'],
+    // Union of the interactive form's custody-status values (fields.controller.js status
+    // dispatch: against_fir list + non-FIR list) — the template is one flat column, so it
+    // must accept every value the form can store.
+    ARREST: ['JC', 'PC', 'Bail', 'Bound Down', 'Release', 'Lockup', '35(3) BNS Notice', 'Fine'],
   };
   const statusOpts = (statusOptionsByType[recordType] || []).map(v => ({ value: v, label: v }));
 
@@ -527,17 +545,26 @@ async function buildLiveLookups(recordType) {
 // ExcelJS 3.10 API (verified): definedNames.add(rangeRef, namedRangeName) — range first.
 // Returns: { namedRangeMap: {fieldKey → namedRangeName}, slugToNR: {categorySlug → namedRangeName} }
 // ────────────────────────────────────────────────────────────────────────────────────────
-function createLookupsSheet(workbook, liveLookups) {
-  // Remove existing _Lookups sheet to make this idempotent
-  const existing = workbook.getWorksheet('_Lookups');
-  if (existing) workbook.removeWorksheet(existing.id);
-
-  const ws = workbook.addWorksheet('_Lookups');
+function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } = {}) {
+  // preserveExisting: append after any columns already on _Lookups instead of rebuilding it.
+  // Required for the UIDB/MISSING flow, where addSheetToWorkbook has already written long
+  // option lists (states, districts…) to _Lookups and referenced them by DIRECT cell range —
+  // removing the sheet here would leave those dropdowns pointing at whatever list lands in
+  // the same column of the rebuilt sheet (observed: Deceased State showing IPC sections).
+  let ws = workbook.getWorksheet('_Lookups');
+  if (ws && !preserveExisting) {
+    workbook.removeWorksheet(ws.id);
+    ws = null;
+  }
+  if (!ws) ws = workbook.addWorksheet('_Lookups');
   try { ws.state = 'veryHidden'; } catch (_) { ws.state = 'hidden'; }
 
   const namedRangeMap = {};  // fieldKey → named range name
   const slugToNR = {};       // category label slug → named range name (for INDIRECT formula)
   let col = 1;
+  ws.getRow(1).eachCell({ includeEmpty: false }, (cell, c) => {
+    if (cell.value !== null && cell.value !== undefined && cell.value !== '') col = Math.max(col, c + 1);
+  });
 
   // Writes one option list to the _Lookups sheet and registers a named range.
   // nrName: the exact name to register (must match what INDIRECT() will reference).
@@ -843,6 +870,14 @@ export class TemplateBuilderService {
       .orWhereIn('field_key', Array.from(allowedKeys))
       .orderBy('sort_order', 'asc');
 
+    // Registry-driven auto-inclusion: active registry fields applicable to this record
+    // type that the curated config lists don't mention and that aren't excluded. They are
+    // processed AFTER all curated fields and appended at the end of their sheet, so the
+    // curated column layout never shifts. (See registry-sync.util.js / import-fields.config.js.)
+    const autoFields = autoIncludedRegistryFields(recordType, activeRegistryFields, allowedKeys);
+    const autoKeys = new Set(autoFields.map(f => f.field_key));
+    const includedKeys = new Set([...allowedKeys, ...autoKeys]);
+
     const typeFields = activeRegistryFields.filter(f => {
       if (allowedKeys.has(f.field_key)) return true;
       try {
@@ -883,7 +918,7 @@ export class TemplateBuilderService {
         
         let lastAllowedCol = -1;
         row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          if (cell.value && allowedKeys.has(String(cell.value).trim())) {
+          if (cell.value && includedKeys.has(String(cell.value).trim())) {
             lastAllowedCol = Math.max(lastAllowedCol, colNumber);
           }
         });
@@ -891,7 +926,7 @@ export class TemplateBuilderService {
         row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
           if (colNumber <= lastAllowedCol) {
             const val = cell.value ? String(cell.value).trim() : '';
-            if (!val || !allowedKeys.has(val)) {
+            if (!val || !includedKeys.has(val)) {
               colIdxToDelete = colNumber;
             }
           }
@@ -904,11 +939,16 @@ export class TemplateBuilderService {
 
     // Ensure local_head is present on Act and Sections sheet - REMOVED
 
-    const excludedKeys = new Set();
     const filteredTypeFields = typeFields.filter(f => allowedKeys.has(f.field_key));
     const sectionMap = recordType === 'CASE' ? CASE_SECTION_MAP : ARREST_SECTION_MAP;
+    const parentSheetLabel = recordType === 'CASE'
+      ? { sheet: 'General Information', label: 'General Information' }
+      : { sheet: 'General Info', label: 'General Information' };
 
-    for (const field of filteredTypeFields) {
+    // Curated fields first (identical to the historical pass), then registry auto-included
+    // fields — by then every curated column exists, so autos append cleanly at the end.
+    for (const field of [...filteredTypeFields, ...autoFields]) {
+      const isAuto = autoKeys.has(field.field_key) && !allowedKeys.has(field.field_key);
       if (recordType === 'ARREST' && field.field_key === 'status') {
         field.section = 'custody_status';
       }
@@ -919,8 +959,15 @@ export class TemplateBuilderService {
       if (field.field_key === 'case_status') {
         field.section = 'investigation_details';
       }
-      const mapping = sectionMap[field.section];
-      if (!mapping) continue;
+      let mapping = sectionMap[field.section];
+      if (!mapping) {
+        // Curated fields keep the historical behaviour (skip — they may live in the base
+        // .xlsx already). Auto-included fields must never silently vanish: fall back to the
+        // parent sheet and log it, so a new form field always surfaces somewhere.
+        if (!isAuto) continue;
+        logger.warn(`buildTemplate(${recordType}): field '${field.field_key}' has unmapped section '${field.section}' — placing on ${parentSheetLabel.sheet}`);
+        mapping = parentSheetLabel;
+      }
 
       const worksheet = workbook.getWorksheet(mapping.sheet);
       if (!worksheet) continue;
@@ -936,7 +983,10 @@ export class TemplateBuilderService {
           targetColIndex = colNum;
         }
       });
-      if (!exists) {
+      // Label-based rescue is for curated fields whose base-.xlsx column lacks a Row-1 key.
+      // Never apply it to auto-included fields: a coincidental label match would REKEY an
+      // existing curated column instead of appending a new one.
+      if (!exists && !isAuto) {
         row3.eachCell({ includeEmpty: true }, (cell, colNum) => {
           if (cell.value && (cell.value === field.label_en || cell.value === field.label_hi)) {
             exists = true;
@@ -1011,10 +1061,12 @@ export class TemplateBuilderService {
         }
 
         if (targetColIndex === -1) {
-          // Fallback: append at the end of allowed columns (ignoring trailing empty columns)
+          // Fallback: append at the end of included columns (ignoring trailing empty columns).
+          // includedKeys (not allowedKeys) so previously appended auto columns anchor the
+          // next append — auto fields land in stable registry order at the sheet's end.
           let lastAllowedCol = 0;
           row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            if (cell.value && allowedKeys.has(String(cell.value).trim())) {
+            if (cell.value && includedKeys.has(String(cell.value).trim())) {
               lastAllowedCol = Math.max(lastAllowedCol, colNumber);
             }
           });
@@ -1325,7 +1377,7 @@ export class TemplateBuilderService {
     let hasMinorHeadCascade = false;
     try {
       liveLookups = await buildLiveLookups(recordType);
-      ({ namedRangeMap, hasMinorHeadCascade } = createLookupsSheet(workbook, liveLookups));
+      ({ namedRangeMap, hasMinorHeadCascade } = createLookupsSheet(workbook, liveLookups, { preserveExisting: true }));
     } catch (err) {
       logger.error('wireActSectionCascade: failed to build live lookups (dropdowns will be static)', { err: err.message });
       return;

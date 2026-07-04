@@ -1,0 +1,3318 @@
+{
+  "CASE": {
+    "General Information": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "fir_no",
+          "section": "General Information",
+          "label": "FIR Number",
+          "hint": "e.g. FIR-220/2026",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "fir_date",
+          "section": "General Information",
+          "label": "FIR Date and time",
+          "hint": "dd-mm-yyyy",
+          "validation": null
+        },
+        {
+          "col": 3,
+          "key": "district",
+          "section": "General Information",
+          "label": "District",
+          "hint": "e.g. New Delhi District (NDD)",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 4,
+          "key": "police_station",
+          "section": "General Information",
+          "label": "Police Station",
+          "hint": "e.g. Parliament Street",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 5,
+          "key": "local_head",
+          "section": "General Information",
+          "label": "Local Head (Crime)",
+          "hint": "e.g. Theft / Larceny",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_LOCAL_HEAD"
+            ]
+          }
+        },
+        {
+          "col": 6,
+          "key": "heinous_offence",
+          "section": "General Information",
+          "label": "Heinous Offence",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 7,
+          "key": "case_type",
+          "section": "General Information",
+          "label": "Case Registration Type",
+          "hint": "e.g. Property Theft",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"cctns(manual FIR),eTheft,eMVT,NCRP,zero FIR\""
+            ]
+          }
+        },
+        {
+          "col": 8,
+          "key": "beat_number",
+          "section": "General Information",
+          "label": "Beat Number",
+          "hint": "e.g. Property Theft",
+          "validation": null
+        },
+        {
+          "col": 9,
+          "key": "occurrence_date",
+          "section": "General Information",
+          "label": "Date of Occurrence",
+          "hint": "DD/MM/YYYY",
+          "validation": null
+        },
+        {
+          "col": 10,
+          "key": "occurrence_time",
+          "section": "General Information",
+          "label": "Occurrence Time",
+          "hint": "HH:MM",
+          "validation": null
+        },
+        {
+          "col": 11,
+          "key": "brief_facts",
+          "section": "General Information",
+          "label": "Brief Facts of the Case",
+          "hint": "Incident narrative",
+          "validation": null
+        },
+        {
+          "col": 12,
+          "key": "complainant_first_name",
+          "section": "Complainant Personal Details",
+          "label": "Complainant First Name",
+          "hint": "First Name",
+          "validation": null
+        },
+        {
+          "col": 13,
+          "key": "complainant_middle_name",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Middle Name",
+          "hint": "Middle Name",
+          "validation": null
+        },
+        {
+          "col": 14,
+          "key": "complainant_last_name",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Last Name",
+          "hint": "Last Name",
+          "validation": null
+        },
+        {
+          "col": 15,
+          "key": "complainant_nickname",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Nickname(s)",
+          "hint": "Nickname or alias",
+          "validation": null
+        },
+        {
+          "col": 16,
+          "key": "complainant_gender",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Gender",
+          "hint": "select: Male, Female, Transgender, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Male,Female,Transgender,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 17,
+          "key": "complainant_marital_status",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Marital Status",
+          "hint": "select: Married, Unmarried, Divorced, Widowed, Single, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Married,Unmarried,Divorced,Widowed,Single,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 18,
+          "key": "complainant_relation_type",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Relation Type",
+          "hint": "select: Father, Mother, Husband, Wife, Guardian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Father,Mother,Husband,Wife,Guardian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 19,
+          "key": "complainant_relative_name",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Relative Name",
+          "hint": "Father's or Husband's Name",
+          "validation": null
+        },
+        {
+          "col": 20,
+          "key": "complainant_mobile_country_code",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Mobile Country Code",
+          "hint": "e.g. +91",
+          "validation": null
+        },
+        {
+          "col": 21,
+          "key": "complainant_mobile",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Mobile No.",
+          "hint": "10-digit mobile number",
+          "validation": null
+        },
+        {
+          "col": 22,
+          "key": "complainant_qualification",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Qualification",
+          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
+            ]
+          }
+        },
+        {
+          "col": 23,
+          "key": "complainant_age_year",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Age (Years)",
+          "hint": "Age in years",
+          "validation": null
+        },
+        {
+          "col": 24,
+          "key": "complainant_house_no",
+          "section": "Complainant Present Address",
+          "label": "Complainant House No.",
+          "hint": "House Number",
+          "validation": null
+        },
+        {
+          "col": 25,
+          "key": "complainant_street",
+          "section": "Complainant Present Address",
+          "label": "Complainant Street",
+          "hint": "Street name",
+          "validation": null
+        },
+        {
+          "col": 26,
+          "key": "complainant_colony",
+          "section": "Complainant Present Address",
+          "label": "Complainant Colony",
+          "hint": "Colony name",
+          "validation": null
+        },
+        {
+          "col": 27,
+          "key": "complainant_city_town_village",
+          "section": "Complainant Present Address",
+          "label": "Complainant Village / City / Town",
+          "hint": "Village/City",
+          "validation": null
+        },
+        {
+          "col": 28,
+          "key": "complainant_tehsil_block_mandal",
+          "section": "Complainant Present Address",
+          "label": "Complainant Tehsil / Block / Mandal",
+          "hint": "Tehsil",
+          "validation": null
+        },
+        {
+          "col": 29,
+          "key": "complainant_country",
+          "section": "Complainant Present Address",
+          "label": "Complainant Nationality",
+          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Indian,Nepalese,Bhutanese,Bangladeshi,Pakistani,Sri Lankan,Afghan,Myanmar,Tibetan,American,British,Canadian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 30,
+          "key": "complainant_state",
+          "section": "Complainant Present Address",
+          "label": "Complainant State",
+          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DYN_COMPLAINANT_STATE"
+            ]
+          }
+        },
+        {
+          "col": 31,
+          "key": "complainant_district",
+          "section": "Complainant Present Address",
+          "label": "Complainant District",
+          "hint": "select (20 options): Central District, Central District, Central District, Central District, Central District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 32,
+          "key": "complainant_police_station",
+          "section": "Complainant Present Address",
+          "label": "Complainant Police Station",
+          "hint": "Police Station",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 33,
+          "key": "complainant_pincode",
+          "section": "Complainant Present Address",
+          "label": "Complainant Pin Code",
+          "hint": "6-digit PIN code",
+          "validation": null
+        },
+        {
+          "col": 34,
+          "key": "complainant_perm_same",
+          "section": "Complainant Present Address",
+          "label": "Is Permanent Address same as Present Address?",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 35,
+          "key": "complainant_perm_house_no",
+          "section": "Complainant Permanent Address",
+          "label": "Complainant Permanent House No.",
+          "hint": "House Number",
+          "validation": null
+        },
+        {
+          "col": 36,
+          "key": "complainant_perm_street",
+          "section": "Complainant Permanent Address",
+          "label": "Complainant Permanent Street",
+          "hint": "Street name",
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": "complainant_perm_colony",
+          "section": "Complainant Permanent Address",
+          "label": "Complainant Permanent Colony",
+          "hint": "Colony name",
+          "validation": null
+        },
+        {
+          "col": 38,
+          "key": "complainant_perm_city_town_village",
+          "section": "Complainant Permanent Address",
+          "label": "Complainant Permanent Village / City / Town",
+          "hint": "Village/City",
+          "validation": null
+        },
+        {
+          "col": 39,
+          "key": "complainant_perm_tehsil_block_mandal",
+          "section": "Complainant Permanent Address",
+          "label": "Complainant Permanent Tehsil / Block / Mandal",
+          "hint": "Tehsil",
+          "validation": null
+        },
+        {
+          "col": 40,
+          "key": "complainant_perm_country",
+          "section": "Complainant Permanent Address",
+          "label": "Complainant Permanent Nationality",
+          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Indian,Nepalese,Bhutanese,Bangladeshi,Pakistani,Sri Lankan,Afghan,Myanmar,Tibetan,American,British,Canadian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 41,
+          "key": "complainant_perm_state",
+          "section": "Complainant Permanent Address",
+          "label": "Complainant Permanent State",
+          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DYN_COMPLAINANT_PERM_STATE"
+            ]
+          }
+        },
+        {
+          "col": 42,
+          "key": "complainant_perm_district",
+          "section": "Complainant Permanent Address",
+          "label": "Complainant Permanent District",
+          "hint": "select (20 options): Central District, Central District, Central District, Central District, Central District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 43,
+          "key": "complainant_perm_police_station",
+          "section": "Complainant Permanent Address",
+          "label": "Complainant Permanent Police Station",
+          "hint": "Police Station",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 44,
+          "key": "complainant_perm_pincode",
+          "section": "Complainant Permanent Address",
+          "label": "Complainant Permanent Pin Code",
+          "hint": "6-digit PIN code",
+          "validation": null
+        },
+        {
+          "col": 45,
+          "key": "occurrence_house_no",
+          "section": "Place of Occurrence Address",
+          "label": "Place of Occurrence House No.",
+          "hint": "House Number",
+          "validation": null
+        },
+        {
+          "col": 46,
+          "key": "occurrence_street",
+          "section": "Place of Occurrence Address",
+          "label": "Place of Occurrence Street",
+          "hint": "Street name",
+          "validation": null
+        },
+        {
+          "col": 47,
+          "key": "occurrence_colony",
+          "section": "Place of Occurrence Address",
+          "label": "Place of Occurrence Colony",
+          "hint": "Colony name",
+          "validation": null
+        },
+        {
+          "col": 48,
+          "key": "occurrence_city_town_village",
+          "section": "Place of Occurrence Address",
+          "label": "Place of Occurrence Village / City / Town",
+          "hint": "Village/City",
+          "validation": null
+        },
+        {
+          "col": 49,
+          "key": "occurrence_tehsil_block_mandal",
+          "section": "Place of Occurrence Address",
+          "label": "Place of Occurrence Tehsil / Block / Mandal",
+          "hint": "Tehsil",
+          "validation": null
+        },
+        {
+          "col": 50,
+          "key": "occurrence_district",
+          "section": "Place of Occurrence Address",
+          "label": "Place of Occurrence District",
+          "hint": "select (20 options): Central District, Central District, Central District, Central District, Central District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 51,
+          "key": "occurrence_police_station",
+          "section": "Place of Occurrence Address",
+          "label": "Place of Occurrence Police Station",
+          "hint": "Police Station",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 52,
+          "key": "occurrence_pincode",
+          "section": "Place of Occurrence Address",
+          "label": "Place of Occurrence Pin Code",
+          "hint": "6-digit PIN code",
+          "validation": null
+        },
+        {
+          "col": 53,
+          "key": "io_name",
+          "section": "IO Details",
+          "label": "IO / Officer Name",
+          "hint": "e.g. Inspector Ravindra Singh",
+          "validation": null
+        },
+        {
+          "col": 54,
+          "key": "io_pis",
+          "section": "IO Details",
+          "label": "PIS No. of IO",
+          "hint": "e.g. 28080214",
+          "validation": null
+        },
+        {
+          "col": 55,
+          "key": "io_mobile",
+          "section": "IO Details",
+          "label": "IO Mobile No.",
+          "hint": "IO contact number",
+          "validation": null
+        },
+        {
+          "col": 56,
+          "key": "case_status",
+          "section": "Action Taken",
+          "label": "Status",
+          "hint": "select: CHARGE SHEET, POLICE INVESTIGATION REPORT(PIR-JCL), UNTRACED, PENDING, CANCELLATION, QUASHED, CLOSURE REPORT, RELEASED U/S 189 BNSS, TRANSFER",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"CHARGE SHEET,POLICE INVESTIGATION REPORT(PIR-JCL),UNTRACED,PENDING,CANCELLATION,QUASHED,CLOSURE REPORT,RELEASED U/S 189 BNSS,TRANSFER\""
+            ]
+          }
+        },
+        {
+          "col": 57,
+          "key": "disposal_type",
+          "section": "Action Taken",
+          "label": "Disposal Type",
+          "hint": "select: Challan, Untrace, Cancel",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Challan,Untrace,Cancel\""
+            ]
+          }
+        },
+        {
+          "col": 58,
+          "key": "rc_no",
+          "section": "Action Taken",
+          "label": "RC No.",
+          "hint": "e.g. RC-123/2026",
+          "validation": null
+        },
+        {
+          "col": 59,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 60,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 61,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 62,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 63,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 64,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 65,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 66,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
+          "validation": null
+        }
+      ],
+      "row2Merges": [
+        "A2:K2",
+        "AI2:AR2",
+        "AS2:AZ2",
+        "BA2:BC2",
+        "BD2:BN2",
+        "L2:W2",
+        "X2:AH2"
+      ]
+    },
+    "Victim Information": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "fir_no",
+          "section": "Case Reference",
+          "label": "FIR Number",
+          "hint": "Must match General Information FIR Number",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "victim_first_name",
+          "section": "Victim Personal Details",
+          "label": "Victim First Name",
+          "hint": "First Name",
+          "validation": null
+        },
+        {
+          "col": 3,
+          "key": "victim_middle_name",
+          "section": "Victim Personal Details",
+          "label": "Victim Middle Name",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 4,
+          "key": "victim_last_name",
+          "section": "Victim Personal Details",
+          "label": "Victim Last Name",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 5,
+          "key": "victim_nickname",
+          "section": "Victim Personal Details",
+          "label": "Victim Nickname(s)",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 6,
+          "key": "victim_gender",
+          "section": "Victim Personal Details",
+          "label": "Victim Gender",
+          "hint": "select: Male, Female, Transgender, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Male,Female,Transgender,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 7,
+          "key": "victim_marital_status",
+          "section": "Victim Personal Details",
+          "label": "Victim Marital Status",
+          "hint": "select: Married, Unmarried, Divorced, Widowed, Single, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Married,Unmarried,Divorced,Widowed,Single,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 8,
+          "key": "victim_relation_type",
+          "section": "Victim Personal Details",
+          "label": "Victim Relation Type",
+          "hint": "select: Father, Mother, Husband, Wife, Guardian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Father,Mother,Husband,Wife,Guardian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 9,
+          "key": "victim_relative_name",
+          "section": "Victim Personal Details",
+          "label": "Victim Relative Name",
+          "hint": "Father's or Husband's Name",
+          "validation": null
+        },
+        {
+          "col": 10,
+          "key": "victim_mobile_country_code",
+          "section": "Victim Personal Details",
+          "label": "Victim Mobile Country Code",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 11,
+          "key": "victim_mobile",
+          "section": "Victim Personal Details",
+          "label": "Victim Mobile No.",
+          "hint": "10-digit mobile number",
+          "validation": null
+        },
+        {
+          "col": 12,
+          "key": "victim_age_year",
+          "section": "Victim Personal Details",
+          "label": "Victim Age (Years)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 13,
+          "key": "victim_house_no",
+          "section": "Victim Present Address",
+          "label": "Victim House No.",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 14,
+          "key": "victim_street",
+          "section": "Victim Present Address",
+          "label": "Victim Street",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 15,
+          "key": "victim_colony",
+          "section": "Victim Present Address",
+          "label": "Victim Colony",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 16,
+          "key": "victim_city_town_village",
+          "section": "Victim Present Address",
+          "label": "Victim Village / City / Town",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 17,
+          "key": "victim_tehsil_block_mandal",
+          "section": "Victim Present Address",
+          "label": "Victim Tehsil / Block / Mandal",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 18,
+          "key": "victim_country",
+          "section": "Victim Present Address",
+          "label": "Victim Nationality",
+          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Indian,Nepalese,Bhutanese,Bangladeshi,Pakistani,Sri Lankan,Afghan,Myanmar,Tibetan,American,British,Canadian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 19,
+          "key": "victim_state",
+          "section": "Victim Present Address",
+          "label": "Victim State",
+          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DYN_VICTIM_STATE"
+            ]
+          }
+        },
+        {
+          "col": 20,
+          "key": "victim_district",
+          "section": "Victim Present Address",
+          "label": "Victim District",
+          "hint": "select (20 options): Central District, Central District, Central District, Central District, Central District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 21,
+          "key": "victim_police_station",
+          "section": "Victim Present Address",
+          "label": "Victim Police Station",
+          "hint": "select (207 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 22,
+          "key": "victim_pincode",
+          "section": "Victim Present Address",
+          "label": "Victim Pin Code",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 23,
+          "key": "victim_perm_same",
+          "section": "Victim Present Address",
+          "label": "Is Permanent Address same as Present Address?",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 24,
+          "key": "victim_perm_house_no",
+          "section": "Victim Permanent Address",
+          "label": "Victim Permanent House No.",
+          "hint": "House Number",
+          "validation": null
+        },
+        {
+          "col": 25,
+          "key": "victim_perm_street",
+          "section": "Victim Permanent Address",
+          "label": "Victim Permanent Street",
+          "hint": "Street name",
+          "validation": null
+        },
+        {
+          "col": 26,
+          "key": "victim_perm_colony",
+          "section": "Victim Permanent Address",
+          "label": "Victim Permanent Colony",
+          "hint": "Colony name",
+          "validation": null
+        },
+        {
+          "col": 27,
+          "key": "victim_perm_city_town_village",
+          "section": "Victim Permanent Address",
+          "label": "Victim Permanent Village / City / Town",
+          "hint": "Village/City",
+          "validation": null
+        },
+        {
+          "col": 28,
+          "key": "victim_perm_tehsil_block_mandal",
+          "section": "Victim Permanent Address",
+          "label": "Victim Permanent Tehsil / Block / Mandal",
+          "hint": "Tehsil",
+          "validation": null
+        },
+        {
+          "col": 29,
+          "key": "victim_perm_country",
+          "section": "Victim Permanent Address",
+          "label": "Victim Permanent Nationality",
+          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Indian,Nepalese,Bhutanese,Bangladeshi,Pakistani,Sri Lankan,Afghan,Myanmar,Tibetan,American,British,Canadian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 30,
+          "key": "victim_perm_state",
+          "section": "Victim Permanent Address",
+          "label": "Victim Permanent State",
+          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DYN_VICTIM_PERM_STATE"
+            ]
+          }
+        },
+        {
+          "col": 31,
+          "key": "victim_perm_district",
+          "section": "Victim Permanent Address",
+          "label": "Victim Permanent District",
+          "hint": "select (20 options): Central District, Central District, Central District, Central District, Central District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 32,
+          "key": "victim_perm_police_station",
+          "section": "Victim Permanent Address",
+          "label": "Victim Permanent Police Station",
+          "hint": "Police Station",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 33,
+          "key": "victim_perm_pincode",
+          "section": "Victim Permanent Address",
+          "label": "Victim Permanent Pin Code",
+          "hint": "6-digit PIN code",
+          "validation": null
+        },
+        {
+          "col": 34,
+          "key": null,
+          "section": "Victim Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 35,
+          "key": null,
+          "section": "Victim Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 36,
+          "key": null,
+          "section": "Victim Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": null,
+          "section": "Victim Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
+        }
+      ],
+      "row2Merges": [
+        "B2:L2",
+        "M2:W2",
+        "X2:AK2"
+      ]
+    },
+    "Act and Sections": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "fir_no",
+          "section": "Case Reference",
+          "label": "FIR Number",
+          "hint": "Must match General Information FIR Number",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "act",
+          "section": "Act and Sections",
+          "label": "Act",
+          "hint": "e.g. IPC / BNS",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_ACTS_LIST"
+            ]
+          }
+        },
+        {
+          "col": 3,
+          "key": "sections",
+          "section": "Act and Sections",
+          "label": "Sections",
+          "hint": "e.g. Sec 379/411",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($B5,ACT_TO_SECTIONS_NR,2,FALSE))"
+            ]
+          }
+        },
+        {
+          "col": 4,
+          "key": "crime_head",
+          "section": "Major / Minor Head",
+          "label": "Major Head",
+          "hint": "e.g. Burglary / Snatching",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($C5,SECTION_TO_MAJOR_NR,2,FALSE))"
+            ]
+          }
+        },
+        {
+          "col": 5,
+          "key": "minor_head",
+          "section": "Major / Minor Head",
+          "label": "Minor Head",
+          "hint": "e.g. Cycle Theft / Dowry Death",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($D5,MAJOR_HEAD_TO_MINOR_NR,2,FALSE))"
+            ]
+          }
+        }
+      ],
+      "row2Merges": [
+        "B2:C2",
+        "D2:E2"
+      ]
+    },
+    "Accused Detail": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "fir_no",
+          "section": "Case Reference",
+          "label": "FIR Number",
+          "hint": "Must match General Information FIR Number",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "accused_first_name",
+          "section": "Accused Personal Details",
+          "label": "Accused First Name",
+          "hint": "First Name",
+          "validation": null
+        },
+        {
+          "col": 3,
+          "key": "accused_middle_name",
+          "section": "Accused Personal Details",
+          "label": "Accused Middle Name",
+          "hint": "Middle Name",
+          "validation": null
+        },
+        {
+          "col": 4,
+          "key": "accused_last_name",
+          "section": "Accused Personal Details",
+          "label": "Accused Last Name",
+          "hint": "Last Name",
+          "validation": null
+        },
+        {
+          "col": 5,
+          "key": "accused_nickname",
+          "section": "Accused Personal Details",
+          "label": "Accused Nickname(s)",
+          "hint": "Nickname or alias",
+          "validation": null
+        },
+        {
+          "col": 6,
+          "key": "accused_gender",
+          "section": "Accused Personal Details",
+          "label": "Accused Gender",
+          "hint": "select: Male, Female, Transgender, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Male,Female,Transgender,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 7,
+          "key": "accused_marital_status",
+          "section": "Accused Personal Details",
+          "label": "Accused Marital Status",
+          "hint": "select: Married, Unmarried, Divorced, Widowed, Single, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Married,Unmarried,Divorced,Widowed,Single,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 8,
+          "key": "accused_relation_type",
+          "section": "Accused Personal Details",
+          "label": "Accused Relation Type",
+          "hint": "select: Father, Mother, Husband, Wife, Guardian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Father,Mother,Husband,Wife,Guardian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 9,
+          "key": "accused_relative_name",
+          "section": "Accused Personal Details",
+          "label": "Accused Relative Name",
+          "hint": "Father's or Husband's Name",
+          "validation": null
+        },
+        {
+          "col": 10,
+          "key": "accused_mobile_country_code",
+          "section": "Accused Personal Details",
+          "label": "Accused Mobile Country Code",
+          "hint": "e.g. +91",
+          "validation": null
+        },
+        {
+          "col": 11,
+          "key": "accused_mobile",
+          "section": "Accused Personal Details",
+          "label": "Accused Mobile No.",
+          "hint": "10-digit mobile number",
+          "validation": null
+        },
+        {
+          "col": 12,
+          "key": "accused_qualification",
+          "section": "Accused Personal Details",
+          "label": "Accused Qualification",
+          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
+            ]
+          }
+        },
+        {
+          "col": 13,
+          "key": "accused_age_year",
+          "section": "Accused Personal Details",
+          "label": "Accused Age (Years)",
+          "hint": "Age in years",
+          "validation": null
+        },
+        {
+          "col": 14,
+          "key": "accused_house_no",
+          "section": "Accused Present Address",
+          "label": "Accused House No.",
+          "hint": "House Number",
+          "validation": null
+        },
+        {
+          "col": 15,
+          "key": "accused_street",
+          "section": "Accused Present Address",
+          "label": "Accused Street",
+          "hint": "Street name",
+          "validation": null
+        },
+        {
+          "col": 16,
+          "key": "accused_colony",
+          "section": "Accused Present Address",
+          "label": "Accused Colony",
+          "hint": "Colony name",
+          "validation": null
+        },
+        {
+          "col": 17,
+          "key": "accused_city_town_village",
+          "section": "Accused Present Address",
+          "label": "Accused Village / City / Town",
+          "hint": "Village/City",
+          "validation": null
+        },
+        {
+          "col": 18,
+          "key": "accused_tehsil_block_mandal",
+          "section": "Accused Present Address",
+          "label": "Accused Tehsil / Block / Mandal",
+          "hint": "Tehsil",
+          "validation": null
+        },
+        {
+          "col": 19,
+          "key": "accused_country",
+          "section": "Accused Present Address",
+          "label": "Accused Nationality",
+          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Indian,Nepalese,Bhutanese,Bangladeshi,Pakistani,Sri Lankan,Afghan,Myanmar,Tibetan,American,British,Canadian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 20,
+          "key": "accused_state",
+          "section": "Accused Present Address",
+          "label": "Accused State",
+          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DYN_ACCUSED_STATE"
+            ]
+          }
+        },
+        {
+          "col": 21,
+          "key": "accused_district",
+          "section": "Accused Present Address",
+          "label": "Accused District",
+          "hint": "select (20 options): Central District, Central District, Central District, Central District, Central District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 22,
+          "key": "accused_police_station",
+          "section": "Accused Present Address",
+          "label": "Accused Police Station",
+          "hint": "Police Station",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 23,
+          "key": "accused_pincode",
+          "section": "Accused Present Address",
+          "label": "Accused Pin Code",
+          "hint": "6-digit PIN code",
+          "validation": null
+        },
+        {
+          "col": 24,
+          "key": "accused_perm_same",
+          "section": "Accused Present Address",
+          "label": "Is Permanent Address same as Present Address?",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 25,
+          "key": "accused_perm_house_no",
+          "section": "Accused Permanent Address",
+          "label": "Accused Permanent House No.",
+          "hint": "House Number",
+          "validation": null
+        },
+        {
+          "col": 26,
+          "key": "accused_perm_street",
+          "section": "Accused Permanent Address",
+          "label": "Accused Permanent Street",
+          "hint": "Street name",
+          "validation": null
+        },
+        {
+          "col": 27,
+          "key": "accused_perm_colony",
+          "section": "Accused Permanent Address",
+          "label": "Accused Permanent Colony",
+          "hint": "Colony name",
+          "validation": null
+        },
+        {
+          "col": 28,
+          "key": "accused_perm_city_town_village",
+          "section": "Accused Permanent Address",
+          "label": "Accused Permanent Village / City / Town",
+          "hint": "Village/City",
+          "validation": null
+        },
+        {
+          "col": 29,
+          "key": "accused_perm_tehsil_block_mandal",
+          "section": "Accused Permanent Address",
+          "label": "Accused Permanent Tehsil / Block / Mandal",
+          "hint": "Tehsil",
+          "validation": null
+        },
+        {
+          "col": 30,
+          "key": "accused_perm_country",
+          "section": "Accused Permanent Address",
+          "label": "Accused Permanent Nationality",
+          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Indian,Nepalese,Bhutanese,Bangladeshi,Pakistani,Sri Lankan,Afghan,Myanmar,Tibetan,American,British,Canadian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 31,
+          "key": "accused_perm_state",
+          "section": "Accused Permanent Address",
+          "label": "Accused Permanent State",
+          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DYN_ACCUSED_PERM_STATE"
+            ]
+          }
+        },
+        {
+          "col": 32,
+          "key": "accused_perm_district",
+          "section": "Accused Permanent Address",
+          "label": "Accused Permanent District",
+          "hint": "select (20 options): Central District, Central District, Central District, Central District, Central District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 33,
+          "key": "accused_perm_police_station",
+          "section": "Accused Permanent Address",
+          "label": "Accused Permanent Police Station",
+          "hint": "Police Station",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 34,
+          "key": "accused_perm_pincode",
+          "section": "Accused Permanent Address",
+          "label": "Accused Permanent Pin Code",
+          "hint": "6-digit PIN code",
+          "validation": null
+        },
+        {
+          "col": 35,
+          "key": null,
+          "section": "Accused Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 36,
+          "key": null,
+          "section": "Accused Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": null,
+          "section": "Accused Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
+        }
+      ],
+      "row2Merges": [
+        "B2:M2",
+        "N2:X2",
+        "Y2:AK2"
+      ]
+    },
+    "Property Details": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "fir_no",
+          "section": "Case Reference",
+          "label": "FIR Number",
+          "hint": "Must match General Information FIR Number",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "property_major_category",
+          "section": "Property Details",
+          "label": "Property  Category",
+          "hint": "See dropdown list",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_PROPERTY_MAJOR_CATEGORY"
+            ]
+          }
+        },
+        {
+          "col": 3,
+          "key": "property_minor_category",
+          "section": "Property Details",
+          "label": "Type of property",
+          "hint": "Select from dropdown (depends on major category)",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($B5,PROP_CAT_TO_TYPE_NR,2,FALSE))"
+            ]
+          }
+        },
+        {
+          "col": 4,
+          "key": "property_details",
+          "section": "Property Details",
+          "label": "Property Description",
+          "hint": "textarea",
+          "validation": null
+        },
+        {
+          "col": 5,
+          "key": "property_stolen_recovered",
+          "section": "Property Details",
+          "label": "Property Status (stolen/recovered/involved/seized)",
+          "hint": "select: Stolen, Recovered, Involved, Seized",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Stolen,Recovered,Involved,Seized\""
+            ]
+          }
+        },
+        {
+          "col": 6,
+          "key": "property_value",
+          "section": "Property Details",
+          "label": "Property Value in inr",
+          "hint": null,
+          "validation": null
+        }
+      ],
+      "row2Merges": [
+        "B2:F2"
+      ]
+    }
+  },
+  "ARREST": {
+    "General Info": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "linked_fir_dd_no",
+          "section": "General Information",
+          "label": "Linked FIR No.",
+          "hint": "e.g. FIR-104/2026",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "fir_date",
+          "section": "General Info",
+          "label": "FIR Date",
+          "hint": "YYYY-MM-DD",
+          "validation": null
+        },
+        {
+          "col": 3,
+          "key": "local_head",
+          "section": "General Info",
+          "label": "Local Head",
+          "hint": "e.g. Theft / Larceny",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_LOCAL_HEAD"
+            ]
+          }
+        },
+        {
+          "col": 4,
+          "key": "heinous_offence",
+          "section": "General Info",
+          "label": "Heinous Offence",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 5,
+          "key": "district",
+          "section": "General Info",
+          "label": "District",
+          "hint": "e.g. New Delhi District (NDD)",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 6,
+          "key": "police_station",
+          "section": "General Info",
+          "label": "Police Station",
+          "hint": "e.g. Parliament Street",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 7,
+          "key": "date_of_arrest",
+          "section": "Arrest Details",
+          "label": "Date Of Arrest",
+          "hint": "YYYY-MM-DD",
+          "validation": null
+        },
+        {
+          "col": 8,
+          "key": "time_of_arrest",
+          "section": "Arrest Details",
+          "label": "Time Of Arrest",
+          "hint": "HH:MM",
+          "validation": null
+        },
+        {
+          "col": 9,
+          "key": "place_of_arrest",
+          "section": "Arrest Details",
+          "label": "Place Of Arrest",
+          "hint": "e.g. Nizamuddin Platform 3",
+          "validation": null
+        },
+        {
+          "col": 10,
+          "key": "io_name",
+          "section": "IO Details",
+          "label": "IO / Officer Name",
+          "hint": "e.g. Inspector Ravindra Singh",
+          "validation": null
+        },
+        {
+          "col": 11,
+          "key": "io_pis",
+          "section": "IO Details",
+          "label": "PIS No. of IO",
+          "hint": "e.g. 28080214",
+          "validation": null
+        },
+        {
+          "col": 12,
+          "key": "io_rank",
+          "section": "IO Details",
+          "label": "IO Rank",
+          "hint": "e.g. SI",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Constable,Head Constable,Assistant Sub Inspector,Sub Inspector,Inspector,Deputy Superintendent of Police,Superintendent of Police\""
+            ]
+          }
+        },
+        {
+          "col": 13,
+          "key": "io_mobile",
+          "section": "IO Details",
+          "label": "IO Mobile No.",
+          "hint": "IO contact number",
+          "validation": null
+        }
+      ],
+      "row2Merges": [
+        "B2:F2",
+        "G2:I2",
+        "J2:M2"
+      ]
+    },
+    "Act and Sections": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "linked_fir_dd_no",
+          "section": "Case Reference",
+          "label": "Linked FIR no.",
+          "hint": "Must match General Info sheet",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "act",
+          "section": "Act and Sections",
+          "label": "Act",
+          "hint": "e.g. IPC / BNS",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_ACTS_LIST"
+            ]
+          }
+        },
+        {
+          "col": 3,
+          "key": "sections",
+          "section": "Act and Sections",
+          "label": "Sections",
+          "hint": "e.g. Sec 379/411",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($B5,ACT_TO_SECTIONS_NR,2,FALSE))"
+            ]
+          }
+        },
+        {
+          "col": 4,
+          "key": "crime_head",
+          "section": "Major / Minor Head",
+          "label": "Major Head",
+          "hint": "e.g. Burglary / Snatching",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($C5,SECTION_TO_MAJOR_NR,2,FALSE))"
+            ]
+          }
+        },
+        {
+          "col": 5,
+          "key": "minor_head",
+          "section": "Major / Minor Head",
+          "label": "Minor Head",
+          "hint": "e.g. Cycle Theft / Dowry Death",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($D5,MAJOR_HEAD_TO_MINOR_NR,2,FALSE))"
+            ]
+          }
+        }
+      ],
+      "row2Merges": [
+        "B2:C2",
+        "D2:E2"
+      ]
+    },
+    "Person Arrested Detail": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "linked_fir_dd_no",
+          "section": "Case Reference",
+          "label": "Linked FIR no.",
+          "hint": "Must match General Info sheet",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "arrested_first_name",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person First Name",
+          "hint": "First Name",
+          "validation": null
+        },
+        {
+          "col": 3,
+          "key": "arrested_middle_name",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Middle Name",
+          "hint": "Middle Name",
+          "validation": null
+        },
+        {
+          "col": 4,
+          "key": "arrested_last_name",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Last Name",
+          "hint": "Last Name",
+          "validation": null
+        },
+        {
+          "col": 5,
+          "key": "arrested_nickname",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Nickname(s)",
+          "hint": "Nickname or alias",
+          "validation": null
+        },
+        {
+          "col": 6,
+          "key": "arrested_gender",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Gender",
+          "hint": "select: Male, Female, Transgender, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Male,Female,Transgender,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 7,
+          "key": "arrested_marital_status",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Marital Status",
+          "hint": "select: Married, Unmarried, Divorced, Widowed, Single, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Married,Unmarried,Divorced,Widowed,Single,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 8,
+          "key": "arrested_relation_type",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Relation Type",
+          "hint": "select: Father, Mother, Husband, Wife, Guardian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Father,Mother,Husband,Wife,Guardian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 9,
+          "key": "arrested_relative_name",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Relative Name",
+          "hint": "Father's or Husband's Name",
+          "validation": null
+        },
+        {
+          "col": 10,
+          "key": "arrested_mobile_country_code",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Mobile Country Code",
+          "hint": "e.g. +91",
+          "validation": null
+        },
+        {
+          "col": 11,
+          "key": "arrested_mobile",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Mobile No.",
+          "hint": "10-digit mobile number",
+          "validation": null
+        },
+        {
+          "col": 12,
+          "key": "arrested_qualification",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Qualification",
+          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
+            ]
+          }
+        },
+        {
+          "col": 13,
+          "key": "arrested_age_year",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Age (Years)",
+          "hint": "Age in years",
+          "validation": null
+        },
+        {
+          "col": 14,
+          "key": "arrested_house_no",
+          "section": "Arrested Person Present Address",
+          "label": "Arrested Person House No.",
+          "hint": "House Number",
+          "validation": null
+        },
+        {
+          "col": 15,
+          "key": "arrested_street",
+          "section": "Arrested Person Present Address",
+          "label": "Arrested Person Street",
+          "hint": "Street name",
+          "validation": null
+        },
+        {
+          "col": 16,
+          "key": "arrested_colony",
+          "section": "Arrested Person Present Address",
+          "label": "Arrested Person Colony",
+          "hint": "Colony name",
+          "validation": null
+        },
+        {
+          "col": 17,
+          "key": "arrested_city_town_village",
+          "section": "Arrested Person Present Address",
+          "label": "Arrested Person Village / City / Town",
+          "hint": "Village/City",
+          "validation": null
+        },
+        {
+          "col": 18,
+          "key": "arrested_tehsil_block_mandal",
+          "section": "Arrested Person Present Address",
+          "label": "Arrested Person Tehsil / Block / Mandal",
+          "hint": "Tehsil",
+          "validation": null
+        },
+        {
+          "col": 19,
+          "key": "arrested_country",
+          "section": "Arrested Person Present Address",
+          "label": "Arrested Person Nationality",
+          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Indian,Nepalese,Bhutanese,Bangladeshi,Pakistani,Sri Lankan,Afghan,Myanmar,Tibetan,American,British,Canadian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 20,
+          "key": "arrested_state",
+          "section": "Arrested Person Present Address",
+          "label": "Arrested Person State",
+          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DYN_ARRESTED_STATE"
+            ]
+          }
+        },
+        {
+          "col": 21,
+          "key": "arrested_district",
+          "section": "Arrested Person Present Address",
+          "label": "Arrested Person District",
+          "hint": "select (20 options): Central District, Central District, Central District, Central District, Central District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 22,
+          "key": "arrested_police_station",
+          "section": "Arrested Person Present Address",
+          "label": "Arrested Person Police Station",
+          "hint": "Police Station",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 23,
+          "key": "arrested_pincode",
+          "section": "Arrested Person Present Address",
+          "label": "Arrested Person Pin Code",
+          "hint": "6-digit PIN code",
+          "validation": null
+        },
+        {
+          "col": 24,
+          "key": "arrested_perm_same",
+          "section": "Arrested Person Present Address",
+          "label": "Is Permanent Address same as Present Address?",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 25,
+          "key": "arrested_perm_house_no",
+          "section": "Arrested Person Permanent Address",
+          "label": "Arrested Person Permanent House No.",
+          "hint": "House Number",
+          "validation": null
+        },
+        {
+          "col": 26,
+          "key": "arrested_perm_street",
+          "section": "Arrested Person Permanent Address",
+          "label": "Arrested Person Permanent Street",
+          "hint": "Street name",
+          "validation": null
+        },
+        {
+          "col": 27,
+          "key": "arrested_perm_colony",
+          "section": "Arrested Person Permanent Address",
+          "label": "Arrested Person Permanent Colony",
+          "hint": "Colony name",
+          "validation": null
+        },
+        {
+          "col": 28,
+          "key": "arrested_perm_city_town_village",
+          "section": "Arrested Person Permanent Address",
+          "label": "Arrested Person Permanent Village / City / Town",
+          "hint": "Village/City",
+          "validation": null
+        },
+        {
+          "col": 29,
+          "key": "arrested_perm_tehsil_block_mandal",
+          "section": "Arrested Person Permanent Address",
+          "label": "Arrested Person Permanent Tehsil / Block / Mandal",
+          "hint": "Tehsil",
+          "validation": null
+        },
+        {
+          "col": 30,
+          "key": "arrested_perm_country",
+          "section": "Arrested Person Permanent Address",
+          "label": "Arrested Person Permanent Nationality",
+          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Indian,Nepalese,Bhutanese,Bangladeshi,Pakistani,Sri Lankan,Afghan,Myanmar,Tibetan,American,British,Canadian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 31,
+          "key": "arrested_perm_state",
+          "section": "Arrested Person Permanent Address",
+          "label": "Arrested Person Permanent State",
+          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DYN_ARRESTED_PERM_STATE"
+            ]
+          }
+        },
+        {
+          "col": 32,
+          "key": "arrested_perm_district",
+          "section": "Arrested Person Permanent Address",
+          "label": "Arrested Person Permanent District",
+          "hint": "select (20 options): Central District, Central District, Central District, Central District, Central District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 33,
+          "key": "arrested_perm_police_station",
+          "section": "Arrested Person Permanent Address",
+          "label": "Arrested Person Permanent Police Station",
+          "hint": "Police Station",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_POLICE_STATION"
+            ]
+          }
+        },
+        {
+          "col": 34,
+          "key": "arrested_perm_pincode",
+          "section": "Arrested Person Permanent Address",
+          "label": "Arrested Person Permanent Pin Code",
+          "hint": "6-digit PIN code",
+          "validation": null
+        },
+        {
+          "col": 35,
+          "key": "nafis_prepared",
+          "section": "Particular Details",
+          "label": "NAFIS Prepared",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 36,
+          "key": "dossier_prepared",
+          "section": "Particular Details",
+          "label": "Dossier Prepared",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 37,
+          "key": "prev_involvement",
+          "section": "Particular Details",
+          "label": "Previous involvement",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 38,
+          "key": "bad_character",
+          "section": "Particular Details",
+          "label": "Bad Character (BC)",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 39,
+          "key": "proclaimed_offender",
+          "section": "Particular Details",
+          "label": "Proclaimed Offender (PO)",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 40,
+          "key": "verifying_officer_name",
+          "section": "Particular Details",
+          "label": "Arresting Officer Name",
+          "hint": "",
+          "validation": null
+        },
+        {
+          "col": 41,
+          "key": "verifying_officer_rank",
+          "section": "Particular Details",
+          "label": "Arresting Officer Rank",
+          "hint": "",
+          "validation": null
+        },
+        {
+          "col": 42,
+          "key": "status",
+          "section": "Particular Details",
+          "label": "Custody status",
+          "hint": "select: JC, PC, Bail, Bound Down, Release, Lockup, 35(3) BNS Notice, Fine",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"JC,PC,Bail,Bound Down,Release,Lockup,35(3) BNS Notice,Fine\""
+            ]
+          }
+        },
+        {
+          "col": 43,
+          "key": "scheme_of_arrest",
+          "section": "Particular Details",
+          "label": "Scheme of arrest",
+          "hint": "select: Integrated Pride, Group Patrolling, Anti-snatching, By Prahari, By Eyes & Ears Scheme Members",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Integrated Pride,Group Patrolling,Anti-snatching,By Prahari,By Eyes & Ears Scheme Members\""
+            ]
+          }
+        },
+        {
+          "col": 44,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 45,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 46,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 47,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 48,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        }
+      ],
+      "row2Merges": [
+        "AI2:AV2",
+        "B2:M2",
+        "N2:X2",
+        "Y2:AH2"
+      ]
+    },
+    "Property Details": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "linked_fir_dd_no",
+          "section": "Case Reference",
+          "label": "Linked FIR No. ",
+          "hint": "Must match General Info sheet",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "property_major_category",
+          "section": "Property Details",
+          "label": "Property  Category",
+          "hint": "See dropdown list",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_PROPERTY_MAJOR_CATEGORY"
+            ]
+          }
+        },
+        {
+          "col": 3,
+          "key": "property_details",
+          "section": "Property Details",
+          "label": "Property Description",
+          "hint": "textarea",
+          "validation": null
+        },
+        {
+          "col": 4,
+          "key": "property_stolen_recovered",
+          "section": "Property Details",
+          "label": "Property Status (stolen/recovered/involved/seized)",
+          "hint": "select: Stolen, Recovered, Involved, Seized",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Stolen,Recovered,Involved,Seized\""
+            ]
+          }
+        },
+        {
+          "col": 5,
+          "key": "property_value",
+          "section": "Property Details",
+          "label": "Property Value in inr",
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 6,
+          "key": "property_minor_category",
+          "section": "Property Details",
+          "label": "Type of property",
+          "hint": "Select from dropdown (depends on major category)",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($B5,PROP_CAT_TO_TYPE_NR,2,FALSE))"
+            ]
+          }
+        }
+      ],
+      "row2Merges": [
+        "B2:F2"
+      ]
+    }
+  },
+  "UIDB": {
+    "General Info": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "gd_no",
+          "section": "General Information",
+          "label": "GD Number, Date & Time",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "status",
+          "section": "General Information",
+          "label": "Status",
+          "hint": "select: ",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Referred to district hospital,Identified,Body Claimed,Unidentified,Held in Mortuary\""
+            ]
+          }
+        },
+        {
+          "col": 3,
+          "key": "identified",
+          "section": "UIDB Details",
+          "label": "Body Identified",
+          "hint": "select: true, false",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 4,
+          "key": "deceased_name",
+          "section": "UIDB Details",
+          "label": "Name of Deceased",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 5,
+          "key": "deceased_house_no",
+          "section": "UIDB Details",
+          "label": "Deceased Present House No.",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 6,
+          "key": "deceased_street",
+          "section": "UIDB Details",
+          "label": "Deceased Present Street",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 7,
+          "key": "deceased_colony",
+          "section": "UIDB Details",
+          "label": "Deceased Present Colony",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 8,
+          "key": "deceased_city_town_village",
+          "section": "UIDB Details",
+          "label": "Deceased Present Village / City / Town",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 9,
+          "key": "deceased_state",
+          "section": "UIDB Details",
+          "label": "Deceased Present State",
+          "hint": "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "'_Lookups'!$A$2:$A$34"
+            ]
+          }
+        },
+        {
+          "col": 10,
+          "key": "deceased_district",
+          "section": "UIDB Details",
+          "label": "Deceased Present District",
+          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "'_Lookups'!$B$2:$B$16"
+            ]
+          }
+        },
+        {
+          "col": 11,
+          "key": "deceased_pincode",
+          "section": "UIDB Details",
+          "label": "Deceased Present Pin Code",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 12,
+          "key": "deceased_perm_same",
+          "section": "UIDB Details",
+          "label": "Is Permanent Address same as Present Address?",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 13,
+          "key": "deceased_perm_house_no",
+          "section": "UIDB Details",
+          "label": "Deceased Permanent House No.",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 14,
+          "key": "deceased_perm_street",
+          "section": "UIDB Details",
+          "label": "Deceased Permanent Street",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 15,
+          "key": "deceased_perm_colony",
+          "section": "UIDB Details",
+          "label": "Deceased Permanent Colony",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 16,
+          "key": "deceased_perm_city_town_village",
+          "section": "UIDB Details",
+          "label": "Deceased Permanent Village / City / Town",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 17,
+          "key": "deceased_perm_state",
+          "section": "UIDB Details",
+          "label": "Deceased Permanent State",
+          "hint": "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "'_Lookups'!$C$2:$C$34"
+            ]
+          }
+        },
+        {
+          "col": 18,
+          "key": "deceased_perm_district",
+          "section": "UIDB Details",
+          "label": "Deceased Permanent District",
+          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "'_Lookups'!$D$2:$D$16"
+            ]
+          }
+        },
+        {
+          "col": 19,
+          "key": "deceased_perm_pincode",
+          "section": "UIDB Details",
+          "label": "Deceased Permanent Pin Code",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 20,
+          "key": "found_date",
+          "section": "UIDB Details",
+          "label": "Date Body Found",
+          "hint": "date (DD/MM/YYYY)",
+          "validation": null
+        },
+        {
+          "col": 21,
+          "key": "found_place",
+          "section": "UIDB Details",
+          "label": "Place Body Found",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 22,
+          "key": "found_time",
+          "section": "UIDB Details",
+          "label": "Time Body Found",
+          "hint": "time (HH:MM)",
+          "validation": null
+        },
+        {
+          "col": 23,
+          "key": "found_latitude",
+          "section": "UIDB Details",
+          "label": "Place Body Found Latitude",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 24,
+          "key": "found_longitude",
+          "section": "UIDB Details",
+          "label": "Place Body Found Longitude",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 25,
+          "key": "approx_age",
+          "section": "UIDB Details",
+          "label": "Approximate Age",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 26,
+          "key": "description",
+          "section": "UIDB Details",
+          "label": "Physical Description",
+          "hint": "textarea",
+          "validation": null
+        },
+        {
+          "col": 27,
+          "key": "identification_marks",
+          "section": "UIDB Details",
+          "label": "Identification Marks",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 28,
+          "key": "gender",
+          "section": "Physical Description",
+          "label": "Gender",
+          "hint": "select: Male, Female, Transgender, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Male,Female,Transgender,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 29,
+          "key": "height",
+          "section": "Physical Description",
+          "label": "Height",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 30,
+          "key": "built",
+          "section": "Physical Description",
+          "label": "Built",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 31,
+          "key": "complexion",
+          "section": "Physical Description",
+          "label": "Complexion",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 32,
+          "key": "upper_dress_color",
+          "section": "Physical Description",
+          "label": "Upper Dress Color",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 33,
+          "key": "lower_dress_color",
+          "section": "Physical Description",
+          "label": "Lower Dress Color",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 34,
+          "key": "face",
+          "section": "Physical Description",
+          "label": "Face",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 35,
+          "key": "hair",
+          "section": "Physical Description",
+          "label": "Hair",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 36,
+          "key": "moustache",
+          "section": "Physical Description",
+          "label": "Moustache",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": "beard",
+          "section": "Physical Description",
+          "label": "Beard",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 38,
+          "key": "informant_name",
+          "section": "Informant & Contact Details",
+          "label": "Informant Name",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 39,
+          "key": "informant_relation",
+          "section": "Informant & Contact Details",
+          "label": "Relation with Deceased",
+          "hint": "select: Father, Mother, Husband, Wife, Brother, Sister, Son, Daughter, Guardian, Friend, Neighbor, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Father,Mother,Husband,Wife,Brother,Sister,Son,Daughter,Guardian,Friend,Neighbor,Other\""
+            ]
+          }
+        },
+        {
+          "col": 40,
+          "key": "informant_mobile",
+          "section": "Informant & Contact Details",
+          "label": "Informant Mobile",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 41,
+          "key": "zipnet_no",
+          "section": "Informant & Contact Details",
+          "label": "ZIPNET No.",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 42,
+          "key": "cause_of_death",
+          "section": "Inquest Details",
+          "label": "Cause of Death",
+          "hint": "select: Accidental, Natural, Suicide, Drowning, Murder, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Accidental,Natural,Suicide,Drowning,Murder,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 43,
+          "key": "deceased_relative_name",
+          "section": "Inquest Details",
+          "label": "Relative Name",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 44,
+          "key": "deceased_relation_type",
+          "section": "Inquest Details",
+          "label": "Relation with Deceased",
+          "hint": "select: Father, Mother, Husband, Wife, Brother, Sister, Son, Daughter, Guardian, Friend, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Father,Mother,Husband,Wife,Brother,Sister,Son,Daughter,Guardian,Friend,Other\""
+            ]
+          }
+        },
+        {
+          "col": 45,
+          "key": "filed_by_acp_sdm",
+          "section": "Inquest Details",
+          "label": "Inquest Filed by ACP / SDM",
+          "hint": "select: SDM, ACP, None",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"SDM,ACP,None\""
+            ]
+          }
+        },
+        {
+          "col": 46,
+          "key": "filed_by_acp_sdm_date",
+          "section": "Inquest Details",
+          "label": "Date of Filed by ACP/SDM",
+          "hint": "date (DD/MM/YYYY)",
+          "validation": null
+        },
+        {
+          "col": 47,
+          "key": "io_name",
+          "section": "IO Details",
+          "label": "IO / Officer Name",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 48,
+          "key": "io_rank",
+          "section": "IO Details",
+          "label": "IO Rank",
+          "hint": "select: Constable, Head Constable, Assistant Sub Inspector, Sub Inspector, Inspector, Deputy Superintendent of Police, Superintendent of Police",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Constable,Head Constable,Assistant Sub Inspector,Sub Inspector,Inspector,Deputy Superintendent of Police,Superintendent of Police\""
+            ]
+          }
+        },
+        {
+          "col": 49,
+          "key": "io_pis",
+          "section": "IO Details",
+          "label": "PIS No. of IO",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 50,
+          "key": "io_mobile",
+          "section": "IO Details",
+          "label": "IO Mobile No.",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 51,
+          "key": "id_card",
+          "section": "General Information",
+          "label": "ID card",
+          "hint": "number",
+          "validation": null
+        }
+      ],
+      "row2Merges": [
+        "A2:B2",
+        "AB2:AK2",
+        "AL2:AO2",
+        "AP2:AT2",
+        "AU2:AX2",
+        "C2:AA2"
+      ]
+    },
+    "Act and Sections": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "gd_no",
+          "section": "General Information",
+          "label": "GD Number, Date & Time",
+          "hint": "Must match Import Template sheet GD Number",
+          "validation": null
+        },
+        {
+          "col": 2,
+          "key": "act_name",
+          "section": "Act and Sections",
+          "label": "Act / Law Name",
+          "hint": "e.g. IPC / BNS",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_ACTS_LIST"
+            ]
+          }
+        },
+        {
+          "col": 3,
+          "key": "sections",
+          "section": "Act and Sections",
+          "label": "Sections",
+          "hint": "e.g. Sec 302",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($B5,ACT_TO_SECTIONS_NR,2,FALSE))"
+            ]
+          }
+        },
+        {
+          "col": 4,
+          "key": "major_head",
+          "section": "Act and Sections",
+          "label": "Major Head",
+          "hint": "e.g. Murder / Theft",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($C5,SECTION_TO_MAJOR_NR,2,FALSE))"
+            ]
+          }
+        },
+        {
+          "col": 5,
+          "key": "minor_head",
+          "section": "Act and Sections",
+          "label": "Minor Head",
+          "hint": "e.g. Cycle Theft / Dowry Death",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "INDIRECT(VLOOKUP($D5,MAJOR_HEAD_TO_MINOR_NR,2,FALSE))"
+            ]
+          }
+        }
+      ],
+      "row2Merges": [
+        "B2:E2"
+      ]
+    }
+  },
+  "MISSING": {
+    "Import Template": {
+      "columns": [
+        {
+          "col": 1,
+          "key": "source",
+          "section": "General Information",
+          "label": "Source of Information",
+          "hint": "select: PCR, DD",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"PCR Call,DD / Written Complaint\""
+            ]
+          }
+        },
+        {
+          "col": 2,
+          "key": "gd_no",
+          "section": "General Information",
+          "label": "GD Number, Date & Time",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 3,
+          "key": "missing_type",
+          "section": "General Information",
+          "label": "Missing / Found Type",
+          "hint": "select: Missing, Found",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Missing,Found\""
+            ]
+          }
+        },
+        {
+          "col": 4,
+          "key": "status",
+          "section": "General Information",
+          "label": "Status",
+          "hint": "select: ",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Un-traced,Traced,Referred,Closed\""
+            ]
+          }
+        },
+        {
+          "col": 5,
+          "key": "mp_known",
+          "section": "Address Details",
+          "label": "Is Missing Person Identified / Known?",
+          "hint": "",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 6,
+          "key": "missing_name",
+          "section": "Address Details",
+          "label": "Name of Missing Person",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 7,
+          "key": "mp_house_no",
+          "section": "Address Details",
+          "label": "Present House No.",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 8,
+          "key": "mp_street",
+          "section": "Address Details",
+          "label": "Present Street",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 9,
+          "key": "mp_colony",
+          "section": "Address Details",
+          "label": "Present Colony",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 10,
+          "key": "mp_city_town_village",
+          "section": "Address Details",
+          "label": "Present Village / City / Town",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 11,
+          "key": "mp_state",
+          "section": "Address Details",
+          "label": "Present State",
+          "hint": "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "'_Lookups'!$A$2:$A$34"
+            ]
+          }
+        },
+        {
+          "col": 12,
+          "key": "mp_district",
+          "section": "Address Details",
+          "label": "Present District",
+          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "'_Lookups'!$B$2:$B$16"
+            ]
+          }
+        },
+        {
+          "col": 13,
+          "key": "mp_pincode",
+          "section": "Address Details",
+          "label": "Present Pin Code",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 14,
+          "key": "mp_perm_same",
+          "section": "Address Details",
+          "label": "Is Permanent Address same as Present Address?",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 15,
+          "key": "mp_perm_house_no",
+          "section": "Address Details",
+          "label": "Permanent House No.",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 16,
+          "key": "mp_perm_street",
+          "section": "Address Details",
+          "label": "Permanent Street",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 17,
+          "key": "mp_perm_colony",
+          "section": "Address Details",
+          "label": "Permanent Colony",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 18,
+          "key": "mp_perm_city_town_village",
+          "section": "Address Details",
+          "label": "Permanent Village / City / Town",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 19,
+          "key": "mp_perm_state",
+          "section": "Address Details",
+          "label": "Permanent State",
+          "hint": "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "'_Lookups'!$C$2:$C$34"
+            ]
+          }
+        },
+        {
+          "col": 20,
+          "key": "mp_perm_district",
+          "section": "Address Details",
+          "label": "Permanent District",
+          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "'_Lookups'!$D$2:$D$16"
+            ]
+          }
+        },
+        {
+          "col": 21,
+          "key": "mp_perm_pincode",
+          "section": "Address Details",
+          "label": "Permanent Pin Code",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 22,
+          "key": "gender",
+          "section": "Address Details",
+          "label": "Gender",
+          "hint": "select: Male, Female, Transgender, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Male,Female,Transgender,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 23,
+          "key": "age",
+          "section": "Address Details",
+          "label": "Age",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 24,
+          "key": "major_minor",
+          "section": "Address Details",
+          "label": "Major / Minor",
+          "hint": "select: Major, Minor",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Major,Minor\""
+            ]
+          }
+        },
+        {
+          "col": 25,
+          "key": "missing_date",
+          "section": "Address Details",
+          "label": "Date Missing Since",
+          "hint": "date (DD/MM/YYYY)",
+          "validation": null
+        },
+        {
+          "col": 26,
+          "key": "missing_place",
+          "section": "Address Details",
+          "label": "Last Seen Place",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 27,
+          "key": "Mental State",
+          "section": "Address Details",
+          "label": "Mental State",
+          "hint": "select: Normal, Abnormal",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Normal,Abnormal\""
+            ]
+          }
+        },
+        {
+          "col": 28,
+          "key": "physical_description",
+          "section": "Address Details",
+          "label": "Physical Description",
+          "hint": "textarea",
+          "validation": null
+        },
+        {
+          "col": 29,
+          "key": "informant_name",
+          "section": "Informant & Contact Details",
+          "label": "Informant Name",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 30,
+          "key": "informant_relation",
+          "section": "Informant & Contact Details",
+          "label": "Relation with Missing Person",
+          "hint": "select: Father, Mother, Husband, Wife, Brother, Sister, Son, Daughter, Guardian, Friend, Neighbor, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Father,Mother,Husband,Wife,Brother,Sister,Son,Daughter,Guardian,Friend,Neighbor,Other\""
+            ]
+          }
+        },
+        {
+          "col": 31,
+          "key": "informant_mobile",
+          "section": "Informant & Contact Details",
+          "label": "Informant Mobile",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 32,
+          "key": "zipnet_no",
+          "section": "Informant & Contact Details",
+          "label": "ZIPNET No.",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 33,
+          "key": "height",
+          "section": "Address Details",
+          "label": "Height",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 34,
+          "key": "built",
+          "section": "Address Details",
+          "label": "Built",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 35,
+          "key": "complexion",
+          "section": "Address Details",
+          "label": "Complexion",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 36,
+          "key": "missing_relation_type",
+          "section": "Address Details",
+          "label": "Relation Type",
+          "hint": "select: Father, Mother, Husband, Wife, Guardian, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Father,Mother,Husband,Wife,Guardian,Other\""
+            ]
+          }
+        },
+        {
+          "col": 37,
+          "key": "upper_dress_color",
+          "section": "Address Details",
+          "label": "Upper Dress Color",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 38,
+          "key": "lower_dress_color",
+          "section": "Address Details",
+          "label": "Lower Dress Color",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 39,
+          "key": "face",
+          "section": "Address Details",
+          "label": "Face",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 40,
+          "key": "hair",
+          "section": "Address Details",
+          "label": "Hair",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 41,
+          "key": "moustache",
+          "section": "Address Details",
+          "label": "Moustache",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 42,
+          "key": "beard",
+          "section": "Address Details",
+          "label": "Beard",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 43,
+          "key": "io_name",
+          "section": "IO Details",
+          "label": "IO / Officer Name",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 44,
+          "key": "io_rank",
+          "section": "IO Details",
+          "label": "IO Rank",
+          "hint": "select: Constable, Head Constable, Assistant Sub Inspector, Sub Inspector, Inspector, Deputy Superintendent of Police, Superintendent of Police",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Constable,Head Constable,Assistant Sub Inspector,Sub Inspector,Inspector,Deputy Superintendent of Police,Superintendent of Police\""
+            ]
+          }
+        },
+        {
+          "col": 45,
+          "key": "io_pis",
+          "section": "IO Details",
+          "label": "PIS No. of IO",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 46,
+          "key": "io_mobile",
+          "section": "IO Details",
+          "label": "IO Mobile No.",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 47,
+          "key": "lllllllll_dddddddddd",
+          "section": "General Information",
+          "label": "lips details",
+          "hint": "text",
+          "validation": null
+        }
+      ],
+      "row2Merges": [
+        "A2:D2",
+        "AC2:AF2",
+        "AG2:AP2",
+        "AQ2:AT2",
+        "E2:AB2"
+      ]
+    }
+  }
+}

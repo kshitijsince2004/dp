@@ -23,15 +23,11 @@ import {
   arrestActSectionFields,
   arrestPersonFields,
   arrestPropertyFields,
-  CASE_SHEETS_CONFIG,
-  ARREST_SHEETS_CONFIG,
   uidbGeneralFields,
   uidbActSectionFields,
-  missingGeneralFields,
-  UIDB_SHEETS_CONFIG,
-  MISSING_SHEETS_CONFIG,
-  UIDB_ACT_SECTION_EXCLUDE_KEYS
+  missingGeneralFields
 } from './import-fields.config.js';
+import { autoIncludedRegistryFields, parseApplicableTypes } from './registry-sync.util.js';
 
 // Synonyms map to handle template label variations and offsets
 const CASE_SYNONYMS = {
@@ -362,7 +358,7 @@ const SHEET_ALIASES = {
 
 // Patterns that identify an instruction/hint row (Row 4 of the official template)
 // so we never mistake it for a data row.
-const HINT_ROW_PATTERNS = /^(\[required\]|select:|date \(|time \(|number$|boolean$|textarea$|e\.g\.|must match|yyyy|hh:mm|\d+-digit|first name$|middle name$|last name$|nickname|age in years|min age$|max age$|full residential|house number$|street name$|colony name$|village\/city$|tehsil$|police station$|incident narrative|npr number$|father's or)/i;
+const HINT_ROW_PATTERNS = /^(\[required\]|select:|date \(|time \(|number$|boolean$|text$|textarea$|file$|checkbox$|e\.g\.|must match|yyyy|hh:mm|\d+-digit|first name$|middle name$|last name$|nickname|age in years|min age$|max age$|full residential|house number$|street name$|colony name$|village\/city$|tehsil$|police station$|incident narrative|npr number$|father's or)/i;
 
 const looksLikeHintRow = (values) => {
   const nonEmpty = values.filter((v) => v && String(v).trim());
@@ -452,8 +448,11 @@ const buildColumnMap = (worksheet, recordType, registryFields) => {
   return { colMap, dataStartRow, hasHiddenKeys: !!keyRow };
 };
 
-// Helper to parse sheets
-const parseWorksheet = (worksheet, recordType, fieldsList) => {
+// Helper to parse sheets. `coercionFieldsByKey` (field_key → registry row) supplies
+// type-aware coercion (DATE/TIME/SELECT) for every column — including registry fields
+// added after this code shipped, which appear in the template automatically and must
+// import just as cleanly as curated ones.
+const parseWorksheet = (worksheet, recordType, fieldsList, coercionFieldsByKey = null) => {
   const { colMap, dataStartRow } = buildColumnMap(worksheet, recordType, fieldsList);
   const registryFieldsMap = {};
   for (const f of fieldsList) {
@@ -463,26 +462,27 @@ const parseWorksheet = (worksheet, recordType, fieldsList) => {
   const rows = [];
   worksheet.eachRow((row, rowIdx) => {
     if (rowIdx < dataStartRow) return;
-    
+
     let isEmpty = true;
     row.eachCell({ includeEmpty: false }, () => {
       isEmpty = false;
     });
     if (isEmpty) return;
 
-    const rowData = extractRowData(row, colMap, registryFieldsMap, recordType);
+    const rowData = extractRowData(row, colMap, registryFieldsMap, recordType, coercionFieldsByKey);
     rows.push({ rowData, rowIdx });
   });
 
   return { rows };
 };
 
-// Helper to validate sheet rows
-const validateSheetRows = (rows, fieldsList, sheetName, errors, parentKeysSet = null, parentKeyField = null) => {
+// Helper to validate sheet rows. `parentIndex` is a buildParentKeyIndex() result —
+// child rows are matched to parents canonically, not by raw string equality.
+const validateSheetRows = (rows, fieldsList, sheetName, errors, parentIndex = null, parentKeyField = null) => {
   for (const { rowData, rowIdx } of rows) {
-    if (parentKeysSet && parentKeyField) {
+    if (parentIndex && parentKeyField) {
       const parentVal = rowData[parentKeyField];
-      if (!parentVal || !parentKeysSet.has(parentVal)) {
+      if (!parentVal || parentIndex.resolve(parentVal) === null) {
         errors.push({
           row: rowIdx,
           field_key: parentKeyField,
@@ -542,6 +542,103 @@ const parseFirAndYear = (str) => {
   }
   return { firNo: seqToken != null ? String(parseInt(seqToken, 10)) : '', year };
 };
+
+// ── Canonical parent-key matching ───────────────────────────────────────────────
+// Child sheets reference their parent row by FIR / GD number, but the same key
+// arrives in many shapes: text "123/2025" vs numeric 123, zero-padded "0123/2025",
+// "FIR-123/2025", stray spaces, different case. Raw === comparison silently
+// detaches children (victims, accused, acts, properties, persons) from their
+// parent, so every parent↔child comparison goes through one canonical form.
+
+const canonKeyParts = (val) => {
+  const s = String(val ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!s) return null;
+  // A cell listing several FIRs ("12/2025, 13/2025") matches as literal text —
+  // collapsing it to its first FIR would collide with a plain "12/2025" parent.
+  if (splitFirTokens(s).length > 1) return { raw: s, seq: '', year: null };
+  const { firNo, year } = parseFirAndYear(s);
+  return { raw: s, seq: firNo || '', year: year || null };
+};
+
+// Canonical string for a parent key: "seq|year" when both parse, else "seq",
+// else the normalized raw text. Used for duplicate checks and the persisted
+// invalid-parent-key sentinels.
+const canonKey = (val) => {
+  const p = canonKeyParts(val);
+  if (!p) return '';
+  if (p.seq) return p.year ? `${p.seq}|${p.year}` : p.seq;
+  return p.raw;
+};
+
+// Index over the parent sheet's keys supporting lenient child→parent resolution:
+//   1. exact canonical match;
+//   2. else match by FIR sequence alone when exactly one parent is compatible
+//      (a year on both sides that differs is a conflict, a missing year is not).
+const buildParentKeyIndex = (parentVals) => {
+  const byCanon = new Set();
+  const bySeq = new Map(); // seq → [{ canon, year }]
+  for (const v of parentVals) {
+    const p = canonKeyParts(v);
+    if (!p) continue;
+    const canon = p.seq ? (p.year ? `${p.seq}|${p.year}` : p.seq) : p.raw;
+    if (byCanon.has(canon)) continue;
+    byCanon.add(canon);
+    if (p.seq) {
+      if (!bySeq.has(p.seq)) bySeq.set(p.seq, []);
+      bySeq.get(p.seq).push({ canon, year: p.year });
+    }
+  }
+  // Returns the parent's canonical key, or null when no unambiguous parent exists.
+  const resolve = (val) => {
+    const p = canonKeyParts(val);
+    if (!p) return null;
+    const canon = p.seq ? (p.year ? `${p.seq}|${p.year}` : p.seq) : p.raw;
+    if (byCanon.has(canon)) return canon;
+    if (p.seq) {
+      const compatible = (bySeq.get(p.seq) || []).filter(
+        (e) => !p.year || !e.year || e.year === p.year
+      );
+      if (compatible.length === 1) return compatible[0].canon;
+    }
+    return null;
+  };
+  return { resolve };
+};
+
+// Groups child-sheet rows under their parent's canonical key. Rows whose key
+// resolves to no parent are dropped here — validation has already reported them
+// as PARENT_KEY_MISSING.
+const groupRowsByParent = (rows, keyField, parentIndex) => {
+  const map = new Map();
+  for (const r of rows) {
+    const canon = parentIndex.resolve(r[keyField]);
+    if (!canon) continue;
+    if (!map.has(canon)) map.set(canon, []);
+    map.get(canon).push(r);
+  }
+  return map;
+};
+
+// Copies only filled values — child-sheet rows carry null for every column the
+// typist left blank, and a blind Object.assign would wipe good parent values.
+const mergeNonEmpty = (target, source) => {
+  for (const [k, v] of Object.entries(source)) {
+    if (v !== null && v !== undefined && v !== '') target[k] = v;
+  }
+  return target;
+};
+
+// One arrest cell sometimes lists several FIRs ("12/2025, 13/2025"). Split on
+// separators that never appear inside a single FIR ('/' and '-' do).
+const splitFirTokens = (raw) => {
+  if (raw === null || raw === undefined) return [];
+  return String(raw)
+    .split(/\s*(?:[,;&\n]|\band\b)\s*/i)
+    .map((t) => t.trim())
+    .filter(Boolean);
+};
+
+const eqi = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
 
 // Normalizes any incoming Excel cell value to dd/mm/yyyy — the format
 // records.data stores date fields in going forward. Delegates the actual
@@ -603,7 +700,7 @@ const splitAccused = (raw) => {
   return { arrested_name: splitVal.trim(), arrested_address: '' };
 };
 
-const extractRowData = (row, colMap, registryFieldsMap, recordType) => {
+const extractRowData = (row, colMap, registryFieldsMap, recordType, coercionFieldsByKey = null) => {
   const rowData = {};
   for (const colIdx of Object.keys(colMap)) {
     const key = colMap[colIdx];
@@ -668,8 +765,12 @@ const extractRowData = (row, colMap, registryFieldsMap, recordType) => {
       return;
     }
 
-    const field = registryFieldsMap[key];
-    if (field) {
+    // Prefer the registry row for coercion — it carries field_type + canonical
+    // options; curated config entries only carry labels/required. This keeps
+    // validate and confirm coercing identically, and covers registry fields
+    // added in the future that no curated list mentions.
+    const field = (coercionFieldsByKey && coercionFieldsByKey[key]) || registryFieldsMap[key];
+    if (field && field.field_type) {
       if (field.field_type === 'DATE') {
         cellVal = coerceDate(cellVal);
       } else if (field.field_type === 'TIME') {
@@ -781,31 +882,34 @@ const runAutoLinkageForArrests = async (trx, arrestRecords, psId, userId) => {
   const linkedDetails = [];
   const unmatchedDetails = [];
 
+  if (!arrestRecords || arrestRecords.length === 0) {
+    return { linkedCount: 0, unmatchedCount: 0, linkedDetails, unmatchedDetails };
+  }
+
   const cases = await trx('records')
     .where({ record_type: 'CASE', ps_id: psId })
     .select('id', 'data');
 
-  const parsedCases = cases.map(c => {
+  // Index every case by parsed FIR sequence once — O(cases + arrests) instead of
+  // re-parsing every case for every arrest.
+  const casesBySeq = new Map();
+  for (const c of cases) {
     let dataObj = {};
     try {
-      dataObj = typeof c.data === 'string' ? JSON.parse(c.data) : c.data;
-    } catch(e) {}
-    const firNo = dataObj.fir_no || '';
-    const firDate = dataObj.fir_date || '';
-    const firYear = firDate ? yearOf(firDate) : null;
-    return {
-      id: c.id,
-      data: dataObj,
-      firNo,
-      firYear
-    };
-  });
+      dataObj = typeof c.data === 'string' ? JSON.parse(c.data) : (c.data || {});
+    } catch (e) {}
+    const parsed = parseFirAndYear(dataObj.fir_no || '');
+    if (!parsed.firNo) continue;
+    const year = parsed.year || (dataObj.fir_date ? yearOf(dataObj.fir_date) : null);
+    if (!casesBySeq.has(parsed.firNo)) casesBySeq.set(parsed.firNo, []);
+    casesBySeq.get(parsed.firNo).push({ id: c.id, data: dataObj, year });
+  }
 
   for (const arrest of arrestRecords) {
     const arrestData = arrest.data;
-    const linkedFirDdNo = arrestData.linked_fir_dd_no;
+    const firTokens = splitFirTokens(arrestData.linked_fir_dd_no);
 
-    if (!linkedFirDdNo) {
+    if (firTokens.length === 0) {
       unmatchedDetails.push({
         arrest_uid: arrestData.uid,
         linked_fir_dd_no: null,
@@ -814,69 +918,86 @@ const runAutoLinkageForArrests = async (trx, arrestRecords, psId, userId) => {
       continue;
     }
 
-    const parsedArrest = parseFirAndYear(linkedFirDdNo);
+    // Year hint when a FIR token has none: the arrest's own FIR date, else arrest date.
+    const fallbackYear =
+      (arrestData.fir_date ? yearOf(arrestData.fir_date) : null) ||
+      (arrestData.date_of_arrest ? yearOf(arrestData.date_of_arrest) : null);
 
-    const candidates = parsedCases.filter(c => {
-      const parsedCaseFir = parseFirAndYear(c.firNo);
-      return parsedCaseFir.firNo === parsedArrest.firNo && parsedCaseFir.firNo !== '';
-    });
+    // One arrest cell can reference several FIRs — link to every case that matches
+    // (record_links is many-to-many).
+    for (const token of firTokens) {
+      const parsedArrest = parseFirAndYear(token);
+      if (!parsedArrest.firNo) {
+        unmatchedDetails.push({
+          arrest_uid: arrestData.uid,
+          linked_fir_dd_no: token,
+          reason: 'FIR / DD number could not be parsed'
+        });
+        continue;
+      }
 
-    if (candidates.length === 0) {
-      unmatchedDetails.push({
-        arrest_uid: arrestData.uid,
-        linked_fir_dd_no: linkedFirDdNo,
-        reason: 'No matching CASE record found with this FIR number'
-      });
-      continue;
-    }
+      const candidates = casesBySeq.get(parsedArrest.firNo) || [];
+      if (candidates.length === 0) {
+        unmatchedDetails.push({
+          arrest_uid: arrestData.uid,
+          linked_fir_dd_no: token,
+          reason: 'No matching CASE record found with this FIR number'
+        });
+        continue;
+      }
 
-    let yearFiltered = candidates;
-    if (parsedArrest.year) {
-      yearFiltered = candidates.filter(c => {
-        const parsedCaseFir = parseFirAndYear(c.firNo);
-        const caseYear = parsedCaseFir.year || c.firYear;
-        return caseYear === parsedArrest.year;
-      });
-    }
+      const wantYear = parsedArrest.year || fallbackYear;
+      let yearFiltered = candidates;
+      if (wantYear) {
+        const strict = candidates.filter(c => c.year === wantYear);
+        // Cases whose FIR carries no year at all stay eligible when nothing matches strictly.
+        yearFiltered = strict.length > 0 ? strict : candidates.filter(c => !c.year);
+      }
 
-    if (yearFiltered.length === 0) {
-      unmatchedDetails.push({
-        arrest_uid: arrestData.uid,
-        linked_fir_dd_no: linkedFirDdNo,
-        reason: `Case found but year mismatch (Expected FIR year: ${parsedArrest.year})`
-      });
-      continue;
-    }
+      if (yearFiltered.length === 0) {
+        unmatchedDetails.push({
+          arrest_uid: arrestData.uid,
+          linked_fir_dd_no: token,
+          reason: `Case found but year mismatch (Expected FIR year: ${wantYear})`
+        });
+        continue;
+      }
 
-    let bestCase = null;
-    if (yearFiltered.length === 1) {
-      bestCase = yearFiltered[0];
-    } else {
-      let bestScore = -1;
-      for (const candidate of yearFiltered) {
-        let score = 0;
-        const candidateData = candidate.data;
-
-        if (candidateData.local_head && arrestData.crime_head) {
-          if (String(candidateData.local_head).trim().toLowerCase() === String(arrestData.crime_head).trim().toLowerCase()) {
+      let bestCase = null;
+      if (yearFiltered.length === 1) {
+        bestCase = yearFiltered[0];
+      } else {
+        // Tie-break by crime head + sections; a wrong link is worse than no link,
+        // so refuse to guess when the top score is shared.
+        let bestScore = -1;
+        let tiedAtBest = false;
+        for (const candidate of yearFiltered) {
+          let score = 0;
+          const candidateData = candidate.data;
+          if (candidateData.local_head && arrestData.crime_head && eqi(candidateData.local_head, arrestData.crime_head)) {
             score += 1;
           }
-        }
-
-        if (candidateData.sections && arrestData.sections) {
-          if (String(candidateData.sections).trim().toLowerCase() === String(arrestData.sections).trim().toLowerCase()) {
+          if (candidateData.sections && arrestData.sections && eqi(candidateData.sections, arrestData.sections)) {
             score += 1;
           }
+          if (score > bestScore) {
+            bestScore = score;
+            bestCase = candidate;
+            tiedAtBest = false;
+          } else if (score === bestScore) {
+            tiedAtBest = true;
+          }
         }
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestCase = candidate;
+        if (tiedAtBest) {
+          unmatchedDetails.push({
+            arrest_uid: arrestData.uid,
+            linked_fir_dd_no: token,
+            reason: 'Multiple cases share this FIR number and could not be disambiguated — link manually'
+          });
+          continue;
         }
       }
-    }
 
-    if (bestCase) {
       try {
         await createLink({
           sourceRecordId: bestCase.id,
@@ -886,26 +1007,29 @@ const runAutoLinkageForArrests = async (trx, arrestRecords, psId, userId) => {
           metadata: { notes: 'Auto-linked during bulk import' }
         });
 
-        const caseData = bestCase.data;
         linkedDetails.push({
           arrest_uid: arrestData.uid,
-          case_uid: caseData.uid,
-          fir_no: caseData.fir_no
+          case_uid: bestCase.data.uid,
+          fir_no: bestCase.data.fir_no
         });
       } catch (err) {
-        logger.error(`[AutoLinkage] Failed to create link: ${err.message}`);
-        unmatchedDetails.push({
-          arrest_uid: arrestData.uid,
-          linked_fir_dd_no: linkedFirDdNo,
-          reason: `Failed to link: ${err.message}`
-        });
+        if (err.status === 409) {
+          // Link already exists — that is the desired end state, count it as linked.
+          linkedDetails.push({
+            arrest_uid: arrestData.uid,
+            case_uid: bestCase.data.uid,
+            fir_no: bestCase.data.fir_no,
+            note: 'Already linked'
+          });
+        } else {
+          logger.error(`[AutoLinkage] Failed to create link: ${err.message}`);
+          unmatchedDetails.push({
+            arrest_uid: arrestData.uid,
+            linked_fir_dd_no: token,
+            reason: `Failed to link: ${err.message}`
+          });
+        }
       }
-    } else {
-      unmatchedDetails.push({
-        arrest_uid: arrestData.uid,
-        linked_fir_dd_no: linkedFirDdNo,
-        reason: 'Multiple matching cases found but secondary validation failed'
-      });
     }
   }
 
@@ -1208,7 +1332,16 @@ export const downloadImportTemplate = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
 
     if (recordType === 'UIDB') {
-      addSheetToWorkbook(workbook, 'General Info', uidbGeneralFields, allFields, lang, recordType);
+      // Registry-driven auto-inclusion: any active UIDB field the curated lists don't
+      // mention (and that isn't excluded in import-fields.config.js) is appended at the
+      // end of the General Info sheet, so new form fields flow into the template
+      // automatically without shifting the curated columns.
+      const uidbConfigKeys = new Set([
+        ...uidbGeneralFields.map(f => f.field_key),
+        ...uidbActSectionFields.map(f => f.field_key),
+      ]);
+      const uidbAutoFields = autoIncludedRegistryFields('UIDB', allFields, uidbConfigKeys);
+      addSheetToWorkbook(workbook, 'General Info', [...uidbGeneralFields, ...uidbAutoFields], allFields, lang, recordType);
       addSheetToWorkbook(workbook, 'Act and Sections', uidbActSectionFields, allFields, lang);
       await TemplateBuilderService.wireActSectionCascade(
         workbook,
@@ -1217,7 +1350,9 @@ export const downloadImportTemplate = async (req, res) => {
         { act: 'act_name', sections: 'sections', major: 'major_head', minor: 'minor_head' }
       );
     } else if (recordType === 'MISSING') {
-      addSheetToWorkbook(workbook, 'Import Template', missingGeneralFields, allFields, lang, recordType);
+      const missingConfigKeys = new Set(missingGeneralFields.map(f => f.field_key));
+      const missingAutoFields = autoIncludedRegistryFields('MISSING', allFields, missingConfigKeys);
+      addSheetToWorkbook(workbook, 'Import Template', [...missingGeneralFields, ...missingAutoFields], allFields, lang, recordType);
     } else {
       let fields = allFields.filter(f => {
         try {
@@ -1354,16 +1489,9 @@ export const validateImportBatch = async (req, res) => {
     }
 
     const allFields = await db('field_registry').where('is_active', true);
-    const registryFields = allFields.filter(f => {
-      try {
-        const types = typeof f.applicable_record_types === 'string'
-          ? JSON.parse(f.applicable_record_types)
-          : f.applicable_record_types;
-        return Array.isArray(types) && types.map(t => t.toUpperCase()).includes(recordType);
-      } catch (e) {
-        return false;
-      }
-    });
+    // Tolerant type parse (JSON array, PG array literal, single value) so fields
+    // created via the admin/district UI are recognised too.
+    const registryFields = allFields.filter(f => parseApplicableTypes(f.applicable_record_types).includes(recordType));
 
     const registryFieldsMap = {};
     for (const f of registryFields) {
@@ -1379,30 +1507,37 @@ export const validateImportBatch = async (req, res) => {
     let invalidParentKeys = new Set();
 
     if (recordType === 'CASE') {
-      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, caseGeneralFields);
-      const parentKeysSet = new Set(parentRows.map(r => r.rowData.fir_no).filter(Boolean));
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, caseGeneralFields, registryFieldsMap);
+      const parentIndex = buildParentKeyIndex(parentRows.map(r => r.rowData.fir_no));
       totalRows = parentRows.length;
 
       invalidParentKeys = new Set();
+      // Attributes a child-sheet error to its parent FIR so the whole FIR is skipped on confirm.
+      const invalidateParentOf = (val) => {
+        if (!val) return;
+        invalidParentKeys.add(parentIndex.resolve(val) || canonKey(val));
+      };
 
       // Validate General Information
       validateSheetRows(parentRows, caseGeneralFields, 'General Information', errors);
 
-      // In-Memory Duplicate Check for FIR
+      // In-sheet duplicate FIR check — canonical, so "123/2025" also collides with
+      // "0123/2025" or a numeric 123 cell.
       const sheetFirs = new Set();
       for (const pr of parentRows) {
         const fir = pr.rowData.fir_no;
         if (fir) {
-          if (sheetFirs.has(fir)) {
+          const cKey = canonKey(fir);
+          if (sheetFirs.has(cKey)) {
             errors.push({
               row: pr.rowIdx,
               field_key: 'fir_no',
               code: 'DUPLICATE_IN_SHEET',
               message: `Duplicate FIR number "${fir}" found in General Information sheet.`
             });
-            invalidParentKeys.add(fir);
+            invalidParentKeys.add(cKey);
           } else {
-            sheetFirs.add(fir);
+            sheetFirs.add(cKey);
           }
         }
       }
@@ -1414,22 +1549,23 @@ export const validateImportBatch = async (req, res) => {
           .select('data');
         const existingFirs = new Set();
         for (const ec of existingCases) {
-          const data = typeof ec.data === 'string' ? JSON.parse(ec.data) : ec.data;
+          let data = null;
+          try { data = typeof ec.data === 'string' ? JSON.parse(ec.data) : ec.data; } catch (_) {}
           if (data && data.fir_no) {
-            existingFirs.add(data.fir_no.trim().toLowerCase());
+            existingFirs.add(canonKey(data.fir_no));
           }
         }
 
         for (const pr of parentRows) {
           const fir = pr.rowData.fir_no;
-          if (fir && existingFirs.has(fir.trim().toLowerCase())) {
+          if (fir && existingFirs.has(canonKey(fir))) {
             errors.push({
               row: pr.rowIdx,
               field_key: 'fir_no',
               code: 'DUPLICATE_IN_DATABASE',
               message: `FIR number "${fir}" already exists in the database for this Police Station.`
             });
-            invalidParentKeys.add(fir);
+            invalidParentKeys.add(canonKey(fir));
           }
         }
       }
@@ -1437,24 +1573,28 @@ export const validateImportBatch = async (req, res) => {
       for (const pr of parentRows) {
         const hasErr = errors.some(e => e.row === pr.rowIdx);
         if (hasErr && pr.rowData.fir_no) {
-          invalidParentKeys.add(pr.rowData.fir_no);
+          invalidParentKeys.add(canonKey(pr.rowData.fir_no));
         }
       }
 
+      // Only parent-sheet errors exist so far; snapshot their rows before child-sheet
+      // errors (whose row numbers can collide with parent rows) get merged in.
+      const parentErrorRows = new Set(errors.map(e => e.row));
+
       // Validate Victims
       if (victimWorksheet) {
-        const { rows: victimRows } = parseWorksheet(victimWorksheet, recordType, caseVictimFields);
+        const { rows: victimRows } = parseWorksheet(victimWorksheet, recordType, caseVictimFields, registryFieldsMap);
         const childErrors = [];
-        validateSheetRows(victimRows, caseVictimFields, 'Victim Information', childErrors, parentKeysSet, 'fir_no');
+        validateSheetRows(victimRows, caseVictimFields, 'Victim Information', childErrors, parentIndex, 'fir_no');
 
-        // Check duplicate victims under same FIR
+        // Check duplicate victims under same FIR (grouped by canonical parent key)
         const victimKeySet = new Set();
         for (const vr of victimRows) {
           const fir = vr.rowData.fir_no;
           const name = `${vr.rowData.victim_first_name || ''} ${vr.rowData.victim_last_name || ''}`.trim().toLowerCase();
           const relName = (vr.rowData.victim_relative_name || '').trim().toLowerCase();
           if (fir && name) {
-            const vKey = `${fir}|${name}|${relName}`;
+            const vKey = `${parentIndex.resolve(fir) || canonKey(fir)}|${name}|${relName}`;
             if (victimKeySet.has(vKey)) {
               childErrors.push({
                 row: vr.rowIdx,
@@ -1471,31 +1611,27 @@ export const validateImportBatch = async (req, res) => {
         for (const err of childErrors) {
           errors.push(err);
           const errRow = victimRows.find(vr => vr.rowIdx === err.row);
-          if (errRow && errRow.rowData.fir_no) {
-            invalidParentKeys.add(errRow.rowData.fir_no);
-          }
+          if (errRow) invalidateParentOf(errRow.rowData.fir_no);
         }
       }
 
       // Validate Act and Sections
       if (actSectionWorksheet) {
-        const { rows: actSectionRows } = parseWorksheet(actSectionWorksheet, recordType, caseActSectionFields);
+        const { rows: actSectionRows } = parseWorksheet(actSectionWorksheet, recordType, caseActSectionFields, registryFieldsMap);
         const childErrors = [];
-        validateSheetRows(actSectionRows, caseActSectionFields, 'Act and Sections', childErrors, parentKeysSet, 'fir_no');
+        validateSheetRows(actSectionRows, caseActSectionFields, 'Act and Sections', childErrors, parentIndex, 'fir_no');
         for (const err of childErrors) {
           errors.push(err);
           const errRow = actSectionRows.find(ar => ar.rowIdx === err.row);
-          if (errRow && errRow.rowData.fir_no) {
-            invalidParentKeys.add(errRow.rowData.fir_no);
-          }
+          if (errRow) invalidateParentOf(errRow.rowData.fir_no);
         }
       }
 
       // Validate Accused Detail
       if (accusedWorksheet) {
-        const { rows: accusedRows } = parseWorksheet(accusedWorksheet, recordType, caseAccusedFields);
+        const { rows: accusedRows } = parseWorksheet(accusedWorksheet, recordType, caseAccusedFields, registryFieldsMap);
         const childErrors = [];
-        validateSheetRows(accusedRows, caseAccusedFields, 'Accused Detail', childErrors, parentKeysSet, 'fir_no');
+        validateSheetRows(accusedRows, caseAccusedFields, 'Accused Detail', childErrors, parentIndex, 'fir_no');
 
         // Check duplicate accused under same FIR
         const accusedKeySet = new Set();
@@ -1504,7 +1640,7 @@ export const validateImportBatch = async (req, res) => {
           const name = `${ar.rowData.accused_first_name || ''} ${ar.rowData.accused_last_name || ''}`.trim().toLowerCase();
           const relName = (ar.rowData.accused_relative_name || '').trim().toLowerCase();
           if (fir && name) {
-            const aKey = `${fir}|${name}|${relName}`;
+            const aKey = `${parentIndex.resolve(fir) || canonKey(fir)}|${name}|${relName}`;
             if (accusedKeySet.has(aKey)) {
               childErrors.push({
                 row: ar.rowIdx,
@@ -1521,17 +1657,15 @@ export const validateImportBatch = async (req, res) => {
         for (const err of childErrors) {
           errors.push(err);
           const errRow = accusedRows.find(ar => ar.rowIdx === err.row);
-          if (errRow && errRow.rowData.fir_no) {
-            invalidParentKeys.add(errRow.rowData.fir_no);
-          }
+          if (errRow) invalidateParentOf(errRow.rowData.fir_no);
         }
       }
 
       // Validate Property Details
       if (propertyWorksheet) {
-        const { rows: propertyRows } = parseWorksheet(propertyWorksheet, recordType, casePropertyFields);
+        const { rows: propertyRows } = parseWorksheet(propertyWorksheet, recordType, casePropertyFields, registryFieldsMap);
         const childErrors = [];
-        validateSheetRows(propertyRows, casePropertyFields, 'Property Details', childErrors, parentKeysSet, 'fir_no');
+        validateSheetRows(propertyRows, casePropertyFields, 'Property Details', childErrors, parentIndex, 'fir_no');
 
         // Check duplicate properties under same FIR
         const propertyKeySet = new Set();
@@ -1540,7 +1674,7 @@ export const validateImportBatch = async (req, res) => {
           const cat = (pr.rowData.property_major_category || '').trim().toLowerCase();
           const det = (pr.rowData.property_details || '').trim().toLowerCase();
           if (fir && (cat || det)) {
-            const pKey = `${fir}|${cat}|${det}`;
+            const pKey = `${parentIndex.resolve(fir) || canonKey(fir)}|${cat}|${det}`;
             if (propertyKeySet.has(pKey)) {
               childErrors.push({
                 row: pr.rowIdx,
@@ -1557,14 +1691,12 @@ export const validateImportBatch = async (req, res) => {
         for (const err of childErrors) {
           errors.push(err);
           const errRow = propertyRows.find(pr => pr.rowIdx === err.row);
-          if (errRow && errRow.rowData.fir_no) {
-            invalidParentKeys.add(errRow.rowData.fir_no);
-          }
+          if (errRow) invalidateParentOf(errRow.rowData.fir_no);
         }
       }
 
       for (const pr of parentRows) {
-        if (invalidParentKeys.has(pr.rowData.fir_no) || errors.some(e => e.row === pr.rowIdx)) {
+        if (invalidParentKeys.has(canonKey(pr.rowData.fir_no)) || parentErrorRows.has(pr.rowIdx)) {
           invalidRowsCount++;
         } else {
           validRowsCount++;
@@ -1572,30 +1704,36 @@ export const validateImportBatch = async (req, res) => {
       }
 
     } else if (recordType === 'ARREST') {
-      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, arrestGeneralFields);
-      const parentKeysSet = new Set(parentRows.map(r => r.rowData.linked_fir_dd_no).filter(Boolean));
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, arrestGeneralFields, registryFieldsMap);
+      const parentIndex = buildParentKeyIndex(parentRows.map(r => r.rowData.linked_fir_dd_no));
       totalRows = parentRows.length;
 
       invalidParentKeys = new Set();
+      const invalidateParentOf = (val) => {
+        if (!val) return;
+        invalidParentKeys.add(parentIndex.resolve(val) || canonKey(val));
+      };
 
       // Validate General Info
       validateSheetRows(parentRows, arrestGeneralFields, 'General Info', errors);
 
-      // Check duplicate arrests in excel sheet
+      // Check duplicate arrests in excel sheet (canonical FIR keys)
       const sheetArrests = new Set();
       let tempPersonRows = [];
       if (personWorksheet) {
-        tempPersonRows = parseWorksheet(personWorksheet, recordType, arrestPersonFields).rows.map(r => r.rowData);
+        tempPersonRows = parseWorksheet(personWorksheet, recordType, arrestPersonFields, registryFieldsMap).rows.map(r => r.rowData);
       }
+      const personsByParent = groupRowsByParent(tempPersonRows, 'linked_fir_dd_no', parentIndex);
 
       for (const pr of parentRows) {
         const fir = pr.rowData.linked_fir_dd_no;
         if (fir) {
-          const matchingPs = tempPersonRows.filter(p => p.linked_fir_dd_no === fir);
+          const parentCanon = parentIndex.resolve(fir) || canonKey(fir);
+          const matchingPs = personsByParent.get(parentCanon) || [];
           if (matchingPs.length > 0) {
             for (const pData of matchingPs) {
               const name = `${pData.arrested_first_name || ''} ${pData.arrested_last_name || ''}`.trim().toLowerCase();
-              const aKey = `${fir.trim().toLowerCase()}|${name}`;
+              const aKey = `${parentCanon}|${name}`;
               if (sheetArrests.has(aKey)) {
                 errors.push({
                   row: pr.rowIdx,
@@ -1603,22 +1741,22 @@ export const validateImportBatch = async (req, res) => {
                   code: 'DUPLICATE_IN_SHEET',
                   message: `Duplicate Arrest row for "${pData.arrested_first_name || ''}" under FIR "${fir}" found in sheet.`
                 });
-                invalidParentKeys.add(fir);
+                invalidParentKeys.add(parentCanon);
               } else {
                 sheetArrests.add(aKey);
               }
             }
           } else {
-            if (sheetArrests.has(fir)) {
+            if (sheetArrests.has(parentCanon)) {
               errors.push({
                 row: pr.rowIdx,
                 field_key: 'linked_fir_dd_no',
                 code: 'DUPLICATE_IN_SHEET',
                 message: `Duplicate Arrest general info row for FIR "${fir}" found in sheet.`
               });
-              invalidParentKeys.add(fir);
+              invalidParentKeys.add(parentCanon);
             } else {
-              sheetArrests.add(fir);
+              sheetArrests.add(parentCanon);
             }
           }
         }
@@ -1631,20 +1769,22 @@ export const validateImportBatch = async (req, res) => {
           .select('data');
         const existingArrestKeys = new Set();
         for (const ea of existingArrests) {
-          const data = typeof ea.data === 'string' ? JSON.parse(ea.data) : ea.data;
+          let data = null;
+          try { data = typeof ea.data === 'string' ? JSON.parse(ea.data) : ea.data; } catch (_) {}
           if (data && data.linked_fir_dd_no) {
             const arrName = `${data.arrested_first_name || data.fullName || ''} ${data.arrested_last_name || ''}`.trim().toLowerCase();
-            existingArrestKeys.add(`${data.linked_fir_dd_no.trim().toLowerCase()}|${arrName}`);
+            existingArrestKeys.add(`${canonKey(data.linked_fir_dd_no)}|${arrName}`);
           }
         }
 
         for (const pr of parentRows) {
           const fir = pr.rowData.linked_fir_dd_no;
           if (fir) {
-            const matchingPs = tempPersonRows.filter(p => p.linked_fir_dd_no === fir);
+            const parentCanon = parentIndex.resolve(fir) || canonKey(fir);
+            const matchingPs = personsByParent.get(parentCanon) || [];
             for (const pData of matchingPs) {
               const name = `${pData.arrested_first_name || ''} ${pData.arrested_last_name || ''}`.trim().toLowerCase();
-              const aKey = `${fir.trim().toLowerCase()}|${name}`;
+              const aKey = `${parentCanon}|${name}`;
               if (existingArrestKeys.has(aKey)) {
                 errors.push({
                   row: pr.rowIdx,
@@ -1652,7 +1792,7 @@ export const validateImportBatch = async (req, res) => {
                   code: 'DUPLICATE_IN_DATABASE',
                   message: `Arrest record for "${pData.arrested_first_name || ''}" under FIR "${fir}" already exists for this Police Station.`
                 });
-                invalidParentKeys.add(fir);
+                invalidParentKeys.add(parentCanon);
               }
             }
           }
@@ -1662,54 +1802,52 @@ export const validateImportBatch = async (req, res) => {
       for (const pr of parentRows) {
         const hasErr = errors.some(e => e.row === pr.rowIdx);
         if (hasErr && pr.rowData.linked_fir_dd_no) {
-          invalidParentKeys.add(pr.rowData.linked_fir_dd_no);
+          invalidParentKeys.add(canonKey(pr.rowData.linked_fir_dd_no));
         }
       }
 
+      // Snapshot parent-sheet error rows before child-sheet errors are merged in
+      // (their row numbers can collide with parent rows).
+      const parentErrorRows = new Set(errors.map(e => e.row));
+
       // Validate Act and Sections
       if (actSectionWorksheet) {
-        const { rows: actSectionRows } = parseWorksheet(actSectionWorksheet, recordType, arrestActSectionFields);
+        const { rows: actSectionRows } = parseWorksheet(actSectionWorksheet, recordType, arrestActSectionFields, registryFieldsMap);
         const childErrors = [];
-        validateSheetRows(actSectionRows, arrestActSectionFields, 'Act and Sections', childErrors, parentKeysSet, 'linked_fir_dd_no');
+        validateSheetRows(actSectionRows, arrestActSectionFields, 'Act and Sections', childErrors, parentIndex, 'linked_fir_dd_no');
         for (const err of childErrors) {
           errors.push(err);
           const errRow = actSectionRows.find(ar => ar.rowIdx === err.row);
-          if (errRow && errRow.rowData.linked_fir_dd_no) {
-            invalidParentKeys.add(errRow.rowData.linked_fir_dd_no);
-          }
+          if (errRow) invalidateParentOf(errRow.rowData.linked_fir_dd_no);
         }
       }
 
       // Validate Person Arrested Detail
       if (personWorksheet) {
-        const { rows: personRows } = parseWorksheet(personWorksheet, recordType, arrestPersonFields);
+        const { rows: personRows } = parseWorksheet(personWorksheet, recordType, arrestPersonFields, registryFieldsMap);
         const childErrors = [];
-        validateSheetRows(personRows, arrestPersonFields, 'Person Arrested Detail', childErrors, parentKeysSet, 'linked_fir_dd_no');
+        validateSheetRows(personRows, arrestPersonFields, 'Person Arrested Detail', childErrors, parentIndex, 'linked_fir_dd_no');
         for (const err of childErrors) {
           errors.push(err);
           const errRow = personRows.find(pr => pr.rowIdx === err.row);
-          if (errRow && errRow.rowData.linked_fir_dd_no) {
-            invalidParentKeys.add(errRow.rowData.linked_fir_dd_no);
-          }
+          if (errRow) invalidateParentOf(errRow.rowData.linked_fir_dd_no);
         }
       }
 
       // Validate Property Details
       if (propertyWorksheet) {
-        const { rows: propertyRows } = parseWorksheet(propertyWorksheet, recordType, arrestPropertyFields);
+        const { rows: propertyRows } = parseWorksheet(propertyWorksheet, recordType, arrestPropertyFields, registryFieldsMap);
         const childErrors = [];
-        validateSheetRows(propertyRows, arrestPropertyFields, 'Property Details', childErrors, parentKeysSet, 'linked_fir_dd_no');
+        validateSheetRows(propertyRows, arrestPropertyFields, 'Property Details', childErrors, parentIndex, 'linked_fir_dd_no');
         for (const err of childErrors) {
           errors.push(err);
           const errRow = propertyRows.find(pr => pr.rowIdx === err.row);
-          if (errRow && errRow.rowData.linked_fir_dd_no) {
-            invalidParentKeys.add(errRow.rowData.linked_fir_dd_no);
-          }
+          if (errRow) invalidateParentOf(errRow.rowData.linked_fir_dd_no);
         }
       }
 
       for (const pr of parentRows) {
-        if (invalidParentKeys.has(pr.rowData.linked_fir_dd_no) || errors.some(e => e.row === pr.rowIdx)) {
+        if (invalidParentKeys.has(canonKey(pr.rowData.linked_fir_dd_no)) || parentErrorRows.has(pr.rowIdx)) {
           invalidRowsCount++;
         } else {
           validRowsCount++;
@@ -1717,8 +1855,8 @@ export const validateImportBatch = async (req, res) => {
       }
 
     } else if (recordType === 'UIDB') {
-      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, uidbGeneralFields);
-      const parentKeysSet = new Set(parentRows.map(r => r.rowData.gd_no).filter(Boolean));
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, uidbGeneralFields, registryFieldsMap);
+      const parentIndex = buildParentKeyIndex(parentRows.map(r => r.rowData.gd_no));
       totalRows = parentRows.length;
 
       invalidParentKeys = new Set();
@@ -1726,44 +1864,32 @@ export const validateImportBatch = async (req, res) => {
       // Validate General Info
       validateSheetRows(parentRows, uidbGeneralFields, 'General Info', errors);
 
-      let actSectionRows = [];
+      // Only parent-sheet errors exist so far — attribute them by canonical GD key,
+      // and snapshot the rows (child-sheet row numbers can collide with these).
+      const parentErrorRows = new Set(errors.map(e => e.row));
+      for (const pr of parentRows) {
+        if (parentErrorRows.has(pr.rowIdx) && pr.rowData.gd_no) {
+          invalidParentKeys.add(canonKey(pr.rowData.gd_no));
+        }
+      }
+
+      // Validate Act and Sections (canonical parent matching replaces the old
+      // exact-string orphan check)
       if (actSectionWorksheet) {
-        const { rows: actRows } = parseWorksheet(actSectionWorksheet, recordType, uidbActSectionFields);
-        actSectionRows = actRows;
-        validateSheetRows(actRows, uidbActSectionFields, 'Act and Sections', errors);
-      }
-
-      // Check duplicate/orphan acts
-      for (const ar of actSectionRows) {
-        const gd = ar.rowData.gd_no;
-        if (gd && !parentKeysSet.has(gd)) {
-          errors.push({
-            row: ar.rowIdx,
-            field_key: 'gd_no',
-            code: 'ORPHAN_CHILD_ROW',
-            message: `GD number "${gd}" in Act and Sections sheet does not exist in General Info sheet.`,
-            sheet: 'Act and Sections'
-          });
+        const { rows: actRows } = parseWorksheet(actSectionWorksheet, recordType, uidbActSectionFields, registryFieldsMap);
+        const childErrors = [];
+        validateSheetRows(actRows, uidbActSectionFields, 'Act and Sections', childErrors, parentIndex, 'gd_no');
+        for (const err of childErrors) {
+          errors.push(err);
+          const errRow = actRows.find(ar => ar.rowIdx === err.row);
+          if (errRow && errRow.rowData.gd_no) {
+            invalidParentKeys.add(parentIndex.resolve(errRow.rowData.gd_no) || canonKey(errRow.rowData.gd_no));
+          }
         }
       }
 
       for (const pr of parentRows) {
-        const gd = pr.rowData.gd_no;
-        if (pr.errors && pr.errors.length > 0) {
-          invalidParentKeys.add(String(gd));
-        }
-      }
-
-      for (const ar of actSectionRows) {
-        const gd = ar.rowData.gd_no;
-        if (ar.errors && ar.errors.length > 0) {
-          invalidParentKeys.add(String(gd));
-        }
-      }
-
-      for (const pr of parentRows) {
-        const gd = pr.rowData.gd_no;
-        if (invalidParentKeys.has(String(gd)) || errors.some(e => e.row === pr.rowIdx && e.sheet === 'General Info')) {
+        if (invalidParentKeys.has(canonKey(pr.rowData.gd_no)) || parentErrorRows.has(pr.rowIdx)) {
           invalidRowsCount++;
         } else {
           validRowsCount++;
@@ -1771,13 +1897,14 @@ export const validateImportBatch = async (req, res) => {
       }
 
     } else if (recordType === 'MISSING') {
-      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, missingGeneralFields);
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, missingGeneralFields, registryFieldsMap);
       totalRows = parentRows.length;
 
       validateSheetRows(parentRows, missingGeneralFields, 'Import Template', errors);
 
+      const errorRowSet = new Set(errors.map(e => e.row));
       for (const pr of parentRows) {
-        if (pr.errors && pr.errors.length > 0) {
+        if (errorRowSet.has(pr.rowIdx)) {
           invalidRowsCount++;
         } else {
           validRowsCount++;
@@ -1969,6 +2096,15 @@ export const confirmImportBatch = async (req, res) => {
     await workbook.xlsx.readFile(batch.file_path);
 
     const allFields = await db('field_registry').where('is_active', true);
+    // Registry rows applicable to this record type, keyed by field_key — the same
+    // coercion source validate used, so confirm stores exactly what was validated
+    // (and future registry fields coerce correctly with zero code change).
+    const typeRegistryMap = {};
+    for (const f of allFields) {
+      if (parseApplicableTypes(f.applicable_record_types).includes(batch.record_type)) {
+        typeRegistryMap[f.field_key] = f;
+      }
+    }
 
     const rowsToInsert = [];
 
@@ -1980,38 +2116,48 @@ export const confirmImportBatch = async (req, res) => {
       const accusedWorksheet = findWorksheet(workbook, a.accused);
       const propertyWorksheet = findWorksheet(workbook, a.property);
 
-      const parentFields = allFields.filter(f => CASE_SHEETS_CONFIG.general.includes(f.field_key));
-      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, parentFields);
+      // Parse with the exact same field lists validation used (parity), plus the
+      // registry map for type-aware coercion.
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, caseGeneralFields, typeRegistryMap);
+      const parentIndex = buildParentKeyIndex(parentRows.map(r => r.rowData.fir_no));
 
       let victimRows = [];
       if (victimWorksheet) {
-        victimRows = parseWorksheet(victimWorksheet, batch.record_type, caseVictimFields).rows.map(r => r.rowData);
+        victimRows = parseWorksheet(victimWorksheet, batch.record_type, caseVictimFields, typeRegistryMap).rows.map(r => r.rowData);
       }
 
       let actSectionRows = [];
       if (actSectionWorksheet) {
-        actSectionRows = parseWorksheet(actSectionWorksheet, batch.record_type, caseActSectionFields).rows.map(r => r.rowData);
+        actSectionRows = parseWorksheet(actSectionWorksheet, batch.record_type, caseActSectionFields, typeRegistryMap).rows.map(r => r.rowData);
       }
 
       let accusedRows = [];
       if (accusedWorksheet) {
-        accusedRows = parseWorksheet(accusedWorksheet, batch.record_type, caseAccusedFields).rows.map(r => r.rowData);
+        accusedRows = parseWorksheet(accusedWorksheet, batch.record_type, caseAccusedFields, typeRegistryMap).rows.map(r => r.rowData);
       }
 
       let propertyRows = [];
       if (propertyWorksheet) {
-        propertyRows = parseWorksheet(propertyWorksheet, batch.record_type, casePropertyFields).rows.map(r => r.rowData);
+        propertyRows = parseWorksheet(propertyWorksheet, batch.record_type, casePropertyFields, typeRegistryMap).rows.map(r => r.rowData);
       }
+
+      // Children grouped once by canonical parent key — no silent detachment on
+      // "123/2025" vs 123 vs "0123/2025" formatting differences.
+      const victimsByParent = groupRowsByParent(victimRows, 'fir_no', parentIndex);
+      const actsByParent = groupRowsByParent(actSectionRows, 'fir_no', parentIndex);
+      const accusedByParent = groupRowsByParent(accusedRows, 'fir_no', parentIndex);
+      const propertiesByParent = groupRowsByParent(propertyRows, 'fir_no', parentIndex);
 
       for (const { rowData } of parentRows) {
         const firNo = rowData.fir_no;
         if (!firNo) continue;
-        if (invalidParentKeys.has(String(firNo))) continue;
+        const parentCanon = parentIndex.resolve(firNo) || canonKey(firNo);
+        if (invalidParentKeys.has(parentCanon)) continue;
 
-        const acts = actSectionRows.filter(a => a.fir_no === firNo);
-        const victims = victimRows.filter(v => v.fir_no === firNo);
-        const accused = accusedRows.filter(a => a.fir_no === firNo);
-        const properties = propertyRows.filter(p => p.fir_no === firNo);
+        const acts = actsByParent.get(parentCanon) || [];
+        const victims = victimsByParent.get(parentCanon) || [];
+        const accused = accusedByParent.get(parentCanon) || [];
+        const properties = propertiesByParent.get(parentCanon) || [];
 
         if (acts.length > 0) {
           const actVal = [...new Set(acts.map(a => a.act).filter(Boolean))].join(', ');
@@ -2074,32 +2220,37 @@ export const confirmImportBatch = async (req, res) => {
       const personWorksheet = findWorksheet(workbook, a.person);
       const propertyWorksheet = findWorksheet(workbook, a.property);
 
-      const parentFields = allFields.filter(f => ARREST_SHEETS_CONFIG.general.includes(f.field_key));
-      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, parentFields);
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, arrestGeneralFields, typeRegistryMap);
+      const parentIndex = buildParentKeyIndex(parentRows.map(r => r.rowData.linked_fir_dd_no));
 
       let actSectionRows = [];
       if (actSectionWorksheet) {
-        actSectionRows = parseWorksheet(actSectionWorksheet, batch.record_type, arrestActSectionFields).rows.map(r => r.rowData);
+        actSectionRows = parseWorksheet(actSectionWorksheet, batch.record_type, arrestActSectionFields, typeRegistryMap).rows.map(r => r.rowData);
       }
 
       let personRows = [];
       if (personWorksheet) {
-        personRows = parseWorksheet(personWorksheet, batch.record_type, arrestPersonFields).rows.map(r => r.rowData);
+        personRows = parseWorksheet(personWorksheet, batch.record_type, arrestPersonFields, typeRegistryMap).rows.map(r => r.rowData);
       }
 
       let propertyRows = [];
       if (propertyWorksheet) {
-        propertyRows = parseWorksheet(propertyWorksheet, batch.record_type, arrestPropertyFields).rows.map(r => r.rowData);
+        propertyRows = parseWorksheet(propertyWorksheet, batch.record_type, arrestPropertyFields, typeRegistryMap).rows.map(r => r.rowData);
       }
+
+      const actsByParent = groupRowsByParent(actSectionRows, 'linked_fir_dd_no', parentIndex);
+      const personsByParent = groupRowsByParent(personRows, 'linked_fir_dd_no', parentIndex);
+      const propertiesByParent = groupRowsByParent(propertyRows, 'linked_fir_dd_no', parentIndex);
 
       for (const { rowData } of parentRows) {
         const linkedFirDdNo = rowData.linked_fir_dd_no;
         if (!linkedFirDdNo) continue;
-        if (invalidParentKeys.has(String(linkedFirDdNo))) continue;
+        const parentCanon = parentIndex.resolve(linkedFirDdNo) || canonKey(linkedFirDdNo);
+        if (invalidParentKeys.has(parentCanon)) continue;
 
-        const acts = actSectionRows.filter(a => a.linked_fir_dd_no === linkedFirDdNo);
-        const matchingPersons = personRows.filter(p => p.linked_fir_dd_no === linkedFirDdNo);
-        const properties = propertyRows.filter(p => p.linked_fir_dd_no === linkedFirDdNo);
+        const acts = actsByParent.get(parentCanon) || [];
+        const matchingPersons = personsByParent.get(parentCanon) || [];
+        const properties = propertiesByParent.get(parentCanon) || [];
 
         const isYes = (val) => {
           if (!val) return false;
@@ -2160,7 +2311,9 @@ export const confirmImportBatch = async (req, res) => {
 
         if (matchingPersons.length > 0) {
           const person = matchingPersons[0];
-          Object.assign(itemRowData, person);
+          // Person rows carry null for every blank column — copy only filled values
+          // so General Info data isn't wiped by empty person cells.
+          mergeNonEmpty(itemRowData, person);
 
           itemRowData.fullName = person.arrested_first_name || person.full_name;
           itemRowData.full_name = person.arrested_first_name || person.full_name;
@@ -2188,10 +2341,12 @@ export const confirmImportBatch = async (req, res) => {
         }
 
         if (properties.length > 0) {
-          itemRowData.property_major_category = properties[0].property_major_category;
-          itemRowData.property_minor_category = properties[0].property_minor_category;
-          itemRowData.property_stolen_recovered = properties[0].property_stolen_recovered;
-          itemRowData.property_details = properties.map(p => p.property_details).filter(Boolean).join(', ');
+          mergeNonEmpty(itemRowData, {
+            property_major_category: properties[0].property_major_category,
+            property_minor_category: properties[0].property_minor_category,
+            property_stolen_recovered: properties[0].property_stolen_recovered,
+            property_details: properties.map(p => p.property_details).filter(Boolean).join(', ')
+          });
         }
 
         itemRowData.firDdNumber = itemRowData.linked_fir_dd_no;
@@ -2208,19 +2363,25 @@ export const confirmImportBatch = async (req, res) => {
       const parentWorksheet = findWorksheet(workbook, a.parent) || workbook.worksheets[0];
       const actSectionWorksheet = findWorksheet(workbook, a.act);
 
-      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, uidbGeneralFields);
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, uidbGeneralFields, typeRegistryMap);
+      const parentIndex = buildParentKeyIndex(parentRows.map(r => r.rowData.gd_no));
 
       let actSectionRows = [];
       if (actSectionWorksheet) {
-        actSectionRows = parseWorksheet(actSectionWorksheet, batch.record_type, uidbActSectionFields).rows.map(r => r.rowData);
+        actSectionRows = parseWorksheet(actSectionWorksheet, batch.record_type, uidbActSectionFields, typeRegistryMap).rows.map(r => r.rowData);
       }
 
-      for (const { rowData, rowIdx } of parentRows) {
+      const actsByParent = groupRowsByParent(actSectionRows, 'gd_no', parentIndex);
+
+      for (const { rowData } of parentRows) {
         const gdNo = rowData.gd_no;
         if (!gdNo) continue;
-        if (invalidParentKeys.has(String(gdNo)) || errorRowsSet.has(rowIdx)) continue;
+        // Skip by canonical GD key only — validation attributed every error (its own
+        // sheet's and the act sheet's) to this key, so row numbers never collide.
+        const parentCanon = parentIndex.resolve(gdNo) || canonKey(gdNo);
+        if (invalidParentKeys.has(parentCanon)) continue;
 
-        const acts = actSectionRows.filter(a => a.gd_no === gdNo);
+        const acts = actsByParent.get(parentCanon) || [];
 
         const itemRowData = { ...rowData };
 
@@ -2271,7 +2432,7 @@ export const confirmImportBatch = async (req, res) => {
     } else if (batch.record_type === 'MISSING') {
       const a = SHEET_ALIASES.MISSING;
       const parentWorksheet = findWorksheet(workbook, a.parent) || workbook.worksheets[0];
-      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, missingGeneralFields);
+      const { rows: parentRows } = parseWorksheet(parentWorksheet, batch.record_type, missingGeneralFields, typeRegistryMap);
 
       for (const { rowData, rowIdx } of parentRows) {
         if (errorRowsSet.has(rowIdx)) continue;
@@ -2280,20 +2441,8 @@ export const confirmImportBatch = async (req, res) => {
 
     } else {
       const worksheet = workbook.worksheets[0] || workbook.getWorksheet(1);
-      const registryFields = allFields.filter(f => {
-        try {
-          const types = typeof f.applicable_record_types === 'string'
-            ? JSON.parse(f.applicable_record_types)
-            : f.applicable_record_types;
-          return Array.isArray(types) && types.map(t => t.toUpperCase()).includes(batch.record_type);
-        } catch (e) {
-          return false;
-        }
-      });
-      const registryFieldsMap = {};
-      for (const f of registryFields) {
-        registryFieldsMap[f.field_key] = f;
-      }
+      const registryFields = Object.values(typeRegistryMap);
+      const registryFieldsMap = typeRegistryMap;
 
       const { colMap, dataStartRow } = buildColumnMap(worksheet, batch.record_type, registryFields);
 
@@ -2618,11 +2767,16 @@ export const confirmImportBatch = async (req, res) => {
       if (batch.record_type === 'ARREST') {
         arrestsToLink = newlyInsertedRecords;
       } else if (batch.record_type === 'CASE') {
+        // Re-link every arrest in this PS that has no CASE link yet (an arrest linked
+        // to something else — e.g. a missing-person record — must still get its case).
         const unmatchedArrests = await trx('records')
           .where({ record_type: 'ARREST', ps_id: batch.ps_id })
           .whereNotExists(function() {
-            this.select('*').from('record_links')
-              .whereRaw('record_links.target_record_id = records.id');
+            this.select('*')
+              .from('record_links')
+              .join('link_type_registry', 'record_links.link_type_id', 'link_type_registry.id')
+              .whereRaw('record_links.target_record_id = records.id')
+              .where('link_type_registry.code', 'CASE_ARREST');
           })
           .select('id', 'data');
         
@@ -2648,6 +2802,7 @@ export const confirmImportBatch = async (req, res) => {
       .update({
         status: 'COMPLETED',
         imported_rows: importedRowsCount,
+        invalid_rows: batch.invalid_rows,
         confirmed_at: new Date().toISOString()
       });
 

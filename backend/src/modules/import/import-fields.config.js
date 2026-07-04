@@ -42,7 +42,8 @@ export const STATE_OPTS = [
 export const DISTRICT_OPTS = [
   "South District (SD)", "South East District (SED)", "New Delhi District (NDD)",
   "South West District (SWD)", "West District (WD)", "Outer District (OD)",
-  "Dwarka District (DW)", "North West District (NWD)", "Rohini District (ROH)",
+  // (RND) matches the field_registry option value the interactive form stores — was (ROH)
+  "Dwarka District (DW)", "North West District (NWD)", "Rohini District (RND)",
   "Outer North District (OND)", "Central District (CD)", "North District (ND)",
   "East District (ED)", "North East District (NED)", "Shahdara District (SHD)"
 ];
@@ -386,7 +387,7 @@ export const missingGeneralFields = [
   { field_key: 'height', label_en: 'Height', label_hi: 'कद', required: false, section: 'person_details' },
   { field_key: 'built', label_en: 'Built', label_hi: 'शरीर की बनावट', required: false, section: 'person_details' },
   { field_key: 'complexion', label_en: 'Complexion', label_hi: 'रंग', required: false, section: 'person_details' },
-  { field_key: 'missing_relation_type', label_en: 'Relation Type', label_hi: 'संबंध का प्रकार', required: false, options: ['Father', 'Mother', 'Husband', 'Wife', 'Guardian', 'Other'], section: 'person_details' },
+  //{ field_key: 'missing_relation_type', label_en: 'Relation Type', label_hi: 'संबंध का प्रकार', required: false, options: ['Father', 'Mother', 'Husband', 'Wife', 'Guardian', 'Other'], section: 'person_details' },
   { field_key: 'upper_dress_color', label_en: 'Upper Dress Color', label_hi: 'ऊपरी पोशाक का रंग', required: false, section: 'person_details' },
   { field_key: 'lower_dress_color', label_en: 'Lower Dress Color', label_hi: 'निचली पोशाक का रंग', required: false, section: 'person_details' },
   { field_key: 'face', label_en: 'Face', label_hi: 'चेहरा', required: false, section: 'person_details' },
@@ -398,6 +399,87 @@ export const missingGeneralFields = [
   { field_key: 'io_pis', label_en: 'PIS No. of IO', label_hi: 'जांच अधिकारी का पीआईएस नंबर', required: false, section: 'investigation_officer' },
   { field_key: 'io_mobile', label_en: 'IO Mobile No.', label_hi: 'जांच अधिकारी का मोबाइल', required: false, section: 'investigation_officer' }
 ];
+
+// ─── Registry-driven template inclusion ─────────────────────────────────────────────────
+// The template no longer shows ONLY the fields hand-listed above. Every active field_registry
+// row applicable to a record type is auto-added to its template (appended at the end of the
+// right sheet, with its registry label/options) UNLESS it is excluded below.
+//
+// How to control what appears in the Excel template:
+//   • Remove a field that auto-appeared        → add its field_key to TEMPLATE_EXCLUDE_KEYS.
+//   • Re-order / re-label / re-hint a field    → add or edit it in the field lists above
+//     (a field listed above is always included and placed exactly where the list says;
+//      the exclude sets below only govern fields NOT listed above).
+//   • Add a brand-new field                    → nothing to do; it flows in from field_registry.
+
+// Fields that exist only to power the interactive form's conditional show/hide behaviour
+// (per-act sections / per-crime minor heads). The flat act/sections/crime_head/minor_head
+// cascade columns replace all of these in Excel, so they are structurally excluded for
+// every record type — do not remove entries from this set to "add" them; they would never
+// be merged on import (same rationale as UIDB_ACT_SECTION_EXCLUDE_KEYS below).
+export const CONDITIONAL_FORM_FIELD_KEYS = new Set([
+  'act_name', 'other_act_name',
+  'ipc_sections', 'excise_sections', 'arms_sections', 'gambling_sections', 'other_sections',
+  'ipc_major_head', 'excise_major_head', 'arms_major_head', 'gambling_major_head', 'other_major_head',
+  'theft_minor_head', 'murder_minor_head', 'hurt_minor_head', 'cheating_minor_head',
+  'robbery_minor_head', 'excise_possession_minor_head', 'excise_minor_head',
+  'excise_sale_minor_head', 'excise_smuggling_minor_head',
+  'arms_minor_head', 'arms_possession_minor_head', 'arms_use_minor_head',
+  'gambling_minor_head', 'gambling_house_minor_head', 'gambling_public_minor_head',
+  'other_minor_head',
+]);
+
+// Per-record-type template excludes. Seeded ("grandfathered") from every field_registry row
+// that existed when registry-driven inclusion was introduced but was not part of the template,
+// so the generated files stayed byte-for-byte identical on the day of the switch.
+// DELETE a key from here to let that field flow into the template automatically.
+export const TEMPLATE_EXCLUDE_KEYS = {
+  CASE: new Set([
+    // general / occurrence info never wired into the template
+    'occurrence_time_type', 'type_of_information', 'occurrence_from_date_time',
+    'occurrence_to_date_time', 'info_received_at_ps_date_time', 'organised_crime',
+    'complaint_no', 'gd_no', 'occurrence_landmark', 'source_reference',
+    'occurrence_latitude', 'occurrence_longitude', 'area_of_crime', 'beat_no',
+    'occurrence_place', 'complainant_name', 'status', 'is_important',
+    // financial fraud / vehicle sections never wired into the template
+    'cheated_amount', 'modus_operandi',
+    'vehicle_no', 'vehicle_type', 'vehicle_make', 'vehicle_model', 'vehicle_color',
+    'vehicle_chassis_no', 'vehicle_engine_no', 'cd_uploaded_24h', 'footage_collected',
+    // property sub-fields (phone/arms details) — property sheet uses the generic columns
+    'property_phone_number', 'phone_make', 'phone_model', 'phone_imei', 'phone_color',
+    'phone_status', 'prop_fire_arms_type', 'prop_arms_made', 'prop_other_subtype',
+    // deliberately dropped person fields (were commented out / .filter()-ed above)
+    'complainant_npr', 'complainant_same_as_victim', 'complainant_dob',
+    'complainant_birth_year', 'complainant_present_address',
+    'accused_npr', 'accused_dob', 'accused_birth_year', 'accused_present_address',
+    'victim_npr', 'victim_qualification', 'victim_dob', 'victim_birth_year',
+    'victim_present_address',
+    'io_rank',
+  ]),
+  ARREST: new Set([
+    // general info variants not used by the arrest template
+    'case_type', 'fir_no', 'gd_no', 'arrest_date', 'arrest_place', 'complainant_name',
+    'other_status_reason', 'recovery', 'nafis_dossier', 'case_status', 'listed_criminal',
+    'arresting_officer', 'arresting_officer_mobile',
+    // intimation section never wired into the template
+    'intimation_date_time', 'intimated_relative_name', 'intimated_relative_relation',
+    'intimation_mode', 'intimation_house_no', 'intimation_street', 'intimation_colony',
+    'intimation_city_town_village', 'intimation_tehsil_block_mandal', 'intimation_country',
+    'intimation_state', 'intimation_district', 'intimation_police_station', 'intimation_pincode',
+    // property sub-fields (phone/arms details)
+    'property_phone_number', 'phone_make', 'phone_model', 'phone_imei', 'phone_color',
+    'phone_status', 'prop_fire_arms_type', 'prop_arms_made', 'prop_other_subtype',
+    // deliberately dropped person fields (were commented out / .filter()-ed above)
+    'arrested_npr', 'nick_name', 'arrested_dob', 'arrested_birth_year',
+    'arrested_present_address', 'arrested_perm_address',
+  ]),
+  UIDB: new Set([
+    'deceased_address', 'deceased_perm_address', 'local_head', 'heinous_offence', 'case_status', 'missing_relation_type',
+  ]),
+  MISSING: new Set([
+    'mp_address', 'missing_address', 'operator_name', 'case_status',
+  ]),
+};
 
 export const CASE_SHEETS_CONFIG = {
   general: caseGeneralFields.map(f => f.field_key),
