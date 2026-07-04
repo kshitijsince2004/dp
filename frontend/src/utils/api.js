@@ -605,6 +605,20 @@ const formSchemas = {
       fields: [
         { field_key: 'arrest_date', field_type: 'DATE', label_en: 'Date of Arrest', label_hi: 'गिरफ्तारी की तिथि', validation_rules: { required: true } },
         { field_key: 'arrest_place', field_type: 'TEXT', label_en: 'Place of Arrest', label_hi: 'गिरफ्तारी का स्थान', validation_rules: { required: true } },
+        { field_key: 'arrest_street', field_type: 'TEXT', label_en: 'Street', label_hi: 'गली / सड़क', validation_rules: { required: false } },
+        { field_key: 'arrest_colony', field_type: 'TEXT', label_en: 'Colony', label_hi: 'कॉलोनी', validation_rules: { required: false } },
+        {
+          field_key: 'arrest_district',
+          field_type: 'SELECT',
+          label_en: 'District',
+          label_hi: 'जिला',
+          options: [
+            { value: 'New Delhi District (NDD)', label_en: 'New Delhi District (NDD)', label_hi: 'नई दिल्ली जिला' },
+            { value: 'Central District', label_en: 'Central District', label_hi: 'मध्य जिला' }
+          ],
+          validation_rules: { required: false }
+        },
+        { field_key: 'arrest_landmark', field_type: 'TEXT', label_en: 'Landmark', label_hi: 'लैंडमार्क', validation_rules: { required: false } }
       ]
     },
     {

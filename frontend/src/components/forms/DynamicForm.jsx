@@ -1960,7 +1960,11 @@ const renderArrestedStep = () => {
         </legend>
         <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
           {renderArrestedModalField('arrest_date')}
-          {renderArrestedModalField('arrest_place', null, true)}
+          {renderArrestedModalField('arrest_place')}
+          {renderArrestedModalField('arrest_street')}
+          {renderArrestedModalField('arrest_colony')}
+          {renderArrestedModalField('arrest_district')}
+          {renderArrestedModalField('arrest_landmark', null, true)}
         </div>
       </fieldset>
     );
