@@ -162,9 +162,17 @@ export async function up(knex) {
     table.string('property_type_srno');
     table.string('property');
   });
+
+  // 22. HEINOUS OFFENCES
+  await knex.schema.createTable('excel_heinous_offences', (table) => {
+    table.increments('id').primary();
+    table.integer('heinous_offence_cd');
+    table.string('heinous_offence');
+  });
 }
 
 export async function down(knex) {
+  await knex.schema.dropTableIfExists('excel_heinous_offences');
   await knex.schema.dropTableIfExists('excel_other_property_items');
   await knex.schema.dropTableIfExists('excel_other_property_categories');
   await knex.schema.dropTableIfExists('excel_jewelry_types');

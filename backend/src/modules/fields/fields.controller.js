@@ -293,12 +293,20 @@ export const getFieldsForForm = async (req, res) => {
               { value: 'TRANSFER', label_en: 'Transfer', label_hi: 'स्थानांतरण' }
             ];
           } else if (normalizedType === 'ARREST') {
-            options = [
-              { value: 'police_custody', label_en: 'Police Custody', label_hi: 'पुलिस हिरासत' },
-              { value: 'bail', label_en: 'Bail', label_hi: 'जमानत' },
-              { value: 'judicial_custody', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
-              { value: 'released', label_en: 'Released', label_hi: 'रिहा' },
-              { value: 'others', label_en: 'Others', label_hi: 'अन्य' }
+            const isAgainstFir = caseType === 'against_fir';
+            options = isAgainstFir ? [
+              { value: 'JC', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
+              { value: 'PC', label_en: 'Police Custody', label_hi: 'पुलिस हिरासत' },
+              { value: 'Bail', label_en: 'Bail', label_hi: 'जमानत' },
+              { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
+              { value: 'Release', label_en: 'Release', label_hi: 'रिहा' },
+              { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
+              { value: '35(3) BNS Notice', label_en: '35(3) BNS Notice', label_hi: '35(3) BNS Notice' }
+            ] : [
+              { value: 'JC', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
+              { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
+              { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
+              { value: 'Fine', label_en: 'Fine', label_hi: 'Fine' }
             ];
           } else if (normalizedType === 'PCR_CALL') {
             options = [
@@ -336,22 +344,24 @@ export const getFieldsForForm = async (req, res) => {
             sort_order = 429;
           }
         } else if (normalizedType === 'MISSING') {
-          if (f.section === 'general_info') {
+          if (f.field_key === 'status') {
+            section = 'general_info';
+            sort_order = 10.6;
+          } else if (f.section === 'general_info') {
             section = 'general_info';
             if (f.field_key === 'source') sort_order = 10.1;
             else if (f.field_key === 'gd_no') sort_order = 10.2;
             else if (f.field_key === 'missing_type') sort_order = 10.3;
             else if (f.field_key === 'pcr_call_flag') sort_order = 10.4;
             else if (f.field_key === 'operator_name') sort_order = 10.5;
-            else if (f.field_key === 'status') sort_order = 10.6;
           } else if (f.section === 'person_details') {
             section = 'person_details';
             sort_order = 20.0 + f.sort_order * 0.1;
-          } else if (f.section === 'location_particulars') {
-            section = 'location_particulars';
+          } else if (f.section === 'missing_address') {
+            section = 'missing_address';
             sort_order = 30.0 + f.sort_order * 0.1;
-          } else if (f.section === 'physical_description') {
-            section = 'physical_description';
+          } else if (f.section === 'missing_physical') {
+            section = 'missing_physical';
             sort_order = 40.0 + f.sort_order * 0.1;
           } else if (f.section === 'contacts_assigned') {
             section = 'contacts_assigned';
@@ -359,6 +369,11 @@ export const getFieldsForForm = async (req, res) => {
           } else if (f.section === 'investigation_officer') {
             section = 'investigation_officer';
             sort_order = 60.0 + f.sort_order * 0.1;
+          }
+        } else if (normalizedType === 'PCR_CALL') {
+          if (f.field_key === 'occurrence_landmark') {
+            section = 'incident_details';
+            sort_order = 8.05;
           }
         } else if (normalizedType === 'UIDB') {
           if (f.field_key === 'uidb_no') {
@@ -378,10 +393,15 @@ export const getFieldsForForm = async (req, res) => {
             sort_order = 10.5;
           } else if ([
             'height', 'built', 'complexion', 'face', 'hair', 'moustache', 'beard',
-            'upper_dress_color', 'lower_dress_color', 'zipnet_no', 'identified', 'gender'
+            'upper_dress_color', 'lower_dress_color', 'description'
+          ].includes(f.field_key)) {
+            section = 'corpse_physical';
+            sort_order = 25.0 + f.sort_order * 0.1;
+          } else if ([
+            'zipnet_no', 'identified', 'gender'
           ].includes(f.field_key) || f.section === 'corpse_desc') {
             section = 'corpse_desc';
-            sort_order = 20 + f.sort_order;
+            sort_order = 20.0 + f.sort_order * 0.1;
           } else if (['cause_of_death', 'deceased_relative_name', 'deceased_relation_type', 'filed_by_acp_sdm', 'filed_by_acp_sdm_date', 'informant_name', 'informant_relation', 'informant_mobile'].includes(f.field_key)) {
             section = 'inquest_details';
             if (f.field_key === 'cause_of_death') sort_order = 40.1;
@@ -615,34 +635,34 @@ export const getFieldsForForm = async (req, res) => {
         },
         {
           section: 'property_details',
-          title_en: 'Particulars',
-          title_hi: 'विवरण',
+          title_en: 'Property of Interest',
+          title_hi: 'संबद्ध संपत्ति',
           is_repeater: true,
           entity_type: 'property',
           fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')
         },
-        {
-          section: 'intimation_details',
-          title_en: 'Intimation Details',
-          title_hi: 'सूचना का विवरण',
-          is_repeater: true,
-          entity_type: 'person',
-          person_type: 'INTIMATED',
-          sub_tabs: [
-            {
-              id: 'personal',
-              title_en: 'Personal Information',
-              title_hi: 'व्यक्तिगत जानकारी',
-              fields: filteredFields.filter(f => f.section === 'intimation_details')
-            },
-            {
-              id: 'address',
-              title_en: 'Address',
-              title_hi: 'पता',
-              fields: filteredFields.filter(f => f.section === 'intimation_address')
-            }
-          ]
-        },
+        // {
+        //   section: 'intimation_details',
+        //   title_en: 'Intimation Details',
+        //   title_hi: 'सूचना का विवरण',
+        //   is_repeater: true,
+        //   entity_type: 'person',
+        //   person_type: 'INTIMATED',
+        //   sub_tabs: [
+        //     {
+        //       id: 'personal',
+        //       title_en: 'Personal Information',
+        //       title_hi: 'व्यक्तिगत जानकारी',
+        //       fields: filteredFields.filter(f => f.section === 'intimation_details')
+        //     },
+        //     {
+        //       id: 'address',
+        //       title_en: 'Address',
+        //       title_hi: 'पता',
+        //       fields: filteredFields.filter(f => f.section === 'intimation_address')
+        //     }
+        //   ]
+        // },
         {
           section: 'procedure_slips',
           title_en: 'Procedural Slips',
@@ -658,6 +678,51 @@ export const getFieldsForForm = async (req, res) => {
           fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
         }
       );
+    } else if (normalizedType === 'MISSING') {
+      sections = [
+        {
+          section: 'general_info',
+          title_en: 'General Information',
+          title_hi: 'सामान्य जानकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'general_info' && !f.repeater_entity)
+        },
+        {
+          section: 'person_details',
+          title_en: 'Person Details',
+          title_hi: 'व्यक्ति विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'person_details' && !f.repeater_entity)
+        },
+        {
+          section: 'missing_address',
+          title_en: 'Address Details',
+          title_hi: 'पता विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'missing_address' && !f.repeater_entity)
+        },
+        {
+          section: 'missing_physical',
+          title_en: 'Physical Description',
+          title_hi: 'शारीरिक हुलिया',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'missing_physical' && !f.repeater_entity)
+        },
+        {
+          section: 'contacts_assigned',
+          title_en: 'Informant Contact',
+          title_hi: 'सूचना प्रदाता संपर्क',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'contacts_assigned' && !f.repeater_entity)
+        },
+        {
+          section: 'investigation_officer',
+          title_en: 'Investigating Officer',
+          title_hi: 'जांच अधिकारी',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
+        }
+      ];
     } else if (normalizedType === 'UIDB') {
       sections = [
         {
@@ -673,6 +738,13 @@ export const getFieldsForForm = async (req, res) => {
           title_hi: 'यूआईडीबी विवरण',
           is_repeater: false,
           fields: filteredFields.filter(f => f.section === 'corpse_desc' && !f.repeater_entity)
+        },
+        {
+          section: 'corpse_physical',
+          title_en: 'Physical Description',
+          title_hi: 'शारीरिक हुलिया',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'corpse_physical' && !f.repeater_entity)
         },
         {
           section: 'inquest_details',

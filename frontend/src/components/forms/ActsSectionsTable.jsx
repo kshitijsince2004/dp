@@ -198,6 +198,35 @@ export default function ActsSectionsTable({
     </select>
   );
 
+  const heinousOffenceBlock = (
+    <div className="flex items-center gap-4 mt-0.5">
+      <label className="flex items-center gap-1.5 text-[#0d2a4a] font-medium cursor-pointer select-none">
+        <input
+          type="radio"
+          name="heinous_offence"
+          disabled={readOnly}
+          value="yes"
+          checked={values.heinous_offence === true || values.heinous_offence === 'yes'}
+          onChange={() => handleChange('heinous_offence', true)}
+          className="accent-[#0f52ba] cursor-pointer"
+        />
+        <span>{lang === 'hi' ? 'हाँ' : 'Yes'}</span>
+      </label>
+      <label className="flex items-center gap-1.5 text-[#0d2a4a] font-medium cursor-pointer select-none">
+        <input
+          type="radio"
+          name="heinous_offence"
+          disabled={readOnly}
+          value="no"
+          checked={values.heinous_offence === false || values.heinous_offence === 'no'}
+          onChange={() => handleChange('heinous_offence', false)}
+          className="accent-[#0f52ba] cursor-pointer"
+        />
+        <span>{lang === 'hi' ? 'नहीं' : 'No'}</span>
+      </label>
+    </div>
+  );
+
   return (
     <>
       <div className="flex flex-col md:flex-row gap-3">
@@ -282,9 +311,12 @@ export default function ActsSectionsTable({
               <legend className="text-[#0d2a4a] text-[11px] font-bold px-1.5 uppercase tracking-wide">
                 Local Head
               </legend>
-              <div className="grid grid-cols-[80px_1fr] gap-x-2 text-[11px] items-center">
+              <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-2 text-[11px] items-center">
                 <span className="text-[#0d2a4a] font-bold">Local Head</span>
                 {localHeadBlock}
+                
+                <span className="text-[#0d2a4a] font-bold">{lang === 'hi' ? 'जघन्य अपराध' : 'Heinous Offences'}</span>
+                {heinousOffenceBlock}
               </div>
             </fieldset>
           </div>
@@ -298,6 +330,10 @@ export default function ActsSectionsTable({
               <div className="flex flex-col gap-1 mt-1">
                 <label className="text-[#0d2a4a] font-bold">Local Head</label>
                 {localHeadBlock}
+              </div>
+              <div className="flex flex-col gap-1 mt-1">
+                <label className="text-[#0d2a4a] font-bold">{lang === 'hi' ? 'जघन्य अपराध' : 'Heinous Offences'}</label>
+                {heinousOffenceBlock}
               </div>
             </div>
           </fieldset>
