@@ -1076,6 +1076,7 @@ export const listMajorHeads = async (req, res) => {
     let data = [];
 
     if (actNameRaw) {
+      // Smart comma-split: rejoin year tokens (e.g. "DELHI EXCISE ACT, 2009" split by comma)
       const rawActNames = actNameRaw.split(',').map(a => a.trim()).filter(Boolean);
       const actNames = [];
       for (const item of rawActNames) {
@@ -1085,35 +1086,61 @@ export const listMajorHeads = async (req, res) => {
           actNames.push(item);
         }
       }
-      const actCds = [];
-      const customNames = [];
+
+      const actCds = new Set();
 
       for (const name of actNames) {
+        // 1. Try ACT_GROUP_CODES lookup first (fastest, verified codes)
         if (ACT_GROUP_CODES[name]) {
-          actCds.push(...ACT_GROUP_CODES[name]);
-        } else {
-          customNames.push(name);
+          for (const cd of ACT_GROUP_CODES[name]) actCds.add(cd);
+          continue;
         }
-      }
 
-      if (customNames.length > 0) {
-        const nameVariants = [];
-        for (const name of customNames) {
-          nameVariants.push(name);
-          if (name.includes(',')) {
-            nameVariants.push(name.replace(/,\s*/g, ','));
-            nameVariants.push(name.replace(/,\s*/g, ', '));
-          }
-        }
-        const customActs = await db('excel_acts')
-          .whereIn('act_long', nameVariants)
+        // 2. Try exact match against excel_acts.act_long
+        const exactMatches = await db('excel_acts')
+          .whereRaw('LOWER(act_long) = LOWER(?)', [name])
           .select('act_cd');
-        actCds.push(...customActs.map(a => a.act_cd));
+        if (exactMatches.length > 0) {
+          exactMatches.forEach(a => actCds.add(a.act_cd));
+          continue;
+        }
+
+        // 3. Try partial ILIKE match — search for meaningful keywords from the act name
+        // Strip common generic words, parenthetical aliases like "(IPC)", punctuation
+        const keywords = name
+          .replace(/\(.*?\)/g, '')           // remove (IPC), (BNS) etc.
+          .replace(/[^a-zA-Z0-9\s]/g, ' ')   // remove punctuation
+          .split(/\s+/)
+          .map(w => w.trim())
+          .filter(w => w.length >= 3 && !['ACT', 'THE', 'AND', 'FOR', 'OF', 'IN', 'TO', 'OR'].includes(w.toUpperCase()));
+
+        if (keywords.length > 0) {
+          // Build an AND query: act_long must contain ALL significant keywords
+          let query = db('excel_acts');
+          for (const kw of keywords) {
+            query = query.whereRaw('LOWER(act_long) LIKE ?', [`%${kw.toLowerCase()}%`]);
+          }
+          const kwMatches = await query.select('act_cd');
+          if (kwMatches.length > 0) {
+            kwMatches.forEach(a => actCds.add(a.act_cd));
+            continue;
+          }
+
+          // 4. Fallback: OR query — any keyword matches
+          let orQuery = db('excel_acts').where(function() {
+            for (const kw of keywords) {
+              this.orWhereRaw('LOWER(act_long) LIKE ?', [`%${kw.toLowerCase()}%`]);
+            }
+          });
+          const orMatches = await orQuery.select('act_cd').limit(50);
+          orMatches.forEach(a => actCds.add(a.act_cd));
+        }
       }
 
-      if (actCds.length > 0) {
+      const actCdList = Array.from(actCds);
+      if (actCdList.length > 0) {
         const mappings = await db('excel_major_minor_mapping')
-          .whereIn('act_cd', actCds)
+          .whereIn('act_cd', actCdList)
           .distinct('major_head_code');
         const majorCds = mappings.map(m => m.major_head_code);
 
@@ -1126,14 +1153,14 @@ export const listMajorHeads = async (req, res) => {
       }
     }
 
-    // Fallback: if no acts are requested, return all major heads
+    // Fallback: if no acts requested, return all major heads
     if (!actNameRaw) {
       data = await db('excel_major_heads')
         .select('major_head as value', 'major_head as label')
         .orderBy('major_head', 'asc');
     }
 
-    // Deduplicate by value (major_head name) to prevent React duplicate key warnings
+    // Deduplicate by value
     const seen = new Set();
     const uniqueData = data.filter(item => {
       if (!item.value) return false;

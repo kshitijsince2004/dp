@@ -3737,61 +3737,18 @@ const renderActionTakenStep = () => {
    * Alias map: UI display name -> schema show_when value
    */
 
+  // getMajorHeadOptions: returns live DB-fetched major heads for the selected act(s).
+  // dbMajorHeadOptions is populated by the useEffect below whenever values.act_name changes.
+  // This is the single source of truth — no hardcoded schema options are used.
   const getMajorHeadOptions = useCallback(() => {
-    const actNameRaw = values.act_name || '';
-    if (!actNameRaw) return [];
+    return dbMajorHeadOptions;
+  }, [dbMajorHeadOptions]);
 
-    // Split comma-separated acts and normalise to schema keys
-    const rawActKeys = actNameRaw
-      .split(',')
-      .map(a => a.trim())
-      .filter(Boolean);
-    const actKeys = [];
-    for (const item of rawActKeys) {
-      if (/^\d{4}$/.test(item) && actKeys.length > 0) {
-        actKeys[actKeys.length - 1] = `${actKeys[actKeys.length - 1]}, ${item}`;
-      } else {
-        actKeys.push(item);
-      }
-    }
-    const normalizedActKeys = actKeys.map(a => ACT_NAME_ALIAS[a] || a);
-
-    // Collect options from all matching major-head schema fields
-    const seen = new Set();
-    const allOptions = [];
-    for (const actKey of normalizedActKeys) {
-      const majorFields = allSchemaFields.filter(
-        f => f.field_key?.includes('major_head') && f.show_when?.value === actKey
-      );
-      for (const mf of majorFields) {
-        if (mf.options && Array.isArray(mf.options)) {
-          for (const opt of mf.options) {
-            if (!seen.has(opt.value)) {
-              seen.add(opt.value);
-              allOptions.push(opt);
-            }
-          }
-        }
-      }
-    }
-    return allOptions;
-  }, [allSchemaFields, values.act_name]);
-  /**
-   * Fetch minor-head options from the schema.
-   * Looks for fields whose field_key matches `*_minor_head` and whose
-   * show_when condition references the currently selected major head value.
-   * Returns the options array from the matching field, or [] if none found.
-   */
+  // getMinorHeadOptions: returns live DB-fetched minor heads for the selected major head.
+  // dbMinorHeadOptions is populated by the useEffect below whenever selectedMajorHead changes.
   const getMinorHeadOptions = useCallback(() => {
-    if (!selectedMajorHead) return [];
-    const minorField = allSchemaFields.find(
-      f => f.field_key?.includes('minor_head') && f.show_when?.value === selectedMajorHead
-    );
-    if (minorField?.options && Array.isArray(minorField.options)) {
-      return minorField.options;
-    }
-    return [];
-  }, [allSchemaFields, selectedMajorHead]);
+    return dbMinorHeadOptions;
+  }, [dbMinorHeadOptions]);
   /**
    * Fetch local-head options from the schema.
    * Looks for the field with field_key === 'local_head'.
@@ -3823,14 +3780,26 @@ const renderActionTakenStep = () => {
   }, []);
 
   // Fetch Major Heads dynamically from the database based on selected acts
+  // Fetch Major Heads from DB whenever the selected acts change.
+  // Sends all registered acts (values.act_registered_list as JSON, or values.act_name)
+  // so that major heads for ALL selected acts are returned at once.
   useEffect(() => {
     let active = true;
-    if (!values.act_name) {
+
+    // Build act name string from the registered acts list if available, else fall back to act_name
+    let actNamesParam = '';
+    if (Array.isArray(values.act_registered_list) && values.act_registered_list.length > 0) {
+      actNamesParam = values.act_registered_list.map(r => r.act).join(',');
+    } else if (values.act_name) {
+      actNamesParam = values.act_name;
+    }
+
+    if (!actNamesParam) {
       setDbMajorHeadOptions([]);
       return;
     }
 
-    api.get('/fields/lookup/major-heads', { params: { act_name: values.act_name } })
+    api.get('/fields/lookup/major-heads', { params: { act_name: actNamesParam } })
       .then(res => {
         if (active && res.data?.success && Array.isArray(res.data.data)) {
           setDbMajorHeadOptions(res.data.data);
@@ -3843,7 +3812,7 @@ const renderActionTakenStep = () => {
     return () => {
       active = false;
     };
-  }, [values.act_name]);
+  }, [values.act_name, values.act_registered_list]);
 
   // Fetch Minor Heads dynamically from the database based on selected Major Head
   useEffect(() => {
