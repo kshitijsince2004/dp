@@ -167,7 +167,7 @@ const parseCombinedAddress = (addressStr) => {
   let remainingParts = [...parts];
 
   const lastPart = remainingParts[remainingParts.length - 1];
-  const countries = ['india', 'nepal', 'bhutan', 'bangladesh', 'pakistan', 'sri lanka', 'myanmar', 'tibetan', 'american', 'british', 'canadian'];
+  const countries = COUNTRY_OPTS.map(c => c.toLowerCase());
   if (countries.includes(lastPart.toLowerCase())) {
     result.country = lastPart;
     remainingParts.pop();
@@ -1088,7 +1088,7 @@ const getHint = (field) => {
     const optList = Array.isArray(options) ? options.map(o => (o && typeof o === 'object') ? o.value : o).join(', ') : '';
     return `${reqStr}select: ${optList}`;
   }
-  if (field.field_type === 'DATE') return `${reqStr}date (DD/MM/YYYY)`;
+  if (field.field_type === 'DATE') return `${reqStr}date (dd-mm-yyyy)`;
   if (field.field_type === 'TIME') return `${reqStr}time (HH:MM)`;
   if (field.field_type === 'NUMBER') return `${reqStr}number`;
   return `${reqStr}${field.field_type.toLowerCase()}`;
@@ -1246,20 +1246,26 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
       options = ['Male', 'Female', 'Transgender', 'Unknown'];
     }
 
-    if ((!options || options.length === 0) && matched) {
-      if (matched.field_key === 'state' || matched.field_key.endsWith('_state')) {
+    if (!options || options.length === 0) {
+      if (f.field_key === 'police_station' || f.field_key.endsWith('_police_station')) {
+        if (allFields.policeStationOptions) {
+          options = allFields.policeStationOptions;
+        }
+      } else if (f.field_key === 'state' || f.field_key.endsWith('_state')) {
         options = STATE_OPTS;
-      } else if (matched.field_key === 'district' || matched.field_key.endsWith('_district')) {
+      } else if (f.field_key === 'district' || f.field_key.endsWith('_district')) {
         options = DISTRICT_OPTS;
-      } else if (matched.field_key === 'country' || matched.field_key.endsWith('_country')) {
+      } else if (f.field_key === 'country' || f.field_key.endsWith('_country')) {
         options = COUNTRY_OPTS;
-      } else if (matched.field_key === 'status') {
-        if (recordType === 'MISSING') {
-          options = ['Un-traced', 'Traced', 'Referred', 'Closed'];
-        } else if (recordType === 'UIDB') {
-          options = ['Referred to district hospital', 'Identified', 'Body Claimed', 'Unidentified', 'Held in Mortuary'];
-        } else if (recordType === 'PCR_CALL') {
-          options = ['Action Taken', 'Pending', 'Referred', 'Closed'];
+      } else if (matched) {
+        if (matched.field_key === 'status') {
+          if (recordType === 'MISSING') {
+            options = ['Un-traced', 'Traced', 'Referred', 'Closed'];
+          } else if (recordType === 'UIDB') {
+            options = ['Referred to district hospital', 'Identified', 'Body Claimed', 'Unidentified', 'Held in Mortuary'];
+          } else if (recordType === 'PCR_CALL') {
+            options = ['Action Taken', 'Pending', 'Referred', 'Closed'];
+          }
         }
       }
     }
@@ -1358,6 +1364,13 @@ export const downloadImportTemplate = async (req, res) => {
     const allFields = await db('field_registry')
       .where('is_active', true)
       .orderBy('sort_order', 'asc');
+
+    const psRows = await db('hierarchy_nodes')
+      .where({ node_type: 'PS', is_active: true })
+      .select('name_en as ps_name')
+      .orderBy('name_en', 'asc');
+    const psOptions = psRows.map(r => r.ps_name);
+    allFields.policeStationOptions = psOptions;
 
     const workbook = new ExcelJS.Workbook();
 

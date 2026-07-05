@@ -25,10 +25,43 @@ export const NR_PREFIX = 'OPT_';
 
 // ────────────────────────────────────────────────────────────────────────────────────────
 
-export const COUNTRY_OPTS = [
-  'Indian', 'Nepalese', 'Bhutanese', 'Bangladeshi', 'Pakistani', 
-  'Sri Lankan', 'Afghan', 'Myanmar', 'Tibetan', 'American', 'British', 'Canadian', 'Other'
-];
+import nationality from 'i18n-nationality';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const jsonPath = path.resolve(__dirname, '../../../node_modules/i18n-nationality/langs/en.json');
+let enNationality = {};
+try {
+  enNationality = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+} catch (e) {
+  enNationality = {
+    "IN": "Indian",
+    "NP": "Nepalese",
+    "BT": "Bhutanese",
+    "BD": "Bangladeshi",
+    "PK": "Pakistani",
+    "LK": "Sri Lankan",
+    "AF": "Afghan",
+    "MM": "Myanmar",
+    "US": "American",
+    "GB": "British",
+    "CA": "Canadian"
+  };
+}
+
+nationality.registerLocale(enNationality);
+
+const rawOpts = nationality.getNames('en');
+const demonymList = Object.values(rawOpts).filter(Boolean);
+const exclude = new Set(['Indian', 'Tibetan', 'Other']);
+const cleanList = demonymList.filter(d => !exclude.has(d));
+cleanList.sort((a, b) => a.localeCompare(b));
+
+export const COUNTRY_OPTS = ['Indian', 'Tibetan', ...cleanList, 'Other'];
 
 export const STATE_OPTS = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 
@@ -62,7 +95,7 @@ const getPersonFieldsList = (prefix, labelPrefixEn, labelPrefixHi) => {
     { field_key: `${prefix}_mobile_country_code`, label_en: `${labelPrefixEn} Mobile Country Code`, label_hi: `${labelPrefixHi} मोबाइल देश कोड`, required: false, hint: 'e.g. +91' },
     { field_key: `${prefix}_mobile`, label_en: `${labelPrefixEn} Mobile No.`, label_hi: `${labelPrefixHi} मोबाइल नंबर`, required: false, hint: '10-digit mobile number' },
     { field_key: `${prefix}_qualification`, label_en: `${labelPrefixEn} Qualification`, label_hi: `${labelPrefixHi} योग्यता`, required: false, options: ['Uneducated', '10th', '10+2', 'Graduate', 'Post-Graduate'] },
-    { field_key: `${prefix}_dob`, label_en: `${labelPrefixEn} Date of Birth`, label_hi: `${labelPrefixHi} जन्म तिथि`, required: false, hint: 'DD/MM/YYYY' },
+    { field_key: `${prefix}_dob`, label_en: `${labelPrefixEn} Date of Birth`, label_hi: `${labelPrefixHi} जन्म तिथि`, required: false, hint: 'dd-mm-yyyy' },
     { field_key: `${prefix}_age_year`, label_en: `${labelPrefixEn} Age (Years)`, label_hi: `${labelPrefixHi} आयु (वर्ष)`, required: false, hint: 'Age in years' },
     { field_key: `${prefix}_birth_year`, label_en: `${labelPrefixEn} Year of Birth`, label_hi: `${labelPrefixHi} जन्म का वर्ष`, required: false, hint: 'e.g. 1995' },
     { field_key: `${prefix}_house_no`, label_en: `${labelPrefixEn} House No.`, label_hi: `${labelPrefixHi} मकान संख्या`, required: false, hint: 'House Number' },
@@ -106,7 +139,7 @@ export const caseGeneralFields = [
   //{ field_key: 'sid_number', label_en: 'SID Number', label_hi: 'एसआईडी संख्या', required: false, hint: 'e.g. SID-889021' },
   { field_key: 'cctns_number', label_en: 'CCTNS Number', label_hi: 'सीसीटीएनएस संख्या', required: false, hint: 'e.g. CCTNS-202699104' },
   { field_key: 'beat_number', label_en: 'Beat Number', label_hi: 'बीट संख्या', required: false, hint: 'e.g. Beat No. 4' },
-  { field_key: 'occurrence_date', label_en: 'Occurrence Date', label_hi: 'घटना की तिथि', required: false, hint: 'DD/MM/YYYY' },
+  { field_key: 'occurrence_date', label_en: 'Occurrence Date', label_hi: 'घटना की तिथि', required: false, hint: 'dd-mm-yyyy' },
   { field_key: 'occurrence_time', label_en: 'Occurrence Time', label_hi: 'घटना का समय', required: false, hint: 'HH:MM' },
   { field_key: 'brief_facts', label_en: 'Brief Facts of Case', label_hi: 'मामले के संक्षिप्त तथ्य', required: false, hint: 'Incident narrative' },
   
@@ -118,7 +151,7 @@ export const caseGeneralFields = [
   { field_key: 'io_name', label_en: 'IO Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },
   { field_key: 'io_pis', label_en: 'PIS Number', label_hi: 'पीआईएस संख्या', required: false, hint: 'e.g. 28080214' },
   { field_key: 'io_mobile', label_en: 'Mobile Number', label_hi: 'मोबाइल नंबर', required: false, hint: 'IO contact number' },
-  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'DD/MM/YYYY' },
+  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'dd-mm-yyyy' },
   { field_key: 'case_status', label_en: 'Status', label_hi: 'स्थिति', required: false },
   { field_key: 'disposal_type', label_en: 'Disposal Type', label_hi: 'निपटान प्रकार', required: false },
   { field_key: 'rc_no', label_en: 'RC No.', label_hi: 'आरसी संख्या', required: false, hint: 'e.g. RC-123/2026' }
@@ -232,7 +265,7 @@ export const arrestPersonFields = [
   { field_key: 'bad_character', label_en: 'Bad Character (BC)', label_hi: 'बुरा चरित्र (BC)', required: false, options: ['Yes', 'No'] },
   { field_key: 'proclaimed_offender', label_en: 'Proclaimed Offender (PO)', label_hi: 'घोषित अपराधी (PO)', required: false, options: ['Yes', 'No'] },
   { field_key: 'verifying_officer_name', label_en: 'Arresting Officer Name', label_hi: 'गिरफ्तार करने वाले अधिकारी का नाम', required: false },
-  { field_key: 'verifying_officer_rank', label_en: 'Arresting Officer Rank', label_hi: 'गिरफ्तार करने वाले अधिकारी का पद', required: false },
+  { field_key: 'verifying_officer_rank', label_en: 'Arresting Officer Rank', label_hi: 'गिरफ्तार करने वाले अधिकारी का पद', required: false, options: ['Constable', 'Head Constable', 'Assistant Sub Inspector', 'Sub Inspector', 'Inspector', 'Deputy Superintendent of Police', 'Superintendent of Police'] },
   { field_key: 'status', label_en: 'Custody status', label_hi: 'हिरासत की स्थिति', required: false },
   { field_key: 'scheme_of_arrest', label_en: 'Scheme of arrest', label_hi: 'गिरफ्तारी की योजना', required: false },
   //{ field_key: 'kin_name', label_en: 'Relative Name', label_hi: 'रिश्तेदार का नाम', required: false },

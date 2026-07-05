@@ -253,7 +253,7 @@ const getHint = (field) => {
     return `${reqStr}select: ${optList}`;
   }
   if (field.field_type === 'DATE') {
-    return `${reqStr}date (DD/MM/YYYY)`;
+    return `${reqStr}date (dd-mm-yyyy)`;
   }
   if (field.field_type === 'TIME') {
     return `${reqStr}time (HH:MM)`;
@@ -341,7 +341,7 @@ async function buildLiveLookups(recordType) {
   // so the Act dropdown offers everything the form does. act_cd: null → they simply have
   // no sections mapping (the dependent Sections cell stays free-text, same as other
   // section-less acts).
-  const FALLBACK_ACTS = ['BNS', 'BNSS', 'CrPC', 'Other Act'];
+  const FALLBACK_ACTS = ['Other Act'];
   const knownActNames = new Set(allActs.map(a => String(a.act_long).trim().toLowerCase()));
   for (const name of FALLBACK_ACTS) {
     if (!knownActNames.has(name.toLowerCase())) {
@@ -400,8 +400,14 @@ async function buildLiveLookups(recordType) {
   const localHeads = (await fieldsService.getLocalHeads()).map(toOpt('local_head'));
 
   // Districts and Police Stations
-  const districts = await db('ref_district').select('district_name').orderBy('district_name', 'asc');
-  const psRows = await db('ref_police_station').select('ps_name').orderBy('ps_name', 'asc');
+  const districts = await db('hierarchy_nodes')
+    .where({ node_type: 'DISTRICT', is_active: true })
+    .select('name_en as district_name')
+    .orderBy('name_en', 'asc');
+  const psRows = await db('hierarchy_nodes')
+    .where({ node_type: 'PS', is_active: true })
+    .select('name_en as ps_name')
+    .orderBy('name_en', 'asc');
   const districtOpts = districts.map(d => ({ value: d.district_name, label: d.district_name }));
   const psOpts = psRows.map(p => ({ value: p.ps_name, label: p.ps_name }));
 
