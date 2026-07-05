@@ -34,6 +34,9 @@ export default function ActsSectionsTable({
   getMinorHeadOptions,
   getLocalHeadOptions,
   localHeadLayout = 'split',
+  // MISSING/UIDB's general_info already lists local_head as its own field, rendered by the
+  // generic field loop — set false there so this component doesn't duplicate that control.
+  showLocalHead = true,
 }) {
   const [actSearchInput, setActSearchInput] = useState('');
   const [actDropdownOpen, setActDropdownOpen] = useState(false);
@@ -292,18 +295,20 @@ export default function ActsSectionsTable({
               <div className="flex flex-col gap-2 text-[11px]">{majorMinorBlock}</div>
             </fieldset>
 
-            <fieldset className="border border-[#7a9cc5] rounded px-3 py-2 bg-[#f0f4f8]/20 flex-shrink-0">
-              <legend className="text-[#0d2a4a] text-[11px] font-bold px-1.5 uppercase tracking-wide">
-                Local Head
-              </legend>
-              <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-2 text-[11px] items-center">
-                <span className="text-[#0d2a4a] font-bold">Local Head</span>
-                {localHeadBlock}
-                
-                <span className="text-[#0d2a4a] font-bold">{lang === 'hi' ? 'जघन्य अपराध' : 'Heinous Offences'}</span>
-                {heinousOffenceBlock}
-              </div>
-            </fieldset>
+            {showLocalHead && (
+              <fieldset className="border border-[#7a9cc5] rounded px-3 py-2 bg-[#f0f4f8]/20 flex-shrink-0">
+                <legend className="text-[#0d2a4a] text-[11px] font-bold px-1.5 uppercase tracking-wide">
+                  Local Head
+                </legend>
+                <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-2 text-[11px] items-center">
+                  <span className="text-[#0d2a4a] font-bold">Local Head</span>
+                  {localHeadBlock}
+
+                  <span className="text-[#0d2a4a] font-bold">{lang === 'hi' ? 'जघन्य अपराध' : 'Heinous Offences'}</span>
+                  {heinousOffenceBlock}
+                </div>
+              </fieldset>
+            )}
           </div>
         ) : (
           <fieldset className="flex-1 border border-[#7a9cc5] rounded px-3 py-2 bg-[#f0f4f8]/20">
@@ -312,14 +317,18 @@ export default function ActsSectionsTable({
             </legend>
             <div className="flex flex-col gap-2 text-[11px]">
               {majorMinorBlock}
-              <div className="flex flex-col gap-1 mt-1">
-                <label className="text-[#0d2a4a] font-bold">Local Head</label>
-                {localHeadBlock}
-              </div>
-              <div className="flex flex-col gap-1 mt-1">
-                <label className="text-[#0d2a4a] font-bold">{lang === 'hi' ? 'जघन्य अपराध' : 'Heinous Offences'}</label>
-                {heinousOffenceBlock}
-              </div>
+              {showLocalHead && (
+                <>
+                  <div className="flex flex-col gap-1 mt-1">
+                    <label className="text-[#0d2a4a] font-bold">Local Head</label>
+                    {localHeadBlock}
+                  </div>
+                  <div className="flex flex-col gap-1 mt-1">
+                    <label className="text-[#0d2a4a] font-bold">{lang === 'hi' ? 'जघन्य अपराध' : 'Heinous Offences'}</label>
+                    {heinousOffenceBlock}
+                  </div>
+                </>
+              )}
             </div>
           </fieldset>
         )}

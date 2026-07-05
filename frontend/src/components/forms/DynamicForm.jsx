@@ -20,39 +20,12 @@ import SearchableSelect from './SearchableSelect.jsx';
 import DateInput from '../ui/DateInput.jsx';
 import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
-
-// Mock registry for Acts & Sections to be loaded dynamically from the backend in the future
-const ACTS_SECTIONS_REGISTRY = [
-  {
-    act: "Indian Penal Code (IPC)",
-    sections: ["379", "302", "323", "406", "506", "354", "411"]
-  },
-  {
-    act: "Arms Act",
-    sections: ["25", "27", "30"]
-  },
-  {
-    act: "NDPS Act",
-    sections: ["15", "18", "20", "21", "22"]
-  },
-  {
-    act: "Motor Vehicles Act",
-    sections: ["181", "184", "185"]
-  },
-  {
-    act: "Information Technology Act (IT Act)",
-    sections: ["66", "66C", "66D", "67"]
-  }
-];
-
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 function parseRules(rawRules) {
   if (!rawRules) return {};
   if (typeof rawRules === 'object') return rawRules;
   try { return JSON.parse(rawRules); } catch { return {}; }
 }
-
-/** Look up a schema field's `options` list by key, tolerating either array or JSON-string storage. */
 function getFieldOptions(fieldsArr, key) {
   const field = fieldsArr.find((f) => f.field_key === key);
   if (!field?.options) return [];
@@ -67,32 +40,18 @@ function getFieldOptions(fieldsArr, key) {
 
 /**
  * Wizard step order per record type, keyed by the backend's `section` value
- * (see backend/src/modules/fields/fields.controller.js — sections/sub_tabs are
- * already grouped there; this just picks the order/subset shown as top-level tabs).
  * 'select_fir' is a synthetic step (see finalSchema) not present in the backend response.
  */
 const SECTION_KEY_ORDER = {
   CASE: ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
-  // For ARREST keep only the main flow tabs. Custody/status and particulars
-  // will be surfaced inside the arrested-person modal to avoid repetition.
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'investigation_officer'],
+  ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
   UIDB: ['general_info', 'corpse_desc', 'corpse_physical', 'inquest_details', 'investigation_officer'],
   MISSING: ['general_info', 'person_details', 'missing_address', 'missing_physical', 'contacts_assigned', 'investigation_officer'],
 };
-
-// Repeater sections need is_repeater/entity_type/person_type so the person/property
-// add-edit-delete modals and the final-submit persons/properties builder can find them.
-const REPEATER_SECTION_META = {
-  property_details: { is_repeater: true, entity_type: 'property' },
-  arrested_info: { is_repeater: true, entity_type: 'person', person_type: 'ARRESTED' },
-  intimation_details: { is_repeater: true, entity_type: 'person', person_type: 'INTIMATED' },
-};
-
 // When "Type of Information" is Oral/Court Order, Case Registration Type mirrors it
-// verbatim (outside the normal case_type dropdown options) — business rule, not config.
 const TYPE_OF_INFO_CASE_TYPE_MAP = { Written: 'cctns(manual FIR)', Oral: 'Oral', 'Court Order': 'Court Order' };
 
-/** Sections with sub_tabs (Complainant/Victim/Accused/Arrested/Intimation) don't carry
+/** Sections with sub_tabs (Complainant/Victim/Accused/Arrested) don't carry
  * a flat `fields` array — concatenate every sub-tab's fields for validation purposes. */
 function flattenSectionFields(section) {
   if (!section) return [];
@@ -195,9 +154,6 @@ export default function DynamicForm({
 
   const { user } = useAuthStore();
   const { schema, isLoading, isError, schemaError } = useFormSchema(recordType, caseType);
-  // Always fetch ARREST schema so the arrested-persons modal has access to all ARREST fields
-  // regardless of what the main form's recordType is (e.g. CASE form embedding arrest modal).
-  const { schema: arrestSchema } = useFormSchema('ARREST', caseType);
   const activeRecordIdRef = useRef(initialValues?.id || null);
 
   // FIR Search State
@@ -235,19 +191,18 @@ export default function DynamicForm({
     }
     setSearchError('');
 
-    // Combine frontend mock cases & backend casesData
-    const unifiedCases = [
-      ...MOCK_FIR_LIST,
-      ...(casesData || []).map(c => ({
-        fir_no: c.data?.fir_no || c.fir_no || `FIR No. ${c.id}`,
-        fir_date: c.data?.fir_date || c.fir_date || c.record_date,
-        complainant_name: c.data?.complainant_name || c.complainant_name || 'N/A',
-        police_station: c.data?.police_station || c.police_station || 'Unknown',
-        crime_head: c.data?.local_head || c.data?.crime_head || c.local_head || c.crime_head || 'N/A',
-        sections: c.data?.sections || c.sections || 'N/A',
-        isBackend: true
-      }))
-    ];
+    // Real backend cases only; MOCK_FIR_LIST is a fallback for when the backend has none
+    // (e.g. dev/demo environments), not something to permanently mix into live results.
+    const backendCases = (casesData || []).map(c => ({
+      fir_no: c.data?.fir_no || c.fir_no || `FIR No. ${c.id}`,
+      fir_date: c.data?.fir_date || c.fir_date || c.record_date,
+      complainant_name: c.data?.complainant_name || c.complainant_name || 'N/A',
+      police_station: c.data?.police_station || c.police_station || 'Unknown',
+      crime_head: c.data?.local_head || c.data?.crime_head || c.local_head || c.crime_head || 'N/A',
+      sections: c.data?.sections || c.sections || 'N/A',
+      isBackend: true
+    }));
+    const unifiedCases = backendCases.length > 0 ? backendCases : MOCK_FIR_LIST;
 
     // Filter unified list
     const filtered = unifiedCases.filter(c => {
@@ -695,30 +650,7 @@ export default function DynamicForm({
         </div>
 
         {/* Acts, Sections, Major/Minor, Local Head Panels */}
-        <ActsSectionsTable
-          values={values}
-          handleChange={handleChange}
-          readOnly={readOnly}
-          lang={lang}
-          actsSectionsRegistry={actsSectionsRegistry}
-          showAddRow={showAddRow}
-          setShowAddRow={setShowAddRow}
-          newAct={newAct}
-          setNewAct={setNewAct}
-          newSection={newSection}
-          setNewSection={setNewSection}
-          selectedMajorHead={selectedMajorHead}
-          setSelectedMajorHead={setSelectedMajorHead}
-          selectedMinorHead={selectedMinorHead}
-          setSelectedMinorHead={setSelectedMinorHead}
-          majorMinorRows={majorMinorRows}
-          onAddMajorMinorRow={handleAddMajorMinorRow}
-          onDeleteMajorMinorRow={handleDeleteMajorMinorRow}
-          getMajorHeadOptions={() => dbMajorHeadOptions}
-          getMinorHeadOptions={() => dbMinorHeadOptions}
-          getLocalHeadOptions={getLocalHeadOptions}
-          localHeadLayout="split"
-        />
+        <ActsSectionsTable {...actsSectionsProps} localHeadLayout="split" />
       </div>
     );
   };
@@ -837,7 +769,7 @@ export default function DynamicForm({
                     lang={lang}
                     selectVariant="compact"
                     selectClassName="w-64 h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-pointer"
-                    selectPlaceholder="-----Select-----"
+                    selectPlaceholder="Select an option"
                   />
                 </td>
               </tr>
@@ -845,41 +777,17 @@ export default function DynamicForm({
           </table>
         </div>
 
-        {/* Two Containers Below */}
-        <ActsSectionsTable
-          values={values}
-          handleChange={handleChange}
-          readOnly={readOnly}
-          lang={lang}
-          actsSectionsRegistry={actsSectionsRegistry}
-          showAddRow={showAddRow}
-          setShowAddRow={setShowAddRow}
-          newAct={newAct}
-          setNewAct={setNewAct}
-          newSection={newSection}
-          setNewSection={setNewSection}
-          selectedMajorHead={selectedMajorHead}
-          setSelectedMajorHead={setSelectedMajorHead}
-          selectedMinorHead={selectedMinorHead}
-          setSelectedMinorHead={setSelectedMinorHead}
-          majorMinorRows={majorMinorRows}
-          onAddMajorMinorRow={handleAddMajorMinorRow}
-          onDeleteMajorMinorRow={handleDeleteMajorMinorRow}
-          getMajorHeadOptions={() => dbMajorHeadOptions}
-          getMinorHeadOptions={() => dbMinorHeadOptions}
-          getLocalHeadOptions={getLocalHeadOptions}
-          localHeadLayout="combined"
-        />
+        <ActsSectionsTable {...actsSectionsProps} localHeadLayout="combined" />
       </div>
     );
   };
 
   const renderOccurrenceStep = () => {
     const sectionFields = activeSection?.fields || [];
-    // Split fields by sort_order: timing/info (< 3), address/place (3.x), extras like lat/lng/area (>= 4)
     const occInfoFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type !== 'RADIO');
     const occPlaceFields = sectionFields.filter(f => f.sort_order >= 3 && f.sort_order < 4);
-    const areaField = sectionFields.find(f => f.field_key === 'area_of_crime');
+
+    const occRadioFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type === 'RADIO');
 
     const renderFieldRow = (field, isLast = false) => {
       const key = field.field_key;
@@ -914,22 +822,21 @@ export default function DynamicForm({
             </div>
           </fieldset>
 
-          {/* AREA OF CRIME — radio row driven by backend field */}
-          {areaField && (
-            <fieldset className="border border-[#7a9cc5] rounded px-2 py-3">
+          {occRadioFields.map((radioField) => (
+            <fieldset key={radioField.field_key} className="border border-[#7a9cc5] rounded px-2 py-3">
               <div className="flex items-center gap-6 text-[12px]">
                 <span className="font-medium">
-                  {lang === 'hi' ? (areaField.label_hi || areaField.label_en) : areaField.label_en}
+                  {lang === 'hi' ? (radioField.label_hi || radioField.label_en) : radioField.label_en}
                 </span>
-                {getFieldOptions(sectionFields, 'area_of_crime').map((opt) => (
+                {getFieldOptions(sectionFields, radioField.field_key).map((opt) => (
                   <label key={opt.value} className="flex items-center gap-1">
-                    <input type="radio" checked={values?.area_of_crime === opt.value} onChange={() => handleChange('area_of_crime', opt.value)} />
+                    <input type="radio" checked={values?.[radioField.field_key] === opt.value} onChange={() => handleChange(radioField.field_key, opt.value)} />
                     {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
                   </label>
                 ))}
               </div>
             </fieldset>
-          )}
+          ))}
         </div>
 
         {/* RIGHT COLUMN — Place of Occurrence driven by backend address fields (sort_order 3.x) */}
@@ -947,10 +854,7 @@ export default function DynamicForm({
     );
   };
 
-  /**
-   * Shared field-metadata suffix conventions between complainant/victim/accused
-   * (only complainant lacks a nickname field and has an extra "same as victim" flag).
-   */
+
   const PERSON_TAB_VARIANTS = {
     complainant: { hasNickname: false, extraContactField: 'complainant_same_as_victim' },
     victim: { hasNickname: true, extraContactField: null },
@@ -958,7 +862,6 @@ export default function DynamicForm({
     arrested: { hasNickname: true, extraContactField: null },
   };
 
-  /** Shared "Personal Information" sub-tab body for Complainant/Victim/Accused. */
   function renderPersonPersonalInfoSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, showInlineErrors, lang, readOnly) {
     const cfg = PERSON_TAB_VARIANTS[prefix];
     const extraRequired = prefix === 'complainant' ? [] : [`${prefix}_first_name`, `${prefix}_gender`];
@@ -2008,175 +1911,6 @@ export default function DynamicForm({
   };
 
 
-  const renderIntimationStep = () => {
-    const intimationList = repeaterState?.intimation_details || [];
-    const subTabs = getSectionSubTabs('intimation_details');
-
-    /** Generic field grid for a sub-tab's fields, entirely driven by the backend's field list. */
-    const renderSubTabFieldGrid = (tabId) => {
-      const tab = subTabs.find(t => t.id === tabId);
-      const fields = tab?.fields || [];
-      if (fields.length === 0) return null;
-
-      return (
-        <fieldset className="bg-white">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-            {lang === 'hi' ? (tab.title_hi || tab.title_en) : tab.title_en}
-          </legend>
-          <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
-            {fields.map((field, idx) => {
-              const key = field.field_key;
-              const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-              const rules = parseRules(field.validation_rules);
-              const isRequired = !!rules.required || key === 'intimated_relative_name';
-              const isLast = idx === fields.length - 1;
-              const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
-              return (
-                <React.Fragment key={key}>
-                  <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                    <span>{label}</span>
-                    {isRequired && <span className="text-red-500 font-bold">*</span>}
-                  </div>
-                  <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                    <FieldRenderer
-                      field={field}
-                      value={intimationTempValues[key]}
-                      onChange={handleIntimationModalChange}
-                      readOnly={isDisabled}
-                      hasError={intimationModalTouched[key] && !!intimationModalErrors[key]}
-                      lang={lang}
-                      values={intimationTempValues}
-                    />
-                    {intimationModalTouched[key] && intimationModalErrors[key] && (
-                      <p className="text-red-500 text-[10px] mt-0.5">{intimationModalErrors[key]}</p>
-                    )}
-                  </div>
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </fieldset>
-      );
-    };
-
-    return (
-      <div className="space-y-4">
-        {/* Header bar with Add Button */}
-        <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
-            {lang === 'hi' ? `सूचना प्राप्तकर्ताओं की सूची (${intimationList.length})` : `Intimation Details List (${intimationList.length})`}
-          </h3>
-          <button
-            type="button"
-            onClick={openIntimationAddModal}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
-          >
-            <span className="text-base leading-none">+</span>
-            {lang === 'hi' ? 'सूचना विवरण जोड़ें' : 'Add Intimation Details'}
-          </button>
-        </div>
-
-        {/* Summary Table */}
-        <div className="border border-[#7a9cc5] rounded overflow-hidden">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="bg-[#0d2a4a] text-white">
-                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
-                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
-                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
-                <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {intimationList.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
-                    {lang === 'hi' ? 'कोई सूचना विवरण नहीं जोड़ा गया। "+ सूचना विवरण जोड़ें" पर क्लिक करें।' : 'No intimation details added yet. Click "+ Add Intimation Details" to add.'}
-                  </td>
-                </tr>
-              ) : (
-                intimationList.map((item, idx) => (
-                  <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
-                    <td className="px-3 py-2 font-medium">{idx + 1}</td>
-                    <td className="px-3 py-2">{getIntimationName(item)}</td>
-                    <td className="px-3 py-2 text-slate-600">{getIntimationAddress(item)}</td>
-                    <td className="px-3 py-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => openIntimationEditModal(idx)}
-                        className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
-                      >
-                        {lang === 'hi' ? 'संपादन' : 'Edit'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteIntimationEntry(idx)}
-                        className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
-                      >
-                        {lang === 'hi' ? 'हटाएं' : 'Delete'}
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Modal Dialog */}
-        {isIntimationModalOpen && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
-                <h2 className="text-sm font-bold uppercase tracking-wide">
-                  {activeIntimationIndex !== null
-                    ? (lang === 'hi' ? 'सूचना विवरण संपादित करें' : 'Edit Intimation Details')
-                    : (lang === 'hi' ? 'सूचना विवरण' : 'Intimation Details')}
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setIsIntimationModalOpen(false)}
-                  className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors"
-                  title="Close"
-                >
-                  ×
-                </button>
-              </div>
-
-              {/* Sub-tabs selectors */}
-              {renderSubTabBar('intimation_details', intimationSubTab, setIntimationSubTab)}
-
-              {/* Scrollable Body — driven entirely by the backend's sub_tabs field list */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                {renderSubTabFieldGrid(intimationSubTab)}
-              </div>
-
-              {/* Footer */}
-              <div className="bg-slate-100 border-t border-slate-200 px-5 py-3 flex justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsIntimationModalOpen(false)}
-                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded cursor-pointer transition-colors"
-                >
-                  {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
-                </button>
-                <button
-                  type="button"
-                  onClick={saveIntimationEntry}
-                  className="px-4 py-2 bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs font-bold rounded cursor-pointer transition-colors shadow-sm"
-                >
-                  {lang === 'hi' ? 'सहेजें' : 'Save'}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-      </div>
-    );
-  };
-
   const renderActionTakenStep = () => {
     const actionTakenFields = finalSchema.find(s => s.section === 'action_taken')?.fields || [];
 
@@ -2254,87 +1988,6 @@ export default function DynamicForm({
 
   const finalFirOptions = firOptions.length > 0 ? firOptions : mockOptions;
 
-  const processSchemaStatusOptions = React.useCallback((schemaToProcess, currentRecordType, currentCaseType) => {
-    if (!schemaToProcess || schemaToProcess.length === 0) return [];
-    return schemaToProcess.map(sec => {
-      if (sec.section === 'general_info' || sec.section === 'custody_status' || sec.section === 'arrested_info') {
-        const fields = (sec.fields || []).map(f => {
-          if (f.field_key === 'status') {
-            const statusField = { ...f };
-            const effectiveCaseType = currentRecordType === 'CASE' ? 'against_fir' : (currentCaseType || 'kalandra');
-            if (effectiveCaseType === 'against_fir') {
-              statusField.options = JSON.stringify([
-                { value: 'JC', label_en: 'JC (Judicial custody)', label_hi: 'जेसी (न्यायिक हिरासत)' },
-                { value: 'PC', label_en: 'PC (Police custody)', label_hi: 'पीसी (पुलिस हिरासत)' },
-                { value: 'Bail', label_en: 'Bail', label_hi: 'जमानत' },
-                { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'बाउंड डाउन' },
-                { value: 'Release', label_en: 'Release', label_hi: 'रिहा' },
-                { value: 'Lockup', label_en: 'Lockup', label_hi: 'हवालात/जेल' },
-                { value: '35(3) BNS Notice', label_en: '35(3) BNS noticee', label_hi: '35(3) BNS noticee' }
-              ]);
-            } else {
-              statusField.options = JSON.stringify([
-                { value: 'JC', label_en: 'JC', label_hi: 'जेसी' },
-                { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'बाउंड डाउन' },
-                { value: 'Lockup', label_en: 'Lockup', label_hi: 'हवालात/जेल' },
-                { value: 'Fine', label_en: 'Fine', label_hi: 'जुर्माना' }
-              ]);
-            }
-            statusField.label_en = 'Status';
-            statusField.label_hi = 'बंदी की स्थिति';
-            return statusField;
-          }
-          return f;
-        });
-
-        // Ensure recovery is in custody_status section
-        if (sec.section === 'custody_status' && !fields.find(f => f.field_key === 'recovery')) {
-          fields.push({
-            field_key: 'recovery',
-            field_type: 'TEXTAREA',
-            label_en: 'Recovered Material Items',
-            label_hi: 'बरामद की गई सामग्री',
-            visible_to_levels: ['L1', 'L2', 'L3'],
-            editable_by_levels: ['L1', 'L2', 'L3'],
-            section: 'custody_status',
-            validation_rules: JSON.stringify({ required: false })
-          });
-        }
-
-        // Ensure scheme_of_arrest is in arrested_info section
-        if (sec.section === 'arrested_info' && !fields.find(f => f.field_key === 'scheme_of_arrest')) {
-          fields.push({
-            field_key: 'scheme_of_arrest',
-            field_type: 'SELECT',
-            label_en: 'Scheme of Arrest',
-            label_hi: 'गिरफ्तारी की योजना',
-            visible_to_levels: ['L1', 'L2', 'L3'],
-            editable_by_levels: ['L1', 'L2', 'L3'],
-            section: 'arrested_info',
-            validation_rules: JSON.stringify({ required: false }),
-            options: JSON.stringify([
-              { value: 'Integrated Pride', label_en: 'Integrated Pride', label_hi: 'Integrated Pride' },
-              { value: 'Group Patrolling', label_en: 'Group Patrolling', label_hi: 'Group Patrolling' },
-              { value: 'Anti-snatching', label_en: 'Anti-snatching', label_hi: 'Anti-snatching' },
-              { value: 'By Prahari', label_en: 'By Prahari', label_hi: 'By Prahari' },
-              { value: 'By Eyes & Ears Scheme Members', label_en: 'By Eyes & Ears Scheme Members', label_hi: 'By Eyes & Ears Scheme Members' }
-            ])
-          });
-        }
-
-        return { ...sec, fields };
-      }
-      return sec;
-    });
-  }, []);
-
-  const processedArrestFields = React.useMemo(() => {
-    const rawSchema = arrestSchema || schema;
-    if (!rawSchema) return [];
-    const processedSchema = processSchemaStatusOptions(rawSchema, recordType, caseType);
-    return deepFlattenSchema(processedSchema);
-  }, [arrestSchema, schema, recordType, caseType, processSchemaStatusOptions]);
-
   const finalSchema = React.useMemo(() => {
     if (!schema || schema.length === 0) return [];
 
@@ -2370,7 +2023,9 @@ export default function DynamicForm({
           title_hi: section.title_hi,
           fields: flattenSectionFields(section),
           sub_tabs: section.sub_tabs,
-          ...REPEATER_SECTION_META[key],
+          is_repeater: section.is_repeater,
+          entity_type: section.entity_type,
+          person_type: section.person_type,
         };
       })
       .filter(Boolean);
@@ -2388,11 +2043,7 @@ export default function DynamicForm({
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [repeaterState, setRepeaterState] = useState({});
   const [propertyMinorOptionsMap, setPropertyMinorOptionsMap] = useState({});
-  // Arms & Ammunition has a 3-level structure beyond the minor-category dropdown:
-  // arms_categories (= Type of Property, above) -> fire_arms (= Type of Arm, filtered
-  // by the selected category) -> arms_made (= Subtype of Arm, an unlinked flat list).
-  // Both extra levels come back on the SAME lookup response, so we stash them here
-  // keyed by major category rather than issuing separate requests.
+
   const [armsLookupMap, setArmsLookupMap] = useState({});
 
 
@@ -2401,7 +2052,7 @@ export default function DynamicForm({
   const [newAct, setNewAct] = useState('');
   const [newSection, setNewSection] = useState('');
   const [newSectionVal, setNewSectionVal] = useState('');
-  const [actsSectionsRegistry, setActsSectionsRegistry] = useState(ACTS_SECTIONS_REGISTRY);
+  const [actsSectionsRegistry, setActsSectionsRegistry] = useState([]);
   const [dbMajorHeadOptions, setDbMajorHeadOptions] = useState([]);
   const [dbMinorHeadOptions, setDbMinorHeadOptions] = useState([]);
   const [showOccurrencePlace, setShowOccurrencePlace] = useState(false);
@@ -2464,9 +2115,6 @@ export default function DynamicForm({
                     label_hi: f.fire_arms ?? f.label ?? f,
                     parent_id: f.arms_category_cd ?? f.parent_id
                   })),
-                  // Subtype of Arm — genuinely linked to Type of Arm via arms_type_cd ->
-                  // fire_arms_cd (the "Sub Type of Fire Arm" sheet section), not the
-                  // unlinked arms_made list.
                   fireArmsSubtypes: (data.fireArmsSubtypes || []).map(s => ({
                     value: s.arms_subtype_cd ?? s.value ?? s,
                     label_en: s.arms_subtype ?? s.label ?? s,
@@ -2476,9 +2124,7 @@ export default function DynamicForm({
                 }
               }));
             } else if (data?.type === 'OTHER_PROPERTY') {
-              // "Others" is a 2-level structure like Arms: Type of Property (this dropdown)
-              // = excel_other_property_categories; Property Subtype = excel_other_property_items
-              // filtered by the selected category's parent_cd.
+
               options = (data.categories || []).map(c => ({
                 value: c.value ?? c.parent_cd ?? c,
                 label_en: c.label ?? c.code_type ?? c,
@@ -2514,35 +2160,18 @@ export default function DynamicForm({
     });
   }, [repeaterState?.property_details, arrestedTempValues?.property_details, propertyMinorOptionsMap]);
 
-  // Intimation Details tab state
-  const [isIntimationModalOpen, setIsIntimationModalOpen] = useState(false);
-  const [activeIntimationIndex, setActiveIntimationIndex] = useState(null);
-  const [intimationTempValues, setIntimationTempValues] = useState({});
-  const [intimationSubTab, setIntimationSubTab] = useState('personal'); // 'personal' | 'address'
-  const [intimationModalErrors, setIntimationModalErrors] = useState({});
-  const [intimationModalTouched, setIntimationModalTouched] = useState({});
-
   /* ── Major / Minor Head state ────────────────────────────────────────────── */
   const [selectedMajorHead, setSelectedMajorHead] = useState('');
   const [selectedMinorHead, setSelectedMinorHead] = useState('');
   const [majorMinorRows, setMajorMinorRows] = useState([]);
-  /**
-   * Helper: extract all fields from the schema (flat list).
-   * Used to look up field options dynamically — no hardcoding.
-   */
   const allSchemaFields = React.useMemo(() => deepFlattenSchema(schema), [schema]);
-
-  /** Backend-provided sub-tab list (id/title_en/title_hi) for a repeater section, e.g. arrested_info's 4 modal tabs. */
   const getSectionSubTabs = (sectionKey) => schema?.find((s) => s.section === sectionKey)?.sub_tabs || [];
-
-  /** Backend label for a field key, or null if the field isn't in schema (caller supplies a fallback). */
   const fieldLabel = (key) => {
     const f = allSchemaFields.find((x) => x.field_key === key);
     if (!f) return null;
     return lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en;
   };
 
-  /** Shared orange/navy sub-tab bar used by every person repeater's edit modal. */
   const renderSubTabBar = (sectionKey, activeTab, setActiveTab, extraWrapperClass = '') => (
     <div className={`flex gap-2 border-b border-[#7a9cc5] pb-0 bg-slate-100/50 p-1 ${extraWrapperClass}`}>
       {getSectionSubTabs(sectionKey).map((t) => (
@@ -2986,110 +2615,6 @@ export default function DynamicForm({
     setIsArrestedModalOpen(false);
   };
 
-  const getIntimationName = (item) => {
-    return item?.intimated_relative_name || '—';
-  };
-
-  const getIntimationAddress = (item) => {
-    const parts = [
-      item?.intimation_house_no,
-      item?.intimation_street,
-      item?.intimation_colony,
-      item?.intimation_city_town_village,
-      item?.intimation_district,
-      item?.intimation_state
-    ].filter(Boolean);
-    return parts.join(', ') || '—';
-  };
-
-  const openIntimationAddModal = () => {
-    setActiveIntimationIndex(null);
-    setIntimationTempValues({});
-    setIntimationModalErrors({});
-    setIntimationModalTouched({});
-    setIntimationSubTab('personal');
-    setIsIntimationModalOpen(true);
-  };
-
-  const openIntimationEditModal = (index) => {
-    const list = repeaterState.intimation_details || [];
-    setActiveIntimationIndex(index);
-    setIntimationTempValues(list[index] || {});
-    setIntimationModalErrors({});
-    setIntimationModalTouched({});
-    setIntimationSubTab('personal');
-    setIsIntimationModalOpen(true);
-  };
-
-  const deleteIntimationEntry = (index) => {
-    const list = repeaterState.intimation_details || [];
-    const nextList = list.filter((_, idx) => idx !== index);
-    setRepeaterState(prev => ({ ...prev, intimation_details: nextList }));
-  };
-
-  const handleIntimationModalChange = (key, val) => {
-    setIntimationTempValues(prev => {
-      const next = { ...prev, [key]: val };
-      if (intimationModalErrors[key]) {
-        setIntimationModalErrors(e => { const n = { ...e }; delete n[key]; return n; });
-      }
-      return next;
-    });
-  };
-
-  const saveIntimationEntry = () => {
-    const intimationFields = allSchemaFields.filter(f => f.field_key?.startsWith('intimation_') || f.field_key?.startsWith('intimated_') || f.section === 'intimation_details');
-    const errs = {};
-    const touchedFields = {};
-
-    intimationFields.forEach(f => {
-      if (f.show_when) {
-        try {
-          const cond = typeof f.show_when === 'string' ? JSON.parse(f.show_when) : f.show_when;
-          if (cond && cond.field) {
-            const currentValue = String(intimationTempValues[cond.field] || '').toLowerCase();
-            const allowed = Array.isArray(cond.value)
-              ? cond.value.map(v => String(v).toLowerCase())
-              : [String(cond.value || '').toLowerCase()];
-            if (!allowed.includes(currentValue)) return;
-          }
-        } catch (e) { }
-      }
-
-      const rules = parseRules(f.validation_rules);
-      if (rules.required) {
-        const val = intimationTempValues[f.field_key];
-        const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
-        if (isEmpty) {
-          const label = lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en;
-          errs[f.field_key] = lang === 'hi' ? `${label} आवश्यक है` : `${label} is required`;
-        }
-      }
-    });
-
-    if (!intimationTempValues.intimated_relative_name) {
-      errs.intimated_relative_name = lang === 'hi' ? 'रिश्तेदार का नाम आवश्यक है' : 'Relative Name is required';
-    }
-
-    if (Object.keys(errs).length > 0) {
-      setIntimationModalErrors(errs);
-      intimationFields.forEach(f => { touchedFields[f.field_key] = true; });
-      setIntimationModalTouched(touchedFields);
-      toast.error(lang === 'hi' ? 'कृपया सभी आवश्यक फ़ील्ड भरें।' : 'Please fill all required fields.');
-      return;
-    }
-
-    const list = [...(repeaterState.intimation_details || [])];
-    if (activeIntimationIndex !== null) {
-      list[activeIntimationIndex] = intimationTempValues;
-    } else {
-      list.push(intimationTempValues);
-    }
-
-    setRepeaterState(prev => ({ ...prev, intimation_details: list }));
-    setIsIntimationModalOpen(false);
-  };
-
   const saveVictimEntry = () => {
     const victimFields = allSchemaFields.filter(f => f.field_key?.startsWith('victim_') || f.section === 'victim_address' || f.section === 'victim_personal_info');
     const errs = {};
@@ -3142,19 +2667,6 @@ export default function DynamicForm({
     setIsVictimModalOpen(false);
   };
 
-  /**
-   * Fetch major-head options from the schema.
-   * act_name is a comma-separated list of all registered acts.
-   * We split it, normalise each name to the value used in schema show_when,
-   * collect options from every matching major-head schema field, and return
-   * the merged (deduplicated) list.
-   *
-   * Alias map: UI display name -> schema show_when value
-   */
-
-  // getMajorHeadOptions: returns live DB-fetched major heads for the selected act(s).
-  // dbMajorHeadOptions is populated by the useEffect below whenever values.act_name changes.
-  // This is the single source of truth — no hardcoded schema options are used.
 
   const getMajorHeadOptions = useCallback(() => {
     const actNameRaw = values.act_name || '';
@@ -3174,7 +2686,6 @@ export default function DynamicForm({
   }
   const normalizedActKeys = actKeys.map(a => ACT_NAME_ALIAS[a] || a);
 
-  // Collect options from all matching major-head schema fields
   const seen = new Set();
   const allOptions = [];
   for (const actKey of normalizedActKeys) {
@@ -3196,12 +2707,7 @@ export default function DynamicForm({
   }
   return allOptions;
 }, [allSchemaFields, values.act_name]);
-/**
- * Fetch minor-head options from the schema.
- * Looks for fields whose field_key matches `*_minor_head` and whose
- * show_when condition references the currently selected major head value.
- * Returns the options array from the matching field, or [] if none found.
- */
+
 const getMinorHeadOptions = useCallback(() => {
   if (!selectedMajorHead) return [];
   const minorField = allSchemaFields.find(
@@ -3214,10 +2720,7 @@ const getMinorHeadOptions = useCallback(() => {
   }
   return [];
 }, [allSchemaFields, selectedMajorHead]);
-/**
- * Fetch local-head options from the schema.
- * Looks for the field with field_key === 'local_head'.
- */
+
 const getLocalHeadOptions = useCallback(() => {
   const localField = allSchemaFields.find(f => f.field_key === 'local_head');
   let opts = localField?.options;
@@ -3245,15 +2748,8 @@ useEffect(() => {
     active = false;
   };
 }, []);
-
-// Fetch Major Heads dynamically from the database, scoped to the specific (act, section)
-// pairs registered in the Acts & Sections table — not just the act(s) as a whole. Resolves
-// each registered section label back to its section_code via actsSectionsRegistry (mirrors
-// the same act_name/sections parsing ActsSectionsTable.jsx uses to render the pairs).
 useEffect(() => {
   let active = true;
-
-  // Build act name string from the registered acts list if available, else fall back to act_name
   let actNamesParam = '';
   if (Array.isArray(values.act_registered_list) && values.act_registered_list.length > 0) {
     actNamesParam = values.act_registered_list.map(r => r.act).join(',');
@@ -3532,9 +3028,6 @@ useEffect(() => {
     police_station: resolvedStation,
     submission_status: initialValues?.current_status || seed.submission_status || 'DRAFT'
   };
-
-  // Formulate gd_date_time if missing but gd_date/gd_time exist.
-  // gd_date is stored as dd/mm/yyyy, so no format conversion is needed here.
   if (!updatedSeed.gd_date_time && updatedSeed.gd_date) {
     const timePart = updatedSeed.gd_time || '00:00';
     updatedSeed.gd_date_time = `${updatedSeed.gd_date} ${timePart.substring(0, 5)}`;
@@ -3749,16 +3242,12 @@ const handleChange = useCallback((key, val) => {
         next.mp_known = false;
       }
     }
-
-
     // Clear error on change
     if (errors[key]) {
       setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
     }
-
     // Auto-save using custom hook (2 seconds debounce)
     triggerAutosave(next, activeRecordIdRef.current);
-
     return next;
   });
 
@@ -3787,6 +3276,33 @@ const handleDeleteMajorMinorRow = useCallback((index) => {
   handleChange('major_heads', updated.map(r => r.majorHead).join(', '));
   handleChange('minor_heads', updated.map(r => r.minorHead).join(', '));
 }, [majorMinorRows, handleChange]);
+
+// Single bundle of everything <ActsSectionsTable> needs, so every call site (ARREST/UIDB
+// general info, CASE acts-and-sections, and the generic FormSection fallback used by
+// MISSING/UIDB) spreads the same object instead of each re-declaring ~17 individual props.
+const actsSectionsProps = {
+  values,
+  handleChange,
+  readOnly,
+  lang,
+  actsSectionsRegistry,
+  showAddRow,
+  setShowAddRow,
+  newAct,
+  setNewAct,
+  newSection,
+  setNewSection,
+  selectedMajorHead,
+  setSelectedMajorHead,
+  selectedMinorHead,
+  setSelectedMinorHead,
+  majorMinorRows,
+  onAddMajorMinorRow: handleAddMajorMinorRow,
+  onDeleteMajorMinorRow: handleDeleteMajorMinorRow,
+  getMajorHeadOptions: () => dbMajorHeadOptions,
+  getMinorHeadOptions: () => dbMinorHeadOptions,
+  getLocalHeadOptions,
+};
 
 /* ── Navigate forward (with step validation) ──────────────────────────── */
 const handleNext = () => {
@@ -4030,20 +3546,15 @@ if (isError || finalSchema.length === 0) {
 const activeSection = finalSchema[currentStep] || finalSchema[0];
 const isLastStep = currentStep === finalSchema.length - 1;
 
-// Dispatch by the backend's stable section key (not title_en text or step index) —
-// a section only gets a bespoke renderer here if its layout can't be reproduced by
-// the generic <FormSection> fallback (composite rows, repeater modals, etc).
-// 'select_fir' only ever appears in finalSchema for ARREST+against_fir, so no extra guard needed.
 const SECTION_RENDERERS = {
   select_fir: renderFirSearchStep,
-  general_info: renderArrestGeneralInfoStep,
+  ...(recordType === 'CASE' || recordType === 'ARREST' ? { general_info: renderArrestGeneralInfoStep } : {}),
   acts_and_sections: renderActsAndSectionsStep,
   occurrence_info: renderOccurrenceStep,
   complainant_info: renderComplainantStep,
   victim_info: renderVictimStep,
   accused_info: renderAccusedStep,
   arrested_info: renderArrestedStep,
-  intimation_details: renderIntimationStep,
   property_details: renderPropertyStep,
   action_taken: renderActionTakenStep,
 };
@@ -4120,9 +3631,6 @@ return (
     {/* ── Active Section (flat field form OR repeater panel) ── */}
     {activeSection && (
       <div className="space-y-3">
-        {/* Wrap ONLY the fields in a form so Enter key doesn't auto-submit
-              when navigating between steps. The submit action is wired via
-              an explicit onClick on the Submit button in FormToolbar. */}
         <form onSubmit={(e) => e.preventDefault()} noValidate>
           {SECTION_RENDERERS[activeSection?.section] ? (
             SECTION_RENDERERS[activeSection.section]()
@@ -4144,6 +3652,7 @@ return (
               onEntriesChange={(entries) =>
                 setRepeaterState(prev => ({ ...prev, [activeSection.section]: entries }))
               }
+              actsSectionsProps={actsSectionsProps}
             />
           )}
         </form>

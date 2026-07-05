@@ -1,20 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-/**
- * Lightweight searchable dropdown for dense, inline form contexts (table rows, compact
- * fieldsets) — a text input that filters a list as you type, closes on outside click.
- * Modeled directly on the Act/Law Name search box in ActsSectionsTable.jsx; extracted here
- * so every other hardcoded native <select> in the ARREST/CASE forms can use the same pattern
- * instead of a plain dropdown.
- *
- * The dropdown is rendered via a portal with fixed positioning (not just `absolute` under the
- * input) — plain absolute positioning gets silently clipped whenever an ancestor sets
- * overflow-x (e.g. the Property of Interest table's horizontal-scroll wrapper), because CSS
- * pairs overflow-y with it even when only overflow-x was intended.
- *
- * `options` accepts either {value, label} or {value, label_en, label_hi} shapes.
- */
+
 export default function SearchableSelect({
   value,
   onChange,
