@@ -463,15 +463,15 @@ export default function DynamicForm({
                             }));
                           }}
                           className={`group cursor-pointer hover:bg-slate-50/80 transition-all ${isSelected
-                              ? 'bg-[var(--accent-glow)] hover:bg-[var(--accent-glow)]'
-                              : ''
+                            ? 'bg-[var(--accent-glow)] hover:bg-[var(--accent-glow)]'
+                            : ''
                             }`}
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${isSelected
-                                  ? 'border-[var(--accent-color)] bg-[var(--accent-color)] text-white scale-110'
-                                  : 'border-slate-300 bg-white group-hover:border-slate-400'
+                                ? 'border-[var(--accent-color)] bg-[var(--accent-color)] text-white scale-110'
+                                : 'border-slate-300 bg-white group-hover:border-slate-400'
                                 }`}>
                                 {isSelected && <Check size={10} className="stroke-[3]" />}
                               </span>
@@ -2916,8 +2916,8 @@ export default function DynamicForm({
           type="button"
           onClick={() => setActiveTab(t.id)}
           className={`px-4 py-1.5 text-xs font-bold border border-b-0 border-[#7a9cc5] rounded-t cursor-pointer transition-colors ${activeTab === t.id
-              ? 'bg-[#ea580c] text-white'
-              : 'bg-[#0d2a4a] text-white hover:bg-[#16406d]'
+            ? 'bg-[#ea580c] text-white'
+            : 'bg-[#0d2a4a] text-white hover:bg-[#16406d]'
             }`}
         >
           {lang === 'hi' ? (t.title_hi || t.title_en) : t.title_en}
@@ -4490,8 +4490,8 @@ export default function DynamicForm({
                   type="button"
                   onClick={() => handleStepClick(idx)}
                   className={`px-3 py-1.5 text-[10px] font-bold transition-all rounded-md cursor-pointer uppercase tracking-tight whitespace-nowrap flex items-center gap-1 select-none border border-[#0d2a4a] ${isSelected
-                      ? 'bg-[#ea580c] border-[#ea580c] text-white shadow-sm'
-                      : 'bg-[#0d2a4a] border-[#0d2a4a] text-white hover:bg-[#16406d] hover:border-[#16406d]'
+                    ? 'bg-[#ea580c] border-[#ea580c] text-white shadow-sm'
+                    : 'bg-[#0d2a4a] border-[#0d2a4a] text-white hover:bg-[#16406d] hover:border-[#16406d]'
                     }`}
                 >
                   {hasError && <AlertCircle size={10} className="text-red-300 animate-pulse" />}
