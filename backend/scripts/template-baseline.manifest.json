@@ -486,6 +486,19 @@
         },
         {
           "col": 50,
+          "key": "occurrence_state",
+          "section": "Place of Occurrence Address",
+          "label": "Place of Occurrence State",
+          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DYN_OCCURRENCE_STATE"
+            ]
+          }
+        },
+        {
+          "col": 51,
           "key": "occurrence_district",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence District",
@@ -498,7 +511,7 @@
           }
         },
         {
-          "col": 51,
+          "col": 52,
           "key": "occurrence_police_station",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Police Station",
@@ -511,7 +524,7 @@
           }
         },
         {
-          "col": 52,
+          "col": 53,
           "key": "occurrence_pincode",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Pin Code",
@@ -519,7 +532,15 @@
           "validation": null
         },
         {
-          "col": 53,
+          "col": 54,
+          "key": "occurrence_landmark",
+          "section": "Place of Occurrence Address",
+          "label": "Place of Occurrence Landmark",
+          "hint": "Landmark",
+          "validation": null
+        },
+        {
+          "col": 55,
           "key": "io_name",
           "section": "IO Details",
           "label": "IO / Officer Name",
@@ -527,7 +548,7 @@
           "validation": null
         },
         {
-          "col": 54,
+          "col": 56,
           "key": "io_pis",
           "section": "IO Details",
           "label": "PIS No. of IO",
@@ -535,7 +556,7 @@
           "validation": null
         },
         {
-          "col": 55,
+          "col": 57,
           "key": "io_mobile",
           "section": "IO Details",
           "label": "IO Mobile No.",
@@ -543,7 +564,7 @@
           "validation": null
         },
         {
-          "col": 56,
+          "col": 58,
           "key": "case_status",
           "section": "Action Taken",
           "label": "Status",
@@ -556,7 +577,7 @@
           }
         },
         {
-          "col": 57,
+          "col": 59,
           "key": "disposal_type",
           "section": "Action Taken",
           "label": "Disposal Type",
@@ -569,27 +590,11 @@
           }
         },
         {
-          "col": 58,
+          "col": 60,
           "key": "rc_no",
           "section": "Action Taken",
           "label": "RC No.",
           "hint": "e.g. RC-123/2026",
-          "validation": null
-        },
-        {
-          "col": 59,
-          "key": null,
-          "section": "Action Taken",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 60,
-          "key": null,
-          "section": "Action Taken",
-          "label": null,
-          "hint": null,
           "validation": null
         },
         {
@@ -639,14 +644,22 @@
           "label": null,
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 67,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
         "A2:K2",
         "AI2:AR2",
-        "AS2:AZ2",
-        "BA2:BC2",
-        "BD2:BN2",
+        "AS2:BB2",
+        "BC2:BE2",
+        "BF2:BO2",
         "L2:W2",
         "X2:AH2"
       ]

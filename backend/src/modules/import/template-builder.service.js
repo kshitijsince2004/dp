@@ -269,7 +269,7 @@ const getHint = (field) => {
 // because insert/delete corrupt the stored merge ranges (ExcelJS model.merges is unreliable).
 // Returns null to mean "carry forward the previous column's section" (used for temporal
 // fields, label-only columns, and anything that belongs with the block before it).
-const ADDR_TOKENS = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'country', 'state', 'district', 'police_station', 'pincode', 'present_address'];
+const ADDR_TOKENS = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'country', 'state', 'district', 'police_station', 'pincode', 'present_address', 'landmark'];
 const PARTICULAR_KEYS = new Set(['nafis_prepared', 'dossier_prepared', 'prev_involvement', 'previous_involvement', 'bad_character', 'proclaimed_offender', 'verifying_officer_name', 'verifying_officer_rank', 'status', 'scheme_of_arrest', 'search_slip_prepared', 'address_verified', 'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path', 'arresting_officer', 'arresting_officer_mobile', 'listed_criminal']);
 
 const sectionLabelForKey = (key, recordType, isParentSheet) => {

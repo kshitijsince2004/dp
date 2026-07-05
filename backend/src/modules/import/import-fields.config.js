@@ -146,7 +146,8 @@ export const caseGeneralFields = [
   ...getPersonFieldsList('complainant', 'Complainant', 'शिकायतकर्ता').filter(f => f.field_key !== 'complainant_npr'&& f.field_key !== 'complainant_present_address'&& f.field_key !== 'complainant_birth_year'&& f.field_key !== 'complainant_dob'),
   { field_key: 'complainant_perm_same', label_en: 'Is Complainant Permanent Same As Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: false, options: ['Yes', 'No'] },
   ...getAddressFieldsList('complainant_perm', 'Complainant Permanent Address', 'शिकायतकर्ता का स्थायी पता'),
-  ...getAddressFieldsList('occurrence', 'Place of Occurrence Address', 'घटनास्थल का पता विवरण').filter(f => f.field_key !== 'occurrence_country'&& f.field_key !== 'occurrence_state'),
+  ...getAddressFieldsList('occurrence', 'Place of Occurrence Address', 'घटनास्थल का पता विवरण').filter(f => f.field_key !== 'occurrence_country' && f.field_key !== 'occurrence_state'),
+  { field_key: 'occurrence_landmark', label_en: 'Place of Occurrence Landmark', label_hi: 'घटनास्थल का मार्ग-चिह्न', required: false, hint: 'Landmark' },
 
   { field_key: 'io_name', label_en: 'IO Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },
   { field_key: 'io_pis', label_en: 'PIS Number', label_hi: 'पीआईएस संख्या', required: false, hint: 'e.g. 28080214' },
@@ -498,9 +499,9 @@ export const TEMPLATE_EXCLUDE_KEYS = {
     // general / occurrence info never wired into the template
     'occurrence_time_type', 'type_of_information', 'occurrence_from_date_time',
     'occurrence_to_date_time', 'info_received_at_ps_date_time', 'organised_crime',
-    'complaint_no', 'gd_no', 'occurrence_landmark', 'source_reference',
+    'complaint_no', 'gd_no', 'source_reference',
     'occurrence_latitude', 'occurrence_longitude', 'area_of_crime', 'beat_no',
-    'occurrence_place', 'complainant_name', 'status', 'is_important',
+    'occurrence_place', 'occurrence_state', 'occurrence_country', 'complainant_name', 'status', 'is_important',
     // financial fraud / vehicle sections never wired into the template
     'cheated_amount', 'modus_operandi',
     'vehicle_no', 'vehicle_type', 'vehicle_make', 'vehicle_model', 'vehicle_color',

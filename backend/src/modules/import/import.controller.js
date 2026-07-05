@@ -51,6 +51,7 @@ const CASE_SYNONYMS = {
   "Brief Facts of the Case": "brief_facts",
   "Status ": "status",
   "Is Permanent Address same as Present Address?": "complainant_perm_same",
+  "Place of Occurrence Landmark": "occurrence_landmark",
   "Place of Occurrence Address Nationality": "occurrence_country",
   "Place of Occurrence State": "occurrence_state",
   "Place of Occurrence District": "occurrence_district",
