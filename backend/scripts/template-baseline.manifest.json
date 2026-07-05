@@ -486,19 +486,6 @@
         },
         {
           "col": 50,
-          "key": "occurrence_state",
-          "section": "Place of Occurrence Address",
-          "label": "Place of Occurrence State",
-          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "OPT_DYN_OCCURRENCE_STATE"
-            ]
-          }
-        },
-        {
-          "col": 51,
           "key": "occurrence_district",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence District",
@@ -511,7 +498,7 @@
           }
         },
         {
-          "col": 52,
+          "col": 51,
           "key": "occurrence_police_station",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Police Station",
@@ -524,7 +511,7 @@
           }
         },
         {
-          "col": 53,
+          "col": 52,
           "key": "occurrence_pincode",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Pin Code",
@@ -532,7 +519,7 @@
           "validation": null
         },
         {
-          "col": 54,
+          "col": 53,
           "key": "occurrence_landmark",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Landmark",
@@ -540,7 +527,7 @@
           "validation": null
         },
         {
-          "col": 55,
+          "col": 54,
           "key": "io_name",
           "section": "IO Details",
           "label": "IO / Officer Name",
@@ -548,7 +535,7 @@
           "validation": null
         },
         {
-          "col": 56,
+          "col": 55,
           "key": "io_pis",
           "section": "IO Details",
           "label": "PIS No. of IO",
@@ -556,7 +543,7 @@
           "validation": null
         },
         {
-          "col": 57,
+          "col": 56,
           "key": "io_mobile",
           "section": "IO Details",
           "label": "IO Mobile No.",
@@ -564,7 +551,7 @@
           "validation": null
         },
         {
-          "col": 58,
+          "col": 57,
           "key": "case_status",
           "section": "Action Taken",
           "label": "Status",
@@ -577,7 +564,7 @@
           }
         },
         {
-          "col": 59,
+          "col": 58,
           "key": "disposal_type",
           "section": "Action Taken",
           "label": "Disposal Type",
@@ -590,11 +577,19 @@
           }
         },
         {
-          "col": 60,
+          "col": 59,
           "key": "rc_no",
           "section": "Action Taken",
           "label": "RC No.",
           "hint": "e.g. RC-123/2026",
+          "validation": null
+        },
+        {
+          "col": 60,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
           "validation": null
         },
         {
@@ -657,9 +652,9 @@
       "row2Merges": [
         "A2:K2",
         "AI2:AR2",
-        "AS2:BB2",
-        "BC2:BE2",
-        "BF2:BO2",
+        "AS2:BA2",
+        "BB2:BD2",
+        "BE2:BO2",
         "L2:W2",
         "X2:AH2"
       ]
@@ -2354,12 +2349,28 @@
           "col": 1,
           "key": "gd_no",
           "section": "General Information",
-          "label": "GD Number, Date & Time",
-          "hint": "text",
+          "label": "GD Number",
+          "hint": "e.g. 12A",
           "validation": null
         },
         {
           "col": 2,
+          "key": "gd_date",
+          "section": "General Information",
+          "label": "GD Date",
+          "hint": "dd-mm-yyyy",
+          "validation": null
+        },
+        {
+          "col": 3,
+          "key": "gd_time",
+          "section": "General Information",
+          "label": "GD Time",
+          "hint": "HH:MM",
+          "validation": null
+        },
+        {
+          "col": 4,
           "key": "status",
           "section": "General Information",
           "label": "Status",
@@ -2372,7 +2383,7 @@
           }
         },
         {
-          "col": 3,
+          "col": 5,
           "key": "identified",
           "section": "UIDB Details",
           "label": "Body Identified",
@@ -2385,7 +2396,7 @@
           }
         },
         {
-          "col": 4,
+          "col": 6,
           "key": "deceased_name",
           "section": "UIDB Details",
           "label": "Name of Deceased",
@@ -2393,7 +2404,7 @@
           "validation": null
         },
         {
-          "col": 5,
+          "col": 7,
           "key": "deceased_house_no",
           "section": "UIDB Details",
           "label": "Deceased Present House No.",
@@ -2401,7 +2412,7 @@
           "validation": null
         },
         {
-          "col": 6,
+          "col": 8,
           "key": "deceased_street",
           "section": "UIDB Details",
           "label": "Deceased Present Street",
@@ -2409,7 +2420,7 @@
           "validation": null
         },
         {
-          "col": 7,
+          "col": 9,
           "key": "deceased_colony",
           "section": "UIDB Details",
           "label": "Deceased Present Colony",
@@ -2417,7 +2428,7 @@
           "validation": null
         },
         {
-          "col": 8,
+          "col": 10,
           "key": "deceased_city_town_village",
           "section": "UIDB Details",
           "label": "Deceased Present Village / City / Town",
@@ -2425,7 +2436,7 @@
           "validation": null
         },
         {
-          "col": 9,
+          "col": 11,
           "key": "deceased_state",
           "section": "UIDB Details",
           "label": "Deceased Present State",
@@ -2438,7 +2449,7 @@
           }
         },
         {
-          "col": 10,
+          "col": 12,
           "key": "deceased_district",
           "section": "UIDB Details",
           "label": "Deceased Present District",
@@ -2451,7 +2462,7 @@
           }
         },
         {
-          "col": 11,
+          "col": 13,
           "key": "deceased_pincode",
           "section": "UIDB Details",
           "label": "Deceased Present Pin Code",
@@ -2459,7 +2470,7 @@
           "validation": null
         },
         {
-          "col": 12,
+          "col": 14,
           "key": "deceased_perm_same",
           "section": "UIDB Details",
           "label": "Is Permanent Address same as Present Address?",
@@ -2472,7 +2483,7 @@
           }
         },
         {
-          "col": 13,
+          "col": 15,
           "key": "deceased_perm_house_no",
           "section": "UIDB Details",
           "label": "Deceased Permanent House No.",
@@ -2480,7 +2491,7 @@
           "validation": null
         },
         {
-          "col": 14,
+          "col": 16,
           "key": "deceased_perm_street",
           "section": "UIDB Details",
           "label": "Deceased Permanent Street",
@@ -2488,7 +2499,7 @@
           "validation": null
         },
         {
-          "col": 15,
+          "col": 17,
           "key": "deceased_perm_colony",
           "section": "UIDB Details",
           "label": "Deceased Permanent Colony",
@@ -2496,7 +2507,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 18,
           "key": "deceased_perm_city_town_village",
           "section": "UIDB Details",
           "label": "Deceased Permanent Village / City / Town",
@@ -2504,7 +2515,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 19,
           "key": "deceased_perm_state",
           "section": "UIDB Details",
           "label": "Deceased Permanent State",
@@ -2517,7 +2528,7 @@
           }
         },
         {
-          "col": 18,
+          "col": 20,
           "key": "deceased_perm_district",
           "section": "UIDB Details",
           "label": "Deceased Permanent District",
@@ -2530,7 +2541,7 @@
           }
         },
         {
-          "col": 19,
+          "col": 21,
           "key": "deceased_perm_pincode",
           "section": "UIDB Details",
           "label": "Deceased Permanent Pin Code",
@@ -2538,7 +2549,7 @@
           "validation": null
         },
         {
-          "col": 20,
+          "col": 22,
           "key": "found_date",
           "section": "UIDB Details",
           "label": "Date Body Found",
@@ -2546,7 +2557,7 @@
           "validation": null
         },
         {
-          "col": 21,
+          "col": 23,
           "key": "found_place",
           "section": "UIDB Details",
           "label": "Place Body Found",
@@ -2554,7 +2565,7 @@
           "validation": null
         },
         {
-          "col": 22,
+          "col": 24,
           "key": "found_time",
           "section": "UIDB Details",
           "label": "Time Body Found",
@@ -2562,7 +2573,7 @@
           "validation": null
         },
         {
-          "col": 23,
+          "col": 25,
           "key": "found_latitude",
           "section": "UIDB Details",
           "label": "Place Body Found Latitude",
@@ -2570,7 +2581,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 26,
           "key": "found_longitude",
           "section": "UIDB Details",
           "label": "Place Body Found Longitude",
@@ -2578,7 +2589,7 @@
           "validation": null
         },
         {
-          "col": 25,
+          "col": 27,
           "key": "approx_age",
           "section": "UIDB Details",
           "label": "Approximate Age",
@@ -2586,7 +2597,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 28,
           "key": "description",
           "section": "UIDB Details",
           "label": "Physical Description",
@@ -2594,7 +2605,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 29,
           "key": "identification_marks",
           "section": "UIDB Details",
           "label": "Identification Marks",
@@ -2602,7 +2613,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 30,
           "key": "gender",
           "section": "Physical Description",
           "label": "Gender",
@@ -2615,7 +2626,7 @@
           }
         },
         {
-          "col": 29,
+          "col": 31,
           "key": "height",
           "section": "Physical Description",
           "label": "Height",
@@ -2623,7 +2634,7 @@
           "validation": null
         },
         {
-          "col": 30,
+          "col": 32,
           "key": "built",
           "section": "Physical Description",
           "label": "Built",
@@ -2631,7 +2642,7 @@
           "validation": null
         },
         {
-          "col": 31,
+          "col": 33,
           "key": "complexion",
           "section": "Physical Description",
           "label": "Complexion",
@@ -2639,7 +2650,7 @@
           "validation": null
         },
         {
-          "col": 32,
+          "col": 34,
           "key": "upper_dress_color",
           "section": "Physical Description",
           "label": "Upper Dress Color",
@@ -2647,7 +2658,7 @@
           "validation": null
         },
         {
-          "col": 33,
+          "col": 35,
           "key": "lower_dress_color",
           "section": "Physical Description",
           "label": "Lower Dress Color",
@@ -2655,7 +2666,7 @@
           "validation": null
         },
         {
-          "col": 34,
+          "col": 36,
           "key": "face",
           "section": "Physical Description",
           "label": "Face",
@@ -2663,7 +2674,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 37,
           "key": "hair",
           "section": "Physical Description",
           "label": "Hair",
@@ -2671,7 +2682,7 @@
           "validation": null
         },
         {
-          "col": 36,
+          "col": 38,
           "key": "moustache",
           "section": "Physical Description",
           "label": "Moustache",
@@ -2679,7 +2690,7 @@
           "validation": null
         },
         {
-          "col": 37,
+          "col": 39,
           "key": "beard",
           "section": "Physical Description",
           "label": "Beard",
@@ -2687,7 +2698,7 @@
           "validation": null
         },
         {
-          "col": 38,
+          "col": 40,
           "key": "informant_name",
           "section": "Informant & Contact Details",
           "label": "Informant Name",
@@ -2695,7 +2706,7 @@
           "validation": null
         },
         {
-          "col": 39,
+          "col": 41,
           "key": "informant_relation",
           "section": "Informant & Contact Details",
           "label": "Relation with Deceased",
@@ -2708,7 +2719,7 @@
           }
         },
         {
-          "col": 40,
+          "col": 42,
           "key": "informant_mobile",
           "section": "Informant & Contact Details",
           "label": "Informant Mobile",
@@ -2716,7 +2727,7 @@
           "validation": null
         },
         {
-          "col": 41,
+          "col": 43,
           "key": "zipnet_no",
           "section": "Informant & Contact Details",
           "label": "ZIPNET No.",
@@ -2724,7 +2735,7 @@
           "validation": null
         },
         {
-          "col": 42,
+          "col": 44,
           "key": "cause_of_death",
           "section": "Inquest Details",
           "label": "Cause of Death",
@@ -2737,7 +2748,7 @@
           }
         },
         {
-          "col": 43,
+          "col": 45,
           "key": "deceased_relative_name",
           "section": "Inquest Details",
           "label": "Relative Name",
@@ -2745,7 +2756,7 @@
           "validation": null
         },
         {
-          "col": 44,
+          "col": 46,
           "key": "deceased_relation_type",
           "section": "Inquest Details",
           "label": "Relation with Deceased",
@@ -2758,7 +2769,7 @@
           }
         },
         {
-          "col": 45,
+          "col": 47,
           "key": "filed_by_acp_sdm",
           "section": "Inquest Details",
           "label": "Inquest Filed by ACP / SDM",
@@ -2771,7 +2782,7 @@
           }
         },
         {
-          "col": 46,
+          "col": 48,
           "key": "filed_by_acp_sdm_date",
           "section": "Inquest Details",
           "label": "Date of Filed by ACP/SDM",
@@ -2779,7 +2790,7 @@
           "validation": null
         },
         {
-          "col": 47,
+          "col": 49,
           "key": "io_name",
           "section": "IO Details",
           "label": "IO / Officer Name",
@@ -2787,7 +2798,7 @@
           "validation": null
         },
         {
-          "col": 48,
+          "col": 50,
           "key": "io_rank",
           "section": "IO Details",
           "label": "IO Rank",
@@ -2800,7 +2811,7 @@
           }
         },
         {
-          "col": 49,
+          "col": 51,
           "key": "io_pis",
           "section": "IO Details",
           "label": "PIS No. of IO",
@@ -2808,29 +2819,21 @@
           "validation": null
         },
         {
-          "col": 50,
+          "col": 52,
           "key": "io_mobile",
           "section": "IO Details",
           "label": "IO Mobile No.",
           "hint": "number",
           "validation": null
-        },
-        {
-          "col": 51,
-          "key": "id_card",
-          "section": "General Information",
-          "label": "ID card",
-          "hint": "number",
-          "validation": null
         }
       ],
       "row2Merges": [
-        "A2:B2",
-        "AB2:AK2",
-        "AL2:AO2",
-        "AP2:AT2",
-        "AU2:AX2",
-        "C2:AA2"
+        "A2:D2",
+        "AD2:AM2",
+        "AN2:AQ2",
+        "AR2:AV2",
+        "AW2:AZ2",
+        "E2:AC2"
       ]
     },
     "Act and Sections": {
@@ -2839,7 +2842,7 @@
           "col": 1,
           "key": "gd_no",
           "section": "General Information",
-          "label": "GD Number, Date & Time",
+          "label": "GD Number",
           "hint": "Must match Import Template sheet GD Number",
           "validation": null
         },
@@ -2921,12 +2924,28 @@
           "col": 2,
           "key": "gd_no",
           "section": "General Information",
-          "label": "GD Number, Date & Time",
-          "hint": "text",
+          "label": "GD Number",
+          "hint": "e.g. 12A",
           "validation": null
         },
         {
           "col": 3,
+          "key": "gd_date",
+          "section": "General Information",
+          "label": "GD Date",
+          "hint": "dd-mm-yyyy",
+          "validation": null
+        },
+        {
+          "col": 4,
+          "key": "gd_time",
+          "section": "General Information",
+          "label": "GD Time",
+          "hint": "HH:MM",
+          "validation": null
+        },
+        {
+          "col": 5,
           "key": "missing_type",
           "section": "General Information",
           "label": "Missing / Found Type",
@@ -2939,7 +2958,7 @@
           }
         },
         {
-          "col": 4,
+          "col": 6,
           "key": "status",
           "section": "General Information",
           "label": "Status",
@@ -2952,7 +2971,7 @@
           }
         },
         {
-          "col": 5,
+          "col": 7,
           "key": "mp_known",
           "section": "Address Details",
           "label": "Is Missing Person Identified / Known?",
@@ -2965,7 +2984,7 @@
           }
         },
         {
-          "col": 6,
+          "col": 8,
           "key": "missing_name",
           "section": "Address Details",
           "label": "Name of Missing Person",
@@ -2973,7 +2992,7 @@
           "validation": null
         },
         {
-          "col": 7,
+          "col": 9,
           "key": "mp_house_no",
           "section": "Address Details",
           "label": "Present House No.",
@@ -2981,7 +3000,7 @@
           "validation": null
         },
         {
-          "col": 8,
+          "col": 10,
           "key": "mp_street",
           "section": "Address Details",
           "label": "Present Street",
@@ -2989,7 +3008,7 @@
           "validation": null
         },
         {
-          "col": 9,
+          "col": 11,
           "key": "mp_colony",
           "section": "Address Details",
           "label": "Present Colony",
@@ -2997,7 +3016,7 @@
           "validation": null
         },
         {
-          "col": 10,
+          "col": 12,
           "key": "mp_city_town_village",
           "section": "Address Details",
           "label": "Present Village / City / Town",
@@ -3005,7 +3024,7 @@
           "validation": null
         },
         {
-          "col": 11,
+          "col": 13,
           "key": "mp_state",
           "section": "Address Details",
           "label": "Present State",
@@ -3018,7 +3037,7 @@
           }
         },
         {
-          "col": 12,
+          "col": 14,
           "key": "mp_district",
           "section": "Address Details",
           "label": "Present District",
@@ -3031,7 +3050,7 @@
           }
         },
         {
-          "col": 13,
+          "col": 15,
           "key": "mp_pincode",
           "section": "Address Details",
           "label": "Present Pin Code",
@@ -3039,7 +3058,7 @@
           "validation": null
         },
         {
-          "col": 14,
+          "col": 16,
           "key": "mp_perm_same",
           "section": "Address Details",
           "label": "Is Permanent Address same as Present Address?",
@@ -3052,7 +3071,7 @@
           }
         },
         {
-          "col": 15,
+          "col": 17,
           "key": "mp_perm_house_no",
           "section": "Address Details",
           "label": "Permanent House No.",
@@ -3060,7 +3079,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 18,
           "key": "mp_perm_street",
           "section": "Address Details",
           "label": "Permanent Street",
@@ -3068,7 +3087,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 19,
           "key": "mp_perm_colony",
           "section": "Address Details",
           "label": "Permanent Colony",
@@ -3076,7 +3095,7 @@
           "validation": null
         },
         {
-          "col": 18,
+          "col": 20,
           "key": "mp_perm_city_town_village",
           "section": "Address Details",
           "label": "Permanent Village / City / Town",
@@ -3084,7 +3103,7 @@
           "validation": null
         },
         {
-          "col": 19,
+          "col": 21,
           "key": "mp_perm_state",
           "section": "Address Details",
           "label": "Permanent State",
@@ -3097,7 +3116,7 @@
           }
         },
         {
-          "col": 20,
+          "col": 22,
           "key": "mp_perm_district",
           "section": "Address Details",
           "label": "Permanent District",
@@ -3110,7 +3129,7 @@
           }
         },
         {
-          "col": 21,
+          "col": 23,
           "key": "mp_perm_pincode",
           "section": "Address Details",
           "label": "Permanent Pin Code",
@@ -3118,7 +3137,7 @@
           "validation": null
         },
         {
-          "col": 22,
+          "col": 24,
           "key": "gender",
           "section": "Address Details",
           "label": "Gender",
@@ -3131,7 +3150,7 @@
           }
         },
         {
-          "col": 23,
+          "col": 25,
           "key": "age",
           "section": "Address Details",
           "label": "Age",
@@ -3139,7 +3158,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 26,
           "key": "major_minor",
           "section": "Address Details",
           "label": "Major / Minor",
@@ -3152,7 +3171,7 @@
           }
         },
         {
-          "col": 25,
+          "col": 27,
           "key": "missing_date",
           "section": "Address Details",
           "label": "Date Missing Since",
@@ -3160,7 +3179,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 28,
           "key": "missing_place",
           "section": "Address Details",
           "label": "Last Seen Place",
@@ -3168,7 +3187,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 29,
           "key": "Mental State",
           "section": "Address Details",
           "label": "Mental State",
@@ -3181,7 +3200,7 @@
           }
         },
         {
-          "col": 28,
+          "col": 30,
           "key": "physical_description",
           "section": "Address Details",
           "label": "Physical Description",
@@ -3189,7 +3208,7 @@
           "validation": null
         },
         {
-          "col": 29,
+          "col": 31,
           "key": "informant_name",
           "section": "Informant & Contact Details",
           "label": "Informant Name",
@@ -3197,7 +3216,7 @@
           "validation": null
         },
         {
-          "col": 30,
+          "col": 32,
           "key": "informant_relation",
           "section": "Informant & Contact Details",
           "label": "Relation with Missing Person",
@@ -3210,7 +3229,7 @@
           }
         },
         {
-          "col": 31,
+          "col": 33,
           "key": "informant_mobile",
           "section": "Informant & Contact Details",
           "label": "Informant Mobile",
@@ -3218,7 +3237,7 @@
           "validation": null
         },
         {
-          "col": 32,
+          "col": 34,
           "key": "zipnet_no",
           "section": "Informant & Contact Details",
           "label": "ZIPNET No.",
@@ -3226,7 +3245,7 @@
           "validation": null
         },
         {
-          "col": 33,
+          "col": 35,
           "key": "height",
           "section": "Address Details",
           "label": "Height",
@@ -3234,7 +3253,7 @@
           "validation": null
         },
         {
-          "col": 34,
+          "col": 36,
           "key": "built",
           "section": "Address Details",
           "label": "Built",
@@ -3242,7 +3261,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 37,
           "key": "complexion",
           "section": "Address Details",
           "label": "Complexion",
@@ -3250,7 +3269,7 @@
           "validation": null
         },
         {
-          "col": 36,
+          "col": 38,
           "key": "upper_dress_color",
           "section": "Address Details",
           "label": "Upper Dress Color",
@@ -3258,7 +3277,7 @@
           "validation": null
         },
         {
-          "col": 37,
+          "col": 39,
           "key": "lower_dress_color",
           "section": "Address Details",
           "label": "Lower Dress Color",
@@ -3266,7 +3285,7 @@
           "validation": null
         },
         {
-          "col": 38,
+          "col": 40,
           "key": "face",
           "section": "Address Details",
           "label": "Face",
@@ -3274,7 +3293,7 @@
           "validation": null
         },
         {
-          "col": 39,
+          "col": 41,
           "key": "hair",
           "section": "Address Details",
           "label": "Hair",
@@ -3282,7 +3301,7 @@
           "validation": null
         },
         {
-          "col": 40,
+          "col": 42,
           "key": "moustache",
           "section": "Address Details",
           "label": "Moustache",
@@ -3290,7 +3309,7 @@
           "validation": null
         },
         {
-          "col": 41,
+          "col": 43,
           "key": "beard",
           "section": "Address Details",
           "label": "Beard",
@@ -3298,7 +3317,7 @@
           "validation": null
         },
         {
-          "col": 42,
+          "col": 44,
           "key": "io_name",
           "section": "IO Details",
           "label": "IO / Officer Name",
@@ -3306,7 +3325,7 @@
           "validation": null
         },
         {
-          "col": 43,
+          "col": 45,
           "key": "io_rank",
           "section": "IO Details",
           "label": "IO Rank",
@@ -3319,7 +3338,7 @@
           }
         },
         {
-          "col": 44,
+          "col": 46,
           "key": "io_pis",
           "section": "IO Details",
           "label": "PIS No. of IO",
@@ -3327,28 +3346,20 @@
           "validation": null
         },
         {
-          "col": 45,
+          "col": 47,
           "key": "io_mobile",
           "section": "IO Details",
           "label": "IO Mobile No.",
           "hint": "number",
           "validation": null
-        },
-        {
-          "col": 46,
-          "key": "lllllllll_dddddddddd",
-          "section": "General Information",
-          "label": "lips details",
-          "hint": "text",
-          "validation": null
         }
       ],
       "row2Merges": [
-        "A2:D2",
-        "AC2:AF2",
-        "AG2:AO2",
-        "AP2:AS2",
-        "E2:AB2"
+        "A2:F2",
+        "AE2:AH2",
+        "AI2:AQ2",
+        "AR2:AU2",
+        "G2:AD2"
       ]
     }
   },
@@ -3359,12 +3370,28 @@
           "col": 1,
           "key": "linked_fir_dd_no",
           "section": "General Information",
-          "label": "Linked FIR / DD No.",
-          "hint": "e.g. DD-104/2026",
+          "label": "GD Number",
+          "hint": "e.g. GD-104/2026",
           "validation": null
         },
         {
           "col": 2,
+          "key": "gd_date",
+          "section": "General Information",
+          "label": "GD Date",
+          "hint": "dd-mm-yyyy",
+          "validation": null
+        },
+        {
+          "col": 3,
+          "key": "gd_time",
+          "section": "General Information",
+          "label": "GD Time",
+          "hint": "HH:MM",
+          "validation": null
+        },
+        {
+          "col": 4,
           "key": "local_head",
           "section": "General Information",
           "label": "Local Head (Crime)",
@@ -3377,7 +3404,7 @@
           }
         },
         {
-          "col": 3,
+          "col": 5,
           "key": "heinous_offence",
           "section": "General Information",
           "label": "Heinous Offences",
@@ -3390,7 +3417,7 @@
           }
         },
         {
-          "col": 4,
+          "col": 6,
           "key": "district",
           "section": "General Information",
           "label": "District",
@@ -3403,7 +3430,7 @@
           }
         },
         {
-          "col": 5,
+          "col": 7,
           "key": "police_station",
           "section": "General Information",
           "label": "Police Station",
@@ -3416,7 +3443,7 @@
           }
         },
         {
-          "col": 6,
+          "col": 8,
           "key": "date_of_arrest",
           "section": "General Information",
           "label": "Date Of Arrest",
@@ -3424,7 +3451,7 @@
           "validation": null
         },
         {
-          "col": 7,
+          "col": 9,
           "key": "time_of_arrest",
           "section": "General Information",
           "label": "Time Of Arrest",
@@ -3432,7 +3459,7 @@
           "validation": null
         },
         {
-          "col": 8,
+          "col": 10,
           "key": "place_of_arrest",
           "section": "General Information",
           "label": "Place Of Arrest",
@@ -3440,7 +3467,7 @@
           "validation": null
         },
         {
-          "col": 9,
+          "col": 11,
           "key": "io_name",
           "section": "Investigating Officer Details",
           "label": "IO / Officer Name",
@@ -3448,7 +3475,7 @@
           "validation": null
         },
         {
-          "col": 10,
+          "col": 12,
           "key": "io_pis",
           "section": "Investigating Officer Details",
           "label": "PIS No. of IO",
@@ -3456,7 +3483,7 @@
           "validation": null
         },
         {
-          "col": 11,
+          "col": 13,
           "key": "io_rank",
           "section": "Investigating Officer Details",
           "label": "IO Rank",
@@ -3469,7 +3496,7 @@
           }
         },
         {
-          "col": 12,
+          "col": 14,
           "key": "io_mobile",
           "section": "Investigating Officer Details",
           "label": "IO Mobile No.",
@@ -3477,7 +3504,7 @@
           "validation": null
         },
         {
-          "col": 13,
+          "col": 15,
           "key": "arrest_street",
           "section": "General Information",
           "label": "Street of Arrest",
@@ -3485,7 +3512,7 @@
           "validation": null
         },
         {
-          "col": 14,
+          "col": 16,
           "key": "arrest_colony",
           "section": "General Information",
           "label": "Colony of Arrest",
@@ -3493,7 +3520,7 @@
           "validation": null
         },
         {
-          "col": 15,
+          "col": 17,
           "key": "arrest_district",
           "section": "General Information",
           "label": "District of Arrest",
@@ -3506,7 +3533,7 @@
           }
         },
         {
-          "col": 16,
+          "col": 18,
           "key": "arrest_landmark",
           "section": "General Information",
           "label": "Landmark of Arrest",
@@ -3515,9 +3542,9 @@
         }
       ],
       "row2Merges": [
-        "A2:H2",
-        "I2:L2",
-        "M2:P2"
+        "A2:J2",
+        "K2:N2",
+        "O2:R2"
       ]
     },
     "Act and Sections": {
@@ -3526,8 +3553,8 @@
           "col": 1,
           "key": "linked_fir_dd_no",
           "section": "General Information",
-          "label": "Linked FIR / DD No.",
-          "hint": "Must match General Info sheet DD No.",
+          "label": "Linked GD Number",
+          "hint": "Must match General Info sheet GD Number",
           "validation": null
         },
         {
@@ -3593,8 +3620,8 @@
           "col": 1,
           "key": "linked_fir_dd_no",
           "section": "General Information",
-          "label": "Linked FIR / DD No.",
-          "hint": "Must match General Info sheet DD No.",
+          "label": "Linked GD No.",
+          "hint": "Must match General Info sheet GD Number",
           "validation": null
         },
         {

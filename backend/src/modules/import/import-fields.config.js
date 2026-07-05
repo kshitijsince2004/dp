@@ -300,20 +300,22 @@ export const arrestPropertyFields = [
 const withFieldPatch = (fields, key, patch) =>
   fields.map(f => (f.field_key === key ? { ...f, ...patch } : f));
 
-const DD_NO_PATCH = { label_en: 'DD No.', label_hi: 'डीडी संख्या', hint: 'e.g. DD-104/2026' };
-const DD_NO_CHILD_PATCH = { label_en: 'DD No.', label_hi: 'डीडी संख्या', hint: 'Must match General Info sheet DD No.' };
+const KALANDRA_ACT_LINKED_PATCH = { label_en: 'Linked GD Number', label_hi: 'लिंक्ड जीडी संख्या', hint: 'Must match General Info sheet GD Number' };
+const KALANDRA_PERSON_LINKED_PATCH = { label_en: 'Linked GD No.', label_hi: 'लिंक्ड जीडी संख्या', hint: 'Must match General Info sheet GD Number' };
 
-export const kalandraGeneralFields = withFieldPatch(
-  arrestGeneralFields.filter(f => f.field_key !== 'fir_date'),
-  'linked_fir_dd_no', DD_NO_PATCH
-);
+export const kalandraGeneralFields = [
+  { field_key: 'linked_fir_dd_no', label_en: 'GD Number', label_hi: 'जीडी संख्या', required: true, hint: 'e.g. GD-104/2026' },
+  { field_key: 'gd_date', label_en: 'GD Date', label_hi: 'जीडी दिनांक', required: false, hint: 'dd-mm-yyyy' },
+  { field_key: 'gd_time', label_en: 'GD Time', label_hi: 'जीडी समय', required: false, hint: 'HH:MM' },
+  ...arrestGeneralFields.filter(f => f.field_key !== 'linked_fir_dd_no' && f.field_key !== 'fir_date')
+];
 
 export const kalandraActSectionFields = withFieldPatch(
-  arrestActSectionFields, 'linked_fir_dd_no', DD_NO_CHILD_PATCH
+  arrestActSectionFields, 'linked_fir_dd_no', KALANDRA_ACT_LINKED_PATCH
 );
 
 export const kalandraPersonFields = withFieldPatch(
-  withFieldPatch(arrestPersonFields, 'linked_fir_dd_no', DD_NO_CHILD_PATCH),
+  withFieldPatch(arrestPersonFields, 'linked_fir_dd_no', KALANDRA_PERSON_LINKED_PATCH),
   // Kalandra custody options differ from against-FIR arrests (no PC/Bail/Release/35(3))
   'status', { options: ['JC', 'Bound Down', 'Lockup', 'Fine'] }
 );
@@ -347,7 +349,9 @@ export const UIDB_ACT_SECTION_EXCLUDE_KEYS = new Set([
 
 export const uidbGeneralFields = [
   // --- General Information (general_info) ---
-  { field_key: 'gd_no', label_en: 'GD Number, Date & Time', label_hi: 'जीडी नंबर, दिनांक और समय', required: true, section: 'general_info' },
+  { field_key: 'gd_no', label_en: 'GD Number', label_hi: 'जीडी संख्या', required: true, section: 'general_info', hint: 'e.g. 12A' },
+  { field_key: 'gd_date', label_en: 'GD Date', label_hi: 'जीडी दिनांक', required: false, section: 'general_info', hint: 'dd-mm-yyyy' },
+  { field_key: 'gd_time', label_en: 'GD Time', label_hi: 'जीडी समय', required: false, section: 'general_info', hint: 'HH:MM' },
   { field_key: 'status', label_en: 'Current Status / Mortuary Remarks', label_hi: 'वर्तमान स्थिति', required: false, options: ['Referred to district hospital', 'Identified', 'Body Claimed', 'Unidentified', 'Held in Mortuary'], section: 'general_info' },
 
   // --- Corpse Details (corpse_desc) ---
@@ -411,7 +415,9 @@ export const uidbGeneralFields = [
 
 export const missingGeneralFields = [
   { field_key: 'source', label_en: 'Source of Information', label_hi: 'जानकारी का स्रोत', required: false, section: 'general_info' },
-  { field_key: 'gd_no', label_en: 'GD Number, Date & Time', label_hi: 'जीडी नंबर, दिनांक और समय', required: true, section: 'general_info' },
+  { field_key: 'gd_no', label_en: 'GD Number', label_hi: 'जीडी संख्या', required: true, section: 'general_info', hint: 'e.g. 12A' },
+  { field_key: 'gd_date', label_en: 'GD Date', label_hi: 'जीडी दिनांक', required: false, section: 'general_info', hint: 'dd-mm-yyyy' },
+  { field_key: 'gd_time', label_en: 'GD Time', label_hi: 'जीडी समय', required: false, section: 'general_info', hint: 'HH:MM' },
   { field_key: 'missing_type', label_en: 'Missing / Found Type', label_hi: 'लापता / मिला प्रकार', required: false, options: ['Missing', 'Found'], section: 'general_info' },
   { field_key: 'status', label_en: 'Status', label_hi: 'स्थिति', required: false, options: ['Un-traced', 'Traced', 'Referred', 'Closed'], section: 'general_info' },
   { field_key: 'mp_known', label_en: 'Is Missing Person Identified / Known?', label_hi: 'क्या लापता व्यक्ति की पहचान हुई है?', required: false, options: ['Yes', 'No'], section: 'person_details' },

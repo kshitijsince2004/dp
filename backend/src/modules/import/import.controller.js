@@ -73,6 +73,9 @@ const CASE_SYNONYMS = {
 };
 
 const ARREST_SYNONYMS = {
+  "GD Number, Date & Time": "linked_fir_dd_no",
+  "Linked GD Number": "linked_fir_dd_no",
+  "Linked GD No.": "linked_fir_dd_no",
   "Linked FIR No.": "linked_fir_dd_no",
   "Linked FIR no.": "linked_fir_dd_no",
   "DD No.": "linked_fir_dd_no",
@@ -408,7 +411,11 @@ const buildColumnMap = (worksheet, recordType, registryFields) => {
   for (let r = 1; r <= SCAN_ROWS; r++) rowsVals[r] = readRow(r);
 
   const registryKeysSet = new Set(registryFields.map((f) => f.field_key));
-  const synonyms = recordType === 'CASE' ? CASE_SYNONYMS : ARREST_SYNONYMS;
+  const synonyms = recordType === 'CASE'
+    ? CASE_SYNONYMS
+    : (['ARREST', 'KALANDRA'].includes(recordType)
+        ? { ...ARREST_SYNONYMS, "GD Number": "linked_fir_dd_no", "GD No.": "linked_fir_dd_no", "GD No": "linked_fir_dd_no" }
+        : { ...ARREST_SYNONYMS, "GD Number": "gd_no", "GD No.": "gd_no", "GD No": "gd_no" });
 
   // Normalized lookup tables for label / synonym matching
   const synByNorm = {};
@@ -1197,6 +1204,20 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
     if (recordType === 'MISSING' && f.field_key === 'informant_relation') {
       return lang === 'hi' ? 'लापता व्यक्ति से संबंध' : 'Relation with Missing Person';
     }
+    if (f.field_key === 'gd_no') {
+      return lang === 'hi' ? 'जीडी संख्या' : 'GD Number';
+    }
+    if (recordType === 'KALANDRA' && f.field_key === 'linked_fir_dd_no') {
+      if (sheetName === 'General Info') {
+        return lang === 'hi' ? 'जीडी संख्या' : 'GD Number';
+      }
+      if (sheetName === 'Act and Sections') {
+        return lang === 'hi' ? 'लिंक्ड जीडी संख्या' : 'Linked GD Number';
+      }
+      if (sheetName === 'Arrested Person') {
+        return lang === 'hi' ? 'लिंक्ड जीडी संख्या' : 'Linked GD No.';
+      }
+    }
     const matched = allFields.find(dbF => dbF.field_key === f.field_key);
     if (matched) {
       return lang === 'hi' ? matched.label_hi : matched.label_en;
@@ -1410,9 +1431,9 @@ export const downloadImportTemplate = async (req, res) => {
         ...arrestPropertyFields.map(f => f.field_key),
       ]);
       const kalandraAutoFields = autoIncludedRegistryFields('ARREST', allFields, kalandraConfigKeys);
-      addSheetToWorkbook(workbook, 'General Info', [...kalandraGeneralFields, ...kalandraAutoFields], allFields, lang, 'ARREST');
-      addSheetToWorkbook(workbook, 'Act and Sections', kalandraActSectionFields, allFields, lang, 'ARREST');
-      addSheetToWorkbook(workbook, 'Arrested Person', kalandraPersonFields, allFields, lang, 'ARREST');
+      addSheetToWorkbook(workbook, 'General Info', [...kalandraGeneralFields, ...kalandraAutoFields], allFields, lang, 'KALANDRA');
+      addSheetToWorkbook(workbook, 'Act and Sections', kalandraActSectionFields, allFields, lang, 'KALANDRA');
+      addSheetToWorkbook(workbook, 'Arrested Person', kalandraPersonFields, allFields, lang, 'KALANDRA');
       await TemplateBuilderService.wireActSectionCascade(
         workbook,
         workbook.getWorksheet('Act and Sections'),
