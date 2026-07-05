@@ -619,6 +619,12 @@ export const getFieldsForForm = async (req, res) => {
               fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrestee_info')
             },
             {
+              id: 'custody_status',
+              title_en: 'Custody Status',
+              title_hi: 'हिरासत की स्थिति',
+              fields: filteredFields.filter(f => f.section === 'custody_status' && !f.repeater_entity)
+            },
+            {
               id: 'address',
               title_en: 'Address',
               title_hi: 'पता',
@@ -1073,7 +1079,39 @@ export const listSectionsForAct = async (req, res) => {
 export const listMajorHeads = async (req, res) => {
   try {
     const actNameRaw = req.query.act_name;
+    const sectionCodesRaw = req.query.section_codes;
     let data = [];
+
+    // section_codes (e.g. "43-302,43-376") comes from the specific (act, section) pairs the
+    // user has actually registered in the Acts & Sections table — section_code already encodes
+    // its parent act, so filtering by it alone is a precise per-pair match, unlike act_name
+    // alone which pulls in every major head for the whole act regardless of which section.
+    if (sectionCodesRaw) {
+      const sectionCodes = sectionCodesRaw.split(',').map(s => s.trim()).filter(Boolean);
+      if (sectionCodes.length > 0) {
+        const mappings = await db('excel_major_minor_mapping')
+          .whereIn('section_code', sectionCodes)
+          .distinct('major_head_code');
+        const majorCds = mappings.map(m => m.major_head_code);
+
+        if (majorCds.length > 0) {
+          data = await db('excel_major_heads')
+            .whereIn('major_head_code', majorCds)
+            .select('major_head as value', 'major_head as label')
+            .orderBy('major_head', 'asc');
+        }
+      }
+
+      const seen = new Set();
+      const uniqueData = data.filter(item => {
+        if (!item.value) return false;
+        const val = item.value.trim();
+        if (seen.has(val)) return false;
+        seen.add(val);
+        return true;
+      });
+      return res.status(200).json({ success: true, data: uniqueData });
+    }
 
     if (actNameRaw) {
       // Smart comma-split: rejoin year tokens (e.g. "DELHI EXCISE ACT, 2009" split by comma)
@@ -1265,6 +1303,13 @@ export const listPropertyItems = async (req, res) => {
         made: raw.made.map(r => ({ value: r.arms_made_cd, label: r.arms_made })),
         categories: raw.categories.map(r => ({ value: r.arms_category_cd, label: r.arms_category })),
         fireArms: raw.fireArms.map(r => ({ value: r.fire_arms_cd, label: r.fire_arms, parent_id: r.arms_category_cd })),
+        fireArmsSubtypes: raw.fireArmsSubtypes.map(r => ({ value: r.arms_subtype_cd, label: r.arms_subtype, parent_id: r.arms_type_cd })),
+      };
+    } else if (raw?.type === 'OTHER_PROPERTY') {
+      data = {
+        type: 'OTHER_PROPERTY',
+        categories: raw.categories.map(r => ({ value: r.parent_cd, label: r.code_type })),
+        items: raw.items.map(r => ({ value: r.property_cd, label: r.property, parent_id: r.parent_cd })),
       };
     } else if (Array.isArray(raw) && raw.length > 0 && 'property_cd' in raw[0]) {
       data = raw.map(r => ({ value: r.property_cd, label: r.property }));

@@ -114,7 +114,7 @@ const ARREST_SECTION_MAP = {
 // Generates validation hints
 const getHint = (field) => {
   const reqStr = field.validation_rules?.required ? '[Required] ' : '';
-  if (field.field_type === 'SELECT') {
+  if (field.field_type === 'SELECT' || field.field_type === 'RADIO') {
     let options = [];
     try {
       options = typeof field.options === 'string' ? JSON.parse(field.options) : field.options;
@@ -209,11 +209,22 @@ async function buildLiveLookups(recordType) {
   const armsMajorHeads    = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES['Arms Act'])).map(toOpt('major_head'));
   const gamblingMajorHeads = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES['Gambling Act'])).map(toOpt('major_head'));
 
-  // Minor heads per crime-specific field_key
+  // Minor heads per crime-specific field_key (kept for any field_registry rows that still
+  // reference these specific keys directly)
   const minorHeadsByKey = {};
   for (const [fk, codes] of Object.entries(MINOR_HEAD_MAJOR_CODES)) {
     const rows = await fieldsService.getMinorHeadsForMajorHeads(codes);
     minorHeadsByKey[fk] = rows.map(toOpt('minor_head'));
+  }
+
+  // Every major head's minor heads, DB-driven and not limited to the 6 hand-picked
+  // crime types above — powers the generic INDIRECT() cascade on the minor_head column
+  // (see createLookupsSheet / third pass in buildTemplate).
+  const allMinorHeadRows = await fieldsService.getAllMinorHeadsByMajorHead();
+  const minorHeadsByMajorLabel = {};
+  for (const row of allMinorHeadRows) {
+    if (!minorHeadsByMajorLabel[row.major_head]) minorHeadsByMajorLabel[row.major_head] = [];
+    minorHeadsByMajorLabel[row.major_head].push({ value: row.minor_head, label: row.minor_head });
   }
 
   // Beats and local heads
@@ -288,6 +299,8 @@ async function buildLiveLookups(recordType) {
     // Private fields consumed by createLookupsSheet
     _propItemsByCategory:        propItemsByCategory,
     _propCategoryLabels:         propCategories.map(c => c.label),
+    _minorHeadsByMajorLabel:     minorHeadsByMajorLabel,
+    _minorHeadMajorLabels:       Object.keys(minorHeadsByMajorLabel),
   };
 }
 
@@ -367,7 +380,42 @@ function createLookupsSheet(workbook, liveLookups) {
     slugToNR[slug] = nrName;
   }
 
-  return { namedRangeMap, slugToNR };
+  // 3. Write one named range per major head (for the minor_head INDIRECT cascade) —
+  // every major head that has minor heads in excel_minor_heads, not just the 6 hand-picked
+  // crime types in MINOR_HEAD_MAJOR_CODES. Major head labels can contain characters
+  // (parentheses, commas, periods, slashes...) that a chain of Excel SUBSTITUTE() calls
+  // can't reliably fold back into the same slug the JS side derived (adjacent special
+  // chars collapse to one underscore in JS but not in nested SUBSTITUTE). So instead of
+  // recomputing the slug inside the workbook, we also write an explicit "major head label
+  // -> named range name" lookup table and have the cascade VLOOKUP into it.
+  const majorHeadToNRRows = [];
+  for (const majorLabel of (liveLookups._minorHeadMajorLabels || [])) {
+    const items = (liveLookups._minorHeadsByMajorLabel || {})[majorLabel] || [];
+    if (items.length === 0) continue;
+    const slug = majorLabel.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
+    const nrName = `${NR_PREFIX}MH_${slug}`;
+    writeList(`__minorhead_${majorLabel}`, items, nrName);
+    majorHeadToNRRows.push([majorLabel, nrName]);
+  }
+  if (majorHeadToNRRows.length > 0) {
+    const labelCol = col;
+    const nrCol = col + 1;
+    majorHeadToNRRows.forEach((row, i) => {
+      ws.getCell(i + 1, labelCol).value = row[0];
+      ws.getCell(i + 1, nrCol).value = row[1];
+    });
+    const labelLetter = numToColLetter(labelCol);
+    const nrLetter = numToColLetter(nrCol);
+    const tableRef = `'_Lookups'!$${labelLetter}$1:$${nrLetter}$${majorHeadToNRRows.length}`;
+    try {
+      workbook.definedNames.add(tableRef, 'MAJOR_HEAD_TO_MINOR_NR');
+    } catch (err) {
+      logger.error('createLookupsSheet: failed to register MAJOR_HEAD_TO_MINOR_NR', { err });
+    }
+    col += 2;
+  }
+
+  return { namedRangeMap, slugToNR, hasMinorHeadCascade: majorHeadToNRRows.length > 0 };
 }
 
 
@@ -392,9 +440,10 @@ export class TemplateBuilderService {
     let liveLookups = {};
     let namedRangeMap = {};
     let slugToNR = {};
+    let hasMinorHeadCascade = false;
     try {
       liveLookups = await buildLiveLookups(recordType);
-      ({ namedRangeMap, slugToNR } = createLookupsSheet(workbook, liveLookups));
+      ({ namedRangeMap, slugToNR, hasMinorHeadCascade } = createLookupsSheet(workbook, liveLookups));
     } catch (err) {
       logger.error('buildTemplate: failed to build live lookups (dropdowns will be static)', { err: err.message });
     }
@@ -774,15 +823,28 @@ export class TemplateBuilderService {
             formulae: [majFormula]
           };
 
-          // 4. Minor Head Column Validation (dependent on Major Head)
-          const majHeadRef = `$${majLetter}${rIdx}`;
-          const minFormula = `IF(${majHeadRef}="THEFT",OPT_THEFT_MINOR_HEAD,IF(${majHeadRef}="MURDER (HOMICIDE)",OPT_MURDER_MINOR_HEAD,IF(${majHeadRef}="HURT",OPT_HURT_MINOR_HEAD,IF(${majHeadRef}="CHEATING",OPT_CHEATING_MINOR_HEAD,IF(${majHeadRef}="ROBBERY",OPT_ROBBERY_MINOR_HEAD,IF(${majHeadRef}="CUSTOMS (SMUGGLING)",OPT_EXCISE_SMUGGLING_MINOR_HEAD,""))))))`;
-          actSectionWS.getCell(rIdx, minCol).dataValidation = {
-            type: 'list',
-            allowBlank: true,
-            showErrorMessage: false,
-            formulae: [minFormula]
-          };
+          // 4. Minor Head Column Validation (dependent on Major Head) — INDIRECT cascade
+          // driven entirely by whatever major heads actually have minor heads in
+          // excel_minor_heads (via the OPT_MH_<slug> named ranges written in
+          // createLookupsSheet), not a hardcoded list of a handful of crime types.
+          // Looks up the exact named range name via VLOOKUP rather than recomputing the
+          // slug in-formula, since major head labels can contain characters a chain of
+          // SUBSTITUTE() calls can't fold back to the same slug the JS side derived.
+          if (hasMinorHeadCascade) {
+            const majHeadRef = `$${majLetter}${rIdx}`;
+            // IFERROR(...,"") — when the selected major head has no minor heads (e.g. a
+            // local_head-sourced value under Other Act/CrPC/BNSS/BNS, or the rare IPC head
+            // with none in excel_minor_heads), VLOOKUP finds no match and INDIRECT(#N/A)
+            // would otherwise surface as a raw "#N/A" list item. Degrade to an empty list
+            // instead of an error.
+            const minFormula = `IFERROR(INDIRECT(VLOOKUP(${majHeadRef},MAJOR_HEAD_TO_MINOR_NR,2,FALSE)),"")`;
+            actSectionWS.getCell(rIdx, minCol).dataValidation = {
+              type: 'list',
+              allowBlank: true,
+              showErrorMessage: false,
+              formulae: [minFormula]
+            };
+          }
         }
       }
     }
@@ -815,6 +877,66 @@ export class TemplateBuilderService {
 
     return workbook;
 
+  }
+
+  // Wires the same Act -> Sections/Major-Head -> Minor-Head cascade used by CASE/ARREST's
+  // "Act and Sections" sheet onto an arbitrary worksheet + column-key set, for record types
+  // (currently UIDB) that build their workbook from addSheetToWorkbook rather than a
+  // hand-designed base .xlsx. Reuses buildLiveLookups/createLookupsSheet so the option lists
+  // stay identical to CASE/ARREST's — same DB tables, same named-range scheme.
+  // keys: { act, sections, major, minor } — the Row-1 field_key each column is stored under.
+  static async wireActSectionCascade(workbook, worksheet, recordType, keys) {
+    if (!worksheet) return;
+
+    let liveLookups = {};
+    let namedRangeMap = {};
+    let hasMinorHeadCascade = false;
+    try {
+      liveLookups = await buildLiveLookups(recordType);
+      ({ namedRangeMap, hasMinorHeadCascade } = createLookupsSheet(workbook, liveLookups));
+    } catch (err) {
+      logger.error('wireActSectionCascade: failed to build live lookups (dropdowns will be static)', { err: err.message });
+      return;
+    }
+    if (!namedRangeMap) return;
+
+    let actCol = -1, secCol = -1, majCol = -1, minCol = -1;
+    worksheet.getRow(1).eachCell({ includeEmpty: true }, (cell, c) => {
+      if (cell.value === keys.act) actCol = c;
+      if (cell.value === keys.sections) secCol = c;
+      if (cell.value === keys.major) majCol = c;
+      if (cell.value === keys.minor) minCol = c;
+    });
+    if (actCol === -1 || secCol === -1 || majCol === -1 || minCol === -1) return;
+
+    const actLetter = numToColLetter(actCol);
+    const majLetter = numToColLetter(majCol);
+    const actsList = ['IPC', 'Delhi Excise Act', 'Arms Act', 'Gambling Act', 'Other Act', 'CrPC', 'BNSS', 'BNS'];
+
+    for (let rIdx = 5; rIdx <= 500; rIdx++) {
+      worksheet.getCell(rIdx, actCol).dataValidation = {
+        type: 'list', allowBlank: true, formulae: [`"${actsList.join(',')}"`]
+      };
+
+      const actRef = `$${actLetter}${rIdx}`;
+      worksheet.getCell(rIdx, secCol).dataValidation = {
+        type: 'list', allowBlank: true, showErrorMessage: false,
+        formulae: [`IF(${actRef}="IPC",OPT_IPC_SECTIONS,IF(${actRef}="Delhi Excise Act",OPT_EXCISE_SECTIONS,IF(${actRef}="Arms Act",OPT_ARMS_SECTIONS,IF(${actRef}="Gambling Act",OPT_GAMBLING_SECTIONS,OPT_SECTIONS))))`]
+      };
+
+      worksheet.getCell(rIdx, majCol).dataValidation = {
+        type: 'list', allowBlank: true, showErrorMessage: false,
+        formulae: [`IF(${actRef}="IPC",OPT_IPC_MAJOR_HEAD,IF(${actRef}="Delhi Excise Act",OPT_EXCISE_MAJOR_HEAD,IF(${actRef}="Arms Act",OPT_ARMS_MAJOR_HEAD,IF(${actRef}="Gambling Act",OPT_GAMBLING_MAJOR_HEAD,OPT_CRIME_HEAD))))`]
+      };
+
+      if (hasMinorHeadCascade) {
+        const majHeadRef = `$${majLetter}${rIdx}`;
+        worksheet.getCell(rIdx, minCol).dataValidation = {
+          type: 'list', allowBlank: true, showErrorMessage: false,
+          formulae: [`IFERROR(INDIRECT(VLOOKUP(${majHeadRef},MAJOR_HEAD_TO_MINOR_NR,2,FALSE)),"")`]
+        };
+      }
+    }
   }
 
   // Recomputes the merged Row-2 section-header banner from Row-1 keys. Idempotent and
@@ -869,22 +991,28 @@ export class TemplateBuilderService {
 
   static insertColumnAt(worksheet, colIndex) {
     const maxCols = worksheet.columnCount;
+    const dvModel = worksheet.dataValidations && worksheet.dataValidations.model;
 
     // Shift cells backwards
     worksheet.eachRow({ includeEmpty: true }, (row) => {
       for (let c = maxCols; c >= colIndex; c--) {
         const srcCell = row.getCell(c);
         const destCell = row.getCell(c + 1);
-        
+
         destCell.value = srcCell.value;
         destCell.style = srcCell.style;
         if (srcCell.dataValidation) {
           destCell.dataValidation = srcCell.dataValidation;
+        } else if (dvModel) {
+          // Explicitly drop any stale entry at the destination address rather than
+          // leaving it — a null/undefined value here still counts as a model key and
+          // corrupts ExcelJS's range-merging optimiser on write (see deleteColumnAt).
+          delete dvModel[destCell.address];
         }
-        
+
         srcCell.value = null;
         srcCell.style = {};
-        srcCell.dataValidation = null;
+        if (dvModel) delete dvModel[srcCell.address];
       }
     });
 
@@ -917,6 +1045,7 @@ export class TemplateBuilderService {
 
   static deleteColumnAt(worksheet, colIndex) {
     const maxCols = worksheet.columnCount;
+    const dvModel = worksheet.dataValidations && worksheet.dataValidations.model;
 
     // Capture each merge's master (top-left) value BEFORE shifting. Shifting left can
     // clobber a master cell when the deleted column IS the master, which would drop the
@@ -939,15 +1068,19 @@ export class TemplateBuilderService {
         destCell.style = srcCell.style;
         if (srcCell.dataValidation) {
           destCell.dataValidation = srcCell.dataValidation;
-        } else {
-          destCell.dataValidation = null;
+        } else if (dvModel) {
+          // Delete the model key outright — assigning null still leaves an entry in
+          // worksheet.dataValidations.model, which ExcelJS's range-merging optimiser
+          // (optimiseDataValidations) can group into a blank range that overlaps and
+          // shadows a real dropdown validation elsewhere in the same column on write.
+          delete dvModel[destCell.address];
         }
       }
       // Clear the last cell
       const lastCell = row.getCell(maxCols);
       lastCell.value = null;
       lastCell.style = {};
-      lastCell.dataValidation = null;
+      if (dvModel) delete dvModel[lastCell.address];
     });
 
     // Shift and update merged ranges, then restore any lost master values

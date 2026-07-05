@@ -24,7 +24,9 @@ import {
   arrestPersonFields,
   arrestPropertyFields,
   CASE_SHEETS_CONFIG,
-  ARREST_SHEETS_CONFIG
+  ARREST_SHEETS_CONFIG,
+  uidbActSectionFields,
+  UIDB_ACT_SECTION_EXCLUDE_KEYS
 } from './import-fields.config.js';
 
 // Synonyms map to handle template label variations and offsets
@@ -859,7 +861,7 @@ const generateImportUID = async (trx, recordType, psId, dateStr) => {
 
 const getHint = (field) => {
   const reqStr = field.validation_rules?.required ? '[Required] ' : '';
-  if (field.field_type === 'SELECT') {
+  if (field.field_type === 'SELECT' || field.field_type === 'RADIO') {
     let options = [];
     try {
       options = typeof field.options === 'string' ? JSON.parse(field.options) : field.options;
@@ -930,7 +932,7 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
       return lang === 'hi' ? 'गिरफ्तार व्यक्ति का व्यक्तिगत विवरण' : 'Arrested Person Personal Details';
     }
     if (key.startsWith('property_') || key.startsWith('phone_')) return lang === 'hi' ? 'संपत्ति विवरण' : 'Property Details';
-    if (key === 'act' || key === 'sections' || key === 'crime_head') return lang === 'hi' ? 'अधिनियम और धाराएं' : 'Act and Sections';
+    if (['act', 'act_name', 'sections', 'crime_head', 'major_head', 'minor_head'].includes(key)) return lang === 'hi' ? 'अधिनियम और धाराएं' : 'Act and Sections';
     if (key === 'io_name' || key === 'io_pis' || key === 'io_mobile' || key === 'date_of_arrest') return lang === 'hi' ? 'जांच अधिकारी और गिरफ्तारी विवरण' : 'IO and Arrest Details';
     if (['nafis_prepared', 'dossier_prepared', 'search_slip_prepared', 'address_verified', 'verifying_officer_name', 'verifying_officer_rank', 'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path'].includes(key)) {
       return lang === 'hi' ? 'सत्यापन और रिश्तेदार विवरण' : 'Verification and Kin Details';
@@ -1001,12 +1003,20 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
     const matched = allFields.find(dbF => dbF.field_key === f.field_key);
     
     let options = [];
-    if (matched && (matched.field_type === 'SELECT' || matched.field_type === 'RADIO')) {
+    if (matched && matched.options) {
+      // Parse regardless of field_type (SELECT, RADIO, and any other picker type all
+      // store their options the same way in field_registry) — gating this on
+      // field_type === 'SELECT' silently dropped the dropdown for RADIO-type boolean
+      // fields (e.g. UIDB's `identified`) even though options were present in the DB.
       try {
         options = typeof matched.options === 'string' ? JSON.parse(matched.options) : matched.options;
       } catch (e) {}
     } else if (f.options) {
-      options = f.options;
+      try {
+        options = typeof f.options === 'string' ? JSON.parse(f.options) : f.options;
+      } catch (e) {
+        options = Array.isArray(f.options) ? f.options : [];
+      }
     } else if (f.field_key.endsWith('_prepared') || f.field_key.endsWith('_verified') || f.field_key.endsWith('_same')) {
       options = ['Yes', 'No'];
     } else if (f.field_key.includes('gender')) {
@@ -1088,7 +1098,7 @@ export const downloadImportTemplate = async (req, res) => {
 
     const workbook = new ExcelJS.Workbook();
 
-    const fields = allFields.filter(f => {
+    let fields = allFields.filter(f => {
       try {
         const types = typeof f.applicable_record_types === 'string'
           ? JSON.parse(f.applicable_record_types)
@@ -1098,6 +1108,13 @@ export const downloadImportTemplate = async (req, res) => {
         return false;
       }
     });
+
+    // UIDB's Act & Sections fields move to their own sheet (see below) — the raw per-act
+    // conditional fields (ipc_major_head, theft_minor_head, ...) are never meaningful as
+    // standalone columns since nothing merges them for imported rows, so drop them here.
+    if (recordType === 'UIDB') {
+      fields = fields.filter(f => !UIDB_ACT_SECTION_EXCLUDE_KEYS.has(f.field_key));
+    }
 
     fields.sort((a, b) => {
       const reqA = isRequired(a) ? 1 : 0;
@@ -1109,6 +1126,18 @@ export const downloadImportTemplate = async (req, res) => {
     });
 
     addSheetToWorkbook(workbook, 'Import Template', fields, allFields, lang, recordType);
+
+    if (recordType === 'UIDB') {
+      // Separate "Act and Sections" sheet, same workbook — matches CASE's multi-sheet
+      // layout instead of cramming the cascade into the flat general sheet.
+      addSheetToWorkbook(workbook, 'Act and Sections', uidbActSectionFields, allFields, lang);
+      await TemplateBuilderService.wireActSectionCascade(
+        workbook,
+        workbook.getWorksheet('Act and Sections'),
+        'UIDB',
+        { act: 'act_name', sections: 'sections', major: 'major_head', minor: 'minor_head' }
+      );
+    }
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${recordType}_Import_Template.xlsx"`);
