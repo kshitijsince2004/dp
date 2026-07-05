@@ -18,6 +18,7 @@ import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
 import DateInput from '../ui/DateInput.jsx';
+import SearchableSelect from './SearchableSelect.jsx';
 import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
 
 // Mock registry for Acts & Sections to be loaded dynamically from the backend in the future
@@ -1661,15 +1662,56 @@ const renderPropertyStep = () => {
               const fieldVal = row[field.field_key] || '';
               const wrapCls = `flex flex-col gap-1${field.full_width ? ' col-span-full' : ''}`;
               const labelEl = <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{label}</label>;
+              
+              // Type of Arm — cascades off "Type of Property" (row.property_minor_category,
+              // which holds the selected arms_category_cd), listing only fire_arms rows whose
+              // parent_id matches it. Options come from the live lookup fetch, not field.options.
+              if (field.field_key === 'prop_fire_arms_type') {
+                const fireArmsOpts = (armsLookupMap[row.property_major_category]?.fireArms || [])
+                  .filter(f => String(f.parent_id) === String(row.property_minor_category));
+                const isDisabled = readOnly || !row.property_minor_category;
+                return (
+                  <div key={field.field_key} className={wrapCls}>
+                    {labelEl}
+                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={fireArmsOpts} lang={lang} />
+                  </div>
+                );
+              }
+
+              // Subtype of Arm — cascades off Type of Arm (row.prop_fire_arms_type, holding
+              // the selected fire_arms_cd) via excel_fire_arms_subtypes.arms_type_cd.
+              if (field.field_key === 'prop_arms_made') {
+                const subtypeOpts = (armsLookupMap[row.property_major_category]?.fireArmsSubtypes || [])
+                  .filter(o => String(o.parent_id) === String(row.prop_fire_arms_type));
+                const isDisabled = readOnly || !row.prop_fire_arms_type;
+                return (
+                  <div key={field.field_key} className={wrapCls}>
+                    {labelEl}
+                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={subtypeOpts} lang={lang} />
+                  </div>
+                );
+              }
+
+              // Property Subtype ("Others" category) — cascades off "Type of Property"
+              // (row.property_minor_category, holding the selected other-category parent_cd).
+              if (field.field_key === 'prop_other_subtype') {
+                const subtypeOpts = (armsLookupMap[row.property_major_category]?.otherSubtype || [])
+                  .filter(o => String(o.parent_id) === String(row.property_minor_category));
+                const isDisabled = readOnly || !row.property_minor_category;
+                return (
+                  <div key={field.field_key} className={wrapCls}>
+                    {labelEl}
+                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={isDisabled} className={cls} options={subtypeOpts} lang={lang} />
+                  </div>
+                );
+              }
+
               if (field.field_type === 'SELECT') {
                 const opts = (() => { try { return typeof field.options === 'string' ? JSON.parse(field.options) : (field.options || []); } catch { return []; } })();
                 return (
                   <div key={field.field_key} className={wrapCls}>
                     {labelEl}
-                    <select value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={readOnly} className={cls}>
-                      <option value="">---{lang === 'hi' ? 'चुनें' : 'Select'}---</option>
-                      {opts.map(o => <option key={o.value ?? o} value={o.value ?? o}>{lang === 'hi' ? (o.label_hi || o.label_en || o) : (o.label_en || o.value || o)}</option>)}
-                    </select>
+                    <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={readOnly} className={cls} options={opts} lang={lang} />
                   </div>
                 );
               }
@@ -1729,6 +1771,9 @@ const renderPropertyStep = () => {
       // Clear any category-specific extra detail fields
       const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
       Object.keys(updatedRow).forEach(k => { if (!KEEP.has(k)) delete updatedRow[k]; });
+    } else if (key === 'prop_fire_arms_type') {
+      // Type of Arm changed — reset the dependent Subtype of Arm selection
+      updatedRow.prop_arms_made = '';
     }
     list[idx] = updatedRow;
     setRepeaterState(prev => ({ ...prev, property_details: list }));
@@ -1740,19 +1785,14 @@ const renderPropertyStep = () => {
 
     if (opts.length > 0) {
       return (
-        <select
+        <SearchableSelect
           value={row.property_minor_category || ''}
-          onChange={(e) => handlePropertyRowChange(idx, 'property_minor_category', e.target.value)}
+          onChange={(val) => handlePropertyRowChange(idx, 'property_minor_category', val)}
           disabled={isDisabled}
           className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
-        >
-          <option value="">{lang === 'hi' ? '---चुनें---' : '---Select---'}</option>
-          {opts.map(o => (
-            <option key={o.value} value={o.value}>
-              {lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}
-            </option>
-          ))}
-        </select>
+          options={opts}
+          lang={lang}
+        />
       );
     }
 
@@ -1820,19 +1860,14 @@ const renderPropertyStep = () => {
 
                     {/* Property Category */}
                     <td className="px-3 py-2 min-w-[200px]">
-                      <select
+                      <SearchableSelect
                         value={row.property_major_category || ''}
-                        onChange={(e) => handlePropertyRowChange(idx, 'property_major_category', e.target.value)}
+                        onChange={(val) => handlePropertyRowChange(idx, 'property_major_category', val)}
                         disabled={readOnly}
                         className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
-                      >
-                        <option value="">{lang === 'hi' ? '---चुनें---' : '---Select---'}</option>
-                        {majorCategoryOptions.map(o => (
-                          <option key={o.value} value={o.value}>
-                            {lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}
-                          </option>
-                        ))}
-                      </select>
+                        options={majorCategoryOptions}
+                        lang={lang}
+                      />
                     </td>
 
                     {/* Type of Property */}
@@ -1842,16 +1877,14 @@ const renderPropertyStep = () => {
 
                     {/* Status (Stolen / Recovered / Involved / Seized) */}
                     <td className="px-3 py-2 w-32">
-                      <select
+                      <SearchableSelect
                         value={row.property_stolen_recovered || 'Stolen'}
-                        onChange={(e) => handlePropertyRowChange(idx, 'property_stolen_recovered', e.target.value)}
+                        onChange={(val) => handlePropertyRowChange(idx, 'property_stolen_recovered', val)}
                         disabled={readOnly}
                         className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
-                      >
-                        {getFieldOptions(allFields, 'property_stolen_recovered').map(o => (
-                          <option key={o.value} value={o.value}>{lang === 'hi' ? (o.label_hi || o.label_en) : o.label_en}</option>
-                        ))}
-                      </select>
+                        options={getFieldOptions(allFields, 'property_stolen_recovered')}
+                        lang={lang}
+                      />
                     </td>
 
                     {/* Description */}
@@ -3054,6 +3087,8 @@ const renderActionTakenStep = () => {
   const [arrestedModalErrors, setArrestedModalErrors] = useState({});
   const [arrestedModalTouched, setArrestedModalTouched] = useState({});
 
+  const [armsLookupMap, setArmsLookupMap] = useState({});
+
   useEffect(() => {
     const list = repeaterState?.property_details || [];
     const arrestedList = arrestedTempValues?.property_details || [];
@@ -3078,6 +3113,40 @@ const renderActionTakenStep = () => {
                 value: c.arms_category_cd ?? c.value ?? c,
                 label_en: c.arms_category ?? c.label ?? c,
                 label_hi: c.arms_category ?? c.label ?? c
+              }));
+              setArmsLookupMap(prev => ({
+                ...prev,
+                [cat]: {
+                  fireArms: (data.fireArms || []).map(f => ({
+                    value: f.fire_arms_cd ?? f.value ?? f,
+                    label_en: f.fire_arms ?? f.label ?? f,
+                    label_hi: f.fire_arms ?? f.label ?? f,
+                    parent_id: f.arms_category_cd ?? f.parent_id
+                  })),
+                  fireArmsSubtypes: (data.fireArmsSubtypes || []).map(s => ({
+                    value: s.arms_subtype_cd ?? s.value ?? s,
+                    label_en: s.arms_subtype ?? s.label ?? s,
+                    label_hi: s.arms_subtype ?? s.label ?? s,
+                    parent_id: s.arms_type_cd ?? s.parent_id
+                  }))
+                }
+              }));
+            } else if (data?.type === 'OTHER_PROPERTY') {
+              options = (data.categories || []).map(c => ({
+                value: c.value ?? c.parent_cd ?? c,
+                label_en: c.label ?? c.code_type ?? c,
+                label_hi: c.label ?? c.code_type ?? c
+              }));
+              setArmsLookupMap(prev => ({
+                ...prev,
+                [cat]: {
+                  otherSubtype: (data.items || []).map(i => ({
+                    value: i.value ?? i.property_cd ?? i,
+                    label_en: i.label ?? i.property ?? i,
+                    label_hi: i.label ?? i.property ?? i,
+                    parent_id: i.parent_id
+                  }))
+                }
               }));
             } else if (Array.isArray(data)) {
               options = data.map(o => ({
