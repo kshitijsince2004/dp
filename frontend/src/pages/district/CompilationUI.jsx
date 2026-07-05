@@ -371,8 +371,14 @@ export default function CompilationUI() {
       )
       : 'Select a diary and compile your station\'s records before sending them up for review.';
 
+  const getThemeClass = () => {
+    if (userLevel === 'HQ') return 'theme-hq-page';
+    if (userLevel === 'DISTRICT') return 'theme-district-page';
+    return 'theme-hc-page';
+  };
+
   return (
-    <div className="space-y-6 w-full theme-district-page p-5 rounded-2xl bg-[var(--bg-page-main)] border border-slate-200 shadow-sm">
+    <div className={`space-y-6 w-full ${getThemeClass()} p-5 rounded-2xl bg-[var(--bg-page-main)] border border-slate-200 shadow-sm`}>
       {/* Back Header */}
       <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
         <button

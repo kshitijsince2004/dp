@@ -38,6 +38,33 @@ function getFieldOptions(fieldsArr, key) {
   }
 }
 
+const PERM_ADDRESS_FIELDS = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'country', 'state', 'district', 'police_station', 'pincode'];
+
+/**
+ * Shared by Victim/Accused/Complainant/Arrested's "Permanent address same as Present"
+ * toggle: one-time bulk copy the moment the toggle flips on, then live-mirror any further
+ * present-address edits into their permanent-address twin while it stays on. Mutates `next`
+ * in place (matches how every call site already builds up `next` before returning it).
+ * `extraFields` lets a prefix add pairs beyond the standard 10 (Arrested also has
+ * present_address -> perm_address).
+ */
+function syncPermAddress(next, prefix, key, val, extraFields = []) {
+  const sameKey = `${prefix}_perm_same`;
+  const fields = [...PERM_ADDRESS_FIELDS.map(f => ({ from: f, to: f })), ...extraFields];
+
+  if (key === sameKey && (val === true || val === 'Yes')) {
+    fields.forEach(({ from, to }) => {
+      next[`${prefix}_perm_${to}`] = next[`${prefix}_${from}`] || (to === 'country' ? 'Indian' : '');
+    });
+  }
+
+  if (next[sameKey] === true || next[sameKey] === 'Yes') {
+    fields.forEach(({ from, to }) => {
+      if (key === `${prefix}_${from}`) next[`${prefix}_perm_${to}`] = val;
+    });
+  }
+}
+
 /**
  * Wizard step order per record type, keyed by the backend's `section` value
  * 'select_fir' is a synthetic step (see finalSchema) not present in the backend response.
@@ -777,7 +804,7 @@ export default function DynamicForm({
           </table>
         </div>
 
-        <ActsSectionsTable {...actsSectionsProps} localHeadLayout="combined" />
+        <ActsSectionsTable {...actsSectionsProps} localHeadLayout="split" />
       </div>
     );
   };
@@ -1461,6 +1488,8 @@ export default function DynamicForm({
         if (!f.repeater_entity || f.repeater_entity.toUpperCase() !== 'PROPERTY') return false;
         if (BASE_PROP_KEYS.has(f.field_key)) return false;
         if (TYPE_COL_KEYS.has(f.field_key)) return false;
+        // Commented out redundant duplicate fields for OTHERS category
+        if (f.field_key === 'prop_other_desc' || f.field_key === 'prop_other_value') return false;
         const cond = f.show_when
           ? (typeof f.show_when === 'string' ? JSON.parse(f.show_when) : f.show_when)
           : null;
@@ -2085,8 +2114,10 @@ export default function DynamicForm({
     const list = repeaterState?.property_details || [];
     const arrestedList = arrestedTempValues?.property_details || [];
     const combinedList = [...list, ...arrestedList];
+    // NOT .filter(Boolean) — "Others" has parent_cd 0, which Boolean() treats as falsy and
+    // would silently drop, leaving its Type of Property dropdown permanently unpopulated.
     const majorCategories = Array.from(new Set(
-      combinedList.map(row => row.property_major_category).filter(Boolean)
+      combinedList.map(row => row.property_major_category).filter(v => v !== undefined && v !== null && v !== '')
     ));
 
     majorCategories.forEach(cat => {
@@ -2250,31 +2281,7 @@ export default function DynamicForm({
       }
 
       // Address copying and auto-sync
-      if (key === 'victim_perm_same' && (val === true || val === 'Yes')) {
-        next.victim_perm_house_no = next.victim_house_no || '';
-        next.victim_perm_street = next.victim_street || '';
-        next.victim_perm_colony = next.victim_colony || '';
-        next.victim_perm_city_town_village = next.victim_city_town_village || '';
-        next.victim_perm_tehsil_block_mandal = next.victim_tehsil_block_mandal || '';
-        next.victim_perm_country = next.victim_country || 'Indian';
-        next.victim_perm_state = next.victim_state || '';
-        next.victim_perm_district = next.victim_district || '';
-        next.victim_perm_police_station = next.victim_police_station || '';
-        next.victim_perm_pincode = next.victim_pincode || '';
-      }
-
-      if (next.victim_perm_same === true || next.victim_perm_same === 'Yes') {
-        if (key === 'victim_house_no') next.victim_perm_house_no = val;
-        if (key === 'victim_street') next.victim_perm_street = val;
-        if (key === 'victim_colony') next.victim_perm_colony = val;
-        if (key === 'victim_city_town_village') next.victim_perm_city_town_village = val;
-        if (key === 'victim_tehsil_block_mandal') next.victim_perm_tehsil_block_mandal = val;
-        if (key === 'victim_country') next.victim_perm_country = val;
-        if (key === 'victim_state') next.victim_perm_state = val;
-        if (key === 'victim_district') next.victim_perm_district = val;
-        if (key === 'victim_police_station') next.victim_perm_police_station = val;
-        if (key === 'victim_pincode') next.victim_perm_pincode = val;
-      }
+      syncPermAddress(next, 'victim', key, val);
 
       // Clear error on change
       if (victimModalErrors[key]) {
@@ -2345,31 +2352,7 @@ export default function DynamicForm({
       }
 
       // Address copying and auto-sync
-      if (key === 'accused_perm_same' && (val === true || val === 'Yes')) {
-        next.accused_perm_house_no = next.accused_house_no || '';
-        next.accused_perm_street = next.accused_street || '';
-        next.accused_perm_colony = next.accused_colony || '';
-        next.accused_perm_city_town_village = next.accused_city_town_village || '';
-        next.accused_perm_tehsil_block_mandal = next.accused_tehsil_block_mandal || '';
-        next.accused_perm_country = next.accused_country || 'Indian';
-        next.accused_perm_state = next.accused_state || '';
-        next.accused_perm_district = next.accused_district || '';
-        next.accused_perm_police_station = next.accused_police_station || '';
-        next.accused_perm_pincode = next.accused_pincode || '';
-      }
-
-      if (next.accused_perm_same === true || next.accused_perm_same === 'Yes') {
-        if (key === 'accused_house_no') next.accused_perm_house_no = val;
-        if (key === 'accused_street') next.accused_perm_street = val;
-        if (key === 'accused_colony') next.accused_perm_colony = val;
-        if (key === 'accused_city_town_village') next.accused_perm_city_town_village = val;
-        if (key === 'accused_tehsil_block_mandal') next.accused_perm_tehsil_block_mandal = val;
-        if (key === 'accused_country') next.accused_perm_country = val;
-        if (key === 'accused_state') next.accused_perm_state = val;
-        if (key === 'accused_district') next.accused_perm_district = val;
-        if (key === 'accused_police_station') next.accused_perm_police_station = val;
-        if (key === 'accused_pincode') next.accused_perm_pincode = val;
-      }
+      syncPermAddress(next, 'accused', key, val);
 
       // Clear error on change
       if (accusedModalErrors[key]) {
@@ -2505,23 +2488,6 @@ export default function DynamicForm({
     return next;
   };
 
-  const syncArrestedPermAddress = (currentTemp) => {
-    if (!currentTemp.arrested_perm_same) return currentTemp;
-    return {
-      ...currentTemp,
-      arrested_perm_house_no: currentTemp.arrested_house_no || '',
-      arrested_perm_street: currentTemp.arrested_street || '',
-      arrested_perm_colony: currentTemp.arrested_colony || '',
-      arrested_perm_city_town_village: currentTemp.arrested_city_town_village || '',
-      arrested_perm_tehsil_block_mandal: currentTemp.arrested_tehsil_block_mandal || '',
-      arrested_perm_country: currentTemp.arrested_country || 'Indian',
-      arrested_perm_state: currentTemp.arrested_state || '',
-      arrested_perm_district: currentTemp.arrested_district || '',
-      arrested_perm_police_station: currentTemp.arrested_police_station || '',
-      arrested_perm_pincode: currentTemp.arrested_pincode || '',
-    };
-  };
-
   const handleArrestedModalChange = (key, val) => {
     setArrestedTempValues((prev) => {
       let next = { ...prev, [key]: val };
@@ -2534,22 +2500,7 @@ export default function DynamicForm({
         next = handleArrestedAgeChange(val, next);
       }
 
-      if (key === 'arrested_perm_same' && (val === true || val === 'Yes')) {
-        next = syncArrestedPermAddress(next);
-      }
-
-      if (next.arrested_perm_same === true || next.arrested_perm_same === 'Yes') {
-        if (key === 'arrested_house_no') next.arrested_perm_house_no = val;
-        if (key === 'arrested_street') next.arrested_perm_street = val;
-        if (key === 'arrested_colony') next.arrested_perm_colony = val;
-        if (key === 'arrested_city_town_village') next.arrested_perm_city_town_village = val;
-        if (key === 'arrested_tehsil_block_mandal') next.arrested_perm_tehsil_block_mandal = val;
-        if (key === 'arrested_country') next.arrested_perm_country = val;
-        if (key === 'arrested_state') next.arrested_perm_state = val;
-        if (key === 'arrested_district') next.arrested_perm_district = val;
-        if (key === 'arrested_police_station') next.arrested_perm_police_station = val;
-        if (key === 'arrested_pincode') next.arrested_perm_pincode = val;
-      }
+      syncPermAddress(next, 'arrested', key, val);
 
       if (arrestedModalErrors[key]) {
         setArrestedModalErrors((e) => { const n = { ...e }; delete n[key]; return n; });
@@ -3180,59 +3131,8 @@ const handleChange = useCallback((key, val) => {
       next.occurrence_time = next.time_of_occurrence;
     }
 
-    if (key === 'arrested_perm_same' && val === true) {
-      next.arrested_perm_house_no = next.arrested_house_no || '';
-      next.arrested_perm_street = next.arrested_street || '';
-      next.arrested_perm_colony = next.arrested_colony || '';
-      next.arrested_perm_city_town_village = next.arrested_city_town_village || '';
-      next.arrested_perm_tehsil_block_mandal = next.arrested_tehsil_block_mandal || '';
-      next.arrested_perm_country = next.arrested_country || 'Indian';
-      next.arrested_perm_state = next.arrested_state || '';
-      next.arrested_perm_district = next.arrested_district || '';
-      next.arrested_perm_police_station = next.arrested_police_station || '';
-      next.arrested_perm_pincode = next.arrested_pincode || '';
-      next.arrested_perm_address = next.arrested_present_address || '';
-    }
-
-    if (next.arrested_perm_same === true) {
-      if (key === 'arrested_house_no') next.arrested_perm_house_no = val;
-      if (key === 'arrested_street') next.arrested_perm_street = val;
-      if (key === 'arrested_colony') next.arrested_perm_colony = val;
-      if (key === 'arrested_city_town_village') next.arrested_perm_city_town_village = val;
-      if (key === 'arrested_tehsil_block_mandal') next.arrested_perm_tehsil_block_mandal = val;
-      if (key === 'arrested_country') next.arrested_perm_country = val;
-      if (key === 'arrested_state') next.arrested_perm_state = val;
-      if (key === 'arrested_district') next.arrested_perm_district = val;
-      if (key === 'arrested_police_station') next.arrested_perm_police_station = val;
-      if (key === 'arrested_pincode') next.arrested_perm_pincode = val;
-      if (key === 'arrested_present_address') next.arrested_perm_address = val;
-    }
-
-    if (key === 'complainant_perm_same' && (val === true || val === 'Yes')) {
-      next.complainant_perm_house_no = next.complainant_house_no || '';
-      next.complainant_perm_street = next.complainant_street || '';
-      next.complainant_perm_colony = next.complainant_colony || '';
-      next.complainant_perm_city_town_village = next.complainant_city_town_village || '';
-      next.complainant_perm_tehsil_block_mandal = next.complainant_tehsil_block_mandal || '';
-      next.complainant_perm_country = next.complainant_country || 'Indian';
-      next.complainant_perm_state = next.complainant_state || '';
-      next.complainant_perm_district = next.complainant_district || '';
-      next.complainant_perm_police_station = next.complainant_police_station || '';
-      next.complainant_perm_pincode = next.complainant_pincode || '';
-    }
-
-    if (next.complainant_perm_same === true || next.complainant_perm_same === 'Yes') {
-      if (key === 'complainant_house_no') next.complainant_perm_house_no = val;
-      if (key === 'complainant_street') next.complainant_perm_street = val;
-      if (key === 'complainant_colony') next.complainant_perm_colony = val;
-      if (key === 'complainant_city_town_village') next.complainant_perm_city_town_village = val;
-      if (key === 'complainant_tehsil_block_mandal') next.complainant_perm_tehsil_block_mandal = val;
-      if (key === 'complainant_country') next.complainant_perm_country = val;
-      if (key === 'complainant_state') next.complainant_perm_state = val;
-      if (key === 'complainant_district') next.complainant_perm_district = val;
-      if (key === 'complainant_police_station') next.complainant_perm_police_station = val;
-      if (key === 'complainant_pincode') next.complainant_perm_pincode = val;
-    }
+    syncPermAddress(next, 'arrested', key, val, [{ from: 'present_address', to: 'address' }]);
+    syncPermAddress(next, 'complainant', key, val);
 
     // Auto-set mp_known based on missing_type (Missing -> Known/Identified=true, Found -> Unknown=false)
     if (key === 'missing_type') {

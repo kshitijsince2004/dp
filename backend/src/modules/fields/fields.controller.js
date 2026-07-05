@@ -215,7 +215,7 @@ export const getFieldsForForm = async (req, res) => {
     // precomputed here (see field_key dispatch below) — its correct option set depends on a live
     // sibling selection among 10 categories, which cannot be flattened into one static list.
     const propertyCategoryOptions = (await fieldsService.getPropertyCategories())
-      .map(c => ({ value: c.parent_cd, label_en: c.code_type, label_hi: c.code_type }))
+      .map(c => ({ value: String(c.parent_cd), label_en: c.code_type, label_hi: c.code_type }))
       .sort((a, b) => a.label_en.localeCompare(b.label_en));
 
     // Filter by applicable_record_types (JS-side, handles both native array and JSON-string storage)

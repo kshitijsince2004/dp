@@ -19,7 +19,7 @@ export default function TimeField({ id, disabled, value, onChange, status, place
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder={placeholder || 'hr:mm AM/PM'}
+        placeholder={placeholder || 'HH:MM AM/PM'}
         className={`${base} ${status === 'error' ? err : ''}`}
       />
     </div>

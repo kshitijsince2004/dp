@@ -64,12 +64,18 @@ export default function MyRecords() {
   const draftCount = allRecords.filter(r => r.current_status === 'DRAFT').length;
 
   const [filters, setFilters] = useState({
-    type: 'CASE',
+    type: 'ALL',
     status: 'ALL',
     dateFrom: null,
     dateTo: null,
     search: ''
   });
+
+  // Reset selectedIds when filters change
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [filters]);
+
 
   // Fetch all records
   const { data: records = [], isLoading } = useQuery({
@@ -131,6 +137,65 @@ export default function MyRecords() {
     if (!aIsSentBack && bIsSentBack) return 1;
     return 0;
   });
+
+  const submittableRecords = filteredRecords.filter(r => {
+    const isSentBack = r.current_status === 'SENT_BACK_HC' || r.current_status === 'SENT_BACK';
+    return r.current_status === 'DRAFT' || isSentBack;
+  });
+
+  const isAllSelected = submittableRecords.length > 0 && submittableRecords.every(r => selectedIds.includes(r.id));
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(submittableRecords.map(r => r.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (id, checked) => {
+    if (checked) {
+      setSelectedIds(prev => [...prev, id]);
+    } else {
+      setSelectedIds(prev => prev.filter(item => item !== id));
+    }
+  };
+
+  const handleBulkSubmit = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(t('actions.confirmBulkSubmit', `Confirm submission of all ${selectedIds.length} selected records to the SHO? This locks the records.`))) {
+      return;
+    }
+    
+    setBulkLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+    
+    const results = await Promise.allSettled(
+      selectedIds.map(id => api.post(`/records/${id}/submit`))
+    );
+    
+    results.forEach(res => {
+      if (res.status === 'fulfilled') {
+        successCount++;
+      } else {
+        failCount++;
+        console.error('Failed to submit record:', res.reason);
+      }
+    });
+    
+    if (successCount > 0) {
+      toast.success(t('actions.bulkSubmitSuccess', `${successCount} records submitted successfully!`));
+    }
+    if (failCount > 0) {
+      toast.error(t('actions.bulkSubmitFail', `Failed to submit ${failCount} records.`));
+    }
+    
+    setSelectedIds([]);
+    setBulkLoading(false);
+    queryClient.invalidateQueries({ queryKey: ['records'] });
+    queryClient.invalidateQueries({ queryKey: ['all-records-stats'] });
+  };
 
   // Render Status Badge
   const renderStatusBadge = (status) => {
@@ -237,6 +302,40 @@ export default function MyRecords() {
           />
         </motion.div>
 
+        {/* Bulk Actions Banner */}
+        {selectedIds.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md"
+          >
+            <div className="flex items-center gap-2 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+              <span className="bg-emerald-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-[10px] tabular-nums font-extrabold shadow-sm">
+                {selectedIds.length}
+              </span>
+              <span>{t('actions.selectedRecords', 'Records Selected')}</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleBulkSubmit}
+              disabled={bulkLoading}
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 hover:shadow-lg active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:bg-slate-300 disabled:cursor-not-allowed uppercase tracking-wider border-none"
+            >
+              {bulkLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
+                  <span>{t('actions.submitting', 'Submitting...')}</span>
+                </>
+              ) : (
+                <>
+                  <Send size={13} />
+                  <span>{t('actions.sendAllToSHO', 'Send Selected to SHO')}</span>
+                </>
+              )}
+            </button>
+          </motion.div>
+        )}
+
         {/* Records Listing */}
         <div ref={tableRef} style={{ scrollMarginTop: '24px' }}>
           {isLoading ? (
@@ -270,7 +369,16 @@ export default function MyRecords() {
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
                     <tr className="bg-gradient-to-r from-[var(--accent-color-hover)] to-[var(--accent-color)] text-white/80 uppercase font-bold text-xs tracking-wider">
-                      <th className="p-4 pl-6">{t('common.referenceId', 'Ref ID / Number')}</th>
+                      <th className="p-4 pl-6 w-12 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          onChange={handleSelectAll}
+                          disabled={submittableRecords.length === 0}
+                          className="rounded border-slate-300 text-[var(--accent-color)] focus:ring-[var(--accent-color)] h-4 w-4 cursor-pointer"
+                        />
+                      </th>
+                      <th className="p-4">{t('common.referenceId', 'Ref ID / Number')}</th>
                       <th className="p-4">{t('common.recordDate', 'Record Date')}</th>
                       <th className="p-4">{t('common.details', 'Gist')}</th>
                       <th className="p-4">{t('common.status', 'Status')}</th>
@@ -310,7 +418,16 @@ export default function MyRecords() {
                               : 'hover:bg-[var(--accent-glow)]'
                             }`}
                         >
-                          <td className="p-4 pl-6 font-mono font-bold text-[var(--accent-color)] text-sm group-hover:text-[var(--accent-color-hover)] transition-colors">
+                          <td className="p-4 pl-6 text-center w-12">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(rec.id)}
+                              onChange={(e) => handleSelectRow(rec.id, e.target.checked)}
+                              disabled={!isEditable}
+                              className="rounded border-slate-300 text-[var(--accent-color)] focus:ring-[var(--accent-color)] h-4 w-4 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                            />
+                          </td>
+                          <td className="p-4 font-mono font-bold text-[var(--accent-color)] text-sm group-hover:text-[var(--accent-color-hover)] transition-colors">
                             {refId}
                           </td>
                           <td className="p-4 font-mono text-[#4A5568] font-semibold text-xs">
