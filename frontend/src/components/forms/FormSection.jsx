@@ -622,8 +622,6 @@ export default function FormSection({
                         hasError={!!error}
                         lang={lang}
                         values={values}
-                        selectVariant="compact"
-                        selectClassName="w-full h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-text"
                       />
                       {error && (
                         <span className="flex items-center gap-1 text-xs text-red-500 font-medium mt-1">

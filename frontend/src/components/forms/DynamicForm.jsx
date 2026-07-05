@@ -16,10 +16,10 @@ import FormSection from './FormSection.jsx';
 import FormToolbar from './FormToolbar.jsx';
 import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
-import SearchableSelect from './SearchableSelect.jsx';
-import DateInput from '../ui/DateInput.jsx';
-import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
+import DateInput from '../ui/DateInput.jsx';
+import SearchableSelect from './SearchableSelect.jsx';
+import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
 
 // Mock registry for Acts & Sections to be loaded dynamically from the backend in the future
 const ACTS_SECTIONS_REGISTRY = [
@@ -525,15 +525,18 @@ export default function DynamicForm({
                   <label className="text-xs font-bold text-slate-700 tracking-wide">
                     {lang === 'hi' ? 'अधिनियम का नाम *' : 'Act Name *'}
                   </label>
-                  <SearchableSelect
+                  <select
                     disabled={readOnly}
                     value={currentAct}
-                    onChange={(val) => handleChange('act_name', val)}
-                    options={getFieldOptions(allSchemaFields, 'act_name')}
-                    lang={lang}
-                    className="w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all cursor-text"
-                    dropdownClassName="max-h-48 overflow-y-auto border-2 border-slate-200 rounded-xl bg-white shadow-xl text-left"
-                  />
+                    onChange={(e) => handleChange('act_name', e.target.value)}
+                    className="w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer"
+                  >
+                    {getFieldOptions(allSchemaFields, 'act_name').map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Act Name Sub-input if Other Act is selected */}
@@ -628,6 +631,7 @@ export default function DynamicForm({
   };
 
   const renderArrestGeneralInfoStep = () => {
+    const allFields = schema ? schema.reduce((acc, sec) => [...acc, ...(sec.fields || [])], []) : [];
     const renderReadOnlyRow = (label, val, isFirst = false, isLast = false) => (
       <React.Fragment>
         <div className={`bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center min-h-[40px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''} ${isFirst ? 'rounded-tl' : ''}`}>
@@ -757,7 +761,7 @@ export default function DynamicForm({
                 </td>
               </tr>
 
-              {/* Row 2: Type of Information */}
+              {/* Row 2: Type of Information
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
                   {fieldLabel('type_of_information') || 'Type of Information'}
@@ -780,7 +784,7 @@ export default function DynamicForm({
                     }}
                   />
                 </td>
-              </tr>
+              </tr> */}
 
               {/* Row: Case Registration Type */}
               <tr className="border-b border-[#7a9cc5]">
@@ -796,8 +800,6 @@ export default function DynamicForm({
                       readOnly={readOnly}
                       lang={lang}
                       values={values}
-                      selectVariant="compact"
-                      selectClassName="w-64 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-text"
                     />
                   </div>
                 </td>
@@ -2673,9 +2675,9 @@ export default function DynamicForm({
     }
 
     const order = SECTION_KEY_ORDER[recordType];
-    if (!order) return schema;
+    if (!order) return processedSchema;
 
-    const bySection = new Map(schema.map((sec) => [sec.section, sec]));
+    const bySection = new Map(processedSchema.map((sec) => [sec.section, sec]));
 
     return order
       .filter((key) => key !== 'select_fir' || (recordType === 'ARREST' && caseType === 'against_fir'))
@@ -2703,7 +2705,6 @@ export default function DynamicForm({
           title_en: section.title_en,
           title_hi: section.title_hi,
           fields: flattenSectionFields(section),
-          sub_tabs: section.sub_tabs,
           ...REPEATER_SECTION_META[key],
         };
       })
@@ -2722,12 +2723,6 @@ export default function DynamicForm({
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [repeaterState, setRepeaterState] = useState({});
   const [propertyMinorOptionsMap, setPropertyMinorOptionsMap] = useState({});
-  // Arms & Ammunition has a 3-level structure beyond the minor-category dropdown:
-  // arms_categories (= Type of Property, above) -> fire_arms (= Type of Arm, filtered
-  // by the selected category) -> arms_made (= Subtype of Arm, an unlinked flat list).
-  // Both extra levels come back on the SAME lookup response, so we stash them here
-  // keyed by major category rather than issuing separate requests.
-  const [armsLookupMap, setArmsLookupMap] = useState({});
 
 
 
@@ -2764,6 +2759,8 @@ export default function DynamicForm({
   const [arrestedModalErrors, setArrestedModalErrors] = useState({});
   const [arrestedModalTouched, setArrestedModalTouched] = useState({});
 
+  const [armsLookupMap, setArmsLookupMap] = useState({});
+
   useEffect(() => {
     const list = repeaterState?.property_details || [];
     const arrestedList = arrestedTempValues?.property_details || [];
@@ -2798,9 +2795,6 @@ export default function DynamicForm({
                     label_hi: f.fire_arms ?? f.label ?? f,
                     parent_id: f.arms_category_cd ?? f.parent_id
                   })),
-                  // Subtype of Arm — genuinely linked to Type of Arm via arms_type_cd ->
-                  // fire_arms_cd (the "Sub Type of Fire Arm" sheet section), not the
-                  // unlinked arms_made list.
                   fireArmsSubtypes: (data.fireArmsSubtypes || []).map(s => ({
                     value: s.arms_subtype_cd ?? s.value ?? s,
                     label_en: s.arms_subtype ?? s.label ?? s,
@@ -2810,9 +2804,6 @@ export default function DynamicForm({
                 }
               }));
             } else if (data?.type === 'OTHER_PROPERTY') {
-              // "Others" is a 2-level structure like Arms: Type of Property (this dropdown)
-              // = excel_other_property_categories; Property Subtype = excel_other_property_items
-              // filtered by the selected category's parent_cd.
               options = (data.categories || []).map(c => ({
                 value: c.value ?? c.parent_cd ?? c,
                 label_en: c.label ?? c.code_type ?? c,
@@ -3523,34 +3514,20 @@ export default function DynamicForm({
   const getMajorHeadOptions = useCallback(() => {
     return dbMajorHeadOptions;
   }, [dbMajorHeadOptions]);
-  /**
-   * Fetch minor-head options from the schema.
-   * Looks for fields whose field_key matches `*_minor_head` and whose
-   * show_when condition references the currently selected major head value.
-   * Returns the options array from the matching field, or [] if none found.
-   */
+
+  // getMinorHeadOptions: returns live DB-fetched minor heads for the selected major head.
+  // dbMinorHeadOptions is populated by the useEffect below whenever selectedMajorHead changes.
   const getMinorHeadOptions = useCallback(() => {
-    if (!selectedMajorHead) return [];
-    const minorField = allSchemaFields.find(
-      f => f.field_key?.includes('minor_head') && f.show_when?.value === selectedMajorHead
-    );
-    let opts = minorField?.options;
-    if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch { } }
-    if (opts && Array.isArray(opts)) {
-      return opts;
-    }
-    return [];
-  }, [allSchemaFields, selectedMajorHead]);
+    return dbMinorHeadOptions;
+  }, [dbMinorHeadOptions]);
   /**
    * Fetch local-head options from the schema.
    * Looks for the field with field_key === 'local_head'.
    */
   const getLocalHeadOptions = useCallback(() => {
     const localField = allSchemaFields.find(f => f.field_key === 'local_head');
-    let opts = localField?.options;
-    if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch { } }
-    if (opts && Array.isArray(opts)) {
-      return opts;
+    if (localField?.options && Array.isArray(localField.options)) {
+      return localField.options;
     }
     return [];
   }, [allSchemaFields]);
@@ -4449,24 +4426,6 @@ export default function DynamicForm({
   const activeSection = finalSchema[currentStep] || finalSchema[0];
   const isLastStep = currentStep === finalSchema.length - 1;
 
-  // Dispatch by the backend's stable section key (not title_en text or step index) —
-  // a section only gets a bespoke renderer here if its layout can't be reproduced by
-  // the generic <FormSection> fallback (composite rows, repeater modals, etc).
-  // 'select_fir' only ever appears in finalSchema for ARREST+against_fir, so no extra guard needed.
-  const SECTION_RENDERERS = {
-    select_fir: renderFirSearchStep,
-    general_info: renderArrestGeneralInfoStep,
-    acts_and_sections: renderActsAndSectionsStep,
-    occurrence_info: renderOccurrenceStep,
-    complainant_info: renderComplainantStep,
-    victim_info: renderVictimStep,
-    accused_info: renderAccusedStep,
-    arrested_info: renderArrestedStep,
-    intimation_details: renderIntimationStep,
-    property_details: renderPropertyStep,
-    action_taken: renderActionTakenStep,
-  };
-
   const stepHasError = (idx) => {
     const sec = finalSchema[idx];
     return sec?.fields?.some((f) => errors[f.field_key] && touched[f.field_key]);
@@ -4543,8 +4502,29 @@ export default function DynamicForm({
               when navigating between steps. The submit action is wired via
               an explicit onClick on the Submit button in FormToolbar. */}
           <form onSubmit={(e) => e.preventDefault()} noValidate>
-            {SECTION_RENDERERS[activeSection?.section] ? (
-              SECTION_RENDERERS[activeSection.section]()
+            {recordType === 'ARREST' && caseType === 'against_fir' && currentStep === 0 ? (
+              renderFirSearchStep()
+            ) : (recordType === 'ARREST' || recordType === 'UIDB') && activeSection?.title_en === 'General Information' ? (
+              renderArrestGeneralInfoStep()
+            ) : recordType === 'ARREST' && activeSection?.title_en === 'Arrested' ? (
+              renderArrestedStep()
+            ) : recordType === 'ARREST' && activeSection?.title_en === 'Intimation Details' ? (
+              renderIntimationStep()
+            ) : recordType === 'CASE' && currentStep === 0 ? (
+              renderActsAndSectionsStep()
+              ) : recordType === 'CASE' && currentStep === 1 ? ( 
+               renderOccurrenceStep() 
+              ) : recordType === 'CASE' && currentStep === 2 ? ( 
+               renderComplainantStep() 
+              ) : recordType === 'CASE' && currentStep === 4 ? ( 
+               renderVictimStep() 
+              ) : recordType === 'CASE' && currentStep === 5 ? ( 
+               renderAccusedStep() 
+              ) : (recordType === 'CASE' && currentStep === 6) ||
+                  (recordType === 'ARREST' && activeSection?.entity_type === 'property') ? (
+               renderPropertyStep()
+              ) : recordType === 'CASE' && currentStep === 7 ? (
+               renderActionTakenStep() 
             ) : (
               <FormSection
                 section={activeSection}

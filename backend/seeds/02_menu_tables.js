@@ -251,9 +251,6 @@ export async function seed(knex) {
         sectionState = 'FIRE_ARMS';
         return;
       }
-      // "Sub Type of Fire Arm" section (arms_subtype_cd, arms_type_cd, arms_subtype) — without
-      // this transition, its rows fell through to the FIRE_ARMS branch above and got inserted
-      // into excel_fire_arms with a bogus fire_arms_cd/arms_category_cd pairing (e.g. "AK 47").
       if (col1Val === 'arms_subtype_cd') {
         sectionState = 'SUBTYPE';
         return;
