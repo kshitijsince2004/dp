@@ -29,28 +29,20 @@ export default function RadioField({ id, disabled, value, onChange, options = []
       {options.map((opt) => {
         const checked = value === opt.value;
         return (
-          <label
+          <button
             key={opt.value}
-            className={`inline-flex items-center gap-2 cursor-pointer select-none ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            type="button"
+            disabled={disabled}
+            onClick={() => !disabled && onChange(opt.value)}
+            className={`inline-flex items-center gap-2 cursor-pointer select-none bg-transparent border-0 p-0 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <div className="relative flex-shrink-0">
-              <input
-                type="radio"
-                name={id}
-                disabled={disabled}
-                value={opt.value}
-                checked={checked}
-                onChange={() => onChange(opt.value)}
-                className="sr-only"
-              />
-              <div className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                checked ? 'border-[var(--accent-color)]' : 'border-slate-300 bg-white'
-              }`}>
-                {checked && <div className="w-2 h-2 rounded-full bg-[var(--accent-color)]" />}
-              </div>
+            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+              checked ? 'border-[var(--accent-color)]' : 'border-slate-300 bg-white'
+            }`}>
+              {checked && <div className="w-2 h-2 rounded-full bg-[var(--accent-color)]" />}
             </div>
             <span className="text-sm text-slate-700 font-medium">{getLabel(opt)}</span>
-          </label>
+          </button>
         );
       })}
     </div>
