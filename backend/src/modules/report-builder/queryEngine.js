@@ -211,6 +211,22 @@ function applyFilterSpecWarehouse(builder, spec, primaryTable, validatedFieldMap
   });
 }
 
+/**
+ * The warehouse fact tables only have typed columns for fields that existed
+ * when they were built (every entry with a `wh_col`). Newly added granular
+ * group fields (address sub-fields, physical description, etc.) intentionally
+ * have no `wh_col` yet — selecting them in WAREHOUSE mode would silently
+ * drop them from the result. So: if ANY requested/filtered field lacks a
+ * `wh_col`, force this request onto the LIVE (JSONB) path instead, where
+ * every field resolves correctly regardless of warehouse schema coverage.
+ */
+async function resolveEffectiveQueryMode(validatedFieldMap) {
+  const hasJsonbOnlyField = Array.from(validatedFieldMap.values())
+    .some(def => !def.is_db_col && !def.wh_col);
+  if (hasJsonbOnlyField) return 'LIVE';
+  return resolveQueryMode();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Validation
 // ─────────────────────────────────────────────────────────────────────────────
@@ -323,7 +339,7 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
   const { ok, errors, validatedFieldMap } = validateQuerySpec(spec, userRole);
   if (!ok) throw new Error(`Query validation failed: ${errors.join('; ')}`);
 
-  const queryMode = await resolveQueryMode();
+  const queryMode = await resolveEffectiveQueryMode(validatedFieldMap);
 
   if (queryMode === 'WAREHOUSE') {
     const factTable = FACT_TABLE_MAP[table];
@@ -481,7 +497,7 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
   const leftTable  = join_on.left.table;
   const rightTable = join_on.right.table;
 
-  const queryMode = await resolveQueryMode();
+  const queryMode = await resolveEffectiveQueryMode(validatedFieldMap);
 
   if (queryMode === 'WAREHOUSE') {
     // Relational schema query: LEFT Fact JOIN Bridge JOIN RIGHT Fact
