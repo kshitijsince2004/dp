@@ -180,6 +180,19 @@ export default function DynamicForm({
   const navigate = useNavigate();
 
   const { user } = useAuthStore();
+  const getThemeClass = (role) => {
+    switch (role) {
+      case 'HC': return 'theme-hc-page';
+      case 'SHO': return 'theme-sho-page';
+      case 'ACP': return 'theme-acp-page';
+      case 'DISTRICT_OFFICER': return 'theme-district-page';
+      case 'HQ_ANALYST':
+      case 'HQ_ADMIN': return 'theme-hq-page';
+      case 'SYSTEM_ADMIN': return 'theme-admin-page';
+      default: return 'theme-shared-page';
+    }
+  };
+  const themeClass = getThemeClass(user?.role);
   const { schema, isLoading, isError, schemaError } = useFormSchema(recordType, caseType);
   const activeRecordIdRef = useRef(initialValues?.id || null);
 
@@ -893,6 +906,46 @@ export default function DynamicForm({
     const cfg = PERSON_TAB_VARIANTS[prefix];
     const extraRequired = prefix === 'complainant' ? [] : [`${prefix}_first_name`, `${prefix}_gender`];
 
+    const evalCond = (cond, vals) => {
+      if (!cond) return true;
+      try {
+        const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
+        if (parsed.field) {
+          const cv = vals[parsed.field];
+          const checkVals = Array.isArray(parsed.value) ? parsed.value : [parsed.value];
+          return checkVals.some(v => String(v || '').toLowerCase() === String(cv || '').toLowerCase());
+        }
+      } catch { /* ignore */ }
+      return true;
+    };
+
+    const personalKeys = [
+      `${prefix}_npr`,
+      `${prefix}_first_name`,
+      `${prefix}_middle_name`,
+      `${prefix}_last_name`,
+      `${prefix}_nickname`,
+      `${prefix}_gender`,
+      `${prefix}_marital_status`,
+      `${prefix}_mobile`,
+      `${prefix}_mobile_country_code`,
+      `${prefix}_email`,
+      `${prefix}_relation_type`,
+      `${prefix}_relative_name`,
+      `${prefix}_dob`,
+      `${prefix}_age_year`,
+      `${prefix}_age_month`,
+      `${prefix}_birth_year`,
+      cfg.extraContactField
+    ].filter(Boolean);
+
+    const extraFields = allFields.filter(
+      (f) =>
+        (f.section === `${prefix}_personal_info` || f.section === `${prefix}_accused_info` || f.section === `complainant_accused_info`) &&
+        !personalKeys.includes(f.field_key)
+    );
+    const visibleExtraFields = extraFields.filter(f => evalCond(f.show_when, valuesObj));
+
     const field = (key, customLabel = null, isLast = false, forceReadOnly = false, extraRequiredKeys = []) => {
       const f = allFields.find((x) => x.field_key === key);
       if (!f) return null;
@@ -1024,12 +1077,77 @@ export default function DynamicForm({
           </fieldset>
 
         </div>
+
+        {/* Dynamic extra custom/seeded fields grid (renders Scheme of Arrest, Qualification, etc.) */}
+        {visibleExtraFields.length > 0 && (
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
+              {visibleExtraFields
+                .filter((_, idx) => idx % 2 === 0)
+                .map((f, idx, arr) => field(f.field_key, null, idx === arr.length - 1))}
+            </div>
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
+              {visibleExtraFields
+                .filter((_, idx) => idx % 2 === 1)
+                .map((f, idx, arr) => field(f.field_key, null, idx === arr.length - 1))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   function renderPersonAddressSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, showInlineErrors, lang, readOnly) {
     const isSame = valuesObj[`${prefix}_perm_same`] === 'Yes' || valuesObj[`${prefix}_perm_same`] === true;
+
+    const evalCond = (cond, vals) => {
+      if (!cond) return true;
+      try {
+        const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
+        if (parsed.field) {
+          const cv = vals[parsed.field];
+          const checkVals = Array.isArray(parsed.value) ? parsed.value : [parsed.value];
+          return checkVals.some(v => String(v || '').toLowerCase() === String(cv || '').toLowerCase());
+        }
+      } catch { /* ignore */ }
+      return true;
+    };
+
+    const presentKeys = [
+      `${prefix}_house_no`,
+      `${prefix}_street`,
+      `${prefix}_colony`,
+      `${prefix}_city_town_village`,
+      `${prefix}_tehsil_block_mandal`,
+      `${prefix}_country`,
+      `${prefix}_state`,
+      `${prefix}_district`,
+      `${prefix}_police_station`,
+      `${prefix}_pincode`
+    ];
+
+    const permanentKeys = [
+      `${prefix}_perm_house_no`,
+      `${prefix}_perm_street`,
+      `${prefix}_perm_colony`,
+      `${prefix}_perm_city_town_village`,
+      `${prefix}_perm_tehsil_block_mandal`,
+      `${prefix}_perm_country`,
+      `${prefix}_perm_state`,
+      `${prefix}_perm_district`,
+      `${prefix}_perm_police_station`,
+      `${prefix}_perm_pincode`,
+      `${prefix}_perm_same`
+    ];
+
+    const addressSection = `${prefix}_address`;
+    const extraFields = allFields.filter(
+      (f) =>
+        f.section === addressSection &&
+        !presentKeys.includes(f.field_key) &&
+        !permanentKeys.includes(f.field_key)
+    );
+    const visibleExtraFields = extraFields.filter(f => evalCond(f.show_when, valuesObj));
 
     const field = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
       const f = allFields.find((x) => x.field_key === key);
@@ -1127,7 +1245,6 @@ export default function DynamicForm({
             </div>
           </div>
         </fieldset>
-
       </div>
     );
   }
@@ -1224,7 +1341,7 @@ export default function DynamicForm({
 
         {/* ── Victim Modal Dialog ── */}
         {isVictimModalOpen && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className={`${themeClass} fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4`}>
             <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
 
               {/* Modal Header */}
@@ -1354,7 +1471,7 @@ export default function DynamicForm({
 
         {/* ── Accused Modal Dialog ── */}
         {isAccusedModalOpen && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className={`${themeClass} fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4`}>
             <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
 
               {/* Modal Header */}
@@ -1902,7 +2019,7 @@ export default function DynamicForm({
 
         {/* Modal Dialog */}
         {isArrestedModalOpen && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className={`${themeClass} fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4`}>
             <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
@@ -2025,7 +2142,7 @@ export default function DynamicForm({
 
     const bySection = new Map(schema.map((sec) => [sec.section, sec]));
 
-    return order
+    const orderedSections = order
       .filter((key) => key !== 'select_fir' || (recordType === 'ARREST' && caseType === 'against_fir'))
       .map((key) => {
         if (key === 'select_fir') {
@@ -2058,6 +2175,28 @@ export default function DynamicForm({
         };
       })
       .filter(Boolean);
+
+    // Append extra sections that are not in the hardcoded order list and contain custom fields
+    const orderSet = new Set(order);
+    const extraSections = schema
+      .filter((sec) => {
+        if (orderSet.has(sec.section)) return false;
+        const fields = sec.fields || [];
+        const hasCustomField = fields.some(f => f.created_by !== null && f.created_by !== undefined);
+        return hasCustomField;
+      })
+      .map((sec) => ({
+        section: sec.section,
+        title_en: sec.title_en,
+        title_hi: sec.title_hi,
+        fields: flattenSectionFields(sec),
+        sub_tabs: sec.sub_tabs,
+        is_repeater: sec.is_repeater,
+        entity_type: sec.entity_type,
+        person_type: sec.person_type,
+      }));
+
+    return [...orderedSections, ...extraSections];
   }, [schema, recordType, caseType, finalFirOptions]);
 
   const { triggerAutosave, saveImmediately, saveStatus, savedRecord } = useAutosave(

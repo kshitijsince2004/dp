@@ -298,12 +298,15 @@ export default function MyRecords() {
           className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] p-4 transition-shadow duration-200 hover:shadow-lg"
         >
           <FilterPresetsPanel
-            currentFilters={{ recordType: filters.type, status: filters.status }}
+            currentFilters={filters}
             onLoadPreset={(saved) => {
               setFilters(prev => ({
                 ...prev,
-                type: saved.recordType || prev.type,
-                status: saved.status || prev.status
+                type: saved.type !== undefined ? saved.type : prev.type,
+                status: saved.status !== undefined ? saved.status : prev.status,
+                dateFrom: saved.dateFrom !== undefined ? saved.dateFrom : prev.dateFrom,
+                dateTo: saved.dateTo !== undefined ? saved.dateTo : prev.dateTo,
+                search: saved.search !== undefined ? saved.search : prev.search
               }));
             }}
           />

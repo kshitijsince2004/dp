@@ -85,8 +85,8 @@ export default function StationFilters({
           </div>
         )}
 
-        {/* Station Filter (HQ or conditional District) */}
-        {isHq && (
+        {/* Station Filter */}
+        {visibleStations.length > 0 && (
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Police Station</label>
             <select
