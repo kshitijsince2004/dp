@@ -281,7 +281,7 @@ export default function DynamicForm({
 
     const selectedFir = values.selected_fir;
     const currentAct = values.act_name || 'IPC';
-    const currentSections = values.sections || '';
+    const currentSections = values.sections ? String(values.sections) : '';
 
     // Parse sections list
     const sectionsList = currentSections
@@ -2831,6 +2831,59 @@ export default function DynamicForm({
               ...prev,
               [cat]: options
             }));
+
+            // Sync string minor categories in repeaterState to their numeric option IDs
+            setRepeaterState(prev => {
+              const nextState = { ...prev };
+              let changed = false;
+              for (const [sectionKey, sectionData] of Object.entries(nextState)) {
+                if (Array.isArray(sectionData)) {
+                  nextState[sectionKey] = sectionData.map(row => {
+                    let updatedRow = row;
+                    // Handle flat property rows
+                    if (String(row.property_major_category) === String(cat) && row.property_minor_category) {
+                      const val = row.property_minor_category;
+                      const isAlreadyNumeric = /^\d+$/.test(String(val));
+                      if (!isAlreadyNumeric) {
+                        const match = options.find(o => 
+                          String(o.label_en).toLowerCase().trim() === String(val).toLowerCase().trim() ||
+                          String(o.label_hi).toLowerCase().trim() === String(val).toLowerCase().trim()
+                        );
+                        if (match) {
+                          updatedRow = { ...updatedRow, property_minor_category: match.value };
+                          changed = true;
+                        }
+                      }
+                    }
+                    // Handle nested property_details inside person rows (like arrested persons)
+                    if (Array.isArray(updatedRow.property_details)) {
+                      const updatedDetails = updatedRow.property_details.map(pRow => {
+                        if (String(pRow.property_major_category) === String(cat) && pRow.property_minor_category) {
+                          const val = pRow.property_minor_category;
+                          const isAlreadyNumeric = /^\d+$/.test(String(val));
+                          if (!isAlreadyNumeric) {
+                            const match = options.find(o => 
+                              String(o.label_en).toLowerCase().trim() === String(val).toLowerCase().trim() ||
+                              String(o.label_hi).toLowerCase().trim() === String(val).toLowerCase().trim()
+                            );
+                            if (match) {
+                              changed = true;
+                              return { ...pRow, property_minor_category: match.value };
+                            }
+                          }
+                        }
+                        return pRow;
+                      });
+                      if (changed) {
+                        updatedRow = { ...updatedRow, property_details: updatedDetails };
+                      }
+                    }
+                    return updatedRow;
+                  });
+                }
+              }
+              return changed ? nextState : prev;
+            });
           }
         })
         .catch(err => {
@@ -3570,7 +3623,7 @@ export default function DynamicForm({
       return;
     }
 
-    const rawActs = values.act_name.split(',').map((s) => s.trim()).filter(Boolean);
+    const rawActs = String(values.act_name || '').split(',').map((s) => s.trim()).filter(Boolean);
     const acts = [];
     for (const item of rawActs) {
       if (/^\d{4}$/.test(item) && acts.length > 0) {
@@ -3579,7 +3632,7 @@ export default function DynamicForm({
         acts.push(item);
       }
     }
-    const secs = values.sections ? values.sections.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    const secs = values.sections ? String(values.sections).split(',').map((s) => s.trim()).filter(Boolean) : [];
 
     const sectionCodes = [];
     acts.forEach((actLabel, i) => {
@@ -3976,8 +4029,8 @@ export default function DynamicForm({
     setValues(updatedSeed);
 
     // Initialize majorMinorRows from seed major_heads / minor_heads
-    const majorsStr = updatedSeed.major_heads || updatedSeed.major_head || '';
-    const minorsStr = updatedSeed.minor_heads || updatedSeed.minor_head || '';
+    const majorsStr = String(updatedSeed.major_heads || updatedSeed.major_head || '');
+    const minorsStr = String(updatedSeed.minor_heads || updatedSeed.minor_head || '');
     if (majorsStr || minorsStr) {
       const majors = majorsStr.split(',').map(s => s.trim()).filter(Boolean);
       const minors = minorsStr.split(',').map(s => s.trim()).filter(Boolean);

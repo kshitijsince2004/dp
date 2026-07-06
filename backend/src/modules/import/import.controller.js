@@ -880,10 +880,17 @@ const extractRowData = (row, colMap, registryFieldsMap, recordType, coercionFiel
             }
           }
         }
+      } else if (['TEXT', 'TEXTAREA'].includes(field.field_type)) {
+        if (cellVal !== null && cellVal !== undefined) {
+          cellVal = String(cellVal).trim();
+        }
       }
     } else {
       if (key.includes('date')) cellVal = coerceDate(cellVal);
       else if (key.includes('time')) cellVal = coerceTime(cellVal);
+      else if (cellVal !== null && cellVal !== undefined) {
+        cellVal = String(cellVal).trim();
+      }
     }
     rowData[key] = cellVal;
   });

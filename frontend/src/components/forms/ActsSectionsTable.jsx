@@ -41,7 +41,7 @@ export default function ActsSectionsTable({
     setActSearchInput(newAct || '');
   }, [newAct]);
 
-  const rawActs = values.act_name ? values.act_name.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const rawActs = values.act_name ? String(values.act_name).split(',').map((s) => s.trim()).filter(Boolean) : [];
   const acts = [];
   for (const item of rawActs) {
     if (/^\d{4}$/.test(item) && acts.length > 0) {
@@ -50,7 +50,7 @@ export default function ActsSectionsTable({
       acts.push(item);
     }
   }
-  const secs = values.sections ? values.sections.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const secs = values.sections ? String(values.sections).split(',').map((s) => s.trim()).filter(Boolean) : [];
   const maxLen = Math.max(acts.length, secs.length);
 
   // Alphabetically sort the acts registry
