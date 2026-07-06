@@ -50,7 +50,14 @@ export const QueuePage = () => {
     try {
       const params = {};
       if (filters.type && filters.type !== 'ALL') params.type = filters.type;
-      if (filters.status && filters.status !== 'ALL') params.status = filters.status;
+      if (filters.status && filters.status !== 'ALL') {
+        if (filters.status === 'SENT_BACK_HC') {
+          // Both SENT_BACK_HC and SENT_BACK statuses are used to represent returned records in different components
+          params.status = ['SENT_BACK_HC', 'SENT_BACK'];
+        } else {
+          params.status = filters.status;
+        }
+      }
       if (filters.dateFrom) params.dateFrom = filters.dateFrom;
       if (filters.dateTo) params.dateTo = filters.dateTo;
       if (filters.search) params.search = filters.search;

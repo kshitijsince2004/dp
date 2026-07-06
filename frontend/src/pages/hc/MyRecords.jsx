@@ -83,7 +83,14 @@ export default function MyRecords() {
     queryFn: async () => {
       const params = {};
       if (filters.type) params.type = filters.type;
-      if (filters.status) params.status = filters.status;
+      if (filters.status) {
+        if (filters.status === 'SENT_BACK_HC') {
+          // Both SENT_BACK_HC and SENT_BACK statuses are used to represent returned records in different components
+          params.status = ['SENT_BACK_HC', 'SENT_BACK'];
+        } else {
+          params.status = filters.status;
+        }
+      }
       if (filters.dateFrom) params.dateFrom = filters.dateFrom;
       if (filters.dateTo) params.dateTo = filters.dateTo;
       if (filters.search) params.search = filters.search;

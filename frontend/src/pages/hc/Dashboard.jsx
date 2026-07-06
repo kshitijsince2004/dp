@@ -10,6 +10,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  AreaChart,
+  Area,
 } from "recharts";
 import api from "../../utils/api.js";
 
@@ -121,18 +123,18 @@ export default function PSDashboard() {
   }
 
   return (
-    <div className="min-h-screen theme-hc-page page-bg px-8 py-8">
+    <div className="min-h-screen theme-hc-page page-bg px-5 py-4">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#0A1628]">Dashboard</h1>
+        <h1 className="text-xl font-bold text-[#0A1628]">Dashboard</h1>
 
-        <div className="flex items-center gap-1 rounded-xl bg-[#F3F4F6] p-1">
+        <div className="flex items-center gap-1 rounded-xl bg-[#F3F4F6] p-0.5">
           {PERIODS.map((period) => (
             <button
               key={period}
               type="button"
               onClick={() => setActivePeriod(period)}
-              className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`rounded-lg px-3.5 py-1 text-xs font-semibold transition-colors ${
                 activePeriod === period
                   ? "bg-white text-[#0A1628] shadow-sm"
                   : "text-[#6B7280] hover:text-[#0A1628]"
@@ -145,39 +147,45 @@ export default function PSDashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="rounded-2xl p-6 shadow-sm border border-slate-100"
+            className="rounded-xl p-4 shadow-sm border border-slate-100/80"
             style={{ backgroundColor: card.bg }}
           >
-            <div className="text-sm font-medium text-[#374151]">{card.label}</div>
-            <div className="mt-3 text-4xl font-bold text-[#0A1628]">{card.value}</div>
-            <div className="mt-3 text-sm text-[#6B7280]">{card.change}</div>
+            <div className="text-xs font-semibold text-[#4B5563]">{card.label}</div>
+            <div className="mt-1 text-2xl font-black text-[#0A1628]">{card.value}</div>
+            <div className="mt-1 text-[11px] text-[#6B7280] font-medium">{card.change}</div>
           </div>
         ))}
       </div>
 
       {/* Arrest chart + Left Out Accused panel */}
-      <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
-        <div className="rounded-2xl p-6 shadow-sm border border-slate-100/50" style={{ backgroundColor: "#F6F3FC" }}>
-          <div className="text-sm font-bold uppercase tracking-wide text-[#0A1628]">ARREST</div>
-          <div className="mt-4 h-[300px] w-full">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
+        <div className="rounded-xl p-4 shadow-sm border border-slate-100/50" style={{ backgroundColor: "#F6F3FC" }}>
+          <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">ARREST</div>
+          <div className="mt-2 h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={arrestTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid stroke="#F3F0FB" vertical={false} />
+              <AreaChart data={arrestTrend} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="arrestAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.35}/>
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.02}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#E2E8F0" strokeDasharray="5 5" vertical={false} />
                 <XAxis
                   dataKey="day"
                   stroke="#A0AEC0"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
-                  dy={10}
+                  dy={8}
                 />
                 <YAxis
                   stroke="#A0AEC0"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                   dx={-5}
@@ -187,38 +195,39 @@ export default function PSDashboard() {
                   contentStyle={{
                     backgroundColor: "#ffffff",
                     border: "1px solid #E5E7EB",
-                    borderRadius: "12px",
-                    fontSize: "11px",
+                    borderRadius: "10px",
+                    fontSize: "10px",
                     fontWeight: "bold",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
                   }}
                   formatter={(value) => [value.toLocaleString(), "Arrests"]}
                   labelStyle={{ color: "#6B7280" }}
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="value"
-                  stroke="#6C4FE0"
+                  stroke="#10B981"
                   strokeWidth={2.5}
-                  dot={false}
-                  activeDot={{ r: 6, fill: "#0A1628", stroke: "#E5DDFB", strokeWidth: 8 }}
+                  fillOpacity={1}
+                  fill="url(#arrestAreaGrad)"
+                  activeDot={{ r: 5, fill: "#10B981", stroke: "#A7F3D0", strokeWidth: 3 }}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="rounded-2xl p-6 shadow-sm border border-slate-100/50" style={{ backgroundColor: "#FBE1D6" }}>
-          <div className="text-base font-bold" style={{ color: "#DC5B3E" }}>
+        <div className="rounded-xl p-4 shadow-sm border border-slate-100/50" style={{ backgroundColor: "#FBE1D6" }}>
+          <div className="text-xs font-bold uppercase tracking-wide" style={{ color: "#DC5B3E" }}>
             Left Out Accused
           </div>
-          <div className="mt-5 space-y-5">
+          <div className="mt-3 space-y-3">
             {leftOutAccused.map((accused) => (
-              <div key={accused.name}>
-                <div className="text-sm font-bold" style={{ color: "#DC5B3E" }}>
+              <div key={accused.name} className="border-b border-[#FADBCF]/40 pb-2 last:border-0 last:pb-0">
+                <div className="text-xs font-bold" style={{ color: "#DC5B3E" }}>
                   {accused.name}
                 </div>
-                <div className="mt-0.5 text-sm text-[#4B5563]">{accused.note}</div>
+                <div className="mt-0.5 text-xs text-[#4B5563] font-medium leading-relaxed">{accused.note}</div>
               </div>
             ))}
           </div>
@@ -226,24 +235,24 @@ export default function PSDashboard() {
       </div>
 
       {/* Case Type table + Cases bar chart */}
-      <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1fr]">
-        <div className="rounded-2xl p-6 shadow-sm border border-emerald-200/80" style={{ backgroundColor: "#D8F3E5" }}>
-          <div className="text-base font-bold text-[#0A1628]">Case Type</div>
-          <table className="mt-4 w-full text-sm">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr]">
+        <div className="rounded-xl p-4 shadow-sm border border-emerald-200/80" style={{ backgroundColor: "#D8F3E5" }}>
+          <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">Case Type</div>
+          <table className="mt-2 w-full text-xs">
             <thead>
               <tr className="text-[#9CA3AF]">
-                <th className="pb-3 text-left font-medium">Name</th>
-                <th className="pb-3 text-right font-medium">Case</th>
-                <th className="pb-3 text-right font-medium">Change</th>
+                <th className="pb-2 text-left font-medium">Name</th>
+                <th className="pb-2 text-right font-medium">Case</th>
+                <th className="pb-2 text-right font-medium">Change</th>
               </tr>
             </thead>
             <tbody>
               {caseTypeRows.map((row) => (
-                <tr key={row.name} className="border-t border-[#F3F4F6]">
-                  <td className="py-3 font-semibold text-[#0A1628]">{row.name}</td>
-                  <td className="py-3 text-right text-[#0A1628]">{row.count}</td>
+                <tr key={row.name} className="border-t border-[#F3F4F6]/50">
+                  <td className="py-2 font-semibold text-[#0A1628]">{row.name}</td>
+                  <td className="py-2 text-right text-[#0A1628] font-bold">{row.count}</td>
                   <td
-                    className="py-3 text-right font-medium"
+                    className="py-2 text-right font-bold"
                     style={{ color: row.isUp ? "#059669" : "#DC2626" }}
                   >
                     {row.change}
@@ -254,11 +263,11 @@ export default function PSDashboard() {
           </table>
         </div>
 
-        <div className="rounded-2xl p-6 shadow-sm border border-slate-100/50" style={{ backgroundColor: "#F1ECFB" }}>
-          <div className="text-base font-bold text-[#0A1628]">Cases</div>
-          <div className="mt-4 h-[300px] w-full">
+        <div className="rounded-xl p-4 shadow-sm border border-slate-100/50" style={{ backgroundColor: "#F1ECFB" }}>
+          <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">Cases</div>
+          <div className="mt-2 h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={casesByMonth} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <BarChart data={casesByMonth} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                 <defs>
                   <linearGradient id="casesBarGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.9}/>
@@ -273,14 +282,14 @@ export default function PSDashboard() {
                 <XAxis
                   dataKey="month"
                   stroke="#A0AEC0"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
-                  dy={10}
+                  dy={8}
                 />
                 <YAxis
                   stroke="#A0AEC0"
-                  fontSize={11}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                   dx={-5}
@@ -290,8 +299,8 @@ export default function PSDashboard() {
                   contentStyle={{
                     backgroundColor: "#ffffff",
                     border: "1px solid #E5E7EB",
-                    borderRadius: "12px",
-                    fontSize: "11px",
+                    borderRadius: "10px",
+                    fontSize: "10px",
                     fontWeight: "bold",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
                   }}
@@ -303,7 +312,7 @@ export default function PSDashboard() {
                   dataKey="value"
                   fill="url(#casesBarGrad)"
                   radius={[6, 6, 0, 0]}
-                  maxBarSize={24}
+                  maxBarSize={20}
                   activeBar={{ fill: "url(#casesBarGradHover)", stroke: "#6C4FE0", strokeWidth: 1 }}
                   animationDuration={1200}
                 />
