@@ -306,8 +306,10 @@ const sectionLabelForKey = (key, recordType, isParentSheet) => {
 
   if (key.startsWith('io_')) return 'IO Details';
 
-  if (['date_of_arrest', 'time_of_arrest', 'place_of_arrest', 'arrest_date', 'arrest_place'].includes(key)) {
-    if (recordType === 'ARREST' && isParentSheet) return 'Arrest Details';
+  if (['date_of_arrest', 'time_of_arrest', 'arrest_date', 'arrest_place', 'arrest_street', 'arrest_colony', 'arrest_district', 'arrest_landmark'].includes(key)) {
+    if (['ARREST', 'KALANDRA'].includes(recordType)) {
+      return isParentSheet ? 'Arrest Details' : 'Arrest Detail';
+    }
     if (isParentSheet) return recordType === 'CASE' ? 'General Information' : 'General Info';
     return null;
   }
@@ -1003,6 +1005,13 @@ export class TemplateBuilderService {
       { field_key: 'district', field_type: 'SELECT', section: 'general_info', label_en: 'District', label_hi: 'जिला' },
       { field_key: 'police_station', field_type: 'SELECT', section: 'general_info', label_en: 'Police Station', label_hi: 'थाना' }
     );
+
+    if (recordType === 'ARREST') {
+      typeFields.push(
+        { field_key: 'date_of_arrest', field_type: 'DATE', section: 'arrest_details', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि' },
+        { field_key: 'time_of_arrest', field_type: 'TIME', section: 'arrest_details', label_en: 'Time Of Arrest', label_hi: 'गिरफ्तारी का समय' }
+      );
+    }
 
     // Clean up columns from the base workbook on the fly if they are not in allowedKeys
     workbook.worksheets.forEach(worksheet => {

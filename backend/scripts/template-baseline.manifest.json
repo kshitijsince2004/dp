@@ -1622,14 +1622,6 @@
         },
         {
           "col": 9,
-          "key": "place_of_arrest",
-          "section": "Arrest Details",
-          "label": "Place Of Arrest",
-          "hint": "e.g. Nizamuddin Platform 3",
-          "validation": null
-        },
-        {
-          "col": 10,
           "key": "io_name",
           "section": "IO Details",
           "label": "IO / Officer Name",
@@ -1637,7 +1629,7 @@
           "validation": null
         },
         {
-          "col": 11,
+          "col": 10,
           "key": "io_pis",
           "section": "IO Details",
           "label": "PIS No. of IO",
@@ -1645,7 +1637,7 @@
           "validation": null
         },
         {
-          "col": 12,
+          "col": 11,
           "key": "io_rank",
           "section": "IO Details",
           "label": "IO Rank",
@@ -1658,18 +1650,26 @@
           }
         },
         {
-          "col": 13,
+          "col": 12,
           "key": "io_mobile",
           "section": "IO Details",
           "label": "IO Mobile No.",
           "hint": "IO contact number",
           "validation": null
+        },
+        {
+          "col": 13,
+          "key": null,
+          "section": "IO Details",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
         "B2:F2",
-        "G2:I2",
-        "J2:M2"
+        "G2:H2",
+        "I2:M2"
       ]
     },
     "Act and Sections": {
@@ -1752,6 +1752,67 @@
         },
         {
           "col": 2,
+          "key": "date_of_arrest",
+          "section": "Arrest Detail",
+          "label": "Date Of Arrest",
+          "hint": "dd-mm-yyyy",
+          "validation": null
+        },
+        {
+          "col": 3,
+          "key": "time_of_arrest",
+          "section": "Arrest Detail",
+          "label": "Time Of Arrest",
+          "hint": "HH:MM",
+          "validation": null
+        },
+        {
+          "col": 4,
+          "key": "arrest_place",
+          "section": "Arrest Detail",
+          "label": "House No. of Arrest",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 5,
+          "key": "arrest_street",
+          "section": "Arrest Detail",
+          "label": "Street of Arrest",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 6,
+          "key": "arrest_colony",
+          "section": "Arrest Detail",
+          "label": "Colony of Arrest",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 7,
+          "key": "arrest_district",
+          "section": "Arrest Detail",
+          "label": "District of Arrest",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "OPT_DISTRICT"
+            ]
+          }
+        },
+        {
+          "col": 8,
+          "key": "arrest_landmark",
+          "section": "Arrest Detail",
+          "label": "Landmark of Arrest",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 9,
           "key": "arrested_first_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person First Name",
@@ -1759,7 +1820,7 @@
           "validation": null
         },
         {
-          "col": 3,
+          "col": 10,
           "key": "arrested_middle_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Middle Name",
@@ -1767,7 +1828,7 @@
           "validation": null
         },
         {
-          "col": 4,
+          "col": 11,
           "key": "arrested_last_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Last Name",
@@ -1775,7 +1836,7 @@
           "validation": null
         },
         {
-          "col": 5,
+          "col": 12,
           "key": "arrested_nickname",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Nickname(s)",
@@ -1783,7 +1844,7 @@
           "validation": null
         },
         {
-          "col": 6,
+          "col": 13,
           "key": "arrested_gender",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Gender",
@@ -1796,7 +1857,7 @@
           }
         },
         {
-          "col": 7,
+          "col": 14,
           "key": "arrested_marital_status",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Marital Status",
@@ -1809,7 +1870,7 @@
           }
         },
         {
-          "col": 8,
+          "col": 15,
           "key": "arrested_relation_type",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Relation Type",
@@ -1822,7 +1883,7 @@
           }
         },
         {
-          "col": 9,
+          "col": 16,
           "key": "arrested_relative_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Relative Name",
@@ -1830,7 +1891,7 @@
           "validation": null
         },
         {
-          "col": 10,
+          "col": 17,
           "key": "arrested_mobile_country_code",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Mobile Country Code",
@@ -1838,7 +1899,7 @@
           "validation": null
         },
         {
-          "col": 11,
+          "col": 18,
           "key": "arrested_mobile",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Mobile No.",
@@ -1846,7 +1907,7 @@
           "validation": null
         },
         {
-          "col": 12,
+          "col": 19,
           "key": "arrested_qualification",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Qualification",
@@ -1859,7 +1920,7 @@
           }
         },
         {
-          "col": 13,
+          "col": 20,
           "key": "arrested_age_year",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Age (Years)",
@@ -1867,7 +1928,7 @@
           "validation": null
         },
         {
-          "col": 14,
+          "col": 21,
           "key": "arrested_house_no",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person House No.",
@@ -1875,7 +1936,7 @@
           "validation": null
         },
         {
-          "col": 15,
+          "col": 22,
           "key": "arrested_street",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Street",
@@ -1883,7 +1944,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 23,
           "key": "arrested_colony",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Colony",
@@ -1891,7 +1952,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 24,
           "key": "arrested_city_town_village",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Village / City / Town",
@@ -1899,7 +1960,7 @@
           "validation": null
         },
         {
-          "col": 18,
+          "col": 25,
           "key": "arrested_tehsil_block_mandal",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Tehsil / Block / Mandal",
@@ -1907,7 +1968,7 @@
           "validation": null
         },
         {
-          "col": 19,
+          "col": 26,
           "key": "arrested_country",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Nationality",
@@ -1920,7 +1981,7 @@
           }
         },
         {
-          "col": 20,
+          "col": 27,
           "key": "arrested_state",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person State",
@@ -1933,7 +1994,7 @@
           }
         },
         {
-          "col": 21,
+          "col": 28,
           "key": "arrested_district",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person District",
@@ -1946,7 +2007,7 @@
           }
         },
         {
-          "col": 22,
+          "col": 29,
           "key": "arrested_police_station",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Police Station",
@@ -1959,7 +2020,7 @@
           }
         },
         {
-          "col": 23,
+          "col": 30,
           "key": "arrested_pincode",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Pin Code",
@@ -1967,7 +2028,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 31,
           "key": "arrested_perm_same",
           "section": "Arrested Person Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -1980,7 +2041,7 @@
           }
         },
         {
-          "col": 25,
+          "col": 32,
           "key": "arrested_perm_house_no",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent House No.",
@@ -1988,7 +2049,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 33,
           "key": "arrested_perm_street",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Street",
@@ -1996,7 +2057,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 34,
           "key": "arrested_perm_colony",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Colony",
@@ -2004,7 +2065,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 35,
           "key": "arrested_perm_city_town_village",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Village / City / Town",
@@ -2012,7 +2073,7 @@
           "validation": null
         },
         {
-          "col": 29,
+          "col": 36,
           "key": "arrested_perm_tehsil_block_mandal",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Tehsil / Block / Mandal",
@@ -2020,7 +2081,7 @@
           "validation": null
         },
         {
-          "col": 30,
+          "col": 37,
           "key": "arrested_perm_country",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Nationality",
@@ -2033,7 +2094,7 @@
           }
         },
         {
-          "col": 31,
+          "col": 38,
           "key": "arrested_perm_state",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent State",
@@ -2046,7 +2107,7 @@
           }
         },
         {
-          "col": 32,
+          "col": 39,
           "key": "arrested_perm_district",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent District",
@@ -2059,7 +2120,7 @@
           }
         },
         {
-          "col": 33,
+          "col": 40,
           "key": "arrested_perm_police_station",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Police Station",
@@ -2072,7 +2133,7 @@
           }
         },
         {
-          "col": 34,
+          "col": 41,
           "key": "arrested_perm_pincode",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Pin Code",
@@ -2080,7 +2141,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 42,
           "key": "nafis_prepared",
           "section": "Particular Details",
           "label": "NAFIS Prepared",
@@ -2093,7 +2154,7 @@
           }
         },
         {
-          "col": 36,
+          "col": 43,
           "key": "dossier_prepared",
           "section": "Particular Details",
           "label": "Dossier Prepared",
@@ -2106,7 +2167,7 @@
           }
         },
         {
-          "col": 37,
+          "col": 44,
           "key": "prev_involvement",
           "section": "Particular Details",
           "label": "Previous involvement",
@@ -2119,7 +2180,7 @@
           }
         },
         {
-          "col": 38,
+          "col": 45,
           "key": "bad_character",
           "section": "Particular Details",
           "label": "Bad Character (BC)",
@@ -2132,7 +2193,7 @@
           }
         },
         {
-          "col": 39,
+          "col": 46,
           "key": "proclaimed_offender",
           "section": "Particular Details",
           "label": "Proclaimed Offender (PO)",
@@ -2145,7 +2206,7 @@
           }
         },
         {
-          "col": 40,
+          "col": 47,
           "key": "verifying_officer_name",
           "section": "Particular Details",
           "label": "Arresting Officer Name",
@@ -2153,7 +2214,7 @@
           "validation": null
         },
         {
-          "col": 41,
+          "col": 48,
           "key": "verifying_officer_rank",
           "section": "Particular Details",
           "label": "Arresting Officer Rank",
@@ -2161,7 +2222,7 @@
           "validation": null
         },
         {
-          "col": 42,
+          "col": 49,
           "key": "status",
           "section": "Particular Details",
           "label": "Custody status",
@@ -2174,7 +2235,7 @@
           }
         },
         {
-          "col": 43,
+          "col": 50,
           "key": "scheme_of_arrest",
           "section": "Particular Details",
           "label": "Scheme of arrest",
@@ -2185,67 +2246,6 @@
               "\"Integrated Pride,Group Patrolling,Anti-snatching,By Prahari,By Eyes & Ears Scheme Members\""
             ]
           }
-        },
-        {
-          "col": 44,
-          "key": "arrest_street",
-          "section": "Particular Details",
-          "label": "Street of Arrest",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 45,
-          "key": "arrest_colony",
-          "section": "Particular Details",
-          "label": "Colony of Arrest",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 46,
-          "key": "arrest_district",
-          "section": "Particular Details",
-          "label": "District of Arrest",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "OPT_DISTRICT"
-            ]
-          }
-        },
-        {
-          "col": 47,
-          "key": "arrest_landmark",
-          "section": "Particular Details",
-          "label": "Landmark of Arrest",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 48,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 49,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 50,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
         },
         {
           "col": 51,
@@ -2262,13 +2262,38 @@
           "label": null,
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 53,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 54,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 55,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
-        "AI2:AZ2",
-        "B2:M2",
-        "N2:X2",
-        "Y2:AH2"
+        "AF2:AO2",
+        "AP2:BC2",
+        "B2:H2",
+        "I2:T2",
+        "U2:AE2"
       ]
     },
     "Property Details": {
@@ -3444,30 +3469,6 @@
         },
         {
           "col": 8,
-          "key": "date_of_arrest",
-          "section": "General Information",
-          "label": "Date Of Arrest",
-          "hint": "dd-mm-yyyy",
-          "validation": null
-        },
-        {
-          "col": 9,
-          "key": "time_of_arrest",
-          "section": "General Information",
-          "label": "Time Of Arrest",
-          "hint": "HH:MM",
-          "validation": null
-        },
-        {
-          "col": 10,
-          "key": "place_of_arrest",
-          "section": "General Information",
-          "label": "Place Of Arrest",
-          "hint": "e.g. Nizamuddin Platform 3",
-          "validation": null
-        },
-        {
-          "col": 11,
           "key": "io_name",
           "section": "Investigating Officer Details",
           "label": "IO / Officer Name",
@@ -3475,7 +3476,7 @@
           "validation": null
         },
         {
-          "col": 12,
+          "col": 9,
           "key": "io_pis",
           "section": "Investigating Officer Details",
           "label": "PIS No. of IO",
@@ -3483,7 +3484,7 @@
           "validation": null
         },
         {
-          "col": 13,
+          "col": 10,
           "key": "io_rank",
           "section": "Investigating Officer Details",
           "label": "IO Rank",
@@ -3496,55 +3497,17 @@
           }
         },
         {
-          "col": 14,
+          "col": 11,
           "key": "io_mobile",
           "section": "Investigating Officer Details",
           "label": "IO Mobile No.",
           "hint": "IO contact number",
           "validation": null
-        },
-        {
-          "col": 15,
-          "key": "arrest_street",
-          "section": "General Information",
-          "label": "Street of Arrest",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 16,
-          "key": "arrest_colony",
-          "section": "General Information",
-          "label": "Colony of Arrest",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 17,
-          "key": "arrest_district",
-          "section": "General Information",
-          "label": "District of Arrest",
-          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "'_Lookups'!$D$2:$D$16"
-            ]
-          }
-        },
-        {
-          "col": 18,
-          "key": "arrest_landmark",
-          "section": "General Information",
-          "label": "Landmark of Arrest",
-          "hint": "text",
-          "validation": null
         }
       ],
       "row2Merges": [
-        "A2:J2",
-        "K2:N2",
-        "O2:R2"
+        "A2:G2",
+        "H2:K2"
       ]
     },
     "Act and Sections": {
@@ -3627,7 +3590,7 @@
         {
           "col": 2,
           "key": "date_of_arrest",
-          "section": "General Information",
+          "section": "Arrest Detail",
           "label": "Date Of Arrest",
           "hint": "dd-mm-yyyy",
           "validation": null
@@ -3635,13 +3598,58 @@
         {
           "col": 3,
           "key": "time_of_arrest",
-          "section": "General Information",
+          "section": "Arrest Detail",
           "label": "Time Of Arrest",
           "hint": "HH:MM",
           "validation": null
         },
         {
           "col": 4,
+          "key": "arrest_place",
+          "section": "Arrest Detail",
+          "label": "House No. of Arrest",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 5,
+          "key": "arrest_street",
+          "section": "Arrest Detail",
+          "label": "Street of Arrest",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 6,
+          "key": "arrest_colony",
+          "section": "Arrest Detail",
+          "label": "Colony of Arrest",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 7,
+          "key": "arrest_district",
+          "section": "Arrest Detail",
+          "label": "District of Arrest",
+          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "'_Lookups'!$E$2:$E$16"
+            ]
+          }
+        },
+        {
+          "col": 8,
+          "key": "arrest_landmark",
+          "section": "Arrest Detail",
+          "label": "Landmark of Arrest",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 9,
           "key": "arrested_first_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person First Name",
@@ -3649,7 +3657,7 @@
           "validation": null
         },
         {
-          "col": 5,
+          "col": 10,
           "key": "arrested_middle_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Middle Name",
@@ -3657,7 +3665,7 @@
           "validation": null
         },
         {
-          "col": 6,
+          "col": 11,
           "key": "arrested_last_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Last Name",
@@ -3665,7 +3673,7 @@
           "validation": null
         },
         {
-          "col": 7,
+          "col": 12,
           "key": "arrested_nickname",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Nickname(s)",
@@ -3673,7 +3681,7 @@
           "validation": null
         },
         {
-          "col": 8,
+          "col": 13,
           "key": "arrested_gender",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Gender",
@@ -3686,7 +3694,7 @@
           }
         },
         {
-          "col": 9,
+          "col": 14,
           "key": "arrested_marital_status",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Marital Status",
@@ -3699,7 +3707,7 @@
           }
         },
         {
-          "col": 10,
+          "col": 15,
           "key": "arrested_relation_type",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Relation Type",
@@ -3712,7 +3720,7 @@
           }
         },
         {
-          "col": 11,
+          "col": 16,
           "key": "arrested_relative_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Relative Name",
@@ -3720,7 +3728,7 @@
           "validation": null
         },
         {
-          "col": 12,
+          "col": 17,
           "key": "arrested_mobile_country_code",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Mobile Country Code",
@@ -3728,7 +3736,7 @@
           "validation": null
         },
         {
-          "col": 13,
+          "col": 18,
           "key": "arrested_mobile",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Mobile No.",
@@ -3736,7 +3744,7 @@
           "validation": null
         },
         {
-          "col": 14,
+          "col": 19,
           "key": "arrested_qualification",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Qualification",
@@ -3749,7 +3757,7 @@
           }
         },
         {
-          "col": 15,
+          "col": 20,
           "key": "arrested_age_year",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Age (Years)",
@@ -3757,7 +3765,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 21,
           "key": "arrested_house_no",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person House No.",
@@ -3765,7 +3773,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 22,
           "key": "arrested_street",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Street",
@@ -3773,7 +3781,7 @@
           "validation": null
         },
         {
-          "col": 18,
+          "col": 23,
           "key": "arrested_colony",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Colony",
@@ -3781,7 +3789,7 @@
           "validation": null
         },
         {
-          "col": 19,
+          "col": 24,
           "key": "arrested_city_town_village",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Village / City / Town",
@@ -3789,7 +3797,7 @@
           "validation": null
         },
         {
-          "col": 20,
+          "col": 25,
           "key": "arrested_tehsil_block_mandal",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Tehsil / Block / Mandal",
@@ -3797,7 +3805,7 @@
           "validation": null
         },
         {
-          "col": 21,
+          "col": 26,
           "key": "arrested_country",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Nationality",
@@ -3810,7 +3818,7 @@
           }
         },
         {
-          "col": 22,
+          "col": 27,
           "key": "arrested_state",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person State",
@@ -3823,7 +3831,7 @@
           }
         },
         {
-          "col": 23,
+          "col": 28,
           "key": "arrested_district",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person District",
@@ -3836,7 +3844,7 @@
           }
         },
         {
-          "col": 24,
+          "col": 29,
           "key": "arrested_police_station",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Police Station",
@@ -3849,7 +3857,7 @@
           }
         },
         {
-          "col": 25,
+          "col": 30,
           "key": "arrested_pincode",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Pin Code",
@@ -3857,7 +3865,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 31,
           "key": "arrested_perm_same",
           "section": "Arrested Person Permanent Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -3870,7 +3878,7 @@
           }
         },
         {
-          "col": 27,
+          "col": 32,
           "key": "arrested_perm_house_no",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent House No.",
@@ -3878,7 +3886,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 33,
           "key": "arrested_perm_street",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Street",
@@ -3886,7 +3894,7 @@
           "validation": null
         },
         {
-          "col": 29,
+          "col": 34,
           "key": "arrested_perm_colony",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Colony",
@@ -3894,7 +3902,7 @@
           "validation": null
         },
         {
-          "col": 30,
+          "col": 35,
           "key": "arrested_perm_city_town_village",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Village / City / Town",
@@ -3902,7 +3910,7 @@
           "validation": null
         },
         {
-          "col": 31,
+          "col": 36,
           "key": "arrested_perm_tehsil_block_mandal",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Tehsil / Block / Mandal",
@@ -3910,7 +3918,7 @@
           "validation": null
         },
         {
-          "col": 32,
+          "col": 37,
           "key": "arrested_perm_country",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Nationality",
@@ -3923,7 +3931,7 @@
           }
         },
         {
-          "col": 33,
+          "col": 38,
           "key": "arrested_perm_state",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent State",
@@ -3936,7 +3944,7 @@
           }
         },
         {
-          "col": 34,
+          "col": 39,
           "key": "arrested_perm_district",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent District",
@@ -3949,7 +3957,7 @@
           }
         },
         {
-          "col": 35,
+          "col": 40,
           "key": "arrested_perm_police_station",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Police Station",
@@ -3962,7 +3970,7 @@
           }
         },
         {
-          "col": 36,
+          "col": 41,
           "key": "arrested_perm_pincode",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Pin Code",
@@ -3970,7 +3978,7 @@
           "validation": null
         },
         {
-          "col": 37,
+          "col": 42,
           "key": "nafis_prepared",
           "section": "Verification & Police Record",
           "label": "NAFIS Prepared",
@@ -3983,7 +3991,7 @@
           }
         },
         {
-          "col": 38,
+          "col": 43,
           "key": "dossier_prepared",
           "section": "Verification & Police Record",
           "label": "Dossier Prepared",
@@ -3996,7 +4004,7 @@
           }
         },
         {
-          "col": 39,
+          "col": 44,
           "key": "prev_involvement",
           "section": "Verification & Police Record",
           "label": "Prev. Involvement (Y/N)",
@@ -4009,7 +4017,7 @@
           }
         },
         {
-          "col": 40,
+          "col": 45,
           "key": "bad_character",
           "section": "Verification & Police Record",
           "label": "Is Bad Character (BC)",
@@ -4022,7 +4030,7 @@
           }
         },
         {
-          "col": 41,
+          "col": 46,
           "key": "proclaimed_offender",
           "section": "Verification & Police Record",
           "label": "Proclaimed Offender (PO)",
@@ -4035,7 +4043,7 @@
           }
         },
         {
-          "col": 42,
+          "col": 47,
           "key": "verifying_officer_name",
           "section": "Verification & Police Record",
           "label": "Arresting Officer Name",
@@ -4043,7 +4051,7 @@
           "validation": null
         },
         {
-          "col": 43,
+          "col": 48,
           "key": "verifying_officer_rank",
           "section": "Verification & Police Record",
           "label": "Arresting Officer Rank",
@@ -4056,7 +4064,7 @@
           }
         },
         {
-          "col": 44,
+          "col": 49,
           "key": "status",
           "section": "Verification & Police Record",
           "label": "Status",
@@ -4069,7 +4077,7 @@
           }
         },
         {
-          "col": 45,
+          "col": 50,
           "key": "scheme_of_arrest",
           "section": "Verification & Police Record",
           "label": "Scheme of Arrest",
@@ -4083,12 +4091,12 @@
         }
       ],
       "row2Merges": [
-        "A2:C2",
-        "AK2:AS2",
-        "D2:K2",
-        "M2:O2",
-        "P2:Y2",
-        "Z2:AJ2"
+        "AE2:AO2",
+        "AP2:AX2",
+        "B2:H2",
+        "I2:P2",
+        "R2:T2",
+        "U2:AD2"
       ]
     }
   }

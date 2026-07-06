@@ -85,7 +85,13 @@ const ARREST_SYNONYMS = {
   "Police Station": "police_station",
   "Date Of Arrest": "date_of_arrest",
   "Time Of Arrest": "time_of_arrest",
-  "Place Of Arrest": "place_of_arrest",
+  //lace Of Arrest": "place_of_arrest",
+  "House No. of Arrest": "arrest_place",
+  "House No. / Name of Arrest": "arrest_place",
+  "Street of Arrest": "arrest_street",
+  "Colony of Arrest": "arrest_colony",
+  "District of Arrest": "arrest_district",
+  "Landmark of Arrest": "arrest_landmark",
   "IO / Officer Name": "io_name",
   "PIS No. of IO": "io_pis",
   "IO Rank": "io_rank",
@@ -1123,6 +1129,9 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
 
   const subheadings = fieldsList.map(f => {
     const key = f.field_key;
+    if (['date_of_arrest', 'time_of_arrest', 'place_of_arrest', 'arrest_date', 'arrest_place', 'arrest_street', 'arrest_colony', 'arrest_district', 'arrest_landmark'].includes(key)) {
+      return lang === 'hi' ? 'गिरफ्तारी का विवरण' : 'Arrest Detail';
+    }
     if (recordType === 'MISSING' || recordType === 'UIDB' || recordType === 'PCR_CALL') {
       const sectionInfo = SECTION_SUBHEADING_MAP[f.section];
       if (sectionInfo) {
@@ -2609,6 +2618,33 @@ export const confirmImportBatch = async (req, res) => {
       const isCaseOrArrest = ['CASE', 'ARREST', 'KALANDRA'].includes(batch.record_type);
       const rowData = isCaseOrArrest ? item.rowData : item;
 
+      // Fallback date_of_arrest, time_of_arrest, place_of_arrest from first person row for ARREST/KALANDRA
+      if (batch.record_type === 'ARREST' || batch.record_type === 'KALANDRA') {
+        const firstPerson = item.persons?.[0];
+        if (firstPerson) {
+          if (!rowData.date_of_arrest && firstPerson.date_of_arrest) {
+            rowData.date_of_arrest = firstPerson.date_of_arrest;
+          }
+          if (!rowData.time_of_arrest && firstPerson.time_of_arrest) {
+            rowData.time_of_arrest = firstPerson.time_of_arrest;
+          }
+          if (!rowData.place_of_arrest) {
+            const parts = [
+              firstPerson.arrest_place,
+              firstPerson.arrest_street,
+              firstPerson.arrest_colony,
+              firstPerson.arrest_district,
+              firstPerson.arrest_landmark
+            ].filter(Boolean);
+            if (parts.length > 0) {
+              rowData.place_of_arrest = parts.join(', ');
+            } else if (firstPerson.place_of_arrest) {
+              rowData.place_of_arrest = firstPerson.place_of_arrest;
+            }
+          }
+        }
+      }
+
       // rowData's own date fields (fir_date, occurrence_date, etc.) are
       // already dd/mm/yyyy via coerceDate; record_date is a native Postgres
       // DATE column and always needs the ISO form.
@@ -2787,7 +2823,7 @@ export const confirmImportBatch = async (req, res) => {
                 pRow.arresting_officer_mobile = rowData.io_mobile;
               }
 
-              // Fallback parent date/time of arrest from the first arrested person row
+              // Fallback parent date/time/place of arrest from the first arrested person row
               if (idx === 0) {
                 if (!rowData.date_of_arrest && pRow.date_of_arrest) {
                   rowData.date_of_arrest = pRow.date_of_arrest;
@@ -2796,6 +2832,22 @@ export const confirmImportBatch = async (req, res) => {
                 if (!rowData.time_of_arrest && pRow.time_of_arrest) {
                   rowData.time_of_arrest = pRow.time_of_arrest;
                   finalData.time_of_arrest = pRow.time_of_arrest;
+                }
+                if (!rowData.place_of_arrest) {
+                  const parts = [
+                    pRow.arrest_place,
+                    pRow.arrest_street,
+                    pRow.arrest_colony,
+                    pRow.arrest_district,
+                    pRow.arrest_landmark
+                  ].filter(Boolean);
+                  if (parts.length > 0) {
+                    rowData.place_of_arrest = parts.join(', ');
+                    finalData.place_of_arrest = parts.join(', ');
+                  } else if (pRow.place_of_arrest) {
+                    rowData.place_of_arrest = pRow.place_of_arrest;
+                    finalData.place_of_arrest = pRow.place_of_arrest;
+                  }
                 }
               }
 

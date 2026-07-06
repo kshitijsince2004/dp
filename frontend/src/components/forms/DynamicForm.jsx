@@ -3525,7 +3525,7 @@ export default function DynamicForm({
    * Looks for the field with field_key === 'local_head'.
    */
   const getLocalHeadOptions = useCallback(() => {
-    const localField = allSchemaFields.find(f => f.field_key === 'local_head');
+    const localField = allSchemaFields.find(f => f.field_key === 'local_head' || f.field_key === 'crime_head');
     if (localField?.options && Array.isArray(localField.options)) {
       return localField.options;
     }
@@ -3695,30 +3695,86 @@ export default function DynamicForm({
           p => p.person_type === section.person_type
         );
         if (matching.length > 0) {
+          const allSchemaFields = schema ? schema.reduce((acc, sec) => {
+            const flat = [...(sec.fields || [])];
+            if (sec.sub_tabs) {
+              sec.sub_tabs.forEach(st => flat.push(...(st.fields || [])));
+            }
+            return [...acc, ...flat];
+          }, []) : [];
+          const majorField = allSchemaFields.find(f => f.field_key === 'property_major_category');
+          const majorOptions = majorField?.options || [];
+
+          const mapMajorCat = (val) => {
+            if (!val || !majorOptions.length) return val;
+            const clean = String(val).trim().toLowerCase();
+            const exact = majorOptions.find(opt => String(opt.value).toLowerCase() === clean);
+            if (exact) return exact.value;
+            const match = majorOptions.find(opt => 
+              String(opt.label_en).toLowerCase() === clean || 
+              String(opt.label_hi).toLowerCase() === clean
+            );
+            return match ? match.value : val;
+          };
+
           initial[section.section] = matching.map((p, pIdx) => {
             const entry = {
               ...(p.data || {}),
               ...p
             };
+            // Sync child row arrest date/time/place fields
+            entry.arrest_date = entry.arrest_date || entry.date_of_arrest || '';
+            entry.date_of_arrest = entry.date_of_arrest || entry.arrest_date || '';
+            entry.arrest_time = entry.arrest_time || entry.time_of_arrest || '';
+            entry.time_of_arrest = entry.time_of_arrest || entry.arrest_time || '';
+            entry.arrest_place = entry.arrest_place || entry.place_of_arrest || '';
+            entry.place_of_arrest = entry.place_of_arrest || entry.arrest_place || '';
+
             if (recordType === 'ARREST' && section.person_type === 'ARRESTED' && pIdx === 0 && (!entry.property_details || entry.property_details.length === 0) && initialProperties.length > 0) {
-              entry.property_details = initialProperties.map(prop => ({
-                property_major_category: prop.major_category || prop.property_major_category || '',
-                property_minor_category: prop.minor_category || prop.property_minor_category || '',
-                property_stolen_recovered: prop.status || prop.property_stolen_recovered || 'Stolen',
-                property_details: prop.details || prop.property_details || '',
-                property_value_inr: prop.property_value_inr || prop.property_value || '',
-                property_value: prop.property_value || prop.property_value_inr || '',
-                ...prop
-              }));
+              entry.property_details = initialProperties.map(prop => {
+                const rawCat = prop.major_category || prop.property_major_category || '';
+                return {
+                  property_major_category: mapMajorCat(rawCat),
+                  property_minor_category: prop.minor_category || prop.property_minor_category || '',
+                  property_stolen_recovered: prop.status || prop.property_stolen_recovered || 'Stolen',
+                  property_details: prop.details || prop.property_details || '',
+                  property_value_inr: prop.property_value_inr || prop.property_value || '',
+                  property_value: prop.property_value || prop.property_value_inr || '',
+                  ...prop
+                };
+              });
             }
             return entry;
           });
         }
       } else if (section.entity_type === 'property') {
         if (initialProperties.length > 0) {
+          const allSchemaFields = schema ? schema.reduce((acc, sec) => {
+            const flat = [...(sec.fields || [])];
+            if (sec.sub_tabs) {
+              sec.sub_tabs.forEach(st => flat.push(...(st.fields || [])));
+            }
+            return [...acc, ...flat];
+          }, []) : [];
+          const majorField = allSchemaFields.find(f => f.field_key === 'property_major_category');
+          const majorOptions = majorField?.options || [];
+
+          const mapMajorCat = (val) => {
+            if (!val || !majorOptions.length) return val;
+            const clean = String(val).trim().toLowerCase();
+            const exact = majorOptions.find(opt => String(opt.value).toLowerCase() === clean);
+            if (exact) return exact.value;
+            const match = majorOptions.find(opt => 
+              String(opt.label_en).toLowerCase() === clean || 
+              String(opt.label_hi).toLowerCase() === clean
+            );
+            return match ? match.value : val;
+          };
+
           initial[section.section] = initialProperties.map(prop => {
+            const rawCat = prop.major_category || prop.property_major_category || '';
             const mapped = {
-              property_major_category: prop.major_category || prop.property_major_category || '',
+              property_major_category: mapMajorCat(rawCat),
               property_minor_category: prop.minor_category || prop.property_minor_category || '',
               property_stolen_recovered: prop.status || prop.property_stolen_recovered || 'Stolen',
               property_details: prop.details || prop.property_details || '',
@@ -3726,7 +3782,7 @@ export default function DynamicForm({
               property_value: prop.property_value || prop.property_value_inr || '',
               ...prop
             };
-            if (prop.major_category) mapped.property_major_category = prop.major_category;
+            if (prop.major_category) mapped.property_major_category = mapMajorCat(prop.major_category);
             if (prop.minor_category) mapped.property_minor_category = prop.minor_category;
             if (prop.status) mapped.property_stolen_recovered = prop.status;
             if (prop.details) mapped.property_details = prop.details;
@@ -3868,6 +3924,22 @@ export default function DynamicForm({
     updatedSeed.complaint_no = updatedSeed.complaint_no || updatedSeed.fir_no || '';
     updatedSeed.fir_no = updatedSeed.fir_no || updatedSeed.complaint_no || '';
 
+    // Synchronize gd_no and linked_fir_dd_no
+    updatedSeed.gd_no = updatedSeed.gd_no || updatedSeed.linked_fir_dd_no || '';
+    updatedSeed.linked_fir_dd_no = updatedSeed.linked_fir_dd_no || updatedSeed.gd_no || '';
+
+    // Synchronize local_head and crime_head
+    updatedSeed.local_head = updatedSeed.local_head || updatedSeed.crime_head || '';
+    updatedSeed.crime_head = updatedSeed.crime_head || updatedSeed.local_head || '';
+
+    // Synchronize parent arrest date/time/place fields
+    updatedSeed.arrest_date = updatedSeed.arrest_date || updatedSeed.date_of_arrest || '';
+    updatedSeed.date_of_arrest = updatedSeed.date_of_arrest || updatedSeed.arrest_date || '';
+    updatedSeed.arrest_time = updatedSeed.arrest_time || updatedSeed.time_of_arrest || '';
+    updatedSeed.time_of_arrest = updatedSeed.time_of_arrest || updatedSeed.arrest_time || '';
+    updatedSeed.arrest_place = updatedSeed.arrest_place || updatedSeed.place_of_arrest || '';
+    updatedSeed.place_of_arrest = updatedSeed.place_of_arrest || updatedSeed.arrest_place || '';
+
     // Formulate gd_date_time if missing but gd_date/gd_time exist
     // Formulate gd_date_time if missing but gd_date/gd_time exist.
     // gd_date is stored as dd/mm/yyyy, so no format conversion is needed here.
@@ -4000,6 +4072,35 @@ export default function DynamicForm({
 
     setValues((prev) => {
       const next = { ...prev, [key]: val };
+
+      // Synchronize gd_no <--> linked_fir_dd_no
+      if (key === 'gd_no') {
+        next.linked_fir_dd_no = val;
+      } else if (key === 'linked_fir_dd_no') {
+        next.gd_no = val;
+      }
+
+      // Synchronize local_head <--> crime_head
+      if (key === 'local_head') {
+        next.crime_head = val;
+      } else if (key === 'crime_head') {
+        next.local_head = val;
+      }
+
+      // Synchronize arrest date/time/place fields
+      if (key === 'date_of_arrest') {
+        next.arrest_date = val;
+      } else if (key === 'arrest_date') {
+        next.date_of_arrest = val;
+      } else if (key === 'time_of_arrest') {
+        next.arrest_time = val;
+      } else if (key === 'arrest_time') {
+        next.time_of_arrest = val;
+      } else if (key === 'place_of_arrest') {
+        next.arrest_place = val;
+      } else if (key === 'arrest_place') {
+        next.place_of_arrest = val;
+      }
 
       // DOB, Age (Years) and Year of Birth interlinking
       if (key.endsWith('_dob')) {
