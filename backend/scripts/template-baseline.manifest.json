@@ -302,7 +302,7 @@
           "key": "complainant_district",
           "section": "Complainant Present Address",
           "label": "Complainant District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -415,7 +415,7 @@
           "key": "complainant_perm_district",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -489,7 +489,7 @@
           "key": "occurrence_district",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -843,7 +843,7 @@
           "key": "victim_district",
           "section": "Victim Present Address",
           "label": "Victim District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -856,7 +856,7 @@
           "key": "victim_police_station",
           "section": "Victim Present Address",
           "label": "Victim Police Station",
-          "hint": "select (192 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
+          "hint": "select (249 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -956,7 +956,7 @@
           "key": "victim_perm_district",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1289,7 +1289,7 @@
           "key": "accused_district",
           "section": "Accused Present Address",
           "label": "Accused District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1402,7 +1402,7 @@
           "key": "accused_perm_district",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1795,7 +1795,7 @@
           "key": "arrest_district",
           "section": "Arrest Detail",
           "label": "District of Arrest",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1998,7 +1998,7 @@
           "key": "arrested_district",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -2111,7 +2111,7 @@
           "key": "arrested_perm_district",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -3463,7 +3463,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$C$2:$C$193"
+              "'_Lookups'!$C$2:$C$250"
             ]
           }
         },
@@ -3852,7 +3852,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$I$2:$I$193"
+              "'_Lookups'!$I$2:$I$250"
             ]
           }
         },
@@ -3965,7 +3965,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$M$2:$M$193"
+              "'_Lookups'!$M$2:$M$250"
             ]
           }
         },
