@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+﻿import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -85,16 +85,11 @@ const SECTION_KEY_ORDER = {
 const REPEATER_SECTION_META = {
   property_details: { is_repeater: true, entity_type: 'property' },
   arrested_info: { is_repeater: true, entity_type: 'person', person_type: 'ARRESTED' },
-  intimation_details: { is_repeater: true, entity_type: 'person', person_type: 'INTIMATED' },
   victim_info: { is_repeater: true, entity_type: 'person', person_type: 'VICTIM' },
   accused_info: { is_repeater: true, entity_type: 'person', person_type: 'ACCUSED' },
 };
 
-// When "Type of Information" is Oral/Court Order, Case Registration Type mirrors it
-// verbatim (outside the normal case_type dropdown options) — business rule, not config.
-const TYPE_OF_INFO_CASE_TYPE_MAP = { Written: 'cctns(manual FIR)', Oral: 'Oral', 'Court Order': 'Court Order' };
-
-/** Sections with sub_tabs (Complainant/Victim/Accused/Arrested/Intimation) don't carry
+/** Sections with sub_tabs (Complainant/Victim/Accused/Arrested) don't carry
  * a flat `fields` array — concatenate every sub-tab's fields for validation purposes. */
 function flattenSectionFields(section) {
   if (!section) return [];
@@ -106,7 +101,7 @@ function flattenSectionFields(section) {
 
 /**
  * Flat list of every field across every schema section, INCLUDING sub_tab-nested
- * fields (Complainant/Victim/Accused/Arrested/Intimation sections carry their fields
+ * fields (Complainant/Victim/Accused/Arrested sections carry their fields
  * under `sub_tabs[].fields`, not a top-level `.fields` array — a plain
  * `sec.fields || []` reduce silently drops all of them).
  */
@@ -154,20 +149,6 @@ const MOCK_FIR_LIST = [
   { fir_no: '88/2026', fir_date: '20/06/2026', complainant_name: 'Manish Sharma', police_station: 'Chanakyapuri', crime_head: 'Delhi Excise Act', sections: 'Sec 33/38 Excise Act' },
   { fir_no: '92/2026', fir_date: '20/06/2026', complainant_name: 'Priyanka Sen', police_station: 'Mandir Marg', crime_head: 'Snatching', sections: 'Sec 356/379 IPC' },
 ];
-
-// Maps UI act display names -> schema show_when values used in major_head fields
-const ACT_NAME_ALIAS = {
-  'Indian Penal Code (IPC)': 'IPC',
-  'IPC': 'IPC',
-  'Arms Act': 'Arms Act',
-  'Delhi Excise Act': 'Delhi Excise Act',
-  'Gambling Act': 'Gambling Act',
-  'NDPS Act': 'NDPS Act',
-  'Motor Vehicles Act': 'Motor Vehicles Act',
-  'Information Technology Act (IT Act)': 'Other Act',
-  'Other Act': 'Other Act',
-};
-
 
 /**
  * DynamicForm
@@ -1046,6 +1027,9 @@ export default function DynamicForm({
                   <div className="flex-1">{rawField(`${prefix}_mobile`)}</div>
                 </div>
               </React.Fragment>
+
+              {field(`${prefix}_qualification`)}
+              {prefix === 'arrested' && field('scheme_of_arrest', null, true)}
 
               {cfg.extraContactField ? (
                 <React.Fragment>
@@ -2338,175 +2322,6 @@ export default function DynamicForm({
   };
 
 
-  const renderIntimationStep = () => {
-    const intimationList = repeaterState?.intimation_details || [];
-    const subTabs = getSectionSubTabs('intimation_details');
-
-    /** Generic field grid for a sub-tab's fields, entirely driven by the backend's field list. */
-    const renderSubTabFieldGrid = (tabId) => {
-      const tab = subTabs.find(t => t.id === tabId);
-      const fields = tab?.fields || [];
-      if (fields.length === 0) return null;
-
-      return (
-        <fieldset className="bg-white">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
-            {lang === 'hi' ? (tab.title_hi || tab.title_en) : tab.title_en}
-          </legend>
-          <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
-            {fields.map((field, idx) => {
-              const key = field.field_key;
-              const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-              const rules = parseRules(field.validation_rules);
-              const isRequired = !!rules.required || key === 'intimated_relative_name';
-              const isLast = idx === fields.length - 1;
-              const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
-              return (
-                <React.Fragment key={key}>
-                  <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                    <span>{label}</span>
-                    {isRequired && <span className="text-red-500 font-bold">*</span>}
-                  </div>
-                  <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                    <FieldRenderer
-                      field={field}
-                      value={intimationTempValues[key]}
-                      onChange={handleIntimationModalChange}
-                      readOnly={isDisabled}
-                      hasError={intimationModalTouched[key] && !!intimationModalErrors[key]}
-                      lang={lang}
-                      values={intimationTempValues}
-                    />
-                    {intimationModalTouched[key] && intimationModalErrors[key] && (
-                      <p className="text-red-500 text-[10px] mt-0.5">{intimationModalErrors[key]}</p>
-                    )}
-                  </div>
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </fieldset>
-      );
-    };
-
-    return (
-      <div className="space-y-4">
-        {/* Header bar with Add Button */}
-        <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
-            {lang === 'hi' ? `सूचना प्राप्तकर्ताओं की सूची (${intimationList.length})` : `Intimation Details List (${intimationList.length})`}
-          </h3>
-          <button
-            type="button"
-            onClick={openIntimationAddModal}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
-          >
-            <span className="text-base leading-none">+</span>
-            {lang === 'hi' ? 'सूचना विवरण जोड़ें' : 'Add Intimation Details'}
-          </button>
-        </div>
-
-        {/* Summary Table */}
-        <div className="border border-[#7a9cc5] rounded overflow-hidden">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="bg-[#0d2a4a] text-white">
-                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
-                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
-                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
-                <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {intimationList.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
-                    {lang === 'hi' ? 'कोई सूचना विवरण नहीं जोड़ा गया। "+ सूचना विवरण जोड़ें" पर क्लिक करें।' : 'No intimation details added yet. Click "+ Add Intimation Details" to add.'}
-                  </td>
-                </tr>
-              ) : (
-                intimationList.map((item, idx) => (
-                  <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
-                    <td className="px-3 py-2 font-medium">{idx + 1}</td>
-                    <td className="px-3 py-2">{getIntimationName(item)}</td>
-                    <td className="px-3 py-2 text-slate-600">{getIntimationAddress(item)}</td>
-                    <td className="px-3 py-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => openIntimationEditModal(idx)}
-                        className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
-                      >
-                        {lang === 'hi' ? 'संपादन' : 'Edit'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteIntimationEntry(idx)}
-                        className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
-                      >
-                        {lang === 'hi' ? 'हटाएं' : 'Delete'}
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Modal Dialog */}
-        {isIntimationModalOpen && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
-                <h2 className="text-sm font-bold uppercase tracking-wide">
-                  {activeIntimationIndex !== null
-                    ? (lang === 'hi' ? 'सूचना विवरण संपादित करें' : 'Edit Intimation Details')
-                    : (lang === 'hi' ? 'सूचना विवरण' : 'Intimation Details')}
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setIsIntimationModalOpen(false)}
-                  className="text-white/80 hover:text-white text-2xl leading-none font-bold cursor-pointer transition-colors"
-                  title="Close"
-                >
-                  ×
-                </button>
-              </div>
-
-              {/* Sub-tabs selectors */}
-              {renderSubTabBar('intimation_details', intimationSubTab, setIntimationSubTab)}
-
-              {/* Scrollable Body — driven entirely by the backend's sub_tabs field list */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                {renderSubTabFieldGrid(intimationSubTab)}
-              </div>
-
-              {/* Footer */}
-              <div className="bg-slate-100 border-t border-slate-200 px-5 py-3 flex justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsIntimationModalOpen(false)}
-                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded cursor-pointer transition-colors"
-                >
-                  {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
-                </button>
-                <button
-                  type="button"
-                  onClick={saveIntimationEntry}
-                  className="px-4 py-2 bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs font-bold rounded cursor-pointer transition-colors shadow-sm"
-                >
-                  {lang === 'hi' ? 'सहेजें' : 'Save'}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-      </div>
-    );
-  };
-
   const renderActionTakenStep = () => {
     const actionTakenFields = finalSchema.find(s => s.section === 'action_taken')?.fields || [];
 
@@ -2838,14 +2653,6 @@ export default function DynamicForm({
         });
     });
   }, [repeaterState?.property_details, arrestedTempValues?.property_details, propertyMinorOptionsMap]);
-
-  // Intimation Details tab state
-  const [isIntimationModalOpen, setIsIntimationModalOpen] = useState(false);
-  const [activeIntimationIndex, setActiveIntimationIndex] = useState(null);
-  const [intimationTempValues, setIntimationTempValues] = useState({});
-  const [intimationSubTab, setIntimationSubTab] = useState('personal'); // 'personal' | 'address'
-  const [intimationModalErrors, setIntimationModalErrors] = useState({});
-  const [intimationModalTouched, setIntimationModalTouched] = useState({});
 
   // Autosave repeaters on change
   const isFirstRender = React.useRef(true);
@@ -3340,110 +3147,6 @@ export default function DynamicForm({
 
     setRepeaterState(prev => ({ ...prev, arrested_info: list }));
     setIsArrestedModalOpen(false);
-  };
-
-  const getIntimationName = (item) => {
-    return item?.intimated_relative_name || '—';
-  };
-
-  const getIntimationAddress = (item) => {
-    const parts = [
-      item?.intimation_house_no,
-      item?.intimation_street,
-      item?.intimation_colony,
-      item?.intimation_city_town_village,
-      item?.intimation_district,
-      item?.intimation_state
-    ].filter(Boolean);
-    return parts.join(', ') || '—';
-  };
-
-  const openIntimationAddModal = () => {
-    setActiveIntimationIndex(null);
-    setIntimationTempValues({});
-    setIntimationModalErrors({});
-    setIntimationModalTouched({});
-    setIntimationSubTab('personal');
-    setIsIntimationModalOpen(true);
-  };
-
-  const openIntimationEditModal = (index) => {
-    const list = repeaterState.intimation_details || [];
-    setActiveIntimationIndex(index);
-    setIntimationTempValues(list[index] || {});
-    setIntimationModalErrors({});
-    setIntimationModalTouched({});
-    setIntimationSubTab('personal');
-    setIsIntimationModalOpen(true);
-  };
-
-  const deleteIntimationEntry = (index) => {
-    const list = repeaterState.intimation_details || [];
-    const nextList = list.filter((_, idx) => idx !== index);
-    setRepeaterState(prev => ({ ...prev, intimation_details: nextList }));
-  };
-
-  const handleIntimationModalChange = (key, val) => {
-    setIntimationTempValues(prev => {
-      const next = { ...prev, [key]: val };
-      if (intimationModalErrors[key]) {
-        setIntimationModalErrors(e => { const n = { ...e }; delete n[key]; return n; });
-      }
-      return next;
-    });
-  };
-
-  const saveIntimationEntry = () => {
-    const intimationFields = allSchemaFields.filter(f => f.field_key?.startsWith('intimation_') || f.field_key?.startsWith('intimated_') || f.section === 'intimation_details');
-    const errs = {};
-    const touchedFields = {};
-
-    intimationFields.forEach(f => {
-      if (f.show_when) {
-        try {
-          const cond = typeof f.show_when === 'string' ? JSON.parse(f.show_when) : f.show_when;
-          if (cond && cond.field) {
-            const currentValue = String(intimationTempValues[cond.field] || '').toLowerCase();
-            const allowed = Array.isArray(cond.value)
-              ? cond.value.map(v => String(v).toLowerCase())
-              : [String(cond.value || '').toLowerCase()];
-            if (!allowed.includes(currentValue)) return;
-          }
-        } catch (e) { }
-      }
-
-      const rules = parseRules(f.validation_rules);
-      if (rules.required) {
-        const val = intimationTempValues[f.field_key];
-        const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
-        if (isEmpty) {
-          const label = lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en;
-          errs[f.field_key] = lang === 'hi' ? `${label} आवश्यक है` : `${label} is required`;
-        }
-      }
-    });
-
-    if (!intimationTempValues.intimated_relative_name) {
-      errs.intimated_relative_name = lang === 'hi' ? 'रिश्तेदार का नाम आवश्यक है' : 'Relative Name is required';
-    }
-
-    if (Object.keys(errs).length > 0) {
-      setIntimationModalErrors(errs);
-      intimationFields.forEach(f => { touchedFields[f.field_key] = true; });
-      setIntimationModalTouched(touchedFields);
-      toast.error(lang === 'hi' ? 'कृपया सभी आवश्यक फ़ील्ड भरें।' : 'Please fill all required fields.');
-      return;
-    }
-
-    const list = [...(repeaterState.intimation_details || [])];
-    if (activeIntimationIndex !== null) {
-      list[activeIntimationIndex] = intimationTempValues;
-    } else {
-      list.push(intimationTempValues);
-    }
-
-    setRepeaterState(prev => ({ ...prev, intimation_details: list }));
-    setIsIntimationModalOpen(false);
   };
 
   const saveVictimEntry = () => {
@@ -4633,8 +4336,6 @@ export default function DynamicForm({
               renderArrestGeneralInfoStep()
             ) : recordType === 'ARREST' && activeSection?.title_en === 'Arrested' ? (
               renderArrestedStep()
-            ) : recordType === 'ARREST' && activeSection?.title_en === 'Intimation Details' ? (
-              renderIntimationStep()
             ) : recordType === 'CASE' && currentStep === 0 ? (
               renderActsAndSectionsStep()
               ) : recordType === 'CASE' && currentStep === 1 ? ( 
