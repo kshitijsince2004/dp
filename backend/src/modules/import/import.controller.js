@@ -263,6 +263,34 @@ const fillAddressFields = (rowData, prefix) => {
   }
 };
 
+const syncPermanentAddress = (rowData, prefix) => {
+  const isSame = rowData[`${prefix}_perm_same`] === 'Yes' || rowData[`${prefix}_perm_same`] === true;
+  if (!isSame) return;
+
+  const addrFields = [
+    'house_no',
+    'street',
+    'colony',
+    'city_town_village',
+    'tehsil_block_mandal',
+    'district',
+    'police_station',
+    'state',
+    'pincode',
+    'country'
+  ];
+
+  for (const field of addrFields) {
+    const presentKey = `${prefix}_${field}`;
+    const permKey = `${prefix}_perm_${field}`;
+    if (rowData[presentKey] !== undefined && rowData[presentKey] !== null && rowData[presentKey] !== '') {
+      if (rowData[permKey] === undefined || rowData[permKey] === null || rowData[permKey] === '') {
+        rowData[permKey] = rowData[presentKey];
+      }
+    }
+  }
+};
+
 const parseActAndSection = (raw) => {
   if (!raw) return { section: null, act: null };
   const clean = String(raw).trim();
@@ -886,12 +914,17 @@ const extractRowData = (row, colMap, registryFieldsMap, recordType, coercionFiel
     fillAddressFields(rowData, 'complainant');
     fillAddressFields(rowData, 'accused');
     fillAddressFields(rowData, 'victim');
+
+    syncPermanentAddress(rowData, 'complainant');
+    syncPermanentAddress(rowData, 'accused');
+    syncPermanentAddress(rowData, 'victim');
     
     if (!rowData.occurrence_from_date_time && rowData.occurrence_date) {
       rowData.occurrence_from_date_time = rowData.occurrence_date;
     }
-  } else if (recordType === 'ARREST') {
+  } else if (recordType === 'ARREST' || recordType === 'KALANDRA') {
     fillAddressFields(rowData, 'arrested');
+    syncPermanentAddress(rowData, 'arrested');
   }
 
   if (rowData.sections) {

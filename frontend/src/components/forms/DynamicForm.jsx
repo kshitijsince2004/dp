@@ -3730,6 +3730,19 @@ export default function DynamicForm({
             entry.arrest_place = entry.arrest_place || entry.place_of_arrest || '';
             entry.place_of_arrest = entry.place_of_arrest || entry.arrest_place || '';
 
+            // Sync child row permanent address if perm_same is true / Yes
+            const prefix = section.person_type.toLowerCase(); // 'arrested', 'accused', 'victim'
+            const isSame = entry[`${prefix}_perm_same`] === 'Yes' || entry[`${prefix}_perm_same`] === true;
+            if (isSame) {
+              const addrFields = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'district', 'police_station', 'state', 'pincode', 'country'];
+              for (const field of addrFields) {
+                const presVal = entry[`${prefix}_${field}`];
+                if (presVal && !entry[`${prefix}_perm_${field}`]) {
+                  entry[`${prefix}_perm_${field}`] = presVal;
+                }
+              }
+            }
+
             if (recordType === 'ARREST' && section.person_type === 'ARRESTED' && pIdx === 0 && (!entry.property_details || entry.property_details.length === 0) && initialProperties.length > 0) {
               entry.property_details = initialProperties.map(prop => {
                 const rawCat = prop.major_category || prop.property_major_category || '';
@@ -3939,6 +3952,17 @@ export default function DynamicForm({
     updatedSeed.time_of_arrest = updatedSeed.time_of_arrest || updatedSeed.arrest_time || '';
     updatedSeed.arrest_place = updatedSeed.arrest_place || updatedSeed.place_of_arrest || '';
     updatedSeed.place_of_arrest = updatedSeed.place_of_arrest || updatedSeed.arrest_place || '';
+
+    // Synchronize complainant permanent address if complainant_perm_same is true / Yes
+    if (updatedSeed.complainant_perm_same === 'Yes' || updatedSeed.complainant_perm_same === true) {
+      const addrFields = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'district', 'police_station', 'state', 'pincode', 'country'];
+      for (const field of addrFields) {
+        const presVal = updatedSeed[`complainant_${field}`];
+        if (presVal && !updatedSeed[`complainant_perm_${field}`]) {
+          updatedSeed[`complainant_perm_${field}`] = presVal;
+        }
+      }
+    }
 
     // Formulate gd_date_time if missing but gd_date/gd_time exist
     // Formulate gd_date_time if missing but gd_date/gd_time exist.
