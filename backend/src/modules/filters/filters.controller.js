@@ -37,6 +37,33 @@ const DEFAULT_SYSTEM_PRESETS = [
     filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_sla_breached', operator: 'is_true' }] }),
     applicable_record_types: JSON.stringify(['CASES', 'ARREST', 'PCR']),
     is_active: true
+  },
+  {
+    id: 'sys_preset_last_30_days',
+    name_en: "Less than 30 days",
+    name_hi: "30 दिनों से कम",
+    scope: 'SYSTEM',
+    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 30 }] }),
+    applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB']),
+    is_active: true
+  },
+  {
+    id: 'sys_preset_last_60_days',
+    name_en: "Less than 60 days",
+    name_hi: "60 दिनों से कम",
+    scope: 'SYSTEM',
+    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 60 }] }),
+    applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB']),
+    is_active: true
+  },
+  {
+    id: 'sys_preset_last_90_days',
+    name_en: "Less than 90 days",
+    name_hi: "90 दिनों से कम",
+    scope: 'SYSTEM',
+    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 90 }] }),
+    applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB']),
+    is_active: true
   }
 ];
 

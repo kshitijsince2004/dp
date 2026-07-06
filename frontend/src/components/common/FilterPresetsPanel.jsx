@@ -32,7 +32,7 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
     const spec = preset.filter_spec || {};
     const conditions = spec.conditions || [];
     const mapped = {
-      type: 'CASE',
+      type: 'ALL',
       status: 'ALL',
       dateFrom: null,
       dateTo: null,
@@ -45,22 +45,33 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
       mapped.dateTo = formatDMY(new Date());
     } else {
       conditions.forEach(cond => {
-        if (cond.field === '_status') {
-          mapped.status = cond.value;
-        } else if (cond.field === '_record_type') {
-          mapped.type = cond.value;
-        } else if (cond.field === '_record_date') {
-          if (cond.operator === 'gte') mapped.dateFrom = cond.value;
-          if (cond.operator === 'lte') mapped.dateTo = cond.value;
-          if (cond.operator === 'last_n_days') {
-            const days = parseInt(cond.value || 1, 10);
+        const field = cond.field || '';
+        const op = (cond.operator || cond.op || '').toLowerCase();
+        const val = cond.value;
+
+        if (field === '_status' || field === 'current_status') {
+          mapped.status = Array.isArray(val) ? val[0] : val;
+        } else if (field === '_record_type' || field === 'record_type') {
+          mapped.type = val;
+        } else if (field === '_record_date' || field === 'record_date') {
+          let formattedDate = val;
+          if (typeof val === 'string' && val.includes('-')) {
+            const parts = val.split('-');
+            if (parts.length === 3) {
+              formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+          }
+          if (op === 'gte' || op === 'gt') mapped.dateFrom = formattedDate;
+          if (op === 'lte' || op === 'lt') mapped.dateTo = formattedDate;
+          if (op === 'last_n_days') {
+            const days = parseInt(val || 1, 10);
             const d = new Date();
             d.setDate(d.getDate() - days + 1);
             mapped.dateFrom = formatDMY(d);
             mapped.dateTo = formatDMY(new Date());
           }
-        } else if (cond.field === '_search') {
-          mapped.search = cond.value;
+        } else if (field === '_search' || field === 'data.local_head' || field === 'brief_facts') {
+          mapped.search = val;
         }
       });
     }

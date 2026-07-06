@@ -300,7 +300,13 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
           placeholder={selectPlaceholder || placeholder}
           options={options}
           lang={lang}
-          variant={selectVariant}
+          // Every FieldRenderer consumer in this codebase (DynamicForm.jsx, FormSection.jsx)
+          // is a dense police-form wizard — 'compact' (search-box, no big portal chrome) is
+          // the only variant actually used anywhere; default to it so call sites that render
+          // SELECT fields generically (person sub-tabs, address grids, etc.) don't have to
+          // repeat `selectVariant="compact"` individually to avoid falling back to
+          // SelectField's bigger default styling.
+          variant={selectVariant || 'compact'}
           className={selectClassName}
         />
         {isCaseStatus && isTransferSelected && (

@@ -72,8 +72,8 @@ const SECTION_TITLES = {
   occurrence_address:        { en: 'Place of Occurrence Address',           hi: 'घटनास्थल का पता' },
   property_details:          { en: 'Property Details',                      hi: 'संपत्ति का विवरण' },
   occurrence_info:           { en: 'Occurrence Information',                 hi: 'घटना की जानकारी' },
-  intimation_details:        { en: 'Intimation Details',                     hi: 'सूचना विवरण' },
-  intimation_address:        { en: 'Intimation Address',                     hi: 'सूचना का पता' },
+  // intimation_details:        { en: 'Intimation Details',                     hi: 'सूचना विवरण' },
+  // intimation_address:        { en: 'Intimation Address',                     hi: 'सूचना का पता' },
 };
 
 const VALID_FIELD_TYPES = ['TEXT', 'TEXTAREA', 'NUMBER', 'DATE', 'DATETIME', 'SELECT', 'BOOLEAN', 'TIME', 'RADIO'];
@@ -215,7 +215,7 @@ export const getFieldsForForm = async (req, res) => {
     // precomputed here (see field_key dispatch below) — its correct option set depends on a live
     // sibling selection among 10 categories, which cannot be flattened into one static list.
     const propertyCategoryOptions = (await fieldsService.getPropertyCategories())
-      .map(c => ({ value: c.parent_cd, label_en: c.code_type, label_hi: c.code_type }))
+      .map(c => ({ value: String(c.parent_cd), label_en: c.code_type, label_hi: c.code_type }))
       .sort((a, b) => a.label_en.localeCompare(b.label_en));
 
     // Filter by applicable_record_types (JS-side, handles both native array and JSON-string storage)
@@ -448,6 +448,7 @@ export const getFieldsForForm = async (req, res) => {
           section_label_hi: f.section_label_hi || null,
           sort_order,
           scope_level: f.scope_level || 'global',
+          created_by: f.created_by || null,
         };
       });
 
@@ -820,6 +821,40 @@ export const getFieldsForForm = async (req, res) => {
       });
     }
 
+    // Gather all assigned field IDs to find any unassigned flat fields
+    const assignedIds = new Set();
+    for (const sec of sections) {
+      if (sec.sub_tabs) {
+        for (const st of sec.sub_tabs) {
+          if (st.fields) {
+            for (const f of st.fields) assignedIds.add(f.id);
+          }
+        }
+      }
+      if (sec.fields) {
+        for (const f of sec.fields) assignedIds.add(f.id);
+      }
+    }
+
+    const unassignedFields = filteredFields.filter(f => !assignedIds.has(f.id) && !f.repeater_entity && f.created_by !== null);
+    if (unassignedFields.length > 0) {
+      const extraSectionsMap = new Map();
+      for (const f of unassignedFields) {
+        const secKey = f.section || 'district_custom';
+        if (!extraSectionsMap.has(secKey)) {
+          extraSectionsMap.set(secKey, {
+            section: secKey,
+            title_en: f.section_label_en || SECTION_TITLES[secKey]?.en || toTitleCase(secKey),
+            title_hi: f.section_label_hi || SECTION_TITLES[secKey]?.hi || toTitleCase(secKey),
+            is_repeater: false,
+            fields: []
+          });
+        }
+        extraSectionsMap.get(secKey).fields.push(f);
+      }
+      sections.push(...extraSectionsMap.values());
+    }
+
     return res.status(200).json({ success: true, data: sections });
   } catch (error) {
     logger.error('getFieldsForForm failed', { record_type, error: error.message, stack: error.stack });
@@ -926,13 +961,23 @@ export const createRegistryField = async (req, res) => {
     const validationRulesObj = { ...(parseJsonField(validation_rules) || {}) };
     if (is_required) validationRulesObj.required = true;
 
+    const targetSection = section || 'general_info';
+    let repeater_entity = null;
+    const siblingField = await db('field_registry')
+      .where({ section: targetSection })
+      .whereNotNull('repeater_entity')
+      .first();
+    if (siblingField) {
+      repeater_entity = siblingField.repeater_entity;
+    }
+
     const payload = {
       id: uuidv4(),
       field_key: normalizedKey,
       label_en,
       label_hi: label_hi || label_en,
       field_type: field_type.toUpperCase(),
-      section: section || 'general_info',
+      section: targetSection,
       section_label_en: section_label_en || null,
       section_label_hi: section_label_hi || null,
       applicable_record_types: applicable_record_types.map(normalizeRecordType),
@@ -945,6 +990,7 @@ export const createRegistryField = async (req, res) => {
       scope_level,
       scope_id,
       created_by: userId,
+      repeater_entity,
     };
 
     const [newField] = await db('field_registry').insert(payload).returning('*');
@@ -993,7 +1039,18 @@ export const updateRegistryField = async (req, res) => {
     if (label_en)                      updates.label_en = label_en;
     if (label_hi !== undefined)        updates.label_hi = label_hi;
     if (field_type)                    updates.field_type = field_type.toUpperCase();
-    if (section)                       updates.section = section;
+    if (section) {
+      updates.section = section;
+      let repeater_entity = null;
+      const siblingField = await db('field_registry')
+        .where({ section })
+        .whereNotNull('repeater_entity')
+        .first();
+      if (siblingField) {
+        repeater_entity = siblingField.repeater_entity;
+      }
+      updates.repeater_entity = repeater_entity;
+    }
     if (section_label_en !== undefined) updates.section_label_en = section_label_en;
     if (section_label_hi !== undefined) updates.section_label_hi = section_label_hi;
     if (applicable_record_types?.length) {

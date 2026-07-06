@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layers, Plus, X, ToggleLeft, ToggleRight, Pencil, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 
@@ -9,6 +10,65 @@ const ensureArray = (val) => (Array.isArray(val) ? val : []);
 
 const RECORD_TYPES = ['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB'];
 const FIELD_TYPES  = ['TEXT', 'TEXTAREA', 'NUMBER', 'DATE', 'DATETIME', 'SELECT', 'BOOLEAN'];
+
+const SECTION_LABELS = {
+  // Case sections
+  general_info: { en: 'General Information', hi: 'सामान्य जानकारी' },
+  incident_details: { en: 'Incident Details', hi: 'घटना का विवरण' },
+  offence_info: { en: 'Offence Information', hi: 'अपराध की जानकारी' },
+  occurrence_info: { en: 'Occurrence of Offence', hi: 'घटना का समय व प्रकार' },
+  complainant_personal_info: { en: 'Complainant (Personal)', hi: 'शिकायतकर्ता (व्यक्तिगत)' },
+  complainant_accused_info: { en: 'Complainant Details', hi: 'शिकायतकर्ता का विवरण' },
+  complainant_address: { en: 'Complainant Address', hi: 'शिकायतकर्ता का पता' },
+  brief_facts: { en: 'FIR Contents', hi: 'प्राथमिकी विवरण' },
+  victim_personal_info: { en: 'Victim (Personal)', hi: 'पीड़ित (व्यक्तिगत)' },
+  victim_address: { en: 'Victim Address', hi: 'पीड़ित का पता' },
+  accused_personal_info: { en: 'Accused (Personal)', hi: 'आरोपी (व्यक्तिगत)' },
+  accused_address: { en: 'Accused Address', hi: 'आरोपी का पता' },
+  property_details: { en: 'Property Details', hi: 'संपत्ति का विवरण' },
+  recovered_property: { en: 'Recovered Property', hi: 'बरामद संपत्ति' },
+  stolen_property: { en: 'Stolen Property', hi: 'चोरी हुई संपत्ति' },
+  action_taken: { en: 'Action Taken', hi: 'की गई कार्रवाई' },
+
+  // Arrest sections
+  arrest_details: { en: 'Arrest Details', hi: 'गिरफ्तारी का विवरण' },
+  arrested_personal_info: { en: 'Arrested (Personal)', hi: 'गिरफ्तार व्यक्ति (व्यक्तिगत)' },
+  arrested_address: { en: 'Arrested Address', hi: 'गिरफ्तार व्यक्ति का पता' },
+  arrestee_info: { en: 'Arrestee Details', hi: 'गिरफ्तार व्यक्ति का विवरण' },
+  custody_status: { en: 'Custody Status', hi: 'हिरासत की स्थिति' },
+  // intimation_details: { en: 'Intimation Details', hi: 'सूचना का विवरण' },
+  // intimation_address: { en: 'Intimation Address', hi: 'सूचना का पता' },
+
+  // UIDB sections
+  corpse_desc: { en: 'Deceased Description', hi: 'मृतक का विवरण' },
+  corpse_physical: { en: 'Deceased Physical Features', hi: 'मृतक की शारीरिक विशेषताएँ' },
+  inquest_details: { en: 'Inquest Details', hi: 'जांच विवरण' },
+  uidb_details: { en: 'UIDB Details', hi: 'UIDB विवरण' },
+
+  // Missing sections
+  person_details: { en: 'Missing Person Particulars', hi: 'लापता व्यक्ति का विवरण' },
+  missing_address: { en: 'Missing Address', hi: 'लापता होने का स्थान/पता' },
+  missing_physical: { en: 'Missing Physical Description', hi: 'लापता व्यक्ति का हुलिया' },
+  contacts_assigned: { en: 'Contacts Assigned', hi: 'संपर्क विवरण' },
+
+  // Common
+  investigation_officer: { en: 'Investigation Officer', hi: 'जांच अधिकारी' },
+  vehicle_details: { en: 'Vehicle Details', hi: 'वाहन का विवरण' },
+  financial_fraud: { en: 'Financial Fraud', hi: 'वित्तीय धोखाधड़ी' },
+  special_scheme: { en: 'Special Scheme', hi: 'विशेष योजना' },
+  procedure_slips: { en: 'Procedure Slips', hi: 'प्रक्रिया पर्ची' }
+};
+
+const getSectionLabel = (key, lang = 'en', fallbackObj = null) => {
+  const item = SECTION_LABELS[key];
+  if (item) {
+    return lang === 'hi' ? (item.hi || item.en) : item.en;
+  }
+  if (fallbackObj) {
+    return lang === 'hi' ? (fallbackObj.label_hi || fallbackObj.label_en) : fallbackObj.label_en;
+  }
+  return key;
+};
 
 const TYPE_COLORS = {
   CASE:     'text-blue-400 border-blue-800/40 bg-blue-950/30',
@@ -27,7 +87,7 @@ const emptyForm = () => ({
   options: [],
 });
 
-// Extracts unique {key, label} section pairs from a flat field list,
+// Extracts unique {key, label_en, label_hi} section pairs from a flat field list,
 // filtered to those matching the selected record types.
 function sectionsFromFields(fieldList, selectedTypes) {
   const seen = new Set();
@@ -40,11 +100,16 @@ function sectionsFromFields(fieldList, selectedTypes) {
     : fieldList;
 
   return relevant
-    .map((f) => ({ key: f.section, label: f.section_label_en || f.section }))
+    .map((f) => ({
+      key: f.section,
+      label_en: f.section_label_en || f.section,
+      label_hi: f.section_label_hi || f.section_label_en || f.section
+    }))
     .filter((s) => s.key && !seen.has(s.key) && seen.add(s.key));
 }
 
 export default function CustomFieldsPage() {
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
 
@@ -268,7 +333,9 @@ export default function CustomFieldsPage() {
                         {f.field_type}
                       </span>
                     </td>
-                    <td className="p-3.5 text-slate-500 text-[11px] font-mono">{f.section}</td>
+                    <td className="p-3.5 text-slate-500 text-[11px] font-medium">
+                      {getSectionLabel(f.section, i18n.language, { label_en: f.section_label_en, label_hi: f.section_label_hi })}
+                    </td>
                     <td className="p-3.5">
                       <div className="flex flex-wrap gap-1">
                         {ensureArray(f.applicable_record_types).map((rt) => (
@@ -410,10 +477,14 @@ export default function CustomFieldsPage() {
                       className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] cursor-pointer">
                       <option value="">— choose a section —</option>
                       {knownSections.map((s) => (
-                        <option key={s.key} value={s.key}>{s.label || s.key}</option>
+                        <option key={s.key} value={s.key}>
+                          {getSectionLabel(s.key, i18n.language, s) || s.key}
+                        </option>
                       ))}
                       {!form.isNewSection && form.section && !knownSections.find((s) => s.key === form.section) && (
-                        <option value={form.section}>{form.section}</option>
+                        <option value={form.section}>
+                          {getSectionLabel(form.section, i18n.language) || form.section}
+                        </option>
                       )}
                       <option value="__new__">+ Create new section…</option>
                     </select>

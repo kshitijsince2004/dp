@@ -52,6 +52,15 @@ const DIARIES = [
     reports: REPORTS,
   },
   {
+    key: 'COMBINED_DAILY_DIARY',
+    label: 'Combine Daily Diary',
+    description: 'Consolidated logs compiled over a date range — 24 report sheets',
+    icon: Layers,
+    status: 'active',
+    levels: ['PS', 'DISTRICT', 'HQ'],
+    reports: REPORTS,
+  },
+  {
     key: 'DISTRICT_DIARY',
     label: 'District Diary',
     description: 'District-level compiled diary',
@@ -371,8 +380,30 @@ export default function CompilationUI() {
       )
       : 'Select a diary and compile your station\'s records before sending them up for review.';
 
+  const getThemeClass = () => {
+    switch (user?.role) {
+      case 'HC':
+        return 'theme-hc-page';
+      case 'SHO':
+        return 'theme-sho-page';
+      case 'ACP':
+        return 'theme-acp-page';
+      case 'DISTRICT':
+      case 'DISTRICT_OFFICER':
+        return 'theme-district-page';
+      case 'HQ':
+      case 'HQ_ANALYST':
+      case 'HQ_ADMIN':
+        return 'theme-hq-page';
+      case 'SYSTEM_ADMIN':
+        return 'theme-admin-page';
+      default:
+        return 'theme-shared-page';
+    }
+  };
+
   return (
-    <div className="space-y-6 w-full theme-district-page p-5 rounded-2xl bg-[var(--bg-page-main)] border border-slate-200 shadow-sm">
+    <div className={`space-y-6 w-full ${getThemeClass()} p-5 rounded-2xl bg-[var(--bg-page-main)] border border-slate-200 shadow-sm`}>
       {/* Back Header */}
       <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
         <button
@@ -473,39 +504,58 @@ export default function CompilationUI() {
         </p>
  
         <div className="flex flex-col sm:flex-row gap-3 items-end relative">
-          <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-              <Calendar size={10} className="text-slate-400" />
-              <span>From Date</span>
-            </span>
-            <DateInput
-              value={dateFrom}
-              onChange={(val) => {
-                setDateFrom(val);
-                const from = parseDMY(val);
-                const to = parseDMY(dateTo);
-                if (from && to && from > to) setDateTo(val);
-              }}
-              inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
-            />
-          </div>
+          {selectedDiary?.key === 'DAILY_DIARY' ? (
+            <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                <Calendar size={10} className="text-slate-400" />
+                <span>Select Date</span>
+              </span>
+              <DateInput
+                value={dateFrom}
+                onChange={(val) => {
+                  setDateFrom(val);
+                  setDateTo(val);
+                }}
+                inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
+              />
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                  <Calendar size={10} className="text-slate-400" />
+                  <span>From Date</span>
+                </span>
+                <DateInput
+                  value={dateFrom}
+                  onChange={(val) => {
+                    setDateFrom(val);
+                    const from = parseDMY(val);
+                    const to = parseDMY(dateTo);
+                    if (from && to && from > to) setDateTo(val);
+                  }}
+                  inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
+                />
+              </div>
 
-          <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-              <Calendar size={10} className="text-slate-400" />
-              <span>To Date</span>
-            </span>
-            <DateInput
-              value={dateTo}
-              onChange={(val) => {
-                const from = parseDMY(dateFrom);
-                const to = parseDMY(val);
-                if (from && to && to < from) return;
-                setDateTo(val);
-              }}
-              inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
-            />
-          </div>
+              <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                  <Calendar size={10} className="text-slate-400" />
+                  <span>To Date</span>
+                </span>
+                <DateInput
+                  value={dateTo}
+                  onChange={(val) => {
+                    const from = parseDMY(dateFrom);
+                    const to = parseDMY(val);
+                    if (from && to && to < from) return;
+                    setDateTo(val);
+                  }}
+                  inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
+                />
+              </div>
+            </>
+          )}
  
           {/* POLICE STATION — PS-level users are locked to their own station (no cross-station browsing) */}
           {userLevel === 'PS' ? (

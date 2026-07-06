@@ -15683,7 +15683,7 @@ to {
         onChange: (e3) => onChange(e3.target.value),
         onFocus: () => setFocused(true),
         onBlur: () => setFocused(false),
-        placeholder: placeholder || "hr:mm AM/PM",
+        placeholder: placeholder || "HH:MM AM/PM",
         className: `${base5} ${status === "error" ? err5 : ""}`
       }
     ));

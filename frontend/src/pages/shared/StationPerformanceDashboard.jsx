@@ -106,10 +106,10 @@ export default function StationPerformanceDashboard() {
       if (filters.recordType && r.record_type !== filters.recordType) return false;
       if (filters.dateFrom && r.record_date < filters.dateFrom) return false;
       if (filters.dateTo && r.record_date > filters.dateTo) return false;
+      if (filters.psId && r.ps_id !== filters.psId) return false;
 
       if (isHq) {
         if (filters.districtId && r.district_id !== filters.districtId) return false;
-        if (filters.psId && r.ps_id !== filters.psId) return false;
       } else if (userDistrictNode) {
         // District officer only sees records in their district
         if (r.district_id !== userDistrictNode.id) return false;
@@ -168,25 +168,23 @@ export default function StationPerformanceDashboard() {
     };
 
     // 4. Merge stations and calculated stats
-    const listToProcess = isHq
-      ? scopedStations.filter((s) => {
-          if (filters.districtId && !s.parent_id.includes(filters.districtId) && !s.id.includes(filters.districtId)) {
-            // Traverse nodes to verify parent district id match
-            let isMatch = false;
-            let current = s;
-            while (current && current.parent_id) {
-              if (current.parent_id === filters.districtId) {
-                isMatch = true;
-                break;
-              }
-              current = nodes.find((n) => n.id === current.parent_id);
-            }
-            if (!isMatch) return false;
+    const listToProcess = scopedStations.filter((s) => {
+      if (isHq && filters.districtId && !s.parent_id.includes(filters.districtId) && !s.id.includes(filters.districtId)) {
+        // Traverse nodes to verify parent district id match
+        let isMatch = false;
+        let current = s;
+        while (current && current.parent_id) {
+          if (current.parent_id === filters.districtId) {
+            isMatch = true;
+            break;
           }
-          if (filters.psId && s.id !== filters.psId) return false;
-          return true;
-        })
-      : scopedStations;
+          current = nodes.find((n) => n.id === current.parent_id);
+        }
+        if (!isMatch) return false;
+      }
+      if (filters.psId && s.id !== filters.psId) return false;
+      return true;
+    });
 
     // Build a quick lookup: psName → {cases, arrests, pcr}
     const psApiMap = {};
