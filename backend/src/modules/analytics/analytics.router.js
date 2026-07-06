@@ -20,5 +20,8 @@ router.get('/trends', authMiddleware, enforceScope, (req, res, next) => {
 
 router.get('/compare', authMiddleware, enforceScope, analyticsController.getCompare);
 router.get('/export', authMiddleware, enforceScope, analyticsController.exportSpreadsheet);
+router.get('/ps-dashboard', authMiddleware, enforceScope, analyticsController.getPsDashboardSummary);
+router.get('/case-type-breakdown', authMiddleware, enforceScope, analyticsController.getCaseTypeBreakdown);
+router.get('/cases-by-month', authMiddleware, enforceScope, analyticsController.getCasesByMonthTrend);
 
 export default router;

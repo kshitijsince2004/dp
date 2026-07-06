@@ -353,3 +353,263 @@ export const getStatusBreakdown = async (req, res) => {
   }
 };
 
+// ── PS Dashboard summary (Cases / Arrest / Left Out Accused) ─────────────────
+
+const applyJurisdictionScope = (query, jq) => {
+  if (jq.ps_id) query = query.where('ps_id', jq.ps_id);
+  if (jq.district_id) query = query.where('district_id', jq.district_id);
+  if (jq.sub_div_id) query = query.where('sub_div_id', jq.sub_div_id);
+  return query;
+};
+
+const toISODate = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const getDateRangeForPeriod = (period) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (period === 'week') {
+    const currentStart = new Date(today);
+    currentStart.setDate(today.getDate() - 6);
+    const previousEnd = new Date(currentStart);
+    previousEnd.setDate(currentStart.getDate() - 1);
+    const previousStart = new Date(previousEnd);
+    previousStart.setDate(previousEnd.getDate() - 6);
+    return {
+      currentStart: toISODate(currentStart), currentEnd: toISODate(today),
+      previousStart: toISODate(previousStart), previousEnd: toISODate(previousEnd)
+    };
+  }
+
+  if (period === 'month') {
+    const currentStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const previousMonthEnd = new Date(currentStart);
+    previousMonthEnd.setDate(previousMonthEnd.getDate() - 1);
+    const previousStart = new Date(previousMonthEnd.getFullYear(), previousMonthEnd.getMonth(), 1);
+    return {
+      currentStart: toISODate(currentStart), currentEnd: toISODate(today),
+      previousStart: toISODate(previousStart), previousEnd: toISODate(previousMonthEnd)
+    };
+  }
+
+  // day (default)
+  const previousDay = new Date(today);
+  previousDay.setDate(today.getDate() - 1);
+  return {
+    currentStart: toISODate(today), currentEnd: toISODate(today),
+    previousStart: toISODate(previousDay), previousEnd: toISODate(previousDay)
+  };
+};
+
+const pctChange = (current, previous) => {
+  if (previous === 0) return current === 0 ? 0 : 100;
+  return Math.round(((current - previous) / previous) * 100);
+};
+
+const CASE_LIKE_TYPES = ['CASE', 'UIDB', 'MISSING'];
+
+const countRecordsByTypes = async (jq, recordTypes, startDate, endDate) => {
+  let query = db('records')
+    .whereIn('record_type', recordTypes)
+    .whereBetween('record_date', [startDate, endDate]);
+  query = applyJurisdictionScope(query, jq);
+  const row = await query.count('* as count').first();
+  return parseInt(row.count, 10) || 0;
+};
+
+// "Kalandra" = an ARREST record with no CASE_ARREST link pointing at it (standalone arrest, no FIR).
+const countStandaloneArrests = async (jq, startDate, endDate) => {
+  let query = db('records')
+    .where('record_type', 'ARREST')
+    .whereBetween('record_date', [startDate, endDate])
+    .whereNotExists(function () {
+      this.select('*')
+        .from('record_links as rl')
+        .join('link_type_registry as ltr', 'rl.link_type_id', 'ltr.id')
+        .where('ltr.code', 'CASE_ARREST')
+        .whereRaw('rl.target_record_id = records.id');
+    });
+  query = applyJurisdictionScope(query, jq);
+  const row = await query.count('* as count').first();
+  return parseInt(row.count, 10) || 0;
+};
+
+const normalizeName = (first, last) => `${first || ''} ${last || ''}`.trim().toLowerCase().replace(/\s+/g, ' ');
+
+// For each CASE in range: its ACCUSED persons vs the ARRESTED persons on its linked
+// (CASE_ARREST) arrests, matched by normalized name. Unmatched accused = "left out".
+const computeLeftOutAccused = async (jq, startDate, endDate) => {
+  try {
+    let caseQuery = db('records')
+      .select('id', db.raw(`${jsonbPath('data', 'fir_no')} as fir_no`))
+      .where('record_type', 'CASE')
+      .whereBetween('record_date', [startDate, endDate]);
+    caseQuery = applyJurisdictionScope(caseQuery, jq);
+    const cases = await caseQuery;
+    if (cases.length === 0) return { count: 0, list: [] };
+
+    const caseIds = cases.map(c => c.id);
+    const caseFirById = new Map(cases.map(c => [c.id, c.fir_no]));
+
+    const accusedRows = await db('record_persons')
+      .whereIn('record_id', caseIds)
+      .andWhere('person_type', 'ACCUSED')
+      .select('record_id', 'first_name', 'last_name');
+    if (accusedRows.length === 0) return { count: 0, list: [] };
+
+    const links = await db('record_links as rl')
+      .join('link_type_registry as ltr', 'rl.link_type_id', 'ltr.id')
+      .where('ltr.code', 'CASE_ARREST')
+      .whereIn('rl.source_record_id', caseIds)
+      .select('rl.source_record_id as case_id', 'rl.target_record_id as arrest_id');
+
+    const arrestIdsByCaseId = new Map();
+    links.forEach(l => {
+      if (!arrestIdsByCaseId.has(l.case_id)) arrestIdsByCaseId.set(l.case_id, []);
+      arrestIdsByCaseId.get(l.case_id).push(l.arrest_id);
+    });
+
+    const allArrestIds = [...new Set(links.map(l => l.arrest_id))];
+    const arrestedNamesByArrestId = new Map();
+    if (allArrestIds.length > 0) {
+      const arrestedRows = await db('record_persons')
+        .whereIn('record_id', allArrestIds)
+        .andWhere('person_type', 'ARRESTED')
+        .select('record_id', 'first_name', 'last_name');
+      arrestedRows.forEach(r => {
+        const name = normalizeName(r.first_name, r.last_name);
+        if (!arrestedNamesByArrestId.has(r.record_id)) arrestedNamesByArrestId.set(r.record_id, new Set());
+        arrestedNamesByArrestId.get(r.record_id).add(name);
+      });
+    }
+
+    const leftOutList = [];
+    accusedRows.forEach(a => {
+      const accusedName = normalizeName(a.first_name, a.last_name);
+      if (!accusedName) return;
+      const arrestIds = arrestIdsByCaseId.get(a.record_id) || [];
+      const isArrested = arrestIds.some(aid => arrestedNamesByArrestId.get(aid)?.has(accusedName));
+      if (!isArrested) {
+        leftOutList.push({
+          name: `${a.first_name || ''} ${a.last_name || ''}`.trim(),
+          fir_no: caseFirById.get(a.record_id) || null
+        });
+      }
+    });
+
+    return { count: leftOutList.length, list: leftOutList };
+  } catch (error) {
+    return { count: 0, list: [] };
+  }
+};
+
+export const getPsDashboardSummary = async (req, res) => {
+  const jq = req.jurisdictionQuery;
+  const period = ['day', 'week', 'month'].includes(req.query.period) ? req.query.period : 'day';
+
+  try {
+    const { currentStart, currentEnd, previousStart, previousEnd } = getDateRangeForPeriod(period);
+
+    const [
+      casesCurrent, casesPrevious,
+      arrestsCurrent, arrestsPrevious,
+      leftOutCurrent, leftOutPrevious
+    ] = await Promise.all([
+      countRecordsByTypes(jq, CASE_LIKE_TYPES, currentStart, currentEnd),
+      countRecordsByTypes(jq, CASE_LIKE_TYPES, previousStart, previousEnd),
+      countRecordsByTypes(jq, ['ARREST'], currentStart, currentEnd),
+      countRecordsByTypes(jq, ['ARREST'], previousStart, previousEnd),
+      computeLeftOutAccused(jq, currentStart, currentEnd),
+      computeLeftOutAccused(jq, previousStart, previousEnd)
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        period,
+        cases: { count: casesCurrent, change_pct: pctChange(casesCurrent, casesPrevious) },
+        arrests: { count: arrestsCurrent, change_pct: pctChange(arrestsCurrent, arrestsPrevious) },
+        left_out: { count: leftOutCurrent.count, change_pct: pctChange(leftOutCurrent.count, leftOutPrevious.count) },
+        left_out_list: leftOutCurrent.list
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getCaseTypeBreakdown = async (req, res) => {
+  const jq = req.jurisdictionQuery;
+  const period = ['day', 'week', 'month'].includes(req.query.period) ? req.query.period : 'day';
+
+  try {
+    const { currentStart, currentEnd, previousStart, previousEnd } = getDateRangeForPeriod(period);
+
+    const categories = [
+      { name: 'FIR', types: ['CASE'] },
+      { name: 'PCR', types: ['PCR_CALL'] },
+      { name: 'Missing', types: ['MISSING'] },
+      { name: 'UIDB', types: ['UIDB'] }
+    ];
+
+    const rows = await Promise.all(categories.map(async (c) => {
+      const [current, previous] = await Promise.all([
+        countRecordsByTypes(jq, c.types, currentStart, currentEnd),
+        countRecordsByTypes(jq, c.types, previousStart, previousEnd)
+      ]);
+      return { name: c.name, count: current, change_pct: pctChange(current, previous) };
+    }));
+
+    const [kalandraCurrent, kalandraPrevious] = await Promise.all([
+      countStandaloneArrests(jq, currentStart, currentEnd),
+      countStandaloneArrests(jq, previousStart, previousEnd)
+    ]);
+    rows.splice(1, 0, { name: 'Kalandra', count: kalandraCurrent, change_pct: pctChange(kalandraCurrent, kalandraPrevious) });
+
+    return res.status(200).json({ success: true, data: { period, rows } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const TREND_MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export const getCasesByMonthTrend = async (req, res) => {
+  const jq = req.jurisdictionQuery;
+
+  try {
+    const today = new Date();
+    const months = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      months.push({ year: d.getFullYear(), month: d.getMonth() });
+    }
+
+    const rangeStart = toISODate(new Date(months[0].year, months[0].month, 1));
+    const rangeEnd = toISODate(new Date(months[months.length - 1].year, months[months.length - 1].month + 1, 0));
+
+    let query = db('records')
+      .select(db.raw(`to_char(record_date, 'YYYY-MM') as ym`))
+      .count('* as count')
+      .whereIn('record_type', CASE_LIKE_TYPES)
+      .whereBetween('record_date', [rangeStart, rangeEnd]);
+    query = applyJurisdictionScope(query, jq);
+    const rows = await query.groupBy(db.raw(`to_char(record_date, 'YYYY-MM')`));
+
+    const countByYm = new Map(rows.map(r => [r.ym, parseInt(r.count, 10) || 0]));
+    const data = months.map(({ year, month }) => {
+      const ym = `${year}-${String(month + 1).padStart(2, '0')}`;
+      return { month: TREND_MONTH_NAMES[month], value: countByYm.get(ym) || 0 };
+    });
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+

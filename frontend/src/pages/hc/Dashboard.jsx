@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -9,6 +9,19 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
+import api from "../../utils/api.js";
+
+const STAT_CARD_META = [
+  { key: "cases", label: "Cases", bg: "#CFF3DD" },
+  { key: "arrests", label: "Arrest", bg: "#F1ECFB" },
+  { key: "left_out", label: "Left Out accused", bg: "#FADBCF" },
+];
+
+const formatChange = (changePct, period) => {
+  if (changePct === null || changePct === undefined) return "--";
+  const sign = changePct > 0 ? "+" : "";
+  return `${sign}${changePct}% vs previous ${period}`;
+};
 
 // ── Static mock data — UI only, no backend wiring ──────────────────────────
 const arrestTrend = [
@@ -23,59 +36,89 @@ const arrestTrend = [
   { day: "30", value: 48200 },
 ];
 
-const leftOutAccused = [
-  { name: "Helena", note: "Linked FIR No.-" },
-  { name: "Oscar", note: "Linked Fir No.-" },
-];
-
-const caseTypeRows = [
-  { name: "FIR", count: 41, change: "+84%", isUp: true },
-  { name: "Kalandra", count: 3, change: "-8%", isUp: false },
-  { name: "PCR", count: 28, change: "+2%", isUp: true },
-  { name: "Missing", count: 4, change: "+33%", isUp: true },
-  { name: "UIDB", count: 3, change: "+30%", isUp: true },
-];
-
-const casesByMonth = [
-  { month: "Jan", value: 150 },
-  { month: "Feb", value: 175 },
-  { month: "Mar", value: 145 },
-  { month: "Apr", value: 130 },
-  { month: "May", value: 195 },
-  { month: "Jun", value: 290 },
-  { month: "Jul", value: 205 },
-  { month: "Aug", value: 230 },
-  { month: "Sep", value: 175 },
-  { month: "Oct", value: 140 },
-  { month: "Nov", value: 120 },
-  { month: "Dec", value: 20 },
-];
-
-const statCards = [
-  {
-    label: "Cases",
-    value: "1",
-    change: "+20% month over month",
-    bg: "#CFF3DD",
-  },
-  {
-    label: "Arrest",
-    value: "2",
-    change: "+33% month over month",
-    bg: "#F1ECFB",
-  },
-  {
-    label: "Left Out accused",
-    value: "2",
-    change: "-8% month over month",
-    bg: "#FADBCF",
-  },
-];
-
 const PERIODS = ["Day", "Week", "Month"];
 
 export default function PSDashboard() {
   const [activePeriod, setActivePeriod] = useState("Day");
+  const [summary, setSummary] = useState(null);
+  const [leftOutAccused, setLeftOutAccused] = useState([]);
+  const [caseTypeRows, setCaseTypeRows] = useState([]);
+  const [casesByMonth, setCasesByMonth] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/analytics/ps-dashboard", { params: { period: activePeriod.toLowerCase() } })
+      .then((res) => {
+        if (cancelled) return;
+        const data = res.data?.data;
+        setSummary(data || null);
+        setLeftOutAccused(
+          (data?.left_out_list || []).map((a) => ({
+            name: a.name,
+            note: `Linked FIR No.-${a.fir_no || ""}`,
+          }))
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSummary(null);
+        setLeftOutAccused([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activePeriod]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/analytics/case-type-breakdown", { params: { period: activePeriod.toLowerCase() } })
+      .then((res) => {
+        if (cancelled) return;
+        const rows = res.data?.data?.rows || [];
+        setCaseTypeRows(
+          rows.map((r) => ({
+            name: r.name,
+            count: r.count,
+            change: `${r.change_pct > 0 ? "+" : ""}${r.change_pct}%`,
+            isUp: r.change_pct >= 0,
+          }))
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCaseTypeRows([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activePeriod]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/analytics/cases-by-month")
+      .then((res) => {
+        if (cancelled) return;
+        setCasesByMonth(res.data?.data || []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCasesByMonth([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const currentPeriod = activePeriod.toLowerCase();
+  const statCards = STAT_CARD_META.map((meta) => ({
+    label: meta.label,
+    bg: meta.bg,
+    value: summary ? String(summary[meta.key]?.count ?? 0) : "--",
+    change: summary ? formatChange(summary[meta.key]?.change_pct, currentPeriod) : "--",
+  }));
 
   return (
     <div className="min-h-screen bg-white px-8 py-8">
@@ -161,8 +204,8 @@ export default function PSDashboard() {
             Left Out Accused
           </div>
           <div className="mt-5 space-y-5">
-            {leftOutAccused.map((accused) => (
-              <div key={accused.name}>
+            {leftOutAccused.map((accused, idx) => (
+              <div key={`${accused.name}-${idx}`}>
                 <div className="text-sm font-bold" style={{ color: "#DC5B3E" }}>
                   {accused.name}
                 </div>
@@ -222,8 +265,8 @@ export default function PSDashboard() {
                   tickLine={false}
                   axisLine={false}
                   dx={-5}
-                  domain={[0, 300]}
-                  ticks={[50, 100, 150, 200, 250, 300]}
+                  domain={[0, "auto"]}
+                  allowDecimals={false}
                 />
                 <Bar dataKey="value" fill="#6C4FE0" radius={[3, 3, 0, 0]} maxBarSize={28} />
               </BarChart>
