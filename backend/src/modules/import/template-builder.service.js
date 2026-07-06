@@ -19,8 +19,135 @@ import {
   INDIRECT_CASCADE_FIELDS,
   NR_PREFIX,
 } from './import-fields.config.js';
+import { autoIncludedRegistryFields } from './registry-sync.util.js';
 import * as fieldsService from '../fields/fields.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from '../fields/classificationSources.config.js';
+import DataValidationsXform from 'exceljs/lib/xlsx/xform/sheet/data-validations-xform.js';
+import exceljsUtils from 'exceljs/lib/utils/utils.js';
+
+// ── ExcelJS data-validation optimiser patch (ExcelJS 3.10.0) ──────────────────────────────
+// ExcelJS writes one <dataValidation> per cell, then merges alike cells into rectangular
+// ranges. Its stock optimiser (optimiseDataValidations) has two problems for our per-cell
+// cascade writes:
+//   1. It sorts cell addresses as TEXT, so "B10" sorts before "B5". Combined with a downward
+//      merge that does NOT skip already-merged cells, a fully-identical column (e.g. the Act
+//      column, every row = OPT_ACTS_LIST) gets emitted as OVERLAPPING ranges — we observed
+//      "B5:B500" and "B10:B500" both written. Overlapping data-validation ranges are an
+//      invalid-content defect: desktop Excel silently repairs it (dropping validations on
+//      some builds), and Excel-online / LibreOffice strip them outright → empty dropdowns.
+//   2. The per-row cascade formulas ($B5, $B6, …) never merge, leaving ~1,500 single-cell
+//      validations that bloat the file and slow load.
+// This patched optimiser sorts NUMERICALLY (column-major, then row) and makes both the
+// downward and rightward growth skip cells that were already claimed, so every run collapses
+// into exactly one non-overlapping range. It is otherwise a faithful re-implementation of the
+// stock algorithm, so the emitted sqref/formulae are identical in shape to what Excel itself
+// produces on save.
+function patchedOptimiseDataValidations(model) {
+  const parse = (address) => {
+    const m = /^([A-Z]+)(\d+)$/.exec(address);
+    if (!m) return null;
+    let col = 0;
+    for (let i = 0; i < m[1].length; i++) col = col * 26 + (m[1].charCodeAt(i) - 64);
+    return { col, row: parseInt(m[2], 10) };
+  };
+  const encode = (col, row) => {
+    let s = '';
+    let n = col;
+    while (n > 0) { const t = (n - 1) % 26; s = String.fromCharCode(t + 65) + s; n = (n - t - 1) / 26; }
+    return `${s}${row}`;
+  };
+  const deepEqual = (a, b) => {
+    if (a === b) return true;
+    if (typeof a !== typeof b || a === null || b === null || typeof a !== 'object') return false;
+    const ka = Object.keys(a);
+    const kb = Object.keys(b);
+    if (ka.length !== kb.length) return false;
+    return ka.every((k) => deepEqual(a[k], b[k]));
+  };
+
+  const cells = [];
+  for (const address of Object.keys(model)) {
+    const pos = parse(address);
+    if (!pos) continue; // ignore any pre-existing range keys — nothing in our model uses them
+    cells.push({ address, col: pos.col, row: pos.row, dv: model[address], marked: false });
+  }
+  const byAddr = {};
+  cells.forEach((c) => { byAddr[c.address] = c; });
+  cells.sort((a, b) => a.col - b.col || a.row - b.row);
+
+  const alive = (col, row) => {
+    const c = byAddr[encode(col, row)];
+    return c && !c.marked ? c : null;
+  };
+
+  const out = [];
+  for (const cell of cells) {
+    if (cell.marked) continue;
+    // grow downward through unclaimed, identical cells
+    let height = 1;
+    while (true) {
+      const n = alive(cell.col, cell.row + height);
+      if (n && deepEqual(n.dv, cell.dv)) height++;
+      else break;
+    }
+    // grow rightward only while every cell of the current height matches and is unclaimed
+    let width = 1;
+    while (true) {
+      let ok = true;
+      for (let i = 0; i < height; i++) {
+        const n = alive(cell.col + width, cell.row + i);
+        if (!n || !deepEqual(n.dv, cell.dv)) { ok = false; break; }
+      }
+      if (ok) width++; else break;
+    }
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
+        const n = byAddr[encode(cell.col + j, cell.row + i)];
+        if (n) n.marked = true;
+      }
+    }
+    const sqref = (height > 1 || width > 1)
+      ? `${cell.address}:${encode(cell.col + width - 1, cell.row + height - 1)}`
+      : cell.address;
+    out.push({ ...cell.dv, sqref });
+  }
+  return out;
+}
+
+// Replace the xform's render with one that uses the patched optimiser. Serialization below is
+// a verbatim copy of ExcelJS 3.10.0's DataValidationsXform.render body.
+DataValidationsXform.prototype.render = function render(xmlStream, model) {
+  const optimizedModel = patchedOptimiseDataValidations(model);
+  if (optimizedModel.length) {
+    xmlStream.openNode('dataValidations', { count: optimizedModel.length });
+    optimizedModel.forEach((value) => {
+      xmlStream.openNode('dataValidation');
+      if (value.type !== 'any') {
+        xmlStream.addAttribute('type', value.type);
+        if (value.operator && value.type !== 'list' && value.operator !== 'between') {
+          xmlStream.addAttribute('operator', value.operator);
+        }
+        if (value.allowBlank) xmlStream.addAttribute('allowBlank', '1');
+      }
+      if (value.showInputMessage) xmlStream.addAttribute('showInputMessage', '1');
+      if (value.promptTitle) xmlStream.addAttribute('promptTitle', value.promptTitle);
+      if (value.prompt) xmlStream.addAttribute('prompt', value.prompt);
+      if (value.showErrorMessage) xmlStream.addAttribute('showErrorMessage', '1');
+      if (value.errorStyle) xmlStream.addAttribute('errorStyle', value.errorStyle);
+      if (value.errorTitle) xmlStream.addAttribute('errorTitle', value.errorTitle);
+      if (value.error) xmlStream.addAttribute('error', value.error);
+      xmlStream.addAttribute('sqref', value.sqref);
+      (value.formulae || []).forEach((formula, index) => {
+        xmlStream.openNode(`formula${index + 1}`);
+        if (value.type === 'date') xmlStream.writeText(exceljsUtils.dateToExcel(new Date(formula)));
+        else xmlStream.writeText(formula);
+        xmlStream.closeNode();
+      });
+      xmlStream.closeNode();
+    });
+    xmlStream.closeNode();
+  }
+};
 
 function slugify(text) {
   return text.toString().toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]+/g, '');
@@ -64,6 +191,7 @@ const CASE_SECTION_MAP = {
   general_info: { sheet: 'General Information', label: 'General Information' },
   incident_details: { sheet: 'General Information', label: 'General Information' },
   investigation_officer: { sheet: 'General Information', label: 'IO Details' },
+  investigation_details: { sheet: 'General Information', label: 'Action Taken' },
   occurrence_info: { sheet: 'General Information', label: 'Place of Occurrence Address' },
   occurrence_address: { sheet: 'General Information', label: 'Place of Occurrence Address' },
   complainant_personal_info: { sheet: 'General Information', label: 'Complainant Personal Details' },
@@ -91,8 +219,10 @@ const CASE_SECTION_MAP = {
 
 const ARREST_SECTION_MAP = {
   general_info: { sheet: 'General Info', label: 'General Information' },
+  incident_details: { sheet: 'General Info', label: 'General Information' },
   arrest_details: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
   arrested_info: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
+  arrestee_info: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
   investigation_officer: { sheet: 'General Info', label: 'IO Details' },
   
   act_section: { sheet: 'Act and Sections', label: 'Act and Sections' },
@@ -123,7 +253,7 @@ const getHint = (field) => {
     return `${reqStr}select: ${optList}`;
   }
   if (field.field_type === 'DATE') {
-    return `${reqStr}date (DD/MM/YYYY)`;
+    return `${reqStr}date (dd-mm-yyyy)`;
   }
   if (field.field_type === 'TIME') {
     return `${reqStr}time (HH:MM)`;
@@ -139,8 +269,8 @@ const getHint = (field) => {
 // because insert/delete corrupt the stored merge ranges (ExcelJS model.merges is unreliable).
 // Returns null to mean "carry forward the previous column's section" (used for temporal
 // fields, label-only columns, and anything that belongs with the block before it).
-const ADDR_TOKENS = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'country', 'state', 'district', 'police_station', 'pincode', 'present_address'];
-const PARTICULAR_KEYS = new Set(['nafis_prepared', 'dossier_prepared', 'prev_involvement', 'previous_involvement', 'bad_character', 'proclaimed_offender', 'verifying_officer_name', 'verifying_officer_rank', 'status', 'scheme_of_arrest', 'search_slip_prepared', 'address_verified', 'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path']);
+const ADDR_TOKENS = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'country', 'state', 'district', 'police_station', 'pincode', 'present_address', 'landmark'];
+const PARTICULAR_KEYS = new Set(['nafis_prepared', 'dossier_prepared', 'prev_involvement', 'previous_involvement', 'bad_character', 'proclaimed_offender', 'verifying_officer_name', 'verifying_officer_rank', 'status', 'scheme_of_arrest', 'search_slip_prepared', 'address_verified', 'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path', 'arresting_officer', 'arresting_officer_mobile', 'listed_criminal']);
 
 const sectionLabelForKey = (key, recordType, isParentSheet) => {
   if (!key) return null; // carry forward (label-only column)
@@ -154,6 +284,7 @@ const sectionLabelForKey = (key, recordType, isParentSheet) => {
   }
 
   if (key === 'act' || key === 'sections') return 'Act and Sections';
+  if (['case_status', 'disposal_type', 'rc_no'].includes(key)) return 'Action Taken';
   if (key === 'crime_head') return 'Major / Minor Head';
 
   for (const [prefix, label] of [['complainant', 'Complainant'], ['victim', 'Victim'], ['accused', 'Accused'], ['arrested', 'Arrested Person']]) {
@@ -168,20 +299,29 @@ const sectionLabelForKey = (key, recordType, isParentSheet) => {
   if (key.startsWith('occurrence_')) {
     const rest = key.slice('occurrence_'.length);
     if (ADDR_TOKENS.some(t => rest === t)) return 'Place of Occurrence Address';
-    return null; // occurrence_date/time/place → stay in General Information
+    // occurrence_date/time/place → stay in General Information
+    if (isParentSheet) return recordType === 'CASE' ? 'General Information' : 'General Info';
+    return null;
   }
 
   if (key.startsWith('io_')) return 'IO Details';
 
-  if (['date_of_arrest', 'time_of_arrest', 'place_of_arrest', 'arrest_date', 'arrest_place'].includes(key)) {
-    return (recordType === 'ARREST' && isParentSheet) ? 'Arrest Details' : null;
+  if (['date_of_arrest', 'time_of_arrest', 'arrest_date', 'arrest_place', 'arrest_street', 'arrest_colony', 'arrest_district', 'arrest_landmark'].includes(key)) {
+    if (['ARREST', 'KALANDRA'].includes(recordType)) {
+      return isParentSheet ? 'Arrest Details' : 'Arrest Detail';
+    }
+    if (isParentSheet) return recordType === 'CASE' ? 'General Information' : 'General Info';
+    return null;
   }
 
   if (key.startsWith('property_') || key.startsWith('phone_')) return 'Property Details';
 
-  if (!isParentSheet && PARTICULAR_KEYS.has(key)) return 'Particular Details';
+  if (PARTICULAR_KEYS.has(key)) return 'Particular Details';
 
-  return null; // General Information fields (fir_date, district, status, etc.) carry forward
+  if (isParentSheet) {
+    return recordType === 'CASE' ? 'General Information' : 'General Info';
+  }
+  return null;
 };
 
 // ────────────────────────────────────────────────────────────────────────────────────────
@@ -194,6 +334,36 @@ async function buildLiveLookups(recordType) {
   // Using the same fieldsService.* calls ensures the Excel template shows
   // exactly the same options as the interactive form.
   const toOpt = (labelCol) => (r) => ({ value: r[labelCol], label: r[labelCol] });
+
+  // Get all Acts and group Sections per Act dynamically
+  const allActs = await fieldsService.getActs();
+
+  // The interactive form (fields.controller.js getFieldsForForm) appends these fallback
+  // acts on top of excel_acts — the new criminal codes and the catch-all. Mirror that here
+  // so the Act dropdown offers everything the form does. act_cd: null → they simply have
+  // no sections mapping (the dependent Sections cell stays free-text, same as other
+  // section-less acts).
+  const FALLBACK_ACTS = ['Other Act'];
+  const knownActNames = new Set(allActs.map(a => String(a.act_long).trim().toLowerCase()));
+  for (const name of FALLBACK_ACTS) {
+    if (!knownActNames.has(name.toLowerCase())) {
+      allActs.push({ act_cd: null, act_long: name });
+    }
+  }
+  const dbSections = await db('excel_sections')
+    .select('act_sec_cd', 'section')
+    .distinct()
+    .orderBy('section', 'asc');
+
+  const sectionsByActCd = {};
+  for (const row of dbSections) {
+    if (!row.act_sec_cd) continue;
+    const cd = String(row.act_sec_cd);
+    if (!sectionsByActCd[cd]) {
+      sectionsByActCd[cd] = [];
+    }
+    sectionsByActCd[cd].push({ value: row.section, label: row.section });
+  }
 
   // Sections per act group
   const ipcSections       = (await fieldsService.getSectionsForActs(ACT_GROUP_CODES.IPC)).map(toOpt('section'));
@@ -232,8 +402,14 @@ async function buildLiveLookups(recordType) {
   const localHeads = (await fieldsService.getLocalHeads()).map(toOpt('local_head'));
 
   // Districts and Police Stations
-  const districts = await db('ref_district').select('district_name').orderBy('district_name', 'asc');
-  const psRows = await db('ref_police_station').select('ps_name').orderBy('ps_name', 'asc');
+  const districts = await db('hierarchy_nodes')
+    .where({ node_type: 'DISTRICT', is_active: true })
+    .select('name_en as district_name')
+    .orderBy('name_en', 'asc');
+  const psRows = await db('hierarchy_nodes')
+    .where({ node_type: 'PS', is_active: true })
+    .select('name_en as ps_name')
+    .orderBy('name_en', 'asc');
   const districtOpts = districts.map(d => ({ value: d.district_name, label: d.district_name }));
   const psOpts = psRows.map(p => ({ value: p.ps_name, label: p.ps_name }));
 
@@ -259,8 +435,14 @@ async function buildLiveLookups(recordType) {
         // Default branch (excel_other_property_items) — raw {property_cd, property}
         items = raw.map(r => ({ value: r.property, label: r.property }));
       } else if (Array.isArray(raw)) {
-        // GENERIC branches already return {value, label}
-        items = raw;
+        // GENERIC branches return {value: <numeric code>, label: <display name>} — the
+        // Excel cell must show (and store) the NAME, not the code, so use the label on
+        // both sides. (Leaving the code as value made e.g. DRUGS/NARCOTIC DRUGS render
+        // as 392/393/394… in the Type of property dropdown.)
+        items = raw.map(r => {
+          const name = (r && typeof r === 'object') ? (r.label ?? r.value) : r;
+          return { value: name, label: name };
+        });
       }
       propItemsByCategory[cat.label] = items;
     } catch (err) {
@@ -269,11 +451,148 @@ async function buildLiveLookups(recordType) {
     }
   }
 
+  // Every section's major heads, act-aware. excel_major_minor_mapping keys rows by
+  // (act_cd, composite "<act_cd>-<label>" section_code), and neither key is reliable
+  // alone: labels drift in case/punctuation ("66f" vs "66F", "9A" vs "9-A"), ~120 rows'
+  // act_cd disagrees with their composite's prefix, and some acts exist twice (IT Act:
+  // 2625 with sections, 3293 without — mapping rows point at both). Resolve each row in
+  // JS — exact composite match first, then normalized-label match under the composite's
+  // prefix act, the row's act_cd, and finally same-named alias acts. The workbook cascade
+  // looks up "<act_long>|<section label>" (see createLookupsSheet), so heads are scoped
+  // per (act, section): sections sharing a label across acts no longer bleed heads into
+  // each other. Pairs without a specific mapping fall back to the act-level union of
+  // heads, then to the full major-head list, so the dropdown is never empty.
+  const mappingRows = await db('excel_major_minor_mapping as m')
+    .join('excel_major_heads as mh', 'm.major_head_code', 'mh.major_head_code')
+    .select('m.act_cd', 'm.section_code', 'mh.major_head');
+  const allSectionRows = await db('excel_sections')
+    .select('section_code', 'act_sec_cd', 'section')
+    .whereNotNull('act_sec_cd')
+    .whereNotNull('section');
+
+  const normLabel = (s) => String(s).toUpperCase().replace(/[^A-Z0-9()]/g, '');
+  // Loose tier drops parentheses too: the mapping writes "66f" where the section sheet
+  // has "66(F)". Only consulted when every strict candidate failed, because stripping
+  // parens can collide ("12(1)" vs "121") — a strict match must always win.
+  const normLabelLoose = (s) => normLabel(s).replace(/[()]/g, '');
+  const SEP = '\u0000';
+
+  // (act, normalized label) → canonical spellings; composite code → its (act, norm) key
+  const labelsByActNorm = new Map();
+  const labelsByActNormLoose = new Map();
+  const compositeToActNorm = new Map();
+  for (const r of allSectionRows) {
+    const act = String(r.act_sec_cd);
+    const key = act + SEP + normLabel(r.section);
+    if (!labelsByActNorm.has(key)) labelsByActNorm.set(key, new Set());
+    labelsByActNorm.get(key).add(r.section);
+    const looseKey = act + SEP + normLabelLoose(r.section);
+    if (!labelsByActNormLoose.has(looseKey)) labelsByActNormLoose.set(looseKey, new Set());
+    labelsByActNormLoose.get(looseKey).add(r.section);
+    if (r.section_code) compositeToActNorm.set(String(r.section_code).trim().toUpperCase(), key);
+  }
+
+  // Duplicate act rows: a mapping-referenced act with no sections of its own is aliased
+  // (by normalized-name prefix) to same-named acts that DO have sections, e.g. 3293
+  // "INFORMATION TECHNOLOGY (AMENDMENT) ACT 2008" → 2625 IT ACT 2000 / 3274.
+  const actsWithSections = new Set(allSectionRows.map((r) => String(r.act_sec_cd)));
+  const normActName = (s) => String(s).toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^THE/, '');
+  const actAliases = new Map();
+  for (const a of allActs) {
+    if (a.act_cd == null || actsWithSections.has(String(a.act_cd))) continue;
+    const prefix = normActName(a.act_long).slice(0, 15);
+    if (prefix.length < 10) continue;
+    const aliases = allActs
+      .filter((b) => b.act_cd != null && actsWithSections.has(String(b.act_cd)) &&
+                     normActName(b.act_long).startsWith(prefix))
+      .map((b) => String(b.act_cd));
+    if (aliases.length > 0) actAliases.set(String(a.act_cd), aliases);
+  }
+
+  const majorHeadsByActSection = new Map(); // "<act><SEP><canonical label>" → [head labels]
+  const actLevelHeadSets = new Map();       // act → Set(head labels)
+  const addActHead = (act, head) => {
+    if (!actLevelHeadSets.has(act)) actLevelHeadSets.set(act, new Set());
+    actLevelHeadSets.get(act).add(head);
+  };
+  const attachTo = (index, actNormKey, head) => {
+    const labels = index.get(actNormKey);
+    if (!labels) return false;
+    const act = actNormKey.slice(0, actNormKey.indexOf(SEP));
+    for (const label of labels) {
+      const k = act + SEP + label;
+      if (!majorHeadsByActSection.has(k)) majorHeadsByActSection.set(k, []);
+      const list = majorHeadsByActSection.get(k);
+      if (!list.includes(head)) list.push(head);
+    }
+    addActHead(act, head);
+    return true;
+  };
+
+  for (const m of mappingRows) {
+    if (!m.section_code || !m.major_head) continue;
+    const raw = String(m.section_code).trim();
+    const code = raw.toUpperCase();
+    const dash = raw.indexOf('-');
+    const prefixAct = dash > 0 ? raw.slice(0, dash) : null;
+    const rawLabel = dash >= 0 ? raw.slice(dash + 1) : raw;
+    const rowAct = m.act_cd != null ? String(m.act_cd) : null;
+
+    // Candidate acts in trust order: the composite's prefix, the row's act_cd, then
+    // same-named alias acts of either.
+    const candActs = [];
+    for (const src of [prefixAct, rowAct]) {
+      if (src && !candActs.includes(src)) candActs.push(src);
+    }
+    for (const src of [prefixAct, rowAct]) {
+      for (const alias of (src && actAliases.get(src)) || []) {
+        if (!candActs.includes(alias)) candActs.push(alias);
+      }
+    }
+
+    let attached = false;
+    const exact = compositeToActNorm.get(code);
+    if (exact) {
+      attached = attachTo(labelsByActNorm, exact, m.major_head);
+    } else {
+      for (const act of candActs) {
+        if (attachTo(labelsByActNorm, act + SEP + normLabel(rawLabel), m.major_head)) { attached = true; break; }
+      }
+      if (!attached) {
+        for (const act of candActs) {
+          if (attachTo(labelsByActNormLoose, act + SEP + normLabelLoose(rawLabel), m.major_head)) { attached = true; break; }
+        }
+      }
+    }
+    if (!attached) {
+      // Section missing from excel_sections under every spelling/alias (source-data
+      // gap) — still count the head toward the act-level fallback list of every act
+      // the row plausibly belongs to.
+      for (const src of new Set([prefixAct, rowAct].filter(Boolean))) {
+        for (const act of (actsWithSections.has(src) ? [src] : (actAliases.get(src) || []))) {
+          addActHead(act, m.major_head);
+        }
+      }
+    }
+  }
+  for (const list of majorHeadsByActSection.values()) list.sort((a, b) => a.localeCompare(b));
+  const actLevelMajorHeads = new Map();
+  for (const [act, set] of actLevelHeadSets) {
+    actLevelMajorHeads.set(act, [...set].sort((a, b) => a.localeCompare(b)));
+  }
+  const allMajorHeadLabels = [...new Set(
+    (await db('excel_major_heads').whereNotNull('major_head').orderBy('major_head', 'asc'))
+      .map((r) => r.major_head)
+  )];
+
   // Status options — record-type-specific (each template covers only one record type)
   const statusOptionsByType = {
     CASE:  ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'UNTRACED', 'PENDING',
              'CANCELLATION', 'QUASHED', 'CLOSURE REPORT', 'RELEASED U/S 189 BNSS', 'TRANSFER'],
-    ARREST: ['police_custody', 'bail', 'judicial_custody', 'released', 'others'],
+    // Union of the interactive form's custody-status values (fields.controller.js status
+    // dispatch: against_fir list + non-FIR list) — the template is one flat column, so it
+    // must accept every value the form can store.
+    ARREST: ['JC', 'PC', 'Bail', 'Bound Down', 'Release', 'Lockup', '35(3) BNS Notice', 'Fine'],
   };
   const statusOpts = (statusOptionsByType[recordType] || []).map(v => ({ value: v, label: v }));
 
@@ -301,6 +620,11 @@ async function buildLiveLookups(recordType) {
     _propCategoryLabels:         propCategories.map(c => c.label),
     _minorHeadsByMajorLabel:     minorHeadsByMajorLabel,
     _minorHeadMajorLabels:       Object.keys(minorHeadsByMajorLabel),
+    _majorHeadsByActSection:     majorHeadsByActSection,
+    _actLevelMajorHeads:         actLevelMajorHeads,
+    _allMajorHeadLabels:         allMajorHeadLabels,
+    _allActs:                    allActs,
+    _sectionsByActCd:            sectionsByActCd,
   };
 }
 
@@ -310,17 +634,26 @@ async function buildLiveLookups(recordType) {
 // ExcelJS 3.10 API (verified): definedNames.add(rangeRef, namedRangeName) — range first.
 // Returns: { namedRangeMap: {fieldKey → namedRangeName}, slugToNR: {categorySlug → namedRangeName} }
 // ────────────────────────────────────────────────────────────────────────────────────────
-function createLookupsSheet(workbook, liveLookups) {
-  // Remove existing _Lookups sheet to make this idempotent
-  const existing = workbook.getWorksheet('_Lookups');
-  if (existing) workbook.removeWorksheet(existing.id);
-
-  const ws = workbook.addWorksheet('_Lookups');
+function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } = {}) {
+  // preserveExisting: append after any columns already on _Lookups instead of rebuilding it.
+  // Required for the UIDB/MISSING flow, where addSheetToWorkbook has already written long
+  // option lists (states, districts…) to _Lookups and referenced them by DIRECT cell range —
+  // removing the sheet here would leave those dropdowns pointing at whatever list lands in
+  // the same column of the rebuilt sheet (observed: Deceased State showing IPC sections).
+  let ws = workbook.getWorksheet('_Lookups');
+  if (ws && !preserveExisting) {
+    workbook.removeWorksheet(ws.id);
+    ws = null;
+  }
+  if (!ws) ws = workbook.addWorksheet('_Lookups');
   try { ws.state = 'veryHidden'; } catch (_) { ws.state = 'hidden'; }
 
   const namedRangeMap = {};  // fieldKey → named range name
   const slugToNR = {};       // category label slug → named range name (for INDIRECT formula)
   let col = 1;
+  ws.getRow(1).eachCell({ includeEmpty: false }, (cell, c) => {
+    if (cell.value !== null && cell.value !== undefined && cell.value !== '') col = Math.max(col, c + 1);
+  });
 
   // Writes one option list to the _Lookups sheet and registers a named range.
   // nrName: the exact name to register (must match what INDIRECT() will reference).
@@ -367,17 +700,58 @@ function createLookupsSheet(workbook, liveLookups) {
     writeList(fk, opts, NR_PREFIX + fk.toUpperCase());
   }
 
-  // 2. Write one named range per property category (for the INDIRECT cascade)
-  // Named range name = OPT_ + slugified category label (upper-case, spaces→underscores)
+  // 2. Write one named range per property category (for the INDIRECT cascade) stacked vertically
+  const propItemsCol = col;
+  col++; // reserve column for property type lists
+  const propCatToTypeNRRows = [];
+  let currentPropRow = 2;
+
+  ws.getCell(1, propItemsCol).value = 'PROP_TYPE_VALS';
+
   for (const catLabel of (liveLookups._propCategoryLabels || [])) {
     const items = (liveLookups._propItemsByCategory || {})[catLabel] || [];
     if (items.length === 0) continue;
-    // slugify: upper-case, non-alphanumeric runs → single underscore, trim
+    
+    const values = items.map(o => (o && typeof o === 'object' ? o.value : String(o)));
+    const startRow = currentPropRow;
+    const endRow = currentPropRow + values.length - 1;
+    
+    values.forEach((v, idx) => {
+      ws.getCell(startRow + idx, propItemsCol).value = v;
+    });
+    
+    const colLetter = numToColLetter(propItemsCol);
+    const rangeRef = `'_Lookups'!$${colLetter}$${startRow}:$${colLetter}$${endRow}`;
     const slug = catLabel.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
-    const nrName = NR_PREFIX + slug;
-    const colKey = `__prop_${catLabel}`;
-    writeList(colKey, items, nrName);
+    const nrName = `${NR_PREFIX}PROP_CAT_${slug}`;
+    
+    try {
+      workbook.definedNames.add(rangeRef, nrName);
+    } catch (err) {
+      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+    }
+    
+    propCatToTypeNRRows.push([catLabel, nrName]);
     slugToNR[slug] = nrName;
+    currentPropRow = endRow + 1;
+  }
+
+  if (propCatToTypeNRRows.length > 0) {
+    const labelCol = col;
+    const nrCol = col + 1;
+    propCatToTypeNRRows.forEach((row, i) => {
+      ws.getCell(i + 1, labelCol).value = row[0];
+      ws.getCell(i + 1, nrCol).value = row[1];
+    });
+    const labelLetter = numToColLetter(labelCol);
+    const nrLetter = numToColLetter(nrCol);
+    const tableRef = `'_Lookups'!$${labelLetter}$1:$${nrLetter}$${propCatToTypeNRRows.length}`;
+    try {
+      workbook.definedNames.add(tableRef, 'PROP_CAT_TO_TYPE_NR');
+    } catch (err) {
+      logger.error('createLookupsSheet: failed to register PROP_CAT_TO_TYPE_NR', { err });
+    }
+    col += 2;
   }
 
   // 3. Write one named range per major head (for the minor_head INDIRECT cascade) —
@@ -415,7 +789,142 @@ function createLookupsSheet(workbook, liveLookups) {
     col += 2;
   }
 
-  return { namedRangeMap, slugToNR, hasMinorHeadCascade: majorHeadToNRRows.length > 0 };
+  // 4. Section→Major-head cascade, act-aware. One stacked column stores every DISTINCT
+  // head set once (deduped by content); SECTION_TO_MAJOR_NR maps "<act_long>|<section
+  // label>" — exactly the string the DV formula concatenates from the act and section
+  // cells ($act5&"|"&$sec5; COM-verified that Excel 2021 accepts the concatenated lookup
+  // key as a DV list source) — to the named range holding that pair's head set. Pairs
+  // without a specific mapping fall back to the act-level union of heads, then to the
+  // full major-head list, so the Major-head dropdown is never empty. IFERROR must still
+  // never be used in the DV formula (see the optimiser-patch comment at the top).
+  const secMajorCol = col;
+  col++; // reserve column for the stacked head-set values
+  ws.getCell(1, secMajorCol).value = 'SEC_MAJOR_VALS';
+  let currentSecMHRow = 2;
+  const headSetSigToNR = new Map();
+  let headSetSeq = 0;
+  const headSetNR = (values) => {
+    if (!values || values.length === 0) return null;
+    const sig = values.join('\u0000');
+    if (headSetSigToNR.has(sig)) return headSetSigToNR.get(sig);
+    const startRow = currentSecMHRow;
+    values.forEach((v, idx) => { ws.getCell(startRow + idx, secMajorCol).value = v; });
+    const endRow = startRow + values.length - 1;
+    currentSecMHRow = endRow + 1;
+    const colLetter = numToColLetter(secMajorCol);
+    const nrName = `${NR_PREFIX}SECMH_${++headSetSeq}`;
+    try {
+      workbook.definedNames.add(`'_Lookups'!$${colLetter}$${startRow}:$${colLetter}$${endRow}`, nrName);
+    } catch (err) {
+      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+      return null;
+    }
+    headSetSigToNR.set(sig, nrName);
+    return nrName;
+  };
+
+  const pairHeads = liveLookups._majorHeadsByActSection || new Map();
+  const actLevelHeads = liveLookups._actLevelMajorHeads || new Map();
+  const allHeadsNR = headSetNR(liveLookups._allMajorHeadLabels || []);
+  const sectionToMHNRRows = [];
+  for (const act of (liveLookups._allActs || [])) {
+    if (act.act_cd == null) continue;
+    const cd = String(act.act_cd);
+    const sections = (liveLookups._sectionsByActCd || {})[cd] || [];
+    if (sections.length === 0) continue;
+    const actNR = actLevelHeads.has(cd) ? headSetNR(actLevelHeads.get(cd)) : null;
+    for (const s of sections) {
+      const label = (s && typeof s === 'object') ? s.value : String(s);
+      const specific = pairHeads.get(cd + '\u0000' + label);
+      const nr = (specific && specific.length > 0 ? headSetNR(specific) : null) || actNR || allHeadsNR;
+      const key = `${act.act_long}|${label}`;
+      // VLOOKUP cannot match lookup values longer than 255 characters
+      if (!nr || key.length > 255) continue;
+      sectionToMHNRRows.push([key, nr]);
+    }
+  }
+
+  if (sectionToMHNRRows.length > 0) {
+    const labelCol = col;
+    const nrCol = col + 1;
+    sectionToMHNRRows.forEach((row, i) => {
+      ws.getCell(i + 1, labelCol).value = row[0];
+      ws.getCell(i + 1, nrCol).value = row[1];
+    });
+    const labelLetter = numToColLetter(labelCol);
+    const nrLetter = numToColLetter(nrCol);
+    const tableRef = `'_Lookups'!$${labelLetter}$1:$${nrLetter}$${sectionToMHNRRows.length}`;
+    try {
+      workbook.definedNames.add(tableRef, 'SECTION_TO_MAJOR_NR');
+    } catch (err) {
+      logger.error('createLookupsSheet: failed to register SECTION_TO_MAJOR_NR', { err });
+    }
+    col += 2;
+  }
+
+  // 5. Write dynamic list of all Acts
+  const actNames = (liveLookups._allActs || []).map(r => r.act_long);
+  writeList('__all_acts_list', actNames.map(name => ({ value: name, label: name })), 'OPT_ACTS_LIST');
+
+  // 6. Write Act Sections stacked vertically in a single column
+  const actSectionsCol = col;
+  col++; // reserve column for act sections
+  const actToSecNRRows = [];
+  let currentSecRow = 2;
+
+  ws.getCell(1, actSectionsCol).value = 'ACT_SECTIONS_VALS';
+
+  for (const act of (liveLookups._allActs || [])) {
+    const cd = String(act.act_cd);
+    const items = (liveLookups._sectionsByActCd || {})[cd] || [];
+    if (items.length === 0) continue;
+    
+    const values = items.map(o => (o && typeof o === 'object' ? o.value : String(o)));
+    const startRow = currentSecRow;
+    const endRow = currentSecRow + values.length - 1;
+    
+    values.forEach((v, idx) => {
+      ws.getCell(startRow + idx, actSectionsCol).value = v;
+    });
+    
+    const colLetter = numToColLetter(actSectionsCol);
+    const rangeRef = `'_Lookups'!$${colLetter}$${startRow}:$${colLetter}$${endRow}`;
+    const nrName = `${NR_PREFIX}ACT_${cd}`;
+    
+    try {
+      workbook.definedNames.add(rangeRef, nrName);
+    } catch (err) {
+      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+    }
+    
+    actToSecNRRows.push([act.act_long, nrName]);
+    currentSecRow = endRow + 1;
+  }
+
+  if (actToSecNRRows.length > 0) {
+    const labelCol = col;
+    const nrCol = col + 1;
+    actToSecNRRows.forEach((row, i) => {
+      ws.getCell(i + 1, labelCol).value = row[0];
+      ws.getCell(i + 1, nrCol).value = row[1];
+    });
+    const labelLetter = numToColLetter(labelCol);
+    const nrLetter = numToColLetter(nrCol);
+    const tableRef = `'_Lookups'!$${labelLetter}$1:$${nrLetter}$${actToSecNRRows.length}`;
+    try {
+      workbook.definedNames.add(tableRef, 'ACT_TO_SECTIONS_NR');
+    } catch (err) {
+      logger.error('createLookupsSheet: failed to register ACT_TO_SECTIONS_NR', { err });
+    }
+    col += 2;
+  }
+
+  return { 
+    namedRangeMap, 
+    slugToNR, 
+    hasMinorHeadCascade: majorHeadToNRRows.length > 0,
+    hasSectionMajorCascade: sectionToMHNRRows.length > 0
+  };
 }
 
 
@@ -435,6 +944,17 @@ export class TemplateBuilderService {
 
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(templatePath);
+
+    // Wipe every data validation inherited from the base .xlsx. All real dropdowns are
+    // (re)written below from live DB data, so anything already in the file is stale — and
+    // after the column deletes/inserts below, a leftover can end up on the WRONG column
+    // (e.g. the base Property sheet's status list surfacing as a dropdown on Property
+    // Value, or a hardcoded "Vehicle,Mobile Phone,…" list below row 500 on Category).
+    workbook.worksheets.forEach(ws => {
+      if (ws.dataValidations && ws.dataValidations.model) {
+        ws.dataValidations.model = {};
+      }
+    });
 
     // ── Fetch live lookups from DB ────────────────────────────────────────────────
     let liveLookups = {};
@@ -459,6 +979,14 @@ export class TemplateBuilderService {
       .orWhereIn('field_key', Array.from(allowedKeys))
       .orderBy('sort_order', 'asc');
 
+    // Registry-driven auto-inclusion: active registry fields applicable to this record
+    // type that the curated config lists don't mention and that aren't excluded. They are
+    // processed AFTER all curated fields and appended at the end of their sheet, so the
+    // curated column layout never shifts. (See registry-sync.util.js / import-fields.config.js.)
+    const autoFields = autoIncludedRegistryFields(recordType, activeRegistryFields, allowedKeys);
+    const autoKeys = new Set(autoFields.map(f => f.field_key));
+    const includedKeys = new Set([...allowedKeys, ...autoKeys]);
+
     const typeFields = activeRegistryFields.filter(f => {
       if (allowedKeys.has(f.field_key)) return true;
       try {
@@ -478,16 +1006,45 @@ export class TemplateBuilderService {
       { field_key: 'police_station', field_type: 'SELECT', section: 'general_info', label_en: 'Police Station', label_hi: 'थाना' }
     );
 
+    if (recordType === 'ARREST') {
+      typeFields.push(
+        { field_key: 'date_of_arrest', field_type: 'DATE', section: 'arrest_details', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि' },
+        { field_key: 'time_of_arrest', field_type: 'TIME', section: 'arrest_details', label_en: 'Time Of Arrest', label_hi: 'गिरफ्तारी का समय' }
+      );
+    }
+
     // Clean up columns from the base workbook on the fly if they are not in allowedKeys
     workbook.worksheets.forEach(worksheet => {
       if (worksheet.name === '_Lookups') return; // Do not touch our hidden lookup sheet!
+      
+      // If CASE general sheet, clear the misplaced disposal_type key in Row 1 so it gets deleted and relocated
+      if (recordType === 'CASE' && worksheet.name === 'General Information') {
+        const row1 = worksheet.getRow(1);
+        row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          if (cell.value === 'disposal_type') {
+            cell.value = null;
+          }
+        });
+      }
+
       let colIdxToDelete = -1;
       do {
         colIdxToDelete = -1;
         const row1 = worksheet.getRow(1);
+        
+        let lastAllowedCol = -1;
         row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          if (cell.value && !allowedKeys.has(cell.value)) {
-            colIdxToDelete = colNumber;
+          if (cell.value && includedKeys.has(String(cell.value).trim())) {
+            lastAllowedCol = Math.max(lastAllowedCol, colNumber);
+          }
+        });
+
+        row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          if (colNumber <= lastAllowedCol) {
+            const val = cell.value ? String(cell.value).trim() : '';
+            if (!val || !includedKeys.has(val)) {
+              colIdxToDelete = colNumber;
+            }
           }
         });
         if (colIdxToDelete !== -1) {
@@ -496,16 +1053,37 @@ export class TemplateBuilderService {
       } while (colIdxToDelete !== -1);
     });
 
-    const excludedKeys = new Set();
+    // Ensure local_head is present on Act and Sections sheet - REMOVED
+
     const filteredTypeFields = typeFields.filter(f => allowedKeys.has(f.field_key));
     const sectionMap = recordType === 'CASE' ? CASE_SECTION_MAP : ARREST_SECTION_MAP;
+    const parentSheetLabel = recordType === 'CASE'
+      ? { sheet: 'General Information', label: 'General Information' }
+      : { sheet: 'General Info', label: 'General Information' };
 
-    for (const field of filteredTypeFields) {
+    // Curated fields first (identical to the historical pass), then registry auto-included
+    // fields — by then every curated column exists, so autos append cleanly at the end.
+    for (const field of [...filteredTypeFields, ...autoFields]) {
+      const isAuto = autoKeys.has(field.field_key) && !allowedKeys.has(field.field_key);
       if (recordType === 'ARREST' && field.field_key === 'status') {
         field.section = 'custody_status';
       }
-      const mapping = sectionMap[field.section];
-      if (!mapping) continue;
+      // Force sections and act to the act_section sheet to prevent them from slipping into General Information
+      if (field.field_key === 'sections' || field.field_key === 'act') {
+        field.section = 'act_section';
+      }
+      if (field.field_key === 'case_status') {
+        field.section = 'investigation_details';
+      }
+      let mapping = sectionMap[field.section];
+      if (!mapping) {
+        // Curated fields keep the historical behaviour (skip — they may live in the base
+        // .xlsx already). Auto-included fields must never silently vanish: fall back to the
+        // parent sheet and log it, so a new form field always surfaces somewhere.
+        if (!isAuto) continue;
+        logger.warn(`buildTemplate(${recordType}): field '${field.field_key}' has unmapped section '${field.section}' — placing on ${parentSheetLabel.sheet}`);
+        mapping = parentSheetLabel;
+      }
 
       const worksheet = workbook.getWorksheet(mapping.sheet);
       if (!worksheet) continue;
@@ -521,7 +1099,10 @@ export class TemplateBuilderService {
           targetColIndex = colNum;
         }
       });
-      if (!exists) {
+      // Label-based rescue is for curated fields whose base-.xlsx column lacks a Row-1 key.
+      // Never apply it to auto-included fields: a coincidental label match would REKEY an
+      // existing curated column instead of appending a new one.
+      if (!exists && !isAuto) {
         row3.eachCell({ includeEmpty: true }, (cell, colNum) => {
           if (cell.value && (cell.value === field.label_en || cell.value === field.label_hi)) {
             exists = true;
@@ -543,48 +1124,96 @@ export class TemplateBuilderService {
           arrestPropertyFields.find(f => f.field_key === field.field_key);
 
       if (!exists) {
-        // 2. Locate the end of the section by looking at merges or Row 2 labels
-        let lastColOfSection = -1;
+        targetColIndex = -1;
 
-        // Scan Row 2 for matching section subheadings
-        const row2 = worksheet.getRow(2);
-        const row2Values = [];
-        row2.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          row2Values[colNumber] = cell.value;
-        });
-
-        // Find the last column that matches the section label (or resides in its merge)
-        if (worksheet.model.merges) {
-          for (const mergeStr of worksheet.model.merges) {
-            const { startCol, endCol, startRow } = parseRange(mergeStr);
-            if (startRow === 2) {
-              const val = row2.getCell(startCol).value;
-              if (val && String(val).trim().toLowerCase() === mapping.label.toLowerCase()) {
-                lastColOfSection = Math.max(lastColOfSection, endCol);
-              }
-            }
-          }
-        }
-
-        // Fallback: search row2 values directly
-        if (lastColOfSection === -1) {
-          for (let c = 1; c <= row2Values.length; c++) {
-            if (row2Values[c] && String(row2Values[c]).trim().toLowerCase() === mapping.label.toLowerCase()) {
-              lastColOfSection = Math.max(lastColOfSection, c);
-            }
-          }
-        }
-
-        // If section was found, we insert right after its last column (making it part of the section)
-        if (lastColOfSection !== -1) {
-          targetColIndex = lastColOfSection + 1;
+        // Resolve which configuration list corresponds to the current worksheet
+        let currentFieldsList = [];
+        if (recordType === 'CASE') {
+          if (mapping.sheet === 'General Information') currentFieldsList = caseGeneralFields;
+          else if (mapping.sheet === 'Victim Information') currentFieldsList = caseVictimFields;
+          else if (mapping.sheet === 'Act and Sections') currentFieldsList = caseActSectionFields;
+          else if (mapping.sheet === 'Accused Detail') currentFieldsList = caseAccusedFields;
+          else if (mapping.sheet === 'Property Details') currentFieldsList = casePropertyFields;
         } else {
-          // Fallback: append at the end
-          let maxCols = 0;
-          worksheet.eachRow({ includeEmpty: true }, r => {
-            maxCols = Math.max(maxCols, r.cellCount);
+          if (mapping.sheet === 'General Info') currentFieldsList = arrestGeneralFields;
+          else if (mapping.sheet === 'Act and Sections') currentFieldsList = arrestActSectionFields;
+          else if (mapping.sheet === 'Person Arrested Detail') currentFieldsList = arrestPersonFields;
+          else if (mapping.sheet === 'Property Details') currentFieldsList = arrestPropertyFields;
+        }
+
+        // Find position of field in currentFieldsList
+        const fieldIdx = currentFieldsList.findIndex(f => f.field_key === field.field_key);
+        if (fieldIdx !== -1) {
+          // Search for preceding fields in the worksheet Row 1
+          let maxPrecedingColIdx = -1;
+          for (let i = 0; i < fieldIdx; i++) {
+            const precKey = currentFieldsList[i].field_key;
+            row1.eachCell({ includeEmpty: true }, (cell, colNum) => {
+              if (cell.value === precKey) {
+                maxPrecedingColIdx = Math.max(maxPrecedingColIdx, colNum);
+              }
+            });
+          }
+
+          if (maxPrecedingColIdx !== -1) {
+            targetColIndex = maxPrecedingColIdx + 1;
+          } else {
+            // Search for succeeding fields in the worksheet Row 1
+            let minSucceedingColIdx = -1;
+            for (let i = fieldIdx + 1; i < currentFieldsList.length; i++) {
+              const succKey = currentFieldsList[i].field_key;
+              row1.eachCell({ includeEmpty: true }, (cell, colNum) => {
+                if (cell.value === succKey) {
+                  if (minSucceedingColIdx === -1 || colNum < minSucceedingColIdx) {
+                    minSucceedingColIdx = colNum;
+                  }
+                }
+              });
+            }
+            if (minSucceedingColIdx !== -1) {
+              targetColIndex = minSucceedingColIdx;
+            }
+          }
+        }
+
+        if (targetColIndex === -1) {
+          // Fallback: append at the end of included columns (ignoring trailing empty columns).
+          // includedKeys (not allowedKeys) so previously appended auto columns anchor the
+          // next append — auto fields land in stable registry order at the sheet's end.
+          let lastAllowedCol = 0;
+          row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            if (cell.value && includedKeys.has(String(cell.value).trim())) {
+              lastAllowedCol = Math.max(lastAllowedCol, colNumber);
+            }
           });
-          targetColIndex = maxCols + 1;
+          targetColIndex = lastAllowedCol + 1;
+        }
+
+        // Keep country code columns immediately to the left of their respective mobile columns
+        if (field.field_key && field.field_key.endsWith('_mobile_country_code')) {
+          const targetMobileKey = field.field_key.replace('_mobile_country_code', '_mobile');
+          let mobileColIdx = -1;
+          row1.eachCell({ includeEmpty: true }, (cell, colNum) => {
+            if (cell.value === targetMobileKey) {
+              mobileColIdx = colNum;
+            }
+          });
+          if (mobileColIdx !== -1) {
+            targetColIndex = mobileColIdx;
+          }
+        }
+
+        // Keep "Type of property" (minor category) immediately to the right of Property
+        // Category so the dependent pair sits adjacent while filling — otherwise it lands
+        // at the end of the section, several unrelated columns away from its parent.
+        if (field.field_key === 'property_minor_category') {
+          let majorCatIdx = -1;
+          row1.eachCell({ includeEmpty: true }, (cell, colNum) => {
+            if (cell.value === 'property_major_category') majorCatIdx = colNum;
+          });
+          if (majorCatIdx !== -1) {
+            targetColIndex = majorCatIdx + 1;
+          }
         }
 
         // 3. Insert the new column
@@ -753,22 +1382,15 @@ export class TemplateBuilderService {
       if (majorCatCol === -1 || minorCatCol === -1) return; // sheet doesn't have both
 
       const majorColLetter = numToColLetter(majorCatCol);
-      // INDIRECT formula: looks up OPT_<SLUG_OF_SELECTED_CATEGORY>
-      // The slug transform in Excel mirrors the JS slugify: UPPER + replace non-alphanum with _
-      // Excel formula equivalent: SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(UPPER(X5), " ", "_"), "-", "_"), "&", "_")
-      // Simplified: SUBSTITUTE(UPPER(X5),[non-alpha]->"_") is hard in a single Excel formula.
-      // We use: INDIRECT(CONCATENATE("OPT_", SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(UPPER(<ref>)," ","_"),"-","_"),"&","_")))
-      // This covers spaces, hyphens, ampersands (the 3 most common special chars in category names).
+      const propFormula = `INDIRECT(VLOOKUP($${majorColLetter}5,PROP_CAT_TO_TYPE_NR,2,FALSE))`;
       for (let rIdx = 5; rIdx <= 500; rIdx++) {
         const cell = ws.getCell(rIdx, minorCatCol);
         if (cell.dataValidation && cell.dataValidation.formulae && cell.dataValidation.formulae[0] === '"__INDIRECT_PENDING__"') {
-          const majorRef = `$${majorColLetter}${rIdx}`;
-          const formula = `INDIRECT(CONCATENATE("${NR_PREFIX}",SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(UPPER(${majorRef})," ","_"),"-","_"),"&","_")))`;
           cell.dataValidation = {
             type: 'list',
             allowBlank: true,
-            showErrorMessage: false, // INDIRECT can be empty if no category is selected
-            formulae: [formula]
+            showErrorMessage: false,
+            formulae: [propFormula]
           };
         }
       }
@@ -796,53 +1418,31 @@ export class TemplateBuilderService {
 
         const actsList = ['IPC', 'Delhi Excise Act', 'Arms Act', 'Gambling Act', 'Other Act', 'CrPC', 'BNSS', 'BNS'];
 
+        // Every row in a cascade column gets the SAME validation object (parent ref anchored
+        // at the first data row, e.g. $B5). Excel re-anchors that row-relative reference per
+        // row, and because the objects are byte-identical the patched optimiser collapses each
+        // column into a single clean range (C5:C500 …) — the exact shape Excel produces on save.
+        const secFormula = `INDIRECT(VLOOKUP($${actLetter}5,ACT_TO_SECTIONS_NR,2,FALSE))`;
+        const majFormula = `INDIRECT(VLOOKUP($${actLetter}5&"|"&$${secLetter}5,SECTION_TO_MAJOR_NR,2,FALSE))`;
+        const minFormula = `INDIRECT(VLOOKUP($${majLetter}5,MAJOR_HEAD_TO_MINOR_NR,2,FALSE))`;
+
         for (let rIdx = 5; rIdx <= 500; rIdx++) {
-          // 1. Act Column Validation (inline list)
+          // 1. Act — flat list of all Acts (OPT_ACTS_LIST named range)
           actSectionWS.getCell(rIdx, actCol).dataValidation = {
-            type: 'list',
-            allowBlank: true,
-            formulae: [`"${actsList.join(',')}"`]
+            type: 'list', allowBlank: true, formulae: ['OPT_ACTS_LIST']
           };
-
-          // 2. Sections Column Validation (dependent on Act)
-          const actRef = `$${actLetter}${rIdx}`;
-          const secFormula = `IF(${actRef}="IPC",OPT_IPC_SECTIONS,IF(${actRef}="Delhi Excise Act",OPT_EXCISE_SECTIONS,IF(${actRef}="Arms Act",OPT_ARMS_SECTIONS,IF(${actRef}="Gambling Act",OPT_GAMBLING_SECTIONS,OPT_SECTIONS))))`;
+          // 2. Sections — dependent on Act (VLOOKUP into ACT_TO_SECTIONS_NR → INDIRECT)
           actSectionWS.getCell(rIdx, secCol).dataValidation = {
-            type: 'list',
-            allowBlank: true,
-            showErrorMessage: false,
-            formulae: [secFormula]
+            type: 'list', allowBlank: true, showErrorMessage: false, formulae: [secFormula]
           };
-
-          // 3. Major Head Column Validation (dependent on Act)
-          const majFormula = `IF(${actRef}="IPC",OPT_IPC_MAJOR_HEAD,IF(${actRef}="Delhi Excise Act",OPT_EXCISE_MAJOR_HEAD,IF(${actRef}="Arms Act",OPT_ARMS_MAJOR_HEAD,IF(${actRef}="Gambling Act",OPT_GAMBLING_MAJOR_HEAD,OPT_CRIME_HEAD))))`;
+          // 3. Major Head — dependent on Section (VLOOKUP into SECTION_TO_MAJOR_NR → INDIRECT)
           actSectionWS.getCell(rIdx, majCol).dataValidation = {
-            type: 'list',
-            allowBlank: true,
-            showErrorMessage: false,
-            formulae: [majFormula]
+            type: 'list', allowBlank: true, showErrorMessage: false, formulae: [majFormula]
           };
-
-          // 4. Minor Head Column Validation (dependent on Major Head) — INDIRECT cascade
-          // driven entirely by whatever major heads actually have minor heads in
-          // excel_minor_heads (via the OPT_MH_<slug> named ranges written in
-          // createLookupsSheet), not a hardcoded list of a handful of crime types.
-          // Looks up the exact named range name via VLOOKUP rather than recomputing the
-          // slug in-formula, since major head labels can contain characters a chain of
-          // SUBSTITUTE() calls can't fold back to the same slug the JS side derived.
+          // 4. Minor Head — dependent on Major Head (VLOOKUP into MAJOR_HEAD_TO_MINOR_NR → INDIRECT)
           if (hasMinorHeadCascade) {
-            const majHeadRef = `$${majLetter}${rIdx}`;
-            // IFERROR(...,"") — when the selected major head has no minor heads (e.g. a
-            // local_head-sourced value under Other Act/CrPC/BNSS/BNS, or the rare IPC head
-            // with none in excel_minor_heads), VLOOKUP finds no match and INDIRECT(#N/A)
-            // would otherwise surface as a raw "#N/A" list item. Degrade to an empty list
-            // instead of an error.
-            const minFormula = `IFERROR(INDIRECT(VLOOKUP(${majHeadRef},MAJOR_HEAD_TO_MINOR_NR,2,FALSE)),"")`;
             actSectionWS.getCell(rIdx, minCol).dataValidation = {
-              type: 'list',
-              allowBlank: true,
-              showErrorMessage: false,
-              formulae: [minFormula]
+              type: 'list', allowBlank: true, showErrorMessage: false, formulae: [minFormula]
             };
           }
         }
@@ -893,7 +1493,7 @@ export class TemplateBuilderService {
     let hasMinorHeadCascade = false;
     try {
       liveLookups = await buildLiveLookups(recordType);
-      ({ namedRangeMap, hasMinorHeadCascade } = createLookupsSheet(workbook, liveLookups));
+      ({ namedRangeMap, hasMinorHeadCascade } = createLookupsSheet(workbook, liveLookups, { preserveExisting: true }));
     } catch (err) {
       logger.error('wireActSectionCascade: failed to build live lookups (dropdowns will be static)', { err: err.message });
       return;
@@ -910,30 +1510,32 @@ export class TemplateBuilderService {
     if (actCol === -1 || secCol === -1 || majCol === -1 || minCol === -1) return;
 
     const actLetter = numToColLetter(actCol);
+    const secLetter = numToColLetter(secCol);
     const majLetter = numToColLetter(majCol);
-    const actsList = ['IPC', 'Delhi Excise Act', 'Arms Act', 'Gambling Act', 'Other Act', 'CrPC', 'BNSS', 'BNS'];
+
+    const secFormula = `INDIRECT(VLOOKUP($${actLetter}5,ACT_TO_SECTIONS_NR,2,FALSE))`;
+    const majFormula = `INDIRECT(VLOOKUP($${actLetter}5&"|"&$${secLetter}5,SECTION_TO_MAJOR_NR,2,FALSE))`;
+    const minFormula = `INDIRECT(VLOOKUP($${majLetter}5,MAJOR_HEAD_TO_MINOR_NR,2,FALSE))`;
 
     for (let rIdx = 5; rIdx <= 500; rIdx++) {
       worksheet.getCell(rIdx, actCol).dataValidation = {
-        type: 'list', allowBlank: true, formulae: [`"${actsList.join(',')}"`]
+        type: 'list', allowBlank: true, formulae: ['OPT_ACTS_LIST']
       };
 
-      const actRef = `$${actLetter}${rIdx}`;
       worksheet.getCell(rIdx, secCol).dataValidation = {
         type: 'list', allowBlank: true, showErrorMessage: false,
-        formulae: [`IF(${actRef}="IPC",OPT_IPC_SECTIONS,IF(${actRef}="Delhi Excise Act",OPT_EXCISE_SECTIONS,IF(${actRef}="Arms Act",OPT_ARMS_SECTIONS,IF(${actRef}="Gambling Act",OPT_GAMBLING_SECTIONS,OPT_SECTIONS))))`]
+        formulae: [secFormula]
       };
 
       worksheet.getCell(rIdx, majCol).dataValidation = {
         type: 'list', allowBlank: true, showErrorMessage: false,
-        formulae: [`IF(${actRef}="IPC",OPT_IPC_MAJOR_HEAD,IF(${actRef}="Delhi Excise Act",OPT_EXCISE_MAJOR_HEAD,IF(${actRef}="Arms Act",OPT_ARMS_MAJOR_HEAD,IF(${actRef}="Gambling Act",OPT_GAMBLING_MAJOR_HEAD,OPT_CRIME_HEAD))))`]
+        formulae: [majFormula]
       };
 
       if (hasMinorHeadCascade) {
-        const majHeadRef = `$${majLetter}${rIdx}`;
         worksheet.getCell(rIdx, minCol).dataValidation = {
           type: 'list', allowBlank: true, showErrorMessage: false,
-          formulae: [`IFERROR(INDIRECT(VLOOKUP(${majHeadRef},MAJOR_HEAD_TO_MINOR_NR,2,FALSE)),"")`]
+          formulae: [minFormula]
         };
       }
     }

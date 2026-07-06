@@ -340,6 +340,15 @@ export const getRecordDetails = async (id) => {
     properties = await db('record_properties')
       .where({ record_id: id })
       .orderBy('sort_order', 'asc');
+    properties = properties.map(p => {
+      let extra = {};
+      try {
+        extra = typeof p.extra_data === 'string' ? JSON.parse(p.extra_data) : (p.extra_data || {});
+      } catch (e) {}
+      const cleanProp = { ...p, ...extra };
+      delete cleanProp.extra_data;
+      return cleanProp;
+    });
   } catch (_e) {
     // Tables not yet migrated — degrade gracefully
   }

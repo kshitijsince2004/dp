@@ -674,6 +674,34 @@ const formSchemas = {
         },
         { field_key: 'arrested_relative_name', field_type: 'TEXT', label_en: 'Relative Name', label_hi: 'रिश्तेदार का नाम', validation_rules: { required: false } },
         { field_key: 'arrested_mobile', field_type: 'TEXT', label_en: 'Mobile No.', label_hi: 'मोबाइल नंबर', validation_rules: { required: false } },
+        {
+          field_key: 'arrested_qualification',
+          field_type: 'SELECT',
+          label_en: 'Arrested Person Qualification',
+          label_hi: 'गिरफ्तार व्यक्ति की योग्यता',
+          options: [
+            { value: 'Uneducated', label_en: 'Uneducated', label_hi: 'अशिक्षित' },
+            { value: '10th', label_en: '10th', label_hi: '10वीं' },
+            { value: '10+2', label_en: '10+2', label_hi: '12वीं' },
+            { value: 'Graduate', label_en: 'Graduate', label_hi: 'स्नातक' },
+            { value: 'Post-Graduate', label_en: 'Post-Graduate', label_hi: 'स्नातकोत्तर' }
+          ],
+          validation_rules: { required: false }
+        },
+        {
+          field_key: 'scheme_of_arrest',
+          field_type: 'SELECT',
+          label_en: 'Scheme of Arrest',
+          label_hi: 'गिरफ्तारी की योजना',
+          options: [
+            { value: 'Integrated Pride', label_en: 'Integrated Pride', label_hi: 'Integrated Pride' },
+            { value: 'Group Patrolling', label_en: 'Group Patrolling', label_hi: 'Group Patrolling' },
+            { value: 'Anti-snatching', label_en: 'Anti-snatching', label_hi: 'Anti-snatching' },
+            { value: 'By Prahari', label_en: 'By Prahari', label_hi: 'By Prahari' },
+            { value: 'By Eyes & Ears Scheme Members', label_en: 'By Eyes & Ears Scheme Members', label_hi: 'By Eyes & Ears Scheme Members' }
+          ],
+          validation_rules: { required: false }
+        },
         { field_key: 'arrested_dob', field_type: 'DATE', label_en: 'Date of Birth', label_hi: 'जन्म तिथि', validation_rules: { required: false } },
         { field_key: 'arrested_age_year', field_type: 'NUMBER', label_en: 'Age (Years)', label_hi: 'आयु (वर्ष)', validation_rules: { required: false } },
         { field_key: 'arrested_birth_year', field_type: 'NUMBER', label_en: 'Year of Birth', label_hi: 'जन्म का वर्ष', validation_rules: { required: false } },

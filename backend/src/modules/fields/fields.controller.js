@@ -1038,7 +1038,7 @@ export const toggleRegistryField = async (req, res) => {
     const [updated] = await db('field_registry')
       .where({ id })
       .update({ is_active: !existing.is_active })
-      .returning('id, is_active');
+      .returning(['id', 'is_active']);
 
     return res.status(200).json({
       success: true,

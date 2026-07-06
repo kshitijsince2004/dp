@@ -9,13 +9,24 @@ export function useAutosave(module, recordId) {
   const timerRef = useRef(null);
 
   const mutation = useMutation({
-    mutationFn: async ({ id, data }) => {
+    mutationFn: async ({ id, data, persons, properties }) => {
       if (id) {
-        const res = await api.put(`/records/${id}`, { data });
+        const res = await api.put(`/records/${id}`, {
+          data,
+          ...(persons !== undefined && { persons }),
+          ...(properties !== undefined && { properties })
+        });
         return res.data.data;
       } else {
         const record_date = data.record_date || formatDMY(new Date());
-        const res = await api.post('/records', { record_type: module, record_date, data });
+        const res = await api.post('/records', {
+          record_type: module,
+          record_date,
+          data,
+          ...(persons !== undefined && { persons }),
+          ...(properties !== undefined && { properties })
+        });
+
         return res.data.data;
       }
     },
@@ -32,19 +43,19 @@ export function useAutosave(module, recordId) {
     }
   });
 
-  const triggerAutosave = (data, activeId) => {
+  const triggerAutosave = (data, activeId, persons, properties) => {
     setSaveStatus('saving');
     if (timerRef.current) clearTimeout(timerRef.current);
     
     timerRef.current = setTimeout(() => {
-      mutation.mutate({ id: activeId || recordId, data });
+      mutation.mutate({ id: activeId || recordId, data, persons, properties });
     }, 2000);
   };
 
-  const saveImmediately = (data, activeId) => {
+  const saveImmediately = (data, activeId, persons, properties) => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setSaveStatus('saving');
-    mutation.mutate({ id: activeId || recordId, data });
+    mutation.mutate({ id: activeId || recordId, data, persons, properties });
   };
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import React from 'react';
 
+import DateTimePickerPopup from './DateTimePickerPopup.jsx';
 import TextField     from './TextField.jsx';
 import TextAreaField from './TextAreaField.jsx';
 import NumberField   from './NumberField.jsx';
@@ -12,6 +13,164 @@ import DateInput     from '../ui/DateInput.jsx';
 import { DISTRICTS_AND_STATIONS } from '../../utils/policeData.js';
 
 const inputBase = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
+
+export default function FieldRenderer({
+  field, value, onChange, readOnly, hasError, lang, values, handleChange,
+  // gd_no composite overrides — different call sites use slightly different sizing
+  // (compact table row vs. taller top card) and need to sync extra date/time fields.
+  wrapperClassName, numberInputClassName, numberPlaceholder, dateInputClassName, onDateSync,
+  // Generic style override for TEXT/TEXTAREA/NUMBER inputs (e.g. dense table rows).
+  inputClassName,
+  // SELECT overrides — 'compact' swaps the searchable-dropdown widget for a plain native <select>.
+  selectVariant, selectClassName, selectPlaceholder,
+  // RADIO overrides — 'native' swaps the custom-circle widget for plain accent-colored radios.
+  radioVariant, radioWrapperClassName, radioInputClassName,
+}) {
+  if (!field) return null;
+  const key     = field.field_key;
+  const type    = (field.field_type || 'TEXT').toUpperCase();
+  const status  = hasError ? 'error' : '';
+  const placeholder = lang === 'hi' ? field.placeholder_hi : field.placeholder_en;
+
+  const containerBg = readOnly ? 'bg-slate-50' : 'bg-white';
+  const disabledClass = readOnly ? 'cursor-not-allowed text-slate-400' : 'text-slate-800';
+
+  let options = field.options;
+  if (typeof options === 'string') {
+    try { options = JSON.parse(options); } catch { options = []; }
+  }
+  options = options || [];
+
+  if (key.endsWith('_police_station') && values) {
+    const prefix = key.substring(0, key.lastIndexOf('_police_station'));
+    const districtVal = values[`${prefix}_district`] || values.district;
+    if (districtVal && DISTRICTS_AND_STATIONS[districtVal]) {
+      options = DISTRICTS_AND_STATIONS[districtVal].map(ps => ({
+        value: ps,
+        label_en: ps,
+        label_hi: ps
+      }));
+    } else {
+      options = [];
+    }
+  }
+
+  const handleFieldChange = (k, v) => {
+    if (handleChange) {
+      handleChange(k, v);
+    } else {
+      onChange(k, v);
+    }
+  };
+
+  if (key === 'gd_no') {
+    const gdNumber = values?.gd_no || '';
+    const gdDateTimeStr = values?.gd_date_time || '';
+
+    return (
+      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
+        <div className="flex-1 flex items-center min-w-0">
+          <input
+            type="text"
+            disabled={readOnly}
+            value={values?.gd_no || ''}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, ''); // type sirf numeric rkhna
+              handleFieldChange('gd_no', val);
+            }}
+            placeholder={lang === 'hi' ? 'जीडी नंबर' : 'GD Number'}
+            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
+          />
+        </div>
+        <div className="w-full sm:w-[180px] flex items-center min-w-0">
+          <DateInput
+            id="field-gd_date"
+            disabled={readOnly}
+            value={values?.gd_date || ''}
+            onChange={(val) => handleFieldChange('gd_date', val)}
+            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+        <div className="w-full sm:w-[140px] flex items-center min-w-0">
+          <input
+            type="time"
+            disabled={readOnly}
+            value={values?.gd_time || ''}
+            onChange={(e) => handleFieldChange('gd_time', e.target.value)}
+            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+
+      </div>
+    );
+  }
+
+  if (key === 'arrest_date') {
+    const arrestDateTimeStr = values?.arrest_date_time || '';
+
+    return (
+      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
+        <div className="flex-1 flex items-center min-w-0">
+          <DateInput
+            id="field-arrest_date"
+            disabled={readOnly}
+            value={values?.arrest_date || ''}
+            onChange={(val) => handleFieldChange('arrest_date', val)}
+            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+        <div className="w-full sm:w-[220px] flex items-center min-w-0">
+          <input
+            type="time"
+            disabled={readOnly}
+            value={values?.arrest_time || ''}
+            onChange={(e) => handleFieldChange('arrest_time', e.target.value)}
+            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+
+      </div>
+    );
+  }
+
+  if (key === 'fir_no') {
+    const firNumber = values?.fir_no || '';
+    const firDateTimeStr = values?.fir_date_time || '';
+
+    return (
+      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
+        <div className="flex-1 flex items-center min-w-0">
+          <input
+            type="text"
+            disabled={readOnly}
+            value={values?.fir_no || ''}
+            onChange={(e) => handleFieldChange('fir_no', e.target.value)}
+            placeholder={lang === 'hi' ? 'प्राथमिकी (FIR) संख्या' : 'FIR Number'}
+            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
+          />
+        </div>
+        <div className="w-full sm:w-[220px] flex items-center min-w-0">
+          <DateInput
+            id="field-fir_date"
+            disabled={readOnly}
+            value={values?.fir_date || ''}
+            onChange={(val) => handleFieldChange('fir_date', val)}
+            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+        <div className="w-full sm:w-[140px] flex items-center min-w-0">
+          <input
+            type="time"
+            disabled={readOnly}
+            value={values?.fir_time || ''}
+            onChange={(e) => handleFieldChange('fir_time', e.target.value)}
+            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+          />
+        </div>
+
+      </div>
+    );
+  }
 
 function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
   const list = Array.isArray(value)
@@ -92,167 +251,6 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
     </div>
   );
 }
-
-export default function FieldRenderer({
-  field, value, onChange, readOnly, hasError, lang, values, handleChange,
-  wrapperClassName, numberInputClassName, numberPlaceholder, dateInputClassName, onDateSync,
-  inputClassName,
-  selectVariant, selectClassName, selectPlaceholder,
-  radioVariant, radioWrapperClassName, radioInputClassName,
-}) {
-  if (!field) return null;
-  const key     = field.field_key;
-  const type    = (field.field_type || 'TEXT').toUpperCase();
-  const status  = hasError ? 'error' : '';
-  const placeholder = lang === 'hi' ? field.placeholder_hi : field.placeholder_en;
-
-  let options = field.options;
-  if (typeof options === 'string') {
-    try { options = JSON.parse(options); } catch { options = []; }
-  }
-  options = options || [];
-
-  if (key.endsWith('_police_station') && values) {
-    const prefix = key.substring(0, key.lastIndexOf('_police_station'));
-    const districtVal = values[`${prefix}_district`] || values.district;
-    if (districtVal && DISTRICTS_AND_STATIONS[districtVal]) {
-      options = DISTRICTS_AND_STATIONS[districtVal].map(ps => ({
-        value: ps,
-        label_en: ps,
-        label_hi: ps
-      }));
-    } else {
-      options = [];
-    }
-  }
-
-  const handleFieldChange = (k, v) => {
-    if (handleChange) {
-      handleChange(k, v);
-    } else {
-      onChange(k, v);
-    }
-  };
-
-  const containerBg = readOnly ? 'bg-slate-50' : 'bg-white';
-  const disabledClass = readOnly ? 'text-slate-500' : 'text-slate-800';
-
-  if (key === 'gd_no') {
-    const gdNumber = values?.gd_no || '';
-
-    return (
-      <div className={wrapperClassName || `w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
-          <input
-            type="text"
-            disabled={readOnly}
-            value={gdNumber}
-            onChange={(e) => handleFieldChange('gd_no', e.target.value.replace(/\D/g, ''))}
-            placeholder={numberPlaceholder || (lang === 'hi' ? 'जीडी नंबर' : 'GD Number')}
-            className={numberInputClassName || `w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[180px] flex items-center min-w-0">
-          <DateInput
-            id="field-gd_date"
-            disabled={readOnly}
-            value={values?.gd_date || ''}
-            onChange={(val) => {
-              handleFieldChange('gd_date', val);
-              if (onDateSync) onDateSync(val, values?.gd_time || '');
-            }}
-            inputClassName={dateInputClassName || `w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[140px] flex items-center min-w-0">
-          <input
-            type="time"
-            disabled={readOnly}
-            value={values?.gd_time || ''}
-            onChange={(e) => {
-              handleFieldChange('gd_time', e.target.value);
-              if (onDateSync) onDateSync(values?.gd_date || '', e.target.value);
-            }}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (key === 'arrest_date') {
-    return (
-      <div className={wrapperClassName || `w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
-          <DateInput
-            id="field-arrest_date"
-            disabled={readOnly}
-            value={values?.arrest_date || ''}
-            onChange={(val) => {
-              handleFieldChange('arrest_date', val);
-              if (onDateSync) onDateSync(val, values?.arrest_time || '');
-            }}
-            inputClassName={dateInputClassName || `w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[220px] flex items-center min-w-0">
-          <input
-            type="time"
-            disabled={readOnly}
-            value={values?.arrest_time || ''}
-            onChange={(e) => {
-              handleFieldChange('arrest_time', e.target.value);
-              if (onDateSync) onDateSync(values?.arrest_date || '', e.target.value);
-            }}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (key === 'fir_no') {
-    const firNumber = values?.fir_no || '';
-
-    return (
-      <div className={wrapperClassName || `w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
-          <input
-            type="text"
-            disabled={readOnly}
-            value={firNumber}
-            onChange={(e) => handleFieldChange('fir_no', e.target.value)}
-            placeholder={numberPlaceholder || (lang === 'hi' ? 'प्राथमिकी (FIR) संख्या' : 'FIR Number')}
-            className={numberInputClassName || `w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[220px] flex items-center min-w-0">
-          <DateInput
-            id="field-fir_date"
-            disabled={readOnly}
-            value={values?.fir_date || ''}
-            onChange={(val) => {
-              handleFieldChange('fir_date', val);
-              if (onDateSync) onDateSync(val, values?.fir_time || '');
-            }}
-            inputClassName={dateInputClassName || `w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[140px] flex items-center min-w-0">
-          <input
-            type="time"
-            disabled={readOnly}
-            value={values?.fir_time || ''}
-            onChange={(e) => {
-              handleFieldChange('fir_time', e.target.value);
-              if (onDateSync) onDateSync(values?.fir_date || '', e.target.value);
-            }}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-      </div>
-    );
-  }
 
   if (key.endsWith('_nickname') || key.endsWith('_nick_name') || key.endsWith('_alias') || key === 'nick_name') {
     return <NicknameChipsField disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} lang={lang} placeholder={placeholder} />;

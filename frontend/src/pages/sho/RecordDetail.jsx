@@ -268,6 +268,8 @@ export default function RecordDetail() {
           <DynamicForm
             recordType={record.record_type}
             initialValues={record}
+            initialPersons={recordPayload?.persons || []}
+            initialProperties={recordPayload?.properties || []}
             readOnly={true}
           />
         </div>

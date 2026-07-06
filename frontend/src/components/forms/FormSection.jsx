@@ -1,7 +1,297 @@
 import React, { useState } from 'react';
 import { AlertCircle, AlertTriangle, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import FieldRenderer from './FieldRenderer.jsx';
-import ActsSectionsTable from './ActsSectionsTable.jsx';
+import SelectField from './SelectField.jsx';
+
+const ACTS_OPTIONS = [
+  { value: 'IPC', label_en: 'IPC', label_hi: 'आईपीसी (IPC)' },
+  { value: 'Delhi Excise Act', label_en: 'Delhi Excise Act', label_hi: 'दिल्ली उत्पाद शुल्क अधिनियम' },
+  { value: 'Arms Act', label_en: 'Arms Act', label_hi: 'शस्त्र अधिनियम' },
+  { value: 'Gambling Act', label_en: 'Gambling Act', label_hi: 'जुआ अधिनियम' },
+  { value: 'Other Act', label_en: 'Other Act', label_hi: 'अन्य अधिनियम' }
+];
+
+const SECTIONS_BY_ACT = {
+  'IPC': [
+    { value: 'Sec 379 IPC', label_en: 'Sec 379 IPC', label_hi: 'धारा 379 आईपीसी' },
+    { value: 'Sec 302 IPC', label_en: 'Sec 302 IPC', label_hi: 'धारा 302 आईपीसी' },
+    { value: 'Sec 323 IPC', label_en: 'Sec 323 IPC', label_hi: 'धारा 323 आईपीसी' },
+    { value: 'Sec 406 IPC', label_en: 'Sec 406 IPC', label_hi: 'धारा 406 आईपीसी' },
+    { value: 'Sec 392 IPC', label_en: 'Sec 392 IPC', label_hi: 'धारा 392 आईपीसी' },
+    { value: 'Sec 356 IPC', label_en: 'Sec 356 IPC', label_hi: 'धारा 356 आईपीसी' }
+  ],
+  'Delhi Excise Act': [
+    { value: 'Sec 33 Excise Act', label_en: 'Sec 33 Excise Act', label_hi: 'धारा 33 उत्पाद शुल्क अधिनियम' },
+    { value: 'Sec 38 Excise Act', label_en: 'Sec 38 Excise Act', label_hi: 'धारा 38 उत्पाद शुल्क अधिनियम' },
+    { value: 'Sec 42 Excise Act', label_en: 'Sec 42 Excise Act', label_hi: 'धारा 42 उत्पाद शुल्क अधिनियम' }
+  ],
+  'Arms Act': [
+    { value: 'Sec 25 Arms Act', label_en: 'Sec 25 Arms Act', label_hi: 'धारा 25 शस्त्र अधिनियम' },
+    { value: 'Sec 27 Arms Act', label_en: 'Sec 27 Arms Act', label_hi: 'धारा 27 शस्त्र अधिनियम' },
+    { value: 'Sec 30 Arms Act', label_en: 'Sec 30 Arms Act', label_hi: 'धारा 30 शस्त्र अधिनियम' }
+  ],
+  'Gambling Act': [
+    { value: 'Sec 3 Gambling Act', label_en: 'Sec 3 Gambling Act', label_hi: 'धारा 3 जुआ अधिनियम' },
+    { value: 'Sec 4 Gambling Act', label_en: 'Sec 4 Gambling Act', label_hi: 'धारा 4 जुआ अधिनियम' },
+    { value: 'Sec 13 Gambling Act', label_en: 'Sec 13 Gambling Act', label_hi: 'धारा 13 जुआ अधिनियम' }
+  ]
+};
+
+const MAJOR_HEADS_BY_ACT = {
+  'IPC': [
+    { value: 'Theft', label_en: 'Theft', label_hi: 'चोरी' },
+    { value: 'Murder', label_en: 'Murder', label_hi: 'हत्या' },
+    { value: 'Hurt', label_en: 'Hurt', label_hi: 'चोट / नुकसान' },
+    { value: 'Cheating', label_en: 'Cheating', label_hi: 'धोखाधड़ी' },
+    { value: 'Robbery', label_en: 'Robbery', label_hi: 'डकैती / लूट' }
+  ],
+  'Delhi Excise Act': [
+    { value: 'Possession', label_en: 'Possession', label_hi: 'कब्जा' },
+    { value: 'Sale', label_en: 'Sale', label_hi: 'बिक्री' },
+    { value: 'Smuggling', label_en: 'Smuggling', label_hi: 'तस्करी' }
+  ],
+  'Arms Act': [
+    { value: 'Possession of illegal arms', label_en: 'Possession of illegal arms', label_hi: 'अवैध हथियारों का कब्जा' },
+    { value: 'Use of illegal arms', label_en: 'Use of illegal arms', label_hi: 'अवैध हथियारों का उपयोग' }
+  ],
+  'Gambling Act': [
+    { value: 'Gaming House', label_en: 'Gaming House', label_hi: 'गेमिंग हाउस / जुआघर' },
+    { value: 'Public Gambling', label_en: 'Public Gambling', label_hi: 'सार्वजनिक जुआ' }
+  ]
+};
+
+const MINOR_HEADS_BY_MAJOR_HEAD = {
+  'Theft': [
+    { value: 'Simple Theft', label_en: 'Simple Theft', label_hi: 'साधारण चोरी' },
+    { value: 'House Theft', label_en: 'House Theft', label_hi: 'घर की चोरी' },
+    { value: 'Snatching', label_en: 'Snatching', label_hi: 'छीना-झपटी' },
+    { value: 'Pick Pocketing', label_en: 'Pick Pocketing', label_hi: 'जेब कटना' },
+    { value: 'Vehicle Theft', label_en: 'Vehicle Theft', label_hi: 'वाहन चोरी' }
+  ],
+  'Murder': [
+    { value: 'Culpable Homicide', label_en: 'Culpable Homicide', label_hi: 'गैर-इरादतन हत्या' },
+    { value: 'Attempt to Murder', label_en: 'Attempt to Murder', label_hi: 'हत्या का प्रयास' },
+    { value: 'Dowry Death', label_en: 'Dowry Death', label_hi: 'दहेज हत्या' }
+  ],
+  'Hurt': [
+    { value: 'Simple Hurt', label_en: 'Simple Hurt', label_hi: 'साधारण चोट' },
+    { value: 'Grievous Hurt', label_en: 'Grievous Hurt', label_hi: 'गंभीर चोट' },
+    { value: 'Acid Attack', label_en: 'Acid Attack', label_hi: 'तेजाब हमला' }
+  ],
+  'Cheating': [
+    { value: 'Forgery', label_en: 'Forgery', label_hi: 'जालसाजी' },
+    { value: 'Cheating by Impersonation', label_en: 'Cheating by Impersonation', label_hi: 'भेष बदलकर धोखाधड़ी' },
+    { value: 'Criminal Breach of Trust', label_en: 'Criminal Breach of Trust', label_hi: 'आपराधिक विश्वासघात' }
+  ],
+  'Robbery': [
+    { value: 'Dacoity', label_en: 'Dacoity', label_hi: 'डकैती' },
+    { value: 'Robbery on Highway', label_en: 'Robbery on Highway', label_hi: 'राजमार्ग पर डकैती' },
+    { value: 'Extortion', label_en: 'Extortion', label_hi: 'जबरन वसूली' }
+  ]
+};
+
+function ActsAndSectionsManager({ values, handleChange, readOnly, lang }) {
+  const acts = React.useMemo(() => {
+    if (Array.isArray(values.acts) && values.acts.length > 0) {
+      return values.acts;
+    }
+    if (values.act_name) {
+      return [{
+        act_name: values.act_name,
+        sections: values.sections || '',
+        major_head: values.local_head || values.crime_head || '',
+        minor_head: ''
+      }];
+    }
+    return [{ act_name: '', sections: '', major_head: '', minor_head: '' }];
+  }, [values.acts, values.act_name, values.sections, values.local_head, values.crime_head]);
+
+  const updateActs = (newActs) => {
+    if (readOnly) return;
+    handleChange('acts', newActs);
+
+    const joinedActNames = newActs.map(a => a.act_name).filter(Boolean).join(', ');
+    const joinedSections = newActs.map(a => a.sections).filter(Boolean).join(', ');
+    
+    handleChange('act_name', joinedActNames);
+    handleChange('sections', joinedSections);
+
+    if (newActs[0]) {
+      const firstMajor = newActs[0].major_head || '';
+      handleChange('local_head', firstMajor);
+      handleChange('crime_head', firstMajor);
+    }
+  };
+
+  const handleActChange = (index, key, val) => {
+    const updated = acts.map((act, i) => {
+      if (i !== index) return act;
+      const newAct = { ...act, [key]: val };
+      if (key === 'act_name') {
+        newAct.sections = '';
+        newAct.major_head = '';
+        newAct.minor_head = '';
+      }
+      if (key === 'major_head') {
+        newAct.minor_head = '';
+      }
+      return newAct;
+    });
+    updateActs(updated);
+  };
+
+  const addAct = () => {
+    updateActs([...acts, { act_name: '', sections: '', major_head: '', minor_head: '' }]);
+  };
+
+  const removeAct = (index) => {
+    if (acts.length <= 1) return;
+    updateActs(acts.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="space-y-4 w-full p-4 border border-slate-200 rounded-xl bg-slate-50/30">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-slate-700 tracking-wide">
+          {lang === 'hi' ? 'अधिनियम, धारा और अपराध शीर्ष विवरण' : 'Acts, Sections & Crime Heads Details'}
+        </h3>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={addAct}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 rounded-lg shadow transition-all cursor-pointer"
+          >
+            <Plus size={14} />
+            {lang === 'hi' ? 'अधिनियम जोड़ें' : 'Add Act'}
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        {acts.map((act, index) => {
+          const actName = act.act_name;
+          const majorHead = act.major_head;
+          const sectionsOptions = SECTIONS_BY_ACT[actName] || [];
+          const majorHeadOptions = MAJOR_HEADS_BY_ACT[actName] || [];
+          const minorHeadOptions = MINOR_HEADS_BY_MAJOR_HEAD[majorHead] || [];
+
+          return (
+            <div
+              key={index}
+              className="p-4 border border-slate-200 rounded-lg bg-white space-y-3 relative shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500">
+                  {lang === 'hi' ? `अधिनियम #${index + 1}` : `Act #${index + 1}`}
+                </span>
+                {!readOnly && acts.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeAct(index)}
+                    className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors cursor-pointer"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* Act Name */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">
+                    {lang === 'hi' ? 'अधिनियम का नाम' : 'Act Name'}
+                  </label>
+                  <SelectField
+                    disabled={readOnly}
+                    value={act.act_name}
+                    onChange={(val) => handleActChange(index, 'act_name', val)}
+                    options={ACTS_OPTIONS}
+                    lang={lang}
+                  />
+                </div>
+
+                {/* Sections */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">
+                    {lang === 'hi' ? 'धाराएँ' : 'Sections'}
+                  </label>
+                  {sectionsOptions.length > 0 ? (
+                    <SelectField
+                      disabled={readOnly || !actName}
+                      value={act.sections}
+                      onChange={(val) => handleActChange(index, 'sections', val)}
+                      options={sectionsOptions}
+                      lang={lang}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      disabled={readOnly || !actName}
+                      value={act.sections || ''}
+                      onChange={(e) => handleActChange(index, 'sections', e.target.value)}
+                      placeholder={lang === 'hi' ? 'धारा दर्ज करें' : 'Enter Section'}
+                      className="w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3 py-2 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
+                    />
+                  )}
+                </div>
+
+                {/* Major Head */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">
+                    {lang === 'hi' ? 'मुख्य शीर्ष' : 'Major Head'}
+                  </label>
+                  {majorHeadOptions.length > 0 ? (
+                    <SelectField
+                      disabled={readOnly || !actName}
+                      value={act.major_head}
+                      onChange={(val) => handleActChange(index, 'major_head', val)}
+                      options={majorHeadOptions}
+                      lang={lang}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      disabled={readOnly || !actName}
+                      value={act.major_head || ''}
+                      onChange={(e) => handleActChange(index, 'major_head', e.target.value)}
+                      placeholder={lang === 'hi' ? 'मुख्य शीर्ष दर्ज करें' : 'Enter Major Head'}
+                      className="w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3 py-2 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
+                    />
+                  )}
+                </div>
+
+                {/* Minor Head */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">
+                    {lang === 'hi' ? 'लघु शीर्ष' : 'Minor Head'}
+                  </label>
+                  {minorHeadOptions.length > 0 ? (
+                    <SelectField
+                      disabled={readOnly || !majorHead}
+                      value={act.minor_head}
+                      onChange={(val) => handleActChange(index, 'minor_head', val)}
+                      options={minorHeadOptions}
+                      lang={lang}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      disabled={readOnly || !actName}
+                      value={act.minor_head || ''}
+                      onChange={(e) => handleActChange(index, 'minor_head', e.target.value)}
+                      placeholder={lang === 'hi' ? 'लघु शीर्ष दर्ज करें' : 'Enter Minor Head'}
+                      className="w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3 py-2 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function parseRules(rawRules) {
   if (!rawRules) return {};
@@ -204,9 +494,6 @@ export default function FormSection({
   // Repeater props (only used when section.is_repeater === true)
   entries,
   onEntriesChange,
-  // Bundle of state/handlers the real <ActsSectionsTable> needs, passed through from
-  // DynamicForm.jsx — only required when this section's fields include 'act_name'.
-  actsSectionsProps,
 }) {
   if (!section) return null;
 
@@ -292,10 +579,15 @@ export default function FormSection({
                 const error = touched[key] ? errors[key] : null;
                 const isLast = index === visibleFields.length - 1;
 
-                if (key === 'act_name' && actsSectionsProps) {
+                if (key === 'act_name') {
                   return (
-                    <div key="acts-sections-block" className="col-span-1 md:col-span-2 p-2 border-b border-[#c7d8ea]">
-                      <ActsSectionsTable {...actsSectionsProps} showLocalHead={false} />
+                    <div key="acts-manager-block" className="col-span-1 md:col-span-2 p-2 border-b border-[#c7d8ea]">
+                      <ActsAndSectionsManager
+                        values={values}
+                        handleChange={handleChange}
+                        readOnly={readOnly}
+                        lang={lang}
+                      />
                     </div>
                   );
                 }
@@ -330,8 +622,6 @@ export default function FormSection({
                         hasError={!!error}
                         lang={lang}
                         values={values}
-                        selectVariant="compact"
-                        selectClassName="w-full h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-text"
                       />
                       {error && (
                         <span className="flex items-center gap-1 text-xs text-red-500 font-medium mt-1">
