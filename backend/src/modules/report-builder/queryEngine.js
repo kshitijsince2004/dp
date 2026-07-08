@@ -113,6 +113,13 @@ function applyCondition(builder, expr, op, value, raw = false) {
       builder.where(colRef, '>=', cutoff.toISOString().split('T')[0]);
       break;
     }
+    case 'OLDER_THAN_N_DAYS': {
+      const days = parseInt(value, 10) || 0;
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      builder.where(colRef, '<', cutoff.toISOString().split('T')[0]);
+      break;
+    }
     case 'THIS_WEEK': {
       const now = new Date();
       const first = new Date(now.setDate(now.getDate() - now.getDay())).toISOString().split('T')[0];

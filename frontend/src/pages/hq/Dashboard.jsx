@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Building, Map, ShieldAlert, Award, FileCheck, PhoneCall, Filter, Radio, MapPin, Clock3, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 import api from '../../utils/api.js';
 import phqImage from '../../assets/phq.jpeg';
 import useAuthStore from '../../store/authStore.js';
+import SearchableSelect from '../../components/forms/SearchableSelect.jsx';
 
 export default function HQDashboard() {
   const { t, i18n } = useTranslation();
@@ -12,6 +13,132 @@ export default function HQDashboard() {
   const { user, jurisdiction } = useAuthStore();
   const [filterDistrict, setFilterDistrict] = useState('All');
   const [filterType, setFilterType] = useState('All');
+  const [filterLocalHead, setFilterLocalHead] = useState('All');
+  const [filterDuration, setFilterDuration] = useState('All');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  const [localHeads, setLocalHeads] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [recordTypes, setRecordTypes] = useState([]);
+  const [datePresets, setDatePresets] = useState([]);
+
+  useEffect(() => {
+    api.get('/fields/lookup/local-heads')
+      .then((res) => {
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          setLocalHeads(res.data.data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch local heads:', err);
+      });
+
+    api.get('/hierarchy/nodes')
+      .then((res) => {
+        if (res.data?.data && Array.isArray(res.data.data)) {
+          const distNodes = res.data.data.filter(n => n.node_type === 'DISTRICT');
+          setDistricts(distNodes);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch districts:', err);
+      });
+
+    api.get('/fields/lookup/record-types')
+      .then((res) => {
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          setRecordTypes(res.data.data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch record types:', err);
+      });
+
+    api.get('/filters/presets')
+      .then((res) => {
+        const raw = res.data?.data;
+        if (Array.isArray(raw)) {
+          const filtered = raw.filter(p => {
+            const spec = p.filter_spec || {};
+            const conds = spec.conditions || [];
+            return conds.some(c => c.field === '_record_date' && (c.operator === 'last_n_days' || c.operator === 'older_than_n_days'));
+          });
+          setDatePresets(filtered);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch presets:', err);
+      });
+  }, []);
+
+  const districtOptions = useMemo(() => {
+    const list = [{ value: 'All', label_en: 'All Districts', label_hi: 'सभी जिले' }];
+    districts.forEach(d => {
+      list.push({ value: d.id, label_en: d.name_en || d.name, label_hi: d.name_hi || d.name });
+    });
+    return list;
+  }, [districts]);
+
+  const recordTypeOptions = useMemo(() => {
+    const list = [{ value: 'All', label_en: 'All Categories', label_hi: 'सभी श्रेणियां' }];
+    recordTypes.forEach(rt => {
+      list.push({ value: rt.value, label_en: rt.label_en || rt.label, label_hi: rt.label_hi || rt.label });
+    });
+    return list;
+  }, [recordTypes]);
+
+  const localHeadOptions = useMemo(() => {
+    const list = [{ value: 'All', label_en: 'All Local Heads', label_hi: 'सभी स्थानीय शीर्ष' }];
+    localHeads.forEach(lh => {
+      list.push({ value: lh.label, label_en: lh.label, label_hi: lh.label });
+    });
+    return list;
+  }, [localHeads]);
+
+  const presetOptions = useMemo(() => {
+    const list = [{ value: 'All', label_en: 'All Durations', label_hi: 'सभी अवधियां' }];
+    datePresets.forEach(p => {
+      list.push({ value: p.id, label_en: p.name_en, label_hi: p.name_hi });
+    });
+    return list;
+  }, [datePresets]);
+
+  const handleDurationChange = (presetId) => {
+    setFilterDuration(presetId);
+    if (presetId === 'All') {
+      setDateFrom('');
+      setDateTo('');
+      return;
+    }
+    const preset = datePresets.find(p => p.id === presetId);
+    if (preset) {
+      const spec = preset.filter_spec || {};
+      const conditions = spec.conditions || [];
+      conditions.forEach(cond => {
+        const field = cond.field || '';
+        const op = (cond.operator || cond.op || '').toLowerCase();
+        const val = cond.value;
+        if (field === '_record_date' || field === 'record_date') {
+          if (op === 'last_n_days') {
+            const days = parseInt(val || 1, 10);
+            const d = new Date();
+            d.setDate(d.getDate() - days + 1);
+            setDateFrom(d.toISOString().split('T')[0]);
+            setDateTo(new Date().toISOString().split('T')[0]);
+          } else if (op === 'older_than_n_days') {
+            const days = parseInt(val || 1, 10);
+            const d = new Date();
+            d.setDate(d.getDate() - days);
+            setDateFrom('');
+            setDateTo(d.toISOString().split('T')[0]);
+          }
+        }
+      });
+    }
+  };
+
+
 
   const getDistrictName = () => {
     const isHq = user?.role === 'HQ' || user?.role === 'HQ_ANALYST' || user?.role === 'HQ_ADMIN' || user?.role === 'SYSTEM_ADMIN';
@@ -44,7 +171,7 @@ export default function HQDashboard() {
     { label: 'Accused arrests processed', value: (stats.arrests_today || 0) , color: 'text-emerald-500', icon: FileCheck },
   ];
 
-  const activeFilterCount = [filterDistrict, filterType].filter(v => v !== 'All').length;
+  const activeFilterCount = [filterDistrict, filterType, filterLocalHead, filterDuration].filter(v => v !== 'All').length;
 
   /* ── badge colour per record_type ── */
   const typeMeta = {
@@ -192,41 +319,95 @@ export default function HQDashboard() {
 
           {/* Controls */}
           <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-end sm:flex-wrap">
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
               <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">District</label>
-              <select
+              <SearchableSelect
                 value={filterDistrict}
-                onChange={(e) => setFilterDistrict(e.target.value)}
-                className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none transition-all duration-150 hover:border-[#003087] focus:border-[#003087] focus:ring-2 focus:ring-[#003087]/10 cursor-pointer"
-              >
-                <option value="All">All Districts</option>
-                <option value="DIST_NDD">New Delhi District (NDD)</option>
-                <option value="DIST_SD">South District (SD)</option>
-                <option value="DIST_CD">Central District (CD)</option>
-              </select>
+                onChange={(val) => setFilterDistrict(val)}
+                options={districtOptions}
+                placeholder="All Districts"
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
+                style={{
+                  minHeight: '42px',
+                  border: '1px solid #E2E8F0',
+                  paddingLeft: '16px',
+                  paddingRight: '20px',
+                  borderRadius: '12px',
+                  backgroundColor: '#F8FAFF'
+                }}
+              />
             </div>
 
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
               <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">Log Type</label>
-              <select
+              <SearchableSelect
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none transition-all duration-150 hover:border-[#003087] focus:border-[#003087] focus:ring-2 focus:ring-[#003087]/10 cursor-pointer"
-              >
-                <option value="All">All Categories</option>
-                <option value="CASE">Cases Master (FIR)</option>
-                <option value="ARREST">Arrests logs</option>
-                <option value="PCR_CALL">PCR emergency logs</option>
-                <option value="MISSING">Missing registers</option>
-                <option value="UIDB">UIDB Unidentified Bodies</option>
-              </select>
+                onChange={(val) => setFilterType(val)}
+                options={recordTypeOptions}
+                placeholder="All Categories"
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
+                style={{
+                  minHeight: '42px',
+                  border: '1px solid #E2E8F0',
+                  paddingLeft: '16px',
+                  paddingRight: '20px',
+                  borderRadius: '12px',
+                  backgroundColor: '#F8FAFF'
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
+              <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">Local Head</label>
+              <SearchableSelect
+                value={filterLocalHead}
+                onChange={(val) => setFilterLocalHead(val)}
+                options={localHeadOptions}
+                placeholder="All Local Heads"
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
+                style={{
+                  minHeight: '42px',
+                  border: '1px solid #E2E8F0',
+                  paddingLeft: '16px',
+                  paddingRight: '20px',
+                  borderRadius: '12px',
+                  backgroundColor: '#F8FAFF'
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
+              <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">Duration</label>
+              <SearchableSelect
+                value={filterDuration}
+                onChange={handleDurationChange}
+                options={presetOptions}
+                placeholder="All Durations"
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
+                style={{
+                  minHeight: '42px',
+                  border: '1px solid #E2E8F0',
+                  paddingLeft: '16px',
+                  paddingRight: '20px',
+                  borderRadius: '12px',
+                  backgroundColor: '#F8FAFF'
+                }}
+              />
             </div>
 
             {/* Reset hint when filters are active */}
             {activeFilterCount > 0 && (
               <button
-                onClick={() => { setFilterDistrict('All'); setFilterType('All'); }}
-                className="self-end rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-xs font-semibold text-[#718096] shadow-sm transition-all duration-150 hover:border-[#DC2626] hover:text-[#DC2626]"
+                onClick={() => {
+                  setFilterDistrict('All');
+                  setFilterType('All');
+                  setFilterLocalHead('All');
+                  setFilterDuration('All');
+                  setDateFrom('');
+                  setDateTo('');
+                }}
+                className="self-end rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-xs font-semibold text-[#718096] shadow-sm transition-all duration-150 hover:border-[#DC2626] hover:text-[#DC2626] cursor-pointer"
+                style={{ minHeight: '42px' }}
               >
                 Clear filters
               </button>
@@ -248,9 +429,45 @@ export default function HQDashboard() {
               <div>
                 <h3 className="text-base font-bold text-[#1A202C]">Real-time Jurisdiction Activity Feed</h3>
                 <p className="mt-0.5 text-xs text-[#718096]">
-                  Showing {Math.min(8, records.filter(r => filterType === 'All' || r.record_type === filterType).length)} of{' '}
-                  {records.filter(r => filterType === 'All' || r.record_type === filterType).length} records
+                  Showing {Math.min(8, records.filter(r => {
+                    if (filterType !== 'All' && r.record_type !== filterType) return false;
+                    if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
+                    if (filterLocalHead !== 'All') {
+                      const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
+                      if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
+                    }
+                    if (dateFrom || dateTo) {
+                      const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
+                      if (recDateStr) {
+                        const recDate = new Date(recDateStr);
+                        const recDateOnly = recDate.toISOString().split('T')[0];
+                        if (dateFrom && recDateOnly < dateFrom) return false;
+                        if (dateTo && recDateOnly > dateTo) return false;
+                      }
+                    }
+                    return true;
+                  }).length)} of{' '}
+                  {records.filter(r => {
+                    if (filterType !== 'All' && r.record_type !== filterType) return false;
+                    if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
+                    if (filterLocalHead !== 'All') {
+                      const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
+                      if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
+                    }
+                    if (dateFrom || dateTo) {
+                      const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
+                      if (recDateStr) {
+                        const recDate = new Date(recDateStr);
+                        const recDateOnly = recDate.toISOString().split('T')[0];
+                        if (dateFrom && recDateOnly < dateFrom) return false;
+                        if (dateTo && recDateOnly > dateTo) return false;
+                      }
+                    }
+                    return true;
+                  }).length} records
                   {filterType !== 'All' ? ` · ${filterType}` : ''}
+                  {filterLocalHead !== 'All' ? ` · ${filterLocalHead}` : ''}
+                  {filterDuration !== 'All' ? ` · ${filterDuration}` : ''}
                 </p>
               </div>
             </div>
@@ -288,7 +505,24 @@ export default function HQDashboard() {
               </thead>
               <tbody className="divide-y divide-[#F0F4F9]">
                 {records
-                  .filter(r => filterType === 'All' || r.record_type === filterType)
+                  .filter(r => {
+                    if (filterType !== 'All' && r.record_type !== filterType) return false;
+                    if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
+                    if (filterLocalHead !== 'All') {
+                      const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
+                      if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
+                    }
+                    if (dateFrom || dateTo) {
+                      const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
+                      if (recDateStr) {
+                        const recDate = new Date(recDateStr);
+                        const recDateOnly = recDate.toISOString().split('T')[0];
+                        if (dateFrom && recDateOnly < dateFrom) return false;
+                        if (dateTo && recDateOnly > dateTo) return false;
+                      }
+                    }
+                    return true;
+                  })
                   .slice(0, 8)
                   .map((rec, idx) => {
                     const refId = rec.data.fir_no || rec.data.gd_no || rec.data.linked_fir_dd_no || rec.data.dd_fir_no || rec.data.uidbNumber || 'N/A';
@@ -313,7 +547,9 @@ export default function HQDashboard() {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-1.5">
                             <MapPin size={11} className="text-[#003087] flex-shrink-0" />
-                            <span className="font-medium text-[#4A5568]">New Delhi District</span>
+                            <span className="font-medium text-[#4A5568]">
+                              {rec.data?.district || rec.districtKey || rec.district_id || 'New Delhi District'}
+                            </span>
                           </div>
                         </td>
                         {/* Record type badge */}
@@ -348,7 +584,24 @@ export default function HQDashboard() {
             </table>
 
             {/* Empty state */}
-            {records.filter(r => filterType === 'All' || r.record_type === filterType).length === 0 && (
+            {records.filter(r => {
+              if (filterType !== 'All' && r.record_type !== filterType) return false;
+              if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
+              if (filterLocalHead !== 'All') {
+                const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
+                if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
+              }
+              if (dateFrom || dateTo) {
+                const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
+                if (recDateStr) {
+                  const recDate = new Date(recDateStr);
+                  const recDateOnly = recDate.toISOString().split('T')[0];
+                  if (dateFrom && recDateOnly < dateFrom) return false;
+                  if (dateTo && recDateOnly > dateTo) return false;
+                }
+              }
+              return true;
+            }).length === 0 && (
               <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F0F4F9] border border-[#E2E8F0]">
                   <AlertCircle size={24} className="text-[#718096]" />

@@ -308,6 +308,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
           // SelectField's bigger default styling.
           variant={selectVariant || 'compact'}
           className={selectClassName}
+          multiple={key === 'sections' || key.endsWith('_sections') || key.includes('sections')}
         />
         {isCaseStatus && isTransferSelected && (
           <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 mt-1 animate-in slide-in-from-top-1 duration-100">

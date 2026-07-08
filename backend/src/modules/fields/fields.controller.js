@@ -1402,4 +1402,21 @@ export const listLocalHeads = async (req, res) => {
   }
 };
 
+export const listRecordTypes = async (req, res) => {
+  try {
+    const data = [
+      { value: "CASE", label_en: "Cases Master (FIR)", label_hi: "मामले (FIR)" },
+      { value: "ARREST", label_en: "Arrests", label_hi: "गिरफ़्तारी" },
+      { value: "PCR_CALL", label_en: "PCR Calls", label_hi: "पीसीआर कॉल" },
+      { value: "MISSING", label_en: "Missing Persons", label_hi: "लापता व्यक्ति" },
+      { value: "UIDB", label_en: "UIDB", label_hi: "यूआईडीबी" }
+    ];
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listRecordTypes failed', { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
 

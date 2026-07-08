@@ -696,7 +696,7 @@ export default function DynamicForm({
         </div>
 
         {/* Acts, Sections, Major/Minor, Local Head Panels */}
-        <ActsSectionsTable {...actsSectionsProps} localHeadLayout="split" />
+        <ActsSectionsTable {...actsSectionsProps} localHeadLayout={recordType === 'UIDB' ? 'hidden' : 'split'} />
       </div>
     );
   };
@@ -3749,6 +3749,7 @@ return (
                 setRepeaterState(prev => ({ ...prev, [activeSection.section]: entries }))
               }
               actsSectionsProps={actsSectionsProps}
+              recordType={recordType}
             />
           )}
         </form>

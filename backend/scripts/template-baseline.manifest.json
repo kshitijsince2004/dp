@@ -162,19 +162,6 @@
         },
         {
           "col": 17,
-          "key": "complainant_marital_status",
-          "section": "Complainant Personal Details",
-          "label": "Complainant Marital Status",
-          "hint": "select: Married, Unmarried, Divorced, Widowed, Single, Unknown",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Married,Unmarried,Divorced,Widowed,Single,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 18,
           "key": "complainant_relation_type",
           "section": "Complainant Personal Details",
           "label": "Complainant Relation Type",
@@ -187,7 +174,7 @@
           }
         },
         {
-          "col": 19,
+          "col": 18,
           "key": "complainant_relative_name",
           "section": "Complainant Personal Details",
           "label": "Complainant Relative Name",
@@ -195,7 +182,7 @@
           "validation": null
         },
         {
-          "col": 20,
+          "col": 19,
           "key": "complainant_mobile_country_code",
           "section": "Complainant Personal Details",
           "label": "Complainant Mobile Country Code",
@@ -203,7 +190,7 @@
           "validation": null
         },
         {
-          "col": 21,
+          "col": 20,
           "key": "complainant_mobile",
           "section": "Complainant Personal Details",
           "label": "Complainant Mobile No.",
@@ -211,20 +198,7 @@
           "validation": null
         },
         {
-          "col": 22,
-          "key": "complainant_qualification",
-          "section": "Complainant Personal Details",
-          "label": "Complainant Qualification",
-          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
-            ]
-          }
-        },
-        {
-          "col": 23,
+          "col": 21,
           "key": "complainant_age_year",
           "section": "Complainant Personal Details",
           "label": "Complainant Age (Years)",
@@ -232,7 +206,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 22,
           "key": "complainant_house_no",
           "section": "Complainant Present Address",
           "label": "Complainant House No.",
@@ -240,7 +214,7 @@
           "validation": null
         },
         {
-          "col": 25,
+          "col": 23,
           "key": "complainant_street",
           "section": "Complainant Present Address",
           "label": "Complainant Street",
@@ -248,7 +222,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 24,
           "key": "complainant_colony",
           "section": "Complainant Present Address",
           "label": "Complainant Colony",
@@ -256,7 +230,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 25,
           "key": "complainant_city_town_village",
           "section": "Complainant Present Address",
           "label": "Complainant Village / City / Town",
@@ -264,7 +238,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 26,
           "key": "complainant_tehsil_block_mandal",
           "section": "Complainant Present Address",
           "label": "Complainant Tehsil / Block / Mandal",
@@ -272,7 +246,7 @@
           "validation": null
         },
         {
-          "col": 29,
+          "col": 27,
           "key": "complainant_country",
           "section": "Complainant Present Address",
           "label": "Complainant Nationality",
@@ -285,7 +259,7 @@
           }
         },
         {
-          "col": 30,
+          "col": 28,
           "key": "complainant_state",
           "section": "Complainant Present Address",
           "label": "Complainant State",
@@ -298,11 +272,11 @@
           }
         },
         {
-          "col": 31,
+          "col": 29,
           "key": "complainant_district",
           "section": "Complainant Present Address",
           "label": "Complainant District",
-          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -311,7 +285,7 @@
           }
         },
         {
-          "col": 32,
+          "col": 30,
           "key": "complainant_police_station",
           "section": "Complainant Present Address",
           "label": "Complainant Police Station",
@@ -319,12 +293,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AE5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AC5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 33,
+          "col": 31,
           "key": "complainant_pincode",
           "section": "Complainant Present Address",
           "label": "Complainant Pin Code",
@@ -332,7 +306,7 @@
           "validation": null
         },
         {
-          "col": 34,
+          "col": 32,
           "key": "complainant_perm_same",
           "section": "Complainant Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -345,7 +319,7 @@
           }
         },
         {
-          "col": 35,
+          "col": 33,
           "key": "complainant_perm_house_no",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent House No.",
@@ -353,7 +327,7 @@
           "validation": null
         },
         {
-          "col": 36,
+          "col": 34,
           "key": "complainant_perm_street",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Street",
@@ -361,7 +335,7 @@
           "validation": null
         },
         {
-          "col": 37,
+          "col": 35,
           "key": "complainant_perm_colony",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Colony",
@@ -369,7 +343,7 @@
           "validation": null
         },
         {
-          "col": 38,
+          "col": 36,
           "key": "complainant_perm_city_town_village",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Village / City / Town",
@@ -377,7 +351,7 @@
           "validation": null
         },
         {
-          "col": 39,
+          "col": 37,
           "key": "complainant_perm_tehsil_block_mandal",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Tehsil / Block / Mandal",
@@ -385,7 +359,7 @@
           "validation": null
         },
         {
-          "col": 40,
+          "col": 38,
           "key": "complainant_perm_country",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Nationality",
@@ -398,7 +372,7 @@
           }
         },
         {
-          "col": 41,
+          "col": 39,
           "key": "complainant_perm_state",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent State",
@@ -411,11 +385,11 @@
           }
         },
         {
-          "col": 42,
+          "col": 40,
           "key": "complainant_perm_district",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent District",
-          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -424,7 +398,7 @@
           }
         },
         {
-          "col": 43,
+          "col": 41,
           "key": "complainant_perm_police_station",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Police Station",
@@ -432,12 +406,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AP5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AN5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 44,
+          "col": 42,
           "key": "complainant_perm_pincode",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Pin Code",
@@ -445,7 +419,7 @@
           "validation": null
         },
         {
-          "col": 45,
+          "col": 43,
           "key": "occurrence_house_no",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence House No.",
@@ -453,7 +427,7 @@
           "validation": null
         },
         {
-          "col": 46,
+          "col": 44,
           "key": "occurrence_street",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Street",
@@ -461,7 +435,7 @@
           "validation": null
         },
         {
-          "col": 47,
+          "col": 45,
           "key": "occurrence_colony",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Colony",
@@ -469,7 +443,7 @@
           "validation": null
         },
         {
-          "col": 48,
+          "col": 46,
           "key": "occurrence_city_town_village",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Village / City / Town",
@@ -477,7 +451,7 @@
           "validation": null
         },
         {
-          "col": 49,
+          "col": 47,
           "key": "occurrence_tehsil_block_mandal",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Tehsil / Block / Mandal",
@@ -485,11 +459,11 @@
           "validation": null
         },
         {
-          "col": 50,
+          "col": 48,
           "key": "occurrence_district",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence District",
-          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -498,7 +472,7 @@
           }
         },
         {
-          "col": 51,
+          "col": 49,
           "key": "occurrence_police_station",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Police Station",
@@ -506,12 +480,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AX5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AV5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 52,
+          "col": 50,
           "key": "occurrence_pincode",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Pin Code",
@@ -519,7 +493,7 @@
           "validation": null
         },
         {
-          "col": 53,
+          "col": 51,
           "key": "occurrence_landmark",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Landmark",
@@ -527,7 +501,7 @@
           "validation": null
         },
         {
-          "col": 54,
+          "col": 52,
           "key": "io_name",
           "section": "IO Details",
           "label": "IO / Officer Name",
@@ -535,7 +509,7 @@
           "validation": null
         },
         {
-          "col": 55,
+          "col": 53,
           "key": "io_pis",
           "section": "IO Details",
           "label": "PIS No. of IO",
@@ -543,7 +517,7 @@
           "validation": null
         },
         {
-          "col": 56,
+          "col": 54,
           "key": "io_mobile",
           "section": "IO Details",
           "label": "IO Mobile No.",
@@ -551,7 +525,7 @@
           "validation": null
         },
         {
-          "col": 57,
+          "col": 55,
           "key": "case_status",
           "section": "Action Taken",
           "label": "Status",
@@ -564,7 +538,7 @@
           }
         },
         {
-          "col": 58,
+          "col": 56,
           "key": "disposal_type",
           "section": "Action Taken",
           "label": "Disposal Type",
@@ -577,11 +551,27 @@
           }
         },
         {
-          "col": 59,
+          "col": 57,
           "key": "rc_no",
           "section": "Action Taken",
           "label": "RC No.",
           "hint": "e.g. RC-123/2026",
+          "validation": null
+        },
+        {
+          "col": 58,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 59,
+          "key": null,
+          "section": "Action Taken",
+          "label": null,
+          "hint": null,
           "validation": null
         },
         {
@@ -651,12 +641,12 @@
       ],
       "row2Merges": [
         "A2:K2",
-        "AI2:AR2",
-        "AS2:BA2",
-        "BB2:BD2",
-        "BE2:BO2",
-        "L2:W2",
-        "X2:AH2"
+        "AG2:AP2",
+        "AQ2:AY2",
+        "AZ2:BB2",
+        "BC2:BO2",
+        "L2:U2",
+        "V2:AF2"
       ]
     },
     "Victim Information": {
@@ -716,19 +706,6 @@
         },
         {
           "col": 7,
-          "key": "victim_marital_status",
-          "section": "Victim Personal Details",
-          "label": "Victim Marital Status",
-          "hint": "select: Married, Unmarried, Divorced, Widowed, Single, Unknown",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Married,Unmarried,Divorced,Widowed,Single,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 8,
           "key": "victim_relation_type",
           "section": "Victim Personal Details",
           "label": "Victim Relation Type",
@@ -741,7 +718,7 @@
           }
         },
         {
-          "col": 9,
+          "col": 8,
           "key": "victim_relative_name",
           "section": "Victim Personal Details",
           "label": "Victim Relative Name",
@@ -749,15 +726,15 @@
           "validation": null
         },
         {
-          "col": 10,
+          "col": 9,
           "key": "victim_mobile_country_code",
           "section": "Victim Personal Details",
           "label": "Victim Mobile Country Code",
-          "hint": "text",
+          "hint": "number",
           "validation": null
         },
         {
-          "col": 11,
+          "col": 10,
           "key": "victim_mobile",
           "section": "Victim Personal Details",
           "label": "Victim Mobile No.",
@@ -765,7 +742,7 @@
           "validation": null
         },
         {
-          "col": 12,
+          "col": 11,
           "key": "victim_age_year",
           "section": "Victim Personal Details",
           "label": "Victim Age (Years)",
@@ -773,7 +750,7 @@
           "validation": null
         },
         {
-          "col": 13,
+          "col": 12,
           "key": "victim_house_no",
           "section": "Victim Present Address",
           "label": "Victim House No.",
@@ -781,7 +758,7 @@
           "validation": null
         },
         {
-          "col": 14,
+          "col": 13,
           "key": "victim_street",
           "section": "Victim Present Address",
           "label": "Victim Street",
@@ -789,7 +766,7 @@
           "validation": null
         },
         {
-          "col": 15,
+          "col": 14,
           "key": "victim_colony",
           "section": "Victim Present Address",
           "label": "Victim Colony",
@@ -797,7 +774,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 15,
           "key": "victim_city_town_village",
           "section": "Victim Present Address",
           "label": "Victim Village / City / Town",
@@ -805,7 +782,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 16,
           "key": "victim_tehsil_block_mandal",
           "section": "Victim Present Address",
           "label": "Victim Tehsil / Block / Mandal",
@@ -813,7 +790,7 @@
           "validation": null
         },
         {
-          "col": 18,
+          "col": 17,
           "key": "victim_country",
           "section": "Victim Present Address",
           "label": "Victim Nationality",
@@ -826,7 +803,7 @@
           }
         },
         {
-          "col": 19,
+          "col": 18,
           "key": "victim_state",
           "section": "Victim Present Address",
           "label": "Victim State",
@@ -839,11 +816,11 @@
           }
         },
         {
-          "col": 20,
+          "col": 19,
           "key": "victim_district",
           "section": "Victim Present Address",
           "label": "Victim District",
-          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -852,20 +829,20 @@
           }
         },
         {
-          "col": 21,
+          "col": 20,
           "key": "victim_police_station",
           "section": "Victim Present Address",
           "label": "Victim Police Station",
-          "hint": "select (249 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
+          "hint": "select (192 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($T5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($S5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 22,
+          "col": 21,
           "key": "victim_pincode",
           "section": "Victim Present Address",
           "label": "Victim Pin Code",
@@ -873,7 +850,7 @@
           "validation": null
         },
         {
-          "col": 23,
+          "col": 22,
           "key": "victim_perm_same",
           "section": "Victim Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -886,7 +863,7 @@
           }
         },
         {
-          "col": 24,
+          "col": 23,
           "key": "victim_perm_house_no",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent House No.",
@@ -894,7 +871,7 @@
           "validation": null
         },
         {
-          "col": 25,
+          "col": 24,
           "key": "victim_perm_street",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent Street",
@@ -902,7 +879,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 25,
           "key": "victim_perm_colony",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent Colony",
@@ -910,7 +887,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 26,
           "key": "victim_perm_city_town_village",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent Village / City / Town",
@@ -918,7 +895,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 27,
           "key": "victim_perm_tehsil_block_mandal",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent Tehsil / Block / Mandal",
@@ -926,7 +903,7 @@
           "validation": null
         },
         {
-          "col": 29,
+          "col": 28,
           "key": "victim_perm_country",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent Nationality",
@@ -939,7 +916,7 @@
           }
         },
         {
-          "col": 30,
+          "col": 29,
           "key": "victim_perm_state",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent State",
@@ -952,11 +929,11 @@
           }
         },
         {
-          "col": 31,
+          "col": 30,
           "key": "victim_perm_district",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent District",
-          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -965,7 +942,7 @@
           }
         },
         {
-          "col": 32,
+          "col": 31,
           "key": "victim_perm_police_station",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent Police Station",
@@ -973,16 +950,24 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AE5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AD5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 33,
+          "col": 32,
           "key": "victim_perm_pincode",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent Pin Code",
           "hint": "6-digit PIN code",
+          "validation": null
+        },
+        {
+          "col": 33,
+          "key": null,
+          "section": "Victim Permanent Address",
+          "label": null,
+          "hint": null,
           "validation": null
         },
         {
@@ -1019,9 +1004,9 @@
         }
       ],
       "row2Merges": [
-        "B2:L2",
-        "M2:W2",
-        "X2:AK2"
+        "B2:K2",
+        "L2:V2",
+        "W2:AK2"
       ]
     },
     "Act and Sections": {
@@ -1149,19 +1134,6 @@
         },
         {
           "col": 7,
-          "key": "accused_marital_status",
-          "section": "Accused Personal Details",
-          "label": "Accused Marital Status",
-          "hint": "select: Married, Unmarried, Divorced, Widowed, Single, Unknown",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Married,Unmarried,Divorced,Widowed,Single,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 8,
           "key": "accused_relation_type",
           "section": "Accused Personal Details",
           "label": "Accused Relation Type",
@@ -1174,7 +1146,7 @@
           }
         },
         {
-          "col": 9,
+          "col": 8,
           "key": "accused_relative_name",
           "section": "Accused Personal Details",
           "label": "Accused Relative Name",
@@ -1182,7 +1154,7 @@
           "validation": null
         },
         {
-          "col": 10,
+          "col": 9,
           "key": "accused_mobile_country_code",
           "section": "Accused Personal Details",
           "label": "Accused Mobile Country Code",
@@ -1190,7 +1162,7 @@
           "validation": null
         },
         {
-          "col": 11,
+          "col": 10,
           "key": "accused_mobile",
           "section": "Accused Personal Details",
           "label": "Accused Mobile No.",
@@ -1198,20 +1170,7 @@
           "validation": null
         },
         {
-          "col": 12,
-          "key": "accused_qualification",
-          "section": "Accused Personal Details",
-          "label": "Accused Qualification",
-          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
-            ]
-          }
-        },
-        {
-          "col": 13,
+          "col": 11,
           "key": "accused_age_year",
           "section": "Accused Personal Details",
           "label": "Accused Age (Years)",
@@ -1219,7 +1178,7 @@
           "validation": null
         },
         {
-          "col": 14,
+          "col": 12,
           "key": "accused_house_no",
           "section": "Accused Present Address",
           "label": "Accused House No.",
@@ -1227,7 +1186,7 @@
           "validation": null
         },
         {
-          "col": 15,
+          "col": 13,
           "key": "accused_street",
           "section": "Accused Present Address",
           "label": "Accused Street",
@@ -1235,7 +1194,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 14,
           "key": "accused_colony",
           "section": "Accused Present Address",
           "label": "Accused Colony",
@@ -1243,7 +1202,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 15,
           "key": "accused_city_town_village",
           "section": "Accused Present Address",
           "label": "Accused Village / City / Town",
@@ -1251,7 +1210,7 @@
           "validation": null
         },
         {
-          "col": 18,
+          "col": 16,
           "key": "accused_tehsil_block_mandal",
           "section": "Accused Present Address",
           "label": "Accused Tehsil / Block / Mandal",
@@ -1259,7 +1218,7 @@
           "validation": null
         },
         {
-          "col": 19,
+          "col": 17,
           "key": "accused_country",
           "section": "Accused Present Address",
           "label": "Accused Nationality",
@@ -1272,7 +1231,7 @@
           }
         },
         {
-          "col": 20,
+          "col": 18,
           "key": "accused_state",
           "section": "Accused Present Address",
           "label": "Accused State",
@@ -1285,11 +1244,11 @@
           }
         },
         {
-          "col": 21,
+          "col": 19,
           "key": "accused_district",
           "section": "Accused Present Address",
           "label": "Accused District",
-          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1298,7 +1257,7 @@
           }
         },
         {
-          "col": 22,
+          "col": 20,
           "key": "accused_police_station",
           "section": "Accused Present Address",
           "label": "Accused Police Station",
@@ -1306,12 +1265,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($U5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($S5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 23,
+          "col": 21,
           "key": "accused_pincode",
           "section": "Accused Present Address",
           "label": "Accused Pin Code",
@@ -1319,7 +1278,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 22,
           "key": "accused_perm_same",
           "section": "Accused Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -1332,7 +1291,7 @@
           }
         },
         {
-          "col": 25,
+          "col": 23,
           "key": "accused_perm_house_no",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent House No.",
@@ -1340,7 +1299,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 24,
           "key": "accused_perm_street",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Street",
@@ -1348,7 +1307,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 25,
           "key": "accused_perm_colony",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Colony",
@@ -1356,7 +1315,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 26,
           "key": "accused_perm_city_town_village",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Village / City / Town",
@@ -1364,7 +1323,7 @@
           "validation": null
         },
         {
-          "col": 29,
+          "col": 27,
           "key": "accused_perm_tehsil_block_mandal",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Tehsil / Block / Mandal",
@@ -1372,7 +1331,7 @@
           "validation": null
         },
         {
-          "col": 30,
+          "col": 28,
           "key": "accused_perm_country",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Nationality",
@@ -1385,7 +1344,7 @@
           }
         },
         {
-          "col": 31,
+          "col": 29,
           "key": "accused_perm_state",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent State",
@@ -1398,11 +1357,11 @@
           }
         },
         {
-          "col": 32,
+          "col": 30,
           "key": "accused_perm_district",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent District",
-          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1411,7 +1370,7 @@
           }
         },
         {
-          "col": 33,
+          "col": 31,
           "key": "accused_perm_police_station",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Police Station",
@@ -1419,16 +1378,32 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AF5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AD5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 34,
+          "col": 32,
           "key": "accused_perm_pincode",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Pin Code",
           "hint": "6-digit PIN code",
+          "validation": null
+        },
+        {
+          "col": 33,
+          "key": "xyz",
+          "section": "Accused Permanent Address",
+          "label": "abc",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 34,
+          "key": null,
+          "section": "Accused Permanent Address",
+          "label": null,
+          "hint": null,
           "validation": null
         },
         {
@@ -1454,12 +1429,20 @@
           "label": null,
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 38,
+          "key": null,
+          "section": "Accused Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
-        "B2:M2",
-        "N2:X2",
-        "Y2:AK2"
+        "B2:K2",
+        "L2:V2",
+        "W2:AL2"
       ]
     },
     "Property Details": {
@@ -1526,10 +1509,321 @@
           "label": "Property Value in inr",
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 7,
+          "key": "aaple",
+          "section": "Property Details",
+          "label": "apple",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 8,
+          "key": "prop_vehicle_no",
+          "section": "Property Details",
+          "label": "Vehicle Registration No.",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 9,
+          "key": "prop_vehicle_type",
+          "section": "Property Details",
+          "label": "Vehicle Type",
+          "hint": "select: Car, Motorcycle, Scooter, E-Rickshaw, Auto, Tempo, Cycle, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Car,Motorcycle,Scooter,E-Rickshaw,Auto,Tempo,Cycle,Other\""
+            ]
+          }
+        },
+        {
+          "col": 10,
+          "key": "prop_cd_24h",
+          "section": "Property Details",
+          "label": "1st CD Uploaded Within 24 Hours",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 11,
+          "key": "prop_cctv",
+          "section": "Property Details",
+          "label": "CCTV Footage Collected",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 12,
+          "key": "prop_gold_item_type",
+          "section": "Property Details",
+          "label": "Item Type",
+          "hint": "select: Ring, Necklace, Bracelet, Chain, Earring, Bangles, Watch, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Ring,Necklace,Bracelet,Chain,Earring,Bangles,Watch,Other\""
+            ]
+          }
+        },
+        {
+          "col": 13,
+          "key": "prop_arms_type",
+          "section": "Property Details",
+          "label": "Weapon Type",
+          "hint": "select: Pistol, Revolver, Rifle, Country-made gun, Knife, Sword/Machete, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Pistol,Revolver,Rifle,Country-made gun,Knife,Sword/Machete,Other\""
+            ]
+          }
+        },
+        {
+          "col": 14,
+          "key": "prop_drug_type",
+          "section": "Property Details",
+          "label": "Drug / Substance Type",
+          "hint": "select: Heroin/Smack, Cannabis/Ganja, Cocaine, Methamphetamine, Opium/Afim, Tablets/Pills, Chemical Precursor, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Heroin/Smack,Cannabis/Ganja,Cocaine,Methamphetamine,Opium/Afim,Tablets/Pills,Chemical Precursor,Other\""
+            ]
+          }
+        },
+        {
+          "col": 15,
+          "key": "prop_elec_device_type",
+          "section": "Property Details",
+          "label": "Device Type",
+          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
+            ]
+          }
+        },
+        {
+          "col": 16,
+          "key": "prop_cash_amount",
+          "section": "Property Details",
+          "label": "Amount (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 17,
+          "key": "prop_other_desc",
+          "section": "Property Details",
+          "label": "Item Description",
+          "hint": "textarea",
+          "validation": null
+        },
+        {
+          "col": 18,
+          "key": "prop_doc_type",
+          "section": "Property Details",
+          "label": "Document Type",
+          "hint": "select: Passport, Aadhar Card, PAN Card, Driving License, Voter ID, Ration Card, Bank Passbook, Cheque Book, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Passport,Aadhar Card,PAN Card,Driving License,Voter ID,Ration Card,Bank Passbook,Cheque Book,Other\""
+            ]
+          }
+        },
+        {
+          "col": 19,
+          "key": "prop_elec_brand",
+          "section": "Property Details",
+          "label": "Make / Brand",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 20,
+          "key": "prop_cash_currency",
+          "section": "Property Details",
+          "label": "Currency Type",
+          "hint": "select: INR, USD, EUR, GBP, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"INR,USD,EUR,GBP,Other\""
+            ]
+          }
+        },
+        {
+          "col": 21,
+          "key": "prop_arms_make",
+          "section": "Property Details",
+          "label": "Make / Manufacturer",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 22,
+          "key": "prop_gold_material",
+          "section": "Property Details",
+          "label": "Material",
+          "hint": "select: Gold, Silver, Diamond, Platinum, Mixed, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Gold,Silver,Diamond,Platinum,Mixed,Other\""
+            ]
+          }
+        },
+        {
+          "col": 23,
+          "key": "prop_drug_quantity",
+          "section": "Property Details",
+          "label": "Quantity",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 24,
+          "key": "prop_other_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 25,
+          "key": "prop_doc_number",
+          "section": "Property Details",
+          "label": "Document Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 26,
+          "key": "prop_doc_holder",
+          "section": "Property Details",
+          "label": "Document Holder Name",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 27,
+          "key": "prop_drug_unit",
+          "section": "Property Details",
+          "label": "Unit",
+          "hint": "select: grams, kg, ml, litres, tablets, packets, sachets",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"grams,kg,ml,litres,tablets,packets,sachets\""
+            ]
+          }
+        },
+        {
+          "col": 28,
+          "key": "prop_arms_serial",
+          "section": "Property Details",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 29,
+          "key": "prop_cash_denomination",
+          "section": "Property Details",
+          "label": "Denomination Details",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 30,
+          "key": "prop_gold_weight",
+          "section": "Property Details",
+          "label": "Weight (grams)",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 31,
+          "key": "prop_elec_model",
+          "section": "Property Details",
+          "label": "Model",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 32,
+          "key": "prop_gold_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 33,
+          "key": "prop_arms_ammo_count",
+          "section": "Property Details",
+          "label": "Ammunition Count",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 34,
+          "key": "prop_drug_value",
+          "section": "Property Details",
+          "label": "Estimated Street Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 35,
+          "key": "prop_doc_issuing_auth",
+          "section": "Property Details",
+          "label": "Issuing Authority",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 36,
+          "key": "prop_elec_serial",
+          "section": "Property Details",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": "prop_arms_license",
+          "section": "Property Details",
+          "label": "License Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 38,
+          "key": "prop_elec_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
         }
       ],
       "row2Merges": [
-        "B2:F2"
+        "B2:AL2"
       ]
     }
   },
@@ -1795,7 +2089,7 @@
           "key": "arrest_district",
           "section": "Arrest Detail",
           "label": "District of Arrest",
-          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1858,19 +2152,6 @@
         },
         {
           "col": 14,
-          "key": "arrested_marital_status",
-          "section": "Arrested Person Personal Details",
-          "label": "Arrested Person Marital Status",
-          "hint": "select: Married, Unmarried, Divorced, Widowed, Single, Unknown",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Married,Unmarried,Divorced,Widowed,Single,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 15,
           "key": "arrested_relation_type",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Relation Type",
@@ -1883,7 +2164,7 @@
           }
         },
         {
-          "col": 16,
+          "col": 15,
           "key": "arrested_relative_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Relative Name",
@@ -1891,7 +2172,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 16,
           "key": "arrested_mobile_country_code",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Mobile Country Code",
@@ -1899,7 +2180,7 @@
           "validation": null
         },
         {
-          "col": 18,
+          "col": 17,
           "key": "arrested_mobile",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Mobile No.",
@@ -1907,20 +2188,7 @@
           "validation": null
         },
         {
-          "col": 19,
-          "key": "arrested_qualification",
-          "section": "Arrested Person Personal Details",
-          "label": "Arrested Person Qualification",
-          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
-            ]
-          }
-        },
-        {
-          "col": 20,
+          "col": 18,
           "key": "arrested_age_year",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Age (Years)",
@@ -1928,7 +2196,7 @@
           "validation": null
         },
         {
-          "col": 21,
+          "col": 19,
           "key": "arrested_house_no",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person House No.",
@@ -1936,7 +2204,7 @@
           "validation": null
         },
         {
-          "col": 22,
+          "col": 20,
           "key": "arrested_street",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Street",
@@ -1944,7 +2212,7 @@
           "validation": null
         },
         {
-          "col": 23,
+          "col": 21,
           "key": "arrested_colony",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Colony",
@@ -1952,7 +2220,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 22,
           "key": "arrested_city_town_village",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Village / City / Town",
@@ -1960,7 +2228,7 @@
           "validation": null
         },
         {
-          "col": 25,
+          "col": 23,
           "key": "arrested_tehsil_block_mandal",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Tehsil / Block / Mandal",
@@ -1968,7 +2236,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 24,
           "key": "arrested_country",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Nationality",
@@ -1981,7 +2249,7 @@
           }
         },
         {
-          "col": 27,
+          "col": 25,
           "key": "arrested_state",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person State",
@@ -1994,11 +2262,11 @@
           }
         },
         {
-          "col": 28,
+          "col": 26,
           "key": "arrested_district",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person District",
-          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -2007,7 +2275,7 @@
           }
         },
         {
-          "col": 29,
+          "col": 27,
           "key": "arrested_police_station",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Police Station",
@@ -2015,12 +2283,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AB5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($Z5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 30,
+          "col": 28,
           "key": "arrested_pincode",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Pin Code",
@@ -2028,7 +2296,7 @@
           "validation": null
         },
         {
-          "col": 31,
+          "col": 29,
           "key": "arrested_perm_same",
           "section": "Arrested Person Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -2041,7 +2309,7 @@
           }
         },
         {
-          "col": 32,
+          "col": 30,
           "key": "arrested_perm_house_no",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent House No.",
@@ -2049,7 +2317,7 @@
           "validation": null
         },
         {
-          "col": 33,
+          "col": 31,
           "key": "arrested_perm_street",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Street",
@@ -2057,7 +2325,7 @@
           "validation": null
         },
         {
-          "col": 34,
+          "col": 32,
           "key": "arrested_perm_colony",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Colony",
@@ -2065,7 +2333,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 33,
           "key": "arrested_perm_city_town_village",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Village / City / Town",
@@ -2073,7 +2341,7 @@
           "validation": null
         },
         {
-          "col": 36,
+          "col": 34,
           "key": "arrested_perm_tehsil_block_mandal",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Tehsil / Block / Mandal",
@@ -2081,7 +2349,7 @@
           "validation": null
         },
         {
-          "col": 37,
+          "col": 35,
           "key": "arrested_perm_country",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Nationality",
@@ -2094,7 +2362,7 @@
           }
         },
         {
-          "col": 38,
+          "col": 36,
           "key": "arrested_perm_state",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent State",
@@ -2107,11 +2375,11 @@
           }
         },
         {
-          "col": 39,
+          "col": 37,
           "key": "arrested_perm_district",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent District",
-          "hint": "select (23 options): Central District, Crime Branch, Dwarka District, EOW, East District...",
+          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -2120,7 +2388,7 @@
           }
         },
         {
-          "col": 40,
+          "col": 38,
           "key": "arrested_perm_police_station",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Police Station",
@@ -2128,12 +2396,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AM5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AK5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 41,
+          "col": 39,
           "key": "arrested_perm_pincode",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Pin Code",
@@ -2141,7 +2409,7 @@
           "validation": null
         },
         {
-          "col": 42,
+          "col": 40,
           "key": "nafis_prepared",
           "section": "Particular Details",
           "label": "NAFIS Prepared",
@@ -2154,7 +2422,7 @@
           }
         },
         {
-          "col": 43,
+          "col": 41,
           "key": "dossier_prepared",
           "section": "Particular Details",
           "label": "Dossier Prepared",
@@ -2167,7 +2435,7 @@
           }
         },
         {
-          "col": 44,
+          "col": 42,
           "key": "prev_involvement",
           "section": "Particular Details",
           "label": "Previous involvement",
@@ -2180,7 +2448,7 @@
           }
         },
         {
-          "col": 45,
+          "col": 43,
           "key": "bad_character",
           "section": "Particular Details",
           "label": "Bad Character (BC)",
@@ -2188,7 +2456,7 @@
           "validation": null
         },
         {
-          "col": 46,
+          "col": 44,
           "key": "proclaimed_offender",
           "section": "Particular Details",
           "label": "Proclaimed Offender (PO)",
@@ -2201,7 +2469,7 @@
           }
         },
         {
-          "col": 47,
+          "col": 45,
           "key": "verifying_officer_name",
           "section": "Particular Details",
           "label": "Arresting Officer Name",
@@ -2209,7 +2477,7 @@
           "validation": null
         },
         {
-          "col": 48,
+          "col": 46,
           "key": "verifying_officer_rank",
           "section": "Particular Details",
           "label": "Arresting Officer Rank",
@@ -2217,7 +2485,7 @@
           "validation": null
         },
         {
-          "col": 49,
+          "col": 47,
           "key": "status",
           "section": "Particular Details",
           "label": "Custody status",
@@ -2230,7 +2498,7 @@
           }
         },
         {
-          "col": 50,
+          "col": 48,
           "key": "scheme_of_arrest",
           "section": "Particular Details",
           "label": "Scheme of arrest",
@@ -2241,6 +2509,22 @@
               "\"Integrated Pride,Group Patrolling,Anti-snatching,By Prahari,By Eyes & Ears Scheme Members\""
             ]
           }
+        },
+        {
+          "col": 49,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 50,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
         },
         {
           "col": 51,
@@ -2284,11 +2568,11 @@
         }
       ],
       "row2Merges": [
-        "AF2:AO2",
-        "AP2:BC2",
+        "AD2:AM2",
+        "AN2:BC2",
         "B2:H2",
-        "I2:T2",
-        "U2:AE2"
+        "I2:R2",
+        "S2:AC2"
       ]
     },
     "Property Details": {
@@ -2355,10 +2639,313 @@
               "INDIRECT(VLOOKUP($B5,PROP_CAT_TO_TYPE_NR,2,FALSE))"
             ]
           }
+        },
+        {
+          "col": 7,
+          "key": "prop_vehicle_no",
+          "section": "Property Details",
+          "label": "Vehicle Registration No.",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 8,
+          "key": "prop_vehicle_type",
+          "section": "Property Details",
+          "label": "Vehicle Type",
+          "hint": "select: Car, Motorcycle, Scooter, E-Rickshaw, Auto, Tempo, Cycle, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Car,Motorcycle,Scooter,E-Rickshaw,Auto,Tempo,Cycle,Other\""
+            ]
+          }
+        },
+        {
+          "col": 9,
+          "key": "prop_cd_24h",
+          "section": "Property Details",
+          "label": "1st CD Uploaded Within 24 Hours",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 10,
+          "key": "prop_cctv",
+          "section": "Property Details",
+          "label": "CCTV Footage Collected",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 11,
+          "key": "prop_arms_type",
+          "section": "Property Details",
+          "label": "Weapon Type",
+          "hint": "select: Pistol, Revolver, Rifle, Country-made gun, Knife, Sword/Machete, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Pistol,Revolver,Rifle,Country-made gun,Knife,Sword/Machete,Other\""
+            ]
+          }
+        },
+        {
+          "col": 12,
+          "key": "prop_drug_type",
+          "section": "Property Details",
+          "label": "Drug / Substance Type",
+          "hint": "select: Heroin/Smack, Cannabis/Ganja, Cocaine, Methamphetamine, Opium/Afim, Tablets/Pills, Chemical Precursor, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Heroin/Smack,Cannabis/Ganja,Cocaine,Methamphetamine,Opium/Afim,Tablets/Pills,Chemical Precursor,Other\""
+            ]
+          }
+        },
+        {
+          "col": 13,
+          "key": "prop_other_desc",
+          "section": "Property Details",
+          "label": "Item Description",
+          "hint": "textarea",
+          "validation": null
+        },
+        {
+          "col": 14,
+          "key": "prop_elec_device_type",
+          "section": "Property Details",
+          "label": "Device Type",
+          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
+            ]
+          }
+        },
+        {
+          "col": 15,
+          "key": "prop_gold_item_type",
+          "section": "Property Details",
+          "label": "Item Type",
+          "hint": "select: Ring, Necklace, Bracelet, Chain, Earring, Bangles, Watch, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Ring,Necklace,Bracelet,Chain,Earring,Bangles,Watch,Other\""
+            ]
+          }
+        },
+        {
+          "col": 16,
+          "key": "prop_doc_type",
+          "section": "Property Details",
+          "label": "Document Type",
+          "hint": "select: Passport, Aadhar Card, PAN Card, Driving License, Voter ID, Ration Card, Bank Passbook, Cheque Book, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Passport,Aadhar Card,PAN Card,Driving License,Voter ID,Ration Card,Bank Passbook,Cheque Book,Other\""
+            ]
+          }
+        },
+        {
+          "col": 17,
+          "key": "prop_cash_amount",
+          "section": "Property Details",
+          "label": "Amount (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 18,
+          "key": "prop_elec_brand",
+          "section": "Property Details",
+          "label": "Make / Brand",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 19,
+          "key": "prop_arms_make",
+          "section": "Property Details",
+          "label": "Make / Manufacturer",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 20,
+          "key": "prop_cash_currency",
+          "section": "Property Details",
+          "label": "Currency Type",
+          "hint": "select: INR, USD, EUR, GBP, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"INR,USD,EUR,GBP,Other\""
+            ]
+          }
+        },
+        {
+          "col": 21,
+          "key": "prop_other_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 22,
+          "key": "prop_gold_material",
+          "section": "Property Details",
+          "label": "Material",
+          "hint": "select: Gold, Silver, Diamond, Platinum, Mixed, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Gold,Silver,Diamond,Platinum,Mixed,Other\""
+            ]
+          }
+        },
+        {
+          "col": 23,
+          "key": "prop_drug_quantity",
+          "section": "Property Details",
+          "label": "Quantity",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 24,
+          "key": "prop_doc_number",
+          "section": "Property Details",
+          "label": "Document Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 25,
+          "key": "prop_arms_serial",
+          "section": "Property Details",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 26,
+          "key": "prop_drug_unit",
+          "section": "Property Details",
+          "label": "Unit",
+          "hint": "select: grams, kg, ml, litres, tablets, packets, sachets",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"grams,kg,ml,litres,tablets,packets,sachets\""
+            ]
+          }
+        },
+        {
+          "col": 27,
+          "key": "prop_doc_holder",
+          "section": "Property Details",
+          "label": "Document Holder Name",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 28,
+          "key": "prop_elec_model",
+          "section": "Property Details",
+          "label": "Model",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 29,
+          "key": "prop_gold_weight",
+          "section": "Property Details",
+          "label": "Weight (grams)",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 30,
+          "key": "prop_cash_denomination",
+          "section": "Property Details",
+          "label": "Denomination Details",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 31,
+          "key": "prop_arms_ammo_count",
+          "section": "Property Details",
+          "label": "Ammunition Count",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 32,
+          "key": "prop_elec_serial",
+          "section": "Property Details",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 33,
+          "key": "prop_gold_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 34,
+          "key": "prop_doc_issuing_auth",
+          "section": "Property Details",
+          "label": "Issuing Authority",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 35,
+          "key": "prop_drug_value",
+          "section": "Property Details",
+          "label": "Estimated Street Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 36,
+          "key": "prop_elec_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": "prop_arms_license",
+          "section": "Property Details",
+          "label": "License Number",
+          "hint": "text",
+          "validation": null
         }
       ],
       "row2Merges": [
-        "B2:F2"
+        "B2:AK2"
       ]
     }
   },
@@ -3466,7 +4053,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$C$2:$C$250"
+              "'_Lookups'!$C$2:$C$193"
             ]
           }
         },
@@ -3509,35 +4096,312 @@
         },
         {
           "col": 12,
-          "key": "arrested_marital_status",
-          "section": "Arrested Person Personal Details",
-          "label": "Arrested Person Marital Status",
-          "hint": "select: Married, Unmarried, Divorced, Widowed, Single, Unknown",
+          "key": "prop_vehicle_no",
+          "section": "General Information",
+          "label": "Vehicle Registration No.",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 13,
+          "key": "prop_vehicle_type",
+          "section": "General Information",
+          "label": "Vehicle Type",
+          "hint": "select: Car, Motorcycle, Scooter, E-Rickshaw, Auto, Tempo, Cycle, Other",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Married,Unmarried,Divorced,Widowed,Single,Unknown\""
+              "\"Car,Motorcycle,Scooter,E-Rickshaw,Auto Rickshaw,Tempo / Truck,Bicycle,Other\""
             ]
           }
         },
         {
-          "col": 13,
-          "key": "arrested_qualification",
-          "section": "Arrested Person Personal Details",
-          "label": "Arrested Person Qualification",
-          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
+          "col": 14,
+          "key": "prop_cd_24h",
+          "section": "General Information",
+          "label": "1st CD Uploaded Within 24 Hours",
+          "hint": "select: Yes, No",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
+              "\"Yes,No\""
             ]
           }
+        },
+        {
+          "col": 15,
+          "key": "prop_cctv",
+          "section": "General Information",
+          "label": "CCTV Footage Collected",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 16,
+          "key": "prop_arms_type",
+          "section": "General Information",
+          "label": "Weapon Type",
+          "hint": "select: Pistol, Revolver, Rifle, Country-made gun, Knife, Sword/Machete, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Pistol,Revolver,Rifle,Country-made Firearm,Knife,Sword / Machete,Other\""
+            ]
+          }
+        },
+        {
+          "col": 17,
+          "key": "prop_drug_type",
+          "section": "General Information",
+          "label": "Drug / Substance Type",
+          "hint": "select: Heroin/Smack, Cannabis/Ganja, Cocaine, Methamphetamine, Opium/Afim, Tablets/Pills, Chemical Precursor, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Heroin / Smack,Cannabis / Ganja / Charas,Cocaine,Methamphetamine / Ice,Opium / Afim,Tablets / Pills,Chemical Precursor,Other\""
+            ]
+          }
+        },
+        {
+          "col": 18,
+          "key": "prop_other_desc",
+          "section": "General Information",
+          "label": "Item Description",
+          "hint": "textarea",
+          "validation": null
+        },
+        {
+          "col": 19,
+          "key": "prop_elec_device_type",
+          "section": "General Information",
+          "label": "Device Type",
+          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
+            ]
+          }
+        },
+        {
+          "col": 20,
+          "key": "prop_gold_item_type",
+          "section": "General Information",
+          "label": "Item Type",
+          "hint": "select: Ring, Necklace, Bracelet, Chain, Earring, Bangles, Watch, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Ring,Necklace,Bracelet,Chain,Earring,Bangles,Watch,Other\""
+            ]
+          }
+        },
+        {
+          "col": 21,
+          "key": "prop_doc_type",
+          "section": "General Information",
+          "label": "Document Type",
+          "hint": "select: Passport, Aadhar Card, PAN Card, Driving License, Voter ID, Ration Card, Bank Passbook, Cheque Book, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Passport,Aadhar Card,PAN Card,Driving License,Voter ID,Ration Card,Bank Passbook,Cheque Book,Other\""
+            ]
+          }
+        },
+        {
+          "col": 22,
+          "key": "prop_cash_amount",
+          "section": "General Information",
+          "label": "Amount (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 23,
+          "key": "prop_elec_brand",
+          "section": "General Information",
+          "label": "Make / Brand",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 24,
+          "key": "prop_arms_make",
+          "section": "General Information",
+          "label": "Make / Manufacturer",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 25,
+          "key": "prop_cash_currency",
+          "section": "General Information",
+          "label": "Currency Type",
+          "hint": "select: INR, USD, EUR, GBP, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Indian Rupee (INR),US Dollar (USD),Euro (EUR),British Pound (GBP),Other\""
+            ]
+          }
+        },
+        {
+          "col": 26,
+          "key": "prop_other_value",
+          "section": "General Information",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 27,
+          "key": "prop_gold_material",
+          "section": "General Information",
+          "label": "Material",
+          "hint": "select: Gold, Silver, Diamond, Platinum, Mixed, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Gold,Silver,Diamond,Platinum,Mixed,Other\""
+            ]
+          }
+        },
+        {
+          "col": 28,
+          "key": "prop_drug_quantity",
+          "section": "General Information",
+          "label": "Quantity",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 29,
+          "key": "prop_doc_number",
+          "section": "General Information",
+          "label": "Document Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 30,
+          "key": "prop_arms_serial",
+          "section": "General Information",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 31,
+          "key": "prop_drug_unit",
+          "section": "General Information",
+          "label": "Unit",
+          "hint": "select: grams, kg, ml, litres, tablets, packets, sachets",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Grams,Kilograms,Millilitres,Litres,Tablets / Pills,Packets,Sachets\""
+            ]
+          }
+        },
+        {
+          "col": 32,
+          "key": "prop_doc_holder",
+          "section": "General Information",
+          "label": "Document Holder Name",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 33,
+          "key": "prop_elec_model",
+          "section": "General Information",
+          "label": "Model",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 34,
+          "key": "prop_gold_weight",
+          "section": "General Information",
+          "label": "Weight (grams)",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 35,
+          "key": "prop_cash_denomination",
+          "section": "General Information",
+          "label": "Denomination Details",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 36,
+          "key": "prop_arms_ammo_count",
+          "section": "General Information",
+          "label": "Ammunition Count",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": "prop_elec_serial",
+          "section": "General Information",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 38,
+          "key": "prop_gold_value",
+          "section": "General Information",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 39,
+          "key": "prop_doc_issuing_auth",
+          "section": "General Information",
+          "label": "Issuing Authority",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 40,
+          "key": "prop_drug_value",
+          "section": "General Information",
+          "label": "Estimated Street Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 41,
+          "key": "prop_elec_value",
+          "section": "General Information",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 42,
+          "key": "prop_arms_license",
+          "section": "General Information",
+          "label": "License Number",
+          "hint": "text",
+          "validation": null
         }
       ],
       "row2Merges": [
         "A2:G2",
         "H2:K2",
-        "L2:M2"
+        "L2:AP2"
       ]
     },
     "Act and Sections": {
@@ -3813,7 +4677,7 @@
           "key": "arrested_country",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Nationality",
-          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghanistan, Myanmar, Tibetan, American, British, Canadian, Other",
           "validation": {
             "type": "list",
             "formulae": [
@@ -3856,7 +4720,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$I$2:$I$250"
+              "'_Lookups'!$I$2:$I$193"
             ]
           }
         },
@@ -3926,7 +4790,7 @@
           "key": "arrested_perm_country",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Nationality",
-          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghanistan, Myanmar, Tibetan, American, British, Canadian, Other",
           "validation": {
             "type": "list",
             "formulae": [
@@ -3969,7 +4833,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$M$2:$M$250"
+              "'_Lookups'!$M$2:$M$193"
             ]
           }
         },

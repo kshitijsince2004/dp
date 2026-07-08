@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ResponsiveContainer,
   BarChart,
@@ -42,6 +43,9 @@ const arrestTrend = [
 ];
 
 export default function PSDashboard() {
+  const { t, i18n } = useTranslation();
+  const currentLng = i18n.language || 'en';
+  const { user } = useAuthStore();
   const [activePeriod, setActivePeriod] = useState("Day");
   const [summary, setSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -121,12 +125,36 @@ export default function PSDashboard() {
   }, []);
 
   const currentPeriod = activePeriod.toLowerCase();
-  const statCards = STAT_CARD_META.map((meta) => ({
-    label: meta.label,
-    bg: meta.bg,
-    value: summary ? String(summary[meta.key]?.count ?? 0) : "--",
-    change: summary ? formatChange(summary[meta.key]?.change_pct, currentPeriod) : "--",
-  }));
+  const statCards = STAT_CARD_META.map((meta) => {
+    const data = summary?.[meta.key] || {};
+    const count = data.count ?? 0;
+    const changePct = data.change_pct ?? 0;
+    const isUp = changePct >= 0;
+
+    let icon = FileText;
+    let gradient = "from-[#10B981] to-[#059669]"; // emerald
+    if (meta.key === 'arrests') {
+      icon = Shield;
+      gradient = "from-[#8B5CF6] to-[#7C3AED]"; // purple
+    } else if (meta.key === 'left_out') {
+      icon = UserX;
+      gradient = "from-[#F59E0B] to-[#D97706]"; // amber
+    }
+
+    const badgeClass = isUp
+      ? "bg-[#ECFDF5] text-[#059669] border-[#6EE7B7]"
+      : "bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]";
+
+    return {
+      label: meta.label,
+      bg: meta.bg,
+      value: summary ? String(count) : "--",
+      change: summary ? formatChange(changePct, currentPeriod) : "--",
+      icon,
+      gradient,
+      badgeClass,
+    };
+  });
 
   if (isLoading) {
     return (

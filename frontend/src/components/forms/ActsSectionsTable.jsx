@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import SearchableSelect from './SearchableSelect.jsx';
 
 /**
  * Acts & Sections registered-list panel + Major/Minor Head cascading table +
@@ -80,8 +81,16 @@ export default function ActsSectionsTable({
 
   const saveAddModal = () => {
     if (newAct.trim() || newSection.trim()) {
-      const updatedActs = [...acts, newAct.trim()].join(', ');
-      const updatedSections = [...secs, newSection.trim()].join(', ');
+      const selectedSecs = newSection
+        ? newSection.split(',').map((s) => s.trim()).filter(Boolean)
+        : [''];
+      
+      const newActsList = selectedSecs.map(() => newAct.trim());
+      const newSecsList = selectedSecs;
+
+      const updatedActs = [...acts, ...newActsList].join(', ');
+      const updatedSections = [...secs, ...newSecsList].join(', ');
+      
       handleChange('act_name', updatedActs);
       handleChange('sections', updatedSections);
     }
@@ -90,42 +99,32 @@ export default function ActsSectionsTable({
 
   const majorMinorBlock = (
     <>
-      <div className="flex flex-col gap-1">
-        <label className="text-[#0d2a4a] font-bold">Major Head</label>
-        <select
+      <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-2 text-[11px] items-center">
+        <span className="text-[#0d2a4a] font-bold">Major Head</span>
+        <SearchableSelect
           disabled={readOnly}
           value={selectedMajorHead}
-          onChange={(e) => {
-            setSelectedMajorHead(e.target.value);
+          onChange={(val) => {
+            setSelectedMajorHead(val);
             setSelectedMinorHead('');
           }}
-          className="w-full h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-pointer"
-        >
-          <option value="">------Select------</option>
-          {getMajorHeadOptions().map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label || (lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en) || opt.value}
-            </option>
-          ))}
-        </select>
-      </div>
+          options={getMajorHeadOptions()}
+          placeholder="select an option"
+          lang={lang}
+          className="w-full h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-text"
+        />
 
-      <div className="flex flex-col gap-1">
-        <label className="text-[#0d2a4a] font-bold">Minor Head</label>
+        <span className="text-[#0d2a4a] font-bold">Minor Head</span>
         <div className="flex items-center gap-2">
-          <select
+          <SearchableSelect
             disabled={readOnly || !selectedMajorHead}
             value={selectedMinorHead}
-            onChange={(e) => setSelectedMinorHead(e.target.value)}
-            className="flex-1 h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-pointer"
-          >
-            <option value="">------Select------</option>
-            {getMinorHeadOptions().map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label || (lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en) || opt.value}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setSelectedMinorHead(val)}
+            options={getMinorHeadOptions()}
+            placeholder="select an option"
+            lang={lang}
+            className="flex-1 h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-text"
+          />
           {!readOnly && (
             <button
               type="button"
@@ -183,19 +182,15 @@ export default function ActsSectionsTable({
   );
 
   const localHeadBlock = (
-    <select
+    <SearchableSelect
       disabled={readOnly}
       value={values.local_head || ''}
-      onChange={(e) => handleChange('local_head', e.target.value)}
-      className="w-full h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-pointer"
-    >
-      <option value="">------Select------</option>
-      {getLocalHeadOptions().map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
-        </option>
-      ))}
-    </select>
+      onChange={(val) => handleChange('local_head', val)}
+      options={getLocalHeadOptions()}
+      placeholder="select an option"
+      lang={lang}
+      className="w-full h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-text"
+    />
   );
 
   const heinousOffenceBlock = (
@@ -298,7 +293,16 @@ export default function ActsSectionsTable({
         </fieldset>
 
         {/* Right: Major/Minor / Local Head */}
-        {localHeadLayout === 'split' ? (
+        {localHeadLayout === 'hidden' ? (
+          <fieldset className="flex-1 border border-[#7a9cc5] rounded px-3 py-2 bg-[#f0f4f8]/20">
+            <legend className="text-[#0d2a4a] text-[11px] font-bold px-1.5 uppercase tracking-wide">
+              Major / Minor
+            </legend>
+            <div className="flex flex-col gap-2 text-[11px]">
+              {majorMinorBlock}
+            </div>
+          </fieldset>
+        ) : localHeadLayout === 'split' ? (
           <div className="flex-1 flex flex-col gap-3">
             <fieldset className="border border-[#7a9cc5] rounded px-3 py-2 bg-[#f0f4f8]/20 min-h-[140px] flex-1">
               <legend className="text-[#0d2a4a] text-[11px] font-bold px-1.5 uppercase tracking-wide">
@@ -417,23 +421,23 @@ export default function ActsSectionsTable({
                 </div>
                 <div className="flex flex-col gap-1 text-[11px] text-left">
                   <label className="text-[#0d2a4a] font-bold">Section(s)</label>
-                  <select
-                    value={newSection}
-                    onChange={(e) => setNewSection(e.target.value)}
+                  <SearchableSelect
                     disabled={!newAct}
-                    className="w-full h-8 px-2 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-[#ea580c] cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="">----select----</option>
-                    {availableSections.map((sec) => {
-                      const value = sec && typeof sec === 'object' ? sec.section : sec;
+                    value={newSection}
+                    onChange={(val) => setNewSection(val)}
+                    options={availableSections.map((sec) => {
+                      const val = sec && typeof sec === 'object' ? sec.section : sec;
                       const desc = sec && typeof sec === 'object' && sec.desc ? ` - ${sec.desc}` : '';
-                      return (
-                        <option key={value} value={value}>
-                          {value}{desc}
-                        </option>
-                      );
+                      return {
+                        value: val,
+                        label: `${val}${desc}`
+                      };
                     })}
-                  </select>
+                    placeholder="select an option"
+                    lang={lang}
+                    multiple={true}
+                    className="w-full h-8 px-2 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-[#ea580c] cursor-text disabled:bg-slate-50 disabled:cursor-not-allowed"
+                  />
                 </div>
               </div>
             </div>

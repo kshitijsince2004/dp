@@ -60,7 +60,7 @@ export const ALLOWED_JOINS = {
 
 // Operators grouped by field type
 const TEXT_OPS = ['EQ', 'NOT_EQ', 'CONTAINS', 'STARTS_WITH', 'ENDS_WITH', 'IS_EMPTY', 'IS_NOT_EMPTY'];
-const DATE_OPS = ['EQ', 'BEFORE', 'AFTER', 'BETWEEN', 'LAST_N_DAYS', 'THIS_WEEK', 'THIS_MONTH', 'THIS_YEAR'];
+const DATE_OPS = ['EQ', 'BEFORE', 'AFTER', 'BETWEEN', 'LAST_N_DAYS', 'OLDER_THAN_N_DAYS', 'THIS_WEEK', 'THIS_MONTH', 'THIS_YEAR'];
 const TIME_OPS = ['EQ', 'BETWEEN'];
 const NUM_OPS  = ['EQ', 'GT', 'GTE', 'LT', 'LTE', 'BETWEEN'];
 const ENUM_OPS = ['IN', 'NOT_IN', 'EQ'];
