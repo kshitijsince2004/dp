@@ -182,28 +182,67 @@ export const getOverview = async (req, res) => {
 export const getByPs = async (req, res) => {
   const jq = req.jurisdictionQuery;
   try {
-    let query = db('records')
-      .select('hn.name_en as station', 'records.record_type')
+    // 1. Fetch active PS nodes for the current scope
+    let stationsQuery = db('hierarchy_nodes').where({ node_type: 'PS', is_active: true });
+
+    if (jq.ps_id) {
+      stationsQuery = stationsQuery.where('id', jq.ps_id);
+    } else if (jq.sub_div_id) {
+      stationsQuery = stationsQuery.where('parent_id', jq.sub_div_id);
+    } else if (jq.district_id) {
+      // Find sub-divisions under this district
+      const subDivs = await db('hierarchy_nodes')
+        .where({ node_type: 'SUB_DIVISION', parent_id: jq.district_id, is_active: true })
+        .select('id');
+      const subDivIds = subDivs.map(s => s.id);
+      stationsQuery = stationsQuery.whereIn('parent_id', subDivIds);
+    }
+
+    const stations = await stationsQuery.select('id', 'name_en', 'name_hi');
+
+    // 2. Fetch record counts grouped by ps_id and record_type
+    let recordsQuery = db('records')
+      .select('ps_id', 'record_type')
       .count('* as count')
-      .join('hierarchy_nodes as hn', 'records.ps_id', 'hn.id');
+      .whereIn('current_status', ['submitted', 'PENDING_SHO', 'DISTRICT_REVIEW', 'HQ_RECEIVED', 'CLOSED', 'COMPILED']);
 
-    if (jq.ps_id) query = query.where('records.ps_id', jq.ps_id);
-    if (jq.district_id) query = query.where('records.district_id', jq.district_id);
-    if (jq.sub_div_id) query = query.where('records.sub_div_id', jq.sub_div_id);
+    if (jq.ps_id) recordsQuery = recordsQuery.where('ps_id', jq.ps_id);
+    if (jq.district_id) recordsQuery = recordsQuery.where('district_id', jq.district_id);
+    if (jq.sub_div_id) recordsQuery = recordsQuery.where('sub_div_id', jq.sub_div_id);
 
-    const rows = await query.groupBy('hn.name_en', 'records.record_type').orderBy('hn.name_en');
+    const rows = await recordsQuery.groupBy('ps_id', 'record_type');
 
-    const stationMap = {};
+    // 3. Map aggregate counts by ps_id
+    const countsMap = {};
     rows.forEach(r => {
-      const station = r.station || 'Unknown PS';
-      if (!stationMap[station]) stationMap[station] = { station, cases: 0, pcr: 0, arrests: 0 };
+      const psId = r.ps_id;
+      if (!countsMap[psId]) {
+        countsMap[psId] = { cases: 0, pcr: 0, arrests: 0 };
+      }
       const type = (r.record_type || '').toUpperCase();
       const count = parseInt(r.count, 10) || 0;
-      if (type === 'CASE') stationMap[station].cases = count;
-      else if (type === 'PCR_CALL') stationMap[station].pcr = count;
-      else if (type === 'ARREST') stationMap[station].arrests = count;
+      if (type === 'CASE' || type === 'CASES') countsMap[psId].cases = count;
+      else if (type === 'PCR_CALL') countsMap[psId].pcr = count;
+      else if (type === 'ARREST') countsMap[psId].arrests = count;
     });
-    return res.status(200).json({ success: true, data: Object.values(stationMap) });
+
+    // 4. Merge stations and counts
+    const data = stations.map(s => {
+      const stats = countsMap[s.id] || { cases: 0, pcr: 0, arrests: 0 };
+      return {
+        id: s.id,
+        station: s.name_en || s.name,
+        station_hi: s.name_hi || s.name,
+        cases: stats.cases,
+        pcr: stats.pcr,
+        arrests: stats.arrests
+      };
+    });
+
+    // Sort alphabetically by station name
+    data.sort((a, b) => a.station.localeCompare(b.station));
+
+    return res.status(200).json({ success: true, data });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -579,10 +618,144 @@ export const getCaseTypeBreakdown = async (req, res) => {
 
 const TREND_MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+export const getTrendForRecordType = async (jq, recordTypes, period) => {
+  const today = new Date();
+  
+  if (period === 'day') {
+    const bins = [
+      { startHour: 0, endHour: 4, label: '04:00' },
+      { startHour: 4, endHour: 8, label: '08:00' },
+      { startHour: 8, endHour: 12, label: '12:00' },
+      { startHour: 12, endHour: 16, label: '16:00' },
+      { startHour: 16, endHour: 20, label: '20:00' },
+      { startHour: 20, endHour: 24, label: '24:00' }
+    ];
+
+    const startOfDay = toISODate(today) + ' 00:00:00';
+    const endOfDay = toISODate(today) + ' 23:59:59';
+
+    let query = db('records')
+      .select('record_date')
+      .whereIn('record_type', recordTypes)
+      .whereBetween('record_date', [startOfDay, endOfDay]);
+
+    query = applyJurisdictionScope(query, jq);
+    const rows = await query;
+
+    const counts = Array(6).fill(0);
+    rows.forEach(r => {
+      if (!r.record_date) return;
+      const h = new Date(r.record_date).getHours();
+      for (let i = 0; i < bins.length; i++) {
+        if (h >= bins[i].startHour && h < bins[i].endHour) {
+          counts[i]++;
+          break;
+        }
+      }
+    });
+
+    return bins.map((bin, index) => ({
+      label: bin.label,
+      value: counts[index]
+    }));
+  }
+
+  if (period === 'week') {
+    const dates = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dayStr = String(d.getDate());
+      const label = i === 6 ? `${dayStr} ${monthNames[d.getMonth()]}` : dayStr;
+      dates.push({ dateStr: toISODate(d), label });
+    }
+
+    const startOfRange = dates[0].dateStr + ' 00:00:00';
+    const endOfRange = dates[6].dateStr + ' 23:59:59';
+
+    let query = db('records')
+      .select('record_date')
+      .whereIn('record_type', recordTypes)
+      .whereBetween('record_date', [startOfRange, endOfRange]);
+
+    query = applyJurisdictionScope(query, jq);
+    const rows = await query;
+
+    const countsMap = {};
+    dates.forEach(d => { countsMap[d.dateStr] = 0; });
+
+    rows.forEach(r => {
+      if (!r.record_date) return;
+      const d = new Date(r.record_date);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${day}`;
+      if (dateStr in countsMap) {
+        countsMap[dateStr]++;
+      }
+    });
+
+    return dates.map(d => ({
+      label: d.label,
+      value: countsMap[d.dateStr]
+    }));
+  }
+
+  // period === 'month'
+  const dates = [];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dayStr = String(d.getDate());
+    const label = (i === 29 || d.getDate() === 1) ? `${dayStr} ${monthNames[d.getMonth()]}` : dayStr;
+    dates.push({ dateStr: toISODate(d), label });
+  }
+
+  const startOfRange = dates[0].dateStr + ' 00:00:00';
+  const endOfRange = dates[29].dateStr + ' 23:59:59';
+
+  let query = db('records')
+    .select('record_date')
+    .whereIn('record_type', recordTypes)
+    .whereBetween('record_date', [startOfRange, endOfRange]);
+
+  query = applyJurisdictionScope(query, jq);
+  const rows = await query;
+
+  const countsMap = {};
+  dates.forEach(d => { countsMap[d.dateStr] = 0; });
+
+  rows.forEach(r => {
+    if (!r.record_date) return;
+    const d = new Date(r.record_date);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${day}`;
+    if (dateStr in countsMap) {
+      countsMap[dateStr]++;
+    }
+  });
+
+  return dates.map(d => ({
+    label: d.label,
+    value: countsMap[d.dateStr]
+  }));
+};
+
 export const getCasesByMonthTrend = async (req, res) => {
   const jq = req.jurisdictionQuery;
+  const period = req.query.period;
 
   try {
+    if (period && ['day', 'week', 'month'].includes(period)) {
+      const trendData = await getTrendForRecordType(jq, CASE_LIKE_TYPES, period);
+      return res.status(200).json({ success: true, data: trendData });
+    }
+
     const today = new Date();
     const months = [];
     for (let i = 11; i >= 0; i--) {
@@ -604,7 +777,11 @@ export const getCasesByMonthTrend = async (req, res) => {
     const countByYm = new Map(rows.map(r => [r.ym, parseInt(r.count, 10) || 0]));
     const data = months.map(({ year, month }) => {
       const ym = `${year}-${String(month + 1).padStart(2, '0')}`;
-      return { month: TREND_MONTH_NAMES[month], value: countByYm.get(ym) || 0 };
+      return { 
+        month: TREND_MONTH_NAMES[month], 
+        label: TREND_MONTH_NAMES[month],
+        value: countByYm.get(ym) || 0 
+      };
     });
 
     return res.status(200).json({ success: true, data });
@@ -612,4 +789,64 @@ export const getCasesByMonthTrend = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getByDistrict = async (req, res) => {
+  try {
+    const districts = await db('hierarchy_nodes')
+      .where({ node_type: 'DISTRICT', is_active: true })
+      .select('id', 'name_en', 'name_hi');
+
+    const rows = await db('records')
+      .select('district_id', 'record_type')
+      .count('* as count')
+      .whereIn('current_status', ['submitted', 'PENDING_SHO', 'DISTRICT_REVIEW', 'HQ_RECEIVED', 'CLOSED'])
+      .groupBy('district_id', 'record_type');
+
+    const countsMap = {};
+    rows.forEach(r => {
+      const distId = r.district_id;
+      if (!countsMap[distId]) {
+        countsMap[distId] = { cases: 0, arrests: 0, pcr: 0, missing: 0, total: 0 };
+      }
+      const type = (r.record_type || '').toUpperCase();
+      const count = parseInt(r.count, 10) || 0;
+      if (type === 'CASE' || type === 'CASES') countsMap[distId].cases = count;
+      else if (type === 'ARREST') countsMap[distId].arrests = count;
+      else if (type === 'PCR_CALL') countsMap[distId].pcr = count;
+      else if (type === 'MISSING') countsMap[distId].missing = count;
+      countsMap[distId].total += count;
+    });
+
+    const data = districts.map(d => {
+      const stats = countsMap[d.id] || { cases: 0, arrests: 0, pcr: 0, missing: 0, total: 0 };
+      return {
+        id: d.id,
+        name: d.name_en || d.name,
+        name_hi: d.name_hi || d.name,
+        cases: stats.cases,
+        arrests: stats.arrests,
+        pcr: stats.pcr,
+        missing: stats.missing,
+        total: stats.total
+      };
+    });
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getArrestsTrend = async (req, res) => {
+  const jq = req.jurisdictionQuery;
+  const period = ['day', 'week', 'month'].includes(req.query.period) ? req.query.period : 'week';
+  try {
+    const trendData = await getTrendForRecordType(jq, ['ARREST'], period);
+    const data = trendData.map(item => ({ day: item.label, value: item.value }));
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 

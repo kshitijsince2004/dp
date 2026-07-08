@@ -31,6 +31,7 @@ const RecordDetail      = lazy(() => import('../pages/sho/RecordDetail.jsx'));
 const DistrictDashboard = lazy(() => import('../pages/district/Dashboard.jsx'));
 const CompilationUI     = lazy(() => import('../pages/district/CompilationUI.jsx'));
 const HQDashboard       = lazy(() => import('../pages/hq/Dashboard.jsx'));
+const DistrictAnalyticsDashboard = lazy(() => import('../pages/hq/DistrictAnalyticsDashboard.jsx'));
 const AnalyticsDashboard = lazy(() => import('../pages/analytics/AnalyticsDashboard.jsx'));
 const ReportsPage       = lazy(() => import('../pages/reports/ReportsPage.jsx'));
 const Users             = lazy(() => import('../pages/admin/Users.jsx'));
@@ -129,6 +130,7 @@ export const AppRouter = () => (
             <Route path="/district/custom-fields" element={<CustomFieldsPage />} />
             <Route path="/district/stations" element={<StationPerformanceDashboard />} />
             <Route path="/district/stations/:id" element={<StationDetailView />} />
+            <Route path="/hq/districts" element={<DistrictAnalyticsDashboard />} />
             <Route path="/hq/stations" element={<StationPerformanceDashboard />} />
             <Route path="/hq/stations/:id" element={<StationDetailView />} />
           </Route>

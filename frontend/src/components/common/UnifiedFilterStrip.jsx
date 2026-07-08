@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Filter, ListFilter } from 'lucide-react';
+import { Search, Filter, ListFilter, Shield } from 'lucide-react';
 import { DatePicker, Input, Select } from 'antd';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import api from '../../utils/api.js';
 
 dayjs.extend(customParseFormat);
 
@@ -13,6 +14,18 @@ const { Option } = Select;
 export default function UnifiedFilterStrip({ filters, onFilterChange, allowedStatuses = [] }) {
   const { t } = useTranslation();
   
+  const [localHeads, setLocalHeads] = useState([]);
+
+  useEffect(() => {
+    api.get('/fields/lookup/local-heads')
+      .then(res => {
+        if (res.data?.success) {
+          setLocalHeads(res.data.data || []);
+        }
+      })
+      .catch(err => console.error('Failed to fetch local heads', err));
+  }, []);
+
   // Local state for debounced search
   const [localSearch, setLocalSearch] = useState(filters.search || '');
 
@@ -31,6 +44,10 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
 
   const handleStatusChange = (value) => {
     onFilterChange({ ...filters, status: value });
+  };
+
+  const handleLocalHeadChange = (value) => {
+    onFilterChange({ ...filters, localHead: value === 'ALL' ? '' : value });
   };
 
   const handleDateRangeChange = (dates) => {
@@ -96,6 +113,28 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
       )}
 
       {allowedStatuses.length > 0 && <div className="h-6 w-px bg-slate-200 hidden md:block"></div>}
+
+      {/* Local Head Filter */}
+      <div className="flex items-center gap-2">
+        <Shield size={16} className="text-[var(--accent-color)]" />
+        <Select 
+          value={filters.localHead || 'ALL'} 
+          onChange={handleLocalHeadChange}
+          style={{ minWidth: 170, maxWidth: 240 }}
+          variant="borderless"
+          className="bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-slate-700"
+          popupMatchSelectWidth={false}
+          showSearch
+          optionFilterProp="children"
+        >
+          <Option value="ALL">{t('common.allLocalHeads', 'All Local Heads')}</Option>
+          {localHeads.map(lh => (
+            <Option key={lh.value} value={lh.label}>{lh.label}</Option>
+          ))}
+        </Select>
+      </div>
+
+      <div className="h-6 w-px bg-slate-200 hidden md:block"></div>
 
       {/* Date Range Filter */}
       <div className="flex items-center gap-2 flex-grow sm:flex-grow-0">

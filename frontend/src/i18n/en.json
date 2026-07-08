@@ -12,6 +12,8 @@
     "newRecord": "New Record",
     "queue": "Approval Desk",
     "district": "District View",
+    "districtWise": "District Analytics",
+    "stationWise": "Station Wise View",
     "compile": "Compile Records",
     "hq": "Command Center",
     "analytics": "Analytics Console",

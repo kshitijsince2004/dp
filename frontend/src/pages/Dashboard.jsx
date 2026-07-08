@@ -24,7 +24,8 @@ export default function Dashboard() {
     status: 'ALL',
     dateFrom: null,
     dateTo: null,
-    search: ''
+    search: '',
+    localHead: ''
   });
 
   const [diaryOpen, setDiaryOpen] = useState(false);
@@ -69,6 +70,7 @@ export default function Dashboard() {
       if (filters.dateFrom) params.dateFrom = filters.dateFrom;
       if (filters.dateTo) params.dateTo = filters.dateTo;
       if (filters.search) params.search = filters.search;
+      if (filters.localHead) params.localHead = filters.localHead;
 
       const res = await api.get('/records', { params });
       return res.data.data.cases || res.data.data.queue || res.data.data || [];

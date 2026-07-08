@@ -32,6 +32,13 @@ export default function StationPerformanceDashboard() {
     dateTo: "",
   });
 
+  // Initialize district ID filter from routing state (drill-down from District Analytics page)
+  useEffect(() => {
+    if (location.state?.districtId) {
+      setFilters((prev) => ({ ...prev, districtId: location.state.districtId }));
+    }
+  }, [location.state]);
+
   // Fetch nodes, records, and pre-aggregated station metrics
   useEffect(() => {
     const fetchData = async () => {

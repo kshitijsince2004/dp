@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -25,22 +25,32 @@ const itemVariants = {
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
+    const data = payload[0].payload;
     return (
       <div className="bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-xl p-4 min-w-[180px] transition-all">
         <p className="text-xs font-extrabold text-slate-800 mb-2 font-display uppercase tracking-wider">{label}</p>
         <div className="space-y-1.5">
-          {payload.map((entry, index) => {
-            const dotColor = entry.name === 'FIR Cases' ? '#cca43b' : entry.name === 'PCR Calls' ? '#0f52ba' : '#16a34a';
-            return (
-              <div key={index} className="flex items-center justify-between gap-4">
-                <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
-                  {entry.name}
-                </span>
-                <span className="text-xs font-bold font-mono text-slate-800">{entry.value}</span>
-              </div>
-            );
-          })}
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#cca43b]" />
+              FIR Cases
+            </span>
+            <span className="text-xs font-bold font-mono text-slate-800">{data.cases || 0}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#0f52ba]" />
+              PCR Calls
+            </span>
+            <span className="text-xs font-bold font-mono text-slate-800">{data.pcr || 0}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#16a34a]" />
+              Arrests
+            </span>
+            <span className="text-xs font-bold font-mono text-slate-800">{data.arrests || 0}</span>
+          </div>
         </div>
       </div>
     );
@@ -53,6 +63,7 @@ export default function DistrictDashboard() {
   const currentLng = i18n.language || 'en';
   const navigate = useNavigate();
   const { user, jurisdiction } = useAuthStore();
+  const [activeMetric, setActiveMetric] = useState('cases'); // 'cases' | 'pcr' | 'arrests'
 
   const getDistrictName = () => {
     const isHq = user?.role === 'HQ' || user?.role === 'HQ_ANALYST' || user?.role === 'HQ_ADMIN' || user?.role === 'SYSTEM_ADMIN';
@@ -218,18 +229,39 @@ export default function DistrictDashboard() {
 
             {/* Legend pills */}
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3 py-1.5 shadow-sm">
-                <span className="h-2 w-2 rounded-full bg-[#D97706]" />
-                <span className="text-xs font-semibold text-[#D97706]">FIR Cases</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-1.5 shadow-sm">
-                <span className="h-2 w-2 rounded-full bg-[#003087]" />
-                <span className="text-xs font-semibold text-[#003087]">PCR Calls</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#6EE7B7] bg-[#ECFDF5] px-3 py-1.5 shadow-sm">
-                <span className="h-2 w-2 rounded-full bg-[#059669]" />
-                <span className="text-xs font-semibold text-[#059669]">Arrests</span>
-              </div>
+              <button
+                onClick={() => setActiveMetric('cases')}
+                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 shadow-sm text-xs font-bold transition-all duration-150 cursor-pointer ${
+                  activeMetric === 'cases'
+                    ? 'border-[#D97706] bg-[#FFFBEB] text-[#D97706] opacity-100 ring-2 ring-[#D97706]/10 scale-105'
+                    : 'border-slate-200 bg-white text-slate-400 opacity-60 hover:opacity-90'
+                }`}
+              >
+                <span className={`h-2 w-2 rounded-full ${activeMetric === 'cases' ? 'bg-[#D97706]' : 'bg-slate-300'}`} />
+                <span>FIR Cases</span>
+              </button>
+              <button
+                onClick={() => setActiveMetric('pcr')}
+                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 shadow-sm text-xs font-bold transition-all duration-150 cursor-pointer ${
+                  activeMetric === 'pcr'
+                    ? 'border-[#003087] bg-[#EFF6FF] text-[#003087] opacity-100 ring-2 ring-[#003087]/10 scale-105'
+                    : 'border-slate-200 bg-white text-slate-400 opacity-60 hover:opacity-90'
+                }`}
+              >
+                <span className={`h-2 w-2 rounded-full ${activeMetric === 'pcr' ? 'bg-[#003087]' : 'bg-slate-300'}`} />
+                <span>PCR Calls</span>
+              </button>
+              <button
+                onClick={() => setActiveMetric('arrests')}
+                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 shadow-sm text-xs font-bold transition-all duration-150 cursor-pointer ${
+                  activeMetric === 'arrests'
+                    ? 'border-[#059669] bg-[#ECFDF5] text-[#059669] opacity-100 ring-2 ring-[#059669]/10 scale-105'
+                    : 'border-slate-200 bg-white text-slate-400 opacity-60 hover:opacity-90'
+                }`}
+              >
+                <span className={`h-2 w-2 rounded-full ${activeMetric === 'arrests' ? 'bg-[#059669]' : 'bg-slate-300'}`} />
+                <span>Arrests</span>
+              </button>
             </div>
           </div>
 
@@ -256,10 +288,14 @@ export default function DistrictDashboard() {
                   <XAxis dataKey="station" stroke="#A0AEC0" fontSize={10} tickLine={false} axisLine={false} dy={10} className="font-semibold" />
                   <YAxis stroke="#A0AEC0" fontSize={10} tickLine={false} axisLine={false} dx={-10} className="font-semibold" />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F0F4F9', opacity: 0.6 }} />
-                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '15px', fontWeight: 600, color: '#718096' }} />
-                  <Bar dataKey="cases"   name="FIR Cases" fill="url(#casesGrad)"   radius={[6, 6, 0, 0]} maxBarSize={30} />
-                  <Bar dataKey="pcr"     name="PCR Calls" fill="url(#pcrGrad)"     radius={[6, 6, 0, 0]} maxBarSize={30} />
-                  <Bar dataKey="arrests" name="Arrests"   fill="url(#arrestsGrad)" radius={[6, 6, 0, 0]} maxBarSize={30} />
+                  <Bar 
+                    dataKey={activeMetric}   
+                    name={activeMetric === 'cases' ? 'FIR Cases' : activeMetric === 'pcr' ? 'PCR Calls' : 'Arrests'} 
+                    fill={activeMetric === 'cases' ? 'url(#casesGrad)' : activeMetric === 'pcr' ? 'url(#pcrGrad)' : 'url(#arrestsGrad)'}   
+                    radius={[6, 6, 0, 0]} 
+                    maxBarSize={30} 
+                    className="outline-none focus:outline-none"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -29,19 +29,6 @@ const formatChange = (changePct, period) => {
   return `${sign}${changePct}% vs previous ${period}`;
 };
 
-// No dedicated backend endpoint provides an hour-by-hour/day-by-day arrest trend yet —
-// this chart stays illustrative until that's built (out of scope for the dashboard-stats work).
-const arrestTrend = [
-  { day: "23 Nov", value: 23200 },
-  { day: "24", value: 24800 },
-  { day: "25", value: 30200 },
-  { day: "26", value: 29400 },
-  { day: "27", value: 33600 },
-  { day: "28", value: 39400 },
-  { day: "29", value: 36000 },
-  { day: "30", value: 48200 },
-];
-
 export default function PSDashboard() {
   const { t, i18n } = useTranslation();
   const currentLng = i18n.language || 'en';
@@ -52,6 +39,7 @@ export default function PSDashboard() {
   const [leftOutAccused, setLeftOutAccused] = useState([]);
   const [caseTypeRows, setCaseTypeRows] = useState([]);
   const [casesByMonth, setCasesByMonth] = useState([]);
+  const [arrestTrend, setArrestTrend] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,8 +97,9 @@ export default function PSDashboard() {
 
   useEffect(() => {
     let cancelled = false;
+    const periodParam = activePeriod.toLowerCase();
     api
-      .get("/analytics/cases-by-month")
+      .get("/analytics/cases-by-month", { params: { period: periodParam } })
       .then((res) => {
         if (cancelled) return;
         setCasesByMonth(res.data?.data || []);
@@ -119,10 +108,22 @@ export default function PSDashboard() {
         if (cancelled) return;
         setCasesByMonth([]);
       });
+
+    api
+      .get("/analytics/arrests-trend", { params: { period: periodParam } })
+      .then((res) => {
+        if (cancelled) return;
+        setArrestTrend(res.data?.data || []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setArrestTrend([]);
+      });
+
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [activePeriod]);
 
   const currentPeriod = activePeriod.toLowerCase();
   const statCards = STAT_CARD_META.map((meta) => {
@@ -132,13 +133,20 @@ export default function PSDashboard() {
     const isUp = changePct >= 0;
 
     let icon = FileText;
-    let gradient = "from-[#10B981] to-[#059669]"; // emerald
+    let iconColor = "text-[#059669]";
+    let iconBg = "bg-[#ECFDF5]";
+    let iconBorder = "border-[#A7F3D0]";
+
     if (meta.key === 'arrests') {
       icon = Shield;
-      gradient = "from-[#8B5CF6] to-[#7C3AED]"; // purple
+      iconColor = "text-[#7C3AED]";
+      iconBg = "bg-[#F5F3FF]";
+      iconBorder = "border-[#C084FC]";
     } else if (meta.key === 'left_out') {
       icon = UserX;
-      gradient = "from-[#F59E0B] to-[#D97706]"; // amber
+      iconColor = "text-[#D97706]";
+      iconBg = "bg-[#FFFBEB]";
+      iconBorder = "border-[#FDE68A]";
     }
 
     const badgeClass = isUp
@@ -151,7 +159,9 @@ export default function PSDashboard() {
       value: summary ? String(count) : "--",
       change: summary ? formatChange(changePct, currentPeriod) : "--",
       icon,
-      gradient,
+      iconColor,
+      iconBg,
+      iconBorder,
       badgeClass,
     };
   });
@@ -223,8 +233,8 @@ export default function PSDashboard() {
                   </span>
                 </div>
               </div>
-              <div className={`p-4 rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-md transform group-hover:scale-110 transition-transform duration-300`}>
-                <card.icon size={24} />
+              <div className={`p-3.5 rounded-xl border ${card.iconBg} ${card.iconBorder} ${card.iconColor} shadow-inner transform group-hover:scale-110 transition-transform duration-300`}>
+                <card.icon size={22} className="stroke-[2.2]" />
               </div>
             </div>
           ))}
@@ -235,8 +245,8 @@ export default function PSDashboard() {
       <div className="mx-auto max-w-7xl px-6 py-8 space-y-6">
 
         {/* Arrest chart + Left Out Accused panel */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
-          <div className="rounded-xl p-4 shadow-sm border border-slate-100/50" style={{ backgroundColor: "#F6F3FC" }}>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
             <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">ARREST</div>
             <div className="mt-2 h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -262,6 +272,7 @@ export default function PSDashboard() {
                     tickLine={false}
                     axisLine={false}
                     dx={-5}
+                    allowDecimals={false}
                     tickFormatter={(v) => v.toLocaleString()}
                   />
                   <Tooltip
@@ -290,42 +301,44 @@ export default function PSDashboard() {
             </div>
           </div>
 
-          <div className="rounded-xl p-4 shadow-sm border border-slate-100/50" style={{ backgroundColor: "#FBE1D6" }}>
-            <div className="text-xs font-bold uppercase tracking-wide" style={{ color: "#DC5B3E" }}>
-              Left Out Accused
-            </div>
-            <div className="mt-3 space-y-3">
-              {leftOutAccused.map((accused) => (
-                <div key={accused.name} className="border-b border-[#FADBCF]/40 pb-2 last:border-0 last:pb-0">
-                  <div className="text-xs font-bold" style={{ color: "#DC5B3E" }}>
-                    {accused.name}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">
+                Left Out Accused
+              </div>
+              <div className="mt-4 space-y-3.5">
+                {leftOutAccused.map((accused) => (
+                  <div key={accused.name} className="border-b border-slate-100 pb-2.5 last:border-0 last:pb-0">
+                    <div className="text-xs font-bold text-slate-800">
+                      {accused.name}
+                    </div>
+                    <div className="mt-1 text-[11px] text-slate-400 font-semibold leading-relaxed">{accused.note}</div>
                   </div>
-                  <div className="mt-0.5 text-xs text-[#4B5563] font-medium leading-relaxed">{accused.note}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Case Type table + Cases bar chart */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr]">
-          <div className="rounded-xl p-4 shadow-sm border border-emerald-200/80" style={{ backgroundColor: "#D8F3E5" }}>
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
             <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">Case Type</div>
-            <table className="mt-2 w-full text-xs">
+            <table className="mt-3 w-full text-xs">
               <thead>
-                <tr className="text-[#9CA3AF]">
-                  <th className="pb-2 text-left font-medium">Name</th>
-                  <th className="pb-2 text-right font-medium">Case</th>
-                  <th className="pb-2 text-right font-medium">Change</th>
+                <tr className="text-slate-400 border-b border-slate-100">
+                  <th className="pb-2.5 text-left font-bold uppercase tracking-wider text-[10px]">Name</th>
+                  <th className="pb-2.5 text-right font-bold uppercase tracking-wider text-[10px]">Case</th>
+                  <th className="pb-2.5 text-right font-bold uppercase tracking-wider text-[10px]">Change</th>
                 </tr>
               </thead>
               <tbody>
                 {caseTypeRows.map((row) => (
-                  <tr key={row.name} className="border-t border-[#F3F4F6]/50">
-                    <td className="py-2 font-semibold text-[#0A1628]">{row.name}</td>
-                    <td className="py-2 text-right text-[#0A1628] font-bold">{row.count}</td>
+                  <tr key={row.name} className="border-b border-slate-100/60 last:border-0">
+                    <td className="py-3 font-semibold text-[#0A1628]">{row.name}</td>
+                    <td className="py-3 text-right text-[#0A1628] font-bold">{row.count}</td>
                     <td
-                      className="py-2 text-right font-bold"
+                      className="py-3 text-right font-bold"
                       style={{ color: row.isUp ? "#059669" : "#DC2626" }}
                     >
                       {row.change}
@@ -336,7 +349,7 @@ export default function PSDashboard() {
             </table>
           </div>
 
-          <div className="rounded-xl p-4 shadow-sm border border-slate-100/50" style={{ backgroundColor: "#F1ECFB" }}>
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
             <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">Cases</div>
             <div className="mt-2 h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -351,9 +364,9 @@ export default function PSDashboard() {
                       <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.6}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="#E5DDFB" strokeDasharray="3 3" vertical={false} />
+                  <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" vertical={false} />
                   <XAxis
-                    dataKey="month"
+                    dataKey="label"
                     stroke="#A0AEC0"
                     fontSize={10}
                     tickLine={false}
@@ -366,6 +379,7 @@ export default function PSDashboard() {
                     tickLine={false}
                     axisLine={false}
                     dx={-5}
+                    allowDecimals={false}
                     tickFormatter={(v) => v.toLocaleString()}
                   />
                   <Tooltip

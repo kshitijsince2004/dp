@@ -68,7 +68,8 @@ export default function MyRecords() {
     status: 'ALL',
     dateFrom: null,
     dateTo: null,
-    search: ''
+    search: '',
+    localHead: ''
   });
 
   // Reset selectedIds when filters change
@@ -94,6 +95,7 @@ export default function MyRecords() {
       if (filters.dateFrom) params.dateFrom = filters.dateFrom;
       if (filters.dateTo) params.dateTo = filters.dateTo;
       if (filters.search) params.search = filters.search;
+      if (filters.localHead) params.localHead = filters.localHead;
 
       const res = await api.get('/records', { params });
       const payload = res.data.data;
