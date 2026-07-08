@@ -311,32 +311,46 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
           multiple={key === 'sections' || key.endsWith('_sections') || key.includes('sections')}
         />
         {isCaseStatus && isTransferSelected && (
-          <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 mt-1 animate-in slide-in-from-top-1 duration-100">
-            <span className="text-xs font-bold text-[#0d2a4a]">
-              {lang === 'hi' ? 'स्थानांतरण का प्रकार:' : 'Transfer To:'}
-            </span>
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer select-none">
-              <input
-                type="radio"
-                name="case_status_transfer_to"
+          <div className="flex flex-col gap-2 mt-1">
+            <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 animate-in slide-in-from-top-1 duration-100">
+              <span className="text-xs font-bold text-[#0d2a4a]">
+                {lang === 'hi' ? 'स्थानांतरण का प्रकार:' : 'Transfer To:'}
+              </span>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                <input
+                  type="radio"
+                  name="case_status_transfer_to"
+                  disabled={readOnly}
+                  checked={values?.transfer_to === 'PS'}
+                  onChange={() => handleFieldChange('transfer_to', 'PS')}
+                  className="accent-[#0f52ba] cursor-pointer"
+                />
+                <span>{lang === 'hi' ? 'पुलिस स्टेशन (PS)' : 'PS'}</span>
+              </label>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                <input
+                  type="radio"
+                  name="case_status_transfer_to"
+                  disabled={readOnly}
+                  checked={values?.transfer_to === 'Agency'}
+                  onChange={() => handleFieldChange('transfer_to', 'Agency')}
+                  className="accent-[#0f52ba] cursor-pointer"
+                />
+                <span>{lang === 'hi' ? 'एजेंसी (Agency)' : 'Agency'}</span>
+              </label>
+            </div>
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 animate-in slide-in-from-top-1 duration-100">
+              <span className="text-xs font-bold text-[#0d2a4a] shrink-0">
+                {lang === 'hi' ? 'स्थानांतरण की तिथि:' : 'Date of Transfer:'}
+              </span>
+              <DateField
+                id="field-date_of_transfer"
                 disabled={readOnly}
-                checked={values?.transfer_to === 'PS'}
-                onChange={() => handleFieldChange('transfer_to', 'PS')}
-                className="accent-[#0f52ba] cursor-pointer"
+                value={values?.date_of_transfer}
+                onChange={(v) => handleFieldChange('date_of_transfer', v)}
+                placeholder={lang === 'hi' ? 'तिथि चुनें' : 'Select date'}
               />
-              <span>{lang === 'hi' ? 'पुलिस स्टेशन (PS)' : 'PS'}</span>
-            </label>
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer select-none">
-              <input
-                type="radio"
-                name="case_status_transfer_to"
-                disabled={readOnly}
-                checked={values?.transfer_to === 'Agency'}
-                onChange={() => handleFieldChange('transfer_to', 'Agency')}
-                className="accent-[#0f52ba] cursor-pointer"
-              />
-              <span>{lang === 'hi' ? 'एजेंसी (Agency)' : 'Agency'}</span>
-            </label>
+            </div>
           </div>
         )}
       </div>
