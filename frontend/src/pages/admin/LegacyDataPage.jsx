@@ -241,7 +241,19 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
       link.click();
       toast.success(t('import.templateDownloaded', 'Template downloaded successfully'));
     } catch (err) {
-      toast.error(t('import.templateDownloadFailed', 'Failed to download template'));
+      console.error('[downloadTemplate] failed:', err);
+      const status = err.response?.status;
+      let serverMessage = err.response?.data?.message;
+      // responseType: 'blob' means an error JSON body arrives as a Blob, not parsed JSON
+      if (!serverMessage && err.response?.data instanceof Blob) {
+        try {
+          serverMessage = JSON.parse(await err.response.data.text())?.message;
+        } catch { /* body wasn't JSON */ }
+      }
+      console.error('[downloadTemplate] status:', status, 'message:', serverMessage);
+      toast.error(
+        `${t('import.templateDownloadFailed', 'Failed to download template')}${status ? ` (${status})` : ''}${serverMessage ? `: ${serverMessage}` : ''}`
+      );
     }
   };
 

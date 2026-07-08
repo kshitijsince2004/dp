@@ -288,7 +288,7 @@ export default function NewRecord() {
             targetFields={sbDetails?.target_fields || []}
             readOnly={record && record.current_status !== 'DRAFT' && record.current_status !== 'SENT_BACK_HC'}
             caseType={caseType}
-            onBack={caseType ? () => setCaseType(null) : null}
+            onBack={caseType ? () => setCaseType(null) : () => navigate(-1)}
           />
         </motion.div>
       </motion.div>

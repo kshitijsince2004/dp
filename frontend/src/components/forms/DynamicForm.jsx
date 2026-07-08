@@ -280,21 +280,25 @@ export default function DynamicForm({
 
     const selectedFir = values.selected_fir;
     const currentAct = values.act_name || 'IPC';
-    const currentSections = values.sections || '';
+
+    const currentSections = values.sections ? String(values.sections) : '';
 
     // Parse sections list
     const sectionsList = currentSections
-      ? currentSections.split(',').map(s => s.trim()).filter(Boolean)
+      ? currentSections.split(/[\/,]/).map(s => s.trim()).filter(Boolean)
       : [];
 
     const handleAddSection = () => {
-      const cleanSec = newSectionVal.trim();
-      if (!cleanSec) return;
-      if (sectionsList.includes(cleanSec)) {
-        setNewSectionVal('');
-        return;
-      }
-      const updatedList = [...sectionsList, cleanSec];
+      const cleanSecs = newSectionVal.split(/[\/,]/).map(s => s.trim()).filter(Boolean);
+      if (!cleanSecs.length) return;
+      
+      const updatedList = [...sectionsList];
+      cleanSecs.forEach(sec => {
+        if (!updatedList.includes(sec)) {
+          updatedList.push(sec);
+        }
+      });
+      
       handleChange('sections', updatedList.join(', '));
       setNewSectionVal('');
     };
@@ -2213,6 +2217,59 @@ export default function DynamicForm({
               ...prev,
               [cat]: options
             }));
+
+            // Sync string minor categories in repeaterState to their numeric option IDs
+            setRepeaterState(prev => {
+              const nextState = { ...prev };
+              let changed = false;
+              for (const [sectionKey, sectionData] of Object.entries(nextState)) {
+                if (Array.isArray(sectionData)) {
+                  nextState[sectionKey] = sectionData.map(row => {
+                    let updatedRow = row;
+                    // Handle flat property rows
+                    if (String(row.property_major_category) === String(cat) && row.property_minor_category) {
+                      const val = row.property_minor_category;
+                      const isAlreadyNumeric = /^\d+$/.test(String(val));
+                      if (!isAlreadyNumeric) {
+                        const match = options.find(o => 
+                          String(o.label_en).toLowerCase().trim() === String(val).toLowerCase().trim() ||
+                          String(o.label_hi).toLowerCase().trim() === String(val).toLowerCase().trim()
+                        );
+                        if (match) {
+                          updatedRow = { ...updatedRow, property_minor_category: match.value };
+                          changed = true;
+                        }
+                      }
+                    }
+                    // Handle nested property_details inside person rows (like arrested persons)
+                    if (Array.isArray(updatedRow.property_details)) {
+                      const updatedDetails = updatedRow.property_details.map(pRow => {
+                        if (String(pRow.property_major_category) === String(cat) && pRow.property_minor_category) {
+                          const val = pRow.property_minor_category;
+                          const isAlreadyNumeric = /^\d+$/.test(String(val));
+                          if (!isAlreadyNumeric) {
+                            const match = options.find(o => 
+                              String(o.label_en).toLowerCase().trim() === String(val).toLowerCase().trim() ||
+                              String(o.label_hi).toLowerCase().trim() === String(val).toLowerCase().trim()
+                            );
+                            if (match) {
+                              changed = true;
+                              return { ...pRow, property_minor_category: match.value };
+                            }
+                          }
+                        }
+                        return pRow;
+                      });
+                      if (changed) {
+                        updatedRow = { ...updatedRow, property_details: updatedDetails };
+                      }
+                    }
+                    return updatedRow;
+                  });
+                }
+              }
+              return changed ? nextState : prev;
+            });
           }
         })
         .catch(err => {
@@ -2964,20 +3021,16 @@ useEffect(() => {
       if (dDate && dTime) {
         seed.gd_date_time = `${dDate} ${dTime}`;
       }
-    } else {
-      if (seed.gd_date && seed.gd_time) {
-        seed.gd_date_time = `${seed.gd_date} ${seed.gd_time}`;
-        if (recordType === 'CASE') {
-          seed.fir_date = seed.fir_date || seed.gd_date;
-          seed.fir_time = seed.fir_time || seed.gd_time;
-        }
+    } else if (seed.gd_date && seed.gd_time) {
+      seed.gd_date_time = `${seed.gd_date} ${seed.gd_time}`;
+      if (recordType === 'CASE') {
+        seed.fir_date = seed.fir_date || seed.gd_date;
+        seed.fir_time = seed.fir_time || seed.gd_time;
       }
     }
-  } else {
-    if (recordType === 'CASE') {
-      seed.fir_date = seed.fir_date || seed.gd_date || seed.gd_date_time.split(' ')[0];
-      seed.fir_time = seed.fir_time || seed.gd_time || seed.gd_date_time.split(' ')[1];
-    }
+  } else if (recordType === 'CASE') {
+    seed.fir_date = seed.fir_date || seed.gd_date || seed.gd_date_time.split(' ')[0];
+    seed.fir_time = seed.fir_time || seed.gd_time || seed.gd_date_time.split(' ')[1];
   }
 
   // Resolve station and district dynamically based on record metadata or active user node
@@ -3034,12 +3087,64 @@ useEffect(() => {
     police_station: resolvedStation,
     submission_status: initialValues?.current_status || seed.submission_status || 'DRAFT'
   };
+
+  // Ensure complaint_no and fir_no are synced
+  updatedSeed.complaint_no = updatedSeed.complaint_no || updatedSeed.fir_no || '';
+  updatedSeed.fir_no = updatedSeed.fir_no || updatedSeed.complaint_no || '';
+
+  // Synchronize gd_no and linked_fir_dd_no
+  updatedSeed.gd_no = updatedSeed.gd_no || updatedSeed.linked_fir_dd_no || '';
+  updatedSeed.linked_fir_dd_no = updatedSeed.linked_fir_dd_no || updatedSeed.gd_no || '';
+
+  // Synchronize local_head and crime_head
+  updatedSeed.local_head = updatedSeed.local_head || updatedSeed.crime_head || '';
+  updatedSeed.crime_head = updatedSeed.crime_head || updatedSeed.local_head || '';
+
+  // Synchronize parent arrest date/time/place fields
+  updatedSeed.arrest_date = updatedSeed.arrest_date || updatedSeed.date_of_arrest || '';
+  updatedSeed.date_of_arrest = updatedSeed.date_of_arrest || updatedSeed.arrest_date || '';
+  updatedSeed.arrest_time = updatedSeed.arrest_time || updatedSeed.time_of_arrest || '';
+  updatedSeed.time_of_arrest = updatedSeed.time_of_arrest || updatedSeed.arrest_time || '';
+  updatedSeed.arrest_place = updatedSeed.arrest_place || updatedSeed.place_of_arrest || '';
+  updatedSeed.place_of_arrest = updatedSeed.place_of_arrest || updatedSeed.arrest_place || '';
+
+  // Synchronize complainant permanent address if complainant_perm_same is true / Yes
+  if (updatedSeed.complainant_perm_same === 'Yes' || updatedSeed.complainant_perm_same === true) {
+    const addrFields = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'district', 'police_station', 'state', 'pincode', 'country'];
+    for (const field of addrFields) {
+      const presVal = updatedSeed[`complainant_${field}`];
+      if (presVal && !updatedSeed[`complainant_perm_${field}`]) {
+        updatedSeed[`complainant_perm_${field}`] = presVal;
+      }
+    }
+  }
+
+  // Formulate gd_date_time if missing but gd_date/gd_time exist
+  // gd_date is stored as dd/mm/yyyy, so no format conversion is needed here.
   if (!updatedSeed.gd_date_time && updatedSeed.gd_date) {
     const timePart = updatedSeed.gd_time || '00:00';
     updatedSeed.gd_date_time = `${updatedSeed.gd_date} ${timePart.substring(0, 5)}`;
   }
 
   setValues(updatedSeed);
+
+  // Initialize majorMinorRows from seed major_heads / minor_heads
+  const majorsStr = String(updatedSeed.major_heads || updatedSeed.major_head || '');
+  const minorsStr = String(updatedSeed.minor_heads || updatedSeed.minor_head || '');
+  if (majorsStr || minorsStr) {
+    const majors = majorsStr.split(',').map(s => s.trim()).filter(Boolean);
+    const minors = minorsStr.split(',').map(s => s.trim()).filter(Boolean);
+    const rows = [];
+    const len = Math.max(majors.length, minors.length);
+    for (let i = 0; i < len; i++) {
+      rows.push({
+        majorHead: majors[i] || '',
+        minorHead: minors[i] || ''
+      });
+    }
+    setMajorMinorRows(rows);
+  }
+
   if (initialValues?.id) {
     activeRecordIdRef.current = initialValues.id;
   } else {

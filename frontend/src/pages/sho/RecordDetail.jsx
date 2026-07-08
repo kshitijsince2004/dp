@@ -271,6 +271,7 @@ export default function RecordDetail() {
             initialPersons={recordPayload?.persons || []}
             initialProperties={recordPayload?.properties || []}
             readOnly={true}
+            onBack={() => navigate(-1)}
           />
         </div>
 
