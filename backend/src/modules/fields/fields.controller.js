@@ -620,16 +620,23 @@ export const getFieldsForForm = async (req, res) => {
               fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrestee_info')
             },
             {
+              id: 'address',
+              title_en: 'Address',
+              title_hi: 'पता',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrested_address')
+            },
+            {
               id: 'custody_status',
               title_en: 'Custody Status',
               title_hi: 'हिरासत की स्थिति',
               fields: filteredFields.filter(f => f.section === 'custody_status' && !f.repeater_entity)
             },
             {
-              id: 'address',
-              title_en: 'Address',
-              title_hi: 'पता',
-              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ARRESTED' && f.section === 'arrested_address')
+              id: 'property',
+              title_en: 'Property of Interest',
+              title_hi: 'संबद्ध संपत्ति',
+              entity_type: 'property',
+              fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')
             }
           ]
         },
@@ -639,14 +646,6 @@ export const getFieldsForForm = async (req, res) => {
           title_hi: 'हिरासत की स्थिति',
           is_repeater: false,
           fields: filteredFields.filter(f => f.section === 'custody_status' && !f.repeater_entity)
-        },
-        {
-          section: 'property_details',
-          title_en: 'Property of Interest',
-          title_hi: 'संबद्ध संपत्ति',
-          is_repeater: true,
-          entity_type: 'property',
-          fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')
         },
         // {
         //   section: 'intimation_details',

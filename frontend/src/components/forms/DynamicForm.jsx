@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -71,7 +71,7 @@ function syncPermAddress(next, prefix, key, val, extraFields = []) {
  */
 const SECTION_KEY_ORDER = {
   CASE: ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
+  ARREST: ['select_fir', 'general_info', 'arrested_info', 'investigation_officer'],
   UIDB: ['general_info', 'corpse_desc', 'corpse_physical', 'inquest_details', 'investigation_officer'],
   MISSING: ['general_info', 'person_details', 'missing_address', 'missing_physical', 'contacts_assigned', 'investigation_officer'],
 };
@@ -145,6 +145,19 @@ const MOCK_FIR_LIST = [
   { fir_no: '88/2026', fir_date: '20/06/2026', complainant_name: 'Manish Sharma', police_station: 'Chanakyapuri', crime_head: 'Delhi Excise Act', sections: 'Sec 33/38 Excise Act' },
   { fir_no: '92/2026', fir_date: '20/06/2026', complainant_name: 'Priyanka Sen', police_station: 'Mandir Marg', crime_head: 'Snatching', sections: 'Sec 356/379 IPC' },
 ];
+
+// Maps UI act display names -> schema show_when values used in major_head fields
+const ACT_NAME_ALIAS = {
+  'Indian Penal Code (IPC)': 'IPC',
+  'IPC': 'IPC',
+  'Arms Act': 'Arms Act',
+  'Delhi Excise Act': 'Delhi Excise Act',
+  'Gambling Act': 'Gambling Act',
+  'NDPS Act': 'NDPS Act',
+  'Motor Vehicles Act': 'Motor Vehicles Act',
+  'Information Technology Act (IT Act)': 'Other Act',
+  'Other Act': 'Other Act',
+};
 
 /**
  * DynamicForm
@@ -719,32 +732,7 @@ export default function DynamicForm({
                   />
                 </td>
               </tr>
-
-              {/* Row 2: Type of Information */}
-              <tr className="border-b border-[#7a9cc5]">
-                <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
-                  {fieldLabel('type_of_information') || 'Type of Information'}
-                </td>
-                <td className="w-2/3 bg-white px-2.5 py-1 flex items-center gap-4 text-[11px]">
-                  <FieldRenderer
-                    field={allFields.find(f => f.field_key === 'type_of_information')}
-                    value={values.type_of_information}
-                    values={values}
-                    readOnly={readOnly}
-                    lang={lang}
-                    radioVariant="native"
-                    radioWrapperClassName="flex items-center gap-4"
-                    radioInputClassName="accent-[#0f52ba] cursor-pointer"
-                    handleChange={(key, val) => {
-                      handleChange(key, val);
-                      if (key === 'type_of_information') {
-                        handleChange('case_type', TYPE_OF_INFO_CASE_TYPE_MAP[val] ?? val);
-                      }
-                    }}
-                  />
-                </td>
-              </tr>
-
+              
               {/* Row: Case Registration Type */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
@@ -920,6 +908,7 @@ export default function DynamicForm({
       `${prefix}_nickname`,
       `${prefix}_gender`,
       `${prefix}_marital_status`,
+      `${prefix}_qualification`,
       `${prefix}_mobile`,
       `${prefix}_mobile_country_code`,
       `${prefix}_email`,
@@ -929,12 +918,14 @@ export default function DynamicForm({
       `${prefix}_age_year`,
       `${prefix}_age_month`,
       `${prefix}_birth_year`,
+      'scheme_of_arrest',
+      'nick_name', // legacy duplicate of arrested_nickname, same section/sort_order — not shown separately
       cfg.extraContactField
     ].filter(Boolean);
 
     const extraFields = allFields.filter(
       (f) =>
-        (f.section === `${prefix}_personal_info` || f.section === `${prefix}_accused_info` || f.section === `complainant_accused_info`) &&
+        f.section === `${prefix}_personal_info` &&
         !personalKeys.includes(f.field_key)
     );
     const visibleExtraFields = extraFields.filter(f => evalCond(f.show_when, valuesObj));
@@ -1006,7 +997,6 @@ export default function DynamicForm({
           <div className="border border-[#7a9cc5] rounded px-2 py-2 self-start">
             <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
               {field(`${prefix}_gender`, null, false, false, extraRequired)}
-              {field(`${prefix}_marital_status`)}
 
               {/* Mobile number with country code */}
               <React.Fragment>
@@ -1019,7 +1009,6 @@ export default function DynamicForm({
                 </div>
               </React.Fragment>
 
-              {field(`${prefix}_qualification`)}
               {prefix === 'arrested' && field('scheme_of_arrest', null, true)}
 
               {cfg.extraContactField ? (
@@ -1523,8 +1512,10 @@ export default function DynamicForm({
     );
   };
 
-  const renderPropertyStep = () => {
-    const propertyList = repeaterState?.property_details || [];
+  /** Shared property-list editor (category/type cascades, extra detail fields) — used by
+   * both CASE's record-level Property step and ARREST's per-arrested-person Property tab. */
+  const renderPropertyEditor = (list, onChange) => {
+    const propertyList = list;
     const allFields = deepFlattenSchema(schema);
     const majorCategoryField = allFields.find(f => f.field_key === 'property_major_category');
 
@@ -1698,30 +1689,29 @@ export default function DynamicForm({
     // ── End extra detail field helpers ─────────────────────────────────────────
 
     const addPropertyRow = () => {
-      const list = [...propertyList];
-      list.push({
+      const nextList = [...propertyList];
+      nextList.push({
         property_major_category: '',
         property_minor_category: '',
         property_details: '',
         property_value_inr: '',
         property_stolen_recovered: 'Stolen'
       });
-      setRepeaterState(prev => ({ ...prev, property_details: list }));
+      onChange(nextList);
     };
 
     const clearAllProperties = () => {
-      setRepeaterState(prev => ({ ...prev, property_details: [] }));
+      onChange([]);
     };
 
     const deletePropertyRow = (idx) => {
-      const list = propertyList.filter((_, i) => i !== idx);
-      setRepeaterState(prev => ({ ...prev, property_details: list }));
+      onChange(propertyList.filter((_, i) => i !== idx));
     };
 
     const handlePropertyRowChange = (idx, key, val) => {
-      const list = [...propertyList];
-      if (!list[idx]) return;
-      const updatedRow = { ...list[idx], [key]: val };
+      const nextList = [...propertyList];
+      if (!nextList[idx]) return;
+      const updatedRow = { ...nextList[idx], [key]: val };
       if (key === 'property_major_category') {
         // Clear minor category and any category-specific extra detail fields
         const KEEP = new Set(['property_major_category', 'property_minor_category', 'property_details', 'property_stolen_recovered', 'property_value_inr']);
@@ -1735,8 +1725,8 @@ export default function DynamicForm({
         // Type of Arm changed — reset the dependent Subtype of Arm selection
         updatedRow.prop_arms_made = '';
       }
-      list[idx] = updatedRow;
-      setRepeaterState(prev => ({ ...prev, property_details: list }));
+      nextList[idx] = updatedRow;
+      onChange(nextList);
     };
 
     const renderTypeCell = (row, idx) => {
@@ -1886,6 +1876,12 @@ export default function DynamicForm({
     );
   };
 
+  /** CASE's record-level Property step — one shared property list per case. */
+  const renderPropertyStep = () => renderPropertyEditor(
+    repeaterState?.property_details || [],
+    (newList) => setRepeaterState(prev => ({ ...prev, property_details: newList }))
+  );
+
   const renderArrestedStep = () => {
     const arrestedList = repeaterState?.arrested_info || [];
     const allFields = deepFlattenSchema(schema);
@@ -1947,6 +1943,12 @@ export default function DynamicForm({
       }
       if (arrestedSubTab === 'address') {
         return renderPersonAddressSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, true, lang, readOnly);
+      }
+      if (arrestedSubTab === 'property') {
+        return renderPropertyEditor(
+          arrestedTempValues?.property_details || [],
+          (newList) => setArrestedTempValues(prev => ({ ...prev, property_details: newList }))
+        );
       }
       // arrest_details, particular_details, custody_status — generic flat grid from backend fields
       return renderSubTabFieldGrid(arrestedSubTab);
@@ -2367,7 +2369,12 @@ export default function DynamicForm({
 
   const openVictimEditModal = (idx) => {
     const list = repeaterState.PERSON_VICTIM || [];
-    setVictimTempValues({ ...(list[idx] || {}) });
+    const item = list[idx];
+    if (item && item._is_complainant) {
+      alert(lang === 'hi' ? 'यह विवरण शिकायतकर्ता से जुड़े हैं। कृपया शिकायतकर्ता टैब में बदलाव करें।' : 'These details are linked to the Complainant. Please edit them in the Complainant tab.');
+      return;
+    }
+    setVictimTempValues({ ...(item || {}) });
     setActiveVictimIndex(idx);
     setVictimSubTab('personal');
     setVictimModalErrors({});
@@ -2377,6 +2384,10 @@ export default function DynamicForm({
 
   const deleteVictimEntry = (idx) => {
     const list = repeaterState.PERSON_VICTIM || [];
+    const itemToDelete = list[idx];
+    if (itemToDelete && itemToDelete._is_complainant) {
+      handleChange('complainant_same_as_victim', 'No');
+    }
     const nextList = list.filter((_, i) => i !== idx);
     setRepeaterState(prev => ({ ...prev, PERSON_VICTIM: nextList }));
   };
@@ -2973,7 +2984,21 @@ useEffect(() => {
         p => p.person_type === section.person_type
       );
       if (matching.length > 0) {
-        initial[section.section] = matching.map(p => ({ ...(p.data || {}) }));
+        initial[section.section] = matching.map(p => {
+          const personData = { ...(p.data || {}) };
+          // ARRESTED persons carry their own property list (per-person, not record-level)
+          if (section.person_type === 'ARRESTED') {
+            personData.property_details = initialProperties
+              .filter(prop => prop.person_id === p.id)
+              .map(prop => ({
+                property_major_category: prop.major_category || '',
+                property_minor_category: prop.minor_category || '',
+                property_stolen_recovered: prop.status || 'Stolen',
+                property_details: prop.details || '',
+              }));
+          }
+          return personData;
+        });
       }
     } else if (section.entity_type === 'property') {
       if (initialProperties.length > 0) {
@@ -2991,9 +3016,11 @@ useEffect(() => {
   }
 }, [initialPersons, initialProperties, finalSchema.length]);
 
-// Auto-populate 1 empty row for property details if empty and not read-only
+// Auto-populate 1 empty row for property details if empty and not read-only.
+// ARREST's property list is per-arrested-person now (seeded in openArrestedAddModal/
+// openArrestedEditModal instead) — this record-level list only applies to CASE.
 useEffect(() => {
-  if (!readOnly && (recordType === 'CASE' || recordType === 'ARREST')) {
+  if (!readOnly && recordType === 'CASE') {
     const propertyList = repeaterState?.property_details || [];
     if (propertyList.length === 0) {
       setRepeaterState(prev => ({
@@ -3286,8 +3313,137 @@ const handleChange = useCallback((key, val) => {
     return next;
   });
 
+  // Sync complainant to victim if complainant_same_as_victim is Yes
+  const next = { ...values, [key]: val };
+  if (key.endsWith('_dob')) {
+    const prefix = key.substring(0, key.lastIndexOf('_dob'));
+    if (val) {
+      const dobDate = parseDMY(val);
+      if (dobDate && !isNaN(dobDate.getTime())) {
+        const birthYear = dobDate.getFullYear();
+        const currentYear = new Date().getFullYear();
+        next[`${prefix}_birth_year`] = birthYear;
+        next[`${prefix}_age_year`] = Math.max(0, currentYear - birthYear);
+      }
+    } else {
+      next[`${prefix}_birth_year`] = '';
+      next[`${prefix}_age_year`] = '';
+    }
+  } else if (key.endsWith('_birth_year')) {
+    const prefix = key.substring(0, key.lastIndexOf('_birth_year'));
+    if (val) {
+      const birthYear = parseInt(val, 10);
+      if (!isNaN(birthYear)) {
+        const currentYear = new Date().getFullYear();
+        next[`${prefix}_age_year`] = Math.max(0, currentYear - birthYear);
+      }
+    } else {
+      next[`${prefix}_age_year`] = '';
+    }
+  } else if (key.endsWith('_age_year')) {
+    const prefix = key.substring(0, key.lastIndexOf('_age_year'));
+    if (val) {
+      const ageYear = parseInt(val, 10);
+      if (!isNaN(ageYear)) {
+        const currentYear = new Date().getFullYear();
+        next[`${prefix}_birth_year`] = currentYear - ageYear;
+      }
+    } else {
+      next[`${prefix}_birth_year`] = '';
+    }
+  }
+
+  if (key === 'complainant_same_as_victim') {
+    if (val === 'Yes') {
+      setRepeaterState(prev => {
+        const list = prev.PERSON_VICTIM || [];
+        const existingIdx = list.findIndex(v => v._is_complainant);
+        const newVictim = {
+          _is_complainant: true,
+          victim_first_name: next.complainant_first_name || '',
+          victim_middle_name: next.complainant_middle_name || '',
+          victim_last_name: next.complainant_last_name || '',
+          victim_gender: next.complainant_gender || '',
+          victim_mobile: next.complainant_mobile || '',
+          victim_mobile_country_code: next.complainant_mobile_country_code || '',
+          victim_email: next.complainant_email || '',
+          victim_relation_type: next.complainant_relation_type || '',
+          victim_relative_name: next.complainant_relative_name || '',
+          victim_dob: next.complainant_dob || '',
+          victim_age_year: next.complainant_age_year || '',
+          victim_age_month: next.complainant_age_month || '',
+          victim_birth_year: next.complainant_birth_year || '',
+          
+          victim_house_no: next.complainant_house_no || '',
+          victim_street: next.complainant_street || '',
+          victim_colony: next.complainant_colony || '',
+          victim_city_town_village: next.complainant_city_town_village || '',
+          victim_tehsil_block_mandal: next.complainant_tehsil_block_mandal || '',
+          victim_country: next.complainant_country || '',
+          victim_state: next.complainant_state || '',
+          victim_district: next.complainant_district || '',
+          victim_police_station: next.complainant_police_station || '',
+          victim_pincode: next.complainant_pincode || '',
+          
+          victim_perm_same: next.complainant_perm_same || false,
+          victim_perm_house_no: next.complainant_perm_same === 'Yes' || next.complainant_perm_same === true ? (next.complainant_house_no || '') : (next.complainant_perm_house_no || ''),
+          victim_perm_street: next.complainant_perm_same === 'Yes' || next.complainant_perm_same === true ? (next.complainant_street || '') : (next.complainant_perm_street || ''),
+          victim_perm_colony: next.complainant_perm_same === 'Yes' || next.complainant_perm_same === true ? (next.complainant_colony || '') : (next.complainant_perm_colony || ''),
+          victim_perm_city_town_village: next.complainant_perm_same === 'Yes' || next.complainant_perm_same === true ? (next.complainant_city_town_village || '') : (next.complainant_perm_city_town_village || ''),
+          victim_perm_tehsil_block_mandal: next.complainant_perm_same === 'Yes' || next.complainant_perm_same === true ? (next.complainant_tehsil_block_mandal || '') : (next.complainant_perm_tehsil_block_mandal || ''),
+          victim_perm_country: next.complainant_perm_same === 'Yes' || next.complainant_perm_same === true ? (next.complainant_country || '') : (next.complainant_perm_country || ''),
+          victim_perm_state: next.complainant_perm_same === 'Yes' || next.complainant_perm_same === true ? (next.complainant_state || '') : (next.complainant_perm_state || ''),
+          victim_perm_district: next.complainant_perm_same === 'Yes' || next.complainant_perm_same === true ? (next.complainant_district || '') : (next.complainant_perm_district || ''),
+          victim_perm_police_station: next.complainant_perm_same === 'Yes' || next.complainant_perm_same === true ? (next.complainant_police_station || '') : (next.complainant_perm_police_station || ''),
+          victim_perm_pincode: next.complainant_perm_same === 'Yes' || next.complainant_perm_same === true ? (next.complainant_pincode || '') : (next.complainant_perm_pincode || '')
+        };
+        const nextList = [...list];
+        if (existingIdx > -1) {
+          nextList[existingIdx] = newVictim;
+        } else {
+          nextList.push(newVictim);
+        }
+        return { ...prev, PERSON_VICTIM: nextList };
+      });
+    } else {
+      setRepeaterState(prev => {
+        const list = prev.PERSON_VICTIM || [];
+        return { ...prev, PERSON_VICTIM: list.filter(v => !v._is_complainant) };
+      });
+    }
+  } else if (key.startsWith('complainant_') && (key === 'complainant_perm_same' ? val : values.complainant_same_as_victim) === 'Yes') {
+    const suffix = key.substring('complainant_'.length);
+    const victimField = `victim_${suffix}`;
+    setRepeaterState(prev => {
+      const list = prev.PERSON_VICTIM || [];
+      const existingIdx = list.findIndex(v => v._is_complainant);
+      if (existingIdx > -1) {
+        const nextList = [...list];
+        nextList[existingIdx] = {
+          ...nextList[existingIdx],
+          [victimField]: val
+        };
+        if (suffix === 'dob' || suffix === 'age_year' || suffix === 'birth_year') {
+          nextList[existingIdx].victim_dob = next.complainant_dob || '';
+          nextList[existingIdx].victim_age_year = next.complainant_age_year || '';
+          nextList[existingIdx].victim_birth_year = next.complainant_birth_year || '';
+        }
+        if (suffix === 'perm_same') {
+          nextList[existingIdx].victim_perm_same = val;
+        }
+        const isPresentAddrField = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'country', 'state', 'district', 'police_station', 'pincode'].includes(suffix);
+        const permSameVal = key === 'complainant_perm_same' ? val : values.complainant_perm_same;
+        if (isPresentAddrField && (permSameVal === 'Yes' || permSameVal === true)) {
+          nextList[existingIdx][`victim_perm_${suffix}`] = val;
+        }
+        return { ...prev, PERSON_VICTIM: nextList };
+      }
+      return prev;
+    });
+  }
+
   setTouched((prev) => ({ ...prev, [key]: true }));
-}, [readOnly, errors, triggerAutosave]);
+}, [readOnly, errors, triggerAutosave, values]);
 
 /** Add a major/minor head row to the table */
 const handleAddMajorMinorRow = useCallback(() => {
@@ -3527,7 +3683,19 @@ const handleFormSubmit = (e) => {
     const entries = repeaterState[section.section] || [];
     if (section.entity_type === 'person' && section.person_type) {
       for (const entry of entries) {
-        persons.push({ person_type: section.person_type, data: entry });
+        // ARRESTED persons carry their own property list (per-person, not record-level) —
+        // pull it out of the person's data blob and flatten into the top-level properties
+        // array, tagged with this person's index so the backend can link each item back
+        // to the right person after it generates real person IDs.
+        const { property_details: personProperties, ...personData } = entry;
+        const personIndex = persons.length;
+        persons.push({ person_type: section.person_type, data: personData });
+        if (section.person_type === 'ARRESTED' && Array.isArray(personProperties)) {
+          for (const prop of personProperties) {
+            if (!prop.property_major_category && !prop.property_details) continue; // skip blank starter rows
+            properties.push({ ...prop, person_index: personIndex });
+          }
+        }
       }
     } else if (section.entity_type === 'property') {
       for (const entry of entries) {
@@ -3659,7 +3827,7 @@ return (
               <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
               {msg}
             </div>
-          ))}
+          ))}is
       </div>
     )}
 

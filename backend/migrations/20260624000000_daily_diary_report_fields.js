@@ -176,19 +176,6 @@ const MISSING_FIELDS = [
     sort_order: 6,
   },
   {
-    field_key: 'bad_character',
-    field_type: 'SELECT',
-    applicable_record_types: JSON.stringify(['ARREST']),
-    label_en: 'Is Bad Character (BC)',
-    label_hi: 'बदमाश (बीसी) है या नहीं',
-    section: 'arrest_details',
-    sort_order: 20,
-    options: JSON.stringify([
-      { value: 'Yes', label_en: 'Yes', label_hi: 'हाँ' },
-      { value: 'No', label_en: 'No', label_hi: 'नहीं' },
-    ]),
-  },
-  {
     field_key: 'proclaimed_offender',
     field_type: 'BOOLEAN',
     applicable_record_types: JSON.stringify(['ARREST']),

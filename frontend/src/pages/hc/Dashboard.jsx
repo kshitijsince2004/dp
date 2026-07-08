@@ -1,9 +1,6 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect } from "react";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
@@ -17,9 +14,35 @@ import api from "../../utils/api.js";
 
 const PERIODS = ["Day", "Week", "Month"];
 
+const STAT_CARD_META = [
+  { key: "cases", label: "Cases", bg: "#CFF3DD" },
+  { key: "arrests", label: "Arrest", bg: "#F1ECFB" },
+  { key: "left_out", label: "Left Out accused", bg: "#FADBCF" },
+];
+
+const formatChange = (changePct, period) => {
+  if (changePct === null || changePct === undefined) return "--";
+  const sign = changePct > 0 ? "+" : "";
+  return `${sign}${changePct}% vs previous ${period}`;
+};
+
+// No dedicated backend endpoint provides an hour-by-hour/day-by-day arrest trend yet —
+// this chart stays illustrative until that's built (out of scope for the dashboard-stats work).
+const arrestTrend = [
+  { day: "23 Nov", value: 23200 },
+  { day: "24", value: 24800 },
+  { day: "25", value: 30200 },
+  { day: "26", value: 29400 },
+  { day: "27", value: 33600 },
+  { day: "28", value: 39400 },
+  { day: "29", value: 36000 },
+  { day: "30", value: 48200 },
+];
+
 export default function PSDashboard() {
   const [activePeriod, setActivePeriod] = useState("Day");
   const [summary, setSummary] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [leftOutAccused, setLeftOutAccused] = useState([]);
   const [caseTypeRows, setCaseTypeRows] = useState([]);
   const [casesByMonth, setCasesByMonth] = useState([]);
@@ -43,6 +66,10 @@ export default function PSDashboard() {
         if (cancelled) return;
         setSummary(null);
         setLeftOutAccused([]);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsLoading(false);
       });
     return () => {
       cancelled = true;
@@ -98,99 +125,6 @@ export default function PSDashboard() {
     value: summary ? String(summary[meta.key]?.count ?? 0) : "--",
     change: summary ? formatChange(summary[meta.key]?.change_pct, currentPeriod) : "--",
   }));
-
-  // Fetch dashboard statistics dynamically from the backend using the agreed API contract
-  const { data, isLoading } = useQuery({
-    queryKey: ["dashboard-stats", activePeriod],
-    queryFn: async () => {
-      try {
-        const res = await api.get("/dashboard/stats", {
-          params: { period: activePeriod },
-        });
-        return res.data?.data;
-      } catch (err) {
-        console.warn("Failed to fetch dashboard stats from backend, falling back to mock contract data:", err);
-        // Fallback mock contract data so the frontend remains fully functional and visual
-        return {
-          stats: {
-            cases: {
-              value: activePeriod === "Day" ? "1" : activePeriod === "Week" ? "8" : "34",
-              change: activePeriod === "Day" ? "+20% month over month" : "+15% week over week",
-            },
-            arrests: {
-              value: activePeriod === "Day" ? "2" : activePeriod === "Week" ? "14" : "56",
-              change: activePeriod === "Day" ? "+33% month over month" : "+22% week over week",
-            },
-            leftOut: {
-              value: activePeriod === "Day" ? "2" : activePeriod === "Week" ? "5" : "12",
-              change: activePeriod === "Day" ? "-8% month over month" : "-4% week over week",
-            },
-          },
-          arrestTrend: [
-            { day: "23 Nov", value: 23200 },
-            { day: "24", value: 24800 },
-            { day: "25", value: 30200 },
-            { day: "26", value: 29400 },
-            { day: "27", value: 33600 },
-            { day: "28", value: 39400 },
-            { day: "29", value: 36000 },
-            { day: "30", value: 48200 },
-          ],
-          leftOutAccused: [
-            { name: "Aman Jha", note: "Linked FIR No. FIR/2026/1009" },
-            { name: "Riya Gupta", note: "Linked FIR No. FIR/2026/1006" },
-          ],
-          caseTypeRows: [
-            { name: "FIR", count: activePeriod === "Day" ? 2 : activePeriod === "Week" ? 11 : 41, change: "+84%", isUp: true },
-            { name: "Kalandra", count: activePeriod === "Day" ? 0 : activePeriod === "Week" ? 1 : 3, change: "-8%", isUp: false },
-            { name: "PCR", count: activePeriod === "Day" ? 1 : activePeriod === "Week" ? 8 : 28, change: "+2%", isUp: true },
-            { name: "Missing", count: activePeriod === "Day" ? 0 : activePeriod === "Week" ? 1 : 4, change: "+33%", isUp: true },
-            { name: "UIDB", count: activePeriod === "Day" ? 0 : activePeriod === "Week" ? 1 : 3, change: "+30%", isUp: true },
-          ],
-          casesByMonth: [
-            { month: "Jan", value: 150 },
-            { month: "Feb", value: 175 },
-            { month: "Mar", value: 145 },
-            { month: "Apr", value: 130 },
-            { month: "May", value: 195 },
-            { month: "Jun", value: 290 },
-            { month: "Jul", value: 205 },
-            { month: "Aug", value: 230 },
-            { month: "Sep", value: 175 },
-            { month: "Oct", value: 140 },
-            { month: "Nov", value: 120 },
-            { month: "Dec", value: 20 },
-          ],
-        };
-      }
-    },
-  });
-
-  const statCards = [
-    {
-      label: "Cases",
-      value: data?.stats?.cases?.value ?? "0",
-      change: data?.stats?.cases?.change ?? "0% month over month",
-      bg: "#CFF3DD",
-    },
-    {
-      label: "Arrest",
-      value: data?.stats?.arrests?.value ?? "0",
-      change: data?.stats?.arrests?.change ?? "0% month over month",
-      bg: "#F1ECFB",
-    },
-    {
-      label: "Left Out accused",
-      value: data?.stats?.leftOut?.value ?? "0",
-      change: data?.stats?.leftOut?.change ?? "0% month over month",
-      bg: "#FADBCF",
-    },
-  ];
-
-  const arrestTrend = data?.arrestTrend ?? [];
-  const leftOutAccused = data?.leftOutAccused ?? [];
-  const caseTypeRows = data?.caseTypeRows ?? [];
-  const casesByMonth = data?.casesByMonth ?? [];
 
   if (isLoading) {
     return (
