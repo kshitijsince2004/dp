@@ -942,6 +942,23 @@ const extractRowData = (row, colMap, registryFieldsMap, recordType, coercionFiel
       }
       rowData.sections = parsedActSection.section;
     }
+    
+    // Normalize sections string to be comma-separated
+    if (rowData.sections) {
+      const sectionsArray = String(rowData.sections)
+        .split(/[\/,]/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      rowData.sections = sectionsArray.join(', ');
+
+      // Repeat the act name to match the number of sections
+      if (rowData.act_name && sectionsArray.length > 1) {
+        const actsArray = String(rowData.act_name).split(',').map(a => a.trim()).filter(Boolean);
+        if (actsArray.length === 1) {
+          rowData.act_name = Array(sectionsArray.length).fill(actsArray[0]).join(', ');
+        }
+      }
+    }
   }
 
   const hasStatusField = registryFieldsMap.status !== undefined;

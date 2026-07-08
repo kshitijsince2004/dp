@@ -285,17 +285,20 @@ export default function DynamicForm({
 
     // Parse sections list
     const sectionsList = currentSections
-      ? currentSections.split(',').map(s => s.trim()).filter(Boolean)
+      ? currentSections.split(/[\/,]/).map(s => s.trim()).filter(Boolean)
       : [];
 
     const handleAddSection = () => {
-      const cleanSec = newSectionVal.trim();
-      if (!cleanSec) return;
-      if (sectionsList.includes(cleanSec)) {
-        setNewSectionVal('');
-        return;
-      }
-      const updatedList = [...sectionsList, cleanSec];
+      const cleanSecs = newSectionVal.split(/[\/,]/).map(s => s.trim()).filter(Boolean);
+      if (!cleanSecs.length) return;
+      
+      const updatedList = [...sectionsList];
+      cleanSecs.forEach(sec => {
+        if (!updatedList.includes(sec)) {
+          updatedList.push(sec);
+        }
+      });
+      
       handleChange('sections', updatedList.join(', '));
       setNewSectionVal('');
     };

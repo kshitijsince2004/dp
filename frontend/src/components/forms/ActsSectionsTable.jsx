@@ -51,7 +51,21 @@ export default function ActsSectionsTable({
     }
   }
   const secs = values.sections ? String(values.sections).split(',').map((s) => s.trim()).filter(Boolean) : [];
-  const maxLen = Math.max(acts.length, secs.length);
+  let maxLen = Math.max(acts.length, secs.length);
+
+  // Fill missing acts with the last available act to ensure equal length
+  while (acts.length > 0 && acts.length < maxLen) {
+    acts.push(acts[acts.length - 1]);
+  }
+
+  useEffect(() => {
+    if (readOnly) return;
+    const rawActsLen = values.act_name ? String(values.act_name).split(',').filter(Boolean).length : 0;
+    const secsLen = secs.length;
+    if (rawActsLen > 0 && rawActsLen < secsLen) {
+      handleChange('act_name', acts.join(', '));
+    }
+  }, [values.act_name, secs.length, readOnly]);
 
   // Alphabetically sort the acts registry
   const sortedActsRegistry = [...actsSectionsRegistry].sort((a, b) =>

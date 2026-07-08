@@ -1409,8 +1409,19 @@ export class TemplateBuilderService {
       } else if (liveOpts && liveOpts.length > 0) {
         // Short list — inline formula (values joined, max 255 chars)
         const vals = liveOpts.map(o => o.value);
-        let joined = vals.join(',');
-        if (joined.length > 240) {
+        const joinedOpts = vals.join(',');
+        if (joinedOpts.length <= 250) {
+          const formulaVal = `"${joinedOpts}"`;
+          for (let rIdx = 5; rIdx <= 1000; rIdx++) {
+            const cell = worksheet.getCell(rIdx, targetColIndex);
+            cell.dataValidation = {
+              type: 'list',
+              allowBlank: true,
+              showErrorMessage: field.field_key === 'sections' ? false : undefined,
+              formulae: [formulaVal]
+            };
+          }
+        } else {
           // Too long for inline: write to _Lookups dynamically and reference it
           // This handles edge cases (e.g. a SELECT field that ended up with many options)
           const tempNRName = `${NR_PREFIX}DYN_${field.field_key.toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`;
@@ -1429,14 +1440,6 @@ export class TemplateBuilderService {
             worksheet.getCell(rIdx, targetColIndex).dataValidation = {
               type: 'list', allowBlank: true,
               formulae: [tempNRName]
-            };
-          }
-        } else {
-          const formulaVal = `"${joined}"`;
-          for (let rIdx = 5; rIdx <= 500; rIdx++) {
-            worksheet.getCell(rIdx, targetColIndex).dataValidation = {
-              type: 'list', allowBlank: true,
-              formulae: [formulaVal]
             };
           }
         }
