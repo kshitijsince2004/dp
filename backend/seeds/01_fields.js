@@ -538,7 +538,6 @@ const fields = [
   // CASE (FIR) MODULE — fields unique to CASE
   // ─────────────────────────────────────────────────────────────────────────────
   { id: 'C_29', field_key: 'case_type', field_type: 'SELECT', applicable_record_types: JSON.stringify(['CASE', 'ARREST']), label_en: 'Case Registration Type', label_hi: 'मामला पंजीकरण प्रकार', visible_to_levels: L, editable_by_levels: E, section: 'general_info', sort_order: 0, validation_rules: JSON.stringify({ required: false }), options: JSON.stringify([{ value: 'cctns(manual FIR)', label_en: 'cctns(manual FIR)', label_hi: 'सीसीटीएनएस (मैनुअल एफआईआर)' }, { value: 'eTheft', label_en: 'eTheft', label_hi: 'ई-चोरी' }, { value: 'eMVT', label_en: 'eMVT', label_hi: 'ई-एमवीटी' }, { value: 'NCRP', label_en: 'NCRP', label_hi: 'एनसीआरपी' }, { value: 'zero FIR', label_en: 'zero FIR', label_hi: 'जीरो एफआईआर' }]) },
-  { id: 'C_type_info', field_key: 'type_of_information', field_type: 'RADIO', applicable_record_types: JSON.stringify(['CASE']), label_en: 'Type of Information', label_hi: 'सूचना का प्रकार', visible_to_levels: L, editable_by_levels: E, section: 'general_info', sort_order: 1, options: JSON.stringify([{ value: 'Written', label_en: 'Written', label_hi: 'लिखित' }, { value: 'Oral', label_en: 'Oral', label_hi: 'मौखिक' }, { value: 'Court Order', label_en: 'Court Order', label_hi: 'न्यायालय आदेश' }]) },
   { id: 'C_compl_no', field_key: 'complaint_no', field_type: 'TEXT', applicable_record_types: JSON.stringify(['CASE']), label_en: 'Complaint No.', label_hi: 'शिकायत संख्या', visible_to_levels: L, editable_by_levels: E, section: 'general_info', sort_order: 2 },
   { id: 'C_src_ref', field_key: 'source_reference', field_type: 'SELECT', applicable_record_types: JSON.stringify(['CASE']), label_en: 'Source / Reference of Complaint', label_hi: 'शिकायत का स्रोत / संदर्भ', visible_to_levels: L, editable_by_levels: E, section: 'general_info', sort_order: 4, validation_rules: JSON.stringify({ required: true }), options: JSON.stringify([{ value: 'PCR Call', label_en: 'PCR Call', label_hi: 'पीसीआर कॉल' }, { value: 'Written Complaint', label_en: 'Written Complaint', label_hi: 'लिखित शिकायत' }, { value: 'Public Informant', label_en: 'Public Informant', label_hi: 'सार्वजनिक सूचना' }, { value: 'Police Beat Officer', label_en: 'Police Beat Officer', label_hi: 'पुलिस बीट अधिकारी' }, { value: 'Physically appear', label_en: 'Physically appear', label_hi: 'व्यक्तिगत रूप से उपस्थिति' }, { value: 'Court Order', label_en: 'Court Order', label_hi: 'न्यायालय आदेश' }, { value: 'Individual/Group/Agency', label_en: 'Individual/Group/Agency', label_hi: 'व्यक्ति/समूह/एजेंसी' }]) },
 
@@ -706,7 +705,7 @@ const fields = [
   { id: 'C_9', field_key: 'local_head', field_type: 'SELECT', applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'UIDB']), label_en: 'Local Head (Crime)', label_hi: 'स्थानीय अपराध शीर्ष', visible_to_levels: L, editable_by_levels: E, section: 'incident_details', sort_order: 9, validation_rules: JSON.stringify({ required: false }), is_active: true, scope_level: 'global', options: CRIME_HEAD_OPTS },
   { id: 'C_heinous_offence', field_key: 'heinous_offence', field_type: 'RADIO', applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'UIDB']), label_en: 'Heinous Offences', label_hi: 'जघन्य अपराध', visible_to_levels: L, editable_by_levels: E, section: 'incident_details', sort_order: 9.5, validation_rules: JSON.stringify({ required: false }), is_active: true, scope_level: 'global', options: JSON.stringify([{ value: true, label_en: 'Yes', label_hi: 'हाँ' }, { value: false, label_en: 'No', label_hi: 'नहीं' }]) },
   { id: 'C_12', field_key: 'brief_facts', field_type: 'TEXTAREA', applicable_record_types: JSON.stringify(['CASE']), label_en: 'Brief Facts of the Case', label_hi: 'मामले का संक्षिप्त विवरण', visible_to_levels: L, editable_by_levels: E, section: 'incident_details', sort_order: 12, validation_rules: JSON.stringify({ required: false }), full_width: true },
-  { id: 'C_13', field_key: 'complainant_name', field_type: 'TEXT', applicable_record_types: JSON.stringify(['CASE', 'ARREST']), label_en: 'Complainant Name', label_hi: 'शिकायतकर्ता का नाम', visible_to_levels: L, editable_by_levels: E, section: 'complainant_accused_info', sort_order: 13, validation_rules: JSON.stringify({ required: false }) },
+  // { id: 'C_13', field_key: 'complainant_name', field_type: 'TEXT', applicable_record_types: JSON.stringify(['CASE', 'ARREST']), label_en: 'Complainant Name', label_hi: 'शिकायतकर्ता का नाम', visible_to_levels: L, editable_by_levels: E, section: 'complainant_accused_info', sort_order: 13, validation_rules: JSON.stringify({ required: false }) },
   { id: 'C_14', field_key: 'complainant_address', field_type: 'TEXT', applicable_record_types: JSON.stringify([]), label_en: 'Complainant Address', label_hi: 'शिकायतकर्ता का पता', visible_to_levels: L, editable_by_levels: E, section: 'complainant_accused_info', sort_order: 14 },
   { id: 'C_18', field_key: 'io_pis', field_type: 'TEXT', applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB']), label_en: 'PIS No. of IO', label_hi: 'जांच अधिकारी का पीआईएस नंबर', visible_to_levels: L, editable_by_levels: E, section: 'investigation_officer', sort_order: 506 },
   { id: 'C_20', field_key: 'property_description', field_type: 'TEXTAREA', applicable_record_types: JSON.stringify([]), label_en: 'Property Description', label_hi: 'संपत्ति का विवरण', visible_to_levels: L, editable_by_levels: E, section: 'recovered_property', sort_order: 341, full_width: true },
@@ -802,7 +801,6 @@ const fields = [
 
   // Daily Diary extra ARREST fields
   { id: 'DD_A1',  field_key: 'arrested_father_husband_name', field_type: 'TEXT',   applicable_record_types: JSON.stringify([]),   label_en: "Arrested Person's Father / Husband Name", label_hi: 'गिरफ्तार व्यक्ति के पिता / पति का नाम', visible_to_levels: L, editable_by_levels: E, section: 'arrestee_info',  sort_order: 5,  is_active: true, scope_level: 'global' },
-  //{ id: 'DD_A2',  field_key: 'bad_character',               field_type: 'RADIO', applicable_record_types: JSON.stringify(['ARREST']), label_en: 'Is Bad Character (BC)',                   label_hi: 'बदमाश (बीसी) है या नहीं',               visible_to_levels: L, editable_by_levels: E, section: 'arrestee_info', sort_order: 20, is_active: true, scope_level: 'global', repeater_entity: 'PERSON_ARRESTED', options: JSON.stringify([{ value: 'Yes', label_en: 'Yes', label_hi: 'हाँ' }, { value: 'No', label_en: 'No', label_hi: 'नहीं' }]) },
   { id: 'DD_A3',  field_key: 'proclaimed_offender',         field_type: 'RADIO',applicable_record_types: JSON.stringify(['ARREST']), label_en: 'Proclaimed Offender (PO)',                label_hi: 'घोषित अपराधी (पीओ)',                    visible_to_levels: L, editable_by_levels: E, section: 'arrestee_info', sort_order: 18, is_active: true, scope_level: 'global', repeater_entity: 'PERSON_ARRESTED', options: JSON.stringify([{ value: 'Yes', label_en: 'Yes', label_hi: 'हाँ' }, { value: 'No', label_en: 'No', label_hi: 'नहीं' }]) },
   { id: 'DD_A4', field_key: 'listed_criminal', field_type: 'RADIO',
     applicable_record_types: JSON.stringify(['ARREST']), label_en: 'Listed Criminal / Bad Character (BC)',label_hi: 'सूचीबद्ध अपराधी / बैड कैरेक्टर (BC)',visible_to_levels: L, editable_by_levels: E,
@@ -1008,21 +1006,6 @@ function generatePersonFields(prefix, labelPrefixEn, labelPrefixHi, recordTypes,
       ])
     },
     {
-      id: `${prefix}_marital_status`, field_key: `${prefix}_marital_status`, field_type: 'SELECT',
-      applicable_record_types: typesStr, label_en: `${labelPrefixEn} Marital Status`, label_hi: `${labelPrefixHi} वैवाहिक स्थिति`,
-      visible_to_levels: L, editable_by_levels: E, section: `${prefix}_personal_info`,
-      sort_order: baseOrder + 4.1, is_active: true, scope_level: 'global',
-      validation_rules: JSON.stringify({ required: false }),
-      options: JSON.stringify([
-        { value: 'Married', label_en: 'Married', label_hi: 'विवाहित' },
-        { value: 'Unmarried', label_en: 'Unmarried', label_hi: 'अविवाहित' },
-        { value: 'Divorced', label_en: 'Divorced', label_hi: 'तलाकशुदा' },
-        { value: 'Widowed', label_en: 'Widowed', label_hi: 'विधवा/विधुर' },
-        { value: 'Single', label_en: 'Single', label_hi: 'अकेला' },
-        { value: 'Unknown', label_en: 'Unknown', label_hi: 'अज्ञात' }
-      ])
-    },
-    {
       id: `${prefix}_relation_type`, field_key: `${prefix}_relation_type`, field_type: 'SELECT',
       applicable_record_types: typesStr, label_en: `${labelPrefixEn} Relation Type`, label_hi: `${labelPrefixHi} संबंध का प्रकार`,
       visible_to_levels: L, editable_by_levels: E, section: `${prefix}_personal_info`,
@@ -1045,30 +1028,16 @@ function generatePersonFields(prefix, labelPrefixEn, labelPrefixHi, recordTypes,
       validation_rules: JSON.stringify({ required: false })
     },
     {
-      id: `${prefix}_mobile_country_code`, field_key: `${prefix}_mobile_country_code`, field_type: 'TEXT',
+      id: `${prefix}_mobile_country_code`, field_key: `${prefix}_mobile_country_code`, field_type: 'NUMBER',
       applicable_record_types: typesStr, label_en: `${labelPrefixEn} Mobile Country Code`, label_hi: `${labelPrefixHi} मोबाइल देश कोड`,
       visible_to_levels: L, editable_by_levels: E, section: `${prefix}_personal_info`,
       sort_order: baseOrder + 7.9, is_active: true, scope_level: 'global'
     },
     {
-      id: `${prefix}_mobile`, field_key: `${prefix}_mobile`, field_type: 'TEXT',
+      id: `${prefix}_mobile`, field_key: `${prefix}_mobile`, field_type: 'NUMBER',
       applicable_record_types: typesStr, label_en: `${labelPrefixEn} Mobile No.`, label_hi: `${labelPrefixHi} मोबाइल नंबर`,
       visible_to_levels: L, editable_by_levels: E, section: `${prefix}_personal_info`,
       sort_order: baseOrder + 8, is_active: true, scope_level: 'global'
-    },
-    {
-      id: `${prefix}_qualification`, field_key: `${prefix}_qualification`, field_type: 'SELECT',
-      applicable_record_types: typesStr, label_en: `${labelPrefixEn} Qualification`, label_hi: `${labelPrefixHi} योग्यता`,
-      visible_to_levels: L, editable_by_levels: E, section: `${prefix}_personal_info`,
-      sort_order: baseOrder + 8.5, is_active: true, scope_level: 'global',
-      validation_rules: JSON.stringify({ required: false }),
-      options: JSON.stringify([
-        { value: 'Uneducated', label_en: 'Uneducated', label_hi: 'अशिक्षित' },
-        { value: '10th', label_en: '10th', label_hi: '10वीं' },
-        { value: '10+2', label_en: '10+2', label_hi: '12वीं' },
-        { value: 'Graduate', label_en: 'Graduate', label_hi: 'स्नातक' },
-        { value: 'Post-Graduate', label_en: 'Post-Graduate', label_hi: 'स्नातकोत्तर' }
-      ])
     },
     {
       id: `${prefix}_dob`, field_key: `${prefix}_dob`, field_type: 'DATE',
@@ -1170,7 +1139,7 @@ const COUNTRY_OPTS = JSON.stringify([
   { value: 'Bangladeshi', label_en: 'Bangladeshi', label_hi: 'बांग्लादेशी' },
   { value: 'Pakistani', label_en: 'Pakistani', label_hi: 'पाकिस्तानी' },
   { value: 'Sri Lankan', label_en: 'Sri Lankan', label_hi: 'श्रीलंकाई' },
-  { value: 'Afghan', label_en: 'Afghan', label_hi: 'अफगानी' },
+  { value: 'Afghanistan', label_en: 'Afghanistan', label_hi: 'अफगानिस्तान' },
   { value: 'Myanmar', label_en: 'Myanmar', label_hi: 'म्यांमार' },
   { value: 'Tibetan', label_en: 'Tibetan', label_hi: 'तिब्बती' },
   { value: 'American', label_en: 'American', label_hi: 'अमेरिकी' },
@@ -1350,7 +1319,8 @@ const generatedFields = [
     editable_by_levels: E,
     section: 'arrested_address',
     sort_order: 423.9,
-    validation_rules: JSON.stringify({ required: true })
+    validation_rules: JSON.stringify({ required: true }),
+    repeater_entity: 'PERSON_ARRESTED'
   },
   // Permanent address full text area
   {

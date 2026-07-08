@@ -17,6 +17,7 @@ import {
   ALLOWED_TABLES,
   ALLOWED_JOINS,
   REPORTABLE_FIELDS,
+  GROUP_LABELS,
   filterFieldsForRole,
 } from './reportableFields.config.js';
 import {
@@ -115,12 +116,22 @@ export const getMetadata = async (req, res) => {
         options: f.options || null,
         is_pii: f.is_pii,
         join_key: f.join_key || false,
+        group: f.group || null,
+      }));
+
+      // Collapse group labels actually present (after PII filtering) into a lookup for this table
+      const groupKeysPresent = new Set(filtered.filter(f => f.group).map(f => f.group));
+      const groups = Array.from(groupKeysPresent).map(groupKey => ({
+        key: groupKey,
+        label_en: GROUP_LABELS[`${tableKey}.${groupKey}`]?.label_en || groupKey,
+        label_hi: GROUP_LABELS[`${tableKey}.${groupKey}`]?.label_hi || groupKey,
       }));
 
       tables[tableKey] = {
         record_type: tableKey,
         label_en: { CASE: 'FIR Master', ARREST: 'Arrest / Person Master', PCR_CALL: 'PCR', MISSING: 'Missing Person Master', UIDB: 'UIDB Master' }[tableKey] || tableKey,
         fields: filtered,
+        groups,
         system_fields: filterFieldsForRole(REPORTABLE_FIELDS._SYSTEM, role).map(f => ({
           key: f.key, label_en: f.label_en, label_hi: f.label_hi, data_type: f.data_type, operators: f.operators
         })),

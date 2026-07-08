@@ -377,10 +377,13 @@ const extractPersonSearchCols = (personType, data) => {
 
 const MAPPED_PROP_KEYS = new Set([
   'property_major_category', 'property_minor_category',
-  'property_details', 'property_stolen_recovered',
+  'property_details', 'property_stolen_recovered', 'person_index',
 ]);
 
-const buildPropertyRow = (prop, i, recordId, hydratedData) => {
+// personId: for ARREST, the record_persons.id of the arrested person this property item
+// belongs to (resolved by the caller from the payload's person_index) — null for
+// record-level property (CASE) or older ARREST payloads with no per-person linkage.
+const buildPropertyRow = (prop, i, recordId, hydratedData, personId = null) => {
   const extraData = Object.fromEntries(
     Object.entries(prop).filter(([k, v]) =>
       !MAPPED_PROP_KEYS.has(k) && v !== undefined && v !== null && v !== ''
@@ -389,6 +392,7 @@ const buildPropertyRow = (prop, i, recordId, hydratedData) => {
   return {
     id: uuidv4(),
     record_id: recordId,
+    person_id: personId,
     uid: hydratedData.uid || null,
     fir_no: hydratedData.fir_no || null,
     major_category: prop.property_major_category || null,
@@ -481,8 +485,9 @@ export const createRecord = async (user, recordType, recordDate, data, ipAddress
     });
 
     // Persist persons
+    let personRows = [];
     if (persons.length > 0) {
-      const personRows = persons.map((p, i) => ({
+      personRows = persons.map((p, i) => ({
         id: uuidv4(),
         record_id: id,
         person_type: p.person_type,
@@ -494,9 +499,13 @@ export const createRecord = async (user, recordType, recordDate, data, ipAddress
       await trx('record_persons').insert(personRows);
     }
 
-    // Persist properties
+    // Persist properties (person_index, when present, links a property item to a
+    // specific person — e.g. one of several arrested persons on this ARREST record)
     if (properties.length > 0) {
-      const propertyRows = properties.map((prop, i) => buildPropertyRow(prop, i, id, hydratedData));
+      const propertyRows = properties.map((prop, i) => {
+        const personId = Number.isInteger(prop.person_index) ? (personRows[prop.person_index]?.id || null) : null;
+        return buildPropertyRow(prop, i, id, hydratedData, personId);
+      });
       await trx('record_properties').insert(propertyRows);
     }
 
@@ -599,10 +608,11 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
     }
 
     // Replace persons if provided
+    let personRows = [];
     if (Array.isArray(persons)) {
       await trx('record_persons').where({ record_id: id }).delete();
       if (persons.length > 0) {
-        const personRows = persons.map((p, i) => ({
+        personRows = persons.map((p, i) => ({
           id: uuidv4(),
           record_id: id,
           person_type: p.person_type,
@@ -615,11 +625,15 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
       }
     }
 
-    // Replace properties if provided
+    // Replace properties if provided (person_index links a property item to a specific
+    // person — e.g. one of several arrested persons on this ARREST record)
     if (Array.isArray(properties)) {
       await trx('record_properties').where({ record_id: id }).delete();
       if (properties.length > 0) {
-        const propertyRows = properties.map((prop, i) => buildPropertyRow(prop, i, id, hydratedData));
+        const propertyRows = properties.map((prop, i) => {
+          const personId = Number.isInteger(prop.person_index) ? (personRows[prop.person_index]?.id || null) : null;
+          return buildPropertyRow(prop, i, id, hydratedData, personId);
+        });
         await trx('record_properties').insert(propertyRows);
       }
     }

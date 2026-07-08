@@ -404,14 +404,35 @@ async function buildLiveLookups(recordType) {
   // Districts and Police Stations
   const districts = await db('hierarchy_nodes')
     .where({ node_type: 'DISTRICT', is_active: true })
-    .select('name_en as district_name')
+    .select('id as district_id', 'name_en as district_name')
     .orderBy('name_en', 'asc');
+  const subDivs = await db('hierarchy_nodes')
+    .where({ node_type: 'SUB_DIVISION', is_active: true })
+    .select('id as subdiv_id', 'parent_id as district_id');
   const psRows = await db('hierarchy_nodes')
     .where({ node_type: 'PS', is_active: true })
-    .select('name_en as ps_name')
+    .select('name_en as ps_name', 'parent_id')
     .orderBy('name_en', 'asc');
   const districtOpts = districts.map(d => ({ value: d.district_name, label: d.district_name }));
   const psOpts = psRows.map(p => ({ value: p.ps_name, label: p.ps_name }));
+
+  // PS grouped by district, for the district → police_station cascade (mirrors the
+  // interactive form's DISTRICTS_AND_STATIONS filtering in FieldRenderer.jsx, but DB-driven).
+  // PS hang off a SUB_DIVISION, which hangs off a DISTRICT — but a few (Crime Branch, EOW,
+  // Special Cell, ...) attach straight to their DISTRICT node with no SUB_DIVISION in between.
+  // Keyed by the exact district_name string used in districtOpts above, so the Excel
+  // VLOOKUP key (the District cell's own dropdown value) always resolves.
+  const subDivToDistrict = new Map(subDivs.map(s => [s.subdiv_id, s.district_id]));
+  const districtIdToName = new Map(districts.map(d => [d.district_id, d.district_name]));
+  const psByDistrict = {};
+  for (const p of psRows) {
+    const districtId = subDivToDistrict.get(p.parent_id) || (districtIdToName.has(p.parent_id) ? p.parent_id : null);
+    const districtName = districtId ? districtIdToName.get(districtId) : null;
+    if (!districtName) continue;
+    if (!psByDistrict[districtName]) psByDistrict[districtName] = [];
+    psByDistrict[districtName].push({ value: p.ps_name, label: p.ps_name });
+  }
+  for (const list of Object.values(psByDistrict)) list.sort((a, b) => a.label.localeCompare(b.label));
 
   // Property categories — use code_type as value/label (the human-readable category name)
   const propCategoryRows = await fieldsService.getPropertyCategories();
@@ -616,6 +637,7 @@ async function buildLiveLookups(recordType) {
     district:                    districtOpts,
     police_station:              psOpts,
     // Private fields consumed by createLookupsSheet
+    _psByDistrict:               psByDistrict,
     _propItemsByCategory:        propItemsByCategory,
     _propCategoryLabels:         propCategories.map(c => c.label),
     _minorHeadsByMajorLabel:     minorHeadsByMajorLabel,
@@ -919,11 +941,64 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     col += 2;
   }
 
-  return { 
-    namedRangeMap, 
-    slugToNR, 
+  // 7. Write one named range per district's PS list (for the district → police_station
+  // cascade). Same stacked-column + lookup-table shape as the Act → Sections block above.
+  const districtPSCol = col;
+  col++; // reserve column for the stacked PS-name values
+  ws.getCell(1, districtPSCol).value = 'DIST_PS_VALS';
+  const districtToPSRows = [];
+  let currentDistPSRow = 2;
+
+  for (const [distLabel, items] of Object.entries(liveLookups._psByDistrict || {})) {
+    if (!items || items.length === 0) continue;
+
+    const values = items.map(o => (o && typeof o === 'object' ? o.value : String(o)));
+    const startRow = currentDistPSRow;
+    const endRow = currentDistPSRow + values.length - 1;
+
+    values.forEach((v, idx) => {
+      ws.getCell(startRow + idx, districtPSCol).value = v;
+    });
+
+    const colLetter = numToColLetter(districtPSCol);
+    const rangeRef = `'_Lookups'!$${colLetter}$${startRow}:$${colLetter}$${endRow}`;
+    const slug = distLabel.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
+    const nrName = `${NR_PREFIX}PS_${slug}`;
+
+    try {
+      workbook.definedNames.add(rangeRef, nrName);
+    } catch (err) {
+      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+    }
+
+    districtToPSRows.push([distLabel, nrName]);
+    currentDistPSRow = endRow + 1;
+  }
+
+  if (districtToPSRows.length > 0) {
+    const labelCol = col;
+    const nrCol = col + 1;
+    districtToPSRows.forEach((row, i) => {
+      ws.getCell(i + 1, labelCol).value = row[0];
+      ws.getCell(i + 1, nrCol).value = row[1];
+    });
+    const labelLetter = numToColLetter(labelCol);
+    const nrLetter = numToColLetter(nrCol);
+    const tableRef = `'_Lookups'!$${labelLetter}$1:$${nrLetter}$${districtToPSRows.length}`;
+    try {
+      workbook.definedNames.add(tableRef, 'DISTRICT_TO_PS_NR');
+    } catch (err) {
+      logger.error('createLookupsSheet: failed to register DISTRICT_TO_PS_NR', { err });
+    }
+    col += 2;
+  }
+
+  return {
+    namedRangeMap,
+    slugToNR,
     hasMinorHeadCascade: majorHeadToNRRows.length > 0,
-    hasSectionMajorCascade: sectionToMHNRRows.length > 0
+    hasSectionMajorCascade: sectionToMHNRRows.length > 0,
+    hasDistrictPSCascade: districtToPSRows.length > 0
   };
 }
 
@@ -961,9 +1036,10 @@ export class TemplateBuilderService {
     let namedRangeMap = {};
     let slugToNR = {};
     let hasMinorHeadCascade = false;
+    let hasDistrictPSCascade = false;
     try {
       liveLookups = await buildLiveLookups(recordType);
-      ({ namedRangeMap, slugToNR, hasMinorHeadCascade } = createLookupsSheet(workbook, liveLookups));
+      ({ namedRangeMap, slugToNR, hasMinorHeadCascade, hasDistrictPSCascade } = createLookupsSheet(workbook, liveLookups));
     } catch (err) {
       logger.error('buildTemplate: failed to build live lookups (dropdowns will be static)', { err: err.message });
     }
@@ -1395,6 +1471,41 @@ export class TemplateBuilderService {
         }
       }
     });
+
+    // ── District → Police Station cascade pass ──────────────────────────────────────────────
+    // Mirrors the interactive form's district-filtered PS dropdown (FieldRenderer.jsx /
+    // DISTRICTS_AND_STATIONS), DB-driven here via DISTRICT_TO_PS_NR. Every *_police_station
+    // column is paired with the *_district column of the same prefix on the same sheet (e.g.
+    // 'police_station' <-> 'district', 'victim_police_station' <-> 'victim_district'). Sheets
+    // without a matching district column (or with an empty cascade table) keep the flat
+    // namedRangeMap['police_station'] list written in the first pass above.
+    if (hasDistrictPSCascade) {
+      workbook.worksheets.forEach(ws => {
+        if (ws.name === '_Lookups') return;
+        const row1 = ws.getRow(1);
+        const colsByKey = {};
+        row1.eachCell({ includeEmpty: true }, (cell, c) => {
+          if (cell.value) colsByKey[String(cell.value).trim()] = c;
+        });
+
+        for (const [key, psCol] of Object.entries(colsByKey)) {
+          if (key !== 'police_station' && !key.endsWith('_police_station')) continue;
+          const prefix = key === 'police_station' ? '' : key.slice(0, key.length - '_police_station'.length);
+          const distKey = prefix ? `${prefix}_district` : 'district';
+          const distCol = colsByKey[distKey];
+          if (!distCol) continue; // no paired district column on this sheet — leave flat list
+
+          const distColLetter = numToColLetter(distCol);
+          const formula = `INDIRECT(VLOOKUP($${distColLetter}5,DISTRICT_TO_PS_NR,2,FALSE))`;
+          for (let rIdx = 5; rIdx <= 500; rIdx++) {
+            ws.getCell(rIdx, psCol).dataValidation = {
+              type: 'list', allowBlank: true, showErrorMessage: false,
+              formulae: [formula]
+            };
+          }
+        }
+      });
+    }
 
     // ── Third pass: configure Act and Sections sheet dropdown cascades ─────────────────────
     const actSectionWS = workbook.getWorksheet('Act and Sections');

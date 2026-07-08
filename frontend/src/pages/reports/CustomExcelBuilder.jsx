@@ -168,17 +168,39 @@ export default function CustomExcelBuilder() {
     for (const t of tables) {
       const tData = metaRes.tables[t];
       if (!tData) continue;
+
+      // Group fields that share a `group` tag into ONE collapsed checkbox —
+      // selecting it exports every member field as its own column (expanded
+      // in handleExport), but the picker only shows one row for the whole group.
+      const groupLabelByKey = new Map((tData.groups || []).map(g => [g.key, tables.length > 1 ? `[${t}] ${g.label_en}` : g.label_en]));
+      const groupMembers = new Map(); // groupKey -> [{value, isPii}]
+
       for (const f of tData.fields) {
+        if (f.group && groupLabelByKey.has(f.group)) {
+          if (!groupMembers.has(f.group)) groupMembers.set(f.group, []);
+          groupMembers.get(f.group).push({ value: `${t}.${f.key}`, isPii: !!f.is_pii });
+          continue;
+        }
         opts.push({
           value: `${t}.${f.key}`,
           label: tables.length > 1 ? `[${t}] ${f.label_en}` : f.label_en,
           badge: f.is_pii ? 'PII' : null,
         });
       }
+      for (const [groupKey, members] of groupMembers) {
+        opts.push({
+          value: `${t}.__group__${groupKey}`,
+          label: groupLabelByKey.get(groupKey),
+          badge: members.some(m => m.isPii) ? 'PII' : null,
+          isGroup: true,
+          memberValues: members.map(m => m.value),
+        });
+      }
       for (const f of (tData.system_fields || [])) {
         opts.push({ value: `${t}.${f.key}`, label: tables.length > 1 ? `[${t}] ${f.label_en}` : f.label_en, badge: null });
       }
     }
+    opts.sort((a, b) => a.label.localeCompare(b.label));
     return opts;
   }, [metaRes, table, join]);
 
@@ -193,7 +215,13 @@ export default function CustomExcelBuilder() {
     if (!dateFrom || !dateTo)      { toast.error('Please set a date range.'); return; }
 
     const hasJoin = !!join;
-    const fields = Array.from(selectedFields).map(ref => {
+    // Expand any selected group checkbox into its full set of member field refs
+    // so the export contains every underlying column, not the synthetic group value.
+    const expandedRefs = Array.from(selectedFields).flatMap(ref => {
+      const opt = fieldOptions.find(o => o.value === ref);
+      return opt?.isGroup ? opt.memberValues : [ref];
+    });
+    const fields = Array.from(new Set(expandedRefs)).map(ref => {
       const [t, f] = ref.split('.');
       return hasJoin ? { field: f, table: t } : f;
     });
