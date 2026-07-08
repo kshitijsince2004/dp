@@ -240,6 +240,15 @@ export const listRecords = async (recordType, filters, jurisdictionQuery) => {
     query = query.where('records.record_date', '<=', filters.dateTo);
   }
 
+  if (filters.localHead) {
+    const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
+    if (isPostgres) {
+      query = query.whereRaw("(records.data->>'local_head' = ? OR records.data->>'crime_head' = ?)", [filters.localHead, filters.localHead]);
+    } else {
+      query = query.whereRaw("(json_extract(records.data, '$.local_head') = ? OR json_extract(records.data, '$.crime_head') = ?)", [filters.localHead, filters.localHead]);
+    }
+  }
+
   if (filters.search) {
     const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
     if (isPostgres) {

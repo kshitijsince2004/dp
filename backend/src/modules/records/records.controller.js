@@ -6,7 +6,7 @@ import path from 'path';
 
 export const getRecords = async (req, res) => {
   const type = req.query.type || req.query.record_type;
-  const { status, dateFrom, dateTo, search, linked_case_id, linked_fir_no } = req.query;
+  const { status, dateFrom, dateTo, search, linked_case_id, linked_fir_no, localHead, local_head } = req.query;
 
   try {
     const records = await recordsService.listRecords(
@@ -17,7 +17,8 @@ export const getRecords = async (req, res) => {
         dateTo: toISO(dateTo) || dateTo,
         search,
         linked_case_id,
-        linked_fir_no
+        linked_fir_no,
+        localHead: localHead || local_head
       },
       req.jurisdictionQuery
     );
@@ -156,7 +157,7 @@ export const overrideHead = async (req, res) => {
 
 export const getQueue = async (req, res) => {
   const { role } = req.user;
-  const { type, status, dateFrom, dateTo, search } = req.query;
+  const { type, status, dateFrom, dateTo, search, localHead, local_head } = req.query;
   let targetStatus;
 
   if (role === 'HC') {
@@ -177,7 +178,13 @@ export const getQueue = async (req, res) => {
   try {
     const records = await recordsService.listRecords(
       type,
-      { status: filterStatus, dateFrom: toISO(dateFrom) || dateFrom, dateTo: toISO(dateTo) || dateTo, search },
+      { 
+        status: filterStatus, 
+        dateFrom: toISO(dateFrom) || dateFrom, 
+        dateTo: toISO(dateTo) || dateTo, 
+        search,
+        localHead: localHead || local_head
+      },
       req.jurisdictionQuery
     );
     const maskedRecords = await Promise.all(

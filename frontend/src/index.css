@@ -4132,3 +4132,16 @@ input[type="checkbox"] {
   cursor: pointer;
   accent-color: #1a6bce;
 }
+
+/* Disable focus outlines on Recharts elements globally */
+.recharts-wrapper *:focus,
+.recharts-wrapper *:focus-visible,
+.recharts-active-bar,
+.recharts-bar-rect,
+.recharts-rectangle,
+.recharts-sector,
+.recharts-bar-sector,
+path.recharts-rectangle {
+  outline: none !important;
+  box-shadow: none !important;
+}

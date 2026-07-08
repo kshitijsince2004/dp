@@ -92,6 +92,7 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
     if (role === 'HQ' || role === 'HQ_ANALYST' || role === 'HQ_ADMIN') {
       items.push(
         { id: "hq", label: t('nav.hq', 'Command Center'), icon: Building, to: "/hq" },
+        { id: "district-wise", label: t('nav.districtWise', 'District Analytics'), icon: Shield, to: "/hq/districts" },
         { id: "station-wise", label: t('nav.stationWise', 'Station Wise View'), icon: Building, to: "/hq/stations" },
         { id: "compile", label: t('nav.compile', 'Compile Records'), icon: FileSpreadsheet, to: "/compile" },
         { id: "analytics", label: t('nav.analytics', 'Analytics Console'), icon: BarChart3, to: "/analytics" },

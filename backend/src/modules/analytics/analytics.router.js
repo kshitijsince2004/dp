@@ -9,6 +9,7 @@ router.get('/summary', authMiddleware, enforceScope, analyticsController.getSumm
 router.get('/overview', authMiddleware, enforceScope, analyticsController.getOverview);
 router.get('/by-crime-head', authMiddleware, enforceScope, analyticsController.getByCrimeHead);
 router.get('/by-ps', authMiddleware, enforceScope, analyticsController.getByPs);
+router.get('/by-district', authMiddleware, enforceScope, analyticsController.getByDistrict);
 router.get('/status-breakdown', authMiddleware, enforceScope, analyticsController.getStatusBreakdown);
 
 router.get('/trends', authMiddleware, enforceScope, (req, res, next) => {
@@ -23,5 +24,6 @@ router.get('/export', authMiddleware, enforceScope, analyticsController.exportSp
 router.get('/ps-dashboard', authMiddleware, enforceScope, analyticsController.getPsDashboardSummary);
 router.get('/case-type-breakdown', authMiddleware, enforceScope, analyticsController.getCaseTypeBreakdown);
 router.get('/cases-by-month', authMiddleware, enforceScope, analyticsController.getCasesByMonthTrend);
+router.get('/arrests-trend', authMiddleware, enforceScope, analyticsController.getArrestsTrend);
 
 export default router;

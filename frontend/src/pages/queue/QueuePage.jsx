@@ -30,7 +30,8 @@ export const QueuePage = () => {
     status: 'ALL',
     dateFrom: null,
     dateTo: null,
-    search: ''
+    search: '',
+    localHead: ''
   });
   const [selectedRecordId, setSelectedRecordId] = useState(null);
   const [recordDetail, setRecordDetail] = useState(null);
@@ -61,6 +62,7 @@ export const QueuePage = () => {
       if (filters.dateFrom) params.dateFrom = filters.dateFrom;
       if (filters.dateTo) params.dateTo = filters.dateTo;
       if (filters.search) params.search = filters.search;
+      if (filters.localHead) params.localHead = filters.localHead;
 
       const res = await axios.get('/api/v1/workflow/queue', { params });
       setQueue(res.data.data.queue || []);
