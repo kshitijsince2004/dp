@@ -26,6 +26,8 @@ export default function StationPerformanceDashboard() {
     districtId: "",
     psId: "",
     recordType: "",
+    localHead: "",
+    datePreset: "",
     dateFrom: "",
     dateTo: "",
   });
@@ -107,6 +109,11 @@ export default function StationPerformanceDashboard() {
       if (filters.dateFrom && r.record_date < filters.dateFrom) return false;
       if (filters.dateTo && r.record_date > filters.dateTo) return false;
       if (filters.psId && r.ps_id !== filters.psId) return false;
+
+      if (filters.localHead) {
+        const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
+        if (!rLocalHead || !rLocalHead.toLowerCase().includes(filters.localHead.toLowerCase())) return false;
+      }
 
       if (isHq) {
         if (filters.districtId && r.district_id !== filters.districtId) return false;
@@ -192,7 +199,7 @@ export default function StationPerformanceDashboard() {
       if (row.station) psApiMap[row.station] = row;
     });
 
-    const isLocalFilterActive = Boolean(filters.dateFrom || filters.dateTo || filters.recordType);
+    const isLocalFilterActive = Boolean(filters.dateFrom || filters.dateTo || filters.recordType || filters.localHead);
 
     const finalStations = listToProcess.map((s) => {
       // Prefer the API-aggregated data only if no time/type filters are applied

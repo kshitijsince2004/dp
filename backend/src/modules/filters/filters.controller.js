@@ -64,6 +64,15 @@ const DEFAULT_SYSTEM_PRESETS = [
     filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 90 }] }),
     applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB']),
     is_active: true
+  },
+  {
+    id: 'sys_preset_older_than_90_days',
+    name_en: "More than 90 days",
+    name_hi: "90 दिनों से अधिक",
+    scope: 'SYSTEM',
+    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'older_than_n_days', value: 90 }] }),
+    applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB']),
+    is_active: true
   }
 ];
 

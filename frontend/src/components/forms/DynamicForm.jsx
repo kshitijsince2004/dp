@@ -696,7 +696,7 @@ export default function DynamicForm({
         </div>
 
         {/* Acts, Sections, Major/Minor, Local Head Panels */}
-        <ActsSectionsTable {...actsSectionsProps} localHeadLayout="split" />
+        <ActsSectionsTable {...actsSectionsProps} localHeadLayout={recordType === 'UIDB' ? 'hidden' : 'split'} />
       </div>
     );
   };
@@ -887,48 +887,6 @@ export default function DynamicForm({
     const cfg = PERSON_TAB_VARIANTS[prefix];
     const extraRequired = prefix === 'complainant' ? [] : [`${prefix}_first_name`, `${prefix}_gender`];
 
-    const evalCond = (cond, vals) => {
-      if (!cond) return true;
-      try {
-        const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
-        if (parsed.field) {
-          const cv = vals[parsed.field];
-          const checkVals = Array.isArray(parsed.value) ? parsed.value : [parsed.value];
-          return checkVals.some(v => String(v || '').toLowerCase() === String(cv || '').toLowerCase());
-        }
-      } catch { /* ignore */ }
-      return true;
-    };
-
-    const personalKeys = [
-      `${prefix}_npr`,
-      `${prefix}_first_name`,
-      `${prefix}_middle_name`,
-      `${prefix}_last_name`,
-      `${prefix}_nickname`,
-      `${prefix}_gender`,
-      `${prefix}_marital_status`,
-      `${prefix}_qualification`,
-      `${prefix}_mobile`,
-      `${prefix}_mobile_country_code`,
-      `${prefix}_email`,
-      `${prefix}_relation_type`,
-      `${prefix}_relative_name`,
-      `${prefix}_dob`,
-      `${prefix}_age_year`,
-      `${prefix}_age_month`,
-      `${prefix}_birth_year`,
-      'scheme_of_arrest',
-      'nick_name', // legacy duplicate of arrested_nickname, same section/sort_order — not shown separately
-      cfg.extraContactField
-    ].filter(Boolean);
-
-    const extraFields = allFields.filter(
-      (f) =>
-        f.section === `${prefix}_personal_info` &&
-        !personalKeys.includes(f.field_key)
-    );
-    const visibleExtraFields = extraFields.filter(f => evalCond(f.show_when, valuesObj));
 
     const field = (key, customLabel = null, isLast = false, forceReadOnly = false, extraRequiredKeys = []) => {
       const f = allFields.find((x) => x.field_key === key);
@@ -1062,77 +1020,12 @@ export default function DynamicForm({
           </fieldset>
 
         </div>
-
-        {/* Dynamic extra custom/seeded fields grid (renders Scheme of Arrest, Qualification, etc.) */}
-        {visibleExtraFields.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 mt-6">
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
-              {visibleExtraFields
-                .filter((_, idx) => idx % 2 === 0)
-                .map((f, idx, arr) => field(f.field_key, null, idx === arr.length - 1))}
-            </div>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
-              {visibleExtraFields
-                .filter((_, idx) => idx % 2 === 1)
-                .map((f, idx, arr) => field(f.field_key, null, idx === arr.length - 1))}
-            </div>
-          </div>
-        )}
       </div>
     );
   }
 
   function renderPersonAddressSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, showInlineErrors, lang, readOnly) {
     const isSame = valuesObj[`${prefix}_perm_same`] === 'Yes' || valuesObj[`${prefix}_perm_same`] === true;
-
-    const evalCond = (cond, vals) => {
-      if (!cond) return true;
-      try {
-        const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
-        if (parsed.field) {
-          const cv = vals[parsed.field];
-          const checkVals = Array.isArray(parsed.value) ? parsed.value : [parsed.value];
-          return checkVals.some(v => String(v || '').toLowerCase() === String(cv || '').toLowerCase());
-        }
-      } catch { /* ignore */ }
-      return true;
-    };
-
-    const presentKeys = [
-      `${prefix}_house_no`,
-      `${prefix}_street`,
-      `${prefix}_colony`,
-      `${prefix}_city_town_village`,
-      `${prefix}_tehsil_block_mandal`,
-      `${prefix}_country`,
-      `${prefix}_state`,
-      `${prefix}_district`,
-      `${prefix}_police_station`,
-      `${prefix}_pincode`
-    ];
-
-    const permanentKeys = [
-      `${prefix}_perm_house_no`,
-      `${prefix}_perm_street`,
-      `${prefix}_perm_colony`,
-      `${prefix}_perm_city_town_village`,
-      `${prefix}_perm_tehsil_block_mandal`,
-      `${prefix}_perm_country`,
-      `${prefix}_perm_state`,
-      `${prefix}_perm_district`,
-      `${prefix}_perm_police_station`,
-      `${prefix}_perm_pincode`,
-      `${prefix}_perm_same`
-    ];
-
-    const addressSection = `${prefix}_address`;
-    const extraFields = allFields.filter(
-      (f) =>
-        f.section === addressSection &&
-        !presentKeys.includes(f.field_key) &&
-        !permanentKeys.includes(f.field_key)
-    );
-    const visibleExtraFields = extraFields.filter(f => evalCond(f.show_when, valuesObj));
 
     const field = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
       const f = allFields.find((x) => x.field_key === key);
@@ -3856,6 +3749,7 @@ return (
                 setRepeaterState(prev => ({ ...prev, [activeSection.section]: entries }))
               }
               actsSectionsProps={actsSectionsProps}
+              recordType={recordType}
             />
           )}
         </form>

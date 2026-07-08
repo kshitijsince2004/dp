@@ -1050,7 +1050,7 @@ const DB_COLUMNS = ['record_type', 'ps_id', 'district_id', 'sub_div_id', 'curren
 // Operators that only ever apply to date fields — used to decide whether a
 // JSON field's dd/mm/yyyy text needs to be parsed into a comparable date
 // before running range comparisons against it.
-const DATE_ONLY_OPS = new Set(['BETWEEN', 'BEFORE', 'AFTER', 'LAST_N_DAYS', 'THIS_WEEK', 'THIS_MONTH', 'THIS_YEAR']);
+const DATE_ONLY_OPS = new Set(['BETWEEN', 'BEFORE', 'AFTER', 'LAST_N_DAYS', 'OLDER_THAN_N_DAYS', 'THIS_WEEK', 'THIS_MONTH', 'THIS_YEAR']);
 // Of those, only these carry an externally-supplied date value that might
 // arrive as dd/mm/yyyy and needs converting to ISO before comparison.
 const DATE_VALUE_OPS = new Set(['BETWEEN', 'BEFORE', 'AFTER']);
@@ -1135,6 +1135,13 @@ const applyBasicCondition = (builder, columnExpr, op, value) => {
       const dateLimit = new Date();
       dateLimit.setDate(dateLimit.getDate() - days);
       builder.where(columnExpr, '>=', dateLimit.toISOString().split('T')[0]);
+      break;
+    }
+    case 'OLDER_THAN_N_DAYS': {
+      const days = parseInt(value, 10) || 0;
+      const dateLimit = new Date();
+      dateLimit.setDate(dateLimit.getDate() - days);
+      builder.where(columnExpr, '<', dateLimit.toISOString().split('T')[0]);
       break;
     }
     case 'THIS_WEEK': {

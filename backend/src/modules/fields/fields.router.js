@@ -20,6 +20,7 @@ router.get('/lookup/property-categories', authMiddleware, fieldsController.listP
 router.get('/lookup/property-items/:parent_cd', authMiddleware, fieldsController.listPropertyItems);
 router.get('/lookup/beats', authMiddleware, fieldsController.listBeats);
 router.get('/lookup/local-heads', authMiddleware, fieldsController.listLocalHeads);
+router.get('/lookup/record-types', authMiddleware, fieldsController.listRecordTypes);
 
 
 // Admin CRUD on field_registry

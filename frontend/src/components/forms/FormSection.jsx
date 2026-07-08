@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertCircle, AlertTriangle, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import FieldRenderer from './FieldRenderer.jsx';
 import SelectField from './SelectField.jsx';
+import ActsSectionsTable from './ActsSectionsTable.jsx';
 
 const ACTS_OPTIONS = [
   { value: 'IPC', label_en: 'IPC', label_hi: 'आईपीसी (IPC)' },
@@ -222,6 +223,7 @@ function ActsAndSectionsManager({ values, handleChange, readOnly, lang }) {
                       onChange={(val) => handleActChange(index, 'sections', val)}
                       options={sectionsOptions}
                       lang={lang}
+                      multiple={true}
                     />
                   ) : (
                     <input
@@ -494,6 +496,8 @@ export default function FormSection({
   // Repeater props (only used when section.is_repeater === true)
   entries,
   onEntriesChange,
+  actsSectionsProps,
+  recordType = null,
 }) {
   if (!section) return null;
 
@@ -581,13 +585,17 @@ export default function FormSection({
 
                 if (key === 'act_name') {
                   return (
-                    <div key="acts-manager-block" className="col-span-1 md:col-span-2 p-2 border-b border-[#c7d8ea]">
-                      <ActsAndSectionsManager
-                        values={values}
-                        handleChange={handleChange}
-                        readOnly={readOnly}
-                        lang={lang}
-                      />
+                    <div key="acts-manager-block" className="col-span-1 md:col-span-2 p-2 border-b border-[#c7d8ea] overflow-visible">
+                      {actsSectionsProps ? (
+                        <ActsSectionsTable {...actsSectionsProps} localHeadLayout={recordType === 'UIDB' ? 'hidden' : 'combined'} />
+                      ) : (
+                        <ActsAndSectionsManager
+                          values={values}
+                          handleChange={handleChange}
+                          readOnly={readOnly}
+                          lang={lang}
+                        />
+                      )}
                     </div>
                   );
                 }

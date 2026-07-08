@@ -69,6 +69,12 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
             d.setDate(d.getDate() - days + 1);
             mapped.dateFrom = formatDMY(d);
             mapped.dateTo = formatDMY(new Date());
+          } else if (op === 'older_than_n_days') {
+            const days = parseInt(val || 1, 10);
+            const d = new Date();
+            d.setDate(d.getDate() - days);
+            mapped.dateFrom = '';
+            mapped.dateTo = formatDMY(d);
           }
         } else if (field === '_search' || field === 'data.local_head' || field === 'brief_facts') {
           mapped.search = val;

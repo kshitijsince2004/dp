@@ -11,6 +11,8 @@ export default function SearchableSelect({
   placeholder,
   className,
   dropdownClassName,
+  multiple = false,
+  style,
 }) {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
@@ -20,8 +22,30 @@ export default function SearchableSelect({
 
   const getLabel = (opt) => opt.label || (lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en) || String(opt.value ?? '');
 
+  const selectedValues = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.split(',').map((v) => v.trim()).filter(Boolean)
+      : [];
+
   const selected = options.find((o) => String(o.value) === String(value));
-  const displayValue = open ? search : (selected ? getLabel(selected) : '');
+
+  const getSelectedLabels = () => {
+    return selectedValues
+      .map((val) => {
+        const opt = options.find((o) => String(o.value) === String(val));
+        return opt ? getLabel(opt) : val;
+      })
+      .filter(Boolean);
+  };
+
+  const displayValue = open
+    ? search
+    : multiple
+      ? getSelectedLabels().join(', ')
+      : selected
+        ? getLabel(selected)
+        : '';
 
   const closeDropdown = () => {
     setOpen(false);
@@ -83,27 +107,60 @@ export default function SearchableSelect({
           {lang === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
         </div>
       ) : (
-        filtered.map((opt) => (
-          <div
-            key={opt.value}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              onChange(opt.value);
-              closeDropdown();
-            }}
-            className={`px-2 py-1.5 cursor-pointer text-[11px] hover:bg-[#f0f4f8] transition-colors ${
-              String(value) === String(opt.value) ? 'bg-[#d0e0f8] font-bold text-[#0d2a4a]' : 'text-slate-700'
-            }`}
-          >
-            {getLabel(opt)}
-          </div>
-        ))
+        filtered.map((opt) => {
+          const isChecked = selectedValues.some((v) => String(v) === String(opt.value));
+          return (
+            <div
+              key={opt.value}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                if (multiple) {
+                  let nextValues;
+                  if (isChecked) {
+                    nextValues = selectedValues.filter((v) => String(v) !== String(opt.value));
+                  } else {
+                    nextValues = [...selectedValues, opt.value];
+                  }
+                  onChange(Array.isArray(value) ? nextValues : nextValues.join(', '));
+                } else {
+                  onChange(opt.value);
+                  closeDropdown();
+                }
+              }}
+              className={`px-2 py-1.5 cursor-pointer text-[11px] hover:bg-[#f0f4f8] transition-colors flex items-center gap-2 ${
+                isChecked ? 'bg-[#d0e0f8] font-bold text-[#0d2a4a]' : 'text-slate-700'
+              }`}
+            >
+              {multiple && (
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => {}}
+                  className="accent-[#0f52ba] h-3.5 w-3.5 rounded cursor-pointer"
+                />
+              )}
+              <span>{getLabel(opt)}</span>
+            </div>
+          );
+        })
       )}
     </div>
   );
 
+  const wrapperLayoutClass = className
+    ? className.split(' ').filter(c => c.startsWith('flex') || c.startsWith('w-') || c.startsWith('h-') || c.startsWith('col-') || c.startsWith('grow') || c.startsWith('shrink')).join(' ')
+    : 'w-full';
+
+  let inputClass = className
+    ? className.replace('flex-1', 'w-full')
+    : "w-full h-6 pl-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-text disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
+
+  if (!inputClass.includes('pr-')) {
+    inputClass = `${inputClass} pr-5`;
+  }
+
   return (
-    <div className="relative w-full" ref={triggerRef}>
+    <div className={`relative ${wrapperLayoutClass || 'w-full'}`} ref={triggerRef}>
       <input
         type="text"
         disabled={disabled}
@@ -113,9 +170,13 @@ export default function SearchableSelect({
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        placeholder={placeholder || (lang === 'hi' ? '------चुनें------' : 'Select an option')}
-        className={className || "w-full h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-text disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"}
+        placeholder={placeholder || (lang === 'hi' ? 'विकल्प चुनें' : 'select an option')}
+        className={inputClass}
+        style={style}
       />
+      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-[8px]">
+        ▼
+      </span>
       {createPortal(dropdown, document.body)}
     </div>
   );
