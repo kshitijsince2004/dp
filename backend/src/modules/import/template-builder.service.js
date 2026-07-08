@@ -6,6 +6,7 @@ import { logger } from '../../utils/logger.js';
 import {
   CASE_SHEETS_CONFIG,
   ARREST_SHEETS_CONFIG,
+  STATE_OPTS,
   caseGeneralFields,
   caseVictimFields,
   caseActSectionFields,
@@ -401,7 +402,7 @@ async function buildLiveLookups(recordType) {
   const beats      = (await fieldsService.getBeats()).map(toOpt('beat_name'));
   const localHeads = (await fieldsService.getLocalHeads()).map(toOpt('local_head'));
 
-  // Districts and Police Stations
+  // Districts and Police Stations (local hierarchy — used as fallback / all-districts list)
   const districts = await db('hierarchy_nodes')
     .where({ node_type: 'DISTRICT', is_active: true })
     .select('name_en as district_name')
@@ -412,6 +413,33 @@ async function buildLiveLookups(recordType) {
     .orderBy('name_en', 'asc');
   const districtOpts = districts.map(d => ({ value: d.district_name, label: d.district_name }));
   const psOpts = psRows.map(p => ({ value: p.ps_name, label: p.ps_name }));
+
+  // State-wise district data — drives the state→district INDIRECT cascade in the template.
+  // Fetched from state_districts table (seeded from "State Wise District Data.xlsx").
+  const sdRows = await db('state_districts')
+    .where({ is_active: true })
+    .select('state_name', 'district_name')
+    .orderBy(['state_name', 'district_name']);
+
+  // Build a case-insensitive normalization map from DB state name → STATE_OPTS display name.
+  // This ensures the VLOOKUP key in the lookup table exactly matches what the user selects
+  // from the state dropdown (which shows STATE_OPTS labels). Excel VLOOKUP is case-insensitive,
+  // but spaces/punctuation differences (e.g. 'ANDHRA  PRADESH' vs 'Andhra Pradesh') would
+  // still fail, so we normalize to the canonical STATE_OPTS string.
+  const stateNormMap = {}; // normalized_key → STATE_OPTS display name
+  const normalize = (s) => s.toUpperCase().replace(/\s+/g, ' ').trim();
+  for (const opt of STATE_OPTS) {
+    stateNormMap[normalize(opt)] = opt;
+  }
+
+  const districtsByState = {}; // STATE_OPTS display name → [district_name, ...]
+  for (const r of sdRows) {
+    const rawState = r.state_name.trim();
+    // Map to the STATE_OPTS display name; fall back to the raw DB value if unmatched
+    const displayState = stateNormMap[normalize(rawState)] || rawState;
+    if (!districtsByState[displayState]) districtsByState[displayState] = [];
+    districtsByState[displayState].push(r.district_name.trim());
+  }
 
   // Property categories — use code_type as value/label (the human-readable category name)
   const propCategoryRows = await fieldsService.getPropertyCategories();
@@ -625,6 +653,9 @@ async function buildLiveLookups(recordType) {
     _allMajorHeadLabels:         allMajorHeadLabels,
     _allActs:                    allActs,
     _sectionsByActCd:            sectionsByActCd,
+    // State-wise district cascade
+    _districtsByState:           districtsByState,
+    _stateNames:                 Object.keys(districtsByState),
   };
 }
 
@@ -866,6 +897,37 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
   const actNames = (liveLookups._allActs || []).map(r => r.act_long);
   writeList('__all_acts_list', actNames.map(name => ({ value: name, label: name })), 'OPT_ACTS_LIST');
 
+  // 7. Write one named range per state's districts (for the state→district INDIRECT cascade).
+  // Each state gets OPT_STATE_DIST_<SLUG> mapping to its sorted district list.
+  // A lookup table STATE_TO_DISTRICT_NR maps state_name → named range name (VLOOKUP target).
+  const stateToDistNRRows = [];
+  const districtsByState = liveLookups._districtsByState || {};
+  for (const stateName of (liveLookups._stateNames || [])) {
+    const distList = districtsByState[stateName] || [];
+    if (distList.length === 0) continue;
+    const slug = stateName.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 30);
+    const nrName = `OPT_STATE_DIST_${slug}`;
+    writeList(`__state_dist_${slug}`, distList.map(d => ({ value: d, label: d })), nrName);
+    stateToDistNRRows.push([stateName, nrName]);
+  }
+  if (stateToDistNRRows.length > 0) {
+    const labelCol = col;
+    const nrCol = col + 1;
+    stateToDistNRRows.forEach((row, i) => {
+      ws.getCell(i + 1, labelCol).value = row[0];
+      ws.getCell(i + 1, nrCol).value = row[1];
+    });
+    const labelLetter = numToColLetter(labelCol);
+    const nrLetter = numToColLetter(nrCol);
+    const tableRef = `'_Lookups'!$${labelLetter}$1:$${nrLetter}$${stateToDistNRRows.length}`;
+    try {
+      workbook.definedNames.add(tableRef, 'STATE_TO_DISTRICT_NR');
+    } catch (err) {
+      logger.error('createLookupsSheet: failed to register STATE_TO_DISTRICT_NR', { err });
+    }
+    col += 2;
+  }
+
   // 6. Write Act Sections stacked vertically in a single column
   const actSectionsCol = col;
   col++; // reserve column for act sections
@@ -923,7 +985,8 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     namedRangeMap, 
     slugToNR, 
     hasMinorHeadCascade: majorHeadToNRRows.length > 0,
-    hasSectionMajorCascade: sectionToMHNRRows.length > 0
+    hasSectionMajorCascade: sectionToMHNRRows.length > 0,
+    hasStateDistrictCascade: stateToDistNRRows.length > 0,
   };
 }
 
@@ -961,9 +1024,10 @@ export class TemplateBuilderService {
     let namedRangeMap = {};
     let slugToNR = {};
     let hasMinorHeadCascade = false;
+    let hasStateDistrictCascade = false;
     try {
       liveLookups = await buildLiveLookups(recordType);
-      ({ namedRangeMap, slugToNR, hasMinorHeadCascade } = createLookupsSheet(workbook, liveLookups));
+      ({ namedRangeMap, slugToNR, hasMinorHeadCascade, hasStateDistrictCascade } = createLookupsSheet(workbook, liveLookups));
     } catch (err) {
       logger.error('buildTemplate: failed to build live lookups (dropdowns will be static)', { err: err.message });
     }
@@ -1276,9 +1340,12 @@ export class TemplateBuilderService {
       if (!hintText) {
         if (INDIRECT_CASCADE_FIELDS.has(field.field_key)) {
           hintText = 'Select from dropdown (depends on major category)';
+        } else if (isDist && hasStateDistrictCascade) {
+          hintText = 'Select from dropdown (depends on selected State)';
         } else if (NAMED_RANGE_FIELD_KEYS.has(field.field_key) && namedRangeMap[field.field_key]) {
           hintText = 'See dropdown list';
         } else if (liveOpts && liveOpts.length > 0) {
+
           const vals = liveOpts.map(o => o.value);
           const joined = vals.join(', ');
           hintText = joined.length <= 200 ? `select: ${joined}` : `select (${vals.length} options): ${vals.slice(0, 5).join(', ')}...`;
@@ -1302,13 +1369,25 @@ export class TemplateBuilderService {
             formulae: ['"__INDIRECT_PENDING__"'] // replaced in second pass
           };
         }
-      } else if (isDist && namedRangeMap['district']) {
-        const nrName = namedRangeMap['district'];
-        for (let rIdx = 5; rIdx <= 500; rIdx++) {
-          worksheet.getCell(rIdx, targetColIndex).dataValidation = {
-            type: 'list', allowBlank: true,
-            formulae: [nrName]
-          };
+      } else if (isDist) {
+        // State-wise district cascade: place a sentinel — resolved in fourth pass once
+        // all columns (including the sibling state column) are placed on the sheet.
+        // Fallback to the flat district named range if state cascade isn't available.
+        if (hasStateDistrictCascade) {
+          for (let rIdx = 5; rIdx <= 500; rIdx++) {
+            worksheet.getCell(rIdx, targetColIndex).dataValidation = {
+              type: 'list', allowBlank: true, showErrorMessage: false,
+              formulae: ['"__DIST_INDIRECT_PENDING__"'] // replaced in fourth pass
+            };
+          }
+        } else if (namedRangeMap['district']) {
+          const nrName = namedRangeMap['district'];
+          for (let rIdx = 5; rIdx <= 500; rIdx++) {
+            worksheet.getCell(rIdx, targetColIndex).dataValidation = {
+              type: 'list', allowBlank: true,
+              formulae: [nrName]
+            };
+          }
         }
       } else if (isPS && namedRangeMap['police_station']) {
         const nrName = namedRangeMap['police_station'];
@@ -1449,12 +1528,96 @@ export class TemplateBuilderService {
       }
     }
 
+    // ── Fourth pass: wire state→district INDIRECT cascade on every sheet ────────────────────
+    // For each worksheet, we find every *_district column and its sibling *_state column
+    // (same prefix, or bare 'district' paired with bare 'state'). The district dropdown
+    // then becomes INDIRECT(VLOOKUP(<state_cell>, STATE_TO_DISTRICT_NR, 2, FALSE)) so only
+    // the districts of the selected state are shown.
+    if (hasStateDistrictCascade) {
+      workbook.worksheets.forEach(ws => {
+        if (ws.name === '_Lookups') return;
+        const row1 = ws.getRow(1);
+
+        // Build column-key map for this worksheet
+        const keyToCol = {};
+        row1.eachCell({ includeEmpty: true }, (cell, c) => {
+          const k = cell.value ? String(cell.value).trim() : '';
+          if (k) keyToCol[k] = c;
+        });
+
+        // For each district column on this sheet, find its corresponding state column
+        for (const [key, distCol] of Object.entries(keyToCol)) {
+          const isDistKey = key === 'district' || key.endsWith('_district');
+          if (!isDistKey) continue;
+
+          // Derive the expected state key: same prefix + '_state', or bare 'state'
+          let stateKey;
+          if (key === 'district') {
+            stateKey = 'state';
+          } else {
+            // e.g. 'complainant_district' -> 'complainant_state'
+            stateKey = key.replace(/_district$/, '_state');
+          }
+
+          const stateCol = keyToCol[stateKey];
+          if (!stateCol) continue; // no sibling state column on this sheet — skip
+
+          const stateColLetter = numToColLetter(stateCol);
+          // VLOOKUP anchors state col ($) but not row, so Excel re-anchors per row
+          const distFormula = `INDIRECT(IFERROR(VLOOKUP($${stateColLetter}5,STATE_TO_DISTRICT_NR,2,FALSE),"OPT_DISTRICT"))`;
+
+          for (let rIdx = 5; rIdx <= 500; rIdx++) {
+            const cell = ws.getCell(rIdx, distCol);
+            // Only overwrite the sentinel cells (preserves any manual override)
+            if (cell.dataValidation && cell.dataValidation.formulae &&
+                cell.dataValidation.formulae[0] === '"__DIST_INDIRECT_PENDING__"') {
+              cell.dataValidation = {
+                type: 'list',
+                allowBlank: true,
+                showErrorMessage: false,
+                formulae: [distFormula]
+              };
+            }
+          }
+        }
+      });
+    }
+
     // Rebuild Row-2 section headers cleanly from each column's hidden key. The per-column
     // insert/delete above leaves the stored merges misaligned, so regenerate them here.
     const parentSheetName = recordType === 'CASE' ? 'General Information' : 'General Info';
     for (const worksheet of workbook.worksheets) {
       if (worksheet.name === '_Lookups') continue; // skip the lookup sheet
       TemplateBuilderService.rebuildSectionHeaders(worksheet, recordType, worksheet.name === parentSheetName);
+    }
+
+    // ── Mark required fields RED in Row 3 (label row) ────────────────────────────────────
+    // Build a set of all field_keys that are required in the curated config for this
+    // record type. Any column whose hidden Row-1 key is in this set gets its Row-3 label
+    // cell styled with a RED font so users immediately know it must be filled.
+    const requiredFieldKeys = new Set();
+    const allCuratedFields = recordType === 'CASE'
+      ? [...caseGeneralFields, ...caseActSectionFields, ...caseVictimFields, ...caseAccusedFields, ...casePropertyFields]
+      : [...arrestGeneralFields, ...arrestActSectionFields, ...arrestPersonFields, ...arrestPropertyFields];
+    for (const f of allCuratedFields) {
+      if (f.required === true) requiredFieldKeys.add(f.field_key);
+    }
+
+    for (const worksheet of workbook.worksheets) {
+      if (worksheet.name === '_Lookups') continue;
+      const keyRow   = worksheet.getRow(1);
+      const labelRow = worksheet.getRow(3);
+      keyRow.eachCell({ includeEmpty: true }, (keyCell, colNum) => {
+        const fieldKey = keyCell.value ? String(keyCell.value).trim() : '';
+        if (fieldKey && requiredFieldKeys.has(fieldKey)) {
+          const labelCell = labelRow.getCell(colNum);
+          try {
+            const s = JSON.parse(JSON.stringify(labelCell.style || {}));
+            s.font = { ...(s.font || {}), bold: true, color: { argb: 'FFFF0000' } };
+            labelCell.style = s;
+          } catch (_) {}
+        }
+      });
     }
 
     // ── Hide internal metadata from users ─────────────────────────────────────────────────
@@ -1477,6 +1640,55 @@ export class TemplateBuilderService {
 
     return workbook;
 
+  }
+
+  // Wires state→district INDIRECT cascade onto all sheets of a workbook for record types
+  // (UIDB, MISSING, KALANDRA) that build their templates via addSheetToWorkbook.
+  // Must be called AFTER addSheetToWorkbook so all columns are present.
+  // For each sheet it finds *_district / *_state column pairs (by Row-1 field_key) and
+  // replaces the "__DIST_INDIRECT_PENDING__" sentinel with the real INDIRECT formula,
+  // then also registers the STATE_TO_DISTRICT_NR named range on the _Lookups sheet.
+  static async wireStateDistrictCascade(workbook) {
+    let liveLookups = {};
+    let hasStateDistrictCascade = false;
+    try {
+      liveLookups = await buildLiveLookups('CASE'); // record type doesn't affect state/district data
+      ({ hasStateDistrictCascade } = createLookupsSheet(workbook, liveLookups, { preserveExisting: true }));
+    } catch (err) {
+      logger.error('wireStateDistrictCascade: failed to build live lookups', { err: err.message });
+      return;
+    }
+    if (!hasStateDistrictCascade) return;
+
+    workbook.worksheets.forEach(ws => {
+      if (ws.name === '_Lookups') return;
+      const row1 = ws.getRow(1);
+
+      const keyToCol = {};
+      row1.eachCell({ includeEmpty: true }, (cell, c) => {
+        const k = cell.value ? String(cell.value).trim() : '';
+        if (k) keyToCol[k] = c;
+      });
+
+      for (const [key, distCol] of Object.entries(keyToCol)) {
+        const isDistKey = key === 'district' || key.endsWith('_district');
+        if (!isDistKey) continue;
+
+        const stateKey = key === 'district' ? 'state' : key.replace(/_district$/, '_state');
+        const stateCol = keyToCol[stateKey];
+        if (!stateCol) continue;
+
+        const stateColLetter = numToColLetter(stateCol);
+        const distFormula = `INDIRECT(IFERROR(VLOOKUP($${stateColLetter}5,STATE_TO_DISTRICT_NR,2,FALSE),"OPT_DISTRICT"))`;
+
+        for (let rIdx = 5; rIdx <= 1000; rIdx++) {
+          ws.getCell(rIdx, distCol).dataValidation = {
+            type: 'list', allowBlank: true, showErrorMessage: false,
+            formulae: [distFormula]
+          };
+        }
+      }
+    });
   }
 
   // Wires the same Act -> Sections/Major-Head -> Minor-Head cascade used by CASE/ARREST's

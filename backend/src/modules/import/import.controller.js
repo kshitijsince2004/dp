@@ -1275,8 +1275,11 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
   });
   const headerRow = worksheet.addRow(row3);
   headerRow.height = 25;
-  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  headerRow.eachCell(cell => {
+  // Apply per-cell font: required fields get RED, others get white (on dark-blue background)
+  headerRow.eachCell((cell, colNumber) => {
+    const f = fieldsList[colNumber - 1];
+    const isReq = f && f.required === true;
+    cell.font = { bold: true, color: { argb: isReq ? 'FFFF0000' : 'FFFFFFFF' } };
     cell.fill = {
       type: 'pattern',
       pattern: 'solid',
@@ -1463,10 +1466,14 @@ export const downloadImportTemplate = async (req, res) => {
         'UIDB',
         { act: 'act_name', sections: 'sections', major: 'major_head', minor: 'minor_head' }
       );
+      // Wire state→district cascade for all district fields in UIDB sheets
+      await TemplateBuilderService.wireStateDistrictCascade(workbook);
     } else if (recordType === 'MISSING') {
       const missingConfigKeys = new Set(missingGeneralFields.map(f => f.field_key));
       const missingAutoFields = autoIncludedRegistryFields('MISSING', allFields, missingConfigKeys);
       addSheetToWorkbook(workbook, 'Import Template', [...missingGeneralFields, ...missingAutoFields], allFields, lang, recordType);
+      // Wire state→district cascade for all district fields in MISSING sheet
+      await TemplateBuilderService.wireStateDistrictCascade(workbook);
     } else if (recordType === 'KALANDRA') {
       // Kalandra = standalone (non-FIR) arrest. Three sheets, same structures as the
       // ARREST template's act-section and person sheets, keyed by DD No. Registry
@@ -1489,6 +1496,8 @@ export const downloadImportTemplate = async (req, res) => {
         'ARREST',
         { act: 'act', sections: 'sections', major: 'crime_head', minor: 'minor_head' }
       );
+      // Wire state→district cascade for all district fields in Kalandra sheets
+      await TemplateBuilderService.wireStateDistrictCascade(workbook);
     } else {
       let fields = allFields.filter(f => {
         try {
