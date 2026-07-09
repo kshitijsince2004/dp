@@ -27,8 +27,8 @@ def map_row(r, idx):
         ),
         'place_of_occurrence': d.get('occurrence_place') or '',
         'time_of_occurrence': format_occurrence(
-            d.get('occurrence_date'),
-            d.get('time_of_occurrence') or d.get('occurrence_time') or d.get('gd_time'),
+            r.get('record_date') or d.get('gd_date') or d.get('occurrence_date'),
+            d.get('gd_time') or d.get('time_of_occurrence') or d.get('occurrence_time'),
             d.get('occurrence_end_date'), d.get('occurrence_end_time'),
         ),
         'stolen_items': d.get('property_description') or d.get('stolen_items') or 'None',
