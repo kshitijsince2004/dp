@@ -38,19 +38,12 @@ const REPORTS = [
 // Diary catalogue: each diary bundles its own set of selectable reports, and is
 // only offered to users whose hierarchy level is in `levels` (PS -> HC/SHO,
 // DISTRICT -> DISTRICT_OFFICER, HQ -> HQ_ANALYST/HQ_ADMIN/SYSTEM_ADMIN).
-// Only DAILY_DIARY has a working export pipeline (backend /daily-diary/export) today;
-// other diaries are listed as "coming_soon" so the flow is ready to accept them without
-// another UI rework once their report sets and export endpoints exist.
+// COMBINED_DAILY_DIARY and the single-day DAILY_DIARY variant share the same
+// backend pipeline (/daily-diary/export — dateTo omitted = single day), so
+// only COMBINED_DAILY_DIARY is offered here; other diaries are listed as
+// "coming_soon" so the flow is ready to accept them without another UI
+// rework once their report sets and export endpoints exist.
 const DIARIES = [
-  {
-    key: 'DAILY_DIARY',
-    label: 'Daily Diary',
-    description: 'Station-wise daily operations log — 24 report sheets',
-    icon: BookOpen,
-    status: 'active',
-    levels: ['PS', 'DISTRICT', 'HQ'],
-    reports: REPORTS,
-  },
   {
     key: 'COMBINED_DAILY_DIARY',
     label: 'Combine Daily Diary',
@@ -504,59 +497,40 @@ export default function CompilationUI() {
         </p>
  
         <div className="flex flex-col sm:flex-row gap-3 items-end relative">
-          {selectedDiary?.key === 'DAILY_DIARY' ? (
-            <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                <Calendar size={10} className="text-slate-400" />
-                <span>Select Date</span>
-              </span>
-              <DateInput
-                value={dateFrom}
-                onChange={(val) => {
-                  setDateFrom(val);
-                  setDateTo(val);
-                }}
-                inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
-              />
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                  <Calendar size={10} className="text-slate-400" />
-                  <span>From Date</span>
-                </span>
-                <DateInput
-                  value={dateFrom}
-                  onChange={(val) => {
-                    setDateFrom(val);
-                    const from = parseDMY(val);
-                    const to = parseDMY(dateTo);
-                    if (from && to && from > to) setDateTo(val);
-                  }}
-                  inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
-                />
-              </div>
+          <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+              <Calendar size={10} className="text-slate-400" />
+              <span>From Date</span>
+            </span>
+            <DateInput
+              value={dateFrom}
+              onChange={(val) => {
+                setDateFrom(val);
+                const from = parseDMY(val);
+                const to = parseDMY(dateTo);
+                if (from && to && from > to) setDateTo(val);
+              }}
+              inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
+            />
+          </div>
 
-              <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                  <Calendar size={10} className="text-slate-400" />
-                  <span>To Date</span>
-                </span>
-                <DateInput
-                  value={dateTo}
-                  onChange={(val) => {
-                    const from = parseDMY(dateFrom);
-                    const to = parseDMY(val);
-                    if (from && to && to < from) return;
-                    setDateTo(val);
-                  }}
-                  inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
-                />
-              </div>
-            </>
-          )}
- 
+          <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+              <Calendar size={10} className="text-slate-400" />
+              <span>To Date</span>
+            </span>
+            <DateInput
+              value={dateTo}
+              onChange={(val) => {
+                const from = parseDMY(dateFrom);
+                const to = parseDMY(val);
+                if (from && to && to < from) return;
+                setDateTo(val);
+              }}
+              inputClassName="bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 pr-9 outline-none focus:border-[var(--accent-color)] transition-all font-semibold"
+            />
+          </div>
+
           {/* POLICE STATION — PS-level users are locked to their own station (no cross-station browsing) */}
           {userLevel === 'PS' ? (
             <div className="relative flex-1 min-w-[200px] w-full flex flex-col gap-1">
