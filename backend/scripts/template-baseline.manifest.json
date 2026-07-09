@@ -560,16 +560,21 @@
         },
         {
           "col": 58,
-          "key": null,
-          "section": "Action Taken",
-          "label": null,
-          "hint": null,
-          "validation": null
+          "key": "work_out",
+          "section": "General Information",
+          "label": "WorkOut",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
         },
         {
           "col": 59,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -577,7 +582,7 @@
         {
           "col": 60,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -585,7 +590,7 @@
         {
           "col": 61,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -593,7 +598,7 @@
         {
           "col": 62,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -601,7 +606,7 @@
         {
           "col": 63,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -609,7 +614,7 @@
         {
           "col": 64,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -617,7 +622,7 @@
         {
           "col": 65,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -625,7 +630,7 @@
         {
           "col": 66,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -633,7 +638,15 @@
         {
           "col": 67,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 68,
+          "key": null,
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -644,7 +657,8 @@
         "AG2:AP2",
         "AQ2:AY2",
         "AZ2:BB2",
-        "BC2:BO2",
+        "BC2:BE2",
+        "BF2:BP2",
         "L2:U2",
         "V2:AF2"
       ]
