@@ -5,6 +5,41 @@ Repo: `Crime-Diaries` | Stack: Node.js/Express + PostgreSQL + RabbitMQ + React/V
 
 ---
 
+# ⚠ DB RESTRUCTURE STATUS (2026-07-11) — READ FIRST
+
+The database was **fully rebuilt** (stages 1–4 of the restructure; design truth =
+`docs/db-audit/DB_SCHEMA.md`, resume-point = `docs/db-audit/HANDOFF.md`):
+
+- **Schema is NEW**: `records` spine + 5 typed detail tables (`fir_details`, `arrest_details`,
+  `pcr_call_details`, `missing_details`, `uidb_details`) + `persons`/`record_properties`/
+  `locations`/`record_offences`. **`records.data` jsonb no longer exists.** `excel_*` tables
+  are now `ref.*` (21 lookup tables, real FKs). `users.station_id` is now `users.ps_id`.
+- **Config-as-data**: form fields / workflow / proformas / level contracts are authored in
+  repo-root `config/` and synced by `npm run sync-config` (see `config/README.md` — includes
+  the full `storage` mapping contract). Migrations are schema-only forever.
+- **First-time DB setup (new)**: from `backend/`:
+  `npm run db:reset && npm run db:migrate && npm run sync-config && npm run load-ref && npm run db:seed`
+- **STAGE 5 IS PENDING — the backend/frontend code is NOT yet adapted.** The `records`,
+  `fields`, `import`, `daily-diary`, `warehouse`, `report-builder` modules and `python_worker`
+  still read `records.data` jsonb and `excel_*` — they are BROKEN against the new DB until the
+  write-path rewrite (registry-driven split into spine/detail/persons/properties/locations/
+  offences per `field_registry.storage`). Mock record seeding (`scripts/seed-test-data.js`)
+  is also old-schema. Do not "fix" the modules by recreating old tables — adapt them per
+  `docs/db-audit/ARCHITECTURE.md`; kill list in `DB_SCHEMA.md` §11 (FALLBACK_TRANSITIONS,
+  workflow.service.js, EAV pair, `compilations.record_ids`, in-memory report templates).
+- **Hierarchy is official now**: `config/org/hierarchy.json` = 349 nodes rebuilt from the
+  official Delhi Police code list (`config/ref-data/PS_Codes.xlsx` → `config/org/ps_codes.json`
+  via `backend/scripts/dev/build_ps_codes.py`): 23 districts (incl. Crime Branch/EOW/IGI/
+  Metro/Railways/Special Cell/SPUWAC/Vigilance), 92 real SDPO sub-divisions (the old generic
+  sub-division layer is gone), 225 PS each with `metadata.official_code`. Beats: 2,090/2,855
+  linked; 765 beats reference 71 codes absent from the official list itself → `ps_id` NULL,
+  raw code in `source_ps_cd` (loader prints them).
+- **Open items**: 71 unreconciled beat ps_cds (above); heinous overlay terror-candidates
+  pending review (`config/ref-overlays/local_head_categories.json`).
+
+Sections below describe the app layer as it still is; DB-related parts of them are stale
+where they conflict with the above.
+
 # AI Agent Rules
 
 Before modifying code:
@@ -23,11 +58,11 @@ Before modifying code:
 | Pillar | Rule |
 |--------|------|
 | Dynamic Field Registry | Forms render from `field_registry` DB rows. Zero hardcoded form fields ever. |
-| JSONB Records | All domain data lives in `records.data JSONB`. New fields = insert to `field_registry`, not ALTER TABLE. |
+| ~~JSONB Records~~ Typed records (2026-07) | Domain data lives in typed columns (spine + detail + persons/properties/locations/offences per `DB_SCHEMA.md`). New field without deploy = `field_registry` row with `storage: "extra"`; reporting-grade fields get real columns via promotion (`config/README.md`). |
 | Event Bus Isolation | Modules never call each other directly. All cross-module comms via RabbitMQ `publish/subscribe`. |
 | Append-only Audit | Every mutation writes to `record_revisions` + `audit_logs`. Records are never deleted — only status-changed. |
 | Hierarchy as Config | `hierarchy_nodes` is a self-referencing tree. New PS/District/level = new row, zero code change. |
-| Bilingual | Every label has `label_en` + `label_hi`. i18n is baked in from Day 1. |
+| Bilingual | `field_registry.labels` stays `{"en","hi"}` (the one live bilingual case). `ref.*` and config tables are English-only single columns — Hindi there is additive later, never a redesign (2026-07 decision). |
 | Config over Code | Workflow transitions, report templates, role permissions — all DB rows, not hardcoded logic. |
 
 ---
@@ -119,24 +154,21 @@ backend/
 
 ---
 
-## 5. Database Tables (12 core)
+## 5. Database Tables (NEW schema, 2026-07 restructure)
 
-| Table | Purpose |
-|-------|---------|
-| `hierarchy_nodes` | Self-referencing PS/District/JCP/HQ tree |
-| `users` | badge_no, role, ps_id, station_id, district_id, sub_div_id, password_hash |
-| `field_registry` | field_key, field_type, label_en/hi, applicable_record_types, validation_rules, section, sort_order |
-| `records` | id, record_type, ps_id, district_id, sub_div_id, data JSONB, current_status, current_level, record_date, created_by, updated_by |
-| `record_revisions` | Append-only ledger: record_id, revision_number, change_type, field_changes JSONB, changed_by, ip_address, reason |
-| `workflow_transitions` | from_status, to_status, from_level, to_level, action, performed_by, comment, target_fields JSONB |
-| `audit_logs` | table_name, record_id, action, changed_by_id, changed_by_role, field_name, old_value, new_value, ip_address |
-| `compilations` | district_id, period, status, record_ids JSONB, compiled_by, target_route, submitted_by |
-| `report_jobs` | template_id, filters JSONB, format, status (pending/READY/FAILED), file_path, created_by |
-| `notifications` | user_id, type, title, body, message, record_id, related_entity_id, is_read |
-| `custom_field_definitions` | EAV field definitions |
-| `custom_field_values` | EAV field values per record |
+**Complete spec: `docs/db-audit/DB_SCHEMA.md`** (every column/constraint/index — the single
+DB context file; no re-analysis needed). Summary: 38 `public` tables + 21 `ref.*` lookups.
 
-**Run migrations:** `node scripts/migrations.js` (idempotent — uses `CREATE TABLE IF NOT EXISTS`)
+| Group | Tables |
+|-------|--------|
+| Org/identity | `hierarchy_nodes` (HQ→ZONE→RANGE→DISTRICT→SUB_DIV→PS, upserted from `config/org/hierarchy.json`), `users` (ps_id — station_id is dead), `investigating_officers` (records carries `io_id` only) |
+| Record data | `records` spine + 1:1 detail tables `fir_details` / `arrest_details` / `pcr_call_details` / `missing_details` / `uidb_details`; `record_offences` (one row per section citation, `is_primary` = single-head classification); `persons` (+`arrestee_details`, `missing_person_details`, `person_descriptions`), `record_properties`, `locations` (all address blocks). Each detail/person/property/location row has ONE `extra` jsonb escape hatch. **No `records.data` blob. No EAV tables.** |
+| Workflow/audit | `workflow_transitions_config` (THE state machine, synced from `config/workflow/`), `workflow_transitions` (ledger), `record_revisions` (hash-chain columns prev_hash/row_hash — single-write-path enforcement lands in stage 6), `record_transfers` + `fir_number_counters` (FIR allocator), `record_amendments`, `audit_logs` |
+| Links/compilation | `record_links` + `link_type_registry`, `compilations` + `compilation_records` (frozen scope snapshots; `record_ids` array is dead) |
+| Config/reporting | `field_registry` (UI metadata + **storage mapping** — see `config/README.md`), `level_data_contracts`, `report_templates`, `report_jobs`, `scheduled_reports`, `report_builder_*`, `filter_presets`, `import_batches`(+errors), `notifications` (type+params i18n) |
+| `ref.*` | acts, sections, major/minor_heads, major_minor_mapping, local_heads (+crime_category overlay), beats, property_categories, other_property_items, arms (4 tables), automobiles, jewelry/currency/document/drug/electric/explosive/cultural types — loaded by `npm run load-ref`, natural-key verdicts in `docs/db-audit/REF_KEY_VERIFICATION.md` |
+
+**Migrations:** `npm run db:migrate` (knex, `backend/migrations/2026071100000*` — 6 files, schema-only forever; config changes go in `config/`, never in migrations)
 
 ---
 
@@ -335,10 +367,14 @@ cd backend && npm run dev      # nodemon on index.js
 # Frontend only
 cd frontend && npm run dev     # Vite dev server on :5173
 
-# First time DB setup
-cd backend && node scripts/migrations.js
-node scripts/seed-fields.js
-node scripts/seed-mock-data.js
+# First time DB setup (NEW — post restructure)
+cd backend
+npm run db:reset      # drops public/ref/rpt schemas (dev only — data is disposable)
+npm run db:migrate    # 6 schema-only migrations
+npm run sync-config   # config/{fields,workflow,proformas,contracts}/*.json → DB
+npm run load-ref      # config/org/hierarchy.json + config/ref-data/Menu_Tables.xlsx → hierarchy + ref.*
+npm run db:seed       # dev users (one per role, password Test@1234)
+# Mock RECORD data: none yet — old seed-mock scripts are pre-restructure (stage 5)
 
 # Docker (PostgreSQL + RabbitMQ)
 docker-compose up -d

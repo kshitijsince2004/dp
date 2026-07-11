@@ -1,0 +1,35 @@
+{
+ "code": "T_DAILY_CRIME_STATEMENT",
+ "name": "PS-wise Daily Crime Statement",
+ "record_types": [
+  "CASE"
+ ],
+ "levels": [
+  "DISTRICT",
+  "HQ"
+ ],
+ "template_definition": {
+  "layout": "A4_LANDSCAPE",
+  "header": {
+   "title_en": "DAILY CRIME STATEMENT",
+   "title_hi": "दैनिक अपराध विवरण"
+  },
+  "sections": [
+   {
+    "title_en": "Police Station Crime Distribution Table",
+    "title_hi": "थानेवार अपराध वितरण तालिका",
+    "fields": [
+     "ps_id",
+     "case_head",
+     "status"
+    ]
+   }
+  ]
+ },
+ "output_formats": [
+  "PDF",
+  "EXCEL"
+ ],
+ "template_type": "PROFORMA",
+ "is_active": true
+}

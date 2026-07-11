@@ -1,0 +1,3290 @@
+[
+ {
+  "code": "HQ",
+  "name": "Delhi Police HQ",
+  "node_type": "HQ",
+  "parent_code": null,
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "ZONE_SCPLOZ",
+  "name": "Spl CP / L&O Zone 2",
+  "node_type": "ZONE",
+  "parent_code": "HQ",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "ZONE_SCPLOZ1",
+  "name": "Spl CP / L&O Zone 1",
+  "node_type": "ZONE",
+  "parent_code": "HQ",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "RANGE_CR",
+  "name": "Central Range",
+  "node_type": "RANGE",
+  "parent_code": "ZONE_SCPLOZ1",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "RANGE_ER",
+  "name": "Eastern Range",
+  "node_type": "RANGE",
+  "parent_code": "ZONE_SCPLOZ1",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "RANGE_NDR",
+  "name": "New Delhi Range",
+  "node_type": "RANGE",
+  "parent_code": "ZONE_SCPLOZ",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "RANGE_NR",
+  "name": "Northern Range",
+  "node_type": "RANGE",
+  "parent_code": "ZONE_SCPLOZ1",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "RANGE_SR",
+  "name": "Southern Range",
+  "node_type": "RANGE",
+  "parent_code": "ZONE_SCPLOZ",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "RANGE_WR",
+  "name": "Western Range",
+  "node_type": "RANGE",
+  "parent_code": "ZONE_SCPLOZ",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "DIST_CD",
+  "name": "Central District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_CR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162"
+  }
+ },
+ {
+  "code": "DIST_CRIMEBRANCH",
+  "name": "Crime Branch",
+  "node_type": "DISTRICT",
+  "parent_code": "HQ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8175"
+  }
+ },
+ {
+  "code": "DIST_DW",
+  "name": "Dwarka District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_WR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176"
+  }
+ },
+ {
+  "code": "DIST_ED",
+  "name": "East District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_ER",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168"
+  }
+ },
+ {
+  "code": "DIST_EOW",
+  "name": "Eow",
+  "node_type": "DISTRICT",
+  "parent_code": "HQ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8956"
+  }
+ },
+ {
+  "code": "DIST_IGIAIRPORT",
+  "name": "Igi Airport",
+  "node_type": "DISTRICT",
+  "parent_code": "HQ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8169"
+  }
+ },
+ {
+  "code": "DIST_METRO",
+  "name": "Metro",
+  "node_type": "DISTRICT",
+  "parent_code": "HQ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160"
+  }
+ },
+ {
+  "code": "DIST_ND",
+  "name": "North District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_CR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166"
+  }
+ },
+ {
+  "code": "DIST_NDD",
+  "name": "New Delhi District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_NDR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165"
+  }
+ },
+ {
+  "code": "DIST_NED",
+  "name": "North East District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_ER",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173"
+  }
+ },
+ {
+  "code": "DIST_NWD",
+  "name": "North West District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_NR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172"
+  }
+ },
+ {
+  "code": "DIST_OD",
+  "name": "Outer District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_WR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174"
+  }
+ },
+ {
+  "code": "DIST_OND",
+  "name": "Outer North District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_NR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8991"
+  }
+ },
+ {
+  "code": "DIST_RAILWAYS",
+  "name": "Railways",
+  "node_type": "DISTRICT",
+  "parent_code": "HQ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8164"
+  }
+ },
+ {
+  "code": "DIST_RND",
+  "name": "Rohini District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_NR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959"
+  }
+ },
+ {
+  "code": "DIST_SD",
+  "name": "South District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_SR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167"
+  }
+ },
+ {
+  "code": "DIST_SED",
+  "name": "South East District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_SR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955"
+  }
+ },
+ {
+  "code": "DIST_SHD",
+  "name": "Shahdara District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_ER",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957"
+  }
+ },
+ {
+  "code": "DIST_SPECIALCELL",
+  "name": "Special Cell",
+  "node_type": "DISTRICT",
+  "parent_code": "HQ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8954"
+  }
+ },
+ {
+  "code": "DIST_SPUWAC",
+  "name": "Special Police Unit For Women & Children",
+  "node_type": "DISTRICT",
+  "parent_code": "HQ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8953"
+  }
+ },
+ {
+  "code": "DIST_SWD",
+  "name": "South West District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_NDR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171"
+  }
+ },
+ {
+  "code": "DIST_VIGILANCE",
+  "name": "Vigilance",
+  "node_type": "DISTRICT",
+  "parent_code": "HQ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8161"
+  }
+ },
+ {
+  "code": "DIST_WD",
+  "name": "West District",
+  "node_type": "DISTRICT",
+  "parent_code": "RANGE_WR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170"
+  }
+ },
+ {
+  "code": "SUBDIV_8160_NORTH",
+  "name": "North Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_METRO",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8160_SOUTH",
+  "name": "South Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_METRO",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8161_VIGILANCE",
+  "name": "Vigilance Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_VIGILANCE",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8162_ACPDIU",
+  "name": "Acp Diu Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_CD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8162_DARYAGANJ",
+  "name": "Daryaganj Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_CD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8162_KAMLAMARKET",
+  "name": "Kamla Market Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_CD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8162_KAROLBAGH",
+  "name": "Karol Bagh Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_CD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8162_PAHARGANJ",
+  "name": "Paharganj Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_CD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8162_PATELNAGAR",
+  "name": "Patel Nagar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_CD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8164_NEWDELHI",
+  "name": "New Delhi Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_RAILWAYS",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8164_OLDDELHI",
+  "name": "Old Delhi Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_RAILWAYS",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8165_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NDD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8165_BARAKHAMBAROAD",
+  "name": "Barakhamba Road Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NDD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8165_CHANKYAPURI",
+  "name": "Chankya Puri Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NDD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8165_CONNAUGHTPLACE",
+  "name": "Connaught Place Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NDD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8165_PARLIAMENTSTREET",
+  "name": "Parliament Street Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NDD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8165_TUGHLAKROAD",
+  "name": "Tughlak Road Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NDD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8166_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8166_CIVILLINES",
+  "name": "Civil Lines Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8166_KOTWALI",
+  "name": "Kotwali Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8166_SADARBAZAR",
+  "name": "Sadar Bazar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8166_SARAIROHILLA",
+  "name": "Sarai Rohilla Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8166_TIMARPUR",
+  "name": "Timarpur Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8167_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8167_CHITRANJANPARK",
+  "name": "Chitranjan Park Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8167_DEFENCECOLONY",
+  "name": "Defence Colony Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8167_HAUZKHAS",
+  "name": "Hauz Khas Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8167_MEHRAULI",
+  "name": "Mehrauli Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8167_SANGAMVIHAR",
+  "name": "Sangam Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8168_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8168_KALYANPURI",
+  "name": "Kalyanpuri Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8168_MADHUVIHAR",
+  "name": "Madhu Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8168_MAYURVIHAR",
+  "name": "Mayur Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8168_PREETVIHAR",
+  "name": "Preet Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_ED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8169_IGIAIRPORT",
+  "name": "Igi Airport Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_IGIAIRPORT",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8170_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_WD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8170_MAYAPURI",
+  "name": "Mayapuri Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_WD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8170_PUNJABIBAGH",
+  "name": "Punjabi Bagh Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_WD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8170_RAJOURIGARDEN",
+  "name": "Rajouri Garden Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_WD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8170_TILAKNAGAR",
+  "name": "Tilak Nagar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_WD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8171_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8171_DELHICANTT",
+  "name": "Delhi Cantt Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8171_SAFDARJUNGENCLAVE",
+  "name": "Safdarjung Enclave Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8171_VASANTKUNJ",
+  "name": "Vasant Kunj Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8171_VASANTVIHAR",
+  "name": "Vasant Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8172_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8172_ASHOKVIHAR",
+  "name": "Ashok Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8172_JAHANGIRPURI",
+  "name": "Jahangir Puri Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8172_MODELTOWN",
+  "name": "Model Town Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8172_SHALIMARBAGH",
+  "name": "Shalimar Bagh Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8172_SUBHASHPLACE",
+  "name": "Subhash Place Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NWD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8173_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8173_BHAJANPURA",
+  "name": "Bhajan Pura Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8173_GOKULPURI",
+  "name": "Gokul Puri Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8173_KHAJURIKHAS",
+  "name": "Khajuri Khas Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8173_NANDNAGRI",
+  "name": "Nand Nagri Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8173_SEELAMPUR",
+  "name": "Seelampur Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_NED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8174_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_OD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8174_MANGOLPURI",
+  "name": "Mangol Puri Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_OD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8174_NANGLOI",
+  "name": "Nangloi Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_OD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8174_PASCHIMVIHAR",
+  "name": "Paschim Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_OD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8174_SULTANPURI",
+  "name": "Sultanpuri Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_OD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8175_CRIMEBRANCH",
+  "name": "Crime Branch Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_CRIMEBRANCH",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8176_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_DW",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8176_CHHAWALA",
+  "name": "Chhawala Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_DW",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8176_DABRI",
+  "name": "Dabri Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_DW",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8176_DWARKA",
+  "name": "Dwarka Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_DW",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8176_NAJAFGARH",
+  "name": "Najaf Garh Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_DW",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8953_SPUWAC",
+  "name": "Spuwac Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SPUWAC",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8954_SPECIALCELL",
+  "name": "Special Cell Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SPECIALCELL",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8955_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8955_BADARPUR",
+  "name": "Badarpur Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8955_KALKAJI",
+  "name": "Kalka Ji Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8955_LAJPATNAGAR",
+  "name": "Lajpat Nagar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8955_NEWFRIENDSCOLONY",
+  "name": "New Friends Colony Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8955_SARITAVIHAR",
+  "name": "Sarita Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SED",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8956_EOW",
+  "name": "Eow Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_EOW",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8957_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SHD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8957_GANDHINAGAR",
+  "name": "Gandhi Nagar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SHD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8957_SEEMAPURI",
+  "name": "Seemapuri Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SHD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8957_SHAHDARA",
+  "name": "Shahdara Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SHD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8957_VIVEKVIHAR",
+  "name": "Vivek Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_SHD",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8959_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_RND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8959_AMANVIHAR",
+  "name": "Aman Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_RND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8959_BEGUMPUR",
+  "name": "Begum Pur Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_RND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8959_PRASHANTVIHAR",
+  "name": "Prashant Vihar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_RND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8959_ROHINI",
+  "name": "Rohini Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_RND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8991_ACPOPPRATION",
+  "name": "Acp/ Oppration Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_OND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8991_BAWANA",
+  "name": "Bawana Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_OND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8991_NARELA",
+  "name": "Narela Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_OND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8991_SAMAIPURBADLI",
+  "name": "Samaipur Badli Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_OND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "SUBDIV_8991_SWARUPNAGAR",
+  "name": "Swaroop Nagar Sub-Division",
+  "node_type": "SUB_DIV",
+  "parent_code": "DIST_OND",
+  "is_active": true,
+  "metadata": {}
+ },
+ {
+  "code": "PS_8160_IGIAIRPORTMETRO",
+  "name": "PS Igi Airport Metro",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160004"
+  },
+  "parent_code": "SUBDIV_8160_SOUTH"
+ },
+ {
+  "code": "PS_8160_INAMETRO",
+  "name": "PS Ina Metro",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160011"
+  },
+  "parent_code": "SUBDIV_8160_SOUTH"
+ },
+ {
+  "code": "PS_8160_KASHMIRIGATEMETRO",
+  "name": "PS Kashmiri Gate Metro",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160007"
+  },
+  "parent_code": "SUBDIV_8160_NORTH"
+ },
+ {
+  "code": "PS_8160_METROPOLICESTATIONAZ",
+  "name": "PS Metro Police Station Azadpur",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160015"
+  },
+  "parent_code": "SUBDIV_8160_NORTH"
+ },
+ {
+  "code": "PS_8160_METROPOLICESTATIONGH",
+  "name": "PS Metro Police Station Ghitorni",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160003"
+  },
+  "parent_code": "SUBDIV_8160_SOUTH"
+ },
+ {
+  "code": "PS_8160_METROPOLICESTATIONOK",
+  "name": "PS Metro Police Station Okhla Vihar",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160002"
+  },
+  "parent_code": "SUBDIV_8160_SOUTH"
+ },
+ {
+  "code": "PS_8160_METROPOLICESTATIONRA",
+  "name": "PS Metro Police Station Rajiv Chowk",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160012"
+  },
+  "parent_code": "SUBDIV_8160_NORTH"
+ },
+ {
+  "code": "PS_8160_NEHRUPLACEMETRO",
+  "name": "PS Nehru Place Metro",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160013"
+  },
+  "parent_code": "SUBDIV_8160_SOUTH"
+ },
+ {
+  "code": "PS_8160_RAJAGARDENMETRO",
+  "name": "PS Raja Garden Metro",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160008"
+  },
+  "parent_code": "SUBDIV_8160_NORTH"
+ },
+ {
+  "code": "PS_8160_RITHALAMETRO",
+  "name": "PS Rithala Metro",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160005"
+  },
+  "parent_code": "SUBDIV_8160_NORTH"
+ },
+ {
+  "code": "PS_8160_SHASHTRIPARKMETRO",
+  "name": "PS Shashtri Park Metro",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160006"
+  },
+  "parent_code": "SUBDIV_8160_NORTH"
+ },
+ {
+  "code": "PS_8160_SUPREMECOURTMETRO",
+  "name": "PS Supreme Court Metro",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160017"
+  },
+  "parent_code": "SUBDIV_8160_SOUTH"
+ },
+ {
+  "code": "PS_8160_YAMUNADEPOTMETRO",
+  "name": "PS Yamuna Depot Metro",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160001"
+  },
+  "parent_code": "SUBDIV_8160_SOUTH"
+ },
+ {
+  "code": "PS_8161_VIGILANCEPS",
+  "name": "PS Vigilance Ps",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8161001"
+  },
+  "parent_code": "SUBDIV_8161_VIGILANCE"
+ },
+ {
+  "code": "PS_8164_HAZRATNIZAMUDDINRLYS",
+  "name": "PS Hazrat Nizamuddin Rly Stn",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8164032"
+  },
+  "parent_code": "SUBDIV_8164_NEWDELHI"
+ },
+ {
+  "code": "PS_8164_NEWDELHIRLYSTN",
+  "name": "PS New Delhi Rly. Stn.",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8164026"
+  },
+  "parent_code": "SUBDIV_8164_NEWDELHI"
+ },
+ {
+  "code": "PS_8164_OLDDELHIDELHIMAINRLY",
+  "name": "PS Old Delhi (Delhi Main) Rly. Stn.",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8164025"
+  },
+  "parent_code": "SUBDIV_8164_OLDDELHI"
+ },
+ {
+  "code": "PS_8164_SARAIROHILLASTATION",
+  "name": "PS Sarai Rohilla Station",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8164034"
+  },
+  "parent_code": "SUBDIV_8164_OLDDELHI"
+ },
+ {
+  "code": "PS_8164_SUBZIMANDIRAILWAYSTA",
+  "name": "PS Subzi Mandi Railway Station",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8164042"
+  },
+  "parent_code": "SUBDIV_8164_OLDDELHI"
+ },
+ {
+  "code": "PS_8165_IITFPRAGATIMAIDAN",
+  "name": "PS Iitf,Pragati Maidan",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165012"
+  },
+  "parent_code": "SUBDIV_8165_BARAKHAMBAROAD"
+ },
+ {
+  "code": "PS_8165_KARTAVYAPATH",
+  "name": "PS Kartavya Path",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165013"
+  },
+  "parent_code": "SUBDIV_8165_TUGHLAKROAD"
+ },
+ {
+  "code": "PS_8169_DOMESTICAIRPORT",
+  "name": "PS Domestic Airport",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8169001"
+  },
+  "parent_code": "SUBDIV_8169_IGIAIRPORT"
+ },
+ {
+  "code": "PS_8169_IGIAIRPORT",
+  "name": "PS I.G.I.Airport",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8169002"
+  },
+  "parent_code": "SUBDIV_8169_IGIAIRPORT"
+ },
+ {
+  "code": "PS_8170_JANAKPURI",
+  "name": "PS Janak Puri",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170021"
+  },
+  "parent_code": "SUBDIV_8170_RAJOURIGARDEN"
+ },
+ {
+  "code": "PS_8171_DELHICANTT",
+  "name": "PS Delhi Cantt",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171011"
+  },
+  "parent_code": "SUBDIV_8171_DELHICANTT"
+ },
+ {
+  "code": "PS_8171_SAROJININAGAR",
+  "name": "PS Sarojini Nagar",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171068"
+  },
+  "parent_code": "SUBDIV_8171_SAFDARJUNGENCLAVE"
+ },
+ {
+  "code": "PS_8172_SUBHASHPLACE",
+  "name": "PS Subhash Place",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172047"
+  },
+  "parent_code": "SUBDIV_8172_SUBHASHPLACE"
+ },
+ {
+  "code": "PS_8174_NANGLOI",
+  "name": "PS Nangloi",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174021"
+  },
+  "parent_code": "SUBDIV_8174_NANGLOI"
+ },
+ {
+  "code": "PS_8175_CRIMEBRANCH",
+  "name": "PS Crime Branch",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8175001"
+  },
+  "parent_code": "SUBDIV_8175_CRIMEBRANCH"
+ },
+ {
+  "code": "PS_8953_CRIMEWOMENCELLNANAKP",
+  "name": "PS Crime (Women) Cell Nanak Pura",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8953001"
+  },
+  "parent_code": "SUBDIV_8953_SPUWAC"
+ },
+ {
+  "code": "PS_8954_SPECIALCELL",
+  "name": "PS Special Cell",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8954001"
+  },
+  "parent_code": "SUBDIV_8954_SPECIALCELL"
+ },
+ {
+  "code": "PS_8956_ECONOMICOFFENCESWING",
+  "name": "PS Economic Offences Wing",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8956001"
+  },
+  "parent_code": "SUBDIV_8956_EOW"
+ },
+ {
+  "code": "PS_8957_ANANDVIHAR",
+  "name": "PS Anand Vihar",
+  "node_type": "PS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957002"
+  },
+  "parent_code": "SUBDIV_8957_VIVEKVIHAR"
+ },
+ {
+  "code": "PS_CD_ANANDPARBAT",
+  "name": "PS Anand Parbat",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_PATELNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162001"
+  }
+ },
+ {
+  "code": "PS_CD_CHANDNIMAHAL",
+  "name": "PS Chandni Mahal",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_DARYAGANJ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162008"
+  }
+ },
+ {
+  "code": "PS_CD_DARYAGANJ",
+  "name": "PS Darya Ganj",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_DARYAGANJ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162010"
+  }
+ },
+ {
+  "code": "PS_CD_DBGROAD",
+  "name": "PS D. B. G. Road",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_PAHARGANJ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162038"
+  }
+ },
+ {
+  "code": "PS_CD_HAUZQAZI",
+  "name": "PS Hauz Qazi",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_KAMLAMARKET",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162015"
+  }
+ },
+ {
+  "code": "PS_CD_IPESTATE",
+  "name": "PS I. P. Estate",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_KAMLAMARKET",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162016"
+  }
+ },
+ {
+  "code": "PS_CD_JAMAMASJID",
+  "name": "PS Jama Masjid",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_DARYAGANJ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162019"
+  }
+ },
+ {
+  "code": "PS_CD_KAMLAMARKET",
+  "name": "PS Kamla Market",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_KAMLAMARKET",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162023"
+  }
+ },
+ {
+  "code": "PS_CD_KAROLBAGH",
+  "name": "PS Karol Bagh",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_KAROLBAGH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162026"
+  }
+ },
+ {
+  "code": "PS_CD_NABIKARIM",
+  "name": "PS Nabi Karim",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_PAHARGANJ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162030"
+  }
+ },
+ {
+  "code": "PS_CD_PAHARGANJ",
+  "name": "PS Pahar Ganj",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_PAHARGANJ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162041"
+  }
+ },
+ {
+  "code": "PS_CD_PARSHADNAGAR",
+  "name": "PS Parshad Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_KAROLBAGH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162040"
+  }
+ },
+ {
+  "code": "PS_CD_PATELNAGAR",
+  "name": "PS Patel Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_PATELNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162042"
+  }
+ },
+ {
+  "code": "PS_CD_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_ACPDIU",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162057"
+  }
+ },
+ {
+  "code": "PS_CD_RAJINDERNAGAR",
+  "name": "PS Rajinder Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_KAROLBAGH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162045"
+  }
+ },
+ {
+  "code": "PS_CD_RANJITNAGAR",
+  "name": "PS Ranjit Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8162_PATELNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8162056"
+  }
+ },
+ {
+  "code": "PS_DW_BABAHARIDASNAGAR",
+  "name": "PS Baba Haridas Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_NAJAFGARH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176009"
+  }
+ },
+ {
+  "code": "PS_DW_BINDAPUR",
+  "name": "PS Binda Pur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_DABRI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176001"
+  }
+ },
+ {
+  "code": "PS_DW_CHHAWLA",
+  "name": "PS Chhawla",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_CHHAWALA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176007"
+  }
+ },
+ {
+  "code": "PS_DW_DABRI",
+  "name": "PS Dabri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_DABRI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176002"
+  }
+ },
+ {
+  "code": "PS_DW_DWARKANORTH",
+  "name": "PS Dwarka North",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_DWARKA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176004"
+  }
+ },
+ {
+  "code": "PS_DW_DWARKASECTOR23",
+  "name": "PS Dwarka Sector 23",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_DWARKA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176005"
+  }
+ },
+ {
+  "code": "PS_DW_DWARKASOUTH",
+  "name": "PS Dwarka South",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_DWARKA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176003"
+  }
+ },
+ {
+  "code": "PS_DW_JAFFARPURKALAN",
+  "name": "PS Jaffarpur Kalan",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_CHHAWALA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176006"
+  }
+ },
+ {
+  "code": "PS_DW_MOHANGARDEN",
+  "name": "PS Mohan Garden",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_NAJAFGARH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176012"
+  }
+ },
+ {
+  "code": "PS_DW_NAJAFGARH",
+  "name": "PS Najafgarh",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_NAJAFGARH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176010"
+  }
+ },
+ {
+  "code": "PS_DW_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176013"
+  }
+ },
+ {
+  "code": "PS_DW_UTTAMNAGAR",
+  "name": "PS Uttam Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8176_DABRI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8176008"
+  }
+ },
+ {
+  "code": "PS_ED_GHAZIPUR",
+  "name": "PS Ghazipur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_MADHUVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168010"
+  }
+ },
+ {
+  "code": "PS_ED_KALYANPURI",
+  "name": "PS Kalyan Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_KALYANPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168013"
+  }
+ },
+ {
+  "code": "PS_ED_LAXMINAGAR",
+  "name": "PS Laxmi Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_PREETVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168054"
+  }
+ },
+ {
+  "code": "PS_ED_MADHUVIHAR",
+  "name": "PS Madhu Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_MADHUVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168023"
+  }
+ },
+ {
+  "code": "PS_ED_MANDAWALI",
+  "name": "PS Mandawali",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_MAYURVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168024"
+  }
+ },
+ {
+  "code": "PS_ED_MAYURVIHAR",
+  "name": "PS Mayur Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_MAYURVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168026"
+  }
+ },
+ {
+  "code": "PS_ED_NEWASHOKNAGAR",
+  "name": "PS New Ashok Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_KALYANPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168028"
+  }
+ },
+ {
+  "code": "PS_ED_PANDAVNAGAR",
+  "name": "PS Pandav Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_MAYURVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168050"
+  }
+ },
+ {
+  "code": "PS_ED_PATPARGANJINDAREA",
+  "name": "PS Patparganj Ind. Area",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_MADHUVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168053"
+  }
+ },
+ {
+  "code": "PS_ED_PREETVIHAR",
+  "name": "PS Preet Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_PREETVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168030"
+  }
+ },
+ {
+  "code": "PS_ED_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168055"
+  }
+ },
+ {
+  "code": "PS_ED_SHAKARPUR",
+  "name": "PS Shakar Pur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8168_PREETVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8168052"
+  }
+ },
+ {
+  "code": "PS_NDD_BARAKHAMBAROAD",
+  "name": "PS Barakhamba Road",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8165_BARAKHAMBAROAD",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165002"
+  }
+ },
+ {
+  "code": "PS_NDD_CHANKAYAPURI",
+  "name": "PS Chankaya Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8165_CHANKYAPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165007"
+  }
+ },
+ {
+  "code": "PS_NDD_CONNAUGHTPLACE",
+  "name": "PS Connaught Place",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8165_CONNAUGHTPLACE",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165011"
+  }
+ },
+ {
+  "code": "PS_NDD_MANDIRMARG",
+  "name": "PS Mandir Marg",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8165_CONNAUGHTPLACE",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165015"
+  }
+ },
+ {
+  "code": "PS_NDD_NORTHAVENUE",
+  "name": "PS North Avenue",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8165_PARLIAMENTSTREET",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165038"
+  }
+ },
+ {
+  "code": "PS_NDD_PARLIAMENTSTREET",
+  "name": "PS Parliament Street",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8165_PARLIAMENTSTREET",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165022"
+  }
+ },
+ {
+  "code": "PS_NDD_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8165_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165039"
+  }
+ },
+ {
+  "code": "PS_NDD_SOUTHAVENUE",
+  "name": "PS South Avenue",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8165_CHANKYAPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165037"
+  }
+ },
+ {
+  "code": "PS_NDD_TILAKMARG",
+  "name": "PS Tilak Marg",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8165_BARAKHAMBAROAD",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165035"
+  }
+ },
+ {
+  "code": "PS_NDD_TUGLAKROAD",
+  "name": "PS Tuglak Road",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8165_TUGHLAKROAD",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8165036"
+  }
+ },
+ {
+  "code": "PS_ND_BARAHINDURAO",
+  "name": "PS Bara Hindu Rao",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_SADARBAZAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166004"
+  }
+ },
+ {
+  "code": "PS_ND_BURARI",
+  "name": "PS Burari",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_TIMARPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166052"
+  }
+ },
+ {
+  "code": "PS_ND_CIVILLINES",
+  "name": "PS Civil Lines",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_CIVILLINES",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166007"
+  }
+ },
+ {
+  "code": "PS_ND_GULABIBAGH",
+  "name": "PS Gulabi Bagh",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_SARAIROHILLA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166024"
+  }
+ },
+ {
+  "code": "PS_ND_KASHMEREGATE",
+  "name": "PS Kashmere Gate",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_KOTWALI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166016"
+  }
+ },
+ {
+  "code": "PS_ND_KOTWALI",
+  "name": "PS Kotwali",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_KOTWALI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166018"
+  }
+ },
+ {
+  "code": "PS_ND_LAHORIGATE",
+  "name": "PS Lahori Gate",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_KOTWALI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166023"
+  }
+ },
+ {
+  "code": "PS_ND_MAURICENAGAR",
+  "name": "PS Maurice Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_CIVILLINES",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166010"
+  }
+ },
+ {
+  "code": "PS_ND_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166055"
+  }
+ },
+ {
+  "code": "PS_ND_ROOPNAGAR",
+  "name": "PS Roop Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_CIVILLINES",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166031"
+  }
+ },
+ {
+  "code": "PS_ND_SADARBAZAR",
+  "name": "PS Sadar Bazar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_SADARBAZAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166038"
+  }
+ },
+ {
+  "code": "PS_ND_SARAIROHILLA",
+  "name": "PS Sarai Rohilla",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_SARAIROHILLA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166039"
+  }
+ },
+ {
+  "code": "PS_ND_SUBZIMANDI",
+  "name": "PS Subzi Mandi",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_SADARBAZAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166041"
+  }
+ },
+ {
+  "code": "PS_ND_TIMARPUR",
+  "name": "PS TimarPur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_TIMARPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166051"
+  }
+ },
+ {
+  "code": "PS_ND_WAZIRABAD",
+  "name": "PS Wazirabad",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8166_TIMARPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8166054"
+  }
+ },
+ {
+  "code": "PS_NED_BHAJANPURA",
+  "name": "PS Bhajan Pura",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_BHAJANPURA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173005"
+  }
+ },
+ {
+  "code": "PS_NED_DAYALPUR",
+  "name": "PS Dayal Pur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_GOKULPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173061"
+  }
+ },
+ {
+  "code": "PS_NED_GOKULPURI",
+  "name": "PS Gokul Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_GOKULPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173054"
+  }
+ },
+ {
+  "code": "PS_NED_HARSHVIHAR",
+  "name": "PS Harsh Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_NANDNAGRI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173055"
+  }
+ },
+ {
+  "code": "PS_NED_JAFFRABAD",
+  "name": "PS Jaffrabad",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_BHAJANPURA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173058"
+  }
+ },
+ {
+  "code": "PS_NED_JYOTINAGAR",
+  "name": "PS Jyoti Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_GOKULPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173056"
+  }
+ },
+ {
+  "code": "PS_NED_KARAWALNAGAR",
+  "name": "PS Karawal Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_KHAJURIKHAS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173016"
+  }
+ },
+ {
+  "code": "PS_NED_KHAJURIKHAS",
+  "name": "PS Khajuri Khas",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_KHAJURIKHAS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173015"
+  }
+ },
+ {
+  "code": "PS_NED_NANDNAGRI",
+  "name": "PS Nand Nagri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_NANDNAGRI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173025"
+  }
+ },
+ {
+  "code": "PS_NED_NEWUSMANPUR",
+  "name": "PS New Usman Pur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_SEELAMPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173030"
+  }
+ },
+ {
+  "code": "PS_NED_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173062"
+  }
+ },
+ {
+  "code": "PS_NED_SEELAMPUR",
+  "name": "PS SeelamPur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_SEELAMPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173042"
+  }
+ },
+ {
+  "code": "PS_NED_SHASTRIPARK",
+  "name": "PS Shastri Park",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_SEELAMPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173060"
+  }
+ },
+ {
+  "code": "PS_NED_SONIAVIHAR",
+  "name": "PS Sonia Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_KHAJURIKHAS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173057"
+  }
+ },
+ {
+  "code": "PS_NED_WELCOME",
+  "name": "PS Welcome",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8173_BHAJANPURA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8173045"
+  }
+ },
+ {
+  "code": "PS_NWD_ADARSHNAGAR",
+  "name": "PS Adarsh Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_JAHANGIRPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172003"
+  }
+ },
+ {
+  "code": "PS_NWD_ASHOKVIHAR",
+  "name": "PS Ashok Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_ASHOKVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172006"
+  }
+ },
+ {
+  "code": "PS_NWD_BHARATNAGAR",
+  "name": "PS Bharat Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_ASHOKVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172007"
+  }
+ },
+ {
+  "code": "PS_NWD_JAHANGIRPURI",
+  "name": "PS Jahangir Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_JAHANGIRPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172014"
+  }
+ },
+ {
+  "code": "PS_NWD_KESHAVPURAM",
+  "name": "PS Keshav Puram",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_ASHOKVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172025"
+  }
+ },
+ {
+  "code": "PS_NWD_MAHENDRAPARK",
+  "name": "PS Mahendra Park",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_SHALIMARBAGH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172051"
+  }
+ },
+ {
+  "code": "PS_NWD_MAURYAENCLAVE",
+  "name": "PS Maurya Enclave",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_SUBHASHPLACE",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172049"
+  }
+ },
+ {
+  "code": "PS_NWD_MODELTOWN",
+  "name": "PS Model Town",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_MODELTOWN",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172017"
+  }
+ },
+ {
+  "code": "PS_NWD_MUKHERJINAGAR",
+  "name": "PS Mukherji Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_MODELTOWN",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172030"
+  }
+ },
+ {
+  "code": "PS_NWD_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172052"
+  }
+ },
+ {
+  "code": "PS_NWD_SHALIMARBAGH",
+  "name": "PS Shalimar Bagh",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8172_SHALIMARBAGH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8172035"
+  }
+ },
+ {
+  "code": "PS_NWD_SUBHASHPLACE",
+  "name": "PS Subhash Place",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8160_NORTH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160016"
+  }
+ },
+ {
+  "code": "PS_OD_MANGOLPURI",
+  "name": "PS Mangol Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8174_MANGOLPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174005"
+  }
+ },
+ {
+  "code": "PS_OD_MUNDKA",
+  "name": "PS Mundka",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8174_NANGLOI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174025"
+  }
+ },
+ {
+  "code": "PS_OD_NANGLOI",
+  "name": "PS Nangloi",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8160_NORTH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160009"
+  }
+ },
+ {
+  "code": "PS_OD_NIHALVIHAR",
+  "name": "PS Nihal Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8174_PASCHIMVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174022"
+  }
+ },
+ {
+  "code": "PS_OD_PASCHIMVIHAREAST",
+  "name": "PS Paschim Vihar East",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8174_PASCHIMVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174026"
+  }
+ },
+ {
+  "code": "PS_OD_PASCHIMVIHARWEST",
+  "name": "PS Paschim Vihar West",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8174_PASCHIMVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174027"
+  }
+ },
+ {
+  "code": "PS_OD_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8174_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174030"
+  }
+ },
+ {
+  "code": "PS_OD_RAJPARK",
+  "name": "PS Raj Park",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8174_SULTANPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174029"
+  }
+ },
+ {
+  "code": "PS_OD_RANHOLA",
+  "name": "PS Ranhola",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8174_NANGLOI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174020"
+  }
+ },
+ {
+  "code": "PS_OD_RANIBAGH",
+  "name": "PS Rani Bagh",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8174_MANGOLPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174028"
+  }
+ },
+ {
+  "code": "PS_OD_SULTANPURI",
+  "name": "PS Sultan Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8174_SULTANPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8174011"
+  }
+ },
+ {
+  "code": "PS_OND_ALIPUR",
+  "name": "PS Ali Pur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8991_SAMAIPURBADLI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8991006"
+  }
+ },
+ {
+  "code": "PS_OND_BAWANA",
+  "name": "PS Bawana",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8991_BAWANA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8991004"
+  }
+ },
+ {
+  "code": "PS_OND_BHALSWADAIRY",
+  "name": "PS Bhalswa Dairy",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8991_SWARUPNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8991003"
+  }
+ },
+ {
+  "code": "PS_OND_NARELA",
+  "name": "PS Narela",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8991_NARELA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8991007"
+  }
+ },
+ {
+  "code": "PS_OND_NARELAINDAREA",
+  "name": "PS Narela Ind. Area",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8991_NARELA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8991001"
+  }
+ },
+ {
+  "code": "PS_OND_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8991_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8991009"
+  }
+ },
+ {
+  "code": "PS_OND_SAMAIPURBADLI",
+  "name": "PS Samai Pur Badli",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8991_SAMAIPURBADLI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8991008"
+  }
+ },
+ {
+  "code": "PS_OND_SHAHBADDAIRY",
+  "name": "PS Shahbad Dairy",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8991_BAWANA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8991005"
+  }
+ },
+ {
+  "code": "PS_OND_SWARUPNAGAR",
+  "name": "PS Swarup Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8991_SWARUPNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8991002"
+  }
+ },
+ {
+  "code": "PS_RND_AMANVIHAR",
+  "name": "PS Aman Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_AMANVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959016"
+  }
+ },
+ {
+  "code": "PS_RND_BEGUMPUR",
+  "name": "PS Begum Pur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_BEGUMPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959003"
+  }
+ },
+ {
+  "code": "PS_RND_BUDHVIHAR",
+  "name": "PS BudhVihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_PRASHANTVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959014"
+  }
+ },
+ {
+  "code": "PS_RND_KANJHAWALA",
+  "name": "PS Kanjha-wala",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_BEGUMPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959015"
+  }
+ },
+ {
+  "code": "PS_RND_KNKATJUMARG",
+  "name": "PS K. N. Katju Marg",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_PRASHANTVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959007"
+  }
+ },
+ {
+  "code": "PS_RND_NORTHROHINI",
+  "name": "PS North Rohini",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_ROHINI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959011"
+  }
+ },
+ {
+  "code": "PS_RND_PARSHANTVIHAR",
+  "name": "PS Parshant Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_PRASHANTVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959008"
+  }
+ },
+ {
+  "code": "PS_RND_PREMNAGAR",
+  "name": "PS Prem Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_AMANVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959013"
+  }
+ },
+ {
+  "code": "PS_RND_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959017"
+  }
+ },
+ {
+  "code": "PS_RND_SOUTHROHINI",
+  "name": "PS South Rohini",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_ROHINI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959010"
+  }
+ },
+ {
+  "code": "PS_RND_VIJAYVIHAR",
+  "name": "PS Vijay Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8959_ROHINI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8959009"
+  }
+ },
+ {
+  "code": "PS_SD_AMBEDKARNAGAR",
+  "name": "PS Ambedkar Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_CHITRANJANPARK",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167064"
+  }
+ },
+ {
+  "code": "PS_SD_CHITRANJANPARK",
+  "name": "PS Chitranjan Park",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_CHITRANJANPARK",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167062"
+  }
+ },
+ {
+  "code": "PS_SD_DEFENCECOLONY",
+  "name": "PS Defence Colony",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_DEFENCECOLONY",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167010"
+  }
+ },
+ {
+  "code": "PS_SD_FATEHPURBERI",
+  "name": "PS Fatehpur Beri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_MEHRAULI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167012"
+  }
+ },
+ {
+  "code": "PS_SD_GREATERKAILASH",
+  "name": "PS Greater Kailash",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_CHITRANJANPARK",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167061"
+  }
+ },
+ {
+  "code": "PS_SD_HAUZKHAS",
+  "name": "PS Hauz Khas",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_HAUZKHAS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167017"
+  }
+ },
+ {
+  "code": "PS_SD_KOTLAMUBARAKPUR",
+  "name": "PS Kotla Mubarak Pur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_DEFENCECOLONY",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167023"
+  }
+ },
+ {
+  "code": "PS_SD_LODHICOLONY",
+  "name": "PS Lodhi Colony",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_DEFENCECOLONY",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167028"
+  }
+ },
+ {
+  "code": "PS_SD_MAIDANGARHI",
+  "name": "PS Maidan Garhi",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_MEHRAULI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167066"
+  }
+ },
+ {
+  "code": "PS_SD_MALVIYANAGAR",
+  "name": "PS Malviya Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_HAUZKHAS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167033"
+  }
+ },
+ {
+  "code": "PS_SD_MEHRAULI",
+  "name": "PS Mehrauli",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_MEHRAULI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167032"
+  }
+ },
+ {
+  "code": "PS_SD_NEBSARAI",
+  "name": "PS Neb Sarai",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_SANGAMVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167057"
+  }
+ },
+ {
+  "code": "PS_SD_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167068"
+  }
+ },
+ {
+  "code": "PS_SD_SAKET",
+  "name": "PS Saket",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_HAUZKHAS",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167056"
+  }
+ },
+ {
+  "code": "PS_SD_SANGAMVIHAR",
+  "name": "PS Sangam Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_SANGAMVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167063"
+  }
+ },
+ {
+  "code": "PS_SD_TIGRI",
+  "name": "PS Tigri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8167_SANGAMVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8167067"
+  }
+ },
+ {
+  "code": "PS_SED_AMARCOLONY",
+  "name": "PS Amar Colony",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_KALKAJI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955007"
+  }
+ },
+ {
+  "code": "PS_SED_BADARPUR",
+  "name": "PS Badarpur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_BADARPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955012"
+  }
+ },
+ {
+  "code": "PS_SED_GOVINDPURI",
+  "name": "PS Govind Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_KALKAJI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955002"
+  }
+ },
+ {
+  "code": "PS_SED_HNDIN",
+  "name": "PS H. N. Din",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_LAJPATNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955005"
+  }
+ },
+ {
+  "code": "PS_SED_JAITPUR",
+  "name": "PS Jaitpur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_BADARPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955001"
+  }
+ },
+ {
+  "code": "PS_SED_JAMIANAGAR",
+  "name": "PS Jamia Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_NEWFRIENDSCOLONY",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955004"
+  }
+ },
+ {
+  "code": "PS_SED_KALINDIKUNJ",
+  "name": "PS Kalindi Kunj",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_SARITAVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955019"
+  }
+ },
+ {
+  "code": "PS_SED_KALKAJI",
+  "name": "PS Kalkaji",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_KALKAJI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955009"
+  }
+ },
+ {
+  "code": "PS_SED_LAJPATNAGAR",
+  "name": "PS Lajpat Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_LAJPATNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955006"
+  }
+ },
+ {
+  "code": "PS_SED_NEWFRIENDSCOLONY",
+  "name": "PS New Friends Colony",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_NEWFRIENDSCOLONY",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955003"
+  }
+ },
+ {
+  "code": "PS_SED_OKHLAINDLAREA",
+  "name": "PS Okhla Indl. Area",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_SARITAVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955013"
+  }
+ },
+ {
+  "code": "PS_SED_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955021"
+  }
+ },
+ {
+  "code": "PS_SED_PULPRAHLADPUR",
+  "name": "PS Pul Prahlad Pur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_BADARPUR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955017"
+  }
+ },
+ {
+  "code": "PS_SED_SARITAVIHAR",
+  "name": "PS Sarita Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_SARITAVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955011"
+  }
+ },
+ {
+  "code": "PS_SED_SHAHEENBAGH",
+  "name": "PS Shaheen Bagh",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_NEWFRIENDSCOLONY",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955020"
+  }
+ },
+ {
+  "code": "PS_SED_SUNLIGHTCOLONY",
+  "name": "PS Sunlight Colony",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8955_LAJPATNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8955016"
+  }
+ },
+ {
+  "code": "PS_SHD_ANANDVIHAR",
+  "name": "PS Anand Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8164_NEWDELHI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8164004"
+  }
+ },
+ {
+  "code": "PS_SHD_FARSHBAZAR",
+  "name": "PS Farsh Bazar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_SHAHDARA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957006"
+  }
+ },
+ {
+  "code": "PS_SHD_GANDHINAGAR",
+  "name": "PS Gandhi Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_GANDHINAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957004"
+  }
+ },
+ {
+  "code": "PS_SHD_GEETACOLONY",
+  "name": "PS Geeta Colony",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_GANDHINAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957005"
+  }
+ },
+ {
+  "code": "PS_SHD_GTBENCLAVE",
+  "name": "PS G. T. B. Enclave",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_SEEMAPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957009"
+  }
+ },
+ {
+  "code": "PS_SHD_JAGATPURI",
+  "name": "PS Jagat Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_VIVEKVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957011"
+  }
+ },
+ {
+  "code": "PS_SHD_KRISHNANAGAR",
+  "name": "PS Krishna Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_GANDHINAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957003"
+  }
+ },
+ {
+  "code": "PS_SHD_MANSAROVERPARK",
+  "name": "PS Mansarover Park",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_SEEMAPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957008"
+  }
+ },
+ {
+  "code": "PS_SHD_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957012"
+  }
+ },
+ {
+  "code": "PS_SHD_SEEMAPURI",
+  "name": "PS Seema Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_SEEMAPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957010"
+  }
+ },
+ {
+  "code": "PS_SHD_SHAHADRA",
+  "name": "PS Shahadra",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_SHAHDARA",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957007"
+  }
+ },
+ {
+  "code": "PS_SHD_VIVEKVIHAR",
+  "name": "PS Vivek Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8957_VIVEKVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8957001"
+  }
+ },
+ {
+  "code": "PS_SWD_DELHICANTT",
+  "name": "PS Delhi Cantt.",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8164_OLDDELHI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8164041"
+  }
+ },
+ {
+  "code": "PS_SWD_KAPASHERA",
+  "name": "PS Kapashera",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_VASANTKUNJ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171030"
+  }
+ },
+ {
+  "code": "PS_SWD_KISHANGARH",
+  "name": "PS Kishan-garh",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_SAFDARJUNGENCLAVE",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171066"
+  }
+ },
+ {
+  "code": "PS_SWD_PALAMVILLAGE",
+  "name": "PS Palam Village",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_DELHICANTT",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171057"
+  }
+ },
+ {
+  "code": "PS_SWD_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171069"
+  }
+ },
+ {
+  "code": "PS_SWD_RKPURAM",
+  "name": "PS R. K. Puram",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_VASANTVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171060"
+  }
+ },
+ {
+  "code": "PS_SWD_SAFDARJUNGENCLAVE",
+  "name": "PS Safdarjung Enclave",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_SAFDARJUNGENCLAVE",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171067"
+  }
+ },
+ {
+  "code": "PS_SWD_SAGARPUR",
+  "name": "PS Sagar Pur",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_DELHICANTT",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171054"
+  }
+ },
+ {
+  "code": "PS_SWD_SOUTHCAMPUS",
+  "name": "PS South Campus",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_VASANTVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171061"
+  }
+ },
+ {
+  "code": "PS_SWD_VASANTKUNJNORTH",
+  "name": "PS Vasant Kunj North",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_VASANTKUNJ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171062"
+  }
+ },
+ {
+  "code": "PS_SWD_VASANTKUNJSOUTH",
+  "name": "PS Vasant Kunj South",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_VASANTKUNJ",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171063"
+  }
+ },
+ {
+  "code": "PS_SWD_VASANTVIHAR",
+  "name": "PS Vasant Vihar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8171_VASANTVIHAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8171064"
+  }
+ },
+ {
+  "code": "PS_WD_HARINAGAR",
+  "name": "PS Hari Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_RAJOURIGARDEN",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170015"
+  }
+ },
+ {
+  "code": "PS_WD_INDERPURI",
+  "name": "PS Inder Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_MAYAPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170064"
+  }
+ },
+ {
+  "code": "PS_WD_JANAKPURI",
+  "name": "PS Janak Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8160_SOUTH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8160010"
+  }
+ },
+ {
+  "code": "PS_WD_KHYALA",
+  "name": "PS Khyala",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_TILAKNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170062"
+  }
+ },
+ {
+  "code": "PS_WD_KIRTINAGAR",
+  "name": "PS Kirti Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_PUNJABIBAGH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170025"
+  }
+ },
+ {
+  "code": "PS_WD_MAYAPURI",
+  "name": "PS Maya Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_MAYAPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170028"
+  }
+ },
+ {
+  "code": "PS_WD_MOTINAGAR",
+  "name": "PS Moti Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_PUNJABIBAGH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170029"
+  }
+ },
+ {
+  "code": "PS_WD_NARAINA",
+  "name": "PS Naraina",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_MAYAPURI",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170063"
+  }
+ },
+ {
+  "code": "PS_WD_PSCYBERCRIME",
+  "name": "PS Cyber Crime",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_ACPOPPRATION",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170065"
+  }
+ },
+ {
+  "code": "PS_WD_PUNJABIBAGH",
+  "name": "PS Punjabi Bagh",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_PUNJABIBAGH",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170043"
+  }
+ },
+ {
+  "code": "PS_WD_RAJOURIGARDEN",
+  "name": "PS Rajouri Garden",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_RAJOURIGARDEN",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170037"
+  }
+ },
+ {
+  "code": "PS_WD_TILAKNAGAR",
+  "name": "PS Tilak Nagar",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_TILAKNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170051"
+  }
+ },
+ {
+  "code": "PS_WD_VIKASPURI",
+  "name": "PS Vikas Puri",
+  "node_type": "PS",
+  "parent_code": "SUBDIV_8170_TILAKNAGAR",
+  "is_active": true,
+  "metadata": {
+   "official_code": "8170060"
+  }
+ }
+]
