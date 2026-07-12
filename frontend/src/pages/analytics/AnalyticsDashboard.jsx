@@ -287,8 +287,8 @@ export default function AnalyticsDashboard() {
                   <PieIcon size={14} className="text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-[var(--text-main-theme)]">Category Incident Ratios</p>
-                  <p className="text-xs text-[var(--text-main-theme)] opacity-70">Crime head breakdown · Donut view</p>
+                  <p className="text-sm font-bold text-[var(--text-main-theme)]">Heinous Offence Ratios</p>
+                  <p className="text-xs text-[var(--text-main-theme)] opacity-70">Heinous offence breakdown · Donut view</p>
                 </div>
               </div>
               <div className="p-5">

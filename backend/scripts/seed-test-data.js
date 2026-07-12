@@ -65,7 +65,7 @@ const USERS = [
 const LOCS_NDD = ['Connaught Place', 'Parliament Street', 'Janpath', 'Patel Chowk', 'Rajpath'];
 const LOCS_NWD = ['Adarsh Nagar', 'Shalimar Bagh', 'Mukherji Nagar', 'Model Town', 'Subhash Place'];
 const IO_NAMES  = ['Insp. Sharma', 'Insp. Verma', 'SI Gupta', 'Insp. Singh', 'SI Tiwari'];
-const CRIME_HEADS = ['Theft', 'Robbery', 'Murder', 'M.V. Theft', 'Snatching'];
+const CRIME_HEADS = ['Theft', 'Robbery', 'Murder', 'M.V. Theft', 'Snatching', 'Rape', 'Attempt to murder', 'Dacoity', 'Acid attack'];
 const IPC_SECS    = ['302', '420', '379', '392', '66C'];
 
 const pad  = n => String(n).padStart(2, '0');
@@ -78,7 +78,7 @@ function caseData(i, ps) {
   const complainantNames = ['Rahul Kumar','Priya Singh','Amit Jain','Meera Patel','Suresh Verma'];
   const parentNames = ['Rajesh Kumar','Harpal Singh','Mohan Jain','Ramesh Patel','Dinesh Verma'];
   
-  const localHead = CRIME_HEADS[i%5];
+  const localHead = CRIME_HEADS[i % CRIME_HEADS.length];
 
   // Phone details conditional on local_head: 'Mobile Theft', 'Snatching', 'Robbery'
   const phoneFields = {};

@@ -26,4 +26,10 @@ router.get('/case-type-breakdown', authMiddleware, enforceScope, analyticsContro
 router.get('/cases-by-month', authMiddleware, enforceScope, analyticsController.getCasesByMonthTrend);
 router.get('/arrests-trend', authMiddleware, enforceScope, analyticsController.getArrestsTrend);
 
+// HC Dashboard v2 (FIR/Kalandra/Heinous KPIs, crime-head matrix, case-status breakdown)
+router.get('/ps-dashboard-v2', authMiddleware, enforceScope, analyticsController.getPsDashboardStatsV2);
+router.get('/arrest-trend-breakdown', authMiddleware, enforceScope, analyticsController.getArrestsTrendBreakdown);
+router.get('/crime-head-matrix', authMiddleware, enforceScope, analyticsController.getCrimeHeadMatrix);
+router.get('/case-status-breakdown', authMiddleware, enforceScope, analyticsController.getCaseStatusBreakdown);
+
 export default router;

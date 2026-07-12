@@ -2463,15 +2463,15 @@ api.interceptors.request.use(
       });
     }
 
-    // Analytics by Crime Head
+    // Analytics by Crime Head (Heinous Offences)
     if (url.includes('/analytics/by-crime-head') && method === 'GET') {
       const data = [
-        { crimeHead: 'Theft', count: 12 },
-        { crimeHead: 'Robbery', count: 4 },
-        { crimeHead: 'Snatching', count: 8 },
-        { crimeHead: 'Burglary', count: 3 },
-        { crimeHead: 'Murder', count: 1 },
-        { crimeHead: 'Other', count: 15 }
+        { name: 'Murder', count: 8 },
+        { name: 'Attempt to murder', count: 5 },
+        { name: 'Rape', count: 3 },
+        { name: 'Robbery', count: 12 },
+        { name: 'Dacoity', count: 2 },
+        { name: 'Acid attack', count: 1 }
       ];
       return Promise.reject({
         isMock: true,
