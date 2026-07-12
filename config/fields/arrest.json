@@ -2034,6 +2034,68 @@
   "scope_level": "global"
  },
  {
+  "field_key": "arrested_qualification",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person Qualification",
+   "hi": "गिरफ्तार व्यक्ति योग्यता"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "qualification"
+  },
+  "options": [
+   {
+    "value": "Uneducated",
+    "label_en": "Uneducated",
+    "label_hi": "अशिक्षित"
+   },
+   {
+    "value": "10th",
+    "label_en": "10th",
+    "label_hi": "10वीं"
+   },
+   {
+    "value": "10+2",
+    "label_en": "10+2",
+    "label_hi": "12वीं"
+   },
+   {
+    "value": "Graduate",
+    "label_en": "Graduate",
+    "label_hi": "स्नातक"
+   },
+   {
+    "value": "Post-Graduate",
+    "label_en": "Post-Graduate",
+    "label_hi": "स्नातकोत्तर"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 408.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
   "field_key": "arrested_dob",
   "record_types": [
    "ARREST"

@@ -270,6 +270,7 @@ Indexes: `(record_id)`, `(section_id)`, `(major_head_id)`, the two partial UNIQU
 | is_minor | boolean | **GENERATED ALWAYS AS (age < 18) STORED** — DB-computed, cannot drift (ruling 20); NULL when age unrecorded. Generic across all roles (missing minors, POCSO victims/accused…) |
 | nick_names | jsonb | NOT NULL DEFAULT '[]' — multi-value chips |
 | mobile | varchar(20) | |
+| qualification | varchar(50) | education level (Uneducated/10th/10+2/Graduate/Post-Graduate — options live in field config, not a CHECK); one column for all roles, the form's per-role `*_qualification` fields map here |
 | present_location_id | uuid | FK → locations (§3.5) — replaces the old inline present-address block (ruling 15) |
 | perm_location_id | uuid | FK → locations, NULL when permanent = present |
 | perm_same_as_present | boolean | NOT NULL DEFAULT false — the form's "same as present" toggle; when true, perm_location_id is NULL |

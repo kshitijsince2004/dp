@@ -369,6 +369,7 @@ erDiagram
         boolean is_minor "GENERATED ALWAYS AS (age lt 18) STORED - DB-computed, all roles"
         jsonb nick_names "multi-value chips"
         varchar mobile
+        varchar qualification "education level, options in field config (added 2026-07-12)"
         uuid present_location_id "FK locations"
         uuid perm_location_id "FK locations, NULL when same as present"
         boolean perm_same_as_present "form toggle"

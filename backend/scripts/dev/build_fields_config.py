@@ -19,6 +19,33 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 rows = json.load(open(SRC))
 
+# Live-DB-only fields: the *_qualification quartet was added straight to the live DB
+# (never a git seed), so the replay export lacks it. Injected here (2026-07-12) —
+# maps to the real persons.qualification column via PERSON_SUFFIX.
+_QUAL_OPTS = json.dumps([
+    {"value": "Uneducated", "label_en": "Uneducated", "label_hi": "अशिक्षित"},
+    {"value": "10th", "label_en": "10th", "label_hi": "10वीं"},
+    {"value": "10+2", "label_en": "10+2", "label_hi": "12वीं"},
+    {"value": "Graduate", "label_en": "Graduate", "label_hi": "स्नातक"},
+    {"value": "Post-Graduate", "label_en": "Post-Graduate", "label_hi": "स्नातकोत्तर"},
+], ensure_ascii=False)
+rows += [{
+    "field_key": key, "field_type": "SELECT",
+    "applicable_record_types": json.dumps(rts),
+    "label_en": en, "label_hi": hi,
+    "options": _QUAL_OPTS, "options_source": None, "depends_on": None, "show_when": None,
+    "validation_rules": '{"required":false}',
+    "visible_to_levels": '["PS","DISTRICT","HQ"]', "editable_by_levels": '["PS"]',
+    "introduced_at_level": "PS", "section": section, "repeater_entity": repeater,
+    "sort_order": so, "full_width": False, "readonly": False, "is_active": True,
+    "scope_level": "global",
+} for key, rts, en, hi, section, repeater, so in [
+    ("complainant_qualification", ["CASE"], "Complainant Qualification", "शिकायतकर्ता योग्यता", "complainant_personal_info", None, 408.5),
+    ("accused_qualification", ["CASE"], "Accused Qualification", "अभियुक्त योग्यता", "accused_personal_info", "PERSON_ACCUSED", 438.5),
+    ("victim_qualification", ["CASE"], "Victim Qualification", "पीड़ित योग्यता", "victim_personal_info", "PERSON_VICTIM", 468.5),
+    ("arrested_qualification", ["ARREST"], "Arrested Person Qualification", "गिरफ्तार व्यक्ति योग्यता", "arrested_personal_info", "PERSON_ARRESTED", 408.5),
+]]
+
 J = lambda v: (json.loads(v) if isinstance(v, str) else v)
 
 # ── 1. dropped fields (never get config rows) ────────────────────────────────
@@ -75,7 +102,7 @@ PERSON_SUFFIX = {  # suffix -> (kind, arg)
     "npr": ("extra", None),
     "mobile_country_code": ("extra", None),
     "marital_status": ("extra", None),
-    "qualification": ("extra", None),
+    "qualification": ("col", "qualification"),  # real persons column since 2026-07-12
 }
 
 def person_rule(key):

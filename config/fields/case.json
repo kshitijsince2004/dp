@@ -1875,6 +1875,67 @@
   "scope_level": "global"
  },
  {
+  "field_key": "complainant_qualification",
+  "record_types": [
+   "CASE"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Complainant Qualification",
+   "hi": "शिकायतकर्ता योग्यता"
+  },
+  "section": "complainant_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "COMPLAINANT",
+   "column": "qualification"
+  },
+  "options": [
+   {
+    "value": "Uneducated",
+    "label_en": "Uneducated",
+    "label_hi": "अशिक्षित"
+   },
+   {
+    "value": "10th",
+    "label_en": "10th",
+    "label_hi": "10वीं"
+   },
+   {
+    "value": "10+2",
+    "label_en": "10+2",
+    "label_hi": "12वीं"
+   },
+   {
+    "value": "Graduate",
+    "label_en": "Graduate",
+    "label_hi": "स्नातक"
+   },
+   {
+    "value": "Post-Graduate",
+    "label_en": "Post-Graduate",
+    "label_hi": "स्नातकोत्तर"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 408.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
   "field_key": "complainant_same_as_victim",
   "record_types": [
    "CASE"
@@ -3723,6 +3784,68 @@
   "scope_level": "global"
  },
  {
+  "field_key": "accused_qualification",
+  "record_types": [
+   "CASE"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Accused Qualification",
+   "hi": "अभियुक्त योग्यता"
+  },
+  "section": "accused_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ACCUSED",
+   "column": "qualification"
+  },
+  "options": [
+   {
+    "value": "Uneducated",
+    "label_en": "Uneducated",
+    "label_hi": "अशिक्षित"
+   },
+   {
+    "value": "10th",
+    "label_en": "10th",
+    "label_hi": "10वीं"
+   },
+   {
+    "value": "10+2",
+    "label_en": "10+2",
+    "label_hi": "12वीं"
+   },
+   {
+    "value": "Graduate",
+    "label_en": "Graduate",
+    "label_hi": "स्नातक"
+   },
+   {
+    "value": "Post-Graduate",
+    "label_en": "Post-Graduate",
+    "label_hi": "स्नातकोत्तर"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ACCUSED",
+  "sort_order": 438.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
   "field_key": "accused_dob",
   "record_types": [
    "CASE"
@@ -5551,6 +5674,68 @@
   "introduced_at_level": "PS",
   "repeater_entity": "PERSON_VICTIM",
   "sort_order": 468,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "victim_qualification",
+  "record_types": [
+   "CASE"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Victim Qualification",
+   "hi": "पीड़ित योग्यता"
+  },
+  "section": "victim_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "VICTIM",
+   "column": "qualification"
+  },
+  "options": [
+   {
+    "value": "Uneducated",
+    "label_en": "Uneducated",
+    "label_hi": "अशिक्षित"
+   },
+   {
+    "value": "10th",
+    "label_en": "10th",
+    "label_hi": "10वीं"
+   },
+   {
+    "value": "10+2",
+    "label_en": "10+2",
+    "label_hi": "12वीं"
+   },
+   {
+    "value": "Graduate",
+    "label_en": "Graduate",
+    "label_hi": "स्नातक"
+   },
+   {
+    "value": "Post-Graduate",
+    "label_en": "Post-Graduate",
+    "label_hi": "स्नातकोत्तर"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_VICTIM",
+  "sort_order": 468.5,
   "full_width": false,
   "readonly": false,
   "is_active": true,

@@ -20,6 +20,7 @@ export async function up(knex) {
       is_minor             boolean GENERATED ALWAYS AS (age < 18) STORED,
       nick_names           jsonb NOT NULL DEFAULT '[]',
       mobile               varchar(20),
+      qualification        varchar(50),
       present_location_id  uuid REFERENCES locations(id),
       perm_location_id     uuid REFERENCES locations(id),
       perm_same_as_present boolean NOT NULL DEFAULT false,
