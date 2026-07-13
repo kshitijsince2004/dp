@@ -31,5 +31,6 @@ router.get('/ps-dashboard-v2', authMiddleware, enforceScope, analyticsController
 router.get('/arrest-trend-breakdown', authMiddleware, enforceScope, analyticsController.getArrestsTrendBreakdown);
 router.get('/crime-head-matrix', authMiddleware, enforceScope, analyticsController.getCrimeHeadMatrix);
 router.get('/case-status-breakdown', authMiddleware, enforceScope, analyticsController.getCaseStatusBreakdown);
+router.get('/crime-head-year-trend', authMiddleware, enforceScope, analyticsController.getCrimeHeadYearTrend);
 
 export default router;

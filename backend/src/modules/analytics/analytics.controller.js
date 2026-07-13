@@ -1086,4 +1086,123 @@ export const getCaseStatusBreakdown = async (req, res) => {
   }
 };
 
+// ── HQ Dashboard: crime-head year-over-year trend chart, combined across all districts ───
+// Duration options (how many prior years to plot) come from filter_presets rows with
+// scope='HQ_DURATION' (seeded in backend/seeds/05_duration_presets.js) — never hardcoded here.
+
+const shiftDateByYears = (dateStr, delta) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return toISODate(new Date(y + delta, m - 1, d));
+};
+
+// Normalizes a crime-head string for matching against excel_heinous_offences: expands the
+// "Att."/"Kid." abbreviations already used consistently throughout the local_head/crime_head
+// option list (e.g. "Att. to Murder" -> "attempt to murder"), so it lines up with the
+// unabbreviated wording used in the heinous-offences reference table.
+const normalizeForHeinousMatch = (s) => (s || '')
+  .replace(/\bAtt\.\s*/gi, 'Attempt ')
+  .replace(/\bKid\.\s*/gi, 'Kidnapping ')
+  .replace(/\s+/g, ' ')
+  .trim()
+  .toLowerCase();
+
+export const getCrimeHeadYearTrend = async (req, res) => {
+  const jq = req.jurisdictionQuery;
+  const { durationPresetId, dateFrom, dateTo } = req.query;
+
+  try {
+    const presetId = durationPresetId || 'hq_dur_1_current_year';
+    const presetRow = await db('filter_presets')
+      .where({ scope: 'HQ_DURATION', is_active: true, id: presetId })
+      .first();
+
+    let yearsBack = 0;
+    if (presetRow) {
+      const spec = parseJsonField(presetRow.filter_spec);
+      yearsBack = parseInt(spec?.conditions?.[0]?.value, 10) || 0;
+    }
+
+    const today = new Date();
+    const currentStart = dateFrom || `${today.getFullYear()}-01-01`;
+    const currentEnd = dateTo || toISODate(today);
+
+    // One line per year: current year + yearsBack previous years, each covering the same
+    // month/day span so year-over-year comparisons stay apples-to-apples.
+    const yearWindows = [];
+    for (let offset = 0; offset <= yearsBack; offset++) {
+      yearWindows.push({
+        year: today.getFullYear() - offset,
+        start: shiftDateByYears(currentStart, -offset),
+        end: shiftDateByYears(currentEnd, -offset)
+      });
+    }
+    const overallStart = yearWindows.reduce((min, w) => (w.start < min ? w.start : min), yearWindows[0].start);
+    const overallEnd = yearWindows.reduce((max, w) => (w.end > max ? w.end : max), yearWindows[0].end);
+
+    // Crime-head categories are DB-driven (field_registry), same zero-fill pattern as getCaseStatusBreakdown,
+    // so crime heads with no records in range still appear as X-axis ticks.
+    const fieldRow = await db('field_registry').where({ field_key: 'local_head', is_active: true }).first();
+    const crimeHeadOptions = parseJsonField(fieldRow?.options) || [];
+
+    // Heinous classification is DB-driven from excel_heinous_offences, not a hardcoded list —
+    // updating that table changes which crime heads land in the Heinous chart, no code change needed.
+    const heinousOffenceRows = await db('excel_heinous_offences').select('heinous_offence');
+    const heinousNormalizedSet = new Set(heinousOffenceRows.map(r => normalizeForHeinousMatch(r.heinous_offence)));
+
+    let pivotQuery = db('records')
+      .select('record_date', db.raw(`COALESCE(${jsonbPath('data', 'local_head')}, ${jsonbPath('data', 'crime_head')}) as crime_head`))
+      .whereIn('record_type', ['CASE', 'ARREST', 'UIDB'])
+      .whereBetween('record_date', [overallStart, overallEnd]);
+    pivotQuery = applyJurisdictionScope(pivotQuery, jq);
+    const pivotRows = await pivotQuery;
+
+    const countMap = new Map(yearWindows.map(w => [w.year, new Map()]));
+    pivotRows.forEach(r => {
+      if (!r.crime_head) return;
+      const dateStr = toISODate(new Date(r.record_date));
+      const window = yearWindows.find(w => dateStr >= w.start && dateStr <= w.end);
+      if (!window) return;
+      const m = countMap.get(window.year);
+      m.set(r.crime_head, (m.get(r.crime_head) || 0) + 1);
+    });
+
+    const years = yearWindows.map(w => w.year);
+    const rows = crimeHeadOptions.map(opt => {
+      const row = {
+        crime_head: opt.value,
+        is_heinous: heinousNormalizedSet.has(normalizeForHeinousMatch(opt.value))
+      };
+      years.forEach(y => { row[y] = countMap.get(y).get(opt.value) || 0; });
+      return row;
+    });
+
+    // Change-rate is always current-period vs the immediately preceding equal-length period,
+    // regardless of how many yearWindows are actually plotted (even for a single-line "Current Year" view).
+    const previousStart = shiftDateByYears(currentStart, -1);
+    const previousEnd = shiftDateByYears(currentEnd, -1);
+    const [currentTotal, previousTotal] = await Promise.all([
+      countRecordsByTypes(jq, ['CASE', 'ARREST', 'UIDB'], currentStart, currentEnd),
+      countRecordsByTypes(jq, ['CASE', 'ARREST', 'UIDB'], previousStart, previousEnd)
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        duration_preset_id: presetRow?.id || null,
+        years,
+        rows,
+        change_rate: {
+          current_range: { from: currentStart, to: currentEnd },
+          previous_range: { from: previousStart, to: previousEnd },
+          current_total: currentTotal,
+          previous_total: previousTotal,
+          pct_change: pctChange(currentTotal, previousTotal)
+        }
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 

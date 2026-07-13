@@ -113,6 +113,26 @@ export const listPresets = async (req, res) => {
   }
 };
 
+export const listDurationPresets = async (req, res) => {
+  try {
+    const rows = await db('filter_presets')
+      .where({ scope: 'HQ_DURATION', is_active: true })
+      .orderBy('id', 'asc');
+
+    const parsed = rows.map(r => ({
+      ...r,
+      filter_spec: typeof r.filter_spec === 'string' ? JSON.parse(r.filter_spec) : r.filter_spec,
+      applicable_record_types: typeof r.applicable_record_types === 'string'
+        ? JSON.parse(r.applicable_record_types || '[]')
+        : r.applicable_record_types
+    }));
+
+    return res.status(200).json({ status: 'success', data: parsed });
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
 export const createPreset = async (req, res) => {
   const { name_en, name_hi, scope, scope_id, filter_spec, applicable_record_types } = req.body;
 

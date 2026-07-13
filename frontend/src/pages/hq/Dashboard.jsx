@@ -1,144 +1,106 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Building, Map, ShieldAlert, Award, FileCheck, PhoneCall, Filter, Radio, MapPin, Clock3, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
+import {
+  Building, ShieldAlert, FileCheck, PhoneCall, Filter, CheckCircle2, ArrowUpRight, ArrowDownRight
+} from 'lucide-react';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 import api from '../../utils/api.js';
 import phqImage from '../../assets/phq.jpeg';
 import useAuthStore from '../../store/authStore.js';
 import SearchableSelect from '../../components/forms/SearchableSelect.jsx';
 
+// One color per year-offset-from-current (index 0 = current year), so a given year's
+// line color never repaints when the Duration selection changes. Max 5 lines (Last 5 Years).
+const YEAR_LINE_COLORS = ['#003087', '#7C3AED', '#059669', '#D97706', '#DC2626'];
+
+function CrimeHeadTooltip({ active, label, payload }) {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div className="rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-lg text-xs">
+      <p className="mb-1.5 font-bold text-[#0A1628]">{label}</p>
+      {payload.map((entry) => (
+        <div key={entry.dataKey} className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1.5 text-[#4A5568]">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+            {entry.name}
+          </span>
+          <span className="font-semibold tabular-nums text-[#1A202C]">{entry.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CrimeHeadLineChart({ rows, years }) {
+  return (
+    <div className="overflow-x-auto p-6">
+      <div style={{ width: Math.max(1100, rows.length * 42), height: 380 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={rows} margin={{ top: 10, right: 20, left: 0, bottom: 90 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+            <XAxis
+              dataKey="crime_head"
+              angle={-90}
+              textAnchor="end"
+              interval={0}
+              height={110}
+              tick={{ fontSize: 10, fill: '#718096' }}
+              stroke="#CBD5E0"
+            />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#718096' }} stroke="#CBD5E0" />
+            <Tooltip content={<CrimeHeadTooltip />} />
+            <Legend verticalAlign="top" height={36} />
+            {years.map((y, i) => (
+              <Line
+                key={y}
+                type="monotone"
+                dataKey={String(y)}
+                name={String(y)}
+                stroke={YEAR_LINE_COLORS[i % YEAR_LINE_COLORS.length]}
+                strokeWidth={i === 0 ? 3 : 2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 export default function HQDashboard() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const currentLng = i18n.language || 'en';
   const { user, jurisdiction } = useAuthStore();
-  const [filterDistrict, setFilterDistrict] = useState('All');
-  const [filterType, setFilterType] = useState('All');
-  const [filterLocalHead, setFilterLocalHead] = useState('All');
-  const [filterDuration, setFilterDuration] = useState('All');
+
+  const [durationPresetId, setDurationPresetId] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-
-  const [localHeads, setLocalHeads] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [recordTypes, setRecordTypes] = useState([]);
-  const [datePresets, setDatePresets] = useState([]);
+  const [durationPresets, setDurationPresets] = useState([]);
 
   useEffect(() => {
-    api.get('/fields/lookup/local-heads')
-      .then((res) => {
-        if (res.data?.success && Array.isArray(res.data.data)) {
-          setLocalHeads(res.data.data);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to fetch local heads:', err);
-      });
-
-    api.get('/hierarchy/nodes')
-      .then((res) => {
-        if (res.data?.data && Array.isArray(res.data.data)) {
-          const distNodes = res.data.data.filter(n => n.node_type === 'DISTRICT');
-          setDistricts(distNodes);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to fetch districts:', err);
-      });
-
-    api.get('/fields/lookup/record-types')
-      .then((res) => {
-        if (res.data?.success && Array.isArray(res.data.data)) {
-          setRecordTypes(res.data.data);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to fetch record types:', err);
-      });
-
-    api.get('/filters/presets')
+    api.get('/filters/duration-presets')
       .then((res) => {
         const raw = res.data?.data;
-        if (Array.isArray(raw)) {
-          const filtered = raw.filter(p => {
-            const spec = p.filter_spec || {};
-            const conds = spec.conditions || [];
-            return conds.some(c => c.field === '_record_date' && (c.operator === 'last_n_days' || c.operator === 'older_than_n_days'));
-          });
-          setDatePresets(filtered);
+        if (Array.isArray(raw) && raw.length) {
+          setDurationPresets(raw);
+          setDurationPresetId((prev) => (prev && raw.some((p) => p.id === prev)) ? prev : raw[0].id);
         }
       })
       .catch((err) => {
-        console.error('Failed to fetch presets:', err);
+        console.error('Failed to fetch duration presets:', err);
       });
   }, []);
 
-  const districtOptions = useMemo(() => {
-    const list = [{ value: 'All', label_en: 'All Districts', label_hi: 'सभी जिले' }];
-    districts.forEach(d => {
-      list.push({ value: d.id, label_en: d.name_en || d.name, label_hi: d.name_hi || d.name });
-    });
-    return list;
-  }, [districts]);
+  const presetOptions = useMemo(() => (
+    durationPresets.map((p) => ({ value: p.id, label_en: p.name_en, label_hi: p.name_hi }))
+  ), [durationPresets]);
 
-  const recordTypeOptions = useMemo(() => {
-    const list = [{ value: 'All', label_en: 'All Categories', label_hi: 'सभी श्रेणियां' }];
-    recordTypes.forEach(rt => {
-      list.push({ value: rt.value, label_en: rt.label_en || rt.label, label_hi: rt.label_hi || rt.label });
-    });
-    return list;
-  }, [recordTypes]);
-
-  const localHeadOptions = useMemo(() => {
-    const list = [{ value: 'All', label_en: 'All Local Heads', label_hi: 'सभी स्थानीय शीर्ष' }];
-    localHeads.forEach(lh => {
-      list.push({ value: lh.label, label_en: lh.label, label_hi: lh.label });
-    });
-    return list;
-  }, [localHeads]);
-
-  const presetOptions = useMemo(() => {
-    const list = [{ value: 'All', label_en: 'All Durations', label_hi: 'सभी अवधियां' }];
-    datePresets.forEach(p => {
-      list.push({ value: p.id, label_en: p.name_en, label_hi: p.name_hi });
-    });
-    return list;
-  }, [datePresets]);
-
-  const handleDurationChange = (presetId) => {
-    setFilterDuration(presetId);
-    if (presetId === 'All') {
-      setDateFrom('');
-      setDateTo('');
-      return;
-    }
-    const preset = datePresets.find(p => p.id === presetId);
-    if (preset) {
-      const spec = preset.filter_spec || {};
-      const conditions = spec.conditions || [];
-      conditions.forEach(cond => {
-        const field = cond.field || '';
-        const op = (cond.operator || cond.op || '').toLowerCase();
-        const val = cond.value;
-        if (field === '_record_date' || field === 'record_date') {
-          if (op === 'last_n_days') {
-            const days = parseInt(val || 1, 10);
-            const d = new Date();
-            d.setDate(d.getDate() - days + 1);
-            setDateFrom(d.toISOString().split('T')[0]);
-            setDateTo(new Date().toISOString().split('T')[0]);
-          } else if (op === 'older_than_n_days') {
-            const days = parseInt(val || 1, 10);
-            const d = new Date();
-            d.setDate(d.getDate() - days);
-            setDateFrom('');
-            setDateTo(d.toISOString().split('T')[0]);
-          }
-        }
-      });
-    }
-  };
-
-
+  const defaultPresetId = durationPresets[0]?.id;
 
   const getDistrictName = () => {
     const isHq = user?.role === 'HQ' || user?.role === 'HQ_ANALYST' || user?.role === 'HQ_ADMIN' || user?.role === 'SYSTEM_ADMIN';
@@ -156,14 +118,27 @@ export default function HQDashboard() {
     },
   });
 
-  // Fetch all compiled logs across Delhi
-  const { data: records = [] } = useQuery({
-    queryKey: ['records', 'all'],
+  // Fetch crime-head year-trend chart data — DB-driven duration + optional custom date range
+  const { data: chartResp } = useQuery({
+    queryKey: ['analytics', 'crime-head-year-trend', durationPresetId, dateFrom, dateTo],
     queryFn: async () => {
-      const res = await api.get('/records');
-      return res.data.data.cases ?? [];
+      const params = new URLSearchParams();
+      if (durationPresetId) params.set('durationPresetId', durationPresetId);
+      if (dateFrom) params.set('dateFrom', dateFrom);
+      if (dateTo) params.set('dateTo', dateTo);
+      const res = await api.get(`/analytics/crime-head-year-trend?${params.toString()}`);
+      return res.data.data;
     },
+    enabled: !!durationPresetId,
+    keepPreviousData: true,
   });
+
+  const years = chartResp?.years ?? [];
+  const chartRows = chartResp?.rows ?? [];
+  const changeRate = chartResp?.change_rate ?? null;
+
+  const heinousRows = chartRows.filter((r) => r.is_heinous);
+  const nonHeinousRows = chartRows.filter((r) => !r.is_heinous);
 
   const cards = [
     { label: 'Delhi-wide FIR cases', value: (stats.cases_today || 0) , color: 'text-amber-500', icon: Building },
@@ -171,29 +146,15 @@ export default function HQDashboard() {
     { label: 'Accused arrests processed', value: (stats.arrests_today || 0) , color: 'text-emerald-500', icon: FileCheck },
   ];
 
-  const activeFilterCount = [filterDistrict, filterType, filterLocalHead, filterDuration].filter(v => v !== 'All').length;
-
-  /* ── badge colour per record_type ── */
-  const typeMeta = {
-    CASE:     { bg: 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]',     label: 'FIR Case'   },
-    ARREST:   { bg: 'bg-[#ECFDF5] text-[#059669] border-[#6EE7B7]',     label: 'Arrest'     },
-    PCR_CALL: { bg: 'bg-[#EFF6FF] text-[#003087] border-[#BFDBFE]',     label: 'PCR Call'   },
-    MISSING:  { bg: 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]',     label: 'Missing'    },
-    UIDB:     { bg: 'bg-[#F5F3FF] text-[#7C3AED] border-[#C4B5FD]',     label: 'UIDB'       },
-  };
-
-  const statusMeta = (status = '') => {
-    const s = status.toUpperCase();
-    if (['HQ_RECEIVED', 'CLOSED', 'COMPILED'].includes(s))
-      return 'bg-[#ECFDF5] text-[#059669] border-[#6EE7B7]';
-    if (['DRAFT', 'SENT_BACK_HC', 'PENDING_SHO', 'DISTRICT_REVIEW'].includes(s))
-      return 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]';
-    return 'bg-[#F0F4F9] text-[#4A5568] border-[#E2E8F0]';
-  };
+  const activeFilterCount = [
+    defaultPresetId && durationPresetId !== defaultPresetId,
+    dateFrom,
+    dateTo
+  ].filter(Boolean).length;
 
   return (
     <div className="min-h-screen theme-hq-page page-bg">
- 
+
       {/* ══════════════ HERO HEADER ══════════════ */}
       <div className="relative overflow-hidden hero-banner-gradient px-8 py-8">
         <span className="user-greeting-badge text-5xl font-bold text-white/95 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 shadow-sm">
@@ -222,7 +183,7 @@ export default function HQDashboard() {
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
           style={{ backgroundImage: 'repeating-linear-gradient(0deg,white 0,white 1px,transparent 1px,transparent 48px),repeating-linear-gradient(90deg,white 0,white 1px,transparent 1px,transparent 48px)' }}
         />
- 
+
         <div className="relative z-10 mx-auto max-w-screen-xl">
           {/* Top row */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
@@ -231,7 +192,7 @@ export default function HQDashboard() {
               {getDistrictName()} · HQ COMMAND CENTER
             </span>
           </div>
- 
+
           {/* Heading + hero stat tiles */}
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
@@ -253,14 +214,14 @@ export default function HQDashboard() {
             </div>
           </div>
         </div>
- 
+
         {/* Bottom separator */}
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
       </div>
- 
+
       {/* ══════════════ PAGE BODY ══════════════ */}
       <div className="mx-auto max-w-screen-xl px-6 pb-12">
- 
+
         {/* ── Overview Stat Cards ── */}
         <div className="mt-8">
           <div className="mb-4 flex items-center gap-3">
@@ -293,7 +254,7 @@ export default function HQDashboard() {
             })}
           </div>
         </div>
- 
+
         {/* ── Scope Filters ── */}
         <div className="mt-6 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[var(--accent-glow)]">
           {/* Panel header */}
@@ -303,7 +264,7 @@ export default function HQDashboard() {
             </div>
             <div>
               <p className="text-sm font-bold text-[#1A202C]">Scope Filters</p>
-              <p className="text-xs text-[#718096]">Narrow the activity feed by district or log type</p>
+              <p className="text-xs text-[#718096]">Choose the year range and optional custom date span for the crime-head trend</p>
             </div>
             {activeFilterCount > 0 ? (
               <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#003087] px-3 py-1 text-xs font-semibold text-white shadow-sm">
@@ -320,69 +281,12 @@ export default function HQDashboard() {
           {/* Controls */}
           <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-end sm:flex-wrap">
             <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
-              <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">District</label>
-              <SearchableSelect
-                value={filterDistrict}
-                onChange={(val) => setFilterDistrict(val)}
-                options={districtOptions}
-                placeholder="All Districts"
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
-                style={{
-                  minHeight: '42px',
-                  border: '1px solid #E2E8F0',
-                  paddingLeft: '16px',
-                  paddingRight: '20px',
-                  borderRadius: '12px',
-                  backgroundColor: '#F8FAFF'
-                }}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
-              <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">Log Type</label>
-              <SearchableSelect
-                value={filterType}
-                onChange={(val) => setFilterType(val)}
-                options={recordTypeOptions}
-                placeholder="All Categories"
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
-                style={{
-                  minHeight: '42px',
-                  border: '1px solid #E2E8F0',
-                  paddingLeft: '16px',
-                  paddingRight: '20px',
-                  borderRadius: '12px',
-                  backgroundColor: '#F8FAFF'
-                }}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
-              <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">Local Head</label>
-              <SearchableSelect
-                value={filterLocalHead}
-                onChange={(val) => setFilterLocalHead(val)}
-                options={localHeadOptions}
-                placeholder="All Local Heads"
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
-                style={{
-                  minHeight: '42px',
-                  border: '1px solid #E2E8F0',
-                  paddingLeft: '16px',
-                  paddingRight: '20px',
-                  borderRadius: '12px',
-                  backgroundColor: '#F8FAFF'
-                }}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
               <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">Duration</label>
               <SearchableSelect
-                value={filterDuration}
-                onChange={handleDurationChange}
+                value={durationPresetId}
+                onChange={(val) => setDurationPresetId(val)}
                 options={presetOptions}
-                placeholder="All Durations"
+                placeholder="Select duration"
                 className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
                 style={{
                   minHeight: '42px',
@@ -392,6 +296,28 @@ export default function HQDashboard() {
                   borderRadius: '12px',
                   backgroundColor: '#F8FAFF'
                 }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 w-full sm:w-[200px]">
+              <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">From Date</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
+                style={{ minHeight: '42px' }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 w-full sm:w-[200px]">
+              <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">To Date</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
+                style={{ minHeight: '42px' }}
               />
             </div>
 
@@ -399,10 +325,7 @@ export default function HQDashboard() {
             {activeFilterCount > 0 && (
               <button
                 onClick={() => {
-                  setFilterDistrict('All');
-                  setFilterType('All');
-                  setFilterLocalHead('All');
-                  setFilterDuration('All');
+                  if (defaultPresetId) setDurationPresetId(defaultPresetId);
                   setDateFrom('');
                   setDateTo('');
                 }}
@@ -415,9 +338,9 @@ export default function HQDashboard() {
           </div>
         </div>
 
-        {/* ── Real-time Activity Feed ── */}
+        {/* ── Crime-Head Year Trend ── */}
         <div className="mt-6 overflow-hidden rounded-3xl border border-[#E2E8F0] bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-[#003087]/5">
-          {/* Table panel header */}
+          {/* Panel header */}
           <div className="relative flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] bg-gradient-to-r from-[#F8FAFF] via-white to-[#F0F4F9] px-6 py-5">
             {/* Left accent bar */}
             <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b from-[#003087] to-[#0046C0]" />
@@ -427,199 +350,38 @@ export default function HQDashboard() {
                 <ShieldAlert size={16} className="text-white" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-[#1A202C]">Real-time Jurisdiction Activity Feed</h3>
-                <p className="mt-0.5 text-xs text-[#718096]">
-                  Showing {Math.min(8, records.filter(r => {
-                    if (filterType !== 'All' && r.record_type !== filterType) return false;
-                    if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
-                    if (filterLocalHead !== 'All') {
-                      const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
-                      if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
-                    }
-                    if (dateFrom || dateTo) {
-                      const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
-                      if (recDateStr) {
-                        const recDate = new Date(recDateStr);
-                        const recDateOnly = recDate.toISOString().split('T')[0];
-                        if (dateFrom && recDateOnly < dateFrom) return false;
-                        if (dateTo && recDateOnly > dateTo) return false;
-                      }
-                    }
-                    return true;
-                  }).length)} of{' '}
-                  {records.filter(r => {
-                    if (filterType !== 'All' && r.record_type !== filterType) return false;
-                    if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
-                    if (filterLocalHead !== 'All') {
-                      const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
-                      if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
-                    }
-                    if (dateFrom || dateTo) {
-                      const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
-                      if (recDateStr) {
-                        const recDate = new Date(recDateStr);
-                        const recDateOnly = recDate.toISOString().split('T')[0];
-                        if (dateFrom && recDateOnly < dateFrom) return false;
-                        if (dateTo && recDateOnly > dateTo) return false;
-                      }
-                    }
-                    return true;
-                  }).length} records
-                  {filterType !== 'All' ? ` · ${filterType}` : ''}
-                  {filterLocalHead !== 'All' ? ` · ${filterLocalHead}` : ''}
-                  {filterDuration !== 'All' ? ` · ${filterDuration}` : ''}
-                </p>
+                <h3 className="text-base font-bold text-[#1A202C]">Crime-Head Trend — All Districts Combined</h3>
+                {changeRate && (
+                  <p className="mt-0.5 text-xs text-[#718096]">
+                    {changeRate.current_range.from} to {changeRate.current_range.to}
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Type pills legend */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3 py-1.5 shadow-sm">
-                <Clock3 size={11} className="text-[#D97706]" />
-                <span className="text-xs font-semibold text-[#D97706]">Cases</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#6EE7B7] bg-[#ECFDF5] px-3 py-1.5 shadow-sm">
-                <CheckCircle2 size={11} className="text-[#059669]" />
-                <span className="text-xs font-semibold text-[#059669]">Arrests</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-1.5 shadow-sm">
-                <PhoneCall size={11} className="text-[#003087]" />
-                <span className="text-xs font-semibold text-[#003087]">PCR</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs">
-              <thead>
-                <tr className="border-b border-[#E2E8F0] bg-[#F8FAFF] text-[#718096]">
-                  <th className="px-5 py-3.5 pl-6 font-semibold uppercase tracking-wide">#</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Reference No.</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">District</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Record Type</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Facts Gist</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Status</th>
-                  <th className="px-5 py-3.5 pr-6 font-semibold uppercase tracking-wide">Timestamp</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F0F4F9]">
-                {records
-                  .filter(r => {
-                    if (filterType !== 'All' && r.record_type !== filterType) return false;
-                    if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
-                    if (filterLocalHead !== 'All') {
-                      const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
-                      if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
-                    }
-                    if (dateFrom || dateTo) {
-                      const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
-                      if (recDateStr) {
-                        const recDate = new Date(recDateStr);
-                        const recDateOnly = recDate.toISOString().split('T')[0];
-                        if (dateFrom && recDateOnly < dateFrom) return false;
-                        if (dateTo && recDateOnly > dateTo) return false;
-                      }
-                    }
-                    return true;
-                  })
-                  .slice(0, 8)
-                  .map((rec, idx) => {
-                    const refId = rec.data.fir_no || rec.data.gd_no || rec.data.linked_fir_dd_no || rec.data.dd_fir_no || rec.data.uidbNumber || 'N/A';
-                    const gist = rec.data.brief_facts || rec.data.call_gist || rec.data.recovered_material || rec.data.physical_description || rec.data.description || rec.data.foundPlace || 'No facts details';
-                    const tMeta = typeMeta[rec.record_type] || { bg: 'bg-[#F0F4F9] text-[#4A5568] border-[#E2E8F0]', label: rec.record_type };
-                    return (
-                      <tr
-                        key={idx}
-                        className="group cursor-pointer transition-all duration-150 hover:bg-[#F8FAFF]"
-                      >
-                        {/* Row number */}
-                        <td className="px-5 py-4 pl-6">
-                          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#F0F4F9] text-xs font-bold text-[#718096]">
-                            {idx + 1}
-                          </span>
-                        </td>
-                        {/* Reference */}
-                        <td className="px-5 py-4">
-                          <span className="font-mono text-sm font-bold text-[#0A1628]">{refId}</span>
-                        </td>
-                        {/* District */}
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-1.5">
-                            <MapPin size={11} className="text-[#003087] flex-shrink-0" />
-                            <span className="font-medium text-[#4A5568]">
-                              {rec.data?.district || rec.districtKey || rec.district_id || 'New Delhi District'}
-                            </span>
-                          </div>
-                        </td>
-                        {/* Record type badge */}
-                        <td className="px-5 py-4">
-                          <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-semibold ${tMeta.bg}`}>
-                            {tMeta.label}
-                          </span>
-                        </td>
-                        {/* Facts gist */}
-                        <td className="max-w-[220px] px-5 py-4">
-                          <p className="truncate text-[#4A5568]">{gist}</p>
-                        </td>
-                        {/* Status */}
-                        <td className="px-5 py-4">
-                          <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-semibold ${statusMeta(rec.current_status)}`}>
-                            {rec.current_status}
-                          </span>
-                        </td>
-                        {/* Timestamp + chevron */}
-                        <td className="px-5 py-4 pr-6">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-mono text-[#718096]">
-                              {new Date(rec.created_at).toLocaleTimeString()}
-                            </span>
-                            <ChevronRight size={13} className="text-[#E2E8F0] transition-colors duration-150 group-hover:text-[#003087]" />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
-
-            {/* Empty state */}
-            {records.filter(r => {
-              if (filterType !== 'All' && r.record_type !== filterType) return false;
-              if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
-              if (filterLocalHead !== 'All') {
-                const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
-                if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
-              }
-              if (dateFrom || dateTo) {
-                const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
-                if (recDateStr) {
-                  const recDate = new Date(recDateStr);
-                  const recDateOnly = recDate.toISOString().split('T')[0];
-                  if (dateFrom && recDateOnly < dateFrom) return false;
-                  if (dateTo && recDateOnly > dateTo) return false;
-                }
-              }
-              return true;
-            }).length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F0F4F9] border border-[#E2E8F0]">
-                  <AlertCircle size={24} className="text-[#718096]" />
-                </div>
-                <p className="text-sm font-semibold text-[#4A5568]">No records found</p>
-                <p className="text-xs text-[#718096]">Try adjusting the scope filters above.</p>
-              </div>
+            {changeRate && (
+              <span className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${changeRate.pct_change >= 0 ? 'bg-[#ECFDF5] text-[#059669] border-[#6EE7B7]' : 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]'}`}>
+                {changeRate.pct_change >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                {Math.abs(changeRate.pct_change)}% vs previous period
+              </span>
             )}
           </div>
 
-          {/* Table footer */}
-          <div className="flex items-center justify-between border-t border-[#E2E8F0] bg-[#F8FAFF] px-6 py-3">
-            <p className="text-xs text-[#718096]">Showing latest 8 records · Sorted by log time</p>
-            <div className="flex items-center gap-1 text-xs font-medium text-[#003087]">
-              <span>View all records</span>
-              <ChevronRight size={13} />
-            </div>
+          {/* Heinous crime heads */}
+          <div className="border-b border-[#E2E8F0] px-6 pt-4">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#DC2626]">
+              Heinous Crime Heads · {heinousRows.length}
+            </span>
           </div>
+          <CrimeHeadLineChart rows={heinousRows} years={years} />
+
+          {/* Non-heinous crime heads */}
+          <div className="border-y border-[#E2E8F0] bg-[#F8FAFF] px-6 pt-4">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#4A5568]">
+              Non-Heinous Crime Heads · {nonHeinousRows.length}
+            </span>
+          </div>
+          <CrimeHeadLineChart rows={nonHeinousRows} years={years} />
         </div>
 
         {/* Footer */}
