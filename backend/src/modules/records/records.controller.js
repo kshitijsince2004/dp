@@ -1,4 +1,5 @@
 import * as recordsService from './records.service.js';
+import * as workflowEngine from '../workflow/workflow.engine.js';
 import { verifyRecordAccess } from '../../middleware/rbac.middleware.js';
 import { maskRecordData, maskRecordDetails } from '../level-contracts/levelContracts.service.js';
 import { toISO } from '../../utils/dateFormat.js';
@@ -156,26 +157,22 @@ export const overrideHead = async (req, res) => {
 };
 
 export const getQueue = async (req, res) => {
-  const { role } = req.user;
   const { type, status, dateFrom, dateTo, search, localHead, local_head } = req.query;
-  let targetStatus;
-
-  if (role === 'HC') {
-    targetStatus = ['DRAFT', 'SENT_BACK'];
-  } else if (role === 'SHO') {
-    targetStatus = ['PENDING_SHO'];
-  } else if (role === 'DISTRICT_OFFICER') {
-    targetStatus = ['DISTRICT_REVIEW'];
-  } else {
-    targetStatus = ['HQ_RECEIVED', 'DISTRICT_REVIEW', 'PENDING_SHO'];
-  }
-
-  let filterStatus = targetStatus;
-  if (status && status !== 'ALL') {
-    filterStatus = targetStatus.includes(status) ? status : targetStatus;
-  }
 
   try {
+    // Queue statuses derive from workflow config: the from_status values of the
+    // transitions this role may perform. Roles without transitions (HQ_ANALYST,
+    // ACP until its config rows land) get an empty queue by design.
+    const targetStatus = await workflowEngine.getQueueStatuses(req.user);
+    if (targetStatus.length === 0) {
+      return res.status(200).json({ success: true, data: { queue: [] } });
+    }
+
+    let filterStatus = targetStatus;
+    if (status && status !== 'ALL') {
+      filterStatus = targetStatus.includes(status) ? status : targetStatus;
+    }
+
     const records = await recordsService.listRecords(
       type,
       { 

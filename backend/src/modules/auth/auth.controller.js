@@ -1,5 +1,6 @@
 import * as authService from './auth.service.js';
-import { resolveDistrictId } from './auth.service.js';
+import { resolveScope } from './auth.service.js';
+import { getLevelFromRole } from '../../utils/generateToken.js';
 import db from '../../config/db.js';
 import bcrypt from 'bcryptjs';
 
@@ -95,8 +96,14 @@ export const me = async (req, res) => {
     }
 
     const user = await db('users')
-      .select('users.*', 'ps.name_en as ps_name_en', 'ps.name_hi as ps_name_hi', 'subdiv.name_en as sub_div_name_en', 'subdiv.name_hi as sub_div_name_hi', 'dist.name_en as district_name_en', 'dist.name_hi as district_name_hi')
-      .leftJoin('hierarchy_nodes as ps', 'users.station_id', 'ps.id')
+      .select(
+        'users.id', 'users.username', 'users.badge_no', 'users.name', 'users.role',
+        'users.ps_id', 'users.district_id', 'users.sub_div_id', 'users.is_active', 'users.last_login',
+        'ps.name as ps_name', 'ps.code as ps_code',
+        'subdiv.name as sub_div_name', 'subdiv.code as sub_div_code',
+        'dist.name as district_name', 'dist.code as district_code'
+      )
+      .leftJoin('hierarchy_nodes as ps', 'users.ps_id', 'ps.id')
       .leftJoin('hierarchy_nodes as subdiv', 'users.sub_div_id', 'subdiv.id')
       .leftJoin('hierarchy_nodes as dist', 'users.district_id', 'dist.id')
       .where('users.id', userId)
@@ -111,25 +118,17 @@ export const me = async (req, res) => {
       });
     }
 
-    const getLevelFromRole = (role) => {
-      if (['HC', 'SHO'].includes(role)) return 'PS';
-      if (role === 'ACP') return 'ACP';
-      if (role === 'DISTRICT_OFFICER') return 'DISTRICT';
-      return 'HQ';
-    };
-
-    const level = getLevelFromRole(user.role);
-
-    // Resolve district_id via hierarchy when user only has station_id (HC/SHO)
-    const effectiveDistrictId = await resolveDistrictId(user);
-
-    // Fetch district name if we resolved it through PS parent
-    let districtName_en = user.district_name_en || null;
-    let districtName_hi = user.district_name_hi || null;
-    if (!user.district_id && effectiveDistrictId) {
-      const distNode = await db('hierarchy_nodes').where({ id: effectiveDistrictId }).first();
-      districtName_en = distNode?.name_en || null;
-      districtName_hi = distNode?.name_hi || null;
+    // Backfill scope ids (and their names) when only ps_id/sub_div_id is stored
+    const scope = await resolveScope(user);
+    let subDivName = user.sub_div_name;
+    let districtName = user.district_name;
+    if (!user.sub_div_id && scope.sub_div_id) {
+      const node = await db('hierarchy_nodes').where({ id: scope.sub_div_id }).first();
+      subDivName = node?.name || null;
+    }
+    if (!user.district_id && scope.district_id) {
+      const node = await db('hierarchy_nodes').where({ id: scope.district_id }).first();
+      districtName = node?.name || null;
     }
 
     return res.status(200).json({
@@ -138,33 +137,25 @@ export const me = async (req, res) => {
       data: {
         user: {
           id: user.id,
-          userId: user.id,
           username: user.username,
           badge_no: user.badge_no,
-          badgeNo: user.badge_no,
-          name_en: user.name_en,
-          name_hi: user.name_hi,
-          name: user.name_en,
+          name: user.name,
           role: user.role,
-          level: level,
-          ps_id: user.station_id || null,
-          psId: user.station_id || null,
-          district_id: effectiveDistrictId,
-          districtId: effectiveDistrictId,
-          sub_div_id: user.sub_div_id || null,
+          level: getLevelFromRole(user.role),
+          ps_id: scope.ps_id,
+          district_id: scope.district_id,
+          sub_div_id: scope.sub_div_id,
           is_active: !!user.is_active,
           last_login: user.last_login,
-          ps_name_en: user.ps_name_en || null,
-          ps_name_hi: user.ps_name_hi || null,
-          sub_div_name_en: user.sub_div_name_en || null,
-          sub_div_name_hi: user.sub_div_name_hi || null,
-          district_name_en: districtName_en,
-          district_name_hi: districtName_hi
+          ps_name: user.ps_name || null,
+          ps_code: user.ps_code || null,
+          sub_div_name: subDivName || null,
+          district_name: districtName || null
         },
         jurisdiction: {
-          station: user.station_id ? { id: user.station_id, name_en: user.ps_name_en, name_hi: user.ps_name_hi, code: user.ps_code } : null,
-          sub_division: user.sub_div_id ? { id: user.sub_div_id, name_en: user.sub_div_name_en, name_hi: user.sub_div_name_hi } : null,
-          district: effectiveDistrictId ? { id: effectiveDistrictId, name_en: districtName_en, name_hi: districtName_hi } : null
+          station: scope.ps_id ? { id: scope.ps_id, name: user.ps_name, code: user.ps_code } : null,
+          sub_division: scope.sub_div_id ? { id: scope.sub_div_id, name: subDivName } : null,
+          district: scope.district_id ? { id: scope.district_id, name: districtName } : null
         }
       }
     });

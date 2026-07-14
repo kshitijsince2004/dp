@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import LanguageToggle from "../ui/LanguageToggle.jsx";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../utils/api.js";
+import { renderNotification } from "../../utils/notificationText.js";
 
 export default function PoliceNavbar({
   notifications = [],
@@ -234,10 +235,13 @@ export default function PoliceNavbar({
               }
 
               const isHi = lang === 'hi';
+              // hierarchy_nodes is English-only for now (Hindi labels are additive
+              // later, see docs/db-audit/DB_SCHEMA.md §Deferred) — Hindi mode falls
+              // back to the same English name until that lands.
               if (roleUpper === 'HC' || roleUpper === 'SHO') {
                 const name = isHi
-                  ? (jurisdiction?.station?.name_hi || jurisdiction?.station?.name_en)
-                  : (jurisdiction?.station?.name_en?.toUpperCase() || 'POLICE STATION');
+                  ? jurisdiction?.station?.name
+                  : (jurisdiction?.station?.name?.toUpperCase() || 'POLICE STATION');
                 const displayName = cleanName(name, roleUpper);
                 return (
                   <>
@@ -249,8 +253,8 @@ export default function PoliceNavbar({
               }
               if (roleUpper === 'ACP') {
                 const name = isHi
-                  ? (jurisdiction?.sub_division?.name_hi || jurisdiction?.sub_division?.name_en)
-                  : (jurisdiction?.sub_division?.name_en?.toUpperCase() || 'SUB-DIVISION');
+                  ? jurisdiction?.sub_division?.name
+                  : (jurisdiction?.sub_division?.name?.toUpperCase() || 'SUB-DIVISION');
                 const displayName = cleanName(name, roleUpper);
                 return (
                   <>
@@ -262,8 +266,8 @@ export default function PoliceNavbar({
               }
               if (roleUpper === 'DISTRICT_OFFICER') {
                 const name = isHi
-                  ? (jurisdiction?.district?.name_hi || jurisdiction?.district?.name_en)
-                  : (jurisdiction?.district?.name_en?.toUpperCase() || 'DISTRICT');
+                  ? jurisdiction?.district?.name
+                  : (jurisdiction?.district?.name?.toUpperCase() || 'DISTRICT');
                 const displayName = cleanName(name, roleUpper);
                 return (
                   <>
@@ -372,6 +376,7 @@ export default function PoliceNavbar({
                   notifications.map((notif) => {
                     const destination = getNotificationDestination();
                     const isClickable = !!destination;
+                    const { title: notifTitle, message: notifMessage } = renderNotification(t, notif);
                     return (
                       <div
                         key={notif.id}
@@ -405,16 +410,16 @@ export default function PoliceNavbar({
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                             }}>
-                              {notif.title_en || notif.message_en || 'Notification'}
+                              {notifTitle}
                             </p>
-                            {notif.message_en && notif.title_en && (
+                            {notifMessage && (
                               <p style={{
                                 margin: '0 0 6px 0',
                                 fontSize: '11px',
                                 color: '#64748b',
                                 lineHeight: '1.4',
                               }}>
-                                {notif.message_en}
+                                {notifMessage}
                               </p>
                             )}
                             <span style={{ fontSize: '10px', color: '#475569' }}>
@@ -475,8 +480,8 @@ export default function PoliceNavbar({
             <div className="officer-details text-left font-sans flex flex-col justify-center leading-tight">
               <span className="officer-name block text-sm font-semibold truncate max-w-[150px] whitespace-nowrap">
                 {lang === 'hi'
-                  ? (user?.name_hi || user?.name_en || user?.username || "हैंड कांस्टेबल रमेश कुमार")
-                  : (user?.name_en || user?.username || "HC Ramesh Kumar")}
+                  ? (user?.name || user?.username || "हैंड कांस्टेबल रमेश कुमार")
+                  : (user?.name || user?.username || "HC Ramesh Kumar")}
               </span>
               <span className="officer-rank block text-[11px] text-slate-400 font-medium truncate max-w-[150px] whitespace-nowrap">
                 {user?.role ? t(`roles.${user.role}`) : (user?.rank || "Station Operator")}
@@ -491,18 +496,12 @@ export default function PoliceNavbar({
                     return isHi ? "दिल्ली पुलिस मुख्यालय" : "Delhi Police HQ";
                   }
                   if (user?.role === 'DISTRICT_OFFICER') {
-                    return isHi
-                      ? (jurisdiction?.district?.name_hi || jurisdiction?.district?.name_en)
-                      : jurisdiction?.district?.name_en;
+                    return jurisdiction?.district?.name;
                   }
                   if (user?.role === 'ACP') {
-                    return isHi
-                      ? (jurisdiction?.sub_division?.name_hi || jurisdiction?.sub_division?.name_en)
-                      : jurisdiction?.sub_division?.name_en;
+                    return jurisdiction?.sub_division?.name;
                   }
-                  return isHi
-                    ? (jurisdiction?.station?.name_hi || jurisdiction?.station?.name_en)
-                    : jurisdiction?.station?.name_en;
+                  return jurisdiction?.station?.name;
                 })()}
               </span>
             </div>

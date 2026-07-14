@@ -5,8 +5,8 @@
 // hierarchy_nodes.code — run `npm run load-ref` (loads config/org/hierarchy.json) FIRST.
 //
 // Strategy: ON CONFLICT (username) DO NOTHING — safe to re-run, never deletes.
-// NOTE: the old seed's ACP users are gone — ACP is not a role in the new CHECK set
-// (HC, SHO, DISTRICT_OFFICER, JCP, SCP, HQ_ANALYST, HQ_ADMIN, SYSTEM_ADMIN).
+// Roles = the CHECK set: HC, SHO, ACP, DISTRICT_OFFICER, JCP, SCP, HQ_ANALYST, HQ_ADMIN, SYSTEM_ADMIN
+// (ACP re-added 2026-07-14 — scoped by sub_div_id; workflow skips ACP until config rows enable it).
 
 import bcrypt from 'bcryptjs';
 
@@ -16,6 +16,7 @@ const USERS = [
   ['SHO', 'sho_parliament_street', 'SHO001', 'Vikram Singh', 'PS_NDD_PARLIAMENTSTREET', 'DIST_NDD', 'SUBDIV_8165_PARLIAMENTSTREET'],
   ['HC', 'hc_connaught_place', 'HC002', 'Suresh Chand', 'PS_NDD_CONNAUGHTPLACE', 'DIST_NDD', 'SUBDIV_8165_CONNAUGHTPLACE'],
   ['SHO', 'sho_connaught_place', 'SHO002', 'Anil Dagar', 'PS_NDD_CONNAUGHTPLACE', 'DIST_NDD', 'SUBDIV_8165_CONNAUGHTPLACE'],
+  ['ACP', 'acp_parliament_street', 'ACP001', 'Mahesh Yadav', null, 'DIST_NDD', 'SUBDIV_8165_PARLIAMENTSTREET'],
   ['DISTRICT_OFFICER', 'dcp_ndd', 'DO001', 'Priya Sharma', null, 'DIST_NDD', null],
   ['DISTRICT_OFFICER', 'dcp_nwd', 'DO002', 'Arjun Mehta', null, 'DIST_NWD', null],
   ['JCP', 'jcp_new_delhi_range', 'JCP001', 'S. K. Malhotra', null, null, null],

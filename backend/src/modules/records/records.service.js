@@ -4,6 +4,7 @@ import * as eventBus from '../../events/eventBus.js';
 import { computeRowHash, getPreviousHash } from '../../utils/hash.js';
 import { getLinksForRecord } from '../record-links/record-links.service.js';
 import { toISO } from '../../utils/dateFormat.js';
+import * as workflowEngine from '../workflow/workflow.engine.js';
 
 // Helpers
 const calculateDiff = (oldData, newData) => {
@@ -716,87 +717,16 @@ export const transitionRecord = async (id, user, action, comment, targetFields, 
 
     const fromStatus = record.current_status;
 
-    // Evaluate rule
-    // 1. Try querying DB config (action stored lowercase in seed)
-    let dbRule = await trx('workflow_transitions_config')
-      .where({ from_status: fromStatus, action: action.toLowerCase(), is_active: true })
-      .andWhere(function () {
-        this.where('record_type', record.record_type).orWhere('record_type', '*');
-      })
-      .first();
-
-    let rule = null;
-    if (dbRule) {
-      let allowedRoles = dbRule.allowed_roles;
-      if (typeof allowedRoles === 'string') {
-        try { allowedRoles = JSON.parse(allowedRoles); } catch (e) { allowedRoles = allowedRoles.split(','); }
-      }
-      rule = {
-        to: dbRule.to_status,
-        toLevel: dbRule.to_status === 'DISTRICT_REVIEW' ? 'DISTRICT' :
-          dbRule.to_status === 'ACP_REVIEW' ? 'ACP' :
-            dbRule.to_status === 'JCP_REVIEW' ? 'JCP' :
-              dbRule.to_status === 'SCP_REVIEW' ? 'SCP' :
-                dbRule.to_status === 'HQ_RECEIVED' ? 'HQ' :
-                  dbRule.to_status === 'ARCHIVED' ? 'HQ' :
-                    dbRule.to_status === 'SENT_BACK' ? 'PS' : 'PS',
-        requiresComment: !!dbRule.requires_comment,
-        allowedRoles
-      };
-    } else {
-      // 2. Fallback transitions including JCP / SCP review flows
-      const FALLBACK_TRANSITIONS = {
-        PENDING_SHO: {
-          approve: { to: 'DISTRICT_REVIEW', toLevel: 'DISTRICT', allowedRoles: ['SHO'] },
-          send_back: { to: 'SENT_BACK', toLevel: 'PS', requiresComment: true, allowedRoles: ['SHO'] }
-        },
-        DISTRICT_REVIEW: {
-          approve: { to: 'JCP_REVIEW', toLevel: 'JCP', allowedRoles: ['DISTRICT_OFFICER'] },
-          send_back: { to: 'SENT_BACK', toLevel: 'PS', requiresComment: true, allowedRoles: ['DISTRICT_OFFICER'] }
-        },
-        JCP_REVIEW: {
-          approve: { to: 'SCP_REVIEW', toLevel: 'SCP', allowedRoles: ['JCP'] },
-          send_back: { to: 'DISTRICT_REVIEW', toLevel: 'DISTRICT', requiresComment: true, allowedRoles: ['JCP'] }
-        },
-        SCP_REVIEW: {
-          approve: { to: 'HQ_RECEIVED', toLevel: 'HQ', allowedRoles: ['SCP'] },
-          send_back: { to: 'JCP_REVIEW', toLevel: 'JCP', requiresComment: true, allowedRoles: ['SCP'] }
-        },
-        HQ_RECEIVED: {
-          seal: { to: 'ARCHIVED', toLevel: 'HQ', allowedRoles: ['HQ_ADMIN'] }
-        }
-      };
-
-      const statusRules = FALLBACK_TRANSITIONS[fromStatus];
-      rule = statusRules ? statusRules[action.toLowerCase()] : null;
-    }
-
-    if (!rule) {
-      throw new Error(`Invalid action "${action}" for status "${fromStatus}"`);
-    }
-
-    // Server-side RBAC verification for transitions
-    if (rule.allowedRoles && !rule.allowedRoles.includes(user.role)) {
-      throw new Error(`Insufficient permissions: role ${user.role} is not allowed to perform action ${action}`);
-    }
-
-    if (rule.requiresComment && (!comment || comment.trim().length === 0)) {
-      throw new Error('Comment is required for this action');
-    }
-
-    let targetStatus = rule.to;
-    let targetLevel = rule.toLevel;
-
-    // Check level data contract route override for DISTRICT_REVIEW -> approve
-    if (fromStatus === 'DISTRICT_REVIEW' && action.toLowerCase() === 'approve') {
-      const contract = await trx('level_data_contracts')
-        .where({ from_level: 'DISTRICT', to_level: 'HQ', is_active: true })
-        .first();
-      if (contract && contract.route === 'DIRECT_HQ') {
-        targetStatus = 'HQ_RECEIVED';
-        targetLevel = 'HQ';
-      }
-    }
+    // Config-driven state machine — workflow.engine is the ONE rule reader
+    const rule = await workflowEngine.getRule(trx, {
+      fromStatus,
+      action,
+      recordType: record.record_type,
+    });
+    workflowEngine.assertAllowed(rule, user);
+    workflowEngine.assertComment(rule, comment);
+    const { toStatus: targetStatus, toLevel: targetLevel } =
+      await workflowEngine.resolveTarget(trx, rule, record);
 
     // Update status
     await trx('records').where({ id }).update({
@@ -818,7 +748,7 @@ export const transitionRecord = async (id, user, action, comment, targetFields, 
       performed_by: user.id,
       performed_at: new Date().toISOString(),
       comment,
-      target_fields: targetFields ? JSON.stringify(targetFields) : null
+      target_fields: JSON.stringify(targetFields || [])
     });
 
     // Write standard audit log

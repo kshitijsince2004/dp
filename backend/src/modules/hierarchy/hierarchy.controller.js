@@ -1,6 +1,8 @@
 import db from '../../config/db.js';
 import { v4 as uuidv4 } from 'uuid';
 
+const NODE_TYPES = ['HQ', 'ZONE', 'RANGE', 'DISTRICT', 'SUB_DIV', 'PS'];
+
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
   if (typeof val === 'string') {
@@ -9,15 +11,19 @@ const parseJsonField = (val) => {
   return val;
 };
 
-// Resolve a district's own id plus every SUB_DIVISION under it, so PS nodes
-// (which hang off a SUB_DIVISION, not the DISTRICT directly) can be matched
+// Resolve a district's own id plus every SUB_DIV under it, so PS nodes
+// (which hang off a SUB_DIV, not the DISTRICT directly) can be matched
 // with a single `parent_id IN (...)` check.
 const districtScopeIds = async (districtId) => {
   const subDivs = await db('hierarchy_nodes')
-    .where({ node_type: 'SUB_DIVISION', parent_id: districtId, is_active: true })
+    .where({ node_type: 'SUB_DIV', parent_id: districtId, is_active: true })
     .select('id');
   return [districtId, ...subDivs.map((s) => s.id)];
 };
+
+// Compat alias: name_en mirrors the single `name` column for frontend
+// consumers that still read name_en — deprecated, drain on touch.
+const withNameAlias = (n) => ({ ...n, name_en: n.name });
 
 export const getNodes = async (req, res) => {
   try {
@@ -60,11 +66,8 @@ export const getNodes = async (req, res) => {
       });
     }
 
-    const list = await query.orderBy('name_en', 'asc');
-    const formatted = list.map(n => ({
-      ...n,
-      metadata: parseJsonField(n.metadata)
-    }));
+    const list = await query.orderBy('name', 'asc');
+    const formatted = list.map(n => withNameAlias({ ...n, metadata: parseJsonField(n.metadata) }));
 
     return res.status(200).json({
       status: 'success',
@@ -83,19 +86,18 @@ export const getNodes = async (req, res) => {
 export const getTree = async (req, res) => {
   try {
     const list = await db('hierarchy_nodes').where({ is_active: true });
-    
+
     // Build recursive parent-child tree
     const idMap = new Map();
     list.forEach(n => {
-      idMap.set(n.id, {
+      idMap.set(n.id, withNameAlias({
         id: n.id,
         node_type: n.node_type,
-        name_en: n.name_en,
-        name_hi: n.name_hi,
+        name: n.name,
         code: n.code,
         parent_id: n.parent_id,
         children: []
-      });
+      }));
     });
 
     const rootNodes = [];
@@ -117,8 +119,8 @@ export const getTree = async (req, res) => {
         tree: rootNodes,
         id: treeRoot.id,
         node_type: treeRoot.node_type,
-        name_en: treeRoot.name_en,
-        name_hi: treeRoot.name_hi,
+        name: treeRoot.name,
+        name_en: treeRoot.name,
         code: treeRoot.code,
         children: treeRoot.children
       }
@@ -133,14 +135,24 @@ export const getTree = async (req, res) => {
 };
 
 export const createNode = async (req, res) => {
-  const { name_en, name_hi, node_type, parent_id, code } = req.body;
+  const name = req.body.name || req.body.name_en;
+  const { parent_id, code } = req.body;
+  const node_type = req.body.node_type ? String(req.body.node_type).toUpperCase() : undefined;
 
-  if (!name_en || !name_hi || !node_type || !code) {
+  if (!name || !node_type || !code) {
     return res.status(400).json({
       status: 'error',
       success: false,
       code: 'BAD_REQUEST',
-      message: 'name_en, name_hi, node_type, and code are required'
+      message: 'name, node_type, and code are required'
+    });
+  }
+  if (!NODE_TYPES.includes(node_type)) {
+    return res.status(400).json({
+      status: 'error',
+      success: false,
+      code: 'BAD_REQUEST',
+      message: `Invalid node_type: ${node_type}`
     });
   }
 
@@ -148,9 +160,8 @@ export const createNode = async (req, res) => {
     const id = uuidv4();
     const newNode = {
       id,
-      name_en,
-      name_hi,
-      node_type: node_type.toUpperCase(),
+      name,
+      node_type,
       parent_id: parent_id || null,
       code,
       is_active: true
@@ -161,7 +172,7 @@ export const createNode = async (req, res) => {
     return res.status(201).json({
       status: 'success',
       success: true,
-      data: newNode
+      data: withNameAlias(newNode)
     });
   } catch (error) {
     return res.status(500).json({
@@ -174,14 +185,15 @@ export const createNode = async (req, res) => {
 
 export const updateNode = async (req, res) => {
   const { id } = req.params;
-  const { name_en, name_hi, parent_id, code } = req.body;
+  const name = req.body.name ?? req.body.name_en;
+  const { parent_id, code } = req.body;
 
   try {
     const updatePayload = {};
-    if (name_en !== undefined) updatePayload.name_en = name_en;
-    if (name_hi !== undefined) updatePayload.name_hi = name_hi;
+    if (name !== undefined) updatePayload.name = name;
     if (parent_id !== undefined) updatePayload.parent_id = parent_id || null;
     if (code !== undefined) updatePayload.code = code;
+    updatePayload.updated_at = db.fn.now();
 
     await db('hierarchy_nodes').where({ id }).update(updatePayload);
 
@@ -198,7 +210,7 @@ export const updateNode = async (req, res) => {
     return res.status(200).json({
       status: 'success',
       success: true,
-      data: updated
+      data: withNameAlias(updated)
     });
   } catch (error) {
     return res.status(500).json({
@@ -213,7 +225,7 @@ export const deleteNode = async (req, res) => {
   const { id } = req.params;
 
   try {
-    await db('hierarchy_nodes').where({ id }).update({ is_active: false });
+    await db('hierarchy_nodes').where({ id }).update({ is_active: false, updated_at: db.fn.now() });
     return res.status(200).json({
       status: 'success',
       success: true,

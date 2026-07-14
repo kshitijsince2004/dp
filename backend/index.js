@@ -5,6 +5,7 @@ import { logger } from './src/utils/logger.js';
 import app from './src/app.js';
 import { createServer } from 'http';
 import { startWarehouseSync } from './src/modules/warehouse/warehouse.scheduler.js';
+import { runStartupAutoload } from './src/bootstrap/autoload.js';
 
 const httpServer = createServer(app);
 
@@ -12,6 +13,9 @@ const start = async () => {
   try {
     // 1. Connect to PostgreSQL
     await connectDB();
+
+    // 1.5 Smart config/ref auto-load (sync-config always, load-ref when sources changed)
+    await runStartupAutoload();
 
     // 2. Connect to RabbitMQ Event Bus
     await connectEventBus();

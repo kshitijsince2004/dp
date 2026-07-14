@@ -25,6 +25,11 @@ export const allow = (...roles) => {
 export const requireRole = (...roles) => allow(...roles);
 
 
+// Roles with global (unscoped) read: JCP/SCP review queues are gated by record
+// status (workflow config), not geography — no zone/range FK exists on users by
+// design. HQ roles are global by definition.
+const GLOBAL_SCOPE_ROLES = ['JCP', 'SCP', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'];
+
 export const enforceScope = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ success: false, message: 'Authentication required' });
@@ -38,25 +43,27 @@ export const enforceScope = (req, res, next) => {
       return res.status(403).json({ success: false, message: 'User is not bound to a Police Station' });
     }
     req.jurisdictionQuery.ps_id = ps_id;
+  } else if (role === 'ACP') {
+    if (!sub_div_id) {
+      return res.status(403).json({ success: false, message: 'User is not bound to a Sub-Division' });
+    }
+    req.jurisdictionQuery.sub_div_id = sub_div_id;
   } else if (role === 'DISTRICT_OFFICER') {
     if (!district_id) {
       return res.status(403).json({ success: false, message: 'User is not bound to a District' });
     }
     req.jurisdictionQuery.district_id = district_id;
-  } else if (role === 'ACP') { // If ACP role is used in sub-divisions
-    if (!sub_div_id) {
-      return res.status(403).json({ success: false, message: 'User is not bound to a Sub-Division' });
-    }
-    req.jurisdictionQuery.sub_div_id = sub_div_id;
+  } else if (!GLOBAL_SCOPE_ROLES.includes(role)) {
+    // Default-deny: an unrecognized role must never fall through to global scope
+    return res.status(403).json({ success: false, message: `Unknown role: ${role}` });
   }
 
-  // HQ_ANALYST, HQ_ADMIN, and SYSTEM_ADMIN roles have global scoping, so req.jurisdictionQuery is empty.
   next();
 };
 
 export const verifyRecordAccess = async (recordId, user) => {
   const { role, ps_id, district_id, sub_div_id } = user;
-  if (['HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'].includes(role)) {
+  if (GLOBAL_SCOPE_ROLES.includes(role)) {
     return true;
   }
 
@@ -65,16 +72,21 @@ export const verifyRecordAccess = async (recordId, user) => {
     throw new Error('Record not found');
   }
 
-  if ((role === 'HC' || role === 'SHO') && record.ps_id !== ps_id) {
-    throw new Error('Access denied: Record falls outside your police station jurisdiction');
-  }
-
-  if (role === 'ACP' && record.sub_div_id !== sub_div_id) {
-    throw new Error('Access denied: Record falls outside your sub-division jurisdiction');
-  }
-
-  if (role === 'DISTRICT_OFFICER' && record.district_id !== district_id) {
-    throw new Error('Access denied: Record falls outside your district jurisdiction');
+  if (role === 'HC' || role === 'SHO') {
+    if (record.ps_id !== ps_id) {
+      throw new Error('Access denied: Record falls outside your police station jurisdiction');
+    }
+  } else if (role === 'ACP') {
+    if (record.sub_div_id !== sub_div_id) {
+      throw new Error('Access denied: Record falls outside your sub-division jurisdiction');
+    }
+  } else if (role === 'DISTRICT_OFFICER') {
+    if (record.district_id !== district_id) {
+      throw new Error('Access denied: Record falls outside your district jurisdiction');
+    }
+  } else {
+    // Default-deny for unrecognized roles
+    throw new Error(`Access denied: unknown role ${role}`);
   }
 
   return true;

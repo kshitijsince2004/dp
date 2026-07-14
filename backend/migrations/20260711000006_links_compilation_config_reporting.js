@@ -238,11 +238,19 @@ export async function up(knex) {
       created_at timestamptz NOT NULL DEFAULT now()
     );
     CREATE INDEX idx_notifications_user ON notifications (user_id, is_read, created_at DESC);
+
+    -- §7.9 system bookkeeping (e.g. ref-source checksum for the startup auto-loader)
+    CREATE TABLE system_meta (
+      key        varchar(100) PRIMARY KEY,
+      value      jsonb NOT NULL,
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
   `);
 }
 
 export async function down(knex) {
   await knex.raw(`
+    DROP TABLE IF EXISTS system_meta;
     DROP TABLE IF EXISTS notifications;
     DROP TABLE IF EXISTS import_batch_errors;
     DROP TABLE IF EXISTS import_batches;

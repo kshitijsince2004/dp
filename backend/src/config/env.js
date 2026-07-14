@@ -12,6 +12,9 @@ export const env = {
   REDIS_URL: getEnv('REDIS_URL', 'redis://localhost:6379'),
   JWT_SECRET: getEnv('JWT_SECRET', 'pharos_jwt_secret_key_extremely_long_and_safe'),
   JWT_REFRESH_SECRET: getEnv('JWT_REFRESH_SECRET', 'pharos_jwt_refresh_secret_key_extremely_long_and_safe'),
+  JWT_ACCESS_EXPIRES: getEnv('JWT_ACCESS_EXPIRES', '15m'),
+  JWT_REFRESH_EXPIRES: getEnv('JWT_REFRESH_EXPIRES', '7d'),
+  STARTUP_AUTOLOAD: getEnv('STARTUP_AUTOLOAD', 'true'),
   FRONTEND_URL: getEnv('FRONTEND_URL', 'http://localhost:5173'),
   REPORTS_OUTPUT_DIR: getEnv('REPORTS_OUTPUT_DIR', './reports/output'),
 };

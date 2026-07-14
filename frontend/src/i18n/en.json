@@ -58,6 +58,27 @@
     "HQ_ADMIN": "HQ Admin",
     "SYSTEM_ADMIN": "System Administrator"
   },
+  "notifications": {
+    "RECORD_SUBMITTED": {
+      "title": "New Record Pending Approval",
+      "message": "A new {{record_type}} entry is pending your approval."
+    },
+    "RECORD_APPROVED": {
+      "title": "Record Approved",
+      "message": "Your {{record_type}} record has been approved."
+    },
+    "RECORD_SENT_BACK": {
+      "title": "Record Sent Back for Correction",
+      "message": "Your {{record_type}} record was sent back. Reason: {{comment}}"
+    },
+    "COMPILATION_SUBMITTED": {
+      "title": "District Compilation Submitted",
+      "message": "A district compilation for period {{period}} is ready for HQ review."
+    },
+    "noReason": "No reason given.",
+    "fallbackTitle": "Notification",
+    "fallbackToast": "New notification"
+  },
   "views": {
     "SYSTEM_ADMIN": "SYSTEM ADMIN",
     "HQ": "HQ VIEW",

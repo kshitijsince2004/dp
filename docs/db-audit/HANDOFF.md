@@ -78,9 +78,18 @@
 **Open items:**
 (a) **71 beat-sheet ps_cd values (765 beats) are absent from the official PS list itself** (likely defunct/renamed PS — codes printed by every `load-ref` run). Those beats stay `ps_id NULL` with raw `source_ps_cd`. If Delhi Police can reconcile them: extend `ps_codes.json`, rerun `load-ref`, then consider SET NOT NULL.
 (b) Heinous overlay review — terror-related local heads (148/157/164/166/167/212) flagged in `config/ref-overlays/local_head_categories.json` `_review_notes`.
-(c) `ACP`-role users existed in the old live DB — role not in the new CHECK set; decide mapping if real ACP logins are needed.
+(c) ~~`ACP`-role users existed in the old live DB — role not in the new CHECK set; decide mapping if real ACP logins are needed.~~ **RESOLVED 2026-07-14**: `ACP` re-added to the `users.role` CHECK (scope = `sub_div_id`); ACP user seeded. Workflow deliberately has no ACP transitions yet — enabling the review step later is `config/workflow/*.json` rows only, but note `records.current_level` CHECK will then need `'SUB_DIV'` added too (see `docs/new-db-integration/01-auth-rbac-workflow-refs.md` §Deferrals).
 (d) ~~`ER_DIAGRAM.md`/`.drawio` not yet regenerated for the implementation-phase spec deltas~~ **RESOLVED 2026-07-14**: both fully re-synced against the live DB (implementation deltas: property_categories merge, beats beat_cd PK + source_ps_cd + NULLable ps_id, sections section_code PK, minor_heads single-column PK, locations.landmark, missing ref_fire_arms_subtypes entity, record_properties.arms_subtype_id; plus rulings 22–23: record_status_events, is_worked_out/worked_out_date, missing fir_no/fir_date) and `.drawio` regenerated. **STANDING RULE (user, 2026-07-14): the ER diagram is the user's primary view of what's in the DB — EVERY schema change updates `ER_DIAGRAM.md` AND regenerates `ER_DIAGRAM.drawio` in the same change, never later.**
 (e) Stage-5 write-path notes: `status` AND `case_status` both map to `fir_details.case_status` (form shows one — dedupe keys in stage 5); duplicate nickname keys (`nick_name`/`arrested_nickname`) both target `persons.nick_names`; ruling-18 arrest `gd_date`/`gd_time` columns exist but have no active form fields yet (add config rows when the wizard adds them); name split fields carry `name_part: 1|2|3` composing into single `persons.name`.
+
+## Stage 5 (app-layer adaptation) — now underway
+
+Tracked separately in `docs/new-db-integration/` (index: `README.md`).
+Integration 1 (auth, RBAC, JWT, workflow engine, ref lookups, users,
+hierarchy, IO module) done 2026-07-14 —
+`docs/new-db-integration/01-auth-rbac-workflow-refs.md`. Records write path,
+import, and reports/analytics remain — see that folder's roadmap table before
+starting adjacent work.
 
 ## Next phase (implementation) — suggested order
 1. Verify `ref.*` natural keys against actual sheet data (the ⚠ items in `DB_SCHEMA.md` §8) — blocks the ref migrations.

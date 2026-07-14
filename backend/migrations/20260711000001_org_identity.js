@@ -24,7 +24,7 @@ export async function up(knex) {
       name          varchar(100) NOT NULL,
       password_hash varchar(255) NOT NULL,
       role          varchar(20) NOT NULL CHECK (role IN
-                      ('HC','SHO','DISTRICT_OFFICER','JCP','SCP','HQ_ANALYST','HQ_ADMIN','SYSTEM_ADMIN')),
+                      ('HC','SHO','ACP','DISTRICT_OFFICER','JCP','SCP','HQ_ANALYST','HQ_ADMIN','SYSTEM_ADMIN')),
       ps_id         uuid REFERENCES hierarchy_nodes(id),
       district_id   uuid REFERENCES hierarchy_nodes(id),
       sub_div_id    uuid REFERENCES hierarchy_nodes(id),

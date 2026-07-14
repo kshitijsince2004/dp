@@ -121,13 +121,13 @@ export const getFieldsForForm = async (req, res) => {
 
     const rawFields = await query;
 
-    // Small local shaping helper — raw excel_* rows -> {value,label_en,label_hi} option shape,
+    // Small local shaping helper — raw ref.* rows -> {value,label_en,label_hi} option shape,
     // using labelCol as both the value and the display label (matches the existing, established
     // convention for these per-act/per-crime fields, whose show_when clauses compare against the
     // human-readable label, not the underlying numeric code).
     const toValueLabel = (labelCol) => (r) => ({ value: r[labelCol], label_en: r[labelCol], label_hi: r[labelCol] });
 
-    // 1. Acts — load dynamically from excel_acts and map to expected frontend keys
+    // 1. Acts — load dynamically from ref.acts and map to expected frontend keys
     const dbActs = await fieldsService.getActs();
     const actOptions = dbActs.map(act => {
       let value = act.act_long;
@@ -188,7 +188,7 @@ export const getFieldsForForm = async (req, res) => {
     const allGroupedActCodes = Object.values(ACT_GROUP_CODES).flat();
     const generalSectionOptions = (await fieldsService.getSectionsForActs(allGroupedActCodes)).map(toValueLabel('section'));
 
-    // 3. Major Heads per Act — joins on major_head_code via excel_major_minor_mapping, filtered
+    // 3. Major Heads per Act — joins on major_head_code via ref.major_minor_mapping, filtered
     // by the real act_cd(s), no name-string matching.
     const ipcMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES.IPC)).map(toValueLabel('major_head'));
     const exciseMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES['Delhi Excise Act'])).map(toValueLabel('major_head'));
@@ -1145,13 +1145,13 @@ export const listMajorHeads = async (req, res) => {
     if (sectionCodesRaw) {
       const sectionCodes = sectionCodesRaw.split(',').map(s => s.trim()).filter(Boolean);
       if (sectionCodes.length > 0) {
-        const mappings = await db('excel_major_minor_mapping')
+        const mappings = await db('ref.major_minor_mapping')
           .whereIn('section_code', sectionCodes)
           .distinct('major_head_code');
         const majorCds = mappings.map(m => m.major_head_code);
 
         if (majorCds.length > 0) {
-          data = await db('excel_major_heads')
+          data = await db('ref.major_heads')
             .whereIn('major_head_code', majorCds)
             .select('major_head as value', 'major_head as label')
             .orderBy('major_head', 'asc');
@@ -1190,8 +1190,8 @@ export const listMajorHeads = async (req, res) => {
           continue;
         }
 
-        // 2. Try exact match against excel_acts.act_long
-        const exactMatches = await db('excel_acts')
+        // 2. Try exact match against ref.acts.act_long
+        const exactMatches = await db('ref.acts')
           .whereRaw('LOWER(act_long) = LOWER(?)', [name])
           .select('act_cd');
         if (exactMatches.length > 0) {
@@ -1210,7 +1210,7 @@ export const listMajorHeads = async (req, res) => {
 
         if (keywords.length > 0) {
           // Build an AND query: act_long must contain ALL significant keywords
-          let query = db('excel_acts');
+          let query = db('ref.acts');
           for (const kw of keywords) {
             query = query.whereRaw('LOWER(act_long) LIKE ?', [`%${kw.toLowerCase()}%`]);
           }
@@ -1221,7 +1221,7 @@ export const listMajorHeads = async (req, res) => {
           }
 
           // 4. Fallback: OR query — any keyword matches
-          let orQuery = db('excel_acts').where(function() {
+          let orQuery = db('ref.acts').where(function() {
             for (const kw of keywords) {
               this.orWhereRaw('LOWER(act_long) LIKE ?', [`%${kw.toLowerCase()}%`]);
             }
@@ -1233,13 +1233,13 @@ export const listMajorHeads = async (req, res) => {
 
       const actCdList = Array.from(actCds);
       if (actCdList.length > 0) {
-        const mappings = await db('excel_major_minor_mapping')
+        const mappings = await db('ref.major_minor_mapping')
           .whereIn('act_cd', actCdList)
           .distinct('major_head_code');
         const majorCds = mappings.map(m => m.major_head_code);
 
         if (majorCds.length > 0) {
-          data = await db('excel_major_heads')
+          data = await db('ref.major_heads')
             .whereIn('major_head_code', majorCds)
             .select('major_head as value', 'major_head as label')
             .orderBy('major_head', 'asc');
@@ -1249,7 +1249,7 @@ export const listMajorHeads = async (req, res) => {
 
     // Fallback: if no acts requested, return all major heads
     if (!actNameRaw) {
-      data = await db('excel_major_heads')
+      data = await db('ref.major_heads')
         .select('major_head as value', 'major_head as label')
         .orderBy('major_head', 'asc');
     }
@@ -1300,7 +1300,7 @@ export const listMinorHeadsForMajorHead = async (req, res) => {
     let code = parseInt(major_head_code, 10);
     if (isNaN(code)) {
       // Resolve string name to numeric code
-      const mh = await db('excel_major_heads')
+      const mh = await db('ref.major_heads')
         .where('major_head', 'ilike', major_head_code)
         .first();
       if (mh) {
@@ -1350,7 +1350,7 @@ export const listPropertyItems = async (req, res) => {
   try {
     const raw = await fieldsService.getPropertyItemsForCategory(parent_cd);
     // The GENERIC branch (fieldsService) already returns {value,label} rows. The ARMS branch
-    // returns raw column names for its three sub-lists, and the default (excel_other_property_items)
+    // returns raw column names for its three sub-lists, and the default (ref.other_property_items)
     // branch returns raw {property_cd,property} rows — both are shaped into {value,label} here.
     let data;
     if (raw?.type === 'ARMS') {

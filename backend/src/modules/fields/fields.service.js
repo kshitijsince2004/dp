@@ -1,20 +1,22 @@
 import db from '../../config/db.js';
 import { PROPERTY_CATEGORY_SOURCES } from './classificationSources.config.js';
 
-// --- Excel/master-data lookup service (shared by fields.controller.js's standalone
+// --- ref-schema lookup service (shared by fields.controller.js's standalone
 // /lookup/* endpoints and getFieldsForForm) ---
 //
-// Returns raw domain rows (native column names); HTTP-facing {value,label} shaping happens
-// in the controller. All table/column names for the property-category dispatch are resolved
-// through classificationSources.config.js — no dynamic identifiers are ever built from request
-// input.
+// Queries the ref.* lookup tables (loaded by `npm run load-ref`; the old excel_*
+// tables are dead). Returns raw domain rows (native column names); HTTP-facing
+// {value,label} shaping happens in the controller, so the response shapes the
+// frontend forms consume are unchanged. All table/column names for the
+// property-category dispatch are resolved through classificationSources.config.js —
+// no dynamic identifiers are ever built from request input.
 
 export const getActs = async () => {
-  return db('excel_acts').select('act_cd', 'act_long').orderBy('act_long', 'asc');
+  return db('ref.acts').select('act_cd', 'act_long').orderBy('act_long', 'asc');
 };
 
 export const getSectionsForActs = async (actCds) => {
-  return db('excel_sections')
+  return db('ref.sections')
     .whereIn('act_sec_cd', actCds.map(String))
     .select('section_code', 'section', 'section_desc', 'pnsh_gt_7yrs')
     .distinct()
@@ -22,8 +24,8 @@ export const getSectionsForActs = async (actCds) => {
 };
 
 export const getMajorHeadsForActs = async (actCds) => {
-  return db('excel_major_heads as mh')
-    .join('excel_major_minor_mapping as m', 'mh.major_head_code', 'm.major_head_code')
+  return db('ref.major_heads as mh')
+    .join('ref.major_minor_mapping as m', 'mh.major_head_code', 'm.major_head_code')
     .whereIn('m.act_cd', actCds)
     .select('mh.major_head_code', 'mh.major_head')
     .distinct()
@@ -31,8 +33,8 @@ export const getMajorHeadsForActs = async (actCds) => {
 };
 
 export const getMajorHeadsForSection = async (sectionCode) => {
-  return db('excel_major_heads as mh')
-    .join('excel_major_minor_mapping as m', 'mh.major_head_code', 'm.major_head_code')
+  return db('ref.major_heads as mh')
+    .join('ref.major_minor_mapping as m', 'mh.major_head_code', 'm.major_head_code')
     .where('m.section_code', sectionCode)
     .select('mh.major_head_code', 'mh.major_head')
     .distinct()
@@ -41,7 +43,7 @@ export const getMajorHeadsForSection = async (sectionCode) => {
 
 export const getMinorHeadsForMajorHeads = async (majorHeadCodes) => {
   if (!majorHeadCodes || majorHeadCodes.length === 0) return [];
-  return db('excel_minor_heads')
+  return db('ref.minor_heads')
     .whereIn('major_head_code', majorHeadCodes)
     .select('minor_head_cd', 'minor_head')
     .distinct()
@@ -53,16 +55,20 @@ export const getMinorHeadsForMajorHeads = async (majorHeadCodes) => {
 // major-head -> minor-head cascade (one named range per major head label) instead of a
 // hand-curated list of per-crime-type minor_head field_keys.
 export const getAllMinorHeadsByMajorHead = async () => {
-  return db('excel_minor_heads as mn')
-    .join('excel_major_heads as mh', 'mh.major_head_code', 'mn.major_head_code')
+  return db('ref.minor_heads as mn')
+    .join('ref.major_heads as mh', 'mh.major_head_code', 'mn.major_head_code')
     .select('mh.major_head', 'mn.minor_head_cd', 'mn.minor_head')
     .distinct()
     .orderBy('mh.major_head', 'asc')
     .orderBy('mn.minor_head', 'asc');
 };
 
+// ref.property_categories merges the former property_types (top-level, major_property=1)
+// and other_property_categories (sub-categories under OTHERS, major_property=0) —
+// major_property IS the discriminator (verified against loaded data 2026-07-14).
 export const getPropertyCategories = async () => {
-  return db('excel_property_types')
+  return db('ref.property_categories')
+    .where({ major_property: 1 })
     .select('parent_srno', 'parent_cd', 'code_type', 'parent_type', 'major_property')
     .orderBy('code_type', 'asc');
 };
@@ -72,10 +78,10 @@ export const getPropertyItemsForCategory = async (parentCd) => {
   const src = PROPERTY_CATEGORY_SOURCES[pCd];
 
   if (src?.type === 'ARMS') {
-    const made = await db('excel_arms_made').select('arms_made_cd', 'arms_made');
-    const categories = await db('excel_arms_categories').select('arms_category_cd', 'arms_category');
-    const fireArms = await db('excel_fire_arms').select('fire_arms_cd', 'arms_category_cd', 'fire_arms');
-    const fireArmsSubtypes = await db('excel_fire_arms_subtypes').select('arms_subtype_cd', 'arms_type_cd', 'arms_subtype');
+    const made = await db('ref.arms_made').select('arms_made_cd', 'arms_made');
+    const categories = await db('ref.arms_categories').select('arms_category_cd', 'arms_category');
+    const fireArms = await db('ref.fire_arms').select('fire_arms_cd', 'arms_category_cd', 'fire_arms');
+    const fireArmsSubtypes = await db('ref.fire_arms_subtypes').select('arms_subtype_cd', 'arms_type_cd', 'arms_subtype');
     return { type: 'ARMS', made, categories, fireArms, fireArmsSubtypes };
   }
 
@@ -85,31 +91,33 @@ export const getPropertyItemsForCategory = async (parentCd) => {
       .orderBy(src.labelColumn, 'asc');
   }
 
-  // OTHERS (parent_cd 0) is itself a 2-level structure, same shape as ARMS:
-  // excel_other_property_categories (Agriculture Products, Animals, ...) is the Type of
-  // Property list; excel_other_property_items (keyed by THOSE sub-category parent_cds, not
-  // by 0) is the Property Subtype list. Querying excel_other_property_items directly by the
-  // major parent_cd (0) — as a flat fallback would — returns nothing, since no row in that
-  // table is ever keyed 0.
-  const categories = await db('excel_other_property_categories')
+  // OTHERS (parent_cd 0) is itself a 2-level structure, same shape as ARMS: the
+  // major_property=0 rows of ref.property_categories (Agriculture Products, Animals, ...)
+  // are the Type of Property list; ref.other_property_items (keyed by THOSE sub-category
+  // parent_cds, not by 0) is the Property Subtype list. Querying ref.other_property_items
+  // directly by the major parent_cd (0) — as a flat fallback would — returns nothing,
+  // since no row in that table is ever keyed 0.
+  const categories = await db('ref.property_categories')
+    .where({ major_property: 0 })
     .select('parent_cd', 'code_type')
     .orderBy('code_type', 'asc');
-  const items = await db('excel_other_property_items')
+  const items = await db('ref.other_property_items')
     .select('parent_cd', 'property_cd', 'property')
     .orderBy('property', 'asc');
   return { type: 'OTHER_PROPERTY', categories, items };
 };
 
 export const getBeats = async (psCd) => {
-  let query = db('excel_beats').select('beat_cd', 'beat_name', 'ps_cd');
+  // source_ps_cd aliased back to ps_cd — the /lookup/beats response shape is frozen
+  let query = db('ref.beats').select('beat_cd', 'beat_name', 'source_ps_cd as ps_cd');
   if (psCd) {
-    query = query.where({ ps_cd: String(psCd) });
+    query = query.where({ source_ps_cd: String(psCd) });
   }
   return query.orderBy('beat_name', 'asc');
 };
 
 export const getLocalHeads = async () => {
-  return db('excel_local_heads').select('local_head_cd', 'local_head').orderBy('local_head', 'asc');
+  return db('ref.local_heads').select('local_head_cd', 'local_head').orderBy('local_head', 'asc');
 };
 
 let cachedRegistry = null;
@@ -117,8 +125,8 @@ let cachedRegistry = null;
 export const getActsSectionsRegistry = async () => {
   if (cachedRegistry) return cachedRegistry;
 
-  const acts = await db('excel_acts').select('act_cd', 'act_long');
-  const sections = await db('excel_sections').select('act_sec_cd', 'section', 'section_desc', 'section_code');
+  const acts = await db('ref.acts').select('act_cd', 'act_long');
+  const sections = await db('ref.sections').select('act_sec_cd', 'section', 'section_desc', 'section_code');
 
   const sectionsByActCd = {};
   for (const s of sections) {
@@ -128,7 +136,7 @@ export const getActsSectionsRegistry = async () => {
     sectionsByActCd[s.act_sec_cd].push({
       section: s.section,
       desc: s.section_desc || '',
-      // Exact key into excel_major_minor_mapping.section_code — needed so Major Head can be
+      // Exact key into ref.major_minor_mapping.section_code — needed so Major Head can be
       // filtered by the specific (act, section) pair chosen, not just the act as a whole.
       section_code: s.section_code
     });

@@ -54,7 +54,7 @@ Indexes: `(parent_id)`, `(node_type)`.
 | badge_no | varchar(50) | NOT NULL, UNIQUE |
 | name | varchar(100) | NOT NULL — single column |
 | password_hash | varchar(255) | NOT NULL |
-| role | varchar(20) | NOT NULL, CHECK IN (HC, SHO, DISTRICT_OFFICER, JCP, SCP, HQ_ANALYST, HQ_ADMIN, SYSTEM_ADMIN) (synced) |
+| role | varchar(20) | NOT NULL, CHECK IN (HC, SHO, ACP, DISTRICT_OFFICER, JCP, SCP, HQ_ANALYST, HQ_ADMIN, SYSTEM_ADMIN) (synced) — ACP re-added 2026-07-14 (scope = sub_div_id; workflow skips ACP for now, enabling it later = config rows only) |
 | ps_id / district_id / sub_div_id | uuid | FK → hierarchy_nodes (deliberate denormalization, §9.3); nullability by role |
 | is_active | boolean | NOT NULL DEFAULT true |
 | last_login | timestamptz | |
@@ -618,6 +618,15 @@ id uuid PK · batch_id uuid NOT NULL FK → import_batches ON DELETE CASCADE · 
 
 ### 7.8 `notifications` — bilingual redesign (L6.7): type + params, rendered via i18n at read time
 id uuid PK · user_id uuid NOT NULL FK → users · type varchar(40) NOT NULL (i18n key) · params jsonb NOT NULL DEFAULT '{}' · record_id uuid FK → records · is_read boolean NOT NULL DEFAULT false · read_at timestamptz · created_at. Index: `(user_id, is_read, created_at DESC)`. English-only i18n for now.
+
+### 7.9 `system_meta` — NEW (2026-07-14, stage-5 integration 1)
+Tiny key/value bookkeeping table for system-level facts that have no per-row home. First consumer: the startup auto-loader stores `ref_source_checksum` (sha256 over Menu_Tables.xlsx + org/hierarchy.json + ref-overlays) so `load-ref` reruns only when the sources actually changed.
+
+| column | type | constraints |
+|---|---|---|
+| key | varchar(100) | PK |
+| value | jsonb | NOT NULL |
+| updated_at | timestamptz | NOT NULL DEFAULT now() |
 
 ---
 

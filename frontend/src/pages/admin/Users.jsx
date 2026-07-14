@@ -191,7 +191,7 @@ export default function Users() {
                         {item.badge_no || item.badgeNo || '—'}
                       </td>
                       <td className="p-3.5 font-semibold text-slate-750">
-                        {item.name_en || item.username || '—'}
+                        {item.name || item.username || '—'}
                       </td>
                       <td className="p-3.5">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${ROLE_COLORS[roleKey] || 'text-slate-500 bg-slate-50 border-slate-200'}`}>
@@ -239,7 +239,7 @@ export default function Users() {
                         {/* Delete */}
                         <button
                           onClick={() => {
-                            if (window.confirm(`Permanently remove ${item.name_en || item.username} from the registry?`)) {
+                            if (window.confirm(`Permanently remove ${item.name || item.username} from the registry?`)) {
                               deleteUserMutation.mutate(item.id);
                             }
                           }}
@@ -397,7 +397,7 @@ export default function Users() {
 
             <div className="p-5 space-y-4 text-xs">
               <p className="text-zinc-400">
-                Resetting password for <strong className="text-zinc-200">{selectedUser.name_en || selectedUser.username}</strong> ({selectedUser.badge_no || selectedUser.badgeNo}).
+                Resetting password for <strong className="text-zinc-200">{selectedUser.name || selectedUser.username}</strong> ({selectedUser.badge_no || selectedUser.badgeNo}).
               </p>
 
               <div className="space-y-1.5">

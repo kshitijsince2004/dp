@@ -90,6 +90,10 @@ erDiagram
     import_batches ||--o{ import_batch_errors : ""
     users ||--o{ import_batches : "uploaded_by"
 
+    %% ── System bookkeeping (standalone, no FKs) ──
+    system_meta {
+    }
+
     %% ── ref schema internal FKs ──
     ref_major_heads ||--o{ ref_minor_heads : ""
     ref_acts ||--o{ ref_major_minor_mapping : ""
@@ -129,7 +133,7 @@ erDiagram
         varchar badge_no UK
         varchar name
         varchar password_hash
-        varchar role "CHECK synced: HC..SYSTEM_ADMIN"
+        varchar role "CHECK synced: HC SHO ACP DO JCP SCP HQx2 SYS"
         uuid ps_id "FK hierarchy_nodes, denormalized"
         uuid district_id "FK hierarchy_nodes"
         uuid sub_div_id "FK hierarchy_nodes"
@@ -849,6 +853,11 @@ erDiagram
         boolean is_read
         timestamptz read_at
         timestamptz created_at
+    }
+    system_meta {
+        varchar key PK
+        jsonb value "e.g. ref_source_checksum for startup auto-loader"
+        timestamptz updated_at
     }
 ```
 

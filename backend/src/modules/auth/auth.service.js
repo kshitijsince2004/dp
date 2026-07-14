@@ -1,9 +1,14 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import db from '../../config/db.js';
 import { env } from '../../config/env.js';
 import Redis from 'ioredis';
 import { logger } from '../../utils/logger.js';
+import {
+  buildAccessPayload,
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from '../../utils/generateToken.js';
 
 let redisClient = null;
 const memoryTokenCache = new Map();
@@ -67,46 +72,68 @@ async function removeRefreshToken(userId) {
   memoryTokenCache.delete(userId);
 }
 
-export async function resolveDistrictId(user) {
-  if (user.district_id) return user.district_id;
-  if (!user.station_id) return null;
-  // PS node's parent is the district node
-  const psNode = await db('hierarchy_nodes').where({ id: user.station_id }).first();
-  return psNode?.parent_id || null;
+/**
+ * Backfill missing scope FKs by climbing the hierarchy.
+ * Chain is HQ → ZONE → RANGE → DISTRICT → SUB_DIV → PS, so a PS's parent is
+ * its SUB_DIV and the district is TWO hops up — never assume ps.parent is the
+ * district. Seeds populate all three columns; this is a safety net for
+ * hand-created users.
+ */
+export async function resolveScope(user) {
+  const scope = {
+    ps_id: user.ps_id || null,
+    sub_div_id: user.sub_div_id || null,
+    district_id: user.district_id || null,
+  };
+  if (scope.ps_id && !scope.sub_div_id) {
+    const ps = await db('hierarchy_nodes').where({ id: scope.ps_id }).first();
+    scope.sub_div_id = ps?.parent_id || null;
+  }
+  if (scope.sub_div_id && !scope.district_id) {
+    const subDiv = await db('hierarchy_nodes').where({ id: scope.sub_div_id }).first();
+    scope.district_id = subDiv?.parent_id || null;
+  }
+  return scope;
 }
 
+const isDev = env.NODE_ENV === 'development';
+
+// Dev-only login sugar: map memorable names/emails to seeded badge numbers.
+const DEV_BADGE_ALIASES = [
+  [/ramesh|hc001/, 'HC001'],
+  [/vikram|sho001/, 'SHO001'],
+  [/mahesh|acp001/, 'ACP001'],
+  [/priya|do001|dcp/, 'DO001'],
+  [/neha|hqa001|analyst/, 'HQA001'],
+  [/rajiv|hqd001|hq_admin/, 'HQD001'],
+  [/system|sa001/, 'SA001'],
+];
+
+const USER_COLUMNS = [
+  'id', 'username', 'badge_no', 'name', 'password_hash', 'role',
+  'ps_id', 'district_id', 'sub_div_id', 'is_active', 'last_login',
+];
+
+const findByBadgeOrUsername = async (value) => {
+  const lower = value.toLowerCase();
+  return (
+    (await db('users').select(USER_COLUMNS).whereRaw('LOWER(badge_no) = ?', [lower]).first()) ||
+    (await db('users').select(USER_COLUMNS).whereRaw('LOWER(username) = ?', [lower]).first())
+  );
+};
+
 export const loginUser = async (badgeNo, password) => {
-  let normalizedBadgeNo = String(badgeNo).trim();
-  const lowerBadge = normalizedBadgeNo.toLowerCase();
+  const normalizedBadgeNo = String(badgeNo).trim();
 
-  // Map quick access/email logins to seeded database badge numbers
-  if (lowerBadge.includes('ramesh') || lowerBadge.includes('hc001')) {
-    normalizedBadgeNo = 'HC001';
-  } else if (lowerBadge.includes('vikram') || lowerBadge.includes('sho001')) {
-    normalizedBadgeNo = 'SHO001';
-  } else if (lowerBadge.includes('priya') || lowerBadge.includes('do001') || lowerBadge.includes('dcp') || lowerBadge.includes('vardhan') || lowerBadge.includes('singh')) {
-    if (lowerBadge.includes('vikram.singh')) {
-      normalizedBadgeNo = 'HQ001';
-    } else {
-      normalizedBadgeNo = 'DO001';
-    }
-  } else if (lowerBadge.includes('anita') || lowerBadge.includes('hq001')) {
-    normalizedBadgeNo = 'HQ001';
-  } else if (lowerBadge.includes('suresh') || lowerBadge.includes('hq002')) {
-    normalizedBadgeNo = 'HQ002';
-  } else if (lowerBadge.includes('system') || lowerBadge.includes('sa001')) {
-    normalizedBadgeNo = 'SA001';
-  }
+  // Exact match first — a real username/badge always wins over alias guessing,
+  // so a seeded username that happens to contain an alias keyword (e.g.
+  // "dcp_nwd" containing "dcp") never gets silently hijacked into the wrong
+  // account.
+  let user = await findByBadgeOrUsername(normalizedBadgeNo);
 
-  // Look up user case-insensitively on badge_no or username
-  let user = await db('users')
-    .whereRaw('LOWER(badge_no) = ?', [normalizedBadgeNo.toLowerCase()])
-    .first();
-
-  if (!user) {
-    user = await db('users')
-      .whereRaw('LOWER(username) = ?', [normalizedBadgeNo.toLowerCase()])
-      .first();
+  if (!user && isDev) {
+    const alias = DEV_BADGE_ALIASES.find(([re]) => re.test(normalizedBadgeNo.toLowerCase()));
+    if (alias) user = await findByBadgeOrUsername(alias[1]);
   }
 
   if (!user) {
@@ -118,9 +145,9 @@ export const loginUser = async (badgeNo, password) => {
   }
 
   let isMatch = await bcrypt.compare(password, user.password_hash);
-  if (!isMatch && (password === 'Password123' || password === 'test123' || password === 'Test@1234')) {
-    const commonPasswords = ['Password123', 'test123', 'Test@1234'];
-    for (const p of commonPasswords) {
+  // Dev-only backdoor: the seeded dev passwords are interchangeable.
+  if (!isMatch && isDev && ['Password123', 'test123', 'Test@1234'].includes(password)) {
+    for (const p of ['Password123', 'test123', 'Test@1234']) {
       if (p !== password) {
         isMatch = await bcrypt.compare(p, user.password_hash);
         if (isMatch) break;
@@ -132,111 +159,52 @@ export const loginUser = async (badgeNo, password) => {
     throw new Error('Invalid badge number or password');
   }
 
-  const getLevelFromRole = (role) => {
-    if (['HC', 'SHO'].includes(role)) return 'PS';
-    if (role === 'DISTRICT_OFFICER') return 'DISTRICT';
-    return 'HQ';
-  };
+  // Backfill any missing scope ids from the hierarchy before building the token
+  const scope = await resolveScope(user);
+  const payload = buildAccessPayload({ ...user, ...scope });
 
-  const level = getLevelFromRole(user.role);
-  const districtId = await resolveDistrictId(user);
+  const accessToken = signAccessToken(payload);
+  const refreshToken = signRefreshToken(user.id);
 
-  // Generate tokens with BOTH camelCase and snake_case properties
-  const payload = {
-    id: user.id,
-    userId: user.id,
-    username: user.username,
-    badge_no: user.badge_no,
-    badgeNo: user.badge_no,
-    name: user.name_en,
-    role: user.role,
-    level: level,
-    ps_id: user.station_id || null,
-    psId: user.station_id || null,
-    district_id: districtId,
-    districtId: districtId,
-    sub_div_id: user.sub_div_id || null
-  };
-
-  const accessToken = jwt.sign(payload, env.JWT_SECRET, { expiresIn: '1h' });
-  const refreshToken = jwt.sign({ id: user.id }, env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
-
-  // Store refresh token
   await storeRefreshToken(user.id, refreshToken);
-
-  // Update last login
   await db('users').where({ id: user.id }).update({ last_login: new Date().toISOString() });
 
-  // Return token details with BOTH camelCase and snake_case keys
   return {
-    accessToken,
-    refreshToken,
     access_token: accessToken,
     refresh_token: refreshToken,
     user: {
       id: user.id,
-      userId: user.id,
       username: user.username,
       badge_no: user.badge_no,
-      badgeNo: user.badge_no,
-      name_en: user.name_en,
-      name_hi: user.name_hi,
-      name: user.name_en,
+      name: user.name,
       role: user.role,
-      level: level,
-      ps_id: user.station_id || null,
-      psId: user.station_id || null,
-      district_id: districtId,
-      districtId: districtId,
-      sub_div_id: user.sub_div_id || null
-    }
+      level: payload.level,
+      ps_id: scope.ps_id,
+      district_id: scope.district_id,
+      sub_div_id: scope.sub_div_id,
+    },
   };
 };
 
 export const refreshUserToken = async (token) => {
   try {
-    const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET);
-    const savedToken = await getRefreshToken(decoded.id);
-    
+    const decoded = verifyRefreshToken(token);
+    const userId = decoded.sub ?? decoded.id; // decoded.id = pre-restructure tokens
+    const savedToken = await getRefreshToken(userId);
+
     if (!savedToken || savedToken !== token) {
       throw new Error('Invalid refresh token');
     }
 
-    const user = await db('users').where({ id: decoded.id }).first();
+    // Re-query so role/scope/is_active changes take effect on the next token
+    const user = await db('users').select(USER_COLUMNS).where({ id: userId }).first();
     if (!user || !user.is_active) {
       throw new Error('User not found or inactive');
     }
 
-    const getLevelFromRole = (role) => {
-      if (['HC', 'SHO'].includes(role)) return 'PS';
-      if (role === 'DISTRICT_OFFICER') return 'DISTRICT';
-      return 'HQ';
-    };
-
-    const level = getLevelFromRole(user.role);
-    const districtId = await resolveDistrictId(user);
-
-    const payload = {
-      id: user.id,
-      userId: user.id,
-      username: user.username,
-      badge_no: user.badge_no,
-      badgeNo: user.badge_no,
-      name: user.name_en,
-      role: user.role,
-      level: level,
-      ps_id: user.station_id || null,
-      psId: user.station_id || null,
-      district_id: districtId,
-      districtId: districtId,
-      sub_div_id: user.sub_div_id || null
-    };
-
-    const newAccessToken = jwt.sign(payload, env.JWT_SECRET, { expiresIn: '1h' });
-    return {
-      accessToken: newAccessToken,
-      access_token: newAccessToken
-    };
+    const scope = await resolveScope(user);
+    const newAccessToken = signAccessToken(buildAccessPayload({ ...user, ...scope }));
+    return { access_token: newAccessToken };
   } catch (error) {
     throw new Error('Token refresh failed: ' + error.message);
   }

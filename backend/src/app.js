@@ -36,6 +36,7 @@ import notificationsRouter from './modules/notifications/notifications.routes.js
 import dailyDiaryRouter from './modules/daily-diary/daily-diary.router.js';
 import warehouseRouter from './modules/warehouse/warehouse.router.js';
 import recordLinksRouter from './modules/record-links/record-links.router.js';
+import ioRouter from './modules/io/io.router.js';
 
 
 
@@ -120,6 +121,9 @@ app.use('/api/users', usersRouter);
 app.use('/api/v1/admin/hierarchy', hierarchyRouter);
 app.use('/api/v1/hierarchy', hierarchyRouter);
 app.use('/api/hierarchy', hierarchyRouter);
+
+app.use('/api/v1/investigating-officers', ioRouter);
+app.use('/api/investigating-officers', ioRouter);
 
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/admin', adminRouter);

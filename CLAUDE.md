@@ -19,14 +19,20 @@ The database was **fully rebuilt** (stages 1–4 of the restructure; design trut
   the full `storage` mapping contract). Migrations are schema-only forever.
 - **First-time DB setup (new)**: from `backend/`:
   `npm run db:reset && npm run db:migrate && npm run sync-config && npm run load-ref && npm run db:seed`
-- **STAGE 5 IS PENDING — the backend/frontend code is NOT yet adapted.** The `records`,
-  `fields`, `import`, `daily-diary`, `warehouse`, `report-builder` modules and `python_worker`
-  still read `records.data` jsonb and `excel_*` — they are BROKEN against the new DB until the
-  write-path rewrite (registry-driven split into spine/detail/persons/properties/locations/
-  offences per `field_registry.storage`). Mock record seeding (`scripts/seed-test-data.js`)
-  is also old-schema. Do not "fix" the modules by recreating old tables — adapt them per
-  `docs/db-audit/ARCHITECTURE.md`; kill list in `DB_SCHEMA.md` §11 (FALLBACK_TRANSITIONS,
-  workflow.service.js, EAV pair, `compilations.record_ids`, in-memory report templates).
+- **STAGE 5 UNDERWAY (2026-07-14) — tracked in `docs/new-db-integration/`.** Integration 1
+  (auth, RBAC, JWT, workflow engine, `ref.*` lookups, users, hierarchy, new IO module) is
+  **done** — see `docs/new-db-integration/01-auth-rbac-workflow-refs.md` for the canonical
+  JWT shape, RBAC scoping table, queue derivation, and every deferral. `ACP` role is back
+  in the `users.role` CHECK (scope = `sub_div_id`); workflow has no ACP transitions yet
+  (config rows only, when needed). **Still NOT adapted**: `records` (the write path — spine/
+  detail/persons/properties/locations/offences split — AND its read path `listRecords`/
+  `getRecordDetails`, still joining dead `hierarchy_nodes.name_en`), `import`, `daily-diary`,
+  `warehouse`, `report-builder`, and `python_worker` — all still read `records.data` jsonb
+  and/or `excel_*` (import specifically; `fields` itself is now on `ref.*`). Mock record
+  seeding (`scripts/seed-test-data.js`) is also old-schema. Do not "fix" the modules by
+  recreating old tables — adapt them per `docs/db-audit/ARCHITECTURE.md`; kill list in
+  `DB_SCHEMA.md` §11 (`FALLBACK_TRANSITIONS` and `workflow.service.js` are now deleted —
+  done; EAV pair, `compilations.record_ids`, in-memory report templates remain).
 - **Hierarchy is official now**: `config/org/hierarchy.json` = 349 nodes rebuilt from the
   official Delhi Police code list (`config/ref-data/PS_Codes.xlsx` → `config/org/ps_codes.json`
   via `backend/scripts/dev/build_ps_codes.py`): 23 districts (incl. Crime Branch/EOW/IGI/
@@ -96,17 +102,18 @@ Before modifying code:
 ## 2. Hierarchy & Roles
 
 ```
-HC (Head Constable) → SHO → DISTRICT_OFFICER → JCP → SCP → HQ_ANALYST / HQ_ADMIN / SYSTEM_ADMIN
+HC (Head Constable) → SHO → ACP → DISTRICT_OFFICER → JCP → SCP → HQ_ANALYST / HQ_ADMIN / SYSTEM_ADMIN
 ```
 
 | Role | Level | Scope |
 |------|-------|-------|
 | HC | PS | Own PS only (`ps_id`) |
 | SHO | PS | Own PS only (`ps_id`) |
+| ACP | SUB_DIV | Own sub-division (`sub_div_id`) — workflow has no ACP review step yet (config-only to add) |
 | DISTRICT_OFFICER | DISTRICT | Own district (`district_id`) |
-| JCP | JCP | Sub-division (`sub_div_id`) |
-| SCP | SCP | Range |
-| HQ_ANALYST | HQ | All districts (read-only) |
+| JCP | JCP | Global, status-gated (`JCP_REVIEW` queue) — no zone/range scope FK exists on `users` |
+| SCP | SCP | Global, status-gated (`SCP_REVIEW` queue) — no zone/range scope FK exists on `users` |
+| HQ_ANALYST | HQ | All districts (read-only, no queue — uses `/records` list) |
 | HQ_ADMIN | HQ | All districts + config |
 | SYSTEM_ADMIN | SYSTEM | Everything |
 
@@ -122,8 +129,13 @@ DRAFT → PENDING_SHO → DISTRICT_REVIEW → COMPILED → JCP_REVIEW → SCP_RE
 Special: LEGACY_IMPORTED (bypasses all workflow), AMENDMENT_PENDING
 ```
 
-**State machine lives in** `records.service.js` → `transitionRecord()` TRANSITIONS config object.  
-Adding new state = add entry to TRANSITIONS. Do NOT add if/else chains.
+**State machine is config-driven** (2026-07-14) — `workflow_transitions_config` (DB, synced
+from `config/workflow/main.json`), read exclusively through
+`modules/workflow/workflow.engine.js` (`getRule`/`resolveTarget`/`getQueueStatuses`).
+`records.service.js` → `transitionRecord()` calls the engine; it no longer contains any
+transition logic itself. Adding a new state/action = add a row to
+`config/workflow/main.json` + `npm run sync-config`. Do NOT add if/else chains or a
+fallback table in code — see `docs/new-db-integration/01-auth-rbac-workflow-refs.md` §5.
 
 ---
 
@@ -183,7 +195,7 @@ backend/
 ## 5. Database Tables (NEW schema, 2026-07 restructure)
 
 **Complete spec: `docs/db-audit/DB_SCHEMA.md`** (every column/constraint/index — the single
-DB context file; no re-analysis needed). Summary: 38 `public` tables + 21 `ref.*` lookups.
+DB context file; no re-analysis needed). Summary: 39 `public` tables + 21 `ref.*` lookups.
 
 | Group | Tables |
 |-------|--------|
@@ -237,8 +249,10 @@ router.post('/', allow('HC'), controller.create); // role check
 
 // enforceScope sets req.jurisdictionQuery:
 // HC/SHO → { ps_id }
+// ACP → { sub_div_id }
 // DISTRICT_OFFICER → { district_id }
-// HQ_ANALYST/HQ_ADMIN/SYSTEM_ADMIN → {} (global)
+// JCP/SCP/HQ_ANALYST/HQ_ADMIN/SYSTEM_ADMIN → {} (global)
+// any other role → 403 (default-deny, never falls through to global)
 
 // In service — always pass jurisdictionQuery to filter queries:
 if (jurisdictionQuery.ps_id) query = query.where('records.ps_id', jurisdictionQuery.ps_id);
@@ -343,20 +357,12 @@ frontend/src/
 | `createRecord(user, type, date, data, ip)` | DB transaction: insert record + revision + audit_log, publish event |
 | `updateRecord(id, user, data, ip)` | DB transaction: diff, update, revision, audit_log |
 | `submitRecord(id, user)` | DRAFT/SENT_BACK → PENDING_SHO, writes transition + audit |
-| `transitionRecord(id, user, action, comment, targetFields, ip)` | State machine — TRANSITIONS config object |
+| `transitionRecord(id, user, action, comment, targetFields, ip)` | State machine — delegates to `workflow.engine.js` (`getRule`/`resolveTarget`), no inline rules |
 | `overrideCaseHead(id, user, newHead, reason, ip)` | HEAD_OVERRIDE revision, requires reason ≥ 10 chars |
 
-**TRANSITIONS config (in transitionRecord):**
-```js
-PENDING_SHO: {
-  approve:    { to: 'DISTRICT_REVIEW', toLevel: 'DISTRICT' },
-  send_back:  { to: 'SENT_BACK', toLevel: 'PS', requiresComment: true }
-},
-DISTRICT_REVIEW: {
-  approve:    { to: 'HQ_RECEIVED', toLevel: 'HQ' },
-  send_back:  { to: 'SENT_BACK', toLevel: 'PS', requiresComment: true }
-}
-```
+**Transitions are DB rows** (`workflow_transitions_config`, synced from `config/workflow/main.json`),
+not code. See `docs/new-db-integration/01-auth-rbac-workflow-refs.md` §5 for the engine contract
+and the verified per-role queue derivation.
 
 ---
 

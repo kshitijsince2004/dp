@@ -68,7 +68,7 @@ export default function DistrictDashboard() {
   const getDistrictName = () => {
     const isHq = user?.role === 'HQ' || user?.role === 'HQ_ANALYST' || user?.role === 'HQ_ADMIN' || user?.role === 'SYSTEM_ADMIN';
     if (isHq) return "DELHI POLICE";
-    const rawName = jurisdiction?.district?.name_en || user?.districtKey || "Delhi Police";
+    const rawName = jurisdiction?.district?.name || user?.districtKey || "Delhi Police";
     return rawName.replace(/\s*\([^)]*\)/g, '').trim().toUpperCase();
   };
 
@@ -109,7 +109,7 @@ export default function DistrictDashboard() {
       {/* ══════════════ HERO HEADER ══════════════ */}
       <div className="relative overflow-hidden hero-banner-gradient px-8 py-8">
         <span className="user-greeting-badge text-5xl font-bold text-white/95 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 shadow-sm">
-          Hi, {currentLng === 'hi' ? (user?.name_hi || user?.name_en || user?.username) : (user?.name_en || user?.username || 'User')}
+          Hi, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
         </span>
         <div className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-10 left-1/3 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
