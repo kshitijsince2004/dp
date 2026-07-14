@@ -7394,7 +7394,10 @@
    "hi": "वर्कआउट"
   },
   "section": "investigation_officer",
-  "storage": "extra",
+  "storage": {
+   "table": "fir_details",
+   "column": "is_worked_out"
+  },
   "options": [
    {
     "value": "Yes",
@@ -7417,6 +7420,43 @@
   ],
   "introduced_at_level": "PS",
   "sort_order": 508,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "work_out_date",
+  "record_types": [
+   "CASE"
+  ],
+  "field_type": "DATE",
+  "labels": {
+   "en": "WorkOut Date",
+   "hi": "वर्कआउट तिथि"
+  },
+  "section": "investigation_officer",
+  "storage": {
+   "table": "fir_details",
+   "column": "worked_out_date"
+  },
+  "validation_rules": {
+   "required": true
+  },
+  "show_when": {
+   "field": "work_out",
+   "value": "Yes"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 509,
   "full_width": false,
   "readonly": false,
   "is_active": true,

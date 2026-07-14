@@ -127,6 +127,8 @@ Indexes: `(ps_id, record_type, record_date DESC)`, `(district_id, record_type)`,
 | beat_id | varchar(20) | FK → ref.beats(beat_cd) (verified PK, §8) |
 | is_important | boolean | NOT NULL DEFAULT false |
 | case_status | varchar(50) | domain case status (Under Investigation / Chargesheet / …), distinct from workflow `current_status` |
+| is_worked_out | boolean | NULL = unanswered — promoted from `extra` (ruling 23a); form field `work_out` Yes/No, normalized to boolean at write; changes tracked in `record_status_events` (§4.8) so worked-out flips land in the diary of their `effective_date` |
+| worked_out_date | date | officer-entered real-world workout date (2026-07-14 addendum to ruling 23a) — form field `work_out_date`, required + shown when work_out=Yes; current-value copy of the latest is_worked_out event's `effective_date`, stamped by the write path in the same transaction as the event row |
 | local_head_id | int | FK → ref.local_heads — the single PS-level classification (daily-diary grouping); acts/sections/major/minor heads are multi-valued → `record_offences` (§2.7) |
 | brief_facts | text | |
 | occurrence_location_id | uuid | FK → locations (§3.5) — full structured place-of-occurrence block (address components + lat/long) |
@@ -201,7 +203,8 @@ Caller → `persons` role CALLER (name/mobile/address live there). Responding/en
 | operator_name | varchar(100) | |
 | source | varchar(100) | source of information — includes PCR-call origin as a value (the old `pcr_call_flag` boolean was redundant with it, ruling 20) |
 | zipnet_no | varchar(50) | |
-| case_registered | boolean | |
+| case_registered | boolean | "is FIR registered?" discriminator (ruling 23b); Yes → fir_no required at submit (config `show_when`+`required`, never a DB CHECK — ruling-18 pattern) |
+| fir_no | varchar(50) | FIR number **as entered** — provenance + fallback ONLY, ruling-19 discipline; THE link is an async-resolved `record_links` CASE_MISSING row (ruling 23c); fir_date date |
 | remarks | text | |
 | extra | jsonb | NOT NULL DEFAULT '{}' |
 | created_at / updated_at | timestamptz | |
@@ -484,6 +487,26 @@ Index: `(record_id, status)`.
 
 Indexes: `(table_name, record_id)`, `(changed_by_id)`, `(changed_at)`.
 
+### 4.8 `record_status_events` — typed domain-status change ledger (ruling 22, 2026-07-13)
+Diaries report status changes on the date they **actually happened**, which officers often enter days later — so every domain-status change carries an officer-entered `effective_date` (the diary pivot, backdating expected) distinct from the system `changed_at` (the audit fact). Workflow status stays in `workflow_transitions` (§4.4); this table is **domain** statuses only. Report-queryable by `pharos_report_ro` (§9.5).
+
+| column | type | constraints / notes |
+|---|---|---|
+| id | uuid | PK |
+| record_id | uuid | NOT NULL, FK → records ON DELETE CASCADE |
+| property_id | uuid | FK → record_properties ON DELETE CASCADE; NULL unless the event is a property status change; CHECK `(status_field = 'property_status') = (property_id IS NOT NULL)` |
+| status_field | varchar(30) | NOT NULL, CHECK IN (case_status, missing_status, uidb_status, final_call_status, property_status, is_worked_out) (synced) — is_worked_out added by ruling 23a (boolean stored as 'true'/'false' in old/new_value) |
+| old_value | varchar(50) | |
+| new_value | varchar(50) | NOT NULL |
+| effective_date | date | NOT NULL — officer-entered real-world date of the change (diary pivot); validated not-future at the API layer, never a DB CHECK |
+| changed_by | uuid | NOT NULL, FK → users |
+| changed_at | timestamptz | NOT NULL DEFAULT now() — system entry time (audit fact, distinct from effective_date) |
+| comment | text | |
+
+Append-only: no updated_at. Indexes: `(record_id)`, `(effective_date)`, `(status_field, effective_date)`.
+
+Write rule: any write that changes one of the tracked status values MUST insert an event row **in the same transaction** (alongside the usual revision), through the single write path. The value set at record creation is NOT an event — registration diaries pivot on the record's own dates; this table holds changes only.
+
 ---
 
 ## 5. Links & compilation
@@ -493,6 +516,8 @@ Indexes: `(table_name, record_id)`, `(changed_by_id)`, `(changed_at)`.
 `link_type_registry`: id uuid PK · code varchar UNIQUE NOT NULL · source_record_type / target_record_type varchar(20) · label varchar(100) (English-only) · cardinality varchar(20) NOT NULL DEFAULT 'ONE_TO_MANY' · is_active boolean NOT NULL DEFAULT true · created_at/updated_at.
 
 `record_links`: id uuid PK · link_type_id uuid NOT NULL FK → link_type_registry · source_record_id / target_record_id uuid NOT NULL FK → records · metadata jsonb NOT NULL DEFAULT '{}' · created_by uuid FK → users · created_at. **UNIQUE (source_record_id, target_record_id, link_type_id)**. Indexes: `(source_record_id)`, `(target_record_id)`.
+
+Link creation from FIR references is **asynchronous** (ruling 23c): the record write commits first; a post-commit event subscriber resolves the reference and inserts the link row as its own single action (idempotent via the UNIQUE triple). Registry codes include CASE_ARREST (ruling 19) and CASE_MISSING (ruling 23b).
 
 ### 5.2 `compilations` (the `record_ids` JSON array is DEAD — join table wins)
 
@@ -701,7 +726,7 @@ The 34 legacy seed rows with empty `applicable_record_types` (superseded flat pe
 | persons.nick_names | jsonb array | multi-value chips |
 
 ### 9.5 Access model (Level 7)
-- python_worker: dedicated role **`pharos_report_ro`** — SELECT-only on exactly: records, all 5 detail tables, record_offences, locations, persons (+3 subtypes), record_properties, record_links, link_type_registry, hierarchy_nodes, investigating_officers, field_registry, report_templates, ref.* (all). Credentials via **environment, never argv**. Job-status writes: Node owns them (worker communicates via stdout/exit protocol) — the role gets NO write grants (implementation may instead grant UPDATE on report_jobs only; either way nothing else).
+- python_worker: dedicated role **`pharos_report_ro`** — SELECT-only on exactly: records, all 5 detail tables, record_offences, locations, persons (+3 subtypes), record_properties, record_links, link_type_registry, hierarchy_nodes, investigating_officers, field_registry, report_templates, **record_status_events + workflow_transitions (ruling 22 — diaries pivot on status-change dates)**, ref.* (all). Credentials via **environment, never argv**. Job-status writes: Node owns them (worker communicates via stdout/exit protocol) — the role gets NO write grants (implementation may instead grant UPDATE on report_jobs only; either way nothing else).
 - Worker sheets read real columns; end-state: worker consumes proforma specs from `report_templates` (the 24 hardcoded JSONB-key mappings dissolve).
 - Raw SQL against typed columns is legitimate. One rule: nothing hand-maintains a parallel field catalog — everything derives from `field_registry.storage`.
 
@@ -732,6 +757,11 @@ The 34 legacy seed rows with empty `applicable_record_types` (superseded flat pe
 19. *(2026-07-11)* Case↔arrest linking discipline: there is exactly **one** linking mechanism — a `record_links` CASE_ARREST row storing the case's UUID. FIR numbers are a **resolution key only**: import/entry resolves the typed number against the `fir_details` business key `(ps_id, fir_year, fir_no)` — same PS + year, so cross-PS FIR-number collisions are impossible by construction — and stores the resolved UUID link. The UUID link is authoritative and survives transfer renumbering (a stored text FIR number goes stale when ruling-4's allocator renumbers on transfer ACCEPT). `arrest_details.fir_no/fir_date` remain solely as as-entered provenance and as the fallback reference when the FIR doesn't exist in PHAROS (other unit / pre-system); when a link row exists, it wins. **`linked_fir_dd_no` is DROPPED** — import routes the old combined "FIR/DD No." value into `fir_no` (FIR-based) or `gd_no` (DD-based) per `is_dd_based`, then attempts UUID resolution and reports unresolved rows (the import's existing linked/unmatched report).
 20. *(2026-07-11)* MISSING + UIDB cleanup: `missing_details.pcr_call_flag` dropped (redundant with `source`, which carries PCR-origin as a value). `missing_person_details.major_minor` replaced by **`persons.is_minor boolean GENERATED ALWAYS AS (age < 18) STORED`** — DB-computed (a generated column can't reference `dob`/now(), which is non-immutable, so the app derives age from dob at write and Postgres derives is_minor from age); lives on `persons` so it applies to every role, not just MISSING. `last_seen_location_id` reverted to **`last_seen_place text`** — narrative text by design, not an address (amends ruling 15c for this one field). Address of the missing person needs nothing new — it's the MISSING `persons` row's `present_location_id`/`perm_location_id`. `uidb_details.gazette_number` dropped (gazette-publication reference; process doesn't track it — re-add via `extra`/promotion at zero cost if that changes). `mental_state` already existed — unchanged.
 21. *(2026-07-11)* Relative pair on persons: the form captures relation type + relative name per person, but the schema only stored the name. `parent_name` → **`relative_name`**, plus new **`relation_type`** CHECK IN (FATHER, MOTHER, HUSBAND, WIFE, GUARDIAN, OTHER) (synced). The S/O / D/O / W/O / C/O display prefix is derived at read from relation_type + gender (matching the existing report-formatter logic), never stored. The old `relation` column is renamed **`relation_to_subject`** (informant's/caller's relation to the record's subject) — a different fact that the near-identical name would have forever confused with `relation_type`.
+22. *(2026-07-13)* Domain-status change dates for diaries: proformas report a status change (case_status progressing, property recovered, missing person traced …) in the diary of the date it **actually happened** — and officers routinely enter it days later. New append-only **`record_status_events`** (§4.8): one row per domain-status change with officer-entered `effective_date` (diary pivot, backdating expected, not-future validated at API layer) + system `changed_at` (audit fact) — the two dates are different facts and are never conflated. Covers the five domain statuses (case/missing/uidb/final_call/property_status); workflow status already has its dated ledger (`workflow_transitions`). Written only by the single write path, same transaction as the status update. `pharos_report_ro` grant list gains SELECT on `record_status_events` + `workflow_transitions` (they were missing — reports couldn't see any history). Current-value columns stay as-is. Import template unaffected (status changes are post-registration; registration diaries pivot on the record's own dates). *(2026-07-13, same day: folded into base migration 20260711000005 — DB had no data, no amendment migration needed.)*
+23. *(2026-07-13)* Three amendments in one ruling:
+    **(a) worked-out promotion** — the `work_out` Yes/No form field (existed, storage `extra`) is reporting-grade: daily diaries break out worked-out cases, and the flag flips after registration. Promoted to **`fir_details.is_worked_out boolean`** (NULL = unanswered; Yes/No normalized to boolean at write per baseline P2). Added to `record_status_events.status_field` CHECK — a later No→Yes flip is a dated event and appears in the diary of its `effective_date`, exactly like a domain-status change. *(2026-07-14 addendum: **`fir_details.worked_out_date date`** — the officer-entered workout date as a first-class current-value column; form field `work_out_date`, required + `show_when` work_out=Yes; the write path uses it as the event's `effective_date` and stamps both in one transaction — reports read the column for current state, the event ledger for history.)*
+    **(b) MISSING → FIR reference** — `missing_details.case_registered` (existed, but had no form field) is the "is FIR registered?" discriminator; new columns **`fir_no varchar(50)` + `fir_date date`** hold the as-entered reference (ruling-19 discipline: provenance + fallback only). Config gains 3 MISSING fields: `case_registered` (RADIO Yes/No), `missing_fir_no` (required, `show_when` case_registered=Yes), `missing_fir_date` (`show_when` same) — requiredness is config re-checked at submit, never a DB CHECK (ruling-18 pattern).
+    **(c) Async linking discipline** — link resolution NEVER runs inside the record-write transaction: one action at a time. The write path stores the as-entered reference and commits; the existing post-commit `record.created`/`record.updated` events trigger a link-resolver subscriber that does exactly one thing — resolve `(ps_id, fir_year, fir_no)` against the fir_details business key and insert the `record_links` row (CASE_ARREST / **CASE_MISSING** — new `link_type_registry` code) — idempotent via the UNIQUE `(source, target, link_type)` triple. Unresolved references stay provenance-only (fallback display) and are retried on the next update event. Generalizes ruling 19's import-time resolution to interactive entry, for ARREST and MISSING alike.
 
 ---
 

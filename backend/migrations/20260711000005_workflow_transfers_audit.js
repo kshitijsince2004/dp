@@ -128,11 +128,33 @@ export async function up(knex) {
     CREATE INDEX idx_audit_logs_table  ON audit_logs (table_name, record_id);
     CREATE INDEX idx_audit_logs_by     ON audit_logs (changed_by_id);
     CREATE INDEX idx_audit_logs_at     ON audit_logs (changed_at);
+
+    -- §4.8 typed domain-status change ledger (rulings 22+23): officer-entered
+    -- effective_date (diary pivot, backdating expected) vs system changed_at (audit fact)
+    CREATE TABLE record_status_events (
+      id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      record_id      uuid NOT NULL REFERENCES records(id) ON DELETE CASCADE,
+      property_id    uuid REFERENCES record_properties(id) ON DELETE CASCADE,
+      status_field   varchar(30) NOT NULL CHECK (status_field IN
+                       ('case_status','missing_status','uidb_status',
+                        'final_call_status','property_status','is_worked_out')),
+      old_value      varchar(50),
+      new_value      varchar(50) NOT NULL,
+      effective_date date NOT NULL,
+      changed_by     uuid NOT NULL REFERENCES users(id),
+      changed_at     timestamptz NOT NULL DEFAULT now(),
+      comment        text,
+      CHECK ((status_field = 'property_status') = (property_id IS NOT NULL))
+    );
+    CREATE INDEX idx_record_status_events_record    ON record_status_events (record_id);
+    CREATE INDEX idx_record_status_events_effective ON record_status_events (effective_date);
+    CREATE INDEX idx_record_status_events_field_eff ON record_status_events (status_field, effective_date);
   `);
 }
 
 export async function down(knex) {
   await knex.raw(`
+    DROP TABLE IF EXISTS record_status_events;
     DROP TABLE IF EXISTS audit_logs;
     DROP TABLE IF EXISTS record_amendments;
     DROP TABLE IF EXISTS workflow_transitions_config;

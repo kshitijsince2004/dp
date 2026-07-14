@@ -40,6 +40,31 @@ The database was **fully rebuilt** (stages 1–4 of the restructure; design trut
 Sections below describe the app layer as it still is; DB-related parts of them are stale
 where they conflict with the above.
 
+# ⚠ ENGINEERING BASELINE (2026-07-13) — BINDING FOR ALL STAGE-5+ WORK
+
+**`docs/ENGINEERING_BASELINE.md` is the permanent rules-of-conduct contract.** Read it
+before implementing anything. The six principles, in one line each:
+
+- **P1** Typed schema only, ONE write path (`records.service.js`), registry-driven
+  storage split, RabbitMQ for cross-module — adaptation order re-ranked there
+  (audit enforcement moved LAST).
+- **P2** Validation = constrain (UI dropdowns/pickers) → normalize (single registry-driven
+  API layer: dates→ISO, phones→digits, casing, FIR refs) → enforce (DB constraints as last
+  line). Officers are non-tech-savvy and shifts rotate — reject only the impossible.
+- **P3** The bulk-import Excel template's OUTPUT is a **frozen contract** — never change
+  its columns/order/labels/dropdowns without explicit user sign-off. Template = what we
+  collect; `field_registry` = where it's stored; a checked mapping + parity check bridges
+  them. Registry-generated template is the goal only once it passes byte-parity.
+- **P4** Frontend is dumb: renders from `/fields/form/:type`, fetches ALL domain data from
+  backend APIs, computes nothing authoritative. Hardcoded arrays are debt — drain on touch.
+- **P5** Every endpoint scoped: `enforceScope` + `jurisdictionQuery` in every query,
+  `verifyRecordAccess` on every single-record op, detail tables scoped through the spine,
+  `ps_id` stamped from `req.user` never the body.
+- **P6** Audit enforcement is deferred but hooks stay warm: append-only, revision +
+  audit_log in-transaction via the one write path, events after commit.
+
+The review checklist at the bottom of that doc applies to every change.
+
 # AI Agent Rules
 
 Before modifying code:
@@ -50,6 +75,7 @@ Before modifying code:
 4. Do not bypass RabbitMQ for cross-module communication.
 5. Show implementation plan before large refactors.
 6. Preserve backward compatibility for API routes.
+7. Comply with `docs/ENGINEERING_BASELINE.md` (P1–P6 + checklist).
 
 ---
 

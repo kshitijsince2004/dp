@@ -35,6 +35,12 @@
 
 ## Next phase (implementation) — suggested order, sequenced by risk (per `ARCHITECTURE.md` §13)
 
+> **2026-07-13 — SUPERSEDED by `docs/ENGINEERING_BASELINE.md` P1.5.** The baseline re-ranks
+> this list: write path → validation/normalization layer → fields+frontend → import (template
+> output FROZEN) → remaining modules → report engine → transfers → hash-chain enforcement
+> LAST (item 6 below deferred; its hooks — append-only, in-transaction revisions, one write
+> path — stay mandatory per baseline P6). Items 1–4 remain first in both orderings.
+
 **Lower-risk, already half-built — do these first:**
 1. `record_persons`/`record_properties` → typed `persons`/`record_properties` migration (schema change + value-copy from existing jsonb blobs).
 2. Seed `workflow_transitions_config` from `config/workflow/*.json`; delete `FALLBACK_TRANSITIONS` and `workflow.service.js`/`workflow.controller.js`.

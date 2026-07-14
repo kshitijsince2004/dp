@@ -1,7 +1,13 @@
 # PHAROS DB Restructure — HANDOFF
 
 **Purpose:** single resume-point for the full DB restructure. Read this first; it tells you what is decided, what exists, and what's next. Keep it updated at every milestone.
-**Last updated:** 2026-07-11 (session 4 — ruling 15 amendments).
+**Last updated:** 2026-07-13 (engineering baseline adopted — see below).
+
+> **2026-07-13:** `docs/ENGINEERING_BASELINE.md` adopted as the BINDING conduct contract
+> for stage-5+ implementation (validation posture, frozen import template, dumb frontend,
+> jurisdiction isolation, deferred-audit priority). It re-ranks the stage-5 order: hash-chain
+> enforcement (stage 6 here) moves LAST; append-only hooks stay warm. Where sequencing in
+> this file conflicts with the baseline, the baseline wins.
 
 ## Phase map
 
@@ -62,11 +68,18 @@
 
 **PS codes follow-up (2026-07-11, same day):** user re-supplied the official list → canonical copy `config/ref-data/PS_Codes.xlsx` (scratch/ is gitignored). `scripts/dev/build_ps_codes.py` derives `config/org/ps_codes.json` (225 entries) **and rebuilt the hierarchy's SUB_DIV layer**: the old tree's 46 sub-divisions were generic/fictional — replaced by the official 92 SDPO sub-divisions; all PS reparented; 33 genuinely-new PS inserted (Cyber PS ×dist, IITF, Kartavya Path, special-unit PS) and 8 special districts (Crime Branch, EOW, IGI, Metro, Railways, Special Cell, SPUWAC, Vigilance) added under HQ → hierarchy is now 349 nodes (23 districts / 92 sub-divs / 225 PS), every PS carrying `metadata.official_code`; existing PS kept their mnemonic codes (stable keys — spelling variants matched via aliases+fuzzy: Prasad/Parshad, Tughlak/Tuglak, "CYBER POLICE STATION X"="PS Cyber Crime", H.N. Din=Hazarat Nizamuddin …). `load-ref` now links beats (2,090/2,855) and deactivates hierarchy nodes absent from config. Users seed updated to the new sub-division codes.
 
+**Session 5 (2026-07-13) — rulings 22+23 + baseline:**
+- [x] `docs/ENGINEERING_BASELINE.md` adopted (see note at top).
+- [x] Ruling 22: **`record_status_events`** (§4.8) — typed, append-only domain-status change ledger with officer-entered `effective_date` (diary pivot; officers backdate) vs system `changed_at` (audit). Gap found while checking proforma needs: status-change history existed only in `record_revisions.field_changes` jsonb, and `pharos_report_ro` couldn't read ANY history table. Grant list (§9.5 + `ARCHITECTURE.md` §9.2) gains SELECT on `record_status_events` + `workflow_transitions`. Stage-5 notes: write path must insert the event row in-transaction on every domain-status change; UI needs a "date of change" input (default today, not-future) on domain-status edits — config field rows to be added with the wizard; import template unaffected.
+- [x] Ruling 23 (same day): **(a)** `work_out` field promoted `extra` → `fir_details.is_worked_out boolean` (config storage mapping updated); added to `record_status_events.status_field` CHECK so worked-out flips are dated diary events. **(b)** `missing_details` gains `fir_no`/`fir_date` (as-entered provenance, ruling-19 discipline; existing `case_registered` = "is FIR registered?" discriminator); 3 new MISSING config fields (`case_registered` RADIO — column existed with NO form field, `missing_fir_no` required-when-Yes, `missing_fir_date`). **(c)** async linking discipline: link resolution never in the record-write transaction — post-commit event subscriber inserts the `record_links` row (CASE_MISSING joins CASE_ARREST as registry codes) as its own idempotent action; also baseline P1.7. Stage-5 note: link-resolver subscriber + CASE_MISSING `link_type_registry` seed row to be built with the write path.
+- [x] DB rebuilt from scratch (user: data disposable, fold schema changes into base migrations — no amendment migrations while pre-launch): ruling-22 table merged into `20260711000005`, ruling-23 columns into `20260711000003`; full chain `db:reset → migrate → sync-config (375 fields) → load-ref → seed` clean 2026-07-13.
+- [x] *(2026-07-14)* Ruling 23a addendum: **`fir_details.worked_out_date date`** — officer-entered workout date as first-class column (current-value copy of the latest is_worked_out event's `effective_date`; write path stamps both in one transaction). New config field `work_out_date` (DATE, required + `show_when` work_out=Yes, sort 509). Folded into `20260711000003`; rebuild clean, 376 fields synced.
+
 **Open items:**
 (a) **71 beat-sheet ps_cd values (765 beats) are absent from the official PS list itself** (likely defunct/renamed PS — codes printed by every `load-ref` run). Those beats stay `ps_id NULL` with raw `source_ps_cd`. If Delhi Police can reconcile them: extend `ps_codes.json`, rerun `load-ref`, then consider SET NOT NULL.
 (b) Heinous overlay review — terror-related local heads (148/157/164/166/167/212) flagged in `config/ref-overlays/local_head_categories.json` `_review_notes`.
 (c) `ACP`-role users existed in the old live DB — role not in the new CHECK set; decide mapping if real ACP logins are needed.
-(d) `ER_DIAGRAM.md`/`.drawio` not yet regenerated for the implementation-phase spec deltas (property_categories merge, beats source_ps_cd/beat_cd PK, sections PK, locations.landmark) — DB_SCHEMA.md is current; regenerate diagrams when convenient (`node docs/db-audit/generate-drawio.mjs`).
+(d) ~~`ER_DIAGRAM.md`/`.drawio` not yet regenerated for the implementation-phase spec deltas~~ **RESOLVED 2026-07-14**: both fully re-synced against the live DB (implementation deltas: property_categories merge, beats beat_cd PK + source_ps_cd + NULLable ps_id, sections section_code PK, minor_heads single-column PK, locations.landmark, missing ref_fire_arms_subtypes entity, record_properties.arms_subtype_id; plus rulings 22–23: record_status_events, is_worked_out/worked_out_date, missing fir_no/fir_date) and `.drawio` regenerated. **STANDING RULE (user, 2026-07-14): the ER diagram is the user's primary view of what's in the DB — EVERY schema change updates `ER_DIAGRAM.md` AND regenerates `ER_DIAGRAM.drawio` in the same change, never later.**
 (e) Stage-5 write-path notes: `status` AND `case_status` both map to `fir_details.case_status` (form shows one — dedupe keys in stage 5); duplicate nickname keys (`nick_name`/`arrested_nickname`) both target `persons.nick_names`; ruling-18 arrest `gd_date`/`gd_time` columns exist but have no active form fields yet (add config rows when the wizard adds them); name split fields carry `name_part: 1|2|3` composing into single `persons.name`.
 
 ## Next phase (implementation) — suggested order

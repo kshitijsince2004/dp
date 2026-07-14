@@ -52,7 +52,7 @@ erDiagram
     ref_local_heads ||--o{ arrest_details : ""
     ref_local_heads ||--o{ uidb_details : ""
     ref_beats ||--o{ fir_details : ""
-    ref_property_types ||--o{ record_properties : "major"
+    ref_property_categories ||--o{ record_properties : "major"
     ref_other_property_items ||--o{ record_properties : "minor"
     ref_automobiles |o--o{ record_properties : ""
     ref_fire_arms |o--o{ record_properties : ""
@@ -60,6 +60,8 @@ erDiagram
     %% ── Workflow, transfers, audit ──
     records ||--o{ record_revisions : "hash chain"
     records ||--o{ workflow_transitions : ""
+    records ||--o{ record_status_events : "domain-status ledger"
+    record_properties |o--o{ record_status_events : ""
     records ||--o{ record_transfers : ""
     hierarchy_nodes ||--o{ fir_number_counters : "ps_id"
     records ||--o{ record_amendments : ""
@@ -94,8 +96,9 @@ erDiagram
     ref_sections ||--o{ ref_major_minor_mapping : ""
     ref_major_heads ||--o{ ref_major_minor_mapping : ""
     ref_arms_categories ||--o{ ref_fire_arms : ""
-    ref_other_property_categories ||--o{ ref_other_property_items : ""
-    hierarchy_nodes ||--o{ ref_beats : "ps_id"
+    ref_fire_arms ||--o{ ref_fire_arms_subtypes : ""
+    ref_property_categories ||--o{ ref_other_property_items : ""
+    hierarchy_nodes |o--o{ ref_beats : "ps_id (NULLable)"
 ```
 
 ---
@@ -215,6 +218,8 @@ erDiagram
         int beat_id "FK ref_beats"
         boolean is_important
         varchar case_status "domain status, not workflow"
+        boolean is_worked_out "ruling 23a; flips tracked in record_status_events"
+        date worked_out_date "officer-entered workout date = latest event's effective_date"
         int local_head_id "FK ref_local_heads; acts+sections+heads live in record_offences"
         text brief_facts
         uuid occurrence_location_id "FK locations"
@@ -292,7 +297,9 @@ erDiagram
         varchar operator_name
         varchar source "source of info; PCR-origin is a value here (pcr_call_flag dropped)"
         varchar zipnet_no
-        boolean case_registered
+        boolean case_registered "is-FIR-registered discriminator (ruling 23b)"
+        varchar fir_no "as-entered provenance only; THE link = record_links CASE_MISSING row"
+        date fir_date
         text remarks
         jsonb extra
         timestamptz created_at
@@ -350,7 +357,7 @@ erDiagram
     persons ||--o| missing_person_details : "role MISSING"
     persons ||--o| person_descriptions : "role MISSING or DECEASED"
     records ||--o{ record_properties : ""
-    ref_property_types ||--o{ record_properties : "major_category_id"
+    ref_property_categories ||--o{ record_properties : "major_category_id"
     ref_other_property_items ||--o{ record_properties : "minor_category_id"
     locations |o--o{ persons : "present_location_id / perm_location_id"
     locations |o--o{ arrestee_details : "arrest_location_id"
@@ -410,6 +417,7 @@ erDiagram
         varchar house_no
         varchar street
         varchar colony
+        varchar landmark "added at implementation 2026-07-11 (occurrence/arrest_landmark form fields)"
         varchar city_town_village
         varchar tehsil_block_mandal
         varchar district "form value, NOT hierarchy FK (anywhere in India)"
@@ -444,7 +452,7 @@ erDiagram
     record_properties {
         uuid id PK
         uuid record_id "FK records, CASCADE"
-        int major_category_id "FK ref_property_types"
+        int major_category_id "FK ref_property_categories (merged table, was ref_property_types)"
         int minor_category_id "FK ref_other_property_items"
         varchar status "CHECK synced: STOLEN|RECOVERED|SEIZED|INTACT|UNCLAIMED"
         text details
@@ -452,6 +460,7 @@ erDiagram
         numeric estimated_value
         int automobile_id "FK ref_automobiles"
         int fire_arm_id "FK ref_fire_arms"
+        int arms_subtype_id "FK ref_fire_arms_subtypes (cascades off fire_arm_id; form key prop_arms_made maps HERE)"
         int arms_made_id "FK ref_arms_made"
         int jewelry_type_id "FK ref_jewelry_types"
         int currency_type_id "FK ref_currency_types"
@@ -486,11 +495,14 @@ erDiagram
 erDiagram
     records ||--o{ record_revisions : "hash chain per record"
     records ||--o{ workflow_transitions : "ledger"
+    records ||--o{ record_status_events : "domain-status ledger (rulings 22+23)"
+    record_properties |o--o{ record_status_events : "property_id when property_status"
     records ||--o{ record_transfers : "two-step handshake"
     records ||--o{ record_amendments : ""
     hierarchy_nodes ||--o{ fir_number_counters : "ps_id"
     hierarchy_nodes ||--o{ record_transfers : "from_ps / to_ps"
     users ||--o{ record_revisions : "changed_by"
+    users ||--o{ record_status_events : "changed_by"
     users ||--o{ audit_logs : "changed_by_id"
     workflow_transitions_config ||..o{ workflow_transitions : "governs (config)"
 
@@ -522,6 +534,18 @@ erDiagram
         timestamptz performed_at
         text comment
         jsonb target_fields "send-back highlighting"
+    }
+    record_status_events {
+        uuid id PK
+        uuid record_id "FK records, CASCADE"
+        uuid property_id "FK record_properties, CASCADE; NOT NULL iff property_status"
+        varchar status_field "CHECK synced: case_status|missing_status|uidb_status|final_call_status|property_status|is_worked_out"
+        varchar old_value
+        varchar new_value
+        date effective_date "officer-entered real-world date - the diary pivot, backdating expected"
+        uuid changed_by "FK users"
+        timestamptz changed_at "system entry time - the audit fact"
+        text comment
     }
     workflow_transitions_config {
         uuid id PK
@@ -832,7 +856,7 @@ erDiagram
 
 ## 8. Domain: `ref` schema (21 lookups)
 
-Natural code PKs (⚠ = key must be verified against sheet data before migration — composite where needed; loader fails loudly on duplicates). UNIQUE on every code column. English-only labels.
+Natural code PKs — **verified against real sheet data** (`REF_KEY_VERIFICATION.md`, 2026-07-11; the pre-verification ⚠ marks are resolved). UNIQUE on every code column. English-only labels.
 
 ```mermaid
 erDiagram
@@ -841,17 +865,18 @@ erDiagram
     ref_sections ||--o{ ref_major_minor_mapping : "section_code"
     ref_major_heads ||--o{ ref_major_minor_mapping : "major_head_code"
     ref_arms_categories ||--o{ ref_fire_arms : "arms_category_cd"
-    ref_other_property_categories ||--o{ ref_other_property_items : "parent_cd"
-    hierarchy_nodes ||--o{ ref_beats : "ps_id (org data, enforced)"
+    ref_fire_arms ||--o{ ref_fire_arms_subtypes : "arms_type_cd"
+    ref_property_categories ||--o{ ref_other_property_items : "parent_cd"
+    hierarchy_nodes |o--o{ ref_beats : "ps_id NULLable - 71 source codes absent from official PS list"
 
     ref_acts {
         int act_cd PK
         text act_long
     }
     ref_sections {
-        varchar act_sec_cd PK "verify natural key"
-        text section_code UK "FK target for mapping"
+        text section_code PK "verified PK (act_sec_cd is NOT a key); FK target for mapping + record_offences"
         varchar section_cd
+        varchar act_sec_cd
         varchar section
         text section_desc
         boolean pnsh_gt_7yrs
@@ -861,12 +886,12 @@ erDiagram
         varchar major_head
     }
     ref_minor_heads {
-        int major_head_code PK "FK ref_major_heads; composite PK, verify"
-        int minor_head_cd PK
+        int minor_head_cd PK "verified: PK alone, not composite"
+        int major_head_code "FK ref_major_heads"
         varchar minor_head
     }
     ref_major_minor_mapping {
-        int sec_mjrhd_cd PK "verify natural key"
+        int sec_mjrhd_cd PK
         int act_cd "FK ref_acts"
         text section_code "FK ref_sections"
         int major_head_code "FK ref_major_heads"
@@ -877,27 +902,21 @@ erDiagram
         varchar crime_category "CHECK: HEINOUS|NON_HEINOUS|OTHER; curated overlay, not in source sheet; reports roll OTHER into NON_HEINOUS"
     }
     ref_beats {
-        uuid ps_id PK "FK hierarchy_nodes; composite PK"
-        varchar beat_cd PK
+        varchar beat_cd PK "verified PK"
         text beat_name
+        varchar source_ps_cd "raw sheet PS code, kept for the 765 unlinked beats"
+        uuid ps_id "FK hierarchy_nodes, NULLable until code reconciled"
     }
-    ref_property_types {
-        int parent_cd PK "verify natural key"
-        int parent_srno
-        varchar code_type
-        varchar parent_type
-        int major_property
-    }
-    ref_other_property_categories {
-        int parent_cd PK "verify natural key"
+    ref_property_categories {
+        int parent_cd PK "MERGED table - was ref_property_types + ref_other_property_categories (union, so items FK resolves)"
         int parent_srno
         varchar code_type
         varchar parent_type
         int major_property
     }
     ref_other_property_items {
-        int property_cd PK "verify natural key"
-        int parent_cd "FK ref_other_property_categories"
+        int property_cd PK
+        int parent_cd "FK ref_property_categories"
         varchar property_type_srno
         varchar property
     }
@@ -905,6 +924,11 @@ erDiagram
         int fire_arms_cd PK
         int arms_category_cd "FK ref_arms_categories"
         varchar fire_arms
+    }
+    ref_fire_arms_subtypes {
+        int arms_subtype_cd PK
+        int arms_type_cd "FK ref_fire_arms"
+        varchar arms_subtype
     }
     ref_arms_categories {
         int arms_category_cd PK

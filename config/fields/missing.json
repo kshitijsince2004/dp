@@ -1548,5 +1548,118 @@
   "readonly": false,
   "is_active": true,
   "scope_level": "global"
+ },
+ {
+  "field_key": "case_registered",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "FIR Registered?",
+   "hi": "क्या एफआईआर दर्ज है?"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "missing_details",
+   "column": "case_registered"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 19,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "missing_fir_no",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "FIR No.",
+   "hi": "एफआईआर संख्या"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "missing_details",
+   "column": "fir_no"
+  },
+  "validation_rules": {
+   "required": true
+  },
+  "show_when": {
+   "field": "case_registered",
+   "value": "Yes"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 20,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "missing_fir_date",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "DATE",
+  "labels": {
+   "en": "FIR Date",
+   "hi": "एफआईआर तिथि"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "missing_details",
+   "column": "fir_date"
+  },
+  "show_when": {
+   "field": "case_registered",
+   "value": "Yes"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 21,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
  }
 ]
