@@ -8,9 +8,9 @@ import rateLimit from 'express-rate-limit';
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
 import * as eventBus from './events/eventBus.js';
-import * as auditHandler from './events/handlers/auditHandler.js';
 import * as notifyHandler from './events/handlers/notifyHandler.js';
 import * as linkAuditHandler from './events/handlers/linkAuditHandler.js';
+import * as linkResolver from './events/handlers/linkResolver.js';
 import { initScheduler } from './modules/reports/scheduler.js';
 import { ipAllowlistMiddleware, csrfDoubleSubmitMiddleware } from './middleware/security.middleware.js';
 import { authMiddleware } from './middleware/auth.middleware.js';
@@ -181,9 +181,9 @@ const startServer = async () => {
   await eventBus.connect();
 
   // Start background handlers
-  await auditHandler.init();
   await notifyHandler.init();
   await linkAuditHandler.init();
+  await linkResolver.init();
   await initScheduler();
 
   app.listen(env.PORT, () => {

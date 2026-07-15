@@ -2,13 +2,29 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, CheckSquare, X, Send, AlertTriangle, ShieldCheck, History, Edit, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, CheckSquare, X, Send, AlertTriangle, ShieldCheck, History, Edit, FileSpreadsheet, RefreshCw, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DynamicForm from '../../components/forms/DynamicForm.jsx';
 import { formSchemas } from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
 import LinkedRecordsPanel from '../../components/common/LinkedRecordsPanel.jsx';
+
+// Domain status field + option list per record type (item 9) — mirrors the exact option
+// sets fields.controller.js's getFieldsForForm already offers at creation time (its `status`
+// field dispatch), so an officer sees the same vocabulary post-registration as at intake.
+const STATUS_FIELD_BY_TYPE = {
+  CASE: 'case_status', ARREST: 'case_status', PCR_CALL: 'final_call_status',
+  MISSING: 'missing_status', UIDB: 'uidb_status',
+};
+const STATUS_OPTIONS_BY_TYPE = {
+  CASE: ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'UNTRACED', 'PENDING', 'CANCELLATION', 'QUASHED', 'CLOSURE REPORT', 'RELEASED U/S 189 BNSS', 'TRANSFER'],
+  ARREST: ['JC', 'PC', 'Bail', 'Bound Down', 'Release', 'Lockup', '35(3) BNS Notice'],
+  PCR_CALL: ['Action Taken', 'Pending', 'Referred', 'Closed'],
+  MISSING: ['Un-traced', 'Traced', 'Referred', 'Closed'],
+  UIDB: ['Referred to district hospital', 'Identified', 'body claimed', 'Unidentified', 'held in mortuary'],
+};
+const todayISO = () => new Date().toISOString().split('T')[0];
 
 export default function RecordDetail() {
   const { t } = useTranslation();
@@ -25,6 +41,14 @@ export default function RecordDetail() {
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [overrideVal, setOverrideVal] = useState('');
   const [overrideReason, setOverrideReason] = useState('');
+
+  // Domain status update states (item 9)
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [statusNewValue, setStatusNewValue] = useState('');
+  const [statusEffectiveDate, setStatusEffectiveDate] = useState(todayISO());
+  const [statusComment, setStatusComment] = useState('');
+  const [workedOutOpen, setWorkedOutOpen] = useState(false);
+  const [workedOutDate, setWorkedOutDate] = useState(todayISO());
 
   // Fetch record details
   const { data: recordPayload, isLoading } = useQuery({
@@ -110,6 +134,48 @@ export default function RecordDetail() {
     },
   });
 
+  // Domain status update mutation (item 9) — distinct from workflow approve/send-back;
+  // this tracks the record's own progress (case_status/missing_status/etc), each change
+  // dated with an officer-entered effective_date (record_status_events, ruling 22).
+  const statusUpdateMutation = useMutation({
+    mutationFn: async (payload) => {
+      const res = await api.patch(`/records/${id}/status`, payload);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      toast.success('Status updated');
+      setStatusModalOpen(false);
+      setWorkedOutOpen(false);
+      setStatusNewValue('');
+      setStatusComment('');
+      queryClient.invalidateQueries({ queryKey: ['records', id] });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Failed to update status');
+    },
+  });
+
+  const handleStatusUpdateSubmit = (statusField) => {
+    if (!statusNewValue) {
+      toast.error('Select a status value');
+      return;
+    }
+    statusUpdateMutation.mutate({
+      status_field: statusField,
+      new_value: statusNewValue,
+      effective_date: statusEffectiveDate,
+      comment: statusComment || undefined,
+    });
+  };
+
+  const handleWorkedOutSubmit = (newValue) => {
+    statusUpdateMutation.mutate({
+      status_field: 'is_worked_out',
+      new_value: newValue,
+      effective_date: workedOutDate,
+    });
+  };
+
   // Handles Send Back submission
   const handleSendBackSubmit = () => {
     if (!sendBackComment) {
@@ -171,6 +237,14 @@ export default function RecordDetail() {
     (record.current_status === 'DISTRICT_REVIEW' && (user?.role === 'DISTRICT' || user?.role === 'DISTRICT_OFFICER'));
 
   const isDCP = user?.role === 'DISTRICT' || user?.role === 'DISTRICT_OFFICER';
+
+  // Domain status update is available to any role with record access (PS+), not gated to
+  // the workflow-review roles above — it's the record's own progress tracking, not an
+  // escalation action.
+  const statusEvents = recordPayload?.status_events || [];
+  const domainStatusField = STATUS_FIELD_BY_TYPE[record.record_type];
+  const domainStatusOptions = STATUS_OPTIONS_BY_TYPE[record.record_type] || [];
+  const canUpdateStatus = ['HC', 'SHO', 'DISTRICT_OFFICER', 'DISTRICT'].includes(user?.role);
 
   // Get field keys for multi-select checklist in send-back
   const getAvailableFields = () => {
@@ -292,6 +366,51 @@ export default function RecordDetail() {
               Records are visible in the hierarchy immediately after HC submission.
             </p>
           </div>
+
+          {/* Domain status update card (item 9) */}
+          {canUpdateStatus && domainStatusField && (
+            <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-70 flex items-center gap-1.5">
+                  <RefreshCw size={13} className="text-[var(--accent-color)]" />
+                  <span>Case Progress</span>
+                </h3>
+                <button
+                  onClick={() => { setStatusNewValue(''); setStatusEffectiveDate(todayISO()); setStatusComment(''); setStatusModalOpen(true); }}
+                  className="text-[11px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
+                >
+                  Update Status
+                </button>
+              </div>
+              {record.record_type === 'CASE' && (
+                <div className="flex items-center justify-between border-t border-[var(--border-card-theme)]/50 pt-2.5">
+                  <span className="text-[11px] font-semibold text-[var(--text-main-theme)] opacity-70">
+                    Worked Out: <strong>{record.data?.work_out === true || record.data?.work_out === 'true' ? 'Yes' : 'No'}</strong>
+                    {record.data?.work_out_date ? ` (${record.data.work_out_date})` : ''}
+                  </span>
+                  <button
+                    onClick={() => { setWorkedOutDate(todayISO()); setWorkedOutOpen(true); }}
+                    className="text-[11px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
+                  >
+                    Flip
+                  </button>
+                </div>
+              )}
+              {statusEvents.length > 0 && (
+                <div className="border-t border-[var(--border-card-theme)]/50 pt-2.5 space-y-1.5 max-h-[160px] overflow-y-auto">
+                  {statusEvents.map((ev) => (
+                    <div key={ev.id} className="text-[11px] text-[var(--text-main-theme)] opacity-80 flex items-start gap-1.5">
+                      <Clock size={11} className="mt-0.5 flex-shrink-0 opacity-60" />
+                      <span>
+                        <strong>{ev.status_field}</strong>: {ev.old_value || '—'} → <strong>{ev.new_value}</strong>
+                        <span className="opacity-60"> (effective {ev.effective_date}, by {ev.username})</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Workflow logs timeline */}
           <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-4 shadow-sm">
@@ -504,6 +623,100 @@ export default function RecordDetail() {
                 className="bg-gradient-to-r from-[#cca43b] to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-amber-500/25 cursor-pointer transition-all hover:-translate-y-0.5"
               >
                 Save Override
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DOMAIN STATUS UPDATE MODAL (item 9) ─────────────────────────────────── */}
+      {statusModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--bg-card-theme)] border border-[var(--border-card-theme)] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl text-[var(--text-main-theme)]">
+            <div className="flex justify-between items-center bg-[var(--bg-page-main)] border-b border-[var(--border-card-theme)]/70 px-6 py-4">
+              <h3 className="text-base font-bold text-[var(--text-main-theme)]">Update case progress</h3>
+              <button onClick={() => setStatusModalOpen(false)} className="text-[var(--text-main-theme)] opacity-50 hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-[var(--bg-page-main)]">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">New Status:</label>
+                <select
+                  value={statusNewValue}
+                  onChange={(e) => setStatusNewValue(e.target.value)}
+                  className="w-full bg-[var(--bg-page-main)]/40 border-2 border-[var(--border-card-theme)] text-sm text-[var(--text-main-theme)] px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all font-bold"
+                >
+                  <option value="">-- Choose Status --</option>
+                  {domainStatusOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">Effective Date (when this actually happened):</label>
+                <input
+                  type="date"
+                  value={statusEffectiveDate}
+                  max={todayISO()}
+                  onChange={(e) => setStatusEffectiveDate(e.target.value)}
+                  className="w-full bg-[var(--bg-page-main)]/40 border-2 border-[var(--border-card-theme)] text-sm text-[var(--text-main-theme)] px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">Comment (optional):</label>
+                <textarea
+                  rows={2}
+                  value={statusComment}
+                  onChange={(e) => setStatusComment(e.target.value)}
+                  className="w-full bg-[var(--bg-page-main)]/40 border-2 border-[var(--border-card-theme)] rounded-xl p-3.5 text-sm text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all resize-none"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 bg-[var(--bg-page-main)] border-t border-[var(--border-card-theme)]/70 px-6 py-4">
+              <button onClick={() => setStatusModalOpen(false)} className="bg-[var(--bg-page-main)] border-2 border-[var(--border-card-theme)] hover:border-[var(--accent-color)] text-[var(--text-main-theme)] px-5 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all hover:shadow-sm">
+                {t('actions.cancel', 'Cancel')}
+              </button>
+              <button
+                onClick={() => handleStatusUpdateSubmit(domainStatusField)}
+                disabled={statusUpdateMutation.isPending}
+                className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md cursor-pointer transition-all disabled:opacity-60"
+              >
+                {statusUpdateMutation.isPending ? 'Saving…' : 'Save Status'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── WORKED-OUT FLIP MODAL (item 9, CASE only) ───────────────────────────── */}
+      {workedOutOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--bg-card-theme)] border border-[var(--border-card-theme)] rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl text-[var(--text-main-theme)]">
+            <div className="flex justify-between items-center bg-[var(--bg-page-main)] border-b border-[var(--border-card-theme)]/70 px-6 py-4">
+              <h3 className="text-base font-bold text-[var(--text-main-theme)]">Mark case worked out</h3>
+              <button onClick={() => setWorkedOutOpen(false)} className="text-[var(--text-main-theme)] opacity-50 hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-[var(--bg-page-main)]">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">Work-out Date:</label>
+                <input
+                  type="date"
+                  value={workedOutDate}
+                  max={todayISO()}
+                  onChange={(e) => setWorkedOutDate(e.target.value)}
+                  className="w-full bg-[var(--bg-page-main)]/40 border-2 border-[var(--border-card-theme)] text-sm text-[var(--text-main-theme)] px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 bg-[var(--bg-page-main)] border-t border-[var(--border-card-theme)]/70 px-6 py-4">
+              <button onClick={() => handleWorkedOutSubmit('false')} disabled={statusUpdateMutation.isPending} className="bg-[var(--bg-page-main)] border-2 border-[var(--border-card-theme)] hover:border-red-400 text-[var(--text-main-theme)] px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all">
+                Mark No
+              </button>
+              <button onClick={() => handleWorkedOutSubmit('true')} disabled={statusUpdateMutation.isPending} className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md cursor-pointer transition-all disabled:opacity-60">
+                Mark Yes
               </button>
             </div>
           </div>

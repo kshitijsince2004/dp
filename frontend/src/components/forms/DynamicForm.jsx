@@ -682,18 +682,6 @@ export default function DynamicForm({
                 handleChange={handleChange}
                 values={values}
                 readOnly={readOnly}
-                numberInputClassName="w-24 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500"
-                numberPlaceholder="GD Number"
-                dateInputClassName="w-48 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-pointer"
-                onDateSync={(datePart, timePart) => {
-                  if (recordType === 'UIDB') {
-                    handleChange('dd_date', datePart);
-                    handleChange('dd_time', timePart);
-                  } else {
-                    handleChange('gd_date', datePart);
-                    handleChange('gd_time', timePart);
-                  }
-                }}
               />
             </div>
           </React.Fragment>
@@ -727,12 +715,6 @@ export default function DynamicForm({
                     handleChange={handleChange}
                     values={values}
                     readOnly={readOnly}
-                    onDateSync={(datePart, timePart) => {
-                      handleChange('gd_date', datePart);
-                      handleChange('gd_time', timePart);
-                      handleChange('fir_date', datePart);
-                      handleChange('fir_time', timePart);
-                    }}
                   />
                 </td>
               </tr>
@@ -758,23 +740,26 @@ export default function DynamicForm({
                 </td>
               </tr>
 
-              {/* Row 3: Complaint No. */}
+              {/* Row 3: FIR/Complaint Number, Date & Time — "Complaint No." is this
+                  station's name for the FIR number, same field_key (fir_no). There is no
+                  separate `complaint_no` field_registry row (only referenced by the old,
+                  still-on-legacy-schema import module) — looking one up here previously
+                  returned undefined, which FieldRenderer silently renders as nothing,
+                  leaving this row permanently blank with no way to enter the FIR number
+                  at all. Renders the same composite Number+Date+Time widget as GD Number
+                  above (FieldRenderer's dedicated `fir_no` branch). */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
-                  {fieldLabel('complaint_no') || 'Complaint No.'}
+                  {fieldLabel('fir_no') || 'Complaint No.'}
                 </td>
-                <td className="w-2/3 bg-white px-2.5 py-1">
+                <td className="w-2/3 bg-white px-2.5 py-1 flex items-center gap-2" style={{ position: 'relative' }}>
                   <FieldRenderer
-                    field={allFields.find(f => f.field_key === 'complaint_no')}
-                    value={values.complaint_no}
+                    field={allFields.find(f => f.field_key === 'fir_no')}
+                    value={values.fir_no}
+                    handleChange={handleChange}
                     values={values}
                     readOnly={readOnly}
                     lang={lang}
-                    inputClassName="w-64 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500"
-                    handleChange={(key, val) => {
-                      handleChange(key, val);
-                      if (key === 'complaint_no') handleChange('fir_no', val);
-                    }}
                   />
                 </td>
               </tr>
@@ -1150,7 +1135,7 @@ export default function DynamicForm({
   };
 
   const renderVictimStep = () => {
-    const victims = repeaterState?.PERSON_VICTIM || [];
+    const victims = repeaterState?.victim_info || [];
     const allFields = deepFlattenSchema(schema);
 
     const getVictimName = (v) => [v.victim_first_name, v.victim_middle_name, v.victim_last_name].filter(Boolean).join(' ') || '—';
@@ -1280,7 +1265,7 @@ export default function DynamicForm({
   };
 
   const renderAccusedStep = () => {
-    const accusedList = repeaterState?.PERSON_ACCUSED || [];
+    const accusedList = repeaterState?.accused_info || [];
     const allFields = deepFlattenSchema(schema);
 
     const getAccusedName = (v) => [v.accused_first_name, v.accused_middle_name, v.accused_last_name].filter(Boolean).join(' ') || '—';
@@ -2318,7 +2303,7 @@ export default function DynamicForm({
   };
 
   const openVictimEditModal = (idx) => {
-    const list = repeaterState.PERSON_VICTIM || [];
+    const list = repeaterState.victim_info || [];
     const item = list[idx];
     if (item && item._is_complainant) {
       alert(lang === 'hi' ? 'यह विवरण शिकायतकर्ता से जुड़े हैं। कृपया शिकायतकर्ता टैब में बदलाव करें।' : 'These details are linked to the Complainant. Please edit them in the Complainant tab.');
@@ -2333,13 +2318,13 @@ export default function DynamicForm({
   };
 
   const deleteVictimEntry = (idx) => {
-    const list = repeaterState.PERSON_VICTIM || [];
+    const list = repeaterState.victim_info || [];
     const itemToDelete = list[idx];
     if (itemToDelete && itemToDelete._is_complainant) {
       handleChange('complainant_same_as_victim', 'No');
     }
     const nextList = list.filter((_, i) => i !== idx);
-    setRepeaterState(prev => ({ ...prev, PERSON_VICTIM: nextList }));
+    setRepeaterState(prev => ({ ...prev, victim_info: nextList }));
   };
 
   const handleVictimModalChange = (key, val) => {
@@ -2398,7 +2383,7 @@ export default function DynamicForm({
   };
 
   const openAccusedEditModal = (idx) => {
-    const list = repeaterState.PERSON_ACCUSED || [];
+    const list = repeaterState.accused_info || [];
     setAccusedTempValues({ ...(list[idx] || {}) });
     setActiveAccusedIndex(idx);
     setAccusedSubTab('personal');
@@ -2408,9 +2393,9 @@ export default function DynamicForm({
   };
 
   const deleteAccusedEntry = (idx) => {
-    const list = repeaterState.PERSON_ACCUSED || [];
+    const list = repeaterState.accused_info || [];
     const nextList = list.filter((_, i) => i !== idx);
-    setRepeaterState(prev => ({ ...prev, PERSON_ACCUSED: nextList }));
+    setRepeaterState(prev => ({ ...prev, accused_info: nextList }));
   };
 
   const handleAccusedModalChange = (key, val) => {
@@ -2500,14 +2485,14 @@ export default function DynamicForm({
       return;
     }
 
-    const list = [...(repeaterState.PERSON_ACCUSED || [])];
+    const list = [...(repeaterState.accused_info || [])];
     if (activeAccusedIndex !== null) {
       list[activeAccusedIndex] = accusedTempValues;
     } else {
       list.push(accusedTempValues);
     }
 
-    setRepeaterState(prev => ({ ...prev, PERSON_ACCUSED: list }));
+    setRepeaterState(prev => ({ ...prev, accused_info: list }));
     setIsAccusedModalOpen(false);
   };
 
@@ -2703,14 +2688,14 @@ export default function DynamicForm({
       return;
     }
 
-    const list = [...(repeaterState.PERSON_VICTIM || [])];
+    const list = [...(repeaterState.victim_info || [])];
     if (activeVictimIndex !== null) {
       list[activeVictimIndex] = victimTempValues;
     } else {
       list.push(victimTempValues);
     }
 
-    setRepeaterState(prev => ({ ...prev, PERSON_VICTIM: list }));
+    setRepeaterState(prev => ({ ...prev, victim_info: list }));
     setIsVictimModalOpen(false);
   };
 
@@ -2990,47 +2975,26 @@ useEffect(() => {
 useEffect(() => {
   const seed = { ...(initialValues?.data || initialValues || {}) };
 
-  // Auto-populate GD date & time with current local time if creating a new record and gd_date_time is empty
-  if (!initialValues?.id && !seed.gd_date_time) {
-    const now = new Date();
-    const dd = String(now.getDate()).padStart(2, '0');
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const yyyy = now.getFullYear();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mi = String(now.getMinutes()).padStart(2, '0');
-    seed.gd_date_time = `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
-    if (recordType === 'UIDB') {
-      seed.dd_date = `${dd}/${mm}/${yyyy}`;
-      seed.dd_time = `${hh}:${mi}`;
-    } else {
-      seed.gd_date = `${dd}/${mm}/${yyyy}`;
-      seed.gd_time = `${hh}:${mi}`;
-      if (recordType === 'CASE') {
-        seed.fir_date = `${dd}/${mm}/${yyyy}`;
-        seed.fir_time = `${hh}:${mi}`;
-        seed.case_type = 'cctns(manual FIR)';
-      }
-    }
-  }
+  console.log('[PHAROS-DEBUG][seed-effect] RUNNING — this rebuilds `values` from initialValues and calls setValues() at the end, which will CLOBBER any in-progress user edits if this effect fires again mid-edit.', {
+    isEdit: !!initialValues?.id,
+    recordType,
+    incomingSeedSnapshot: {
+      gd_no: seed.gd_no, gd_date: seed.gd_date, gd_time: seed.gd_time,
+      fir_no: seed.fir_no, fir_date: seed.fir_date, fir_time: seed.fir_time,
+    },
+  });
 
-  // Combine date and time into gd_date_time for existing records if empty
-  if (!seed.gd_date_time) {
-    if (recordType === 'UIDB') {
-      const dDate = seed.dd_date || seed.ddDate;
-      const dTime = seed.dd_time || seed.ddTime;
-      if (dDate && dTime) {
-        seed.gd_date_time = `${dDate} ${dTime}`;
-      }
-    } else if (seed.gd_date && seed.gd_time) {
-      seed.gd_date_time = `${seed.gd_date} ${seed.gd_time}`;
-      if (recordType === 'CASE') {
-        seed.fir_date = seed.fir_date || seed.gd_date;
-        seed.fir_time = seed.fir_time || seed.gd_time;
-      }
-    }
-  } else if (recordType === 'CASE') {
-    seed.fir_date = seed.fir_date || seed.gd_date || seed.gd_date_time.split(' ')[0];
-    seed.fir_time = seed.fir_time || seed.gd_time || seed.gd_date_time.split(' ')[1];
+  // NOTE: this used to also auto-populate gd_date/gd_time/fir_date/fir_time (and
+  // dd_date/dd_time for UIDB) with the current time on new records, and cross-fill
+  // fir_date/fir_time from gd_date/gd_time whenever gd_date_time was present. That
+  // silently gave gd_no/fir_no a filled date+time while the number itself stayed
+  // blank, which made validateSection's "fill all three or none" check for the
+  // gd_no/fir_no composite fields fire on step 0 of every new (and existing) CASE
+  // record, permanently blocking Next. Removed — DateTimePickerPopup already
+  // defaults to "now" when opened with no value, so today's date/time is still one
+  // click away without pre-seeding state behind the user's back.
+  if (!initialValues?.id && recordType === 'CASE' && !seed.case_type) {
+    seed.case_type = 'cctns(manual FIR)';
   }
 
   // Resolve station and district dynamically based on record metadata or active user node
@@ -3088,10 +3052,6 @@ useEffect(() => {
     submission_status: initialValues?.current_status || seed.submission_status || 'DRAFT'
   };
 
-  // Ensure complaint_no and fir_no are synced
-  updatedSeed.complaint_no = updatedSeed.complaint_no || updatedSeed.fir_no || '';
-  updatedSeed.fir_no = updatedSeed.fir_no || updatedSeed.complaint_no || '';
-
   // Synchronize gd_no and linked_fir_dd_no
   updatedSeed.gd_no = updatedSeed.gd_no || updatedSeed.linked_fir_dd_no || '';
   updatedSeed.linked_fir_dd_no = updatedSeed.linked_fir_dd_no || updatedSeed.gd_no || '';
@@ -3126,6 +3086,10 @@ useEffect(() => {
     updatedSeed.gd_date_time = `${updatedSeed.gd_date} ${timePart.substring(0, 5)}`;
   }
 
+  console.log('[PHAROS-DEBUG][seed-effect] setValues() about to run — final composite snapshot being written into form state:', {
+    gd_no: updatedSeed.gd_no, gd_date: updatedSeed.gd_date, gd_time: updatedSeed.gd_time,
+    fir_no: updatedSeed.fir_no, fir_date: updatedSeed.fir_date, fir_time: updatedSeed.fir_time,
+  });
   setValues(updatedSeed);
 
   // Initialize majorMinorRows from seed major_heads / minor_heads
@@ -3159,6 +3123,13 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
   if (section.is_repeater) return {}; // repeater sections have no flat-field validation
 
   const errs = {};
+  const requiredKeys = section.fields.filter(f => parseRules(f.validation_rules).required).map(f => f.field_key);
+  const dupeKeys = section.fields.map(f => f.field_key).filter((k, i, arr) => arr.indexOf(k) !== i);
+  console.log('[PHAROS-DEBUG][validateSection] step', stepIdx, 'section=', section.section, {
+    requiredKeys,
+    dupeFieldKeysInThisSection: [...new Set(dupeKeys)],
+    fieldCount: section.fields.length,
+  });
   section.fields.forEach((field) => {
     // Skip validating if field is hidden by condition
     if (field.show_when) {
@@ -3173,7 +3144,10 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
           return true;
         }
       })();
-      if (!isShown) return;
+      if (!isShown) {
+        console.log('[PHAROS-DEBUG][validateSection] field hidden by show_when, skipping:', field.field_key, field.show_when);
+        return;
+      }
     }
 
     const rules = parseRules(field.validation_rules);
@@ -3182,14 +3156,24 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
       const num = currentValues.gd_no;
       const dt = currentValues.gd_date;
       const tm = currentValues.gd_time;
-      const isAnyFilled = !!(num || dt || tm);
       const isAllFilled = !!(num && dt && tm);
+      // Anchored on the NUMBER, not "any of the three": a stray gd_date/gd_time with no
+      // gd_no must never block Next. That case is real, not hypothetical — this exact
+      // draft had fir_date pre-poisoned (autosaved by the old, now-removed, seed
+      // auto-population code) with no fir_no ever entered, and the previous
+      // "isAnyFilled && !isAllFilled" check blocked on it regardless of `required`. Only
+      // once the officer actually types the number do date+time become mandatory.
+      console.log('[PHAROS-DEBUG][validateSection] gd_no composite check:', {
+        num: JSON.stringify(num), dt: JSON.stringify(dt), tm: JSON.stringify(tm),
+        isAllFilled, required: !!rules.required,
+        currentValuesIsLiveValues: currentValues === values,
+      });
 
       if (rules.required && !isAllFilled) {
         errs.gd_no = lang === 'hi'
           ? 'जीडी नंबर, दिनांक और समय तीनों भरना आवश्यक है।'
           : 'GD Number, Date and Time are all required.';
-      } else if (isAnyFilled && !isAllFilled) {
+      } else if (num && !isAllFilled) {
         errs.gd_no = lang === 'hi'
           ? 'जीडी नंबर, दिनांक और समय तीनों भरें।'
           : 'Please fill all three: GD Number, Date and Time.';
@@ -3201,14 +3185,18 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
       const num = currentValues.fir_no;
       const dt = currentValues.fir_date;
       const tm = currentValues.fir_time;
-      const isAnyFilled = !!(num || dt || tm);
       const isAllFilled = !!(num && dt && tm);
+      console.log('[PHAROS-DEBUG][validateSection] fir_no composite check:', {
+        num: JSON.stringify(num), dt: JSON.stringify(dt), tm: JSON.stringify(tm),
+        isAllFilled, required: !!rules.required,
+        currentValuesIsLiveValues: currentValues === values,
+      });
 
       if (rules.required && !isAllFilled) {
         errs.fir_no = lang === 'hi'
           ? 'प्राथमिकी संख्या, दिनांक और समय तीनों भरना आवश्यक है।'
           : 'FIR Number, Date and Time are all required.';
-      } else if (isAnyFilled && !isAllFilled) {
+      } else if (num && !isAllFilled) {
         errs.fir_no = lang === 'hi'
           ? 'प्राथमिकी संख्या, दिनांक और समय तीनों भरें।'
           : 'Please fill all three: FIR Number, Date and Time.';
@@ -3220,6 +3208,10 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
 
     const val = currentValues[field.field_key];
     const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
+    console.log('[PHAROS-DEBUG][validateSection] required-field check:', field.field_key, {
+      value: val, typeofValue: typeof val, isEmpty, fieldType: field.field_type,
+      show_when: field.show_when || null,
+    });
 
     if (isEmpty) {
       const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
@@ -3245,8 +3237,20 @@ const validateAll = useCallback((currentValues = values) => {
 const handleChange = useCallback((key, val) => {
   if (readOnly) return;
 
+  const COMPOSITE_KEYS = ['gd_no', 'gd_date', 'gd_time', 'fir_no', 'fir_date', 'fir_time'];
+  if (COMPOSITE_KEYS.includes(key)) {
+    console.log('[PHAROS-DEBUG][handleChange] composite field changed:', key, '=', JSON.stringify(val));
+  }
+
   setValues((prev) => {
     const next = { ...prev, [key]: val };
+
+    if (COMPOSITE_KEYS.includes(key)) {
+      console.log('[PHAROS-DEBUG][handleChange] setValues updater ran — resulting composite snapshot:', {
+        gd_no: next.gd_no, gd_date: next.gd_date, gd_time: next.gd_time,
+        fir_no: next.fir_no, fir_date: next.fir_date, fir_time: next.fir_time,
+      });
+    }
 
     // DOB, Age (Years) and Year of Birth interlinking
     if (key.endsWith('_dob')) {
@@ -3354,7 +3358,7 @@ const handleChange = useCallback((key, val) => {
   if (key === 'complainant_same_as_victim') {
     if (val === 'Yes') {
       setRepeaterState(prev => {
-        const list = prev.PERSON_VICTIM || [];
+        const list = prev.victim_info || [];
         const existingIdx = list.findIndex(v => v._is_complainant);
         const newVictim = {
           _is_complainant: true,
@@ -3401,19 +3405,19 @@ const handleChange = useCallback((key, val) => {
         } else {
           nextList.push(newVictim);
         }
-        return { ...prev, PERSON_VICTIM: nextList };
+        return { ...prev, victim_info: nextList };
       });
     } else {
       setRepeaterState(prev => {
-        const list = prev.PERSON_VICTIM || [];
-        return { ...prev, PERSON_VICTIM: list.filter(v => !v._is_complainant) };
+        const list = prev.victim_info || [];
+        return { ...prev, victim_info: list.filter(v => !v._is_complainant) };
       });
     }
   } else if (key.startsWith('complainant_') && (key === 'complainant_perm_same' ? val : values.complainant_same_as_victim) === 'Yes') {
     const suffix = key.substring('complainant_'.length);
     const victimField = `victim_${suffix}`;
     setRepeaterState(prev => {
-      const list = prev.PERSON_VICTIM || [];
+      const list = prev.victim_info || [];
       const existingIdx = list.findIndex(v => v._is_complainant);
       if (existingIdx > -1) {
         const nextList = [...list];
@@ -3434,7 +3438,7 @@ const handleChange = useCallback((key, val) => {
         if (isPresentAddrField && (permSameVal === 'Yes' || permSameVal === true)) {
           nextList[existingIdx][`victim_perm_${suffix}`] = val;
         }
-        return { ...prev, PERSON_VICTIM: nextList };
+        return { ...prev, victim_info: nextList };
       }
       return prev;
     });
@@ -3495,6 +3499,10 @@ const actsSectionsProps = {
 
 /* ── Navigate forward (with step validation) ──────────────────────────── */
 const handleNext = () => {
+  console.log('[PHAROS-DEBUG][handleNext] clicked. currentStep=', currentStep, 'live `values` composite snapshot:', {
+    gd_no: values.gd_no, gd_date: values.gd_date, gd_time: values.gd_time,
+    fir_no: values.fir_no, fir_date: values.fir_date, fir_time: values.fir_time,
+  });
   const stepErrs = validateSection(currentStep);
   if (Object.keys(stepErrs).length > 0) {
     console.log('Block handleNext on step:', currentStep, 'Errors:', stepErrs);
@@ -3684,10 +3692,13 @@ const handleFormSubmit = (e) => {
         // ARRESTED persons carry their own property list (per-person, not record-level) —
         // pull it out of the person's data blob and flatten into the top-level properties
         // array, tagged with this person's index so the backend can link each item back
-        // to the right person after it generates real person IDs.
-        const { property_details: personProperties, ...personData } = entry;
+        // to the right person after it generates real person IDs. `id` (present on entries
+        // loaded from an existing record's recomposed persons[]) is likewise pulled to the
+        // top level — the backend's id-preserving upsert matches edits by `persons[].id`,
+        // not by a nested `data.id`.
+        const { property_details: personProperties, id: personId, ...personData } = entry;
         const personIndex = persons.length;
-        persons.push({ person_type: section.person_type, data: personData });
+        persons.push({ id: personId ?? undefined, person_type: section.person_type, data: personData });
         if (section.person_type === 'ARRESTED' && Array.isArray(personProperties)) {
           for (const prop of personProperties) {
             if (!prop.property_major_category && !prop.property_details) continue; // skip blank starter rows

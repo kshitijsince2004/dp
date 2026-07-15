@@ -37,6 +37,7 @@ erDiagram
     persons ||--o| missing_person_details : "MISSING"
     persons ||--o| person_descriptions : "MISSING or DECEASED"
     records ||--o{ record_properties : ""
+    persons |o--o{ record_properties : "person_id, e.g. recovered from this arrestee"
     locations |o--o{ persons : "present/perm"
     locations |o--o{ fir_details : "occurrence"
     locations |o--o{ pcr_call_details : "incident/occurrence"
@@ -361,6 +362,7 @@ erDiagram
     persons ||--o| missing_person_details : "role MISSING"
     persons ||--o| person_descriptions : "role MISSING or DECEASED"
     records ||--o{ record_properties : ""
+    persons |o--o{ record_properties : "person_id, e.g. recovered from this arrestee (added 2026-07-15)"
     ref_property_categories ||--o{ record_properties : "major_category_id"
     ref_other_property_items ||--o{ record_properties : "minor_category_id"
     locations |o--o{ persons : "present_location_id / perm_location_id"
@@ -456,6 +458,7 @@ erDiagram
     record_properties {
         uuid id PK
         uuid record_id "FK records, CASCADE"
+        uuid person_id "FK persons, SET NULL (added 2026-07-15) - which participant this was recovered from/associated with"
         int major_category_id "FK ref_property_categories (merged table, was ref_property_types)"
         int minor_category_id "FK ref_other_property_items"
         varchar status "CHECK synced: STOLEN|RECOVERED|SEIZED|INTACT|UNCLAIMED"

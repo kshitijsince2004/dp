@@ -24,15 +24,29 @@ The database was **fully rebuilt** (stages 1–4 of the restructure; design trut
   **done** — see `docs/new-db-integration/01-auth-rbac-workflow-refs.md` for the canonical
   JWT shape, RBAC scoping table, queue derivation, and every deferral. `ACP` role is back
   in the `users.role` CHECK (scope = `sub_div_id`); workflow has no ACP transitions yet
-  (config rows only, when needed). **Still NOT adapted**: `records` (the write path — spine/
-  detail/persons/properties/locations/offences split — AND its read path `listRecords`/
-  `getRecordDetails`, still joining dead `hierarchy_nodes.name_en`), `import`, `daily-diary`,
-  `warehouse`, `report-builder`, and `python_worker` — all still read `records.data` jsonb
-  and/or `excel_*` (import specifically; `fields` itself is now on `ref.*`). Mock record
-  seeding (`scripts/seed-test-data.js`) is also old-schema. Do not "fix" the modules by
-  recreating old tables — adapt them per `docs/db-audit/ARCHITECTURE.md`; kill list in
-  `DB_SCHEMA.md` §11 (`FALLBACK_TRANSITIONS` and `workflow.service.js` are now deleted —
-  done; EAV pair, `compilations.record_ids`, in-memory report templates remain).
+  (config rows only, when needed). **Integration 2 (2026-07-15) is also done** — the records
+  write path (registry-driven spine/detail/persons/properties/locations/offences split, both
+  create AND update, with id-preserving upserts for persons/properties), its read path
+  (`listRecords`/`getRecordDetails`, now on typed joins), domain status updates
+  (`PATCH /records/:id/status`), the district head override, compilation, analytics, and the
+  SHO-provisions-HC-users + IO-dropdown pieces of Stage 5 — see
+  `docs/new-db-integration/02-records-write-path.md` for the full canonical contract
+  (registry-driven mapper/normalizer, the six real bugs found and fixed during this pass,
+  including a **pre-existing, severe production bug**: `backend/index.js` — the actual
+  `npm run dev`/`start` entry point — was never calling `app.js`'s `startServer()`, so
+  `notifyHandler.js`/`linkAuditHandler.js` never ran in any real deployment; fixed by wiring
+  the correct handlers directly into `index.js` and deleting the dead
+  `notifications.service.js` subscription path it had been calling instead).
+  **Attachments/file-upload/MinIO/S3/Cloudinary eliminated entirely** (user decision,
+  2026-07-15 — not deferred, permanently out of scope; `record_attachments` will never exist).
+  **Still NOT adapted**: `import`, `daily-diary`, `warehouse`, `report-builder`, and
+  `python_worker` — all still read `records.data` jsonb and/or `excel_*` (import specifically;
+  `fields` itself is now on `ref.*`). Mock record seeding (`scripts/seed-test-data.js`) is
+  also old-schema. Do not "fix" the modules by recreating old tables — adapt them per
+  `docs/db-audit/ARCHITECTURE.md`; kill list in `DB_SCHEMA.md` §11 (`FALLBACK_TRANSITIONS`,
+  `workflow.service.js`, `auditHandler.js`, EAV pair/`customFields.controller.js`,
+  `compilations.record_ids`, attachments/upload/S3/Cloudinary are all now deleted — done;
+  in-memory report templates remain, part of the still-pending report-engine integration).
 - **Hierarchy is official now**: `config/org/hierarchy.json` = 349 nodes rebuilt from the
   official Delhi Police code list (`config/ref-data/PS_Codes.xlsx` → `config/org/ps_codes.json`
   via `backend/scripts/dev/build_ps_codes.py`): 23 districts (incl. Crime Branch/EOW/IGI/
@@ -152,14 +166,14 @@ backend/
 │   ├── events/
 │   │   ├── eventBus.js           # RabbitMQ publish/subscribe (topic exchange: 'pharos')
 │   │   └── handlers/
-│   │       ├── auditHandler.js   # Subscribes 'record.*' → writes record_revisions
-│   │       └── notifyHandler.js  # Subscribes 'record.status_changed', 'compilation.submitted'
+│   │       ├── notifyHandler.js  # Subscribes record.submitted/approved/sent_back, compilation.submitted
+│   │       ├── linkAuditHandler.js # Subscribes 'link.*' → writes audit_logs
+│   │       └── linkResolver.js   # Subscribes record.created/updated → async CASE_ARREST/CASE_MISSING resolution (ruling 23c)
 │   ├── middleware/
 │   │   ├── auth.middleware.js    # authMiddleware — JWT Bearer verify → req.user
 │   │   ├── rbac.middleware.js    # allow(...roles), enforceScope, verifyRecordAccess
 │   │   ├── validate.middleware.js # express-validator error collector → 422
 │   │   ├── rateLimiter.middleware.js
-│   │   ├── upload.middleware.js  # Multer config
 │   │   └── error.middleware.js
 │   ├── modules/
 │   │   ├── auth/                 # login, refresh, logout, /me, change-password [Dev 1]
@@ -173,8 +187,8 @@ backend/
 │   │   ├── compilation/          # District roll-up → HQ submission [Dev 2]
 │   │   ├── analytics/            # overview, trends, by-ps, by-crime-head, status-breakdown [Dev 2]
 │   │   ├── notifications/        # list, unread count, mark-read, event handlers [Dev 2]
-│   │   ├── upload/               # File upload (Multer/Cloudinary) [Dev 2]
-│   │   └── admin/                # customFields, admin stats [Dev 1]
+│   │   ├── io/                   # investigating_officers CRUD, PS-scoped [Dev 1]
+│   │   └── admin/                # admin stats (customFields killed — EAV superseded) [Dev 1]
 │   └── utils/
 │       ├── ApiError.js           # throw new ApiError(statusCode, message)
 │       ├── ApiResponse.js
@@ -348,21 +362,27 @@ frontend/src/
 
 ---
 
-## 10. records.service.js — Key Functions
+## 10. records.service.js — Key Functions (rewritten 2026-07-15, Integration 2)
+
+Registry-driven: `records.mapper.js` (`splitPayload`/`recomposeRecord`) is the ONE place a
+`field_registry.storage` mapping routes a value to its typed table/column; `records.normalize.js`
+handles P2 normalization + label→`ref.*` FK resolution. No module hardcodes "field X → column Y".
 
 | Function | Description |
 |----------|-------------|
-| `listRecords(type, filters, jurisdictionQuery)` | Joins ps/district/user, applies scope + filters |
-| `getRecordDetails(id)` | Record + revisions + transitions + customFields |
-| `createRecord(user, type, date, data, ip)` | DB transaction: insert record + revision + audit_log, publish event |
-| `updateRecord(id, user, data, ip)` | DB transaction: diff, update, revision, audit_log |
-| `submitRecord(id, user)` | DRAFT/SENT_BACK → PENDING_SHO, writes transition + audit |
-| `transitionRecord(id, user, action, comment, targetFields, ip)` | State machine — delegates to `workflow.engine.js` (`getRule`/`resolveTarget`), no inline rules |
-| `overrideCaseHead(id, user, newHead, reason, ip)` | HEAD_OVERRIDE revision, requires reason ≥ 10 chars |
+| `listRecords(type, filters, jurisdictionQuery)` | Typed joins through detail tables (fir_no, case_status, local_head label, etc.), applies scope + filters |
+| `getRecordDetails(id)` | Spine + detail + persons(+subtypes) + properties + offences + locations + revisions + transitions + `status_events`, recomposed via the mapper into the flat shape the frontend already speaks |
+| `createRecord(user, type, date, data, ip, {persons, properties, offences})` | One transaction: registry-driven split → insert spine/detail/persons/properties/offences/locations, hash-chained revision (CREATE), audit_log, publish `record.created` after commit |
+| `updateRecord(id, user, data, ip, {persons, properties, offences})` | Id-preserving upsert for persons/properties (never delete-and-reinsert — `record_status_events.property_id` is `ON DELETE CASCADE`); delete-and-reinsert for offences; diffs old vs new flat data for the revision |
+| `submitRecord(id, user, ip)` | Full requiredness re-validation (registry `required`+`show_when`, hidden fields skip) then `transitionRecord(..., 'submit', ...)` |
+| `transitionRecord(id, user, action, comment, targetFields, ip)` | Single writer of `record_revisions` for every `change_type` (`SELECT ... FOR UPDATE` serializes the chain) — delegates rule resolution to `workflow.engine.js`, no inline rules |
+| `overrideCaseHead(id, user, newHead, reason, ip)` | Resolves the label to a major/local head; updates the `is_primary` `record_offences` row or detail `local_head_id`; HEAD_OVERRIDE revision, reason ≥ 10 chars |
+| `updateDomainStatus(id, user, {statusField, newValue, effectiveDate, comment, propertyId}, ip)` | `PATCH /records/:id/status` — case/missing/uidb/PCR status + worked-out flip, each dated via `record_status_events` (ruling 22) |
 
 **Transitions are DB rows** (`workflow_transitions_config`, synced from `config/workflow/main.json`),
 not code. See `docs/new-db-integration/01-auth-rbac-workflow-refs.md` §5 for the engine contract
-and the verified per-role queue derivation.
+and the verified per-role queue derivation, and `docs/new-db-integration/02-records-write-path.md`
+for the full write-path contract (C1–C5) and the bugs found while building it.
 
 ---
 
@@ -416,12 +436,9 @@ docker-compose up -d
 
 ## 13. Known Issues & Important Notes
 
-1. **`records.router.js` has local changes** — stash before `git pull` or it aborts merge.
-2. **Old `*.routes.js` files** in modules — orphaned, not imported, ignore them.
-3. **Dual router files** — `analytics.routes.js` + `analytics.router.js` both exist. Only `*.router.js` is imported by `app.js`.
-4. **`validate.middleware.js` exists** but is **NOT wired to any route** — no `express-validator` chains anywhere. API bodies are largely unvalidated at the controller layer (only basic existence checks).
-5. **notifications.service.js** — `initSubscriptions()` uses a different `subscribe` signature than `auditHandler.js`. The notification subscriptions may not be initialized on startup (check `notifyHandler.js` `init()` instead).
-6. **Report templates** are in-memory arrays in `reports.controller.js` — not in a DB `report_templates` table. Adding new templates requires a code deploy.
+1. **`validate.middleware.js` exists** but is **NOT wired to any route** — no `express-validator` chains anywhere. API bodies are largely unvalidated at the controller layer beyond `records.normalize.js`'s registry-driven pass (added 2026-07-15).
+2. **Report templates** are in-memory arrays in `reports.controller.js` — not in a DB `report_templates` table. Adding new templates requires a code deploy. (Note: `report_templates` the table DOES exist and is synced from `config/proformas/` — the report *engine* just doesn't read from it yet; unified report engine is future work.)
+3. **RESOLVED 2026-07-15**: `backend/index.js` (the actual `npm run dev`/`start` entry point) was found to run its own independent bootstrap that never called `app.js`'s `startServer()` — meaning `notifyHandler.js`/`linkAuditHandler.js` (and, once built, `linkResolver.js`) never actually ran in any real deployment; `index.js` was instead calling the confirmed-dead `notifications.service.js`'s `initSubscriptions()` (wrong event, hardcoded mock user id, writes to a `message` column that doesn't exist on the new schema). Fixed: `index.js` now calls the correct three handlers' `.init()` directly, matching `app.js`'s `startServer()`; the dead `notifications.service.js` functions are deleted. If you ever see event-driven side effects (notifications, link resolution, audit) silently not happening again, check `index.js`'s handler wiring first — `app.js`'s `startServer()` is a secondary path that only runs when `app.js` itself is the process entry point (tests), not in normal dev/prod.
 
 ---
 

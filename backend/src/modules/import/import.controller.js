@@ -6,7 +6,6 @@ import ExcelJS from 'exceljs';
 import { publish } from '../../events/eventBus.js';
 import { computeRowHash } from '../../utils/hash.js';
 import { logger } from '../../utils/logger.js';
-import { TYPE_CODES } from '../records/records.service.js';
 import { createLink } from '../record-links/record-links.service.js';
 import { TemplateBuilderService } from './template-builder.service.js';
 import { toISO, toDMY } from '../../utils/dateFormat.js';
@@ -31,6 +30,13 @@ import {
   missingGeneralFields
 } from './import-fields.config.js';
 import { autoIncludedRegistryFields, parseApplicableTypes } from './registry-sync.util.js';
+
+// records.service.js's old TYPE_CODES export was removed with the jsonb-era generateUID
+// (Integration 2 — the new schema has no `uid` column, so records.service.js no longer
+// generates one). This module is still on the old schema pending its own future integration
+// (docs/new-db-integration/README.md) — kept as a local constant purely so this still-broken
+// module's import graph doesn't take down app boot; not a functional fix.
+const TYPE_CODES = { CASE: 'CSE', ARREST: 'ARR', PCR_CALL: 'PCR', MISSING: 'MSP', UIDB: 'UDB' };
 
 // Synonyms map to handle template label variations and offsets
 const CASE_SYNONYMS = {

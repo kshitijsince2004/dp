@@ -21,6 +21,16 @@ const withJurisdiction = (query, jurisdictionQuery, table = 'users') => {
   return query;
 };
 
+// SHO may only touch HC users in their own PS (item 7) — mirrors verifyRecordAccess's
+// per-record ownership check, but for users. SYSTEM_ADMIN is unrestricted.
+const assertUserInScope = (target, caller) => {
+  if (caller.role === 'SYSTEM_ADMIN') return;
+  if (caller.role === 'SHO' && target.role === 'HC' && target.ps_id === caller.ps_id) return;
+  const err = new Error('Access denied: user is outside your jurisdiction');
+  err.status = 403;
+  throw err;
+};
+
 // Response aliases kept for a handful of frontend fallback readers
 // (station_id, psId, districtId) — deprecated, drain on touch.
 const sanitize = (user) => {
@@ -109,12 +119,24 @@ export const getUser = async (req, res) => {
 export const createUser = async (req, res) => {
   const badgeNo = req.body.badgeNo || req.body.badge_no;
   const name = req.body.name || req.body.name_en;
-  const role = req.body.role;
-  const psId = req.body.psId || req.body.ps_id || req.body.station_id;
-  const districtId = req.body.districtId || req.body.district_id;
-  const subDivId = req.body.subDivId || req.body.sub_div_id;
+  let role = req.body.role;
+  let psId = req.body.psId || req.body.ps_id || req.body.station_id;
+  let districtId = req.body.districtId || req.body.district_id;
+  let subDivId = req.body.subDivId || req.body.sub_div_id;
   const username = req.body.username || badgeNo;
   const password = req.body.password;
+
+  // SHO provisions HC users for their own PS ONLY (item 7) — role and scope are stamped
+  // server-side from the caller's own JWT, never trusted from the request body (P5.4).
+  if (req.user.role === 'SHO') {
+    if (role !== undefined && role !== 'HC') {
+      return res.status(403).json({ status: 'error', success: false, code: 'FORBIDDEN', message: 'SHO may only create HC users' });
+    }
+    role = 'HC';
+    psId = req.user.ps_id;
+    districtId = undefined;
+    subDivId = undefined;
+  }
 
   if (!badgeNo || !password || !role || !name) {
     return res.status(400).json({
@@ -163,10 +185,10 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   const { id } = req.params;
   const name = req.body.name ?? req.body.name_en;
-  const role = req.body.role;
-  const psId = req.body.psId ?? req.body.ps_id ?? req.body.station_id;
-  const districtId = req.body.districtId ?? req.body.district_id;
-  const subDivId = req.body.subDivId ?? req.body.sub_div_id;
+  let role = req.body.role;
+  let psId = req.body.psId ?? req.body.ps_id ?? req.body.station_id;
+  let districtId = req.body.districtId ?? req.body.district_id;
+  let subDivId = req.body.subDivId ?? req.body.sub_div_id;
   const { is_active } = req.body;
 
   if (role !== undefined && !ROLES.includes(role)) {
@@ -174,6 +196,16 @@ export const updateUser = async (req, res) => {
   }
 
   try {
+    const target = await db('users').where({ id }).first();
+    if (!target) {
+      return res.status(404).json({ status: 'error', success: false, code: 'NOT_FOUND', message: 'User not found' });
+    }
+    assertUserInScope(target, req.user);
+    if (req.user.role === 'SHO') {
+      // SHO cannot re-role or re-scope a user out of their own PS.
+      role = undefined; psId = undefined; districtId = undefined; subDivId = undefined;
+    }
+
     const updatePayload = {};
     if (name !== undefined) updatePayload.name = name;
     if (role !== undefined) updatePayload.role = role;
@@ -186,13 +218,10 @@ export const updateUser = async (req, res) => {
     await db('users').where({ id }).update(updatePayload);
 
     const updatedUser = await db('users').where({ id }).first();
-    if (!updatedUser) {
-      return res.status(404).json({ status: 'error', success: false, code: 'NOT_FOUND', message: 'User not found' });
-    }
-
     return res.status(200).json({ status: 'success', success: true, data: sanitize(updatedUser) });
   } catch (error) {
-    return res.status(500).json({ status: 'error', success: false, message: error.message });
+    const status = error.status || 500;
+    return res.status(status).json({ status: 'error', success: false, message: error.message });
   }
 };
 
@@ -200,10 +229,17 @@ export const deleteUser = async (req, res) => {
   const { id } = req.params;
 
   try {
+    const target = await db('users').where({ id }).first();
+    if (!target) {
+      return res.status(404).json({ status: 'error', success: false, code: 'NOT_FOUND', message: 'User not found' });
+    }
+    assertUserInScope(target, req.user);
+
     await db('users').where({ id }).update({ is_active: false, updated_at: db.fn.now() });
     return res.status(200).json({ status: 'success', success: true, data: { message: 'User deactivated' } });
   } catch (error) {
-    return res.status(500).json({ status: 'error', success: false, message: error.message });
+    const status = error.status || 500;
+    return res.status(status).json({ status: 'error', success: false, message: error.message });
   }
 };
 
@@ -216,11 +252,18 @@ export const resetPassword = async (req, res) => {
   }
 
   try {
+    const target = await db('users').where({ id }).first();
+    if (!target) {
+      return res.status(404).json({ status: 'error', success: false, code: 'NOT_FOUND', message: 'User not found' });
+    }
+    assertUserInScope(target, req.user);
+
     const hash = await bcrypt.hash(newPassword, 12);
     await db('users').where({ id }).update({ password_hash: hash, updated_at: db.fn.now() });
     await logoutUser(id);
     return res.status(200).json({ status: 'success', success: true, data: { message: 'Password reset' } });
   } catch (error) {
-    return res.status(500).json({ status: 'error', success: false, message: error.message });
+    const status = error.status || 500;
+    return res.status(status).json({ status: 'error', success: false, message: error.message });
   }
 };

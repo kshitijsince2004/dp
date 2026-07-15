@@ -82,7 +82,10 @@ export default function NewRecord() {
   };
 
   const getSendBackDetails = () => {
-    if (!record || record.current_status !== 'SENT_BACK_HC') return null;
+    // 'SENT_BACK' is the real workflow status (config/workflow/main.json) — 'SENT_BACK_HC'
+    // checked alongside it only for compatibility with older mock-data paths that still use
+    // that name, matching the OR pattern already used elsewhere (Queue.jsx, MyRecords.jsx).
+    if (!record || (record.current_status !== 'SENT_BACK' && record.current_status !== 'SENT_BACK_HC')) return null;
     return transitions.find((tr) => tr.action === 'SEND_BACK') || null;
   };
 
@@ -286,7 +289,7 @@ export default function NewRecord() {
             initialProperties={recordPayload?.properties || []}
             onSubmit={handleFormSubmit}
             targetFields={sbDetails?.target_fields || []}
-            readOnly={record && record.current_status !== 'DRAFT' && record.current_status !== 'SENT_BACK_HC'}
+            readOnly={record && record.current_status !== 'DRAFT' && record.current_status !== 'SENT_BACK' && record.current_status !== 'SENT_BACK_HC'}
             caseType={caseType}
             onBack={caseType ? () => setCaseType(null) : () => navigate(-1)}
           />

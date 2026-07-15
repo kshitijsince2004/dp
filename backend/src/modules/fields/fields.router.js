@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as fieldsController from './fields.controller.js';
 import { authMiddleware } from '../../middleware/auth.middleware.js';
-import { allow } from '../../middleware/rbac.middleware.js';
+import { allow, enforceScope } from '../../middleware/rbac.middleware.js';
 
 const router = Router();
 
@@ -21,6 +21,9 @@ router.get('/lookup/property-items/:parent_cd', authMiddleware, fieldsController
 router.get('/lookup/beats', authMiddleware, fieldsController.listBeats);
 router.get('/lookup/local-heads', authMiddleware, fieldsController.listLocalHeads);
 router.get('/lookup/record-types', authMiddleware, fieldsController.listRecordTypes);
+// io_id's options_source target — scoped (enforceScope), unlike the ref.* lookups above
+// which are global reference data.
+router.get('/lookup/investigating-officers', authMiddleware, enforceScope, fieldsController.listInvestigatingOfficersLookup);
 
 
 // Admin CRUD on field_registry

@@ -1,4 +1,6 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import api from '../../utils/api.js';
 
 import DateTimePickerPopup from './DateTimePickerPopup.jsx';
 import TextField     from './TextField.jsx';
@@ -9,16 +11,13 @@ import TimeField     from './TimeField.jsx';
 import SelectField   from './SelectField.jsx';
 import CheckboxField from './CheckboxField.jsx';
 import RadioField    from './RadioField.jsx';
-import DateInput     from '../ui/DateInput.jsx';
 import { DISTRICTS_AND_STATIONS } from '../../utils/policeData.js';
 
 const inputBase = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
 
 export default function FieldRenderer({
   field, value, onChange, readOnly, hasError, lang, values, handleChange,
-  // gd_no composite overrides — different call sites use slightly different sizing
-  // (compact table row vs. taller top card) and need to sync extra date/time fields.
-  wrapperClassName, numberInputClassName, numberPlaceholder, dateInputClassName, onDateSync,
+  wrapperClassName,
   // Generic style override for TEXT/TEXTAREA/NUMBER inputs (e.g. dense table rows).
   inputClassName,
   // SELECT overrides — 'compact' swaps the searchable-dropdown widget for a plain native <select>.
@@ -26,6 +25,23 @@ export default function FieldRenderer({
   // RADIO overrides — 'native' swaps the custom-circle widget for plain accent-colored radios.
   radioVariant, radioWrapperClassName, radioInputClassName,
 }) {
+  // Generic options_source fetch (P4/item 5): any field whose registry row carries
+  // options_source and no inline options resolves its dropdown from
+  // /fields/lookup/:options_source — the same convention already used ad hoc elsewhere
+  // (major-heads, property-items) generalized to every field, not just the hardcoded ones.
+  // Hook must run before the `!field` early return (Rules of Hooks) — `enabled` guards it.
+  const optionsSource = field?.options_source;
+  const hasInlineOptions = field?.options && (Array.isArray(field.options) ? field.options.length > 0 : true);
+  const { data: sourceOptions } = useQuery({
+    queryKey: ['fieldOptionsSource', optionsSource],
+    queryFn: async () => {
+      const res = await api.get(`/fields/lookup/${optionsSource}`);
+      return res.data.data || [];
+    },
+    enabled: !!optionsSource && !hasInlineOptions,
+    staleTime: 60_000,
+  });
+
   if (!field) return null;
   const key     = field.field_key;
   const type    = (field.field_type || 'TEXT').toUpperCase();
@@ -40,6 +56,12 @@ export default function FieldRenderer({
     try { options = JSON.parse(options); } catch { options = []; }
   }
   options = options || [];
+
+  if (optionsSource && !hasInlineOptions && Array.isArray(sourceOptions)) {
+    // /fields/lookup/* endpoints return {value, label} — SearchableSelect's getLabel()
+    // checks opt.label first, so no further reshaping is needed.
+    options = sourceOptions;
+  }
 
   if (key.endsWith('_police_station') && values) {
     const prefix = key.substring(0, key.lastIndexOf('_police_station'));
@@ -56,6 +78,7 @@ export default function FieldRenderer({
   }
 
   const handleFieldChange = (k, v) => {
+    console.log('[PHAROS-DEBUG][FieldRenderer] handleFieldChange(', JSON.stringify(k), ',', JSON.stringify(v), ') — routing to', handleChange ? 'handleChange (DynamicForm)' : 'onChange (local prop)');
     if (handleChange) {
       handleChange(k, v);
     } else {
@@ -63,10 +86,30 @@ export default function FieldRenderer({
     }
   };
 
-  if (key === 'gd_no') {
-    const gdNumber = values?.gd_no || '';
-    const gdDateTimeStr = values?.gd_date_time || '';
+  // Shared composite-field date+time cell: a single DateTimePickerPopup driving two
+  // separate values (e.g. gd_date + gd_time), replacing the old DateInput (native
+  // calendar) + native <input type="time"> pairing — same calendar+slider popup as
+  // plain DATETIME fields, so the whole form has one consistent date+time picker.
+  const compositeDateTimeCell = (dateKey, timeKey, widthClass) => {
+    const combined = values?.[dateKey] ? `${values[dateKey]} ${values?.[timeKey] || '00:00'}` : '';
+    console.log('[PHAROS-DEBUG][FieldRenderer.compositeDateTimeCell] render', { dateKey, timeKey, rawDateVal: values?.[dateKey], rawTimeVal: values?.[timeKey], combinedPassedToPopup: combined });
+    return (
+      <div className={`${widthClass} flex items-center min-w-0 px-3.5 py-1`}>
+        <DateTimePickerPopup
+          value={combined}
+          onDone={(_formatted, datePart, timePart) => {
+            console.log('[PHAROS-DEBUG][FieldRenderer.compositeDateTimeCell] onDone fired for', dateKey, '/', timeKey, '→', { datePart, timePart });
+            handleFieldChange(dateKey, datePart);
+            handleFieldChange(timeKey, timePart);
+          }}
+          disabled={readOnly}
+          inputClassName={`w-full bg-transparent border-0 text-sm py-1 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
+        />
+      </div>
+    );
+  };
 
+  if (key === 'gd_no') {
     return (
       <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
         <div className="flex-1 flex items-center min-w-0">
@@ -82,61 +125,20 @@ export default function FieldRenderer({
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
           />
         </div>
-        <div className="w-full sm:w-[180px] flex items-center min-w-0">
-          <DateInput
-            id="field-gd_date"
-            disabled={readOnly}
-            value={values?.gd_date || ''}
-            onChange={(val) => handleFieldChange('gd_date', val)}
-            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[140px] flex items-center min-w-0">
-          <input
-            type="time"
-            disabled={readOnly}
-            value={values?.gd_time || ''}
-            onChange={(e) => handleFieldChange('gd_time', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-
+        {compositeDateTimeCell('gd_date', 'gd_time', 'w-full sm:w-[220px]')}
       </div>
     );
   }
 
   if (key === 'arrest_date') {
-    const arrestDateTimeStr = values?.arrest_date_time || '';
-
     return (
       <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
-          <DateInput
-            id="field-arrest_date"
-            disabled={readOnly}
-            value={values?.arrest_date || ''}
-            onChange={(val) => handleFieldChange('arrest_date', val)}
-            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[220px] flex items-center min-w-0">
-          <input
-            type="time"
-            disabled={readOnly}
-            value={values?.arrest_time || ''}
-            onChange={(e) => handleFieldChange('arrest_time', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-
+        {compositeDateTimeCell('arrest_date', 'arrest_time', 'w-full')}
       </div>
     );
   }
 
   if (key === 'fir_no') {
-    const firNumber = values?.fir_no || '';
-    const firDateTimeStr = values?.fir_date_time || '';
-
     return (
       <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
         <div className="flex-1 flex items-center min-w-0">
@@ -149,25 +151,7 @@ export default function FieldRenderer({
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
           />
         </div>
-        <div className="w-full sm:w-[220px] flex items-center min-w-0">
-          <DateInput
-            id="field-fir_date"
-            disabled={readOnly}
-            value={values?.fir_date || ''}
-            onChange={(val) => handleFieldChange('fir_date', val)}
-            inputClassName={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 pr-9 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-        <div className="w-full sm:w-[140px] flex items-center min-w-0">
-          <input
-            type="time"
-            disabled={readOnly}
-            value={values?.fir_time || ''}
-            onChange={(e) => handleFieldChange('fir_time', e.target.value)}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 cursor-pointer ${disabledClass}`}
-          />
-        </div>
-
+        {compositeDateTimeCell('fir_date', 'fir_time', 'w-full sm:w-[220px]')}
       </div>
     );
   }

@@ -2,16 +2,6 @@ import db from '../../config/db.js';
 import ExcelJS from 'exceljs';
 import { toDMY } from '../../utils/dateFormat.js';
 
-const parseJsonField = (val) => {
-  if (val === null || val === undefined) return null;
-  if (typeof val === 'string') {
-    try { return JSON.parse(val); } catch (e) { return val; }
-  }
-  return val;
-};
-
-const jsonbPath = (column, path) => `(${column})::jsonb->>'${path}'`;
-
 // 'YYYY-MM' bucket key -> 'MM/YYYY' display label
 const formatMonthLabel = (ym) => {
   if (!ym || typeof ym !== 'string') return ym;
@@ -60,27 +50,42 @@ export const getTrends = async (req, res) => {
   }
 
   const typeUpper = recordType.toUpperCase();
-  const classificationKey = typeUpper === 'CASE' ? 'case_head' : (typeUpper === 'ARREST' ? 'crime_head' : 'pcr_head');
 
   try {
-    const jsonPath = jsonbPath('data', classificationKey);
-    const monthExpr = `to_char(record_date, 'YYYY-MM')`;
+    const monthExpr = `to_char(records.record_date, 'YYYY-MM')`;
+    // Single-head classification (DB_SCHEMA.md §9.4): the record_offences row flagged
+    // is_primary is the one daily-diary/crime-head consumers read — for CASE/ARREST. PCR_CALL
+    // has no record_offences (§2.7 scope); its classification is the plain call_head column.
+    let query;
+    if (typeUpper === 'PCR_CALL') {
+      query = db('records')
+        .select(
+          db.raw('pcr.call_head as classification'),
+          db.raw(`${monthExpr} as month`),
+          db.raw('count(*) as count'),
+        )
+        .join('pcr_call_details as pcr', 'records.id', 'pcr.record_id')
+        .where({ record_type: typeUpper })
+        .whereIn('current_status', ['submitted', 'PENDING_SHO', 'DISTRICT_REVIEW', 'HQ_RECEIVED', 'CLOSED']);
+    } else {
+      query = db('records')
+        .select(
+          db.raw('mh.major_head as classification'),
+          db.raw(`${monthExpr} as month`),
+          db.raw('count(*) as count'),
+        )
+        .leftJoin('record_offences as ro', (j) => j.on('records.id', 'ro.record_id').andOn('ro.is_primary', db.raw('true')))
+        .leftJoin('ref.major_heads as mh', 'ro.major_head_id', 'mh.major_head_code')
+        .where({ record_type: typeUpper })
+        .whereIn('current_status', ['submitted', 'PENDING_SHO', 'DISTRICT_REVIEW', 'HQ_RECEIVED', 'CLOSED']);
+    }
 
-    let query = db('records')
-      .select(
-        db.raw(`${jsonPath} as classification`),
-        db.raw(`${monthExpr} as month`),
-        db.raw('count(*) as count')
-      )
-      .where({ record_type: typeUpper })
-      .whereIn('current_status', ['submitted', 'PENDING_SHO', 'DISTRICT_REVIEW', 'HQ_RECEIVED', 'CLOSED']);
-
-    if (jq.ps_id) query = query.where('ps_id', jq.ps_id);
-    if (jq.district_id) query = query.where('district_id', jq.district_id);
-    if (jq.sub_div_id) query = query.where('sub_div_id', jq.sub_div_id);
+    if (jq.ps_id) query = query.where('records.ps_id', jq.ps_id);
+    if (jq.district_id) query = query.where('records.district_id', jq.district_id);
+    if (jq.sub_div_id) query = query.where('records.sub_div_id', jq.sub_div_id);
 
     const trends = await query
-      .groupBy([db.raw(jsonPath), db.raw(monthExpr)])
+      .groupBy(['classification', db.raw(monthExpr)])
       .orderBy('month', 'asc');
 
     return res.status(200).json({
@@ -112,14 +117,14 @@ export const getCompare = async (req, res) => {
   if (typeUpper === 'PCR') typeUpper = 'PCR_CALL';
 
   try {
-    let selectCol = 'ps.name_en';
+    let selectCol = 'ps.name';
     let groupCol = 'records.ps_id';
 
     if (['HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'].includes(role)) {
-      selectCol = 'dist.name_en';
+      selectCol = 'dist.name';
       groupCol = 'records.district_id';
     } else if (role === 'DISTRICT_OFFICER') {
-      selectCol = 'sub.name_en';
+      selectCol = 'sub.name';
       groupCol = 'records.sub_div_id';
     }
 
@@ -192,13 +197,13 @@ export const getByPs = async (req, res) => {
     } else if (jq.district_id) {
       // Find sub-divisions under this district
       const subDivs = await db('hierarchy_nodes')
-        .where({ node_type: 'SUB_DIVISION', parent_id: jq.district_id, is_active: true })
+        .where({ node_type: 'SUB_DIV', parent_id: jq.district_id, is_active: true })
         .select('id');
       const subDivIds = subDivs.map(s => s.id);
       stationsQuery = stationsQuery.whereIn('parent_id', subDivIds);
     }
 
-    const stations = await stationsQuery.select('id', 'name_en', 'name_hi');
+    const stations = await stationsQuery.select('id', 'name');
 
     // 2. Fetch record counts grouped by ps_id and record_type
     let recordsQuery = db('records')
@@ -231,8 +236,8 @@ export const getByPs = async (req, res) => {
       const stats = countsMap[s.id] || { cases: 0, pcr: 0, arrests: 0 };
       return {
         id: s.id,
-        station: s.name_en || s.name,
-        station_hi: s.name_hi || s.name,
+        station: s.name,
+        station_hi: s.name,
         cases: stats.cases,
         pcr: stats.pcr,
         arrests: stats.arrests
@@ -251,17 +256,19 @@ export const getByPs = async (req, res) => {
 export const getByCrimeHead = async (req, res) => {
   const jq = req.jurisdictionQuery;
   try {
-    const jsonPath = jsonbPath('data', 'crime_head');
+    // Single-head classification (§9.4): the is_primary record_offences row's major_head.
     let query = db('records')
-      .select(db.raw(`${jsonPath} as crime_head`))
+      .select('mh.major_head as crime_head')
       .count('* as count')
+      .leftJoin('record_offences as ro', (j) => j.on('records.id', 'ro.record_id').andOn('ro.is_primary', db.raw('true')))
+      .leftJoin('ref.major_heads as mh', 'ro.major_head_id', 'mh.major_head_code')
       .where('record_type', 'CASE');
 
-    if (jq.ps_id) query = query.where('ps_id', jq.ps_id);
-    if (jq.district_id) query = query.where('district_id', jq.district_id);
-    if (jq.sub_div_id) query = query.where('sub_div_id', jq.sub_div_id);
+    if (jq.ps_id) query = query.where('records.ps_id', jq.ps_id);
+    if (jq.district_id) query = query.where('records.district_id', jq.district_id);
+    if (jq.sub_div_id) query = query.where('records.sub_div_id', jq.sub_div_id);
 
-    const rows = await query.groupBy(db.raw(jsonPath)).orderBy('count', 'desc').limit(10);
+    const rows = await query.groupBy('mh.major_head').orderBy('count', 'desc').limit(10);
     const data = rows.map(r => ({
       name: r.crime_head || 'UNCATEGORIZED',
       count: parseInt(r.count, 10) || 0
@@ -322,11 +329,25 @@ export const exportSpreadsheet = async (req, res) => {
   if (typeUpper === 'CASES') typeUpper = 'CASE';
   if (typeUpper === 'PCR') typeUpper = 'PCR_CALL';
 
+  const DETAIL_TABLES = { CASE: 'fir_details', ARREST: 'arrest_details', PCR_CALL: 'pcr_call_details', MISSING: 'missing_details', UIDB: 'uidb_details' };
+  const detailTable = DETAIL_TABLES[typeUpper];
+  if (!detailTable) {
+    return res.status(400).json({ success: false, message: `Unknown recordType "${recordType}"` });
+  }
+  // The old jsonb "Details (JSON Block)" dump has no equivalent under the typed schema —
+  // export the detail table's own reference/status column instead, per type.
+  const DETAIL_REF_COLUMN = { CASE: 'fir_no', ARREST: 'fir_no', PCR_CALL: 'pcr_no', MISSING: 'gd_no', UIDB: 'uidb_no' };
+  const DETAIL_STATUS_COLUMN = { CASE: 'case_status', ARREST: 'case_status', PCR_CALL: 'final_call_status', MISSING: 'missing_status', UIDB: 'uidb_status' };
+  const refCol = DETAIL_REF_COLUMN[typeUpper];
+  const statusCol = DETAIL_STATUS_COLUMN[typeUpper];
+
   try {
     let query = db('records')
-      .select('records.*', 'ps.name_en as ps_name', 'dist.name_en as district_name')
+      .select('records.id', 'ps.name as ps_name', 'dist.name as district_name', 'records.record_date', 'records.current_status',
+        `d.${refCol} as reference_no`, `d.${statusCol} as domain_status`)
       .join('hierarchy_nodes as ps', 'records.ps_id', 'ps.id')
       .join('hierarchy_nodes as dist', 'records.district_id', 'dist.id')
+      .leftJoin(`${detailTable} as d`, 'records.id', 'd.record_id')
       .where({ record_type: typeUpper })
       .whereIn('records.current_status', ['submitted', 'PENDING_SHO', 'DISTRICT_REVIEW', 'HQ_RECEIVED', 'CLOSED']);
 
@@ -340,23 +361,24 @@ export const exportSpreadsheet = async (req, res) => {
     const sheet = workbook.addWorksheet(`${typeUpper} Records`);
 
     sheet.columns = [
-      { header: 'UID', key: 'uid', width: 25 },
+      { header: 'ID', key: 'id', width: 38 },
+      { header: 'Reference No.', key: 'reference_no', width: 20 },
       { header: 'District', key: 'district_name', width: 20 },
       { header: 'Police Station', key: 'ps_name', width: 20 },
       { header: 'Date', key: 'record_date', width: 15 },
-      { header: 'Status', key: 'current_status', width: 15 },
-      { header: 'Details (JSON Block)', key: 'data_json', width: 50 }
+      { header: 'Workflow Status', key: 'current_status', width: 18 },
+      { header: 'Domain Status', key: 'domain_status', width: 20 },
     ];
 
     rows.forEach(r => {
-      const dataObj = parseJsonField(r.data);
       sheet.addRow({
-        uid: dataObj?.uid || r.id,
+        id: r.id,
+        reference_no: r.reference_no || '',
         district_name: r.district_name,
         ps_name: r.ps_name,
         record_date: toDMY(r.record_date) || '',
         current_status: r.current_status,
-        data_json: JSON.stringify(dataObj)
+        domain_status: r.domain_status || '',
       });
     });
 
@@ -478,14 +500,15 @@ const countStandaloneArrests = async (jq, startDate, endDate) => {
   return parseInt(row.count, 10) || 0;
 };
 
-const normalizeName = (first, last) => `${first || ''} ${last || ''}`.trim().toLowerCase().replace(/\s+/g, ' ');
+const normalizeName = (name) => (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
-// For each CASE in range: its ACCUSED persons vs the ARRESTED persons on its linked
+// For each CASE in range: its ACCUSED persons vs the ARRESTEE persons on its linked
 // (CASE_ARREST) arrests, matched by normalized name. Unmatched accused = "left out".
 const computeLeftOutAccused = async (jq, startDate, endDate) => {
   try {
     let caseQuery = db('records')
-      .select('id', db.raw(`${jsonbPath('data', 'fir_no')} as fir_no`))
+      .select('records.id', 'fir.fir_no as fir_no')
+      .leftJoin('fir_details as fir', 'records.id', 'fir.record_id')
       .where('record_type', 'CASE')
       .whereBetween('record_date', [startDate, endDate]);
     caseQuery = applyJurisdictionScope(caseQuery, jq);
@@ -495,10 +518,10 @@ const computeLeftOutAccused = async (jq, startDate, endDate) => {
     const caseIds = cases.map(c => c.id);
     const caseFirById = new Map(cases.map(c => [c.id, c.fir_no]));
 
-    const accusedRows = await db('record_persons')
+    const accusedRows = await db('persons')
       .whereIn('record_id', caseIds)
-      .andWhere('person_type', 'ACCUSED')
-      .select('record_id', 'first_name', 'last_name');
+      .andWhere('role', 'ACCUSED')
+      .select('record_id', 'name');
     if (accusedRows.length === 0) return { count: 0, list: [] };
 
     const links = await db('record_links as rl')
@@ -516,12 +539,12 @@ const computeLeftOutAccused = async (jq, startDate, endDate) => {
     const allArrestIds = [...new Set(links.map(l => l.arrest_id))];
     const arrestedNamesByArrestId = new Map();
     if (allArrestIds.length > 0) {
-      const arrestedRows = await db('record_persons')
+      const arrestedRows = await db('persons')
         .whereIn('record_id', allArrestIds)
-        .andWhere('person_type', 'ARRESTED')
-        .select('record_id', 'first_name', 'last_name');
+        .andWhere('role', 'ARRESTEE')
+        .select('record_id', 'name');
       arrestedRows.forEach(r => {
-        const name = normalizeName(r.first_name, r.last_name);
+        const name = normalizeName(r.name);
         if (!arrestedNamesByArrestId.has(r.record_id)) arrestedNamesByArrestId.set(r.record_id, new Set());
         arrestedNamesByArrestId.get(r.record_id).add(name);
       });
@@ -529,13 +552,13 @@ const computeLeftOutAccused = async (jq, startDate, endDate) => {
 
     const leftOutList = [];
     accusedRows.forEach(a => {
-      const accusedName = normalizeName(a.first_name, a.last_name);
+      const accusedName = normalizeName(a.name);
       if (!accusedName) return;
       const arrestIds = arrestIdsByCaseId.get(a.record_id) || [];
       const isArrested = arrestIds.some(aid => arrestedNamesByArrestId.get(aid)?.has(accusedName));
       if (!isArrested) {
         leftOutList.push({
-          name: `${a.first_name || ''} ${a.last_name || ''}`.trim(),
+          name: a.name || '',
           fir_no: caseFirById.get(a.record_id) || null
         });
       }
@@ -794,7 +817,7 @@ export const getByDistrict = async (req, res) => {
   try {
     const districts = await db('hierarchy_nodes')
       .where({ node_type: 'DISTRICT', is_active: true })
-      .select('id', 'name_en', 'name_hi');
+      .select('id', 'name');
 
     const rows = await db('records')
       .select('district_id', 'record_type')
@@ -821,8 +844,8 @@ export const getByDistrict = async (req, res) => {
       const stats = countsMap[d.id] || { cases: 0, arrests: 0, pcr: 0, missing: 0, total: 0 };
       return {
         id: d.id,
-        name: d.name_en || d.name,
-        name_hi: d.name_hi || d.name,
+        name: d.name,
+        name_hi: d.name,
         cases: stats.cases,
         arrests: stats.arrests,
         pcr: stats.pcr,

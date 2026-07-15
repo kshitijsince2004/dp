@@ -104,16 +104,6 @@ export default function PoliceNavbar({
     const crumbs = [{ label: t('nav.hq') || "Command Center", to: "/dashboard" }];
     if (path === "/dashboard" || path === "/dashboard/") {
       crumbs.push({ label: t('nav.dashboard') || "Dashboard", to: "/dashboard" });
-    } else if (path.includes("/case-management")) {
-      crumbs.push({ label: t('recordTypes.CASE') || "Case Management", to: "/dashboard/case-management" });
-    } else if (path.includes("/arrest-management")) {
-      crumbs.push({ label: t('recordTypes.ARREST') || "Arrest Management", to: "/dashboard/arrest-management" });
-    } else if (path.includes("/pcr-calls")) {
-      crumbs.push({ label: t('recordTypes.PCR_CALL') || "PCR Calls", to: "/dashboard/pcr-calls" });
-    } else if (path.includes("/uidb-management")) {
-      crumbs.push({ label: t('recordTypes.UIDB') || "UIDB Management", to: "/dashboard/uidb-management" });
-    } else if (path.includes("/missing-persons")) {
-      crumbs.push({ label: t('recordTypes.MISSING') || "Missing Persons", to: "/dashboard/missing-persons" });
     } else if (path.includes("/records")) {
       crumbs.push({ label: t('nav.records') || "Records", to: "/records" });
     } else if (path.includes("/queue")) {

@@ -193,10 +193,5 @@ export const maskRecordDetails = async (details, user) => {
   }
   details.record.data = maskedData;
 
-  // Mask customFields (EAV)
-  if (details.customFields && Array.isArray(details.customFields)) {
-    details.customFields = details.customFields.filter(f => visibleKeys.includes(f.field_key));
-  }
-
   return details;
 };

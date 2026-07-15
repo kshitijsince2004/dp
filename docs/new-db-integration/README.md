@@ -11,9 +11,9 @@ integration — read it before touching code.
 | # | Integration | Status | Handoff |
 |---|---|---|---|
 | 1 | Auth, RBAC, JWT, workflow engine, ref lookups, IO module | ✅ done (2026-07-14) | [`01-auth-rbac-workflow-refs.md`](01-auth-rbac-workflow-refs.md) |
-| 2 | Records write path (registry-driven spine/detail/persons/properties/locations/offences split) | not started | — |
+| 2 | Records write path (registry-driven spine/detail/persons/properties/locations/offences split) + compilation + analytics + SHO-provisions-HC + domain status updates | ✅ done (2026-07-15) | [`02-records-write-path.md`](02-records-write-path.md) |
 | 3 | Import / bulk-upload (excel_* → ref.*, frozen template, dedup) | not started | — |
-| 4 | Reports / analytics / report-builder / daily-diary / warehouse | not started | — |
+| 4 | Reports / report-builder / daily-diary / warehouse (analytics already adapted in #2) | not started | — |
 | 5 | Hash-chain audit enforcement (deferred per baseline — last, not first) | not started | — |
 
 ## How to use this log

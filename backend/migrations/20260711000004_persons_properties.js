@@ -86,6 +86,7 @@ export async function up(knex) {
     CREATE TABLE record_properties (
       id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       record_id            uuid NOT NULL REFERENCES records(id) ON DELETE CASCADE,
+      person_id            uuid REFERENCES persons(id) ON DELETE SET NULL,
       major_category_id    int REFERENCES ref.property_categories(parent_cd),
       minor_category_id    int REFERENCES ref.other_property_items(property_cd),
       status               varchar(20) NOT NULL DEFAULT 'STOLEN' CHECK (status IN
@@ -121,6 +122,7 @@ export async function up(knex) {
       updated_at           timestamptz NOT NULL DEFAULT now()
     );
     CREATE INDEX idx_record_properties_record   ON record_properties (record_id);
+    CREATE INDEX idx_record_properties_person   ON record_properties (person_id);
     CREATE INDEX idx_record_properties_category ON record_properties (major_category_id);
     CREATE INDEX idx_record_properties_status   ON record_properties (status);
     CREATE INDEX idx_record_properties_vehicle  ON record_properties (vehicle_no);

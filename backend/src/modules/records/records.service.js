@@ -5,261 +5,463 @@ import { computeRowHash, getPreviousHash } from '../../utils/hash.js';
 import { getLinksForRecord } from '../record-links/record-links.service.js';
 import { toISO } from '../../utils/dateFormat.js';
 import * as workflowEngine from '../workflow/workflow.engine.js';
+import * as mapper from './records.mapper.js';
+import { resolveMajorHead, resolveLocalHead } from './records.normalize.js';
 
-// Helpers
-const calculateDiff = (oldData, newData) => {
+// ── shared write-path helpers (single write path, ARCHITECTURE.md §4.2) ─────────────────
+
+/** Insert a `locations` row (or return null for an empty block). Used on CREATE, where
+ * there is never a prior row to reconcile against. */
+async function insertLocation(trx, cols) {
+  if (!cols || !Object.keys(cols).length) return null;
+  const id = uuidv4();
+  await trx('locations').insert({ id, ...cols });
+  return id;
+}
+
+/** UPDATE in place when the owner already has a location for this slot, INSERT when new,
+ * DELETE when the block was cleared — the one function both create (existingId always null)
+ * and update paths share (`DB_SCHEMA.md` §3.5 ownership rule: one row per use). */
+async function upsertLocation(trx, existingId, cols) {
+  const hasCols = cols && Object.keys(cols).length > 0;
+  if (!hasCols) {
+    if (existingId) await trx('locations').where({ id: existingId }).delete();
+    return null;
+  }
+  if (existingId) {
+    await trx('locations').where({ id: existingId }).update({ ...cols, updated_at: trx.fn.now() });
+    return existingId;
+  }
+  const id = uuidv4();
+  await trx('locations').insert({ id, ...cols });
+  return id;
+}
+
+async function insertPersonEntry(trx, recordId, entry) {
+  const personId = uuidv4();
+  const locationIdBySlot = {};
+  for (const [slot, cols] of Object.entries(entry.locations)) {
+    locationIdBySlot[slot] = await insertLocation(trx, cols);
+  }
+  const personCols = { ...entry.columns };
+  for (const [slot, locId] of Object.entries(locationIdBySlot)) {
+    const target = mapper.PERSON_LOCATION_SLOTS[slot];
+    if (target?.table === 'persons') personCols[target.column] = locId;
+  }
+  await trx('persons').insert({
+    id: personId, record_id: recordId, role: entry.role, ...personCols,
+    extra: JSON.stringify(entry.extra || {}), sort_order: entry.sourceIndex ?? 0,
+  });
+  for (const [subtypeTable, cols] of Object.entries(entry.subtypes || {})) {
+    const subtypeCols = { ...cols };
+    for (const [slot, locId] of Object.entries(locationIdBySlot)) {
+      const target = mapper.PERSON_LOCATION_SLOTS[slot];
+      if (target?.table === subtypeTable) subtypeCols[target.column] = locId;
+    }
+    await trx(subtypeTable).insert({ person_id: personId, ...subtypeCols });
+  }
+  return personId;
+}
+
+/**
+ * Id-preserving upsert for persons on UPDATE (C4 — never delete-and-reinsert: role subtype
+ * rows cascade off `persons.id`, and while nothing references a person row directly today,
+ * treating a person's identity as stable across edits is the correct model regardless).
+ * Singleton roles (COMPLAINANT/MISSING/DECEASED/INFORMANT/CALLER) match the record's one
+ * existing row of that role; repeater roles match by the `persons[].id` the client echoes
+ * back (recomposeRecord always includes it). Returns { personIdBySourceIndex } for the
+ * property linker.
+ */
+async function upsertPersons(trx, recordId, personEntries, oldPersonRows) {
+  const oldById = new Map(oldPersonRows.map((p) => [p.id, p]));
+  const oldByRole = new Map();
+  for (const p of oldPersonRows) if (!mapper.REPEATER_ROLES.has(p.role)) oldByRole.set(p.role, p);
+
+  const keptIds = new Set();
+  const personIdBySourceIndex = {};
+
+  for (const entry of personEntries) {
+    const existing = mapper.REPEATER_ROLES.has(entry.role)
+      ? (entry.existingId ? oldById.get(entry.existingId) : null)
+      : oldByRole.get(entry.role);
+    const personId = existing?.id || uuidv4();
+    keptIds.add(personId);
+
+    const locationIdBySlot = {};
+    for (const slot of Object.keys(mapper.PERSON_LOCATION_SLOTS)) {
+      const target = mapper.PERSON_LOCATION_SLOTS[slot];
+      const ownerOld = target.table === 'persons' ? existing : existing?.subtypes?.[target.table];
+      const existingLocId = ownerOld?.[target.column] || null;
+      const cols = entry.locations[slot];
+      if (!cols && !existingLocId) continue;
+      locationIdBySlot[slot] = await upsertLocation(trx, existingLocId, cols);
+    }
+
+    const personCols = { ...entry.columns };
+    for (const [slot, locId] of Object.entries(locationIdBySlot)) {
+      const target = mapper.PERSON_LOCATION_SLOTS[slot];
+      if (target.table === 'persons') personCols[target.column] = locId;
+    }
+    const row = {
+      role: entry.role, ...personCols, extra: JSON.stringify(entry.extra || {}),
+      sort_order: entry.sourceIndex ?? 0, updated_at: trx.fn.now(),
+    };
+    if (existing) await trx('persons').where({ id: personId }).update(row);
+    else await trx('persons').insert({ id: personId, record_id: recordId, ...row });
+
+    const subtypeTables = new Set([...Object.keys(entry.subtypes || {}), ...Object.keys(existing?.subtypes || {})]);
+    for (const subtypeTable of subtypeTables) {
+      const cols = { ...(entry.subtypes?.[subtypeTable] || {}) };
+      for (const [slot, locId] of Object.entries(locationIdBySlot)) {
+        const target = mapper.PERSON_LOCATION_SLOTS[slot];
+        if (target.table === subtypeTable) cols[target.column] = locId;
+      }
+      const hadOld = !!existing?.subtypes?.[subtypeTable];
+      const hasNew = Object.keys(cols).length > 0;
+      if (!hasNew) {
+        if (hadOld) await trx(subtypeTable).where({ person_id: personId }).delete();
+        continue;
+      }
+      if (hadOld) await trx(subtypeTable).where({ person_id: personId }).update(cols);
+      else await trx(subtypeTable).insert({ person_id: personId, ...cols });
+    }
+
+    if (entry.sourceKind === 'repeater') personIdBySourceIndex[entry.sourceIndex] = personId;
+  }
+
+  for (const old of oldPersonRows) {
+    if (keptIds.has(old.id)) continue;
+    const locIds = [old.present_location_id, old.perm_location_id,
+      ...Object.values(old.subtypes || {}).flatMap((s) => [s.arrest_location_id, s.missing_location_id, s.found_location_id])]
+      .filter(Boolean);
+    await trx('persons').where({ id: old.id }).delete(); // cascades subtype rows
+    if (locIds.length) await trx('locations').whereIn('id', locIds).delete();
+  }
+
+  return personIdBySourceIndex;
+}
+
+/** Id-preserving upsert for properties on UPDATE — REQUIRED, not a style choice:
+ * `record_status_events.property_id` is `ON DELETE CASCADE`, so delete-and-reinsert would
+ * silently destroy a property's status-change history on every unrelated edit. */
+async function upsertProperties(trx, recordId, propertyEntries, oldPropertyRows, personIdBySourceIndex) {
+  const oldById = new Map(oldPropertyRows.map((p) => [p.id, p]));
+  const keptIds = new Set();
+  const statusChanges = []; // {propertyId, oldValue, newValue} for record_status_events
+
+  for (const entry of propertyEntries) {
+    const existing = entry.existingId ? oldById.get(entry.existingId) : null;
+    const propertyId = existing?.id || uuidv4();
+    keptIds.add(propertyId);
+    const personId = entry.personIndex != null ? (personIdBySourceIndex[entry.personIndex] ?? null) : (existing?.person_id ?? null);
+    const row = {
+      person_id: personId, ...entry.columns, extra: JSON.stringify(entry.extra || {}),
+      updated_at: trx.fn.now(),
+    };
+    if (existing) {
+      if (entry.columns.status && existing.status && entry.columns.status !== existing.status) {
+        statusChanges.push({ propertyId, oldValue: existing.status, newValue: entry.columns.status });
+      }
+      await trx('record_properties').where({ id: propertyId }).update(row);
+    } else {
+      await trx('record_properties').insert({ id: propertyId, record_id: recordId, sort_order: 0, ...row });
+    }
+  }
+
+  const toDelete = oldPropertyRows.filter((p) => !keptIds.has(p.id)).map((p) => p.id);
+  if (toDelete.length) await trx('record_properties').whereIn('id', toDelete).delete();
+
+  return { personIdBySourceIndex, statusChanges };
+}
+
+/** `fir_details.ps_id` is a deliberate denormalized copy of `records.ps_id` (DB_SCHEMA.md
+ * §9.3 #3) solely to carry the `UNIQUE(ps_id, fir_year, fir_no)` business key — it isn't a
+ * form field, so nothing in the registry maps to it; the write path stamps it directly, same
+ * as the spine's own scoping ids (P5.4). No other detail table needs its own copy. */
+function detailScopingColumns(recordType, psId) {
+  return recordType === 'CASE' ? { ps_id: psId } : {};
+}
+
+/** record_offences has nothing referencing it — wholesale delete-and-reinsert is safe and
+ * matches the documented pattern (a group can never half-update). */
+async function replaceOffenceRows(trx, recordId, offenceRows) {
+  await trx('record_offences').where({ record_id: recordId }).delete();
+  if (!offenceRows.length) return;
+  await trx('record_offences').insert(offenceRows.map((o) => ({ id: uuidv4(), record_id: recordId, ...o })));
+}
+
+async function writeRevision(trx, { recordId, changeType, level, changedBy, comment, reason, ipAddress, fieldChanges }) {
+  const revCountRow = await trx('record_revisions').where({ record_id: recordId }).count('* as count').first();
+  const revisionNumber = (parseInt(revCountRow.count, 10) || 0) + 1;
+  const prevHash = await getPreviousHash(recordId, trx);
+  const changedAt = new Date().toISOString();
+  const fieldChangesJson = JSON.stringify(fieldChanges || []);
+  const rowHash = computeRowHash({
+    record_id: recordId, revision_number: revisionNumber, changed_by: changedBy,
+    changed_at: changedAt, field_changes: fieldChangesJson,
+  }, prevHash);
+  await trx('record_revisions').insert({
+    id: uuidv4(), record_id: recordId, revision_number: revisionNumber, change_type: changeType,
+    field_changes: fieldChangesJson, level: level || 'PS', changed_by: changedBy, changed_at: changedAt,
+    comment: comment || null, reason: reason || null, ip_address: ipAddress || null,
+    prev_hash: prevHash, row_hash: rowHash, hash_version: 1,
+  });
+}
+
+async function writeAuditLog(trx, { recordId, action, user, fieldName, oldValue, newValue, reason, ipAddress }) {
+  await trx('audit_logs').insert({
+    id: uuidv4(), table_name: 'records', record_id: recordId, action,
+    changed_by_id: user.id, changed_by_role: user.role, changed_at: new Date().toISOString(),
+    field_name: fieldName || null,
+    old_value: oldValue !== undefined ? JSON.stringify(oldValue) : null,
+    new_value: newValue !== undefined ? JSON.stringify(newValue) : null,
+    reason: reason || null, ip_address: ipAddress || null,
+  });
+}
+
+function calculateDiff(oldFlat, newFlat) {
   const diff = [];
-  const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
+  const allKeys = new Set([...Object.keys(oldFlat || {}), ...Object.keys(newFlat || {})]);
   for (const key of allKeys) {
-    if (JSON.stringify(oldData[key]) !== JSON.stringify(newData[key])) {
-      diff.push({
-        field_key: key,
-        old_value: oldData[key] ?? '',
-        new_value: newData[key] ?? ''
-      });
+    if (JSON.stringify(oldFlat?.[key]) !== JSON.stringify(newFlat?.[key])) {
+      diff.push({ field_key: key, old_value: oldFlat?.[key] ?? '', new_value: newFlat?.[key] ?? '' });
     }
   }
   return diff;
+}
+
+// Domain-status columns record_status_events tracks (DB_SCHEMA.md §4.8's CHECK set).
+const STATUS_FIELD_BY_DETAIL_COLUMN = {
+  fir_details: { case_status: 'case_status', is_worked_out: 'is_worked_out' },
+  missing_details: { missing_status: 'missing_status' },
+  uidb_details: { uidb_status: 'uidb_status' },
+  pcr_call_details: { final_call_status: 'final_call_status' },
 };
 
-const parseJsonField = (val) => {
-  if (val === null || val === undefined) return null;
-  if (typeof val === 'string') {
-    try { return JSON.parse(val); } catch (e) { return val; }
+async function detectDetailStatusChanges(oldDetail, newDetailCols, detailTable) {
+  const map = STATUS_FIELD_BY_DETAIL_COLUMN[detailTable];
+  if (!map || !oldDetail) return [];
+  const changes = [];
+  for (const [column, statusField] of Object.entries(map)) {
+    if (!(column in newDetailCols)) continue;
+    const oldValue = oldDetail[column];
+    const newValue = newDetailCols[column];
+    const oldStr = oldValue === null || oldValue === undefined ? null : String(oldValue);
+    const newStr = newValue === null || newValue === undefined ? null : String(newValue);
+    if (oldStr === newStr) continue;
+    changes.push({ statusField, oldValue: oldStr, newValue: newStr });
   }
-  return val;
-};
+  return changes;
+}
 
-export const TYPE_CODES = {
-  CASE: 'CSE', ARREST: 'ARR', PCR_CALL: 'PCR', MISSING: 'MSP', UIDB: 'UDB'
-};
+async function writeStatusEvents(trx, recordId, user, changes, { effectiveDate, comment, propertyId } = {}) {
+  for (const c of changes) {
+    if (c.newValue === null) continue; // clearing a status is not itself a dated event
+    await trx('record_status_events').insert({
+      id: uuidv4(), record_id: recordId, property_id: c.statusField === 'property_status' ? propertyId : null,
+      status_field: c.statusField, old_value: c.oldValue, new_value: c.newValue,
+      effective_date: effectiveDate || toISO(new Date().toISOString()),
+      changed_by: user.id, changed_at: new Date().toISOString(), comment: comment || null,
+    });
+  }
+}
 
-export const generateUID = async (recordType, psId, dateStr, trx = db) => {
-  const ps = await trx('hierarchy_nodes').where({ id: psId }).first();
-  const psCode = ps?.code || 'PS000';
-  const year = String(new Date(dateStr).getFullYear());
-  const typeCode = TYPE_CODES[recordType] || recordType.substring(0, 3).toUpperCase();
-  const countRow = await trx('records')
-    .where({ ps_id: psId, record_type: recordType })
-    .whereRaw('EXTRACT(YEAR FROM record_date::date) = ?', [parseInt(year)])
-    .count('* as count')
-    .first();
-  const seq = String((parseInt(countRow.count, 10) || 0) + 1).padStart(6, '0');
-  return `${typeCode}/${year}/${psCode}/${seq}`;
-};
+// ── read helpers ──────────────────────────────────────────────────────────────────────
 
-const DYNAMIC_LOOKUP_FIELDS = [
-  'act_name',
-  'sections',
-  'ipc_sections',
-  'excise_sections',
-  'arms_sections',
-  'gambling_sections',
-  'other_sections',
-  'local_head',
-  'crime_head',
-  'property_major_category',
-  'property_minor_category',
-  'beat_no'
-];
+async function enrichOffenceLabels(trx, rows) {
+  if (!rows.length) return [];
+  const actIds = [...new Set(rows.map((r) => r.act_id).filter((v) => v != null))];
+  const sectionIds = [...new Set(rows.map((r) => r.section_id).filter(Boolean))];
+  const majorIds = [...new Set(rows.map((r) => r.major_head_id).filter((v) => v != null))];
+  const minorIds = [...new Set(rows.map((r) => r.minor_head_id).filter((v) => v != null))];
+  const [acts, sections, majors, minors] = await Promise.all([
+    actIds.length ? trx('ref.acts').whereIn('act_cd', actIds) : [],
+    sectionIds.length ? trx('ref.sections').whereIn('section_code', sectionIds) : [],
+    majorIds.length ? trx('ref.major_heads').whereIn('major_head_code', majorIds) : [],
+    minorIds.length ? trx('ref.minor_heads').whereIn('minor_head_cd', minorIds) : [],
+  ]);
+  const actById = new Map(acts.map((a) => [a.act_cd, a.act_long]));
+  const sectionById = new Map(sections.map((s) => [s.section_code, s.section]));
+  const majorById = new Map(majors.map((m) => [m.major_head_code, m.major_head]));
+  const minorById = new Map(minors.map((m) => [m.minor_head_cd, m.minor_head]));
+  return rows.map((r) => ({
+    ...r,
+    act_label: r.other_act_name || actById.get(r.act_id) || null,
+    section_label: sectionById.get(r.section_id) || null,
+    major_head_label: majorById.get(r.major_head_id) || null,
+    minor_head_label: minorById.get(r.minor_head_id) || null,
+  }));
+}
 
-const validateSelectFields = async (trx, recordType, data) => {
-  const allFields = await trx('field_registry').where('is_active', true);
-  const selectFields = allFields.filter(f => {
-    if (f.field_type !== 'SELECT') return false;
-    try {
-      const types = typeof f.applicable_record_types === 'string'
-        ? JSON.parse(f.applicable_record_types)
-        : f.applicable_record_types;
-      return Array.isArray(types) && types.map(t => t.toUpperCase()).includes(recordType.toUpperCase());
-    } catch (e) {
-      return false;
+async function enrichDetailLabels(trx, detail) {
+  if (!detail) return detail;
+  if (detail.local_head_id != null) {
+    const row = await trx('ref.local_heads').where({ local_head_cd: detail.local_head_id }).first();
+    detail.local_head_id_label = row?.local_head || null;
+  }
+  if (detail.beat_id) {
+    const row = await trx('ref.beats').where({ beat_cd: detail.beat_id }).first();
+    detail.beat_id_label = row?.beat_name || null;
+  }
+  return detail;
+}
+
+/** Fetch a record's full typed state — spine, detail (+labels), persons (+subtypes),
+ * properties, offences (+labels), and every referenced `locations` row — the shared read
+ * used by both getRecordDetails (display) and updateRecord (diff + upsert baseline). */
+async function fetchRecordFull(trx, id) {
+  const record = await trx('records').where({ id }).first();
+  if (!record) return null;
+
+  const detailTable = mapper.DETAIL_TABLES[record.record_type];
+  const detail = await trx(detailTable).where({ record_id: id }).first();
+  if (detail) {
+    detail.extra = typeof detail.extra === 'string' ? JSON.parse(detail.extra) : (detail.extra || {});
+    await enrichDetailLabels(trx, detail);
+  }
+
+  const personRows = await trx('persons').where({ record_id: id }).orderBy('sort_order', 'asc');
+  for (const p of personRows) {
+    p.extra = typeof p.extra === 'string' ? JSON.parse(p.extra) : (p.extra || {});
+    p.nick_names = typeof p.nick_names === 'string' ? JSON.parse(p.nick_names) : (p.nick_names || []);
+    p.subtypes = {};
+    for (const t of mapper.PERSON_SUBTYPE_TABLES) {
+      const row = await trx(t).where({ person_id: p.id }).first();
+      if (row) p.subtypes[t] = row;
     }
-  });
+  }
 
-  for (const f of selectFields) {
-    // Exempt dynamic database lookup fields from static validation
-    if (DYNAMIC_LOOKUP_FIELDS.includes(f.field_key)) {
-      continue;
+  const propertyRows = await trx('record_properties').where({ record_id: id }).orderBy('sort_order', 'asc');
+  for (const p of propertyRows) p.extra = typeof p.extra === 'string' ? JSON.parse(p.extra) : (p.extra || {});
+
+  const offenceRowsRaw = await trx('record_offences').where({ record_id: id }).orderBy('sort_order', 'asc');
+  const offenceRows = await enrichOffenceLabels(trx, offenceRowsRaw);
+
+  const locationIds = new Set();
+  if (detail) {
+    for (const slotMap of Object.values(mapper.DETAIL_LOCATION_SLOTS)) {
+      const c = slotMap[record.record_type];
+      if (c && detail[c]) locationIds.add(detail[c]);
     }
-
-    const val = data[f.field_key];
-    if (val !== undefined && val !== null && val !== '') {
-      let options = [];
-      try {
-        options = typeof f.options === 'string' ? JSON.parse(f.options) : f.options;
-      } catch (e) {
-        options = [];
+  }
+  for (const p of personRows) {
+    if (p.present_location_id) locationIds.add(p.present_location_id);
+    if (p.perm_location_id) locationIds.add(p.perm_location_id);
+    for (const s of Object.values(p.subtypes)) {
+      for (const col of ['arrest_location_id', 'missing_location_id', 'found_location_id']) {
+        if (s[col]) locationIds.add(s[col]);
       }
-      if (Array.isArray(options) && options.length > 0) {
-        const allowedValues = options.map(o => (o && typeof o === 'object') ? o.value : o);
-        if (Array.isArray(val)) {
-          for (const item of val) {
-            if (!allowedValues.includes(item)) {
-              const err = new Error(`Invalid value '${item}' for field '${f.field_key}'. Allowed values: ${allowedValues.join(', ')}`);
-              err.status = 422;
-              throw err;
-            }
-          }
-        } else {
-          if (!allowedValues.includes(val)) {
-            const err = new Error(`Invalid value '${val}' for field '${f.field_key}'. Allowed values: ${allowedValues.join(', ')}`);
-            err.status = 422;
-            throw err;
-          }
-        }
-      }
     }
   }
-};
+  const locationRows = locationIds.size ? await trx('locations').whereIn('id', [...locationIds]) : [];
+  const locationsById = Object.fromEntries(locationRows.map((l) => [l.id, l]));
 
-const mergeConditionalFields = (data) => {
-  if (!data) return data;
+  return { record, detail, personRows, propertyRows, offenceRows, locationsById };
+}
 
-  // Merge sections
-  const conditionalSectionKeys = ['ipc_sections', 'excise_sections', 'arms_sections', 'gambling_sections', 'other_sections'];
-  for (const key of conditionalSectionKeys) {
-    if (data[key] !== undefined && data[key] !== null && data[key] !== '') {
-      data.sections = data[key];
-      break;
-    }
+// ── requiredness (P2.4 — full validation at submit, drafts save partial) ────────────────
+
+function isFieldVisible(f, flatData) {
+  const sw = f.show_when;
+  if (!sw || !sw.field) return true;
+  const actual = flatData[sw.field];
+  if (sw.operator === 'filled') return actual !== undefined && actual !== null && actual !== '';
+  if (Array.isArray(sw.value)) return sw.value.includes(actual);
+  return actual === sw.value;
+}
+
+async function validateRequiredFields(trx, recordType, flatData) {
+  const registry = await mapper.loadRegistry(trx, recordType);
+  const missing = [];
+  for (const f of registry) {
+    if (f.storage === 'ui_only') continue;
+    if (f.validation_rules?.required !== true) continue;
+    if (!isFieldVisible(f, flatData)) continue;
+    const val = flatData[f.field_key];
+    if (val === undefined || val === null || val === '') missing.push(f.labels?.en || f.field_key);
   }
-
-  // Merge major_head
-  const conditionalMajorHeadKeys = ['ipc_major_head', 'excise_major_head', 'arms_major_head', 'gambling_major_head', 'other_major_head'];
-  for (const key of conditionalMajorHeadKeys) {
-    if (data[key] !== undefined && data[key] !== null && data[key] !== '') {
-      data.major_head = data[key];
-      break;
-    }
+  if (missing.length) {
+    const err = new Error(`Missing required fields before submit: ${missing.join(', ')}`);
+    err.status = 422;
+    throw err;
   }
+}
 
-  // Merge minor_head
-  const conditionalMinorHeadKeys = [
-    'theft_minor_head', 'murder_minor_head', 'hurt_minor_head', 'cheating_minor_head', 'robbery_minor_head',
-    'excise_minor_head', 'arms_minor_head', 'gambling_minor_head', 'other_minor_head'
-  ];
-  for (const key of conditionalMinorHeadKeys) {
-    if (data[key] !== undefined && data[key] !== null && data[key] !== '') {
-      data.minor_head = data[key];
-      break;
-    }
-  }
+// ── list / detail reads ──────────────────────────────────────────────────────────────
 
-  // Handle occurrence_from_date_time extraction for database/report compatibility.
-  // DATETIME fields are submitted as 'DD/MM/YYYY HH:mm'.
-  if (data.occurrence_from_date_time) {
-    const [datePart, timePart] = String(data.occurrence_from_date_time).split(' ');
-    if (datePart) data.occurrence_date = datePart;
-    if (timePart) data.occurrence_time = timePart;
+function buildListSummary(r) {
+  switch (r.record_type) {
+    case 'CASE': return { fir_no: r.fir_no, case_status: r.case_status, local_head: r.case_local_head, is_worked_out: r.is_worked_out, io_name: r.io_name };
+    case 'ARREST': return { fir_no: r.arrest_fir_no, case_status: r.arrest_case_status, local_head: r.arrest_local_head, io_name: r.io_name };
+    case 'PCR_CALL': return { final_call_status: r.final_call_status, call_head: r.call_head, io_name: r.io_name };
+    case 'MISSING': return { missing_status: r.missing_status, fir_no: r.missing_fir_no, io_name: r.io_name };
+    case 'UIDB': return { uidb_status: r.uidb_status, uidb_no: r.uidb_no, local_head: r.uidb_local_head, io_name: r.io_name };
+    default: return {};
   }
+}
 
-  // Construct complainant_name and complainant_address from granular fields for backward compatibility
-  if (data.complainant_first_name) {
-    data.complainant_name = [
-      data.complainant_first_name,
-      data.complainant_middle_name,
-      data.complainant_last_name
-    ].filter(Boolean).join(' ');
-  }
-  if (data.complainant_relation_type && data.complainant_relative_name) {
-    if (['Father', 'Husband'].includes(data.complainant_relation_type)) {
-      data.complainant_father_husband_name = data.complainant_relative_name;
-    }
-  }
-  if (data.complainant_house_no || data.complainant_street || data.complainant_colony || data.complainant_city_town_village) {
-    data.complainant_address = [
-      data.complainant_house_no ? `House No. ${data.complainant_house_no}` : '',
-      data.complainant_street,
-      data.complainant_colony,
-      data.complainant_city_town_village,
-      data.complainant_tehsil_block_mandal,
-      data.complainant_district,
-      data.complainant_state,
-      data.complainant_pincode
-    ].filter(Boolean).join(', ');
-  }
-
-  // Handle auto-sync for permanent address if same toggled
-  if (data.complainant_perm_same === 'Yes' || data.complainant_perm_same === true) {
-    data.complainant_perm_house_no = data.complainant_house_no;
-    data.complainant_perm_street = data.complainant_street;
-    data.complainant_perm_colony = data.complainant_colony;
-    data.complainant_perm_city_town_village = data.complainant_city_town_village;
-    data.complainant_perm_tehsil_block_mandal = data.complainant_tehsil_block_mandal;
-    data.complainant_perm_country = data.complainant_country;
-    data.complainant_perm_state = data.complainant_state;
-    data.complainant_perm_district = data.complainant_district;
-    data.complainant_perm_police_station = data.complainant_police_station;
-    data.complainant_perm_pincode = data.complainant_pincode;
-  }
-
-  return data;
-};
-
-// Services
-export const listRecords = async (recordType, filters, jurisdictionQuery) => {
-  let query = db('records').select(
-    'records.*',
-    'ps.name_en as ps_name',
-    'dist.name_en as district_name',
-    'u.username as creator_name'
-  )
+function withListJoins(query) {
+  return query
     .join('hierarchy_nodes as ps', 'records.ps_id', 'ps.id')
     .join('hierarchy_nodes as dist', 'records.district_id', 'dist.id')
-    .join('users as u', 'records.created_by', 'u.id');
+    .join('users as u', 'records.created_by', 'u.id')
+    .leftJoin('investigating_officers as io', 'records.io_id', 'io.id')
+    .leftJoin('fir_details as fir', 'records.id', 'fir.record_id')
+    .leftJoin('ref.local_heads as lh_fir', 'fir.local_head_id', 'lh_fir.local_head_cd')
+    .leftJoin('arrest_details as arr', 'records.id', 'arr.record_id')
+    .leftJoin('ref.local_heads as lh_arr', 'arr.local_head_id', 'lh_arr.local_head_cd')
+    .leftJoin('pcr_call_details as pcr', 'records.id', 'pcr.record_id')
+    .leftJoin('missing_details as mis', 'records.id', 'mis.record_id')
+    .leftJoin('uidb_details as uidb', 'records.id', 'uidb.record_id')
+    .leftJoin('ref.local_heads as lh_uidb', 'uidb.local_head_id', 'lh_uidb.local_head_cd')
+    .select(
+      'records.*', 'ps.name as ps_name', 'dist.name as district_name', 'u.name as creator_name',
+      'io.name as io_name',
+      'fir.fir_no as fir_no', 'fir.case_status as case_status', 'fir.is_worked_out as is_worked_out',
+      'lh_fir.local_head as case_local_head',
+      'arr.case_status as arrest_case_status', 'arr.fir_no as arrest_fir_no', 'lh_arr.local_head as arrest_local_head',
+      'pcr.final_call_status as final_call_status', 'pcr.call_head as call_head',
+      'mis.missing_status as missing_status', 'mis.fir_no as missing_fir_no',
+      'uidb.uidb_status as uidb_status', 'uidb.uidb_no as uidb_no', 'lh_uidb.local_head as uidb_local_head',
+    );
+}
 
-  // Apply RBAC geographical boundary filters
-  if (jurisdictionQuery.ps_id) {
-    query = query.where('records.ps_id', jurisdictionQuery.ps_id);
-  }
-  if (jurisdictionQuery.district_id) {
-    query = query.where('records.district_id', jurisdictionQuery.district_id);
-  }
-  if (jurisdictionQuery.sub_div_id) {
-    query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id);
-  }
+export const listRecords = async (recordType, filters, jurisdictionQuery) => {
+  let query = withListJoins(db('records'));
 
-  // Scoped filters
-  if (recordType && recordType !== 'ALL') {
-    query = query.where('records.record_type', recordType);
-  }
+  if (jurisdictionQuery.ps_id) query = query.where('records.ps_id', jurisdictionQuery.ps_id);
+  if (jurisdictionQuery.district_id) query = query.where('records.district_id', jurisdictionQuery.district_id);
+  if (jurisdictionQuery.sub_div_id) query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id);
+
+  if (recordType && recordType !== 'ALL') query = query.where('records.record_type', recordType);
 
   if (filters.status) {
-    if (Array.isArray(filters.status)) {
-      query = query.whereIn('records.current_status', filters.status);
-    } else {
-      query = query.where('records.current_status', filters.status);
-    }
+    if (Array.isArray(filters.status)) query = query.whereIn('records.current_status', filters.status);
+    else query = query.where('records.current_status', filters.status);
   }
-
-  if (filters.dateFrom) {
-    query = query.where('records.record_date', '>=', filters.dateFrom);
-  }
-
-  if (filters.dateTo) {
-    query = query.where('records.record_date', '<=', filters.dateTo);
-  }
+  if (filters.dateFrom) query = query.where('records.record_date', '>=', filters.dateFrom);
+  if (filters.dateTo) query = query.where('records.record_date', '<=', filters.dateTo);
 
   if (filters.localHead) {
-    const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
-    if (isPostgres) {
-      query = query.whereRaw("(records.data->>'local_head' = ? OR records.data->>'crime_head' = ?)", [filters.localHead, filters.localHead]);
-    } else {
-      query = query.whereRaw("(json_extract(records.data, '$.local_head') = ? OR json_extract(records.data, '$.crime_head') = ?)", [filters.localHead, filters.localHead]);
-    }
+    query = query.where((b) => {
+      b.whereRaw('lh_fir.local_head ILIKE ?', [filters.localHead])
+        .orWhereRaw('lh_arr.local_head ILIKE ?', [filters.localHead])
+        .orWhereRaw('lh_uidb.local_head ILIKE ?', [filters.localHead]);
+    });
   }
 
   if (filters.search) {
-    const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
-    if (isPostgres) {
-      query = query.whereRaw("records.data::text ILIKE ?", [`%${filters.search}%`]);
-    } else {
-      query = query.where('records.data', 'LIKE', `%${filters.search}%`);
-    }
+    const term = `%${filters.search}%`;
+    query = query.where((b) => {
+      b.whereRaw('fir.fir_no ILIKE ?', [term])
+        .orWhereRaw('arr.fir_no ILIKE ?', [term])
+        .orWhereRaw('uidb.uidb_no ILIKE ?', [term])
+        .orWhereExists(function () {
+          this.select('*').from('persons').whereRaw('persons.record_id = records.id').andWhere('persons.name', 'ILIKE', term);
+        });
+    });
   }
 
-  // Filter by linked case UUID (e.g. show only arrests linked to a specific case)
   if (filters.linked_case_id) {
     query = query.whereExists(function () {
       this.select('*').from('record_links')
@@ -268,1039 +470,439 @@ export const listRecords = async (recordType, filters, jurisdictionQuery) => {
     });
   }
 
-  // Filter by FIR number of the linked case
   if (filters.linked_fir_no) {
-    const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
     query = query.whereExists(function () {
-      const sub = this.select('*').from('record_links')
+      this.select('*').from('record_links')
         .whereRaw('record_links.target_record_id = records.id')
-        .join('records as case_rec', 'case_rec.id', 'record_links.source_record_id');
-      if (isPostgres) {
-        sub.whereRaw("case_rec.data->>'fir_no' = ?", [filters.linked_fir_no]);
-      } else {
-        sub.whereRaw("json_extract(case_rec.data, '$.fir_no') = ?", [filters.linked_fir_no]);
-      }
+        .join('fir_details as case_fir', 'case_fir.record_id', 'record_links.source_record_id')
+        .where('case_fir.fir_no', filters.linked_fir_no);
     });
   }
 
   const rawRecords = await query.orderBy('records.created_at', 'desc');
-
-  return rawRecords.map(r => ({
-    ...r,
-    data: parseJsonField(r.data)
-  }));
+  return rawRecords.map((r) => ({ ...r, data: buildListSummary(r) }));
 };
 
 export const getRecordDetails = async (id) => {
-  const record = await db('records')
-    .select('records.*', 'ps.name_en as ps_name', 'dist.name_en as district_name')
-    .join('hierarchy_nodes as ps', 'records.ps_id', 'ps.id')
-    .join('hierarchy_nodes as dist', 'records.district_id', 'dist.id')
-    .where('records.id', id)
-    .first();
+  return db.transaction(async (trx) => {
+    const full = await fetchRecordFull(trx, id);
+    if (!full) return null;
+    const { record, detail, personRows, propertyRows, offenceRows, locationsById } = full;
 
-  if (!record) return null;
+    const [ps, dist] = await Promise.all([
+      trx('hierarchy_nodes').where({ id: record.ps_id }).first(),
+      trx('hierarchy_nodes').where({ id: record.district_id }).first(),
+    ]);
+    record.ps_name = ps?.name || null;
+    record.district_name = dist?.name || null;
 
-  record.data = parseJsonField(record.data);
-
-  // Fetch revisions
-  const revisions = await db('record_revisions')
-    .select('record_revisions.*', 'u.username', 'u.name_en as user_fullname')
-    .join('users as u', 'record_revisions.changed_by', 'u.id')
-    .where('record_revisions.record_id', id)
-    .orderBy('record_revisions.revision_number', 'asc');
-
-  revisions.forEach(rev => {
-    rev.field_changes = parseJsonField(rev.field_changes);
-  });
-
-  // Fetch workflow transitions
-  const transitions = await db('workflow_transitions')
-    .select('workflow_transitions.*', 'u.username')
-    .join('users as u', 'workflow_transitions.performed_by', 'u.id')
-    .where('workflow_transitions.record_id', id)
-    .orderBy('workflow_transitions.performed_at', 'asc');
-
-  transitions.forEach(tr => {
-    tr.target_fields = parseJsonField(tr.target_fields);
-  });
-
-  // Fetch Custom Field Values (EAV)
-  const customValues = await db('custom_field_values')
-    .select('custom_field_values.*', 'd.field_label', 'd.field_key', 'd.field_type')
-    .join('custom_field_definitions as d', 'custom_field_values.field_definition_id', 'd.id')
-    .where('custom_field_values.record_id', id);
-
-  let linkedRecords = [];
-  try {
-    linkedRecords = await getLinksForRecord(id);
-  } catch (_e) {
-    linkedRecords = [];
-  }
-
-  // Fetch persons and properties (graceful — tables may not exist in older deploys)
-  let persons = [];
-  let properties = [];
-  try {
-    persons = await db('record_persons')
-      .where({ record_id: id })
-      .orderBy('sort_order', 'asc');
-    persons.forEach(p => { p.data = parseJsonField(p.data) || {}; });
-
-    properties = await db('record_properties')
-      .where({ record_id: id })
-      .orderBy('sort_order', 'asc');
-    properties = properties.map(p => {
-      let extra = {};
-      try {
-        extra = typeof p.extra_data === 'string' ? JSON.parse(p.extra_data) : (p.extra_data || {});
-      } catch (e) {}
-      const cleanProp = { ...p, ...extra };
-      delete cleanProp.extra_data;
-      return cleanProp;
+    const registry = await mapper.loadRegistry(trx, record.record_type);
+    const { data, persons, properties } = await mapper.recomposeRecord(trx, registry, record.record_type, {
+      spineRow: record, detailRow: detail, personRows, propertyRows, offenceRows, locationsById,
     });
-  } catch (_e) {
-    // Tables not yet migrated — degrade gracefully
-  }
+    record.data = data;
 
-  return {
-    record,
-    revisions,
-    transitions,
-    customFields: customValues,
-    linkedRecords,
-    persons,
-    properties,
-  };
+    const revisions = await trx('record_revisions')
+      .select('record_revisions.*', 'u.username', 'u.name as user_fullname')
+      .join('users as u', 'record_revisions.changed_by', 'u.id')
+      .where('record_revisions.record_id', id)
+      .orderBy('record_revisions.revision_number', 'asc');
+    revisions.forEach((rev) => { rev.field_changes = typeof rev.field_changes === 'string' ? JSON.parse(rev.field_changes) : rev.field_changes; });
+
+    const transitions = await trx('workflow_transitions')
+      .select('workflow_transitions.*', 'u.username')
+      .join('users as u', 'workflow_transitions.performed_by', 'u.id')
+      .where('workflow_transitions.record_id', id)
+      .orderBy('workflow_transitions.performed_at', 'asc');
+    transitions.forEach((tr) => { tr.target_fields = typeof tr.target_fields === 'string' ? JSON.parse(tr.target_fields) : tr.target_fields; });
+
+    const statusEvents = await trx('record_status_events')
+      .select('record_status_events.*', 'u.username')
+      .join('users as u', 'record_status_events.changed_by', 'u.id')
+      .where('record_status_events.record_id', id)
+      .orderBy('record_status_events.effective_date', 'desc');
+
+    let linkedRecords = [];
+    try { linkedRecords = await getLinksForRecord(id); } catch { linkedRecords = []; }
+
+    return { record, revisions, transitions, status_events: statusEvents, linkedRecords, persons, properties, offences: offenceRows };
+  });
 };
 
-const extractPersonSearchCols = (personType, data) => {
-  const prefix = personType.toLowerCase();
-  return {
-    first_name: data[`${prefix}_first_name`] || null,
-    last_name: data[`${prefix}_last_name`] || null,
-    mobile: data[`${prefix}_mobile`] || null,
-    city: data[`${prefix}_city_town_village`] || null,
-    district: data[`${prefix}_district`] || null,
-  };
-};
+// ── write path ────────────────────────────────────────────────────────────────────────
 
-const MAPPED_PROP_KEYS = new Set([
-  'property_major_category', 'property_minor_category',
-  'property_details', 'property_stolen_recovered', 'person_index',
-]);
-
-// personId: for ARREST, the record_persons.id of the arrested person this property item
-// belongs to (resolved by the caller from the payload's person_index) — null for
-// record-level property (CASE) or older ARREST payloads with no per-person linkage.
-const buildPropertyRow = (prop, i, recordId, hydratedData, personId = null) => {
-  const extraData = Object.fromEntries(
-    Object.entries(prop).filter(([k, v]) =>
-      !MAPPED_PROP_KEYS.has(k) && v !== undefined && v !== null && v !== ''
-    )
-  );
-  return {
-    id: uuidv4(),
-    record_id: recordId,
-    person_id: personId,
-    uid: hydratedData.uid || null,
-    fir_no: hydratedData.fir_no || null,
-    major_category: prop.property_major_category || null,
-    minor_category: prop.property_minor_category || null,
-    status: prop.property_stolen_recovered || null,
-    details: prop.property_details || null,
-    extra_data: Object.keys(extraData).length > 0 ? JSON.stringify(extraData) : null,
-    sort_order: i,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-};
-
-export const createRecord = async (user, recordType, recordDate, data, ipAddress, { persons = [], properties = [] } = {}) => {
-  const mergedData = mergeConditionalFields({ ...data });
-  if (recordType === 'ARREST' && Array.isArray(persons)) {
-    const arrestedPerson = persons.find(p => p.person_type === 'ARRESTED');
-    if (arrestedPerson && arrestedPerson.data) {
-      if (arrestedPerson.data.status) mergedData.status = arrestedPerson.data.status;
-      if (arrestedPerson.data.other_status_reason) mergedData.other_status_reason = arrestedPerson.data.other_status_reason;
-      if (arrestedPerson.data.recovery) mergedData.recovery = arrestedPerson.data.recovery;
-    }
-  }
+export const createRecord = async (user, recordType, recordDate, data, ipAddress, { persons = [], properties = [], offences = [] } = {}) => {
   const dbRecord = await db.transaction(async (trx) => {
-    await validateSelectFields(trx, recordType, mergedData);
+    const registry = await mapper.loadRegistry(trx, recordType);
+    const split = await mapper.splitPayload(trx, registry, recordType, { data, persons, properties, offences });
+
     const id = uuidv4();
-    const uid = await generateUID(recordType, user.ps_id, recordDate, trx);
+    const detailTable = mapper.DETAIL_TABLES[recordType];
 
-    // Save records row
-    const recordPayload = {
-      id,
-      record_type: recordType,
-      ps_id: user.ps_id,
-      district_id: user.district_id,
-      sub_div_id: user.sub_div_id,
-      data: JSON.stringify(mergedData),
-      current_status: 'DRAFT',
-      current_level: 'PS',
-      record_date: recordDate,
-      created_by: user.id,
-      updated_by: user.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    const detailLocationIds = {};
+    for (const [slot, cols] of Object.entries(split.detailLocationFields)) {
+      detailLocationIds[slot] = await insertLocation(trx, cols);
+    }
+    for (const [slot, locId] of Object.entries(detailLocationIds)) {
+      const col = mapper.DETAIL_LOCATION_SLOTS[slot]?.[recordType];
+      if (col) split.detail[col] = locId;
+    }
 
-    // Inject generated UID into records data JSON block for search consistency
-    const hydratedData = { ...mergedData, uid };
-    recordPayload.data = JSON.stringify(hydratedData);
-
-    await trx('records').insert(recordPayload);
-
-    // Write initial revision (Pillar 2)
-    const revisionPayload = {
-      id: uuidv4(),
-      record_id: id,
-      revision_number: 1,
-      changed_by: user.id,
-      changed_at: new Date().toISOString(),
-      level: 'PS',
-      change_type: 'CREATE',
-      field_changes: JSON.stringify(calculateDiff({}, hydratedData)),
-      ip_address: ipAddress
-    };
-
-    const prev_hash = null;
-    const row_hash = computeRowHash({
-      record_id: id,
-      revision_number: 1,
-      changed_by: user.id,
-      changed_at: revisionPayload.changed_at,
-      field_changes: revisionPayload.field_changes
-    }, prev_hash);
-
-    revisionPayload.prev_hash = prev_hash;
-    revisionPayload.row_hash = row_hash;
-
-    await trx('record_revisions').insert(revisionPayload);
-
-    // Write audit log entry
-    await trx('audit_logs').insert({
-      id: uuidv4(),
-      table_name: 'records',
-      record_id: id,
-      action: 'CREATE',
-      changed_by_id: user.id,
-      changed_by_role: user.role,
-      changed_at: new Date().toISOString(),
-      new_value: JSON.stringify(hydratedData),
-      ip_address: ipAddress
+    await trx('records').insert({
+      id, record_type: recordType, ps_id: user.ps_id, district_id: user.district_id, sub_div_id: user.sub_div_id || null,
+      io_id: split.spine.io_id || null, current_status: 'DRAFT', current_level: 'PS', record_date: recordDate,
+      created_by: user.id, updated_by: user.id,
     });
 
-    // Persist persons
-    let personRows = [];
-    if (persons.length > 0) {
-      personRows = persons.map((p, i) => ({
-        id: uuidv4(),
-        record_id: id,
-        person_type: p.person_type,
-        ...extractPersonSearchCols(p.person_type, p.data || {}),
-        data: JSON.stringify(p.data || {}),
-        sort_order: i,
-        created_at: new Date().toISOString(),
-      }));
-      await trx('record_persons').insert(personRows);
+    await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, user.ps_id), ...split.detail, extra: JSON.stringify(split.detailExtra) });
+
+    const personIdBySourceIndex = {};
+    for (const entry of split.personEntries) {
+      const personId = await insertPersonEntry(trx, id, entry);
+      if (entry.sourceKind === 'repeater') personIdBySourceIndex[entry.sourceIndex] = personId;
     }
 
-    // Persist properties (person_index, when present, links a property item to a
-    // specific person — e.g. one of several arrested persons on this ARREST record)
-    if (properties.length > 0) {
-      const propertyRows = properties.map((prop, i) => {
-        const personId = Number.isInteger(prop.person_index) ? (personRows[prop.person_index]?.id || null) : null;
-        return buildPropertyRow(prop, i, id, hydratedData, personId);
+    for (const prop of split.propertyEntries) {
+      const personId = prop.personIndex != null ? (personIdBySourceIndex[prop.personIndex] ?? null) : null;
+      await trx('record_properties').insert({
+        id: uuidv4(), record_id: id, person_id: personId, ...prop.columns,
+        extra: JSON.stringify(prop.extra || {}), sort_order: 0,
       });
-      await trx('record_properties').insert(propertyRows);
     }
 
-    return { id, uid, data: hydratedData };
+    await replaceOffenceRows(trx, id, split.offenceRows);
+
+    await writeRevision(trx, {
+      recordId: id, changeType: 'CREATE', level: 'PS', changedBy: user.id, ipAddress,
+      fieldChanges: calculateDiff({}, data),
+    });
+    await writeAuditLog(trx, { recordId: id, action: 'CREATE', user, newValue: data, ipAddress });
+
+    return { id };
   });
 
-  // Publish created event
   await eventBus.publish('record.created', {
-    record_id: dbRecord.id,
-    record_type: recordType,
-    changed_by: user.id,
-    data: dbRecord.data
+    record_id: dbRecord.id, record_type: recordType, changed_by: user.id, ps_id: user.ps_id,
+    counts: { persons: (persons || []).length, properties: (properties || []).length, offences: (offences || []).length },
   });
 
   return dbRecord;
 };
 
-export const updateRecord = async (id, user, data, ipAddress, { persons, properties } = {}) => {
-  const dbRecord = await db.transaction(async (trx) => {
-    const record = await trx('records').where({ id }).first();
-    if (!record) throw new Error('Record not found');
+const EDITABLE_STATUSES = ['DRAFT', 'SENT_BACK'];
 
-    const editableStatuses = ['DRAFT', 'SENT_BACK', 'SENT_BACK_HC'];
-    if (!editableStatuses.includes(record.current_status)) {
+export const updateRecord = async (id, user, data, ipAddress, { persons, properties, offences } = {}) => {
+  const dbRecord = await db.transaction(async (trx) => {
+    const full = await fetchRecordFull(trx, id);
+    if (!full) throw new Error('Record not found');
+    const { record, detail: oldDetail, personRows: oldPersonRows, propertyRows: oldPropertyRows } = full;
+
+    if (!EDITABLE_STATUSES.includes(record.current_status)) {
       throw new Error('This record is locked. Only DRAFT or sent-back records can be edited.');
     }
 
-    const oldData = parseJsonField(record.data);
-    const hydratedData = mergeConditionalFields({ ...oldData, ...data });
-    if (record.record_type === 'ARREST' && Array.isArray(persons)) {
-      const arrestedPerson = persons.find(p => p.person_type === 'ARRESTED');
-      if (arrestedPerson && arrestedPerson.data) {
-        if (arrestedPerson.data.status) hydratedData.status = arrestedPerson.data.status;
-        if (arrestedPerson.data.other_status_reason) hydratedData.other_status_reason = arrestedPerson.data.other_status_reason;
-        if (arrestedPerson.data.recovery) hydratedData.recovery = arrestedPerson.data.recovery;
-      }
+    const recordType = record.record_type;
+    const detailTable = mapper.DETAIL_TABLES[recordType];
+    const registry = await mapper.loadRegistry(trx, recordType);
+
+    const { data: oldFlatData } = await mapper.recomposeRecord(trx, registry, recordType, {
+      spineRow: record, detailRow: oldDetail, personRows: oldPersonRows, propertyRows: oldPropertyRows,
+      offenceRows: full.offenceRows, locationsById: full.locationsById,
+    });
+
+    const split = await mapper.splitPayload(trx, registry, recordType, {
+      data, persons: persons ?? [], properties: properties ?? [], offences: offences ?? [],
+    });
+
+    const statusChanges = await detectDetailStatusChanges(oldDetail, split.detail, detailTable);
+
+    const detailLocationIds = {};
+    for (const [slot, cols] of Object.entries(split.detailLocationFields)) {
+      const col = mapper.DETAIL_LOCATION_SLOTS[slot]?.[recordType];
+      const existingLocId = col && oldDetail ? oldDetail[col] : null;
+      detailLocationIds[slot] = await upsertLocation(trx, existingLocId, cols);
+    }
+    for (const [slot, locId] of Object.entries(detailLocationIds)) {
+      const col = mapper.DETAIL_LOCATION_SLOTS[slot]?.[recordType];
+      if (col) split.detail[col] = locId;
     }
 
-    await validateSelectFields(trx, record.record_type, hydratedData);
+    if (oldDetail) await trx(detailTable).where({ record_id: id }).update({ ...split.detail, extra: JSON.stringify(split.detailExtra), updated_at: trx.fn.now() });
+    else await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, record.ps_id), ...split.detail, extra: JSON.stringify(split.detailExtra) });
 
-    const diff = calculateDiff(oldData, hydratedData);
-    if (diff.length === 0) return record; // No modifications made
+    const personIdBySourceIndex = persons !== undefined
+      ? await upsertPersons(trx, id, split.personEntries, oldPersonRows)
+      : {};
 
-    // Update record
-    await trx('records').where({ id }).update({
-      data: JSON.stringify(hydratedData),
-      updated_by: user.id,
-      updated_at: new Date().toISOString()
+    let propertyStatusChanges = [];
+    if (properties !== undefined) {
+      const result = await upsertProperties(trx, id, split.propertyEntries, oldPropertyRows, personIdBySourceIndex);
+      propertyStatusChanges = result.statusChanges;
+    }
+
+    if (offences !== undefined || (data.act_name !== undefined || data.sections !== undefined)) {
+      await replaceOffenceRows(trx, id, split.offenceRows);
+    }
+
+    await trx('records').where({ id }).update({ updated_by: user.id, updated_at: trx.fn.now() });
+
+    const { data: newFlatData } = await mapper.recomposeRecord(trx, registry, recordType, {
+      spineRow: { ...record, io_id: split.spine.io_id ?? record.io_id }, detailRow: { ...oldDetail, ...split.detail },
+      personRows: oldPersonRows, propertyRows: oldPropertyRows, offenceRows: full.offenceRows, locationsById: full.locationsById,
     });
+    const diff = calculateDiff(oldFlatData, { ...newFlatData, ...data });
+    if (diff.length === 0 && statusChanges.length === 0 && propertyStatusChanges.length === 0) return { id, data: oldFlatData };
 
-    // Fetch revision counter
-    const revCountRow = await trx('record_revisions')
-      .where({ record_id: id })
-      .count('* as count')
-      .first();
-    const nextRevNo = (parseInt(revCountRow.count, 10) || 0) + 1;
-
-    const prev_hash = await getPreviousHash(id, trx);
-    const changed_at = new Date().toISOString();
-    const field_changes = JSON.stringify(diff);
-
-    const row_hash = computeRowHash({
-      record_id: id,
-      revision_number: nextRevNo,
-      changed_by: user.id,
-      changed_at,
-      field_changes
-    }, prev_hash);
-
-    // Write revision
-    await trx('record_revisions').insert({
-      id: uuidv4(),
-      record_id: id,
-      revision_number: nextRevNo,
-      changed_by: user.id,
-      changed_at,
-      level: record.current_level,
-      change_type: 'UPDATE',
-      field_changes,
-      ip_address: ipAddress,
-      prev_hash,
-      row_hash
+    await writeRevision(trx, {
+      recordId: id, changeType: 'UPDATE', level: record.current_level, changedBy: user.id, ipAddress, fieldChanges: diff,
     });
-
-    // Write standard audit log
     for (const change of diff) {
-      await trx('audit_logs').insert({
-        id: uuidv4(),
-        table_name: 'records',
-        record_id: id,
-        action: 'UPDATE',
-        changed_by_id: user.id,
-        changed_by_role: user.role,
-        changed_at: new Date().toISOString(),
-        field_name: change.field_key,
-        old_value: String(change.old_value),
-        new_value: String(change.new_value),
-        ip_address: ipAddress
+      await writeAuditLog(trx, { recordId: id, action: 'UPDATE', user, fieldName: change.field_key, oldValue: change.old_value, newValue: change.new_value, ipAddress });
+    }
+
+    const effectiveDate = split.detail.worked_out_date || toISO(new Date().toISOString());
+    await writeStatusEvents(trx, id, user, statusChanges, { effectiveDate });
+    for (const c of propertyStatusChanges) {
+      await writeStatusEvents(trx, id, user, [{ statusField: 'property_status', oldValue: c.oldValue, newValue: c.newValue }], {
+        effectiveDate: toISO(new Date().toISOString()), propertyId: c.propertyId,
       });
     }
 
-    // Replace persons if provided
-    let personRows = [];
-    if (Array.isArray(persons)) {
-      await trx('record_persons').where({ record_id: id }).delete();
-      if (persons.length > 0) {
-        personRows = persons.map((p, i) => ({
-          id: uuidv4(),
-          record_id: id,
-          person_type: p.person_type,
-          ...extractPersonSearchCols(p.person_type, p.data || {}),
-          data: JSON.stringify(p.data || {}),
-          sort_order: i,
-          created_at: new Date().toISOString(),
-        }));
-        await trx('record_persons').insert(personRows);
-      }
-    }
-
-    // Replace properties if provided (person_index links a property item to a specific
-    // person — e.g. one of several arrested persons on this ARREST record)
-    if (Array.isArray(properties)) {
-      await trx('record_properties').where({ record_id: id }).delete();
-      if (properties.length > 0) {
-        const propertyRows = properties.map((prop, i) => {
-          const personId = Number.isInteger(prop.person_index) ? (personRows[prop.person_index]?.id || null) : null;
-          return buildPropertyRow(prop, i, id, hydratedData, personId);
-        });
-        await trx('record_properties').insert(propertyRows);
-      }
-    }
-
-    return { id, data: hydratedData };
+    return { id, data: { ...newFlatData, ...data } };
   });
 
-  // Publish updated event
-  await eventBus.publish('record.updated', {
-    record_id: id,
-    changed_by: user.id,
-    data: dbRecord.data
-  });
-
+  await eventBus.publish('record.updated', { record_id: id, changed_by: user.id });
   return dbRecord;
 };
 
-export const submitRecord = async (id, user) => {
+export const submitRecord = async (id, user, ipAddress) => {
+  const record = await db('records').where({ id }).first();
+  if (!record) throw new Error('Record not found');
+
   await db.transaction(async (trx) => {
-    const record = await trx('records').where({ id }).first();
-    if (!record) throw new Error('Record not found');
-
-    const submittableStatuses = ['DRAFT', 'SENT_BACK', 'SENT_BACK_HC'];
-    if (!submittableStatuses.includes(record.current_status)) {
-      throw new Error('Record is already submitted');
-    }
-
-    // Advance status to PENDING_SHO
-    await trx('records').where({ id }).update({
-      current_status: 'PENDING_SHO',
-      updated_by: user.id,
-      updated_at: new Date().toISOString()
+    const full = await fetchRecordFull(trx, id);
+    const registry = await mapper.loadRegistry(trx, record.record_type);
+    const { data: flatData } = await mapper.recomposeRecord(trx, registry, record.record_type, {
+      spineRow: record, detailRow: full.detail, personRows: full.personRows, propertyRows: full.propertyRows,
+      offenceRows: full.offenceRows, locationsById: full.locationsById,
     });
-
-    // Write workflow transition log
-    await trx('workflow_transitions').insert({
-      id: uuidv4(),
-      record_id: id,
-      from_status: record.current_status,
-      to_status: 'PENDING_SHO',
-      from_level: record.current_level,
-      to_level: record.current_level,
-      action: 'SUBMIT',
-      performed_by: user.id,
-      performed_at: new Date().toISOString()
-    });
-
-    // Write audit log
-    await trx('audit_logs').insert({
-      id: uuidv4(),
-      table_name: 'records',
-      record_id: id,
-      action: 'SUBMIT',
-      changed_by_id: user.id,
-      changed_by_role: user.role,
-      changed_at: new Date().toISOString()
-    });
+    await validateRequiredFields(trx, record.record_type, flatData);
   });
 
-  // Publish submit event
-  await eventBus.publish('record.submitted', {
-    record_id: id,
-    performed_by: user.id
-  });
+  await transitionRecord(id, user, 'submit', null, null, ipAddress);
 };
 
 export const transitionRecord = async (id, user, action, comment, targetFields, ipAddress) => {
   await db.transaction(async (trx) => {
-    const record = await trx('records').where({ id }).first();
+    // SELECT ... FOR UPDATE serializes revision_number/prev_hash assignment for this record —
+    // the single write path (ARCHITECTURE.md §4.2) now owns every change_type's revision write.
+    const record = await trx('records').where({ id }).forUpdate().first();
     if (!record) throw new Error('Record not found');
+    if (record.is_frozen) throw new Error('Record is frozen pending audit review and cannot be transitioned.');
 
     const fromStatus = record.current_status;
-
-    // Config-driven state machine — workflow.engine is the ONE rule reader
-    const rule = await workflowEngine.getRule(trx, {
-      fromStatus,
-      action,
-      recordType: record.record_type,
-    });
+    const rule = await workflowEngine.getRule(trx, { fromStatus, action, recordType: record.record_type });
     workflowEngine.assertAllowed(rule, user);
     workflowEngine.assertComment(rule, comment);
-    const { toStatus: targetStatus, toLevel: targetLevel } =
-      await workflowEngine.resolveTarget(trx, rule, record);
+    const { toStatus: targetStatus, toLevel: targetLevel } = await workflowEngine.resolveTarget(trx, rule, record);
 
-    // Update status
     await trx('records').where({ id }).update({
-      current_status: targetStatus,
-      current_level: targetLevel,
-      updated_by: user.id,
-      updated_at: new Date().toISOString()
+      current_status: targetStatus, current_level: targetLevel, updated_by: user.id, updated_at: trx.fn.now(),
     });
 
-    // Write workflow transition log
     await trx('workflow_transitions').insert({
-      id: uuidv4(),
-      record_id: id,
-      from_status: fromStatus,
-      to_status: targetStatus,
-      from_level: record.current_level,
-      to_level: targetLevel,
-      action: action.toUpperCase(),
-      performed_by: user.id,
-      performed_at: new Date().toISOString(),
-      comment,
-      target_fields: JSON.stringify(targetFields || [])
+      id: uuidv4(), record_id: id, from_status: fromStatus, to_status: targetStatus,
+      from_level: record.current_level, to_level: targetLevel, action: action.toUpperCase(),
+      performed_by: user.id, performed_at: new Date().toISOString(), comment,
+      target_fields: JSON.stringify(targetFields || []),
     });
 
-    // Write standard audit log
-    await trx('audit_logs').insert({
-      id: uuidv4(),
-      table_name: 'records',
-      record_id: id,
-      action: action.toUpperCase(),
-      changed_by_id: user.id,
-      changed_by_role: user.role,
-      changed_at: new Date().toISOString(),
-      reason: comment,
-      ip_address: ipAddress
+    await writeRevision(trx, {
+      recordId: id, changeType: 'STATUS_CHANGE', level: targetLevel, changedBy: user.id, ipAddress,
+      comment, fieldChanges: [{ field_key: 'current_status', old_value: fromStatus, new_value: targetStatus }],
     });
+
+    await writeAuditLog(trx, { recordId: id, action: action.toUpperCase(), user, reason: comment, ipAddress });
   });
 
-  // Publish event
-  const eventName = `record.${action.toLowerCase() === 'approve' ? 'approved' : action.toLowerCase() === 'send_back' ? 'sent_back' : 'status_changed'}`;
-  await eventBus.publish(eventName, {
-    record_id: id,
-    performed_by: user.id,
-    comment
-  });
+  // Named events for the three notifyHandler.js cares about (CLAUDE.md §8's "Active
+  // events" list); everything else (compile, seal, jcp/scp-approve which are still
+  // action='approve' and correctly hit the 'approved' branch, transfer_*, amendment_*)
+  // falls through to the generic 'record.status_changed', matching the event catalog.
+  const EVENT_NAME_BY_ACTION = { submit: 'submitted', approve: 'approved', send_back: 'sent_back' };
+  const eventName = `record.${EVENT_NAME_BY_ACTION[action.toLowerCase()] || 'status_changed'}`;
+  await eventBus.publish(eventName, { record_id: id, performed_by: user.id, comment });
 };
 
+/**
+ * District-level head override (item 4) — rewritten against `record_offences` (the old
+ * implementation touched the dead `records.data` blob). Updates the record's single-head
+ * classification: the `is_primary` `record_offences` row's major/minor head, and/or the
+ * detail table's `local_head_id` (the PS-level classification, a separate fact — §2.7/§2.2).
+ */
 export const overrideCaseHead = async (id, user, newHead, reason, ipAddress) => {
   if (!newHead) throw new Error('New crime head classification is required');
-  if (!reason || reason.trim().length < 10) {
-    throw new Error('Justification reason must be at least 10 characters long');
-  }
+  if (!reason || reason.trim().length < 10) throw new Error('Justification reason must be at least 10 characters long');
 
   const result = await db.transaction(async (trx) => {
-    const record = await trx('records').where({ id }).first();
+    const record = await trx('records').where({ id }).forUpdate().first();
     if (!record) throw new Error('Record not found');
+    const detailTable = mapper.DETAIL_TABLES[record.record_type];
 
-    const oldData = parseJsonField(record.data);
-    let key = 'crime_head';
-    if ('case_head' in oldData) {
-      key = 'case_head';
-    } else if ('local_head' in oldData) {
-      key = 'local_head';
-    } else if (record.record_type === 'CASE' || record.record_type === 'CASES') {
-      key = 'local_head';
+    const newMajorHeadId = await resolveMajorHead(trx, newHead);
+    const newLocalHeadId = await resolveLocalHead(trx, newHead);
+
+    let oldValue = null;
+    if (newMajorHeadId) {
+      const primaryRow = await trx('record_offences').where({ record_id: id, is_primary: true }).first();
+      if (primaryRow) {
+        oldValue = primaryRow.major_head_id;
+        await trx('record_offences').where({ id: primaryRow.id }).update({ major_head_id: newMajorHeadId, updated_at: trx.fn.now() });
+      } else {
+        await trx('record_offences').insert({
+          id: uuidv4(), record_id: id, major_head_id: newMajorHeadId, other_act_name: '(head override)', is_primary: true, sort_order: 0,
+        });
+      }
+    } else if (newLocalHeadId) {
+      const detailRow = await trx(detailTable).where({ record_id: id }).first();
+      oldValue = detailRow?.local_head_id ?? null;
+      await trx(detailTable).where({ record_id: id }).update({ local_head_id: newLocalHeadId, updated_at: trx.fn.now() });
+    } else {
+      throw new Error(`"${newHead}" did not match any known major head or local head classification`);
     }
-    const oldHead = oldData[key];
 
-    const hydratedData = { ...oldData, [key]: newHead };
-
-    // Update data block
-    await trx('records').where({ id }).update({
-      data: JSON.stringify(hydratedData),
-      updated_by: user.id,
-      updated_at: new Date().toISOString()
+    await writeRevision(trx, {
+      recordId: id, changeType: 'HEAD_OVERRIDE', level: record.current_level, changedBy: user.id, ipAddress, reason,
+      fieldChanges: [{ field_key: 'crime_head', old_value: oldValue ?? '', new_value: newHead }],
     });
+    await writeAuditLog(trx, { recordId: id, action: 'OVERRIDE', user, fieldName: 'crime_head', oldValue, newValue: newHead, reason, ipAddress });
 
-    // Fetch revision count
-    const revCountRow = await trx('record_revisions')
-      .where({ record_id: id })
-      .count('* as count')
-      .first();
-    const nextRevNo = (parseInt(revCountRow.count, 10) || 0) + 1;
-
-    const prev_hash = await getPreviousHash(id, trx);
-    const changed_at = new Date().toISOString();
-    const field_changes = JSON.stringify([{ field_key: key, old_value: oldHead || '', new_value: newHead }]);
-
-    const row_hash = computeRowHash({
-      record_id: id,
-      revision_number: nextRevNo,
-      changed_by: user.id,
-      changed_at,
-      field_changes
-    }, prev_hash);
-
-    // Write revision (tamper-chained event)
-    await trx('record_revisions').insert({
-      id: uuidv4(),
-      record_id: id,
-      revision_number: nextRevNo,
-      changed_by: user.id,
-      changed_at,
-      level: record.current_level,
-      change_type: 'HEAD_OVERRIDE',
-      field_changes,
-      reason,
-      ip_address: ipAddress,
-      prev_hash,
-      row_hash
-    });
-
-    // Write audit logs
-    await trx('audit_logs').insert({
-      id: uuidv4(),
-      table_name: 'records',
-      record_id: id,
-      action: 'OVERRIDE',
-      changed_by_id: user.id,
-      changed_by_role: user.role,
-      changed_at: new Date().toISOString(),
-      field_name: key,
-      old_value: oldHead || '',
-      new_value: newHead,
-      reason,
-      ip_address: ipAddress
-    });
-
-    return { id, data: hydratedData };
+    return { id, newHead };
   });
 
-  // Publish override event
-  await eventBus.publish('record.overridden', {
-    record_id: id,
-    performed_by: user.id,
-    reason,
-    data: result.data
+  await eventBus.publish('record.overridden', { record_id: id, performed_by: user.id, reason });
+  return result;
+};
+
+/**
+ * Domain status update (item 9) — the officer-facing "update case/missing/uidb/PCR status,
+ * or flip worked-out" action, distinct from workflow transitions. Writes the current-value
+ * column AND a dated `record_status_events` row in one transaction (ruling 22).
+ */
+export const updateDomainStatus = async (id, user, { statusField, newValue, effectiveDate, comment, propertyId } = {}, ipAddress) => {
+  const VALID_FIELDS = ['case_status', 'missing_status', 'uidb_status', 'final_call_status', 'property_status', 'is_worked_out'];
+  if (!VALID_FIELDS.includes(statusField)) throw Object.assign(new Error(`Unknown status_field "${statusField}"`), { status: 422 });
+  if (!newValue) throw Object.assign(new Error('new_value is required'), { status: 422 });
+  const effDate = toISO(effectiveDate);
+  if (!effDate) throw Object.assign(new Error('A valid effective_date is required'), { status: 422 });
+  if (effDate > toISO(new Date().toISOString())) throw Object.assign(new Error('effective_date cannot be in the future'), { status: 422 });
+  if (statusField === 'property_status' && !propertyId) throw Object.assign(new Error('property_id is required for property_status updates'), { status: 422 });
+
+  const result = await db.transaction(async (trx) => {
+    const record = await trx('records').where({ id }).forUpdate().first();
+    if (!record) throw new Error('Record not found');
+    const detailTable = mapper.DETAIL_TABLES[record.record_type];
+
+    let oldValue = null;
+    if (statusField === 'property_status') {
+      const prop = await trx('record_properties').where({ id: propertyId, record_id: id }).first();
+      if (!prop) throw Object.assign(new Error('Property not found on this record'), { status: 404 });
+      oldValue = prop.status;
+      await trx('record_properties').where({ id: propertyId }).update({ status: newValue, updated_at: trx.fn.now() });
+    } else {
+      const column = { case_status: 'case_status', missing_status: 'missing_status', uidb_status: 'uidb_status', final_call_status: 'final_call_status', is_worked_out: 'is_worked_out' }[statusField];
+      const detailRow = await trx(detailTable).where({ record_id: id }).first();
+      if (!detailRow || !(column in detailRow)) throw Object.assign(new Error(`"${statusField}" does not apply to record type ${record.record_type}`), { status: 422 });
+      oldValue = detailRow[column];
+      const coerced = statusField === 'is_worked_out' ? (newValue === 'true' || newValue === true) : newValue;
+      const updatePayload = { [column]: coerced, updated_at: trx.fn.now() };
+      if (statusField === 'is_worked_out' && coerced === true) updatePayload.worked_out_date = effDate;
+      await trx(detailTable).where({ record_id: id }).update(updatePayload);
+    }
+
+    await trx('record_status_events').insert({
+      id: uuidv4(), record_id: id, property_id: statusField === 'property_status' ? propertyId : null,
+      status_field: statusField, old_value: oldValue === null ? null : String(oldValue), new_value: String(newValue),
+      effective_date: effDate, changed_by: user.id, changed_at: new Date().toISOString(), comment: comment || null,
+    });
+
+    await writeRevision(trx, {
+      recordId: id, changeType: 'STATUS_CHANGE', level: record.current_level, changedBy: user.id, ipAddress, comment,
+      fieldChanges: [{ field_key: statusField, old_value: oldValue ?? '', new_value: newValue }],
+    });
+    await writeAuditLog(trx, { recordId: id, action: 'STATUS_UPDATE', user, fieldName: statusField, oldValue, newValue, reason: comment, ipAddress });
+
+    return { id, statusField, newValue, effectiveDate: effDate };
   });
 
+  await eventBus.publish('record.updated', { record_id: id, changed_by: user.id });
   return result;
 };
 
 export const getRecordRevisions = async (record_id) => {
-  return await db('record_revisions')
-    .where({ record_id })
-    .orderBy('revision_number', 'asc');
+  return db('record_revisions').where({ record_id }).orderBy('revision_number', 'asc');
 };
 
 export const checkDuplicateRecord = async (recordType, firNumber, accusedName, date) => {
-  if (firNumber && firNumber.trim().length > 0) {
-    const client = db.client.config.client;
-    let query = db('records').where('record_type', recordType.toUpperCase());
-
-    if (client === 'sqlite3') {
-      query = query.andWhere('data', 'like', `%fir_no%${firNumber}%`);
-    } else {
-      query = query.whereRaw("data->>'fir_no' = ?", [firNumber]);
-    }
-
-    const existing = await query.first();
-    if (existing) {
-      return { isDuplicate: true, existingId: existing.id };
-    }
+  const detailTable = mapper.DETAIL_TABLES[recordType.toUpperCase()];
+  if (firNumber && firNumber.trim().length > 0 && detailTable) {
+    const existing = await db('records')
+      .join(`${detailTable} as d`, 'records.id', 'd.record_id')
+      .where('records.record_type', recordType.toUpperCase())
+      .andWhere('d.fir_no', firNumber)
+      .select('records.id')
+      .first();
+    if (existing) return { isDuplicate: true, existingId: existing.id };
   }
 
   if (accusedName && date) {
-    const client = db.client.config.client;
-    // record_date is a native DATE column — always compare in ISO form,
-    // regardless of whether the caller passed dd/mm/yyyy or yyyy-mm-dd.
-    let query = db('records')
-      .where('record_type', recordType.toUpperCase())
-      .andWhere('record_date', toISO(date) || date);
-
-    if (client === 'sqlite3') {
-      query = query.andWhere('data', 'like', `%accused_name%${accusedName}%`);
-    } else {
-      query = query.whereRaw("data->>'accused_name' = ?", [accusedName]);
-    }
-
-    const existing = await query.first();
-    if (existing) {
-      return { isDuplicate: true, existingId: existing.id };
-    }
+    const existing = await db('records')
+      .join('persons', 'persons.record_id', 'records.id')
+      .where('records.record_type', recordType.toUpperCase())
+      .andWhere('records.record_date', toISO(date) || date)
+      .andWhere('persons.role', 'ACCUSED')
+      .andWhere('persons.name', 'ILIKE', accusedName)
+      .select('records.id')
+      .first();
+    if (existing) return { isDuplicate: true, existingId: existing.id };
   }
 
   return { isDuplicate: false };
 };
 
-export const addAttachment = async (recordId, file, user) => {
-  const result = await db.transaction(async (trx) => {
-    const record = await trx('records').where({ id: recordId }).first();
-    if (!record) throw new Error('Record not found');
-
-    if (record.current_status !== 'DRAFT') {
-      throw new Error('Attachments can only be added to DRAFT records');
-    }
-
-    const oldData = parseJsonField(record.data);
-    const attachments = oldData.attachments || [];
-
-    const { uploadToS3 } = await import('../../utils/s3.js');
-    const attachmentInfo = await uploadToS3(file);
-    attachments.push(attachmentInfo);
-
-    const hydratedData = { ...oldData, attachments };
-
-    await trx('records').where({ id: recordId }).update({
-      data: JSON.stringify(hydratedData),
-      updated_by: user.id,
-      updated_at: new Date().toISOString()
-    });
-
-    return attachmentInfo;
-  });
-
-  return result;
-};
-
-export const listAttachments = async (recordId) => {
-  const record = await db('records').where({ id: recordId }).first();
-  if (!record) throw new Error('Record not found');
-
-  const oldData = parseJsonField(record.data);
-  return oldData.attachments || [];
-};
-
-export const removeAttachment = async (recordId, attachmentId, user) => {
-  await db.transaction(async (trx) => {
-    const record = await trx('records').where({ id: recordId }).first();
-    if (!record) throw new Error('Record not found');
-
-    if (record.current_status !== 'DRAFT') {
-      throw new Error('Attachments can only be deleted from DRAFT records');
-    }
-
-    const oldData = parseJsonField(record.data);
-    const attachments = oldData.attachments || [];
-
-    const index = attachments.findIndex(a => a.id === attachmentId);
-    if (index === -1) throw new Error('Attachment not found');
-
-    const attachment = attachments[index];
-    attachments.splice(index, 1);
-
-    const hydratedData = { ...oldData, attachments };
-
-    await trx('records').where({ id: recordId }).update({
-      data: JSON.stringify(hydratedData),
-      updated_by: user.id,
-      updated_at: new Date().toISOString()
-    });
-
-    const { deleteFromS3 } = await import('../../utils/s3.js');
-    await deleteFromS3(attachment.url);
-  });
-};
-
-const DB_COLUMNS = ['record_type', 'ps_id', 'district_id', 'sub_div_id', 'current_status', 'current_level', 'record_date', 'created_by', 'is_legacy', 'source_system', 'imported_at', 'imported_by', 'legacy_ref', 'created_at', 'updated_at'];
-
-// Operators that only ever apply to date fields — used to decide whether a
-// JSON field's dd/mm/yyyy text needs to be parsed into a comparable date
-// before running range comparisons against it.
-const DATE_ONLY_OPS = new Set(['BETWEEN', 'BEFORE', 'AFTER', 'LAST_N_DAYS', 'OLDER_THAN_N_DAYS', 'THIS_WEEK', 'THIS_MONTH', 'THIS_YEAR']);
-// Of those, only these carry an externally-supplied date value that might
-// arrive as dd/mm/yyyy and needs converting to ISO before comparison.
-const DATE_VALUE_OPS = new Set(['BETWEEN', 'BEFORE', 'AFTER']);
-
-const toISOMaybe = (val) => (Array.isArray(val) ? val.map((v) => toISO(v) || v) : (toISO(val) || val));
-
-const getJsonFieldExpression = (field) => {
-  const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
-  if (isPostgres) {
-    return `CAST(records.data AS jsonb)->>'${field}'`;
-  } else {
-    return `json_extract(records.data, '$.${field}')`;
-  }
-};
-
-// records.data stores date fields as literal dd/mm/yyyy text. Range/relative
-// -date operators need a real comparable date, not a lexicographic string
-// compare, so parse the extracted text before comparing.
-const getJsonDateFieldExpression = (field) => {
-  const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
-  if (isPostgres) {
-    return `to_date(NULLIF(CAST(records.data AS jsonb)->>'${field}', ''), 'DD/MM/YYYY')`;
-  }
-  const extract = `json_extract(records.data, '$.${field}')`;
-  return `(substr(${extract}, 7, 4) || '-' || substr(${extract}, 4, 2) || '-' || substr(${extract}, 1, 2))`;
-};
-
-const applyBasicCondition = (builder, columnExpr, op, value) => {
-  switch (op) {
-    case 'EQ':
-      builder.where(columnExpr, '=', value);
-      break;
-    case 'NOT_EQ':
-      builder.where(columnExpr, '!=', value);
-      break;
-    case 'GT':
-      builder.where(columnExpr, '>', value);
-      break;
-    case 'GTE':
-      builder.where(columnExpr, '>=', value);
-      break;
-    case 'LT':
-      builder.where(columnExpr, '<', value);
-      break;
-    case 'LTE':
-      builder.where(columnExpr, '<=', value);
-      break;
-    case 'CONTAINS':
-      builder.where(columnExpr, 'LIKE', `%${value}%`);
-      break;
-    case 'STARTS_WITH':
-      builder.where(columnExpr, 'LIKE', `${value}%`);
-      break;
-    case 'ENDS_WITH':
-      builder.where(columnExpr, 'LIKE', `%${value}`);
-      break;
-    case 'IS_EMPTY':
-      builder.whereNull(columnExpr).orWhere(columnExpr, '=', '');
-      break;
-    case 'IS_NOT_EMPTY':
-      builder.whereNotNull(columnExpr).andWhere(columnExpr, '!=', '');
-      break;
-    case 'IN':
-      builder.whereIn(columnExpr, Array.isArray(value) ? value : [value]);
-      break;
-    case 'NOT_IN':
-      builder.whereNotIn(columnExpr, Array.isArray(value) ? value : [value]);
-      break;
-    case 'BETWEEN':
-      if (Array.isArray(value) && value.length === 2) {
-        builder.whereBetween(columnExpr, value);
-      }
-      break;
-    case 'BEFORE':
-      builder.where(columnExpr, '<', value);
-      break;
-    case 'AFTER':
-      builder.where(columnExpr, '>', value);
-      break;
-    case 'LAST_N_DAYS': {
-      const days = parseInt(value, 10) || 0;
-      const dateLimit = new Date();
-      dateLimit.setDate(dateLimit.getDate() - days);
-      builder.where(columnExpr, '>=', dateLimit.toISOString().split('T')[0]);
-      break;
-    }
-    case 'OLDER_THAN_N_DAYS': {
-      const days = parseInt(value, 10) || 0;
-      const dateLimit = new Date();
-      dateLimit.setDate(dateLimit.getDate() - days);
-      builder.where(columnExpr, '<', dateLimit.toISOString().split('T')[0]);
-      break;
-    }
-    case 'THIS_WEEK': {
-      const now = new Date();
-      const first = now.getDate() - now.getDay();
-      const last = first + 6;
-      const firstday = new Date(new Date().setDate(first)).toISOString().split('T')[0];
-      const lastday = new Date(new Date().setDate(last)).toISOString().split('T')[0];
-      builder.whereBetween(columnExpr, [firstday, lastday]);
-      break;
-    }
-    case 'THIS_MONTH': {
-      const now = new Date();
-      const firstday = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const lastday = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-      builder.whereBetween(columnExpr, [firstday, lastday]);
-      break;
-    }
-    case 'THIS_YEAR': {
-      const now = new Date();
-      const firstday = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
-      const lastday = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
-      builder.whereBetween(columnExpr, [firstday, lastday]);
-      break;
-    }
-    case 'IS_TRUE':
-      builder.where(columnExpr, '=', true).orWhere(columnExpr, '=', 1).orWhere(columnExpr, '=', 'true');
-      break;
-    case 'IS_FALSE':
-      builder.where(columnExpr, '=', false).orWhere(columnExpr, '=', 0).orWhere(columnExpr, '=', 'false');
-      break;
-    case 'HAS_ATTACHMENT': {
-      // attachments are in record's data JSON array
-      const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
-      if (isPostgres) {
-        builder.whereRaw("records.data->'attachments' IS NOT NULL AND jsonb_array_length(records.data->'attachments') > 0");
-      } else {
-        builder.whereRaw("json_extract(records.data, '$.attachments') IS NOT NULL AND json_extract(records.data, '$.attachments') != '[]' AND json_extract(records.data, '$.attachments') != ''");
-      }
-      break;
-    }
-    case 'NO_ATTACHMENT': {
-      const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
-      if (isPostgres) {
-        builder.whereRaw("records.data->'attachments' IS NULL OR jsonb_array_length(records.data->'attachments') = 0");
-      } else {
-        builder.whereRaw("json_extract(records.data, '$.attachments') IS NULL OR json_extract(records.data, '$.attachments') = '[]' OR json_extract(records.data, '$.attachments') = ''");
-      }
-      break;
-    }
-    default:
-      builder.where(columnExpr, '=', value);
-  }
-};
-
-const VIRTUAL_FIELD_RESOLVERS = {
-  _status: (builder, operator, value) => {
-    applyBasicCondition(builder, 'records.current_status', operator, value);
-  },
-  _is_legacy: (builder, operator, value) => {
-    const boolVal = value === 'true' || value === true || value === 1 || value === '1';
-    builder.where('records.is_legacy', boolVal ? 1 : 0);
-  },
-  _record_date: (builder, operator, value) => {
-    const v = DATE_VALUE_OPS.has(operator) ? toISOMaybe(value) : value;
-    applyBasicCondition(builder, 'records.record_date', operator, v);
-  },
-  _created_at: (builder, operator, value) => {
-    applyBasicCondition(builder, 'records.created_at', operator, value);
-  },
-  _ps_id: (builder, operator, value) => {
-    applyBasicCondition(builder, 'records.ps_id', operator, value);
-  },
-  _district_id: (builder, operator, value) => {
-    applyBasicCondition(builder, 'records.district_id', operator, value);
-  },
-  _sla_breached: (builder, operator, value) => {
-    const subquery = db('records')
-      .select('records.id')
-      .join('workflow_transitions_config as wt', 'wt.from_status', 'records.current_status')
-      .whereNotNull('wt.sla_hours');
-
-    const isPostgres = db.client.config.client === 'postgresql' || db.client.config.client === 'pg';
-    if (isPostgres) {
-      subquery.whereRaw("records.updated_at + (wt.sla_hours || ' hours')::INTERVAL < NOW()");
-    } else {
-      subquery.whereRaw("datetime(records.updated_at, '+' || wt.sla_hours || ' hours') < datetime('now')");
-    }
-
-    const isTrue = value === 'true' || value === true || operator === 'IS_TRUE';
-    if (isTrue) {
-      builder.whereIn('records.id', subquery);
-    } else {
-      builder.whereNotIn('records.id', subquery);
-    }
-  }
-};
-
-const applyCondition = (builder, field, operator, value) => {
-  const op = operator.toUpperCase();
-  const isDateOp = DATE_ONLY_OPS.has(op);
-  const v = isDateOp && DATE_VALUE_OPS.has(op) ? toISOMaybe(value) : value;
-
-  if (field.startsWith('_')) {
-    const resolver = VIRTUAL_FIELD_RESOLVERS[field];
-    if (resolver) {
-      resolver(builder, op, value);
-    } else {
-      const realField = field.substring(1);
-      if (DB_COLUMNS.includes(realField)) {
-        applyBasicCondition(builder, `records.${realField}`, op, realField === 'record_date' ? v : value);
-      } else {
-        const expr = isDateOp ? getJsonDateFieldExpression(realField) : getJsonFieldExpression(realField);
-        applyBasicCondition(builder, db.raw(expr), op, v);
-      }
-    }
-  } else if (DB_COLUMNS.includes(field)) {
-    applyBasicCondition(builder, `records.${field}`, op, field === 'record_date' ? v : value);
-  } else {
-    const expr = isDateOp ? getJsonDateFieldExpression(field) : getJsonFieldExpression(field);
-    applyBasicCondition(builder, db.raw(expr), op, v);
-  }
-};
-
-export const buildFilterQuery = (builder, spec) => {
-  if (!spec) return;
-  const { logic, conditions } = spec;
-
-  if (!logic || !Array.isArray(conditions)) {
-    return;
-  }
-
-  const isOr = logic.toUpperCase() === 'OR';
-
-  builder.where(function () {
-    const innerBuilder = this;
-    conditions.forEach((cond, index) => {
-      const applyFunc = (isOr && index > 0) ? 'orWhere' : 'where';
-
-      if (cond.logic && cond.conditions) {
-        innerBuilder[applyFunc](function () {
-          buildFilterQuery(this, cond);
-        });
-      } else {
-        const { field, operator, value } = cond;
-        innerBuilder[applyFunc](function () {
-          applyCondition(this, field, operator, value);
-        });
-      }
-    });
-  });
-};
-
+/** Ad-hoc filter-spec search (used by the /records/search endpoint). Only spine-level
+ * (typed, non-repeater) fields are supported today — person/property-scoped filters need
+ * the same registry-driven resolution the mapper does and are explicitly out of scope for
+ * this integration (see docs/new-db-integration/02-records-write-path.md deferrals). */
 export const searchRecordsWithSpec = async (recordType, filterSpec, jurisdictionQuery = {}) => {
-  let query = db('records')
-    .select('records.*', 'ps.name_en as ps_name', 'dist.name_en as district_name')
-    .join('hierarchy_nodes as ps', 'records.ps_id', 'ps.id')
-    .join('hierarchy_nodes as dist', 'records.district_id', 'dist.id');
+  let query = withListJoins(db('records'));
+  if (jurisdictionQuery.ps_id) query = query.where('records.ps_id', jurisdictionQuery.ps_id);
+  if (jurisdictionQuery.district_id) query = query.where('records.district_id', jurisdictionQuery.district_id);
+  if (jurisdictionQuery.sub_div_id) query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id);
+  if (recordType && recordType !== 'ALL') query = query.where('records.record_type', recordType);
 
-  if (jurisdictionQuery.ps_id) {
-    query = query.where('records.ps_id', jurisdictionQuery.ps_id);
-  }
-  if (jurisdictionQuery.district_id) {
-    query = query.where('records.district_id', jurisdictionQuery.district_id);
-  }
-  if (jurisdictionQuery.sub_div_id) {
-    query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id);
-  }
-
-  if (recordType) {
-    query = query.where('records.record_type', recordType);
-  }
-
-  if (filterSpec && filterSpec.conditions && filterSpec.conditions.length > 0) {
-    query = query.where(function () {
-      buildFilterQuery(this, filterSpec);
-    });
+  const conditions = filterSpec?.conditions || [];
+  for (const cond of conditions) {
+    if (cond.field === 'current_status') query = query.where('records.current_status', cond.value);
+    else if (cond.field === 'record_date') query = query.where('records.record_date', cond.operator || '=', cond.value);
+    else {
+      const err = new Error(`Filter field "${cond.field}" is not supported yet — only current_status/record_date filters are typed-schema-ready in this integration.`);
+      err.status = 400;
+      throw err;
+    }
   }
 
   const rawRecords = await query.orderBy('records.created_at', 'desc');
-
-  return rawRecords.map(r => ({
-    ...r,
-    data: parseJsonField(r.data)
-  }));
+  return rawRecords.map((r) => ({ ...r, data: buildListSummary(r) }));
 };
 
 export const deleteRecord = async (id, user) => {
   await db.transaction(async (trx) => {
     const record = await trx('records').where({ id }).first();
-    if (!record) {
-      const err = new Error('Record not found');
-      err.status = 404;
-      throw err;
-    }
-
-    if (record.current_status !== 'DRAFT') {
-      const err = new Error('Only DRAFT records can be deleted');
-      err.status = 400;
-      throw err;
-    }
-
-    // Delete records row (cascade deletes associated tables automatically via foreign keys)
-    await trx('records').where({ id }).delete();
-
-    // Write audit log entry
-    await trx('audit_logs').insert({
-      id: uuidv4(),
-      table_name: 'records',
-      record_id: id,
-      action: 'DELETE',
-      changed_by_id: user.id,
-      changed_by_role: user.role,
-      changed_at: new Date().toISOString()
-    });
+    if (!record) { const err = new Error('Record not found'); err.status = 404; throw err; }
+    if (record.current_status !== 'DRAFT') { const err = new Error('Only DRAFT records can be deleted'); err.status = 400; throw err; }
+    await trx('records').where({ id }).delete(); // cascades detail/persons/properties/offences
+    await writeAuditLog(trx, { recordId: id, action: 'DELETE', user });
   });
-
-  // Publish deleted event
-  await eventBus.publish('record.deleted', {
-    record_id: id,
-    performed_by: user.id
-  });
+  await eventBus.publish('record.deleted', { record_id: id, performed_by: user.id });
 };
