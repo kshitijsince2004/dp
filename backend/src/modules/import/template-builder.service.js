@@ -20,7 +20,8 @@ import {
   INDIRECT_CASCADE_FIELDS,
   NR_PREFIX,
 } from './import-fields.config.js';
-import { autoIncludedRegistryFields } from './registry-sync.util.js';
+import { autoIncludedRegistryFields, normalizeRegistryRow } from './registry-sync.util.js';
+import { DISTRICTS_BY_STATE, ALL_INDIA_DISTRICTS } from '../../config/geoData.js';
 import * as fieldsService from '../fields/fields.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from '../fields/classificationSources.config.js';
 import DataValidationsXform from 'exceljs/lib/xlsx/xform/sheet/data-validations-xform.js';
@@ -351,7 +352,7 @@ async function buildLiveLookups(recordType) {
       allActs.push({ act_cd: null, act_long: name });
     }
   }
-  const dbSections = await db('excel_sections')
+  const dbSections = await db('ref.sections')
     .select('act_sec_cd', 'section')
     .distinct()
     .orderBy('section', 'asc');
@@ -405,15 +406,15 @@ async function buildLiveLookups(recordType) {
   // Districts and Police Stations (local hierarchy — used as fallback / all-districts list)
   const districts = await db('hierarchy_nodes')
     .where({ node_type: 'DISTRICT', is_active: true })
-    .select('id as district_id', 'name_en as district_name')
-    .orderBy('name_en', 'asc');
+    .select('id as district_id', 'name as district_name')
+    .orderBy('name', 'asc');
   const subDivs = await db('hierarchy_nodes')
-    .where({ node_type: 'SUB_DIVISION', is_active: true })
+    .where({ node_type: 'SUB_DIV', is_active: true })
     .select('id as subdiv_id', 'parent_id as district_id');
   const psRows = await db('hierarchy_nodes')
     .where({ node_type: 'PS', is_active: true })
-    .select('name_en as ps_name', 'parent_id')
-    .orderBy('name_en', 'asc');
+    .select('name as ps_name', 'parent_id')
+    .orderBy('name', 'asc');
   const districtOpts = districts.map(d => ({ value: d.district_name, label: d.district_name }));
   const psOpts = psRows.map(p => ({ value: p.ps_name, label: p.ps_name }));
 
@@ -434,12 +435,14 @@ async function buildLiveLookups(recordType) {
     psByDistrict[districtName].push({ value: p.ps_name, label: p.ps_name });
   }
   for (const list of Object.values(psByDistrict)) list.sort((a, b) => a.label.localeCompare(b.label));
-  // State-wise district data — drives the state→district INDIRECT cascade in the template.
-  // Fetched from state_districts table (seeded from "State Wise District Data.xlsx").
-  const sdRows = await db('state_districts')
-    .where({ is_active: true })
-    .select('state_name', 'district_name')
-    .orderBy(['state_name', 'district_name']);
+  // State→district cascade data (WP11): resurrected from the reviewed LGD snapshot
+  // (config/ref-data/india_states_districts.json via geoData.js) — the old `state_districts`
+  // table this cascade was originally built on died in the DB restructure; the snapshot is
+  // its replacement. Shape matches what every consumer below already expects
+  // ({state_name, district_name} pairs).
+  const sdRows = Object.entries(DISTRICTS_BY_STATE).flatMap(([state_name, districts]) =>
+    districts.map((district_name) => ({ state_name, district_name }))
+  );
 
   // Build a case-insensitive normalization map from DB state name → STATE_OPTS display name.
   // This ensures the VLOOKUP key in the lookup table exactly matches what the user selects
@@ -510,10 +513,10 @@ async function buildLiveLookups(recordType) {
   // per (act, section): sections sharing a label across acts no longer bleed heads into
   // each other. Pairs without a specific mapping fall back to the act-level union of
   // heads, then to the full major-head list, so the dropdown is never empty.
-  const mappingRows = await db('excel_major_minor_mapping as m')
-    .join('excel_major_heads as mh', 'm.major_head_code', 'mh.major_head_code')
+  const mappingRows = await db('ref.major_minor_mapping as m')
+    .join('ref.major_heads as mh', 'm.major_head_code', 'mh.major_head_code')
     .select('m.act_cd', 'm.section_code', 'mh.major_head');
-  const allSectionRows = await db('excel_sections')
+  const allSectionRows = await db('ref.sections')
     .select('section_code', 'act_sec_cd', 'section')
     .whereNotNull('act_sec_cd')
     .whereNotNull('section');
@@ -629,7 +632,7 @@ async function buildLiveLookups(recordType) {
     actLevelMajorHeads.set(act, [...set].sort((a, b) => a.localeCompare(b)));
   }
   const allMajorHeadLabels = [...new Set(
-    (await db('excel_major_heads').whereNotNull('major_head').orderBy('major_head', 'asc'))
+    (await db('ref.major_heads').whereNotNull('major_head').orderBy('major_head', 'asc'))
       .map((r) => r.major_head)
   )];
 
@@ -921,6 +924,10 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
   // 7. Write one named range per state's districts (for the state→district INDIRECT cascade).
   // Each state gets OPT_STATE_DIST_<SLUG> mapping to its sorted district list.
   // A lookup table STATE_TO_DISTRICT_NR maps state_name → named range name (VLOOKUP target).
+  // OPT_INDIA_DISTRICTS (the full-India superset) is the cascade's IFERROR fallback for
+  // ADDRESS district cells — state empty or 'Other UT/State' still gets a usable list
+  // (WP11; the police-district OPT_DISTRICT list is wrong for a person's home address).
+  writeList('__india_districts', ALL_INDIA_DISTRICTS.map((d) => ({ value: d, label: d })), 'OPT_INDIA_DISTRICTS');
   const stateToDistNRRows = [];
   const districtsByState = liveLookups._districtsByState || {};
   for (const stateName of (liveLookups._stateNames || [])) {
@@ -1065,6 +1072,166 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
 }
 
 
+// ── WP7 (Integration 3) — invisible-only Excel-level hardening (D4/P3.1 sign-off: enforcement
+// changes are approved as long as no visible column/order/label/dropdown-option moves) ────────
+//
+// Deliberately implemented as a POST-PROCESSING PASS over the fully-built workbook rather than
+// threaded into each of the ~14 dataValidation call sites above. Those sites carry real,
+// deliberate nuance — e.g. every cascade/INDIRECT-dependent list (sections, major/minor head,
+// district-by-state, PS-by-district, property-minor-category) explicitly sets
+// `showErrorMessage: false` so a not-yet-resolved dependent cell isn't flagged as invalid while
+// an officer is still filling the row left-to-right — and this file's own header comment
+// documents how fragile the merge-optimiser is around per-cell dataValidation object identity.
+// Operating on the finished workbook sidesteps all of that: it only ever (a) adds a brand-new
+// dataValidation/numFmt to a cell that has NONE today (DATE/TIME/NUMBER/text-length fields never
+// receive one anywhere above — only SELECT/RADIO columns do), or (b) patches
+// `showErrorMessage`/`errorTitle`/`error` onto an EXISTING list validation only where the
+// creating site left `showErrorMessage` unset entirely (`undefined`) — every cascade-dependent
+// site sets it explicitly (`true` or `false`), so that is a reliable, non-guessy signal for
+// "this dropdown's validity doesn't depend on a sibling cell."
+//
+// Deliberately NOT touched here (see docs/new-db-integration/03-import.md WP7 entry for the
+// full reasoning): `allowBlank` on any EXISTING list validation is left exactly as today
+// (`true`, universally) — changing it to `!required` per the plan's original wording risks
+// blocking legitimate "tab past a not-yet-fillable required cell mid-row" workflows on
+// cascade-dependent columns (district/PS, act/section/major/minor), and unlike showErrorMessage
+// this genuinely needs a real-Excel check this headless environment cannot perform (same
+// caution as G5 below). `allowBlank: !required` IS applied to the brand-new validations this
+// pass adds (DATE/NUMBER-bounds/textLength), since those have no prior established behavior to
+// disrupt. Sheet protection (`worksheet.protect()`) is skipped entirely for the same reason —
+// G5's explicit escape hatch.
+export function buildFieldMetaMap(fieldsList, allFields) {
+  const map = new Map();
+  for (const f of fieldsList || []) {
+    if (!f || !f.field_key || map.has(f.field_key)) continue;
+    const registryMatch = f.field_type ? f : (allFields || []).find((af) => af.field_key === f.field_key);
+    map.set(f.field_key, {
+      field_type: registryMatch ? registryMatch.field_type : null,
+      required: f.required === true || (registryMatch && registryMatch.required === true),
+    });
+  }
+  return map;
+}
+
+const FIR_LIKE_KEYS = new Set(['fir_no', 'linked_fir_dd_no', 'gd_no', 'rc_no']);
+const isMobileKey = (k) => k === 'mobile' || k.endsWith('_mobile');
+const isPincodeKey = (k) => k === 'pincode' || k.endsWith('_pincode');
+const isAgeKey = (k) => k === 'age' || k.endsWith('_age');
+const VALUE_LIKE_KEYS = new Set(['property_value', 'prop_other_value', 'estimated_value']);
+
+export function applyFieldLevelHardening(workbook, fieldMetaByKey) {
+  workbook.worksheets.forEach((ws) => {
+    if (ws.name === '_Lookups') return;
+    const row1 = ws.getRow(1);
+    const colKeys = {};
+    row1.eachCell({ includeEmpty: true }, (cell, c) => {
+      if (cell.value) colKeys[c] = String(cell.value).trim();
+    });
+
+    for (const [colStr, key] of Object.entries(colKeys)) {
+      const col = Number(colStr);
+      const meta = fieldMetaByKey.get(key);
+      if (!meta) continue;
+      const { field_type, required } = meta;
+
+      // Column-level numFmt — safe regardless of any per-cell dataValidation state.
+      if (field_type === 'DATE') {
+        ws.getColumn(col).numFmt = 'dd-mm-yyyy';
+      } else if (field_type === 'TIME') {
+        ws.getColumn(col).numFmt = 'hh:mm';
+      } else if (FIR_LIKE_KEYS.has(key) || isPincodeKey(key)) {
+        // Forces text storage — stops Excel silently mangling "123/2025" into a date serial
+        // (the headline bug this hardening pass exists to fix) or eating a pincode's leading
+        // zero the moment the cell is typed into.
+        ws.getColumn(col).numFmt = '@';
+      }
+
+      for (let r = 5; r <= 1000; r++) {
+        const cell = ws.getCell(r, col);
+        const dv = cell.dataValidation;
+
+        if (!dv) {
+          if (field_type === 'DATE') {
+            cell.dataValidation = {
+              type: 'date', operator: 'greaterThan', allowBlank: !required,
+              formulae: ['1900-01-01'],
+              showErrorMessage: true, errorStyle: 'stop',
+              errorTitle: 'Invalid date', error: 'Enter a valid date (dd-mm-yyyy) after 01-01-1900.',
+            };
+          } else if (isAgeKey(key) && field_type === 'NUMBER') {
+            cell.dataValidation = {
+              type: 'whole', operator: 'between', allowBlank: !required,
+              formulae: [0, 120],
+              showErrorMessage: true, errorStyle: 'stop',
+              errorTitle: 'Invalid age', error: 'Age must be a whole number between 0 and 120.',
+            };
+          } else if (VALUE_LIKE_KEYS.has(key) && field_type === 'NUMBER') {
+            cell.dataValidation = {
+              type: 'decimal', operator: 'greaterThanOrEqual', allowBlank: !required,
+              formulae: [0],
+              showErrorMessage: true, errorStyle: 'stop',
+              errorTitle: 'Invalid value', error: 'Value must be zero or greater.',
+            };
+          } else if (isMobileKey(key)) {
+            cell.dataValidation = {
+              type: 'textLength', operator: 'equal', allowBlank: !required,
+              formulae: [10],
+              showErrorMessage: true, errorStyle: 'stop',
+              errorTitle: 'Invalid mobile number', error: 'Mobile number must be exactly 10 digits.',
+            };
+          } else if (isPincodeKey(key)) {
+            cell.dataValidation = {
+              type: 'textLength', operator: 'equal', allowBlank: !required,
+              formulae: [6],
+              showErrorMessage: true, errorStyle: 'stop',
+              errorTitle: 'Invalid pincode', error: 'Pincode must be exactly 6 digits.',
+            };
+          }
+        } else if (dv.type === 'list' && dv.showErrorMessage === undefined) {
+          dv.showErrorMessage = true;
+          dv.errorStyle = 'stop';
+          dv.errorTitle = 'Invalid value';
+          dv.error = 'Please choose a value from the dropdown list.';
+        }
+      }
+    }
+  });
+}
+
+// WP0 found (deferred to WP7): the checked-in base workbooks leave 1+ fully-empty ghost
+// columns at some sheets' tails (e.g. ARREST/Person Arrested Detail cols 49-55 right after
+// scheme_of_arrest) — pre-existing, not something the column-management loop above creates,
+// and confirmed present on unmodified base files too. Trims only columns at the TRUE tail
+// (repeatedly re-checking the CURRENT last column) whose Row-1 field_key is empty — this can
+// never touch an internal/populated column, and can never invalidate an earlier cascade
+// formula (those only ever reference real, non-trailing columns, which this never shifts:
+// deleteColumnAt only shifts columns AT/AFTER the deleted index, and the deleted index is
+// always the sheet's current last column). Only the base-workbook path (CASE/ARREST) needs
+// this — `addSheetToWorkbook`'s from-scratch sheets are built directly from a real fieldsList,
+// so they cannot have a trailing null-key column by construction.
+export function trimTrailingEmptyColumns(workbook) {
+  workbook.worksheets.forEach((worksheet) => {
+    if (worksheet.name === '_Lookups') return;
+    let lastReal = 0;
+    worksheet.getRow(1).eachCell({ includeEmpty: false }, (cell, c) => {
+      const v = cell.value;
+      if (v !== null && v !== undefined && String(v).trim() !== '') lastReal = Math.max(lastReal, c);
+    });
+    // worksheet.columnCount is a high-water mark that does NOT shrink when deleteColumnAt
+    // clears a cell's value back to null (verified directly against ExcelJS — the Cell object
+    // stays registered) — so it must be captured ONCE, up front, as the trim count; re-reading
+    // it inside a loop condition would never decrease and spin forever (this is exactly what
+    // the first version of this function did). Every column from lastReal+1 to the captured
+    // count is empty by definition (lastReal is the true last non-empty Row-1 cell), so
+    // repeatedly deleting at the SAME fixed index (lastReal + 1) is safe — each call just
+    // shifts another empty column into that position from the right.
+    const trimCount = worksheet.columnCount - lastReal;
+    for (let i = 0; i < trimCount; i++) {
+      TemplateBuilderService.deleteColumnAt(worksheet, lastReal + 1);
+    }
+  });
+}
+
 export class TemplateBuilderService {
   static async buildTemplate(recordType, lang = 'en') {
     const filename = recordType === 'CASE'
@@ -1113,10 +1280,10 @@ export class TemplateBuilderService {
         : Object.values(ARREST_SHEETS_CONFIG).flat()
     );
 
-    const activeRegistryFields = await db('field_registry')
+    const activeRegistryFields = (await db('field_registry')
       .where('is_active', true)
       .orWhereIn('field_key', Array.from(allowedKeys))
-      .orderBy('sort_order', 'asc');
+      .orderBy([{ column: 'sort_order', order: 'asc' }, { column: 'field_key', order: 'asc' }])).map(normalizeRegistryRow);
 
     // Registry-driven auto-inclusion: active registry fields applicable to this record
     // type that the curated config lists don't mention and that aren't excluded. They are
@@ -1179,11 +1346,18 @@ export class TemplateBuilderService {
         });
 
         row1.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          if (colNumber <= lastAllowedCol) {
-            const val = cell.value ? String(cell.value).trim() : '';
-            if (!val || !includedKeys.has(val)) {
-              colIdxToDelete = colNumber;
-            }
+          const val = cell.value ? String(cell.value).trim() : '';
+          // A KEYED column not in the template contract is removed wherever it sits — the
+          // old `colNumber <= lastAllowedCol` guard let stale keyed columns SURVIVE at the
+          // sheet tail (found in WP10: the base workbook's io_rank/io_mobile sat after the
+          // last allowed key, so removing them from the curated lists didn't remove the
+          // physical columns). Empty-key deletion stays restricted to the allowed range —
+          // tail empties are trimTrailingEmptyColumns' job, and interior behavior is
+          // unchanged.
+          if (val && !includedKeys.has(val)) {
+            colIdxToDelete = colNumber;
+          } else if (!val && colNumber <= lastAllowedCol) {
+            colIdxToDelete = colNumber;
           }
         });
         if (colIdxToDelete !== -1) {
@@ -1673,11 +1847,16 @@ export class TemplateBuilderService {
           }
 
           const stateCol = keyToCol[stateKey];
-          if (!stateCol) continue; // no sibling state column on this sheet — skip
-
-          const stateColLetter = numToColLetter(stateCol);
-          // VLOOKUP anchors state col ($) but not row, so Excel re-anchors per row
-          const distFormula = `INDIRECT(IFERROR(VLOOKUP($${stateColLetter}5,STATE_TO_DISTRICT_NR,2,FALSE),"OPT_DISTRICT"))`;
+          // No sibling state column ⇒ this is NOT an India-scoped address district — it's a
+          // Delhi-police-scoped event district (occurrence_district / arrest_district have no
+          // state columns by design, D-A). The first pass left the cascade SENTINEL on these
+          // cells (it can't know sibling layout yet); resolve them to the flat POLICE
+          // district list here, otherwise they'd ship as a broken literal-sentinel dropdown
+          // — dead code while the cascade's data source was empty, live now (WP11).
+          const distFormula = stateCol
+            ? `INDIRECT(IFERROR(VLOOKUP($${numToColLetter(stateCol)}5,STATE_TO_DISTRICT_NR,2,FALSE),"OPT_INDIA_DISTRICTS"))`
+            : (namedRangeMap['district'] || null);
+          if (!distFormula) continue;
 
           for (let rIdx = 5; rIdx <= 500; rIdx++) {
             const cell = ws.getCell(rIdx, distCol);
@@ -1751,6 +1930,12 @@ export class TemplateBuilderService {
       });
     }
 
+    // WP7 hardening — see the function's own header comment above for the full design
+    // rationale (why this runs as a post-pass, what it deliberately does and doesn't touch).
+    const fieldMetaByKey = buildFieldMetaMap([...typeFields, ...autoFields], activeRegistryFields);
+    applyFieldLevelHardening(workbook, fieldMetaByKey);
+    trimTrailingEmptyColumns(workbook);
+
     return workbook;
 
   }
@@ -1792,7 +1977,9 @@ export class TemplateBuilderService {
         if (!stateCol) continue;
 
         const stateColLetter = numToColLetter(stateCol);
-        const distFormula = `INDIRECT(IFERROR(VLOOKUP($${stateColLetter}5,STATE_TO_DISTRICT_NR,2,FALSE),"OPT_DISTRICT"))`;
+        // Fallback (state empty / 'Other UT/State') is the full-India address superset, not
+        // the police-district list — these are person-address cells (WP11).
+        const distFormula = `INDIRECT(IFERROR(VLOOKUP($${stateColLetter}5,STATE_TO_DISTRICT_NR,2,FALSE),"OPT_INDIA_DISTRICTS"))`;
 
         for (let rIdx = 5; rIdx <= 1000; rIdx++) {
           ws.getCell(rIdx, distCol).dataValidation = {

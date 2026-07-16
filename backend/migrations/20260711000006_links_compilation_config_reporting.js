@@ -195,32 +195,41 @@ export async function up(knex) {
     );
 
     -- §7.6 (legacy_import_batches is DEAD — is_legacy flag covers it)
+    -- processed_rows/error_message added Integration 3 WP1 (2026-07-16): async confirm needs
+    -- an attempted-row counter distinct from imported_rows (rows can be SKIPPED as duplicates
+    -- without being imported) for progress polling, and a human-readable reason when the batch
+    -- lands in FAILED.
     CREATE TABLE import_batches (
-      id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      record_type   varchar(20) NOT NULL,
-      is_legacy     boolean NOT NULL DEFAULT false,
-      uploaded_by   uuid NOT NULL REFERENCES users(id),
-      ps_id         uuid REFERENCES hierarchy_nodes(id),
-      district_id   uuid REFERENCES hierarchy_nodes(id),
-      file_path     varchar(500),
-      total_rows    int NOT NULL DEFAULT 0,
-      valid_rows    int NOT NULL DEFAULT 0,
-      invalid_rows  int NOT NULL DEFAULT 0,
-      imported_rows int NOT NULL DEFAULT 0,
-      status        varchar(30) NOT NULL DEFAULT 'VALIDATION_PENDING' CHECK (status IN
+      id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      record_type    varchar(20) NOT NULL,
+      is_legacy      boolean NOT NULL DEFAULT false,
+      uploaded_by    uuid NOT NULL REFERENCES users(id),
+      ps_id          uuid REFERENCES hierarchy_nodes(id),
+      district_id    uuid REFERENCES hierarchy_nodes(id),
+      file_path      varchar(500),
+      total_rows     int NOT NULL DEFAULT 0,
+      valid_rows     int NOT NULL DEFAULT 0,
+      invalid_rows   int NOT NULL DEFAULT 0,
+      imported_rows  int NOT NULL DEFAULT 0,
+      processed_rows int NOT NULL DEFAULT 0,
+      status         varchar(30) NOT NULL DEFAULT 'VALIDATION_PENDING' CHECK (status IN
                       ('VALIDATION_PENDING','VALIDATED','CONFIRMED','IMPORTED','FAILED','CANCELLED')),
-      confirmed_at  timestamptz,
-      created_at    timestamptz NOT NULL DEFAULT now(),
-      updated_at    timestamptz NOT NULL DEFAULT now()
+      error_message  text,
+      confirmed_at   timestamptz,
+      created_at     timestamptz NOT NULL DEFAULT now(),
+      updated_at     timestamptz NOT NULL DEFAULT now()
     );
 
-    -- §7.7
+    -- §7.7 severity added Integration 3 WP1 (2026-07-16): legacy imports downgrade
+    -- unresolvable ref-label errors to WARNING (import anyway, raw value preserved) instead
+    -- of ERROR (row rejected) — see docs/new-db-integration/03-import.md C6.
     CREATE TABLE import_batch_errors (
       id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       batch_id      uuid NOT NULL REFERENCES import_batches(id) ON DELETE CASCADE,
       row_number    int NOT NULL,
       field_key     varchar(60),
       error_code    varchar(40),
+      severity      varchar(10) NOT NULL DEFAULT 'ERROR' CHECK (severity IN ('ERROR','WARNING')),
       error_message text,
       created_at    timestamptz NOT NULL DEFAULT now()
     );
@@ -245,11 +254,22 @@ export async function up(knex) {
       value      jsonb NOT NULL,
       updated_at timestamptz NOT NULL DEFAULT now()
     );
+
+    -- records.import_batch_id — added Integration 3 WP1 (2026-07-16), here (not in migration
+    -- ...0003 where the records spine is created) because it FKs to import_batches, which
+    -- doesn't exist until this migration. Completes the provenance set alongside is_legacy/
+    -- source_system/legacy_ref/imported_at/imported_by (...0003): legacy_ref carries the
+    -- record's canonical source key (parent FIR/GD/DD, or row:<n>) and import_batch_id carries
+    -- which batch it came from — together the idempotency key for resumable async confirm
+    -- (docs/new-db-integration/03-import.md C4).
+    ALTER TABLE records ADD COLUMN import_batch_id uuid REFERENCES import_batches(id) ON DELETE SET NULL;
+    CREATE INDEX idx_records_import_batch ON records (import_batch_id);
   `);
 }
 
 export async function down(knex) {
   await knex.raw(`
+    ALTER TABLE records DROP COLUMN IF EXISTS import_batch_id;
     DROP TABLE IF EXISTS system_meta;
     DROP TABLE IF EXISTS notifications;
     DROP TABLE IF EXISTS import_batch_errors;

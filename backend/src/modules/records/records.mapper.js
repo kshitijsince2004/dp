@@ -8,7 +8,7 @@
 // Never hardcode "field X goes to column Y" outside this file — if a field moves, only
 // `config/fields/*.json` changes.
 import {
-  normalizeText, normalizeDate, normalizePhone, toBool,
+  normalizeText, normalizeDate, normalizePhone, normalizeFirNo, toBool,
   resolveAct, resolveSection, resolveMajorHead, resolveMinorHead,
   resolveLocalHead, resolveBeat,
 } from './records.normalize.js';
@@ -247,6 +247,12 @@ const DEFERRED_FK_LABEL_COLUMNS = new Set(['beat_id', 'local_head_id']);
 
 function normalizeDetailValue(table, column, raw) {
   if (DEFERRED_FK_LABEL_COLUMNS.has(column)) return raw;
+  // fir_no exists on exactly fir_details/arrest_details/missing_details (verified against
+  // information_schema) — canonicalize to "<seq>/<4-digit-year>" so linkResolver's and the
+  // dup-check's exact-string matching works across entry formats, for BOTH the interactive
+  // form and bulk import (both funnel through splitPayload). gd_no is a different column
+  // and format — never normalized (G2: a GD ref must never look like a FIR).
+  if (column === 'fir_no') return normalizeFirNo(raw);
   if (/mobile|phone/.test(column)) return normalizePhone(raw);
   return coerceByType(columnCache?.[table]?.[column], raw);
 }

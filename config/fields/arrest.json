@@ -1,5 +1,62 @@
 [
  {
+  "field_key": "gd_time",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TIME",
+  "labels": {
+   "en": "GD Time",
+   "hi": "जीडी समय"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "gd_time"
+  },
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": -1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "is_dd_based",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "BOOLEAN",
+  "labels": {
+   "en": "DD/GD-Based Arrest (Kalandra)",
+   "hi": "जीडी आधारित गिरफ्तारी (कलंदरा)"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "is_dd_based"
+  },
+  "visible_to_levels": [],
+  "editable_by_levels": [],
+  "introduced_at_level": "PS",
+  "sort_order": 0,
+  "full_width": false,
+  "readonly": true,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
   "field_key": "arrest_date",
   "record_types": [
    "ARREST"
@@ -29,6 +86,41 @@
   "introduced_at_level": "PS",
   "repeater_entity": "PERSON_ARRESTED",
   "sort_order": 6,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrest_time",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TIME",
+  "labels": {
+   "en": "Time Of Arrest",
+   "hi": "गिरफ्तारी का समय"
+  },
+  "section": "arrest_details",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "arrest_time"
+  },
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 6.5,
   "full_width": false,
   "readonly": false,
   "is_active": true,
@@ -1361,6 +1453,77 @@
   "scope_level": "global"
  },
  {
+  "field_key": "verifying_officer_rank",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arresting Officer Rank",
+   "hi": "गिरफ्तार करने वाले अधिकारी का पद"
+  },
+  "section": "arrestee_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "arresting_officer_rank"
+  },
+  "options": [
+   {
+    "value": "Constable",
+    "label_en": "Constable",
+    "label_hi": "Constable"
+   },
+   {
+    "value": "Head Constable",
+    "label_en": "Head Constable",
+    "label_hi": "Head Constable"
+   },
+   {
+    "value": "Assistant Sub Inspector",
+    "label_en": "Assistant Sub Inspector",
+    "label_hi": "Assistant Sub Inspector"
+   },
+   {
+    "value": "Sub Inspector",
+    "label_en": "Sub Inspector",
+    "label_hi": "Sub Inspector"
+   },
+   {
+    "value": "Inspector",
+    "label_en": "Inspector",
+    "label_hi": "Inspector"
+   },
+   {
+    "value": "Deputy Superintendent of Police",
+    "label_en": "Deputy Superintendent of Police",
+    "label_hi": "Deputy Superintendent of Police"
+   },
+   {
+    "value": "Superintendent of Police",
+    "label_en": "Superintendent of Police",
+    "label_hi": "Superintendent of Police"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 21.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
   "field_key": "integrated_pi",
   "record_types": [
    "ARREST"
@@ -2406,73 +2569,7 @@
    "column": "country",
    "role": "ARRESTEE"
   },
-  "options": [
-   {
-    "value": "Indian",
-    "label_en": "Indian",
-    "label_hi": "भारतीय"
-   },
-   {
-    "value": "Nepalese",
-    "label_en": "Nepalese",
-    "label_hi": "नेपाली"
-   },
-   {
-    "value": "Bhutanese",
-    "label_en": "Bhutanese",
-    "label_hi": "भूटानी"
-   },
-   {
-    "value": "Bangladeshi",
-    "label_en": "Bangladeshi",
-    "label_hi": "बांग्लादेशी"
-   },
-   {
-    "value": "Pakistani",
-    "label_en": "Pakistani",
-    "label_hi": "पाकिस्तानी"
-   },
-   {
-    "value": "Sri Lankan",
-    "label_en": "Sri Lankan",
-    "label_hi": "श्रीलंकाई"
-   },
-   {
-    "value": "Afghanistan",
-    "label_en": "Afghanistan",
-    "label_hi": "अफगानिस्तान"
-   },
-   {
-    "value": "Myanmar",
-    "label_en": "Myanmar",
-    "label_hi": "म्यांमार"
-   },
-   {
-    "value": "Tibetan",
-    "label_en": "Tibetan",
-    "label_hi": "तिब्बती"
-   },
-   {
-    "value": "American",
-    "label_en": "American",
-    "label_hi": "अमेरिकी"
-   },
-   {
-    "value": "British",
-    "label_en": "British",
-    "label_hi": "ब्रिटिश"
-   },
-   {
-    "value": "Canadian",
-    "label_en": "Canadian",
-    "label_hi": "कनाडाई"
-   },
-   {
-    "value": "Other",
-    "label_en": "Other",
-    "label_hi": "अन्य"
-   }
-  ],
+  "options": "$NATIONALITY",
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -2506,173 +2603,7 @@
    "column": "state",
    "role": "ARRESTEE"
   },
-  "options": [
-   {
-    "value": "Andhra Pradesh",
-    "label_en": "Andhra Pradesh",
-    "label_hi": "आंध्र प्रदेश"
-   },
-   {
-    "value": "Arunachal Pradesh",
-    "label_en": "Arunachal Pradesh",
-    "label_hi": "अरुणाचल प्रदेश"
-   },
-   {
-    "value": "Assam",
-    "label_en": "Assam",
-    "label_hi": "असम"
-   },
-   {
-    "value": "Bihar",
-    "label_en": "Bihar",
-    "label_hi": "बिहार"
-   },
-   {
-    "value": "Chhattisgarh",
-    "label_en": "Chhattisgarh",
-    "label_hi": "छत्तीसगढ़"
-   },
-   {
-    "value": "Delhi",
-    "label_en": "Delhi",
-    "label_hi": "दिल्ली"
-   },
-   {
-    "value": "Goa",
-    "label_en": "Goa",
-    "label_hi": "गोवा"
-   },
-   {
-    "value": "Gujarat",
-    "label_en": "Gujarat",
-    "label_hi": "गुजरात"
-   },
-   {
-    "value": "Haryana",
-    "label_en": "Haryana",
-    "label_hi": "हरियाणा"
-   },
-   {
-    "value": "Himachal Pradesh",
-    "label_en": "Himachal Pradesh",
-    "label_hi": "हिमाचल प्रदेश"
-   },
-   {
-    "value": "Jammu & Kashmir",
-    "label_en": "Jammu & Kashmir",
-    "label_hi": "जम्मू और कश्मीर"
-   },
-   {
-    "value": "Jharkhand",
-    "label_en": "Jharkhand",
-    "label_hi": "झारखंड"
-   },
-   {
-    "value": "Karnataka",
-    "label_en": "Karnataka",
-    "label_hi": "कर्नाटक"
-   },
-   {
-    "value": "Kerala",
-    "label_en": "Kerala",
-    "label_hi": "केरल"
-   },
-   {
-    "value": "Ladakh",
-    "label_en": "Ladakh",
-    "label_hi": "लद्दाख"
-   },
-   {
-    "value": "Madhya Pradesh",
-    "label_en": "Madhya Pradesh",
-    "label_hi": "मध्य प्रदेश"
-   },
-   {
-    "value": "Maharashtra",
-    "label_en": "Maharashtra",
-    "label_hi": "महाराष्ट्र"
-   },
-   {
-    "value": "Manipur",
-    "label_en": "Manipur",
-    "label_hi": "मणिपुर"
-   },
-   {
-    "value": "Meghalaya",
-    "label_en": "Meghalaya",
-    "label_hi": "मेघालय"
-   },
-   {
-    "value": "Mizoram",
-    "label_en": "Mizoram",
-    "label_hi": "मिजोरम"
-   },
-   {
-    "value": "Nagaland",
-    "label_en": "Nagaland",
-    "label_hi": "नागालैंड"
-   },
-   {
-    "value": "Odisha",
-    "label_en": "Odisha",
-    "label_hi": "ओडिशा"
-   },
-   {
-    "value": "Puducherry",
-    "label_en": "Puducherry",
-    "label_hi": "पुडुचेरी"
-   },
-   {
-    "value": "Punjab",
-    "label_en": "Punjab",
-    "label_hi": "पंजाब"
-   },
-   {
-    "value": "Rajasthan",
-    "label_en": "Rajasthan",
-    "label_hi": "राजस्थान"
-   },
-   {
-    "value": "Sikkim",
-    "label_en": "Sikkim",
-    "label_hi": "सिक्किम"
-   },
-   {
-    "value": "Tamil Nadu",
-    "label_en": "Tamil Nadu",
-    "label_hi": "तमिलनाडु"
-   },
-   {
-    "value": "Telangana",
-    "label_en": "Telangana",
-    "label_hi": "तेलंगाना"
-   },
-   {
-    "value": "Tripura",
-    "label_en": "Tripura",
-    "label_hi": "त्रिपुरा"
-   },
-   {
-    "value": "Uttar Pradesh",
-    "label_en": "Uttar Pradesh",
-    "label_hi": "उत्तर प्रदेश"
-   },
-   {
-    "value": "Uttarakhand",
-    "label_en": "Uttarakhand",
-    "label_hi": "उत्तराखंड"
-   },
-   {
-    "value": "West Bengal",
-    "label_en": "West Bengal",
-    "label_hi": "पश्चिम बंगाल"
-   },
-   {
-    "value": "Other UT/State",
-    "label_en": "Other UT/State",
-    "label_hi": "अन्य केंद्र शासित प्रदेश/राज्य"
-   }
-  ],
+  "options": "$INDIA_STATES",
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -2706,83 +2637,7 @@
    "column": "district",
    "role": "ARRESTEE"
   },
-  "options": [
-   {
-    "value": "South District (SD)",
-    "label_en": "South District (SD)",
-    "label_hi": "South District (SD)"
-   },
-   {
-    "value": "South East District (SED)",
-    "label_en": "South East District (SED)",
-    "label_hi": "South East District (SED)"
-   },
-   {
-    "value": "New Delhi District (NDD)",
-    "label_en": "New Delhi District (NDD)",
-    "label_hi": "New Delhi District (NDD)"
-   },
-   {
-    "value": "South West District (SWD)",
-    "label_en": "South West District (SWD)",
-    "label_hi": "South West District (SWD)"
-   },
-   {
-    "value": "West District (WD)",
-    "label_en": "West District (WD)",
-    "label_hi": "West District (WD)"
-   },
-   {
-    "value": "Outer District (OD)",
-    "label_en": "Outer District (OD)",
-    "label_hi": "Outer District (OD)"
-   },
-   {
-    "value": "Dwarka District (DW)",
-    "label_en": "Dwarka District (DW)",
-    "label_hi": "Dwarka District (DW)"
-   },
-   {
-    "value": "North West District (NWD)",
-    "label_en": "North West District (NWD)",
-    "label_hi": "North West District (NWD)"
-   },
-   {
-    "value": "Rohini District (RND)",
-    "label_en": "Rohini District (RND)",
-    "label_hi": "Rohini District (RND)"
-   },
-   {
-    "value": "Outer North District (OND)",
-    "label_en": "Outer North District (OND)",
-    "label_hi": "Outer North District (OND)"
-   },
-   {
-    "value": "Central District (CD)",
-    "label_en": "Central District (CD)",
-    "label_hi": "Central District (CD)"
-   },
-   {
-    "value": "North District (ND)",
-    "label_en": "North District (ND)",
-    "label_hi": "North District (ND)"
-   },
-   {
-    "value": "East District (ED)",
-    "label_en": "East District (ED)",
-    "label_hi": "East District (ED)"
-   },
-   {
-    "value": "North East District (NED)",
-    "label_en": "North East District (NED)",
-    "label_hi": "North East District (NED)"
-   },
-   {
-    "value": "Shahdara District (SHD)",
-    "label_en": "Shahdara District (SHD)",
-    "label_hi": "Shahdara District (SHD)"
-   }
-  ],
+  "options": "$INDIA_DISTRICTS",
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -3115,73 +2970,7 @@
    "column": "country",
    "role": "ARRESTEE"
   },
-  "options": [
-   {
-    "value": "Indian",
-    "label_en": "Indian",
-    "label_hi": "भारतीय"
-   },
-   {
-    "value": "Nepalese",
-    "label_en": "Nepalese",
-    "label_hi": "नेपाली"
-   },
-   {
-    "value": "Bhutanese",
-    "label_en": "Bhutanese",
-    "label_hi": "भूटानी"
-   },
-   {
-    "value": "Bangladeshi",
-    "label_en": "Bangladeshi",
-    "label_hi": "बांग्लादेशी"
-   },
-   {
-    "value": "Pakistani",
-    "label_en": "Pakistani",
-    "label_hi": "पाकिस्तानी"
-   },
-   {
-    "value": "Sri Lankan",
-    "label_en": "Sri Lankan",
-    "label_hi": "श्रीलंकाई"
-   },
-   {
-    "value": "Afghanistan",
-    "label_en": "Afghanistan",
-    "label_hi": "अफगानिस्तान"
-   },
-   {
-    "value": "Myanmar",
-    "label_en": "Myanmar",
-    "label_hi": "म्यांमार"
-   },
-   {
-    "value": "Tibetan",
-    "label_en": "Tibetan",
-    "label_hi": "तिब्बती"
-   },
-   {
-    "value": "American",
-    "label_en": "American",
-    "label_hi": "अमेरिकी"
-   },
-   {
-    "value": "British",
-    "label_en": "British",
-    "label_hi": "ब्रिटिश"
-   },
-   {
-    "value": "Canadian",
-    "label_en": "Canadian",
-    "label_hi": "कनाडाई"
-   },
-   {
-    "value": "Other",
-    "label_en": "Other",
-    "label_hi": "अन्य"
-   }
-  ],
+  "options": "$NATIONALITY",
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -3215,173 +3004,7 @@
    "column": "state",
    "role": "ARRESTEE"
   },
-  "options": [
-   {
-    "value": "Andhra Pradesh",
-    "label_en": "Andhra Pradesh",
-    "label_hi": "आंध्र प्रदेश"
-   },
-   {
-    "value": "Arunachal Pradesh",
-    "label_en": "Arunachal Pradesh",
-    "label_hi": "अरुणाचल प्रदेश"
-   },
-   {
-    "value": "Assam",
-    "label_en": "Assam",
-    "label_hi": "असम"
-   },
-   {
-    "value": "Bihar",
-    "label_en": "Bihar",
-    "label_hi": "बिहार"
-   },
-   {
-    "value": "Chhattisgarh",
-    "label_en": "Chhattisgarh",
-    "label_hi": "छत्तीसगढ़"
-   },
-   {
-    "value": "Delhi",
-    "label_en": "Delhi",
-    "label_hi": "दिल्ली"
-   },
-   {
-    "value": "Goa",
-    "label_en": "Goa",
-    "label_hi": "गोवा"
-   },
-   {
-    "value": "Gujarat",
-    "label_en": "Gujarat",
-    "label_hi": "गुजरात"
-   },
-   {
-    "value": "Haryana",
-    "label_en": "Haryana",
-    "label_hi": "हरियाणा"
-   },
-   {
-    "value": "Himachal Pradesh",
-    "label_en": "Himachal Pradesh",
-    "label_hi": "हिमाचल प्रदेश"
-   },
-   {
-    "value": "Jammu & Kashmir",
-    "label_en": "Jammu & Kashmir",
-    "label_hi": "जम्मू और कश्मीर"
-   },
-   {
-    "value": "Jharkhand",
-    "label_en": "Jharkhand",
-    "label_hi": "झारखंड"
-   },
-   {
-    "value": "Karnataka",
-    "label_en": "Karnataka",
-    "label_hi": "कर्नाटक"
-   },
-   {
-    "value": "Kerala",
-    "label_en": "Kerala",
-    "label_hi": "केरल"
-   },
-   {
-    "value": "Ladakh",
-    "label_en": "Ladakh",
-    "label_hi": "लद्दाख"
-   },
-   {
-    "value": "Madhya Pradesh",
-    "label_en": "Madhya Pradesh",
-    "label_hi": "मध्य प्रदेश"
-   },
-   {
-    "value": "Maharashtra",
-    "label_en": "Maharashtra",
-    "label_hi": "महाराष्ट्र"
-   },
-   {
-    "value": "Manipur",
-    "label_en": "Manipur",
-    "label_hi": "मणिपुर"
-   },
-   {
-    "value": "Meghalaya",
-    "label_en": "Meghalaya",
-    "label_hi": "मेघालय"
-   },
-   {
-    "value": "Mizoram",
-    "label_en": "Mizoram",
-    "label_hi": "मिजोरम"
-   },
-   {
-    "value": "Nagaland",
-    "label_en": "Nagaland",
-    "label_hi": "नागालैंड"
-   },
-   {
-    "value": "Odisha",
-    "label_en": "Odisha",
-    "label_hi": "ओडिशा"
-   },
-   {
-    "value": "Puducherry",
-    "label_en": "Puducherry",
-    "label_hi": "पुडुचेरी"
-   },
-   {
-    "value": "Punjab",
-    "label_en": "Punjab",
-    "label_hi": "पंजाब"
-   },
-   {
-    "value": "Rajasthan",
-    "label_en": "Rajasthan",
-    "label_hi": "राजस्थान"
-   },
-   {
-    "value": "Sikkim",
-    "label_en": "Sikkim",
-    "label_hi": "सिक्किम"
-   },
-   {
-    "value": "Tamil Nadu",
-    "label_en": "Tamil Nadu",
-    "label_hi": "तमिलनाडु"
-   },
-   {
-    "value": "Telangana",
-    "label_en": "Telangana",
-    "label_hi": "तेलंगाना"
-   },
-   {
-    "value": "Tripura",
-    "label_en": "Tripura",
-    "label_hi": "त्रिपुरा"
-   },
-   {
-    "value": "Uttar Pradesh",
-    "label_en": "Uttar Pradesh",
-    "label_hi": "उत्तर प्रदेश"
-   },
-   {
-    "value": "Uttarakhand",
-    "label_en": "Uttarakhand",
-    "label_hi": "उत्तराखंड"
-   },
-   {
-    "value": "West Bengal",
-    "label_en": "West Bengal",
-    "label_hi": "पश्चिम बंगाल"
-   },
-   {
-    "value": "Other UT/State",
-    "label_en": "Other UT/State",
-    "label_hi": "अन्य केंद्र शासित प्रदेश/राज्य"
-   }
-  ],
+  "options": "$INDIA_STATES",
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -3415,83 +3038,7 @@
    "column": "district",
    "role": "ARRESTEE"
   },
-  "options": [
-   {
-    "value": "South District (SD)",
-    "label_en": "South District (SD)",
-    "label_hi": "South District (SD)"
-   },
-   {
-    "value": "South East District (SED)",
-    "label_en": "South East District (SED)",
-    "label_hi": "South East District (SED)"
-   },
-   {
-    "value": "New Delhi District (NDD)",
-    "label_en": "New Delhi District (NDD)",
-    "label_hi": "New Delhi District (NDD)"
-   },
-   {
-    "value": "South West District (SWD)",
-    "label_en": "South West District (SWD)",
-    "label_hi": "South West District (SWD)"
-   },
-   {
-    "value": "West District (WD)",
-    "label_en": "West District (WD)",
-    "label_hi": "West District (WD)"
-   },
-   {
-    "value": "Outer District (OD)",
-    "label_en": "Outer District (OD)",
-    "label_hi": "Outer District (OD)"
-   },
-   {
-    "value": "Dwarka District (DW)",
-    "label_en": "Dwarka District (DW)",
-    "label_hi": "Dwarka District (DW)"
-   },
-   {
-    "value": "North West District (NWD)",
-    "label_en": "North West District (NWD)",
-    "label_hi": "North West District (NWD)"
-   },
-   {
-    "value": "Rohini District (RND)",
-    "label_en": "Rohini District (RND)",
-    "label_hi": "Rohini District (RND)"
-   },
-   {
-    "value": "Outer North District (OND)",
-    "label_en": "Outer North District (OND)",
-    "label_hi": "Outer North District (OND)"
-   },
-   {
-    "value": "Central District (CD)",
-    "label_en": "Central District (CD)",
-    "label_hi": "Central District (CD)"
-   },
-   {
-    "value": "North District (ND)",
-    "label_en": "North District (ND)",
-    "label_hi": "North District (ND)"
-   },
-   {
-    "value": "East District (ED)",
-    "label_en": "East District (ED)",
-    "label_hi": "East District (ED)"
-   },
-   {
-    "value": "North East District (NED)",
-    "label_en": "North East District (NED)",
-    "label_hi": "North East District (NED)"
-   },
-   {
-    "value": "Shahdara District (SHD)",
-    "label_en": "Shahdara District (SHD)",
-    "label_hi": "Shahdara District (SHD)"
-   }
-  ],
+  "options": "$INDIA_DISTRICTS",
   "visible_to_levels": [
    "PS",
    "DISTRICT",

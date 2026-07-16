@@ -370,7 +370,7 @@ function isFieldVisible(f, flatData) {
   return actual === sw.value;
 }
 
-async function validateRequiredFields(trx, recordType, flatData) {
+export async function validateRequiredFields(trx, recordType, flatData) {
   const registry = await mapper.loadRegistry(trx, recordType);
   const missing = [];
   for (const f of registry) {
@@ -531,62 +531,127 @@ export const getRecordDetails = async (id) => {
 
 // ── write path ────────────────────────────────────────────────────────────────────────
 
+/**
+ * Shared transaction body for every fresh-record insert. `createRecord` (interactive HTTP
+ * create) and `createImportedRecord` (bulk import, Integration 3) are both thin wrappers
+ * around this — P1.2's one write path stays one function, not one endpoint. `opts.scope`
+ * defaults to the acting user's own jurisdiction (the interactive-create case); import is the
+ * only caller that ever passes a different scope, and only with a batch-derived, pre-validated
+ * value — never from request body / sheet content (P5.4).
+ */
+async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddress, split, opts = {}) {
+  const {
+    scope = { ps_id: user.ps_id, district_id: user.district_id, sub_div_id: user.sub_div_id || null },
+    status = 'DRAFT',
+    level = 'PS',
+    changeType = 'CREATE',
+    importStamps = null, // { isLegacy, sourceSystem, legacyRef, batchId }
+  } = opts;
+
+  const id = uuidv4();
+  const detailTable = mapper.DETAIL_TABLES[recordType];
+
+  const detailLocationIds = {};
+  for (const [slot, cols] of Object.entries(split.detailLocationFields)) {
+    detailLocationIds[slot] = await insertLocation(trx, cols);
+  }
+  for (const [slot, locId] of Object.entries(detailLocationIds)) {
+    const col = mapper.DETAIL_LOCATION_SLOTS[slot]?.[recordType];
+    if (col) split.detail[col] = locId;
+  }
+
+  await trx('records').insert({
+    id, record_type: recordType, ps_id: scope.ps_id, district_id: scope.district_id, sub_div_id: scope.sub_div_id || null,
+    io_id: split.spine.io_id || null, current_status: status, current_level: level, record_date: recordDate,
+    created_by: user.id, updated_by: user.id,
+    ...(importStamps ? {
+      is_legacy: !!importStamps.isLegacy,
+      source_system: importStamps.sourceSystem,
+      legacy_ref: importStamps.legacyRef,
+      import_batch_id: importStamps.batchId,
+      imported_at: trx.fn.now(),
+      imported_by: user.id,
+    } : {}),
+  });
+
+  await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, scope.ps_id), ...split.detail, extra: JSON.stringify(split.detailExtra) });
+
+  const personIdBySourceIndex = {};
+  for (const entry of split.personEntries) {
+    const personId = await insertPersonEntry(trx, id, entry);
+    if (entry.sourceKind === 'repeater') personIdBySourceIndex[entry.sourceIndex] = personId;
+  }
+
+  for (const prop of split.propertyEntries) {
+    const personId = prop.personIndex != null ? (personIdBySourceIndex[prop.personIndex] ?? null) : null;
+    await trx('record_properties').insert({
+      id: uuidv4(), record_id: id, person_id: personId, ...prop.columns,
+      extra: JSON.stringify(prop.extra || {}), sort_order: 0,
+    });
+  }
+
+  await replaceOffenceRows(trx, id, split.offenceRows);
+
+  await writeRevision(trx, {
+    recordId: id, changeType, level, changedBy: user.id, ipAddress,
+    fieldChanges: calculateDiff({}, data),
+  });
+  await writeAuditLog(trx, { recordId: id, action: changeType, user, newValue: data, ipAddress });
+
+  return { id, ps_id: scope.ps_id };
+}
+
 export const createRecord = async (user, recordType, recordDate, data, ipAddress, { persons = [], properties = [], offences = [] } = {}) => {
   const dbRecord = await db.transaction(async (trx) => {
     const registry = await mapper.loadRegistry(trx, recordType);
     const split = await mapper.splitPayload(trx, registry, recordType, { data, persons, properties, offences });
-
-    const id = uuidv4();
-    const detailTable = mapper.DETAIL_TABLES[recordType];
-
-    const detailLocationIds = {};
-    for (const [slot, cols] of Object.entries(split.detailLocationFields)) {
-      detailLocationIds[slot] = await insertLocation(trx, cols);
-    }
-    for (const [slot, locId] of Object.entries(detailLocationIds)) {
-      const col = mapper.DETAIL_LOCATION_SLOTS[slot]?.[recordType];
-      if (col) split.detail[col] = locId;
-    }
-
-    await trx('records').insert({
-      id, record_type: recordType, ps_id: user.ps_id, district_id: user.district_id, sub_div_id: user.sub_div_id || null,
-      io_id: split.spine.io_id || null, current_status: 'DRAFT', current_level: 'PS', record_date: recordDate,
-      created_by: user.id, updated_by: user.id,
-    });
-
-    await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, user.ps_id), ...split.detail, extra: JSON.stringify(split.detailExtra) });
-
-    const personIdBySourceIndex = {};
-    for (const entry of split.personEntries) {
-      const personId = await insertPersonEntry(trx, id, entry);
-      if (entry.sourceKind === 'repeater') personIdBySourceIndex[entry.sourceIndex] = personId;
-    }
-
-    for (const prop of split.propertyEntries) {
-      const personId = prop.personIndex != null ? (personIdBySourceIndex[prop.personIndex] ?? null) : null;
-      await trx('record_properties').insert({
-        id: uuidv4(), record_id: id, person_id: personId, ...prop.columns,
-        extra: JSON.stringify(prop.extra || {}), sort_order: 0,
-      });
-    }
-
-    await replaceOffenceRows(trx, id, split.offenceRows);
-
-    await writeRevision(trx, {
-      recordId: id, changeType: 'CREATE', level: 'PS', changedBy: user.id, ipAddress,
-      fieldChanges: calculateDiff({}, data),
-    });
-    await writeAuditLog(trx, { recordId: id, action: 'CREATE', user, newValue: data, ipAddress });
-
-    return { id };
+    return insertRecordCore(trx, user, recordType, recordDate, data, ipAddress, split);
   });
 
   await eventBus.publish('record.created', {
-    record_id: dbRecord.id, record_type: recordType, changed_by: user.id, ps_id: user.ps_id,
+    record_id: dbRecord.id, record_type: recordType, changed_by: user.id, ps_id: dbRecord.ps_id,
     counts: { persons: (persons || []).length, properties: (properties || []).length, offences: (offences || []).length },
   });
 
-  return dbRecord;
+  return { id: dbRecord.id };
+};
+
+/**
+ * Bulk-import create — same transaction core as createRecord, with import-specific scope/
+ * status/provenance. Never reachable from the interactive HTTP create path (that foot-gun is
+ * the whole reason this is a separate wrapper rather than an options bag on createRecord —
+ * see docs/new-db-integration/03-import.md AD1). `scope` must be pre-validated by the caller
+ * (the import batch's target PS/district, checked against the uploader's own jurisdiction at
+ * batch-creation time — never taken from spreadsheet content, P5.4/P5.6).
+ */
+export const createImportedRecord = async (
+  user, recordType, recordDate, data, ipAddress,
+  { persons = [], properties = [], offences = [] } = {},
+  { scope, isLegacy = false, status = 'DRAFT', batchId, sourceRef } = {}
+) => {
+  if (!scope || !scope.ps_id || !scope.district_id) {
+    throw new Error('createImportedRecord requires a resolved scope { ps_id, district_id }');
+  }
+
+  const dbRecord = await db.transaction(async (trx) => {
+    const registry = await mapper.loadRegistry(trx, recordType);
+    const split = await mapper.splitPayload(trx, registry, recordType, { data, persons, properties, offences });
+    return insertRecordCore(trx, user, recordType, recordDate, data, ipAddress, split, {
+      scope, status, level: 'PS', changeType: 'IMPORT',
+      importStamps: { isLegacy, sourceSystem: 'BULK_IMPORT', legacyRef: sourceRef, batchId },
+    });
+  });
+
+  // Same event as the interactive create path (record.created) — this is what makes
+  // linkResolver.js resolve CASE_ARREST/CASE_MISSING links for imported records too;
+  // notifyHandler.js doesn't subscribe to record.created, so no notification suppression
+  // is needed for legacy imports (docs/new-db-integration/03-import.md C7).
+  await eventBus.publish('record.created', {
+    record_id: dbRecord.id, record_type: recordType, changed_by: user.id, ps_id: dbRecord.ps_id,
+    counts: { persons: (persons || []).length, properties: (properties || []).length, offences: (offences || []).length },
+  });
+
+  return { id: dbRecord.id };
 };
 
 const EDITABLE_STATUSES = ['DRAFT', 'SENT_BACK'];

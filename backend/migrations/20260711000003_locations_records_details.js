@@ -115,6 +115,7 @@ export async function up(knex) {
       dossier_prepared            boolean,
       arresting_officer_name      varchar(100),
       arresting_officer_mobile    varchar(20),
+      arresting_officer_rank      varchar(50),
       custody_status              varchar(50),
       other_status_reason         varchar(255),
       recovery                    text,

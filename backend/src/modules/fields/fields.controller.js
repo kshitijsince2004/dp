@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger.js';
 import * as fieldsService from './fields.service.js';
 import * as ioService from '../io/io.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from './classificationSources.config.js';
+import { INDIA_STATES, DISTRICTS_BY_STATE } from '../../config/geoData.js';
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -1448,6 +1449,22 @@ export const listLocalHeads = async (req, res) => {
     return res.status(200).json({ success: true, data });
   } catch (error) {
     logger.error('listLocalHeads failed', { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// India states -> districts map (WP11) — drives the form's address state→district cascading
+// (FieldRenderer narrows a *_district dropdown to the sibling *_state's districts). Static
+// checked-in data (config/ref-data LGD snapshot via geoData.js), so long client cache is safe.
+export const listStateDistricts = async (req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    return res.status(200).json({
+      success: true,
+      data: { states: INDIA_STATES, districtsByState: DISTRICTS_BY_STATE },
+    });
+  } catch (error) {
+    logger.error('listStateDistricts failed', { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };

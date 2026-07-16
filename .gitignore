@@ -59,3 +59,7 @@ Thumbs.db
 walkthrough.md
 scratch/
 
+
+# Project context file for AI assistants — kept local only, not pushed
+CLAUDE.md
+CLAUDE.local.md

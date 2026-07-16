@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   Archive, Upload, Eye, CheckCircle2, XCircle,
-  AlertTriangle, Loader2, Clock, RefreshCw, ChevronDown, FileSpreadsheet,
-  Link, AlertCircle
+  AlertTriangle, Loader2, Clock, RefreshCw, FileSpreadsheet,
+  Link, AlertCircle, Ban
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore.js';
@@ -12,10 +12,12 @@ import api from '../../utils/api.js';
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
 const STATUS_CLS = {
-  PENDING:   'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  APPROVED:  'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-  REJECTED:  'bg-rose-500/10 text-rose-500 border-rose-500/20',
-  COMPLETED: 'bg-sky-500/10 text-sky-500 border-sky-500/20',
+  VALIDATION_PENDING: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  VALIDATED:          'bg-sky-500/10 text-sky-500 border-sky-500/20',
+  CONFIRMED:          'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  IMPORTED:           'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  FAILED:             'bg-rose-500/10 text-rose-500 border-rose-500/20',
+  CANCELLED:          'bg-[var(--bg-page-main)] border-[var(--border-card-theme)] text-[var(--text-main-theme)]/60',
 };
 
 function StatusBadge({ status }) {
@@ -24,6 +26,67 @@ function StatusBadge({ status }) {
     <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${cls}`}>
       {status || '—'}
     </span>
+  );
+}
+
+// Terminal statuses a confirmed batch can land on — polling stops here.
+const TERMINAL_STATUSES = new Set(['IMPORTED', 'FAILED', 'CANCELLED']);
+
+// Splits a batch's error rows into ERROR (row rejected) vs WARNING (imported anyway, e.g.
+// legacy leniency downgrades — docs/new-db-integration/03-import.md C6) sections.
+function ErrorList({ errors = [] }) {
+  if (!errors.length) return null;
+  const hardErrors = errors.filter((e) => e.severity !== 'WARNING');
+  const warnings = errors.filter((e) => e.severity === 'WARNING');
+  return (
+    <div className="space-y-3">
+      {hardErrors.length > 0 && (
+        <div className="border border-rose-500/30 bg-rose-500/5 rounded-2xl p-5 space-y-3">
+          <p className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-2 text-xs">
+            <AlertTriangle size={14} />
+            Errors ({hardErrors.length}) — these rows were skipped
+          </p>
+          <div className="max-h-48 overflow-y-auto space-y-1.5 pr-2">
+            {hardErrors.map((err, i) => (
+              <div key={i} className="font-mono text-[10px] bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 px-3 py-2 rounded-lg flex justify-between items-start gap-4">
+                <div>
+                  <span className="font-bold mr-2">Row {err.row ?? err.row_number}:</span>
+                  <span>{err.message ?? err.error_message}</span>
+                </div>
+                {(err.field_key) && (
+                  <span className="bg-rose-500/20 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                    {err.field_key}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {warnings.length > 0 && (
+        <div className="border border-amber-500/30 bg-amber-500/5 rounded-2xl p-5 space-y-3">
+          <p className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-2 text-xs">
+            <AlertCircle size={14} />
+            Warnings ({warnings.length}) — imported anyway, review recommended
+          </p>
+          <div className="max-h-48 overflow-y-auto space-y-1.5 pr-2">
+            {warnings.map((err, i) => (
+              <div key={i} className="font-mono text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-3 py-2 rounded-lg flex justify-between items-start gap-4">
+                <div>
+                  <span className="font-bold mr-2">Row {err.row ?? err.row_number}:</span>
+                  <span>{err.message ?? err.error_message}</span>
+                </div>
+                {(err.field_key) && (
+                  <span className="bg-amber-500/20 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                    {err.field_key}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -41,7 +104,7 @@ function BatchTable({ batches = [], isLoading, onViewBatch }) {
       <div className="text-center py-16 text-[var(--text-main-theme)] opacity-60 font-semibold font-sans">
         <Archive size={40} className="mx-auto mb-3 opacity-30 text-[var(--accent-color)]" />
         <p className="text-sm font-bold text-[var(--text-main-theme)]">No import batches found.</p>
-        <p className="text-xs mt-1 text-[var(--text-main-theme)] opacity-70">Upload a file in the New Import tab to get started.</p>
+        <p className="text-xs mt-1 text-[var(--text-main-theme)] opacity-70">Upload a file in the Bulk Importer tab to get started.</p>
       </div>
     );
   }
@@ -56,7 +119,7 @@ function BatchTable({ batches = [], isLoading, onViewBatch }) {
             <th className="p-3 text-[var(--text-main-theme)] font-bold">Total Rows</th>
             <th className="p-3 text-[var(--text-main-theme)] font-bold">Imported</th>
             <th className="p-3 text-[var(--text-main-theme)] font-bold">Status</th>
-            <th className="p-3 text-[var(--text-main-theme)] font-bold">Imported At</th>
+            <th className="p-3 text-[var(--text-main-theme)] font-bold">Created At</th>
             <th className="p-3 pr-6 text-right text-[var(--text-main-theme)] font-bold">Action</th>
           </tr>
         </thead>
@@ -69,7 +132,7 @@ function BatchTable({ batches = [], isLoading, onViewBatch }) {
               <td className="p-3 pl-6 font-mono text-[var(--text-main-theme)] opacity-60 text-[10px]">{batch.id?.slice(0, 12)}…</td>
               <td className="p-3 font-bold text-[var(--accent-color)]">{batch.record_type || '—'}</td>
               <td className="p-3 tabular-numbers text-[var(--text-main-theme)] opacity-80 font-semibold">{batch.total_rows ?? '—'}</td>
-              <td className="p-3 tabular-numbers text-emerald-500 font-bold">{batch.imported_count ?? '—'}</td>
+              <td className="p-3 tabular-numbers text-emerald-500 font-bold">{batch.imported_rows ?? '—'}</td>
               <td className="p-3"><StatusBadge status={batch.status} /></td>
               <td className="p-3 font-mono text-[var(--text-main-theme)] opacity-70 text-[10px]">
                 {batch.created_at
@@ -95,137 +158,33 @@ function BatchTable({ batches = [], isLoading, onViewBatch }) {
   );
 }
 
-// ── File Import Panel ─────────────────────────────────────────────────────────
-function ImportPanel({ onImported }) {
-  const [recordType, setRecordType] = useState('CASE');
-  const [file, setFile] = useState(null);
-  const [psId, setPsId] = useState('');
-  const { i18n } = useTranslation();
-  const currentLng = i18n.language || 'en';
-
-  // Fetch active stations dynamically
-  const { data: stations = [] } = useQuery({
-    queryKey: ['hierarchy', 'stations'],
-    queryFn: async () => {
-      const res = await api.get('/hierarchy/nodes?type=PS');
-      return res.data?.data || [];
-    }
-  });
-
-  const importMutation = useMutation({
-    mutationFn: async () => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('record_type', recordType);
-      if (psId) {
-        formData.append('ps_id', psId);
-      }
-      const res = await api.post('/legacy/import', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success('Legacy import triggered successfully');
-      setFile(null);
-      setPsId('');
-      onImported?.();
-    },
-    onError: (err) => toast.error(err.response?.data?.message || 'Import failed'),
-  });
-
-  return (
-    <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-6 space-y-5 text-xs shadow-sm font-sans">
-      <h3 className="font-bold text-[var(--text-main-theme)] flex items-center gap-2 text-sm font-display">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--bg-page-main)]/80 border border-[var(--border-card-theme)]/85">
-          <Upload size={15} className="text-[var(--accent-color)]" />
-        </span>
-        Bulk Import Records (Excel / CSV)
-      </h3>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[var(--text-main-theme)] font-semibold">
-        {/* Record Type */}
-        <div className="space-y-1.5">
-          <label className="text-[var(--text-main-theme)] opacity-80 font-bold">Record Type</label>
-          <select
-            value={recordType}
-            onChange={(e) => setRecordType(e.target.value)}
-            className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl px-3 py-2 text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer shadow-sm font-bold"
-          >
-            {['CASE', 'ARREST', 'KALANDRA', 'PCR_CALL', 'MISSING', 'UIDB'].map((rt) => (
-              <option key={rt} value={rt} className="bg-[var(--bg-page-main)] text-[var(--text-main-theme)]">{rt}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Destination Police Station */}
-        <div className="space-y-1.5">
-          <label className="text-[var(--text-main-theme)] opacity-80 font-bold">Destination Police Station</label>
-          <select
-            value={psId}
-            onChange={(e) => setPsId(e.target.value)}
-            className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl px-3 py-2 text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer shadow-sm font-bold"
-          >
-            <option value="">Select Destination Station...</option>
-            {stations.map(st => (
-              <option key={st.id} value={st.id} className="bg-[var(--bg-page-main)] text-[var(--text-main-theme)]">
-                {currentLng === 'hi' ? st.name_hi : st.name_en}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* File Selection */}
-        <div className="space-y-1.5">
-          <label className="text-[var(--text-main-theme)] opacity-80 font-bold">File (Excel / CSV)</label>
-          <input
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl px-3 py-1.5 text-[var(--text-main-theme)] opacity-80 cursor-pointer text-[11px] shadow-sm file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--bg-page-main)]/80 file:text-[var(--accent-color)] file:font-bold file:px-2 file:py-0.5"
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <p className="text-[var(--text-main-theme)] opacity-60 font-semibold">
-          File will be processed in background. Check Batches tab for status.
-        </p>
-        <button
-          type="button"
-          disabled={!file || !psId || importMutation.isPending}
-          onClick={() => importMutation.mutate()}
-          className="flex items-center gap-1.5 bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-bold px-5 py-2.5 rounded-xl transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border-none shadow-sm active:scale-95"
-        >
-          {importMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-          Start Import
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Bulk Importer Panel (Validate / Confirm) ───────────────────────────────────
-function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTab }) {
+// ── Bulk Importer Panel (Validate / Confirm / Poll / Report) ──────────────────
+// Role-aware: HC is forced non-legacy, own PS only (D1). DISTRICT_OFFICER is forced legacy,
+// destination PS restricted to their own district — the PS list itself already comes back
+// district-scoped from GET /hierarchy/nodes?type=PS (hierarchy.controller.js's DISTRICT_OFFICER
+// branch), so no client-side filtering is needed here.
+function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
   const { t, i18n } = useTranslation();
   const currentLng = i18n.language || 'en';
-  
-  const [step, setStep] = useState(1); // 1 | 2 | 3
+
+  const [step, setStep] = useState(1); // 1 Upload/Validate | 2 Review/Confirm | 3 Report
   const [recordType, setRecordType] = useState('CASE');
   const [psId, setPsId] = useState(isHC ? (user?.ps_id || user?.station_id || '') : '');
-  const [isLegacy, setIsLegacy] = useState(false);
   const [file, setFile] = useState(null);
   const [validationResult, setValidationResult] = useState(null);
-  const [importReport, setImportReport] = useState(null);
-  
-  // Fetch active stations dynamically
+  const [confirmedBatchId, setConfirmedBatchId] = useState(null);
+
+  // Legacy mode is never a user choice — D1/D2, enforced identically server-side (403 on
+  // mismatch): HC batches are always non-legacy, DISTRICT_OFFICER batches are always legacy.
+  const isLegacy = !isHC;
+
   const { data: stations = [] } = useQuery({
     queryKey: ['hierarchy', 'stations'],
     queryFn: async () => {
       const res = await api.get('/hierarchy/nodes?type=PS');
       return res.data?.data || [];
     },
-    enabled: !isHC
+    enabled: !isHC,
   });
 
   const downloadTemplate = async () => {
@@ -244,7 +203,6 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
       console.error('[downloadTemplate] failed:', err);
       const status = err.response?.status;
       let serverMessage = err.response?.data?.message;
-      // responseType: 'blob' means an error JSON body arrives as a Blob, not parsed JSON
       if (!serverMessage && err.response?.data instanceof Blob) {
         try {
           serverMessage = JSON.parse(await err.response.data.text())?.message;
@@ -262,12 +220,8 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
       const formData = new FormData();
       formData.append('file', file);
       formData.append('record_type', recordType);
-      formData.append('is_legacy', isHC ? 'false' : String(isLegacy));
-      if (!isHC && psId) {
-        formData.append('ps_id', psId);
-      } else if (isHC) {
-        formData.append('ps_id', user?.ps_id || user?.station_id || '');
-      }
+      formData.append('is_legacy', String(isLegacy));
+      formData.append('ps_id', isHC ? (user?.ps_id || user?.station_id || '') : psId);
       const res = await api.post('/import/validate', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         // Bulk validation parses the whole sheet (30k+ rows) — override the global
@@ -286,33 +240,73 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
     }
   });
 
+  // Confirm only CLAIMS the batch (VALIDATED -> CONFIRMED) and hands off to the async
+  // RabbitMQ worker (docs/new-db-integration/03-import.md C5) — the endpoint responds 202
+  // immediately, well before any record is written. batchDetailQuery below (started once
+  // confirmedBatchId is set) is what actually tracks the import to completion.
   const confirmMutation = useMutation({
     mutationFn: async () => {
-      // Importing 30k+ rows can take well over the global 15s axios timeout; disable
-      // the timeout for this request so the browser waits for the import to finish
-      // instead of aborting and leaving the user to retry into an "already imported" error.
       const res = await api.post(`/import/confirm/${validationResult?.batch_id}`, {}, { timeout: 0 });
       return res.data?.data;
     },
     onSuccess: (data) => {
-      toast.success(t('import.importSuccess', `Successfully imported ${data?.imported_rows} rows!`));
-      setImportReport(data.report);
-      setStep(3);
-      if (!isHC) {
-        onImported?.();
-      }
+      toast.success(t('import.importQueued', 'Import queued — processing in the background'));
+      setConfirmedBatchId(data.batch_id);
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || t('import.confirmFailed', 'Import confirmation failed'));
     }
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/import/batches/${validationResult?.batch_id}/cancel`);
+      return res.data?.data;
+    },
+    onSuccess: () => {
+      toast.success(t('import.importCancelled', 'Import cancelled'));
+      resetWizard();
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || t('import.cancelFailed', 'Cancel failed'));
+    }
+  });
+
+  // Polls GET /import/batches/:id every 2s while the batch is CONFIRMED (i.e. the async
+  // worker has picked it up but hasn't finished) — stops the moment a terminal status lands.
+  const { data: polledBatch } = useQuery({
+    queryKey: ['import', 'batch', confirmedBatchId],
+    queryFn: async () => {
+      const res = await api.get(`/import/batches/${confirmedBatchId}`);
+      return res.data?.data;
+    },
+    enabled: !!confirmedBatchId,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status && TERMINAL_STATUSES.has(status) ? false : 2000;
+    },
+  });
+
+  React.useEffect(() => {
+    if (polledBatch && TERMINAL_STATUSES.has(polledBatch.status) && step !== 3) {
+      setStep(3);
+      if (polledBatch.status === 'IMPORTED' && !isHC) {
+        onImported?.();
+      }
+    }
+  }, [polledBatch, step, isHC, onImported]);
+
   const resetWizard = () => {
     setStep(1);
     setFile(null);
     setValidationResult(null);
-    setImportReport(null);
+    setConfirmedBatchId(null);
   };
+
+  const isPolling = !!confirmedBatchId && !(polledBatch && TERMINAL_STATUSES.has(polledBatch.status));
+  const progressPct = polledBatch?.total_rows
+    ? Math.min(100, Math.round((polledBatch.processed_rows / polledBatch.total_rows) * 100))
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -370,10 +364,11 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
               </button>
             </div>
 
-            {/* Destination Station selection (if not HC) */}
+            {/* Destination Station selection (DISTRICT_OFFICER only — the list returned by
+                the hierarchy API is already scoped to this user's own district server-side) */}
             {!isHC && (
               <div className="space-y-1.5">
-                <label className="text-[var(--text-main-theme)] opacity-80 font-bold">{t('import.destinationStation', 'Destination Police Station')}</label>
+                <label className="text-[var(--text-main-theme)] opacity-80 font-bold">{t('import.destinationStation', 'Destination Police Station (your district)')}</label>
                 <select
                   value={psId}
                   onChange={(e) => setPsId(e.target.value)}
@@ -382,27 +377,27 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
                   <option value="">{t('import.selectStation', 'Select Destination Station...')}</option>
                   {stations.map(st => (
                     <option key={st.id} value={st.id} className="bg-[var(--bg-page-main)] text-[var(--text-main-theme)]">
-                      {currentLng === 'hi' ? st.name_hi : st.name_en}
+                      {/* hierarchy API has no name_hi — fall back so Hindi mode never renders blank options */}
+                      {currentLng === 'hi' ? (st.name_hi || st.name_en) : st.name_en}
                     </option>
                   ))}
                 </select>
               </div>
             )}
 
-            {/* Is Legacy checkbox (if not HC) */}
-            {!isHC && (
-              <div className="space-y-1.5 flex items-center pl-2 pt-6">
-                <label className="flex items-center gap-2 cursor-pointer font-bold select-none text-[var(--text-main-theme)] opacity-80">
-                  <input
-                    type="checkbox"
-                    checked={isLegacy}
-                    onChange={(e) => setIsLegacy(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--accent-color)] cursor-pointer"
-                  />
-                  <span>{t('import.markAsLegacy', 'Process as Legacy Data')}</span>
-                </label>
-              </div>
-            )}
+            {/* Legacy mode indicator — never a choice, D1/D2 (server enforces identically) */}
+            <div className="space-y-1.5 flex items-center pl-2 pt-6">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wide ${
+                isLegacy
+                  ? 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
+                  : 'bg-sky-500/10 border-sky-500/20 text-sky-600 dark:text-sky-400'
+              }`}>
+                <Clock size={12} />
+                {isLegacy
+                  ? t('import.legacyModeBadge', 'Legacy import — lands as LEGACY_IMPORTED, bypasses workflow')
+                  : t('import.liveModeBadge', 'Live import — lands in your queue as DRAFT')}
+              </span>
+            </div>
 
             {/* File selection */}
             <div className="space-y-1.5 md:col-span-2">
@@ -433,7 +428,7 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
         </div>
       )}
 
-      {step === 2 && (
+      {step === 2 && !confirmedBatchId && (
         <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-6 space-y-6 text-xs shadow-sm">
           <h3 className="font-bold text-[var(--text-main-theme)] flex items-center gap-2 text-sm font-display">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--bg-page-main)]/80 border border-[var(--border-card-theme)]/85">
@@ -470,32 +465,18 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
             </div>
           </div>
 
-          {/* Error Details List */}
           {validationResult?.errors?.length > 0 ? (
-            <div className="border border-rose-500/30 bg-rose-500/5 rounded-2xl p-5 space-y-3">
-              <p className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-2 text-xs">
-                <AlertTriangle size={14} />
-                {t('import.validationErrorsFound', `Validation Errors Found (${validationResult.errors.length})`)}
-              </p>
+            <>
+              <ErrorList errors={validationResult.errors} />
+              {validationResult?.errors_truncated && (
+                <p className="text-[var(--text-main-theme)]/60 text-[10px] font-semibold italic">
+                  {t('import.errorsTruncated', 'Only the first errors are shown here — the full list is recorded against the batch.')}
+                </p>
+              )}
               <p className="text-[var(--text-main-theme)]/70 font-semibold text-[10px]">
-                {t('import.errorSkipHint', 'These rows contain errors. When you confirm import, only valid rows will be imported and the rows listed below will be skipped.')}
+                {t('import.errorSkipHint', 'Rows with errors will be skipped on confirm; rows with only warnings will still be imported.')}
               </p>
-              <div className="max-h-48 overflow-y-auto space-y-1.5 pr-2">
-                {validationResult.errors.map((err, i) => (
-                  <div key={i} className="font-mono text-[10px] bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 px-3 py-2 rounded-lg flex justify-between items-start gap-4">
-                    <div>
-                      <span className="font-bold mr-2">Row {err.row}:</span>
-                      <span>{err.message}</span>
-                    </div>
-                    {err.field_key && (
-                      <span className="bg-rose-500/20 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
-                        {err.field_key}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            </>
           ) : (
             <div className="border border-emerald-500/30 bg-emerald-500/5 rounded-2xl p-5 flex items-center gap-3">
               <CheckCircle2 className="text-emerald-500 shrink-0" size={18} />
@@ -512,13 +493,25 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
 
           {/* Actions */}
           <div className="flex items-center justify-between border-t border-[var(--border-card-theme)]/40 pt-4">
-            <button
-              type="button"
-              onClick={resetWizard}
-              className="flex items-center gap-1.5 text-[var(--text-main-theme)] hover:bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] bg-transparent px-4 py-2 rounded-xl transition-all cursor-pointer font-bold shadow-sm"
-            >
-              {t('common.cancel', 'Cancel & Reset')}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={resetWizard}
+                className="flex items-center gap-1.5 text-[var(--text-main-theme)] hover:bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] bg-transparent px-4 py-2 rounded-xl transition-all cursor-pointer font-bold shadow-sm"
+              >
+                {t('common.startOver', 'Start Over')}
+              </button>
+              <button
+                type="button"
+                disabled={cancelMutation.isPending}
+                onClick={() => cancelMutation.mutate()}
+                className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 bg-transparent px-4 py-2 rounded-xl transition-all cursor-pointer font-bold shadow-sm disabled:opacity-50"
+                title={t('import.cancelHint', 'Discards this batch — no records have been written yet')}
+              >
+                {cancelMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Ban size={12} />}
+                {t('import.cancelBatch', 'Cancel Batch')}
+              </button>
+            </div>
 
             <button
               type="button"
@@ -533,18 +526,58 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
         </div>
       )}
 
-      {step === 3 && importReport && (
+      {step === 2 && confirmedBatchId && isPolling && (
+        <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-8 space-y-5 text-xs shadow-sm text-center">
+          <Loader2 size={32} className="animate-spin mx-auto text-[var(--accent-color)]" />
+          <div>
+            <p className="text-[var(--text-main-theme)] font-bold text-sm">
+              {t('import.importing', 'Importing records…')}
+            </p>
+            <p className="text-[var(--text-main-theme)]/60 text-[10px] mt-1 font-semibold">
+              {t('import.importingHint', 'This runs in the background — you can leave this page and check the Import Batches tab later.')}
+            </p>
+          </div>
+          {polledBatch?.total_rows > 0 && (
+            <div className="max-w-md mx-auto space-y-1.5">
+              <div className="h-2.5 rounded-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] overflow-hidden">
+                <div
+                  className="h-full bg-[var(--accent-color)] transition-all duration-500"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              <p className="text-[var(--text-main-theme)]/70 font-mono text-[10px] font-bold">
+                {polledBatch.processed_rows ?? 0} / {polledBatch.total_rows} rows ({progressPct}%)
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {step === 3 && polledBatch && (
         <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-6 space-y-6 text-xs shadow-sm font-sans">
           <div className="text-center py-4 space-y-2">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
-              <CheckCircle2 size={30} className="animate-pulse" />
+            <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border ${
+              polledBatch.status === 'IMPORTED'
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                : polledBatch.status === 'FAILED'
+                ? 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                : 'bg-[var(--bg-page-main)] border-[var(--border-card-theme)] text-[var(--text-main-theme)]/60'
+            }`}>
+              {polledBatch.status === 'IMPORTED' && <CheckCircle2 size={30} />}
+              {polledBatch.status === 'FAILED' && <XCircle size={30} />}
+              {polledBatch.status === 'CANCELLED' && <Ban size={30} />}
             </div>
             <h3 className="text-lg font-bold text-[var(--text-main-theme)] font-display">
-              {t('import.reportTitle', 'Import Process Completed!')}
+              {polledBatch.status === 'IMPORTED' && t('import.reportTitleDone', 'Import Completed')}
+              {polledBatch.status === 'FAILED' && t('import.reportTitleFailed', 'Import Failed')}
+              {polledBatch.status === 'CANCELLED' && t('import.reportTitleCancelled', 'Import Cancelled')}
             </h3>
             <p className="text-[var(--text-main-theme)] opacity-60 text-xs">
-              Batch ID: <span className="font-mono text-[10px] bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] px-2 py-0.5 rounded">{validationResult?.batch_id}</span>
+              Batch ID: <span className="font-mono text-[10px] bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] px-2 py-0.5 rounded">{polledBatch.id}</span>
             </p>
+            {polledBatch.status === 'FAILED' && polledBatch.error_message && (
+              <p className="text-rose-500 text-[10px] font-semibold max-w-md mx-auto">{polledBatch.error_message}</p>
+            )}
           </div>
 
           {/* Metrics Grid */}
@@ -554,7 +587,7 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
                 {t('import.totalProcessed', 'Processed')}
               </div>
               <div className="text-[var(--text-main-theme)] font-bold text-lg tabular-numbers">
-                {importReport.total_processed ?? 0}
+                {polledBatch.processed_rows ?? 0} / {polledBatch.total_rows ?? 0}
               </div>
             </div>
             <div className="border border-emerald-500/20 bg-emerald-500/5 rounded-2xl p-4 text-center">
@@ -562,7 +595,7 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
                 {t('import.imported', 'Imported')}
               </div>
               <div className="text-emerald-600 dark:text-emerald-400 font-bold text-lg tabular-numbers">
-                {importReport.imported_count ?? 0}
+                {polledBatch.imported_rows ?? 0}
               </div>
             </div>
             <div className="border border-sky-500/20 bg-sky-500/5 rounded-2xl p-4 text-center">
@@ -571,7 +604,7 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
                 {t('import.linked', 'Linked')}
               </div>
               <div className="text-sky-600 dark:text-sky-400 font-bold text-lg tabular-numbers">
-                {importReport.linked_count ?? 0}
+                {polledBatch.linked ?? 0}
               </div>
             </div>
             <div className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4 text-center">
@@ -580,100 +613,26 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
                 {t('import.unmatched', 'Unmatched')}
               </div>
               <div className="text-amber-600 dark:text-amber-400 font-bold text-lg tabular-numbers">
-                {importReport.unmatched_arrests_count ?? 0}
+                {polledBatch.unmatched ?? 0}
               </div>
             </div>
             <div className="border border-rose-500/20 bg-rose-500/5 rounded-2xl p-4 text-center col-span-2 md:col-span-1">
               <div className="text-rose-600 dark:text-rose-400 opacity-80 text-[10px] font-bold uppercase tracking-wider mb-1">
-                {t('import.failed', 'Failed Rows')}
+                {t('import.skipped', 'Skipped')}
               </div>
               <div className="text-rose-600 dark:text-rose-400 font-bold text-lg tabular-numbers">
-                {importReport.failed_count ?? 0}
+                {(polledBatch.errors || []).filter((e) => e.severity !== 'WARNING').length}
               </div>
             </div>
           </div>
 
-          {/* Details Sections */}
-          <div className="space-y-4 pt-2">
-            {/* Linked Records List */}
-            {importReport.linked_details?.length > 0 && (
-              <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/30 rounded-2xl p-4 space-y-2">
-                <h4 className="font-bold text-[var(--text-main-theme)] flex items-center gap-2">
-                  <Link size={14} className="text-sky-500" />
-                  Auto-Linked Records ({importReport.linked_details.length})
-                </h4>
-                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-2">
-                  {importReport.linked_details.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] px-3 py-2 rounded-xl text-[10px] font-mono">
-                      <div className="flex items-center gap-1.5">
-                        <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-1.5 py-0.5 rounded font-bold">ARREST</span>
-                        <span className="text-[var(--text-main-theme)] font-bold">{item.arrest_uid}</span>
-                      </div>
-                      <span className="text-[var(--text-main-theme)] opacity-40 font-bold">linked to</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="bg-sky-500/10 border border-sky-500/20 text-sky-500 px-1.5 py-0.5 rounded font-bold">CASE</span>
-                        <span className="text-[var(--text-main-theme)] font-bold">{item.case_uid}</span>
-                        <span className="text-[var(--text-main-theme)] opacity-60">(FIR No: {item.fir_no})</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          {polledBatch.linked > 0 || polledBatch.unmatched > 0 ? (
+            <p className="text-[var(--text-main-theme)]/60 text-[10px] font-semibold italic text-center">
+              {t('import.linkageAsyncHint', 'Linked/unmatched counts resolve asynchronously and may still be climbing — reopen this batch from Import Batches to see the latest.')}
+            </p>
+          ) : null}
 
-            {/* Unmatched Arrests Warning List */}
-            {importReport.unmatched_arrest_details?.length > 0 && (
-              <div className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4 space-y-2">
-                <h4 className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                  <AlertCircle size={14} />
-                  Unmatched Arrests ({importReport.unmatched_arrest_details.length})
-                </h4>
-                <p className="text-[var(--text-main-theme)]/70 text-[10px] font-semibold">
-                  These arrest records were successfully imported, but could not be automatically linked because no corresponding CASE record could be found.
-                </p>
-                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-2">
-                  {importReport.unmatched_arrest_details.map((item, idx) => (
-                    <div key={idx} className="bg-[var(--bg-page-main)] border border-amber-500/20 text-amber-700 dark:text-amber-300 px-3 py-2 rounded-xl text-[10px] font-mono flex justify-between items-center">
-                      <div>
-                        <span className="font-bold">UID:</span> {item.arrest_uid || '—'} | <span className="font-bold">FIR Referer:</span> {item.linked_fir_dd_no || '—'}
-                      </div>
-                      <span className="text-[9px] bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded font-bold uppercase">
-                        {item.reason}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Failed Rows List */}
-            {importReport.failed_details?.length > 0 && (
-              <div className="border border-rose-500/20 bg-rose-500/5 rounded-2xl p-4 space-y-2">
-                <h4 className="font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                  <AlertTriangle size={14} />
-                  Skipped / Failed Rows ({importReport.failed_details.length})
-                </h4>
-                <p className="text-[var(--text-main-theme)]/70 text-[10px] font-semibold">
-                  These rows failed spreadsheet validations and were not imported.
-                </p>
-                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-2">
-                  {importReport.failed_details.map((item, idx) => (
-                    <div key={idx} className="bg-[var(--bg-page-main)] border border-rose-500/20 text-rose-700 dark:text-rose-300 px-3 py-2 rounded-xl text-[10px] font-mono flex justify-between items-start gap-4">
-                      <div>
-                        <span className="font-bold text-rose-600 dark:text-rose-400 mr-2">Row {item.row}:</span>
-                        <span>{item.message}</span>
-                      </div>
-                      {item.field_key && (
-                        <span className="bg-rose-500/10 border border-rose-500/20 text-[8px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                          {item.field_key}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <ErrorList errors={polledBatch.errors || []} />
 
           {/* Action Bar */}
           <div className="flex justify-end border-t border-[var(--border-card-theme)]/40 pt-4">
@@ -696,8 +655,9 @@ function BulkImporterPanel({ onImported, isHC, user, refetchBatches, setActiveTa
 export default function LegacyDataPage() {
   const { user } = useAuthStore();
   const isHC = user?.role === 'HC';
-  const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState(isHC ? 'bulk_import' : 'batches');
+  const isDistrictOfficer = user?.role === 'DISTRICT_OFFICER';
+  const canImport = isHC || isDistrictOfficer;
+  const [activeTab, setActiveTab] = useState(canImport ? 'bulk_import' : 'batches');
   const [selectedBatch, setSelectedBatch] = useState(null);
 
   const getThemeClass = () => {
@@ -726,51 +686,51 @@ export default function LegacyDataPage() {
 
   // ── Fetch Batches ─────────────────────────────────────────────────────────
   const { data: batches = [], isLoading: batchLoading, refetch: refetchBatches } = useQuery({
-    queryKey: ['legacy', 'batches'],
+    queryKey: ['import', 'batches'],
     queryFn: async () => {
-      const res = await api.get('/legacy/batches');
+      const res = await api.get('/import/batches');
       const raw = res.data?.data;
       return Array.isArray(raw) ? raw : [];
     },
-    enabled: !isHC,
+    enabled: canImport,
   });
 
   // ── Fetch Batch Detail ────────────────────────────────────────────────────
   const { data: batchDetail } = useQuery({
-    queryKey: ['legacy', 'batch', selectedBatch?.id],
+    queryKey: ['import', 'batch', selectedBatch?.id],
     queryFn: async () => {
-      const res = await api.get(`/legacy/batches/${selectedBatch.id}`);
+      const res = await api.get(`/import/batches/${selectedBatch.id}`);
       return res.data?.data;
     },
     enabled: !!selectedBatch?.id,
   });
-  const TABS = isHC
-    ? [ { id: 'bulk_import', label: 'Bulk Importer' } ]
-    : [
-        { id: 'batches',    label: 'Import Batches' },
-        { id: 'import',     label: 'New Import' },
+
+  const TABS = canImport
+    ? [
+        { id: 'batches',     label: 'Import Batches' },
         { id: 'bulk_import', label: 'Bulk Importer' },
-      ];
+      ]
+    : [ { id: 'batches', label: 'Import Batches' } ];
 
   return (
     <div className={`min-h-screen ${getThemeClass()} page-bg space-y-6 p-6 font-sans text-[var(--text-main-theme)]`}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="hero-banner-gradient px-8 py-8 shadow-lg relative overflow-hidden rounded-2xl">
-        {/* subtle decorative ring */}
         <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full border border-white/5" />
         <div className="absolute -right-4 -top-4 h-32 w-32 rounded-full border border-white/5" />
 
         <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            {/* <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-[10px] font-semibold text-white/80 uppercase tracking-wider">
-              <Upload size={11} /> Bulk Import
-            </span> */}
             <h1 className="mt-3 text-2xl font-bold text-white flex items-center gap-3 font-display">
               Bulk Import Manager
             </h1>
             <p className="text-white/60 text-xs mt-1.5 max-w-lg font-semibold">
-              Upload case registers, arrest files, or PCR logs in bulk and monitor batch statuses.
+              {isHC
+                ? 'Upload case registers, arrest files, or PCR logs for your station.'
+                : isDistrictOfficer
+                ? 'Bulk-import legacy (historical) records for a police station in your district.'
+                : 'View bulk import batch history.'}
             </p>
           </div>
           <button
@@ -783,6 +743,16 @@ export default function LegacyDataPage() {
           </button>
         </div>
       </div>
+
+      {!canImport && (
+        <div className="border border-amber-500/30 bg-amber-500/5 rounded-2xl p-4 flex items-center gap-3 text-xs">
+          <AlertTriangle size={16} className="text-amber-500 shrink-0" />
+          <p className="text-[var(--text-main-theme)]/80 font-semibold">
+            Bulk import (upload/validate/confirm) is available to Station Operators (HC) and
+            District Officers only. You can still view batch history below.
+          </p>
+        </div>
+      )}
 
       {/* ── Tabs ───────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1 bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-1.5 shadow-sm border border-[var(--border-card-theme)] w-fit">
@@ -836,10 +806,10 @@ export default function LegacyDataPage() {
                   {[
                     { label: 'Record Type', value: batchDetail.record_type },
                     { label: 'Total Rows',  value: batchDetail.total_rows },
-                    { label: 'Imported',    value: batchDetail.imported_count },
-                    { label: 'Duplicates Skipped', value: batchDetail.skipped_count ?? 0 },
-                    { label: 'Validation Errors', value: batchDetail.error_count ?? 0 },
-                    { label: 'Status',      value: batchDetail.status },
+                    { label: 'Imported',    value: batchDetail.imported_rows },
+                    { label: 'Linked',      value: batchDetail.linked },
+                    { label: 'Unmatched',   value: batchDetail.unmatched },
+                    { label: 'Status',      value: <StatusBadge status={batchDetail.status} /> },
                   ].map(({ label, value }) => (
                     <div
                       key={label}
@@ -851,38 +821,19 @@ export default function LegacyDataPage() {
                   ))}
                 </div>
 
-                {batchDetail.errors?.length > 0 && (
-                  <div className="border border-rose-500/30 bg-rose-500/5 rounded-2xl p-5 shadow-sm">
-                    <p className="text-rose-500 font-bold mb-3 flex items-center gap-2 text-sm">
-                      <AlertTriangle size={14} /> Import Errors ({batchDetail.errors.length})
-                    </p>
-                    <ul className="text-rose-500/90 space-y-1 max-h-36 overflow-y-auto font-semibold">
-                      {batchDetail.errors.map((e, i) => (
-                        <li key={i} className="font-mono text-[10px] bg-rose-500/10 border border-rose-500/20 text-rose-500 px-3 py-1.5 rounded-lg">
-                          Row {e.row}: {e.message}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <ErrorList errors={batchDetail.errors || []} />
               </div>
             )}
           </div>
         )}
 
-
-        {activeTab === 'import' && (
-          <div className="p-6">
-            <ImportPanel onImported={() => { refetchBatches(); setActiveTab('batches'); }} />
-          </div>
-        )}
-
-        {activeTab === 'bulk_import' && (
+        {activeTab === 'bulk_import' && canImport && (
           <div className="p-6">
             <BulkImporterPanel
               isHC={isHC}
+              isDistrictOfficer={isDistrictOfficer}
               user={user}
-              onImported={() => { refetchBatches(); setActiveTab('batches'); }}
+              onImported={() => { refetchBatches(); }}
             />
           </div>
         )}

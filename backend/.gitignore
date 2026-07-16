@@ -34,3 +34,10 @@ Thumbs.db
 
 # Scratch / temp dev scripts (not for repo)
 scratch/
+
+# Import module temp uploads (Integration 3, WP6) — multer-saved .xlsx files awaiting
+# validate/confirm; deleted on success/failure/cancel by the app itself, this is just a
+# backstop so a crashed process's leftovers never get committed.
+var/tmp/imports/
+# Superseded by var/tmp/imports/ above — kept here in case it reappears locally.
+temp-imports/

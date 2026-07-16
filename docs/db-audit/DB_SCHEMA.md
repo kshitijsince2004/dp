@@ -102,12 +102,13 @@ Indexes: `(ps_id, is_active)`.
 | is_frozen | boolean | NOT NULL DEFAULT false — hash-chain break freeze (§9.4); write path rejects mutations, only privileged review unfreezes |
 | is_legacy | boolean | NOT NULL DEFAULT false |
 | source_system | varchar(100) | |
-| legacy_ref | varchar(255) | |
+| legacy_ref | varchar(255) | — the record's canonical source key within its import batch (parent FIR/GD/DD, or `row:<n>` for single-sheet types); paired with `import_batch_id` as the resumable-import idempotency key (Integration 3) |
 | imported_at | timestamptz | ; imported_by uuid FK → users |
+| import_batch_id | uuid | FK → import_batches ON DELETE SET NULL — added Integration 3 WP1 (2026-07-16); NULL for non-imported records |
 | created_by / updated_by | uuid | NOT NULL / NULL, FK → users |
 | created_at / updated_at | timestamptz | |
 
-Indexes: `(ps_id, record_type, record_date DESC)`, `(district_id, record_type)`, `(current_status)`, `(record_date DESC)`, `(io_id)`.
+Indexes: `(ps_id, record_type, record_date DESC)`, `(district_id, record_type)`, `(current_status)`, `(record_date DESC)`, `(io_id)`, `(import_batch_id)`.
 **No `zone_id`/`range_id`:** verified 2026-07-07 — no zone/range-level scoping exists in any report consumer (python_worker sheets, daily-diary module). If zone-level proformas arrive later: add columns + scripted backfill from the tree (per L3.1).
 
 ### 2.2 `fir_details` (record_type = CASE) — 1:1 → records
@@ -612,10 +613,10 @@ audit (append-only): id uuid PK · user_id uuid FK → users · user_role varcha
 id uuid PK · name varchar(150) NOT NULL · scope varchar(20) NOT NULL DEFAULT 'global' · scope_id uuid FK → hierarchy_nodes · filter_spec jsonb NOT NULL · record_types jsonb NOT NULL DEFAULT '[]' · created_by uuid FK → users · is_active boolean NOT NULL DEFAULT true · created_at/updated_at.
 
 ### 7.6 `import_batches` (merged: `legacy_import_batches` is DEAD — `is_legacy` flag covers it)
-id uuid PK · record_type varchar(20) NOT NULL · is_legacy boolean NOT NULL DEFAULT false · uploaded_by uuid NOT NULL FK → users · ps_id / district_id uuid FK → hierarchy_nodes · file_path varchar(500) · total_rows / valid_rows / invalid_rows / imported_rows int NOT NULL DEFAULT 0 · status varchar(30) NOT NULL DEFAULT 'VALIDATION_PENDING', CHECK IN (VALIDATION_PENDING, VALIDATED, CONFIRMED, IMPORTED, FAILED, CANCELLED) (synced) · confirmed_at timestamptz · created_at/updated_at.
+id uuid PK · record_type varchar(20) NOT NULL · is_legacy boolean NOT NULL DEFAULT false · uploaded_by uuid NOT NULL FK → users · ps_id / district_id uuid FK → hierarchy_nodes · file_path varchar(500) · total_rows / valid_rows / invalid_rows / imported_rows / **processed_rows** int NOT NULL DEFAULT 0 · status varchar(30) NOT NULL DEFAULT 'VALIDATION_PENDING', CHECK IN (VALIDATION_PENDING, VALIDATED, CONFIRMED, IMPORTED, FAILED, CANCELLED) (synced) · **error_message text** · confirmed_at timestamptz · created_at/updated_at. `processed_rows`/`error_message` added Integration 3 WP1 (2026-07-16) — async-confirm progress counter (attempted, distinct from `imported_rows` since rows can be skipped as duplicates) and FAILED-status reason.
 
 ### 7.7 `import_batch_errors` (kept — ruling)
-id uuid PK · batch_id uuid NOT NULL FK → import_batches ON DELETE CASCADE · row_number int NOT NULL · field_key varchar(60) · error_code varchar(40) · error_message text · created_at. Index: `(batch_id)`.
+id uuid PK · batch_id uuid NOT NULL FK → import_batches ON DELETE CASCADE · row_number int NOT NULL · field_key varchar(60) · error_code varchar(40) · **severity varchar(10) NOT NULL DEFAULT 'ERROR', CHECK IN (ERROR, WARNING)** · error_message text · created_at. Index: `(batch_id)`. `severity` added Integration 3 WP1 (2026-07-16) — legacy imports downgrade unresolvable ref-label errors to WARNING (row still imports, raw value preserved) instead of ERROR (row rejected).
 
 ### 7.8 `notifications` — bilingual redesign (L6.7): type + params, rendered via i18n at read time
 id uuid PK · user_id uuid NOT NULL FK → users · type varchar(40) NOT NULL (i18n key) · params jsonb NOT NULL DEFAULT '{}' · record_id uuid FK → records · is_read boolean NOT NULL DEFAULT false · read_at timestamptz · created_at. Index: `(user_id, is_read, created_at DESC)`. English-only i18n for now.

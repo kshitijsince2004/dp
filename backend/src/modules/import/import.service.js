@@ -1,0 +1,403 @@
+// Batch lifecycle for the bulk-import module (Integration 3, WP4/WP5). Owns the
+// `import_batches`/`import_batch_errors` rows end to end: create (parse+validate+persist),
+// claim (the atomic pre-confirm handoff to the async worker — WP5 adds processBatch alongside
+// claimBatch in this same file), cancel, and the scoped list/detail reads. Controllers never
+// touch these tables directly — this is the one place that does, matching P1.2's "one write
+// path" discipline extended to the import module's own bookkeeping tables.
+import fs from 'fs';
+import db from '../../config/db.js';
+import { ApiError } from '../../utils/ApiError.js';
+import { logger } from '../../utils/logger.js';
+import { readWorkbook, INVALID_PARENT_CODE, effectiveRecordType } from './import.parse.js';
+import { validateBatch } from './import.validate.js';
+import { createImportedRecord } from '../records/records.service.js';
+import { normalizeRegistryRow, parseApplicableTypes } from './registry-sync.util.js';
+
+const MAX_INLINE_ERRORS = 500;
+
+/** Registry rows applicable to `recordType`, active, pre-shimmed (WP0's normalizeRegistryRow)
+ * — the same map readWorkbook/validateBatch/composeRecordPayload all consume. */
+async function buildRegistryMap(recordType) {
+  const rows = (await db('field_registry').where('is_active', true)).map(normalizeRegistryRow);
+  const map = {};
+  for (const f of rows) {
+    if (parseApplicableTypes(f.applicable_record_types).includes(recordType)) map[f.field_key] = f;
+  }
+  return map;
+}
+
+/** Walks hierarchy_nodes.parent_id up from a PS to its DISTRICT ancestor — same pattern the
+ * old controller used at validate time (kept, not reinvented). Exported: WP6's controller-
+ * level DISTRICT_OFFICER district-membership check (P5.6) reuses this instead of a second
+ * copy of the same walk. */
+export async function districtForPs(psId) {
+  let node = await db('hierarchy_nodes').where({ id: psId }).first();
+  while (node && node.node_type !== 'DISTRICT') {
+    if (!node.parent_id) return null;
+    node = await db('hierarchy_nodes').where({ id: node.parent_id }).first();
+  }
+  return node || null;
+}
+
+/** Resolves the { psId, districtId, districtName, psName } batchScope object validateBatch and
+ * this file's own persistence step need. Callers (the controller) supply an ALREADY-DECIDED,
+ * ALREADY-AUTHORIZED target psId — this function only resolves display names + the district
+ * chain for the PS_MISMATCH sanity check and the spine's district_id stamp; it does not itself
+ * enforce who's allowed to target what PS (that's the router/controller's job, P5.6/WP6). */
+async function resolveBatchScope(psId) {
+  const psNode = await db('hierarchy_nodes').where({ id: psId }).first();
+  if (!psNode) throw new ApiError(400, 'Target police station not found');
+  const districtNode = await districtForPs(psId);
+  return {
+    psId,
+    districtId: districtNode ? districtNode.id : null,
+    districtName: districtNode ? districtNode.name : null,
+    psName: psNode.name,
+  };
+}
+
+/**
+ * Create + fully validate a batch in one call: inserts the `import_batches` row, parses the
+ * uploaded file, runs validateBatch, persists every finding (the full set, always — WP4's
+ * error taxonomy) plus the `__INVALID_PARENT__` sentinel rows confirm will need, and leaves
+ * the batch in `VALIDATED`. Never leaves a batch in `VALIDATION_PENDING` on return — either
+ * this succeeds through to VALIDATED or it throws (the controller's job to mark FAILED /
+ * clean up the temp file on that path, since only it knows the HTTP-level failure semantics).
+ *
+ * @param user          req.user — uploaded_by, and (for CASE dup-checks etc.) the acting identity
+ * @param recordType    'CASE' | 'ARREST' | 'KALANDRA' | 'UIDB' | 'MISSING' | 'PCR_CALL'
+ * @param isLegacy      boolean
+ * @param targetPsId    resolved + authorized by the caller (WP6) — never taken from the body
+ * @param filePath      the multer-saved temp file's path
+ * @returns { batch, errors (capped to MAX_INLINE_ERRORS for the HTTP response), errorsTruncated }
+ */
+export async function createBatch({ user, recordType, isLegacy, targetPsId, filePath }) {
+  const batchScope = await resolveBatchScope(targetPsId);
+
+  const [batch] = await db('import_batches')
+    .insert({
+      record_type: recordType, is_legacy: isLegacy, uploaded_by: user.id,
+      ps_id: batchScope.psId, district_id: batchScope.districtId,
+      file_path: filePath, status: 'VALIDATION_PENDING',
+    })
+    .returning('*');
+
+  const registryMap = await buildRegistryMap(recordType);
+  const parsed = await readWorkbook(recordType, filePath, registryMap);
+  if (!parsed) {
+    throw new ApiError(400, 'Invalid template: main worksheet not found');
+  }
+
+  const { errorRows, invalidParentKeys, counts } = await validateBatch(db, {
+    recordType, isLegacy, batchScope, parsed, registryMap,
+  });
+
+  await db.transaction(async (trx) => {
+    if (errorRows.length) {
+      const errorPayloads = errorRows.map((e) => ({
+        batch_id: batch.id, row_number: e.row ?? 0, field_key: e.field_key || null,
+        error_code: e.code, severity: e.severity, error_message: e.message,
+      }));
+      for (let i = 0; i < errorPayloads.length; i += 500) {
+        await trx('import_batch_errors').insert(errorPayloads.slice(i, i + 500));
+      }
+    }
+    if (invalidParentKeys.size) {
+      // Authoritative persisted parent-invalidation set — confirm (WP5) reads these back by
+      // canonical key instead of re-deriving them, so validate and confirm can never disagree
+      // about which FIRs were rejected even if the underlying file is re-read independently.
+      const sentinelPayloads = [...invalidParentKeys].map((canon) => ({
+        batch_id: batch.id, row_number: 0, field_key: null,
+        error_code: INVALID_PARENT_CODE, severity: 'ERROR', error_message: canon,
+      }));
+      for (let i = 0; i < sentinelPayloads.length; i += 500) {
+        await trx('import_batch_errors').insert(sentinelPayloads.slice(i, i + 500));
+      }
+    }
+    await trx('import_batches').where({ id: batch.id }).update({
+      status: 'VALIDATED', total_rows: counts.total, valid_rows: counts.valid,
+      invalid_rows: counts.invalid, updated_at: trx.fn.now(),
+    });
+  });
+
+  const visibleErrors = errorRows.filter((e) => e.code !== INVALID_PARENT_CODE);
+  return {
+    batch: { ...batch, status: 'VALIDATED', total_rows: counts.total, valid_rows: counts.valid, invalid_rows: counts.invalid },
+    errors: visibleErrors.slice(0, MAX_INLINE_ERRORS),
+    errorsTruncated: visibleErrors.length > MAX_INLINE_ERRORS,
+    counts,
+  };
+}
+
+/** Atomic VALIDATED -> CONFIRMED claim (§4.7). 0 rows updated means someone else already
+ * claimed it, or it's not in a claimable state — the caller (controller) turns that into the
+ * right 409/400. Does NOT start processing — that's the confirm handler's job (WP5), triggered
+ * by the event this function's caller publishes after the claim succeeds. */
+export async function claimBatch(batchId, userId) {
+  const batch = await db('import_batches').where({ id: batchId }).first();
+  if (!batch) throw new ApiError(404, 'Batch not found');
+  if (batch.uploaded_by !== userId) throw new ApiError(403, 'Only the user who uploaded the batch can confirm it');
+  if (batch.status === 'IMPORTED') throw new ApiError(409, 'This batch has already been imported.');
+  if (batch.status === 'CONFIRMED') throw new ApiError(409, 'This batch is already being imported. Please wait for it to finish.');
+  if (batch.status !== 'VALIDATED') throw new ApiError(400, `Batch is not ready for confirmation (status must be VALIDATED, is ${batch.status})`);
+  if (!batch.file_path || !fs.existsSync(batch.file_path)) throw new ApiError(410, 'Physical temp file has expired or was removed');
+
+  const claimed = await db('import_batches')
+    .where({ id: batchId, status: 'VALIDATED' })
+    .update({ status: 'CONFIRMED', confirmed_at: db.fn.now() });
+  if (claimed === 0) {
+    const current = await db('import_batches').where({ id: batchId }).first();
+    if (current?.status === 'IMPORTED') throw new ApiError(409, 'This batch has already been imported.');
+    throw new ApiError(409, 'This batch is already being imported. Please wait for it to finish.');
+  }
+  return { ...batch, status: 'CONFIRMED' };
+}
+
+/** CANCELLED is legal only pre-confirm (D6 — records are append-only, there's no undo once
+ * writing has started; a batch already CONFIRMED/IMPORTED must run to completion). */
+export async function cancelBatch(batchId, userId) {
+  const batch = await db('import_batches').where({ id: batchId }).first();
+  if (!batch) throw new ApiError(404, 'Batch not found');
+  if (batch.uploaded_by !== userId) throw new ApiError(403, 'Only the user who uploaded the batch can cancel it');
+  if (!['VALIDATION_PENDING', 'VALIDATED'].includes(batch.status)) {
+    throw new ApiError(409, `Batch cannot be cancelled once ${batch.status} — records may already be written.`);
+  }
+  await db('import_batches').where({ id: batchId }).update({ status: 'CANCELLED', updated_at: db.fn.now() });
+  try {
+    if (batch.file_path && fs.existsSync(batch.file_path)) fs.unlinkSync(batch.file_path);
+  } catch (err) {
+    logger.warn(`[ImportService] Failed to delete temp file for cancelled batch ${batchId}: ${err.message}`);
+  }
+  return { id: batchId, status: 'CANCELLED' };
+}
+
+/** P5.1 — every list carries the jurisdiction predicate. `jurisdictionQuery` is req.jurisdictionQuery
+ * from enforceScope: {ps_id} for HC, {district_id} for DISTRICT_OFFICER, {} for global roles. */
+export async function listBatches(jurisdictionQuery, { page = 1, limit = 20 } = {}) {
+  let query = db('import_batches');
+  if (jurisdictionQuery.ps_id) query = query.where('ps_id', jurisdictionQuery.ps_id);
+  else if (jurisdictionQuery.district_id) query = query.where('district_id', jurisdictionQuery.district_id);
+
+  const countRow = await query.clone().count('* as count').first();
+  const rows = await query.clone().orderBy('created_at', 'desc').offset((page - 1) * limit).limit(limit);
+  return { rows, total: parseInt(countRow.count, 10) || 0, page, limit };
+}
+
+const LINK_TYPE_BY_RECORD_TYPE = { ARREST: 'CASE_ARREST', MISSING: 'CASE_MISSING' };
+
+/** Live linked/unmatched counts (AD5) — computed on read, not stored, since linkResolver.js
+ * resolves asynchronously after each imported record's `record.created` event; a batch's
+ * counts can legitimately still be climbing seconds after `getBatchDetail` is first called.
+ * Only ARREST/MISSING have a CASE_* link type; every other type returns {linked:0,unmatched:0}. */
+async function computeLinkageCounts(batchId, recordType) {
+  const linkTypeCode = LINK_TYPE_BY_RECORD_TYPE[recordType];
+  if (!linkTypeCode) return { linked: 0, unmatched: 0 };
+
+  const importedIds = await db('records').where({ import_batch_id: batchId }).pluck('id');
+  if (!importedIds.length) return { linked: 0, unmatched: 0 };
+
+  const linkedIds = await db('record_links')
+    .join('link_type_registry', 'record_links.link_type_id', 'link_type_registry.id')
+    .where('link_type_registry.code', linkTypeCode)
+    .whereIn('record_links.target_record_id', importedIds)
+    .pluck('record_links.target_record_id');
+
+  const linked = new Set(linkedIds).size;
+  return { linked, unmatched: importedIds.length - linked };
+}
+
+export async function getBatchDetail(batchId, jurisdictionQuery) {
+  let query = db('import_batches').where({ id: batchId });
+  if (jurisdictionQuery.ps_id) query = query.andWhere('ps_id', jurisdictionQuery.ps_id);
+  else if (jurisdictionQuery.district_id) query = query.andWhere('district_id', jurisdictionQuery.district_id);
+  const batch = await query.first();
+  if (!batch) return null;
+
+  const errors = await db('import_batch_errors')
+    .where({ batch_id: batchId }).whereNot('error_code', INVALID_PARENT_CODE)
+    .orderBy('row_number', 'asc');
+
+  const linkage = await computeLinkageCounts(batchId, batch.record_type);
+
+  return { ...batch, errors, ...linkage };
+}
+
+// ── async confirm worker (Integration 3, WP5) ───────────────────────────────────────────
+
+const PROGRESS_FLUSH_EVERY = 20;
+
+/**
+ * The actual confirm work — triggered by `importConfirmHandler.js`'s subscription to
+ * `import.confirm.requested` (published by the confirm endpoint right after `claimBatch`
+ * succeeds). Never called directly by a controller; the event is the only entry point.
+ *
+ * Re-derives everything from the source file rather than trusting anything computed at
+ * validate time (AD7) — re-reads the workbook, and re-runs `validateBatch` in full. This is
+ * deliberate, not wasted work: it guarantees byte-for-byte parity between what was validated
+ * and what gets written, it's what actually invokes `validateRefLabels`'s legacy raw-value-
+ * preservation side effect (C6 — there is no other call site that does this at write time),
+ * and it naturally re-checks DUPLICATE_IN_DB against the database's CURRENT state (catching a
+ * race where a different process imported the same FIR between the original validate and this
+ * confirm) without any bespoke race-detection logic of its own — the unique-constraint catch
+ * below is only the final backstop for the remaining single-row race window.
+ *
+ * Per-row failures (a single record's `createImportedRecord` throwing) are caught and recorded
+ * as a WRITE_FAILED error row — one bad row never aborts the other 999 good ones. A crash of
+ * the whole function (e.g. the source file went missing) is caught by the outer try/catch,
+ * which marks the batch FAILED rather than leaving it stuck in CONFIRMED — RabbitMQ's
+ * redelivery-on-crash (before this function's own completion) is the OTHER path back to
+ * CONFIRMED, which the leading status guard below treats as a safe, idempotent resume.
+ */
+export async function processBatch(batchId) {
+  const batch = await db('import_batches').where({ id: batchId }).first();
+  if (!batch) {
+    logger.warn(`[ImportService] processBatch: batch ${batchId} not found`);
+    return;
+  }
+  if (batch.status !== 'CONFIRMED') {
+    // Idempotent redelivery guard (§4.6/G4) — already finished (IMPORTED/FAILED) or somehow
+    // not yet claimed. Never re-run a batch that isn't in the exact state this function owns.
+    logger.info(`[ImportService] processBatch: batch ${batchId} status is ${batch.status}, not CONFIRMED — skipping`);
+    return;
+  }
+
+  try {
+    if (!batch.file_path || !fs.existsSync(batch.file_path)) {
+      throw new Error('Source file no longer exists — cannot confirm');
+    }
+    const uploader = await db('users').where({ id: batch.uploaded_by }).first();
+    if (!uploader) throw new Error('Uploading user account no longer exists');
+
+    const registryMap = await buildRegistryMap(batch.record_type);
+    const parsed = await readWorkbook(batch.record_type, batch.file_path, registryMap);
+    if (!parsed) throw new Error('Could not re-read the workbook at confirm time');
+
+    const batchScope = await resolveBatchScope(batch.ps_id);
+    const { composedPayloads, errorRows: confirmErrorRows } = await validateBatch(db, {
+      recordType: batch.record_type, isLegacy: batch.is_legacy, batchScope, parsed, registryMap,
+    });
+
+    // Persist confirm-time findings NOT already recorded at validate time (WP10, user
+    // decision: auditing needs these). Anything newly discovered here — typically a
+    // DUPLICATE_IN_DB from a cross-batch race between validate and confirm, or a reference
+    // that changed underneath the batch — would otherwise vanish silently: its row is
+    // excluded from composedPayloads, processed_rows lands below total_rows, and nothing in
+    // import_batch_errors explains why. Append-only, deduped against the validate-time rows
+    // on (row_number, error_code, field_key); the __INVALID_PARENT__ sentinels are NOT in
+    // errorRows (they travel separately as invalidParentKeys) so they can't be re-inserted.
+    const existingErrs = await db('import_batch_errors')
+      .where({ batch_id: batchId }).select('row_number', 'error_code', 'field_key');
+    const seenTriples = new Set(existingErrs.map((e) => `${e.row_number}|${e.error_code}|${e.field_key ?? ''}`));
+    const freshErrs = confirmErrorRows
+      .filter((e) => !seenTriples.has(`${e.row ?? 0}|${e.code}|${e.field_key ?? ''}`))
+      .map((e) => ({
+        batch_id: batchId, row_number: e.row ?? 0, field_key: e.field_key || null,
+        error_code: e.code, severity: e.severity, error_message: e.message,
+      }));
+    for (let i = 0; i < freshErrs.length; i += 500) {
+      await db('import_batch_errors').insert(freshErrs.slice(i, i + 500));
+    }
+
+    const scope = { ps_id: batchScope.psId, district_id: batchScope.districtId, sub_div_id: null };
+    const status = batch.is_legacy ? 'LEGACY_IMPORTED' : 'DRAFT';
+    const writeRecordType = effectiveRecordType(batch.record_type); // KALANDRA writes as ARREST
+
+    let processedRows = 0;
+    let importedRows = 0;
+    const newErrorRows = [];
+
+    for (const { payload } of composedPayloads) {
+      processedRows++;
+
+      // Idempotency (C4/AD2) — the resume path. Same (import_batch_id, legacy_ref) pair means
+      // this exact row was already written by an earlier, interrupted run of this function.
+      const existing = await db('records')
+        .where({ import_batch_id: batchId, legacy_ref: payload.sourceRef }).first();
+      if (existing) continue;
+
+      try {
+        await createImportedRecord(
+          uploader, writeRecordType, payload.recordDate, payload.data, null,
+          { persons: payload.persons, properties: payload.properties, offences: payload.offences },
+          { scope, isLegacy: batch.is_legacy, status, batchId, sourceRef: payload.sourceRef },
+        );
+        importedRows++;
+      } catch (err) {
+        if (err.code === '23505') {
+          // Unique-violation backstop (P2 enforce layer) — a race validateBatch's own
+          // DUPLICATE_IN_DB check (run moments earlier, above) didn't catch: another process
+          // wrote the same fir_details (ps_id, fir_year, fir_no) between that check and this
+          // INSERT. Downgraded to a WARNING, not WRITE_FAILED — the row was skipped for a
+          // meaningful, expected reason, not a genuine error.
+          newErrorRows.push({
+            batch_id: batchId, row_number: payload.rowIdx, field_key: 'fir_no',
+            error_code: 'DUPLICATE_IN_DB', severity: 'WARNING',
+            error_message: 'This FIR was imported by a concurrent process between validation and confirmation.',
+          });
+        } else {
+          logger.error(`[ImportService] processBatch ${batchId}: row ${payload.rowIdx} write failed: ${err.message}`);
+          newErrorRows.push({
+            batch_id: batchId, row_number: payload.rowIdx, field_key: null,
+            error_code: 'WRITE_FAILED', severity: 'ERROR', error_message: err.message,
+          });
+        }
+      }
+
+      if (processedRows % PROGRESS_FLUSH_EVERY === 0) {
+        await db('import_batches').where({ id: batchId })
+          .update({ processed_rows: processedRows, imported_rows: importedRows, updated_at: db.fn.now() });
+      }
+    }
+
+    if (newErrorRows.length) {
+      for (let i = 0; i < newErrorRows.length; i += 500) {
+        await db('import_batch_errors').insert(newErrorRows.slice(i, i + 500));
+      }
+    }
+
+    await db('import_batches').where({ id: batchId }).update({
+      status: 'IMPORTED', processed_rows: processedRows, imported_rows: importedRows,
+      updated_at: db.fn.now(),
+    });
+
+    try {
+      if (fs.existsSync(batch.file_path)) fs.unlinkSync(batch.file_path);
+    } catch (err) {
+      logger.warn(`[ImportService] Failed to delete temp file for completed batch ${batchId}: ${err.message}`);
+    }
+  } catch (err) {
+    logger.error(`[ImportService] processBatch ${batchId} failed: ${err.message}`);
+    try {
+      await db('import_batches').where({ id: batchId })
+        .update({ status: 'FAILED', error_message: err.message, updated_at: db.fn.now() });
+    } catch (updateErr) {
+      logger.error(`[ImportService] processBatch ${batchId}: failed to mark FAILED too: ${updateErr.message}`);
+    }
+    // Deliberately does not rethrow — eventBus.js nacks-without-requeue on a thrown error
+    // (§4.6/G4), which would just drop the message with no record of why. Marking FAILED here
+    // and returning normally (ack) is the correct terminal state; the batch is done, just
+    // unsuccessfully. The 15-minute sweep (below) is for batches stuck in CONFIRMED with no
+    // message at all (e.g. RabbitMQ itself lost it in mock-mode), not for batches that reached
+    // this function and failed cleanly.
+  }
+}
+
+/**
+ * Startup safety net (§4.6/G4) — re-publishes `import.confirm.requested` for any batch stuck
+ * in CONFIRMED for more than `staleMinutes`. Covers the case where the original message never
+ * reached a handler at all (mock-mode process restart mid-flight) — `processBatch`'s own
+ * leading status guard makes redelivery always safe (a batch already IMPORTED/FAILED is a
+ * no-op; a batch still genuinely CONFIRMED picks up via the idempotency check per row).
+ * Called once from `importConfirmHandler.js`'s `init()`, not on a recurring timer — a fresh
+ * check on every process start is what "startup sweep" means here, not a cron job.
+ */
+export async function sweepStaleConfirmedBatches(publish, staleMinutes = 15) {
+  const staleBatches = await db('import_batches')
+    .where({ status: 'CONFIRMED' })
+    .andWhere('confirmed_at', '<', db.raw(`now() - interval '${staleMinutes} minutes'`));
+  for (const batch of staleBatches) {
+    logger.warn(`[ImportService] Sweeping stale CONFIRMED batch ${batch.id} (confirmed_at=${batch.confirmed_at}) — re-publishing`);
+    await publish('import.confirm.requested', { batch_id: batch.id });
+  }
+  return staleBatches.length;
+}

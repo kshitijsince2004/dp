@@ -42,6 +42,23 @@ export default function FieldRenderer({
     staleTime: 60_000,
   });
 
+  // India address state→district cascading: a person-address *_district dropdown narrows to
+  // its sibling *_state's districts (static LGD-snapshot map from the backend, cached long).
+  // 'district' (the record's police district), occurrence_district and arrest_district are
+  // Delhi-Police-scoped event fields — never cascaded here.
+  const fieldKey = field?.field_key || '';
+  const isAddressDistrict = fieldKey.endsWith('_district')
+    && fieldKey !== 'occurrence_district' && fieldKey !== 'arrest_district';
+  const { data: stateDistrictMap } = useQuery({
+    queryKey: ['stateDistricts'],
+    queryFn: async () => {
+      const res = await api.get('/fields/lookup/state-districts');
+      return res.data.data || {};
+    },
+    enabled: isAddressDistrict,
+    staleTime: Infinity,
+  });
+
   if (!field) return null;
   const key     = field.field_key;
   const type    = (field.field_type || 'TEXT').toUpperCase();
@@ -74,6 +91,18 @@ export default function FieldRenderer({
       }));
     } else {
       options = [];
+    }
+  }
+
+  // Address district cascading (see the stateDistricts query above): sibling state selected
+  // and known → narrow to that state's districts; no state (or 'Other UT/State') → keep the
+  // field's own full-India options untouched.
+  if (isAddressDistrict && values && stateDistrictMap?.districtsByState) {
+    const prefix = key.slice(0, -'_district'.length);
+    const stateVal = values[`${prefix}_state`];
+    const stateDistricts = stateVal && stateDistrictMap.districtsByState[stateVal];
+    if (stateDistricts) {
+      options = stateDistricts.map(d => ({ value: d, label_en: d, label_hi: d }));
     }
   }
 

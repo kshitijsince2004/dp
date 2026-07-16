@@ -46,6 +46,60 @@ export function normalizeDate(val) {
   return toISO(val);
 }
 
+// ── FIR reference normalization ──────────────────────────────────────────────────────
+// Canonical FIR form is "<seq>/<4-digit-year>" ("123/2026"). Case↔arrest↔missing-person
+// auto-linkage (linkResolver.js) and duplicate detection both match fir_no by EXACT string,
+// so every write path (interactive form AND bulk import) must store the same canonical form
+// — this is the one shared brain for it (applied via records.mapper.js's normalizeDetailValue
+// for the fir_no detail columns, and by the import composer for validate-time checks).
+
+/** 2-digit FIR year -> 4-digit. FIRs are registered in the current year (occasionally the
+ * recent past; legacy imports reach back decades); future years are impossible beyond a
+ * year-boundary margin. Rule: yy <= (current yy + 1) -> 20yy, else 19yy.
+ * (In 2026: 26 -> 2026, 27 -> 2027 (margin), 28 -> 1928, 98 -> 1998.) */
+export function expandFirYear(y2) {
+  const cur2 = new Date().getFullYear() % 100;
+  return y2 <= cur2 + 1 ? 2000 + y2 : 1900 + y2;
+}
+
+// Same separator convention as import.parse.js's splitFirTokens (reimplemented locally —
+// dependency direction is import module -> records module, never the reverse). A cell
+// listing several FIRs is left untouched: collapsing it would corrupt data.
+const FIR_LIST_SEPARATORS = /\s*(?:[,;&\n]|\band\b)\s*/i;
+
+/** Normalize a single FIR reference to "<seq>/<4-digit-year>" — "0123/26", "FIR-104 / 2026",
+ * "123/2026" all become "123/2026". A bare sequence with no year stays a bare sequence (never
+ * invent a year). Multi-FIR lists and unparseable text return UNCHANGED (P2: reject only the
+ * impossible — validation elsewhere decides whether the value is an error). */
+export function normalizeFirNo(raw) {
+  if (raw === null || raw === undefined) return raw;
+  const s = String(raw).trim();
+  if (!s) return raw;
+  if (s.split(FIR_LIST_SEPARATORS).filter(Boolean).length > 1) return raw;
+  const nums = s.match(/\d+/g);
+  if (!nums || nums.length === 0) return raw;
+  if (nums.length === 1) return String(parseInt(nums[0], 10));
+  // Prefer an explicit 4-digit year token anywhere in the string; else treat the second
+  // number as the year (2-digit -> century-expanded). Mirrors import.parse.js parseFirAndYear.
+  let yearIdx = -1;
+  for (let i = 0; i < nums.length; i++) {
+    const n = parseInt(nums[i], 10);
+    if (nums[i].length === 4 && n >= 1900 && n <= 2200) { yearIdx = i; break; }
+  }
+  let year;
+  let seqToken;
+  if (yearIdx >= 0) {
+    year = parseInt(nums[yearIdx], 10);
+    seqToken = nums.find((_, i) => i !== yearIdx);
+  } else {
+    seqToken = nums[0];
+    year = parseInt(nums[1], 10);
+    if (nums[1].length === 2) year = expandFirYear(year);
+  }
+  if (seqToken === undefined) return raw;
+  return `${parseInt(seqToken, 10)}/${year}`;
+}
+
 // ── FK label resolution (ref.* lookups) ──────────────────────────────────────────────
 // Every resolver is case-insensitive-exact-match against the label the frontend actually
 // renders as the option value (see fields.controller.js's toValueLabel dispatch — the

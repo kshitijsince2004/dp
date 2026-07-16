@@ -17,9 +17,26 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import { NATIONALITY_OPTS, INDIA_STATES, ALL_INDIA_DISTRICTS } from '../../src/config/geoData.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CONFIG_DIR = path.resolve(__dirname, '../../../config');
+
+// Geo/nationality option placeholders (WP11) — config/fields/*.json carries a one-line
+// placeholder string instead of ~40 duplicated literal lists; expanded here at sync time so
+// the registry stays the single truth every consumer already reads. label_hi = label_en for
+// these (English-only lookups; Hindi additive later per the bilingual pillar).
+const OPTION_PLACEHOLDERS = {
+  $NATIONALITY: NATIONALITY_OPTS,
+  $INDIA_STATES: INDIA_STATES,
+  $INDIA_DISTRICTS: ALL_INDIA_DISTRICTS,
+};
+const expandOptions = (options) => {
+  if (typeof options !== 'string') return options;
+  const list = OPTION_PLACEHOLDERS[options];
+  if (!list) fail(`unknown options placeholder "${options}"`);
+  return list.map((v) => ({ value: v, label_en: v, label_hi: v }));
+};
 
 const sha = (obj) => crypto.createHash('sha256').update(JSON.stringify(obj)).digest('hex');
 const readDir = (dir) => {
@@ -141,6 +158,11 @@ export async function syncConfig(db, log = console.log) {
   // fields
   const fieldFiles = readDir('fields');
   const fields = fieldFiles.flatMap(f => f.data);
+  // Expand geo/nationality placeholders BEFORE the checksum is taken (syncTable's sha(item))
+  // — the checksum then covers the EXPANDED list, so rows resync automatically when the
+  // underlying dataset (LGD snapshot / i18n-nationality) changes, not just when the config
+  // file text does.
+  for (const f of fields) f.options = expandOptions(f.options);
   const cols = await loadColumns(db);
   if (!cols.field_registry) {
     fail('field_registry table not found — run `npm run db:migrate` first');

@@ -90,6 +90,7 @@ erDiagram
     %% ── Import ──
     import_batches ||--o{ import_batch_errors : ""
     users ||--o{ import_batches : "uploaded_by"
+    import_batches |o--o{ records : "import_batch_id"
 
     %% ── System bookkeeping (standalone, no FKs) ──
     system_meta {
@@ -184,6 +185,7 @@ erDiagram
     hierarchy_nodes ||--o{ records : "ps/district/sub_div"
     investigating_officers |o--o{ records : "io_id"
     users ||--o{ records : "created_by / updated_by / imported_by"
+    import_batches |o--o{ records : "import_batch_id"
 
     records {
         uuid id PK
@@ -199,9 +201,10 @@ erDiagram
         boolean is_frozen "hash-chain break freeze"
         boolean is_legacy
         varchar source_system
-        varchar legacy_ref
+        varchar legacy_ref "canonical source key within its import batch"
         timestamptz imported_at
         uuid imported_by "FK users"
+        uuid import_batch_id "FK import_batches, SET NULL"
         uuid created_by "FK users"
         uuid updated_by "FK users"
         timestamptz created_at
@@ -639,6 +642,7 @@ erDiagram
     records ||--o{ compilation_records : "frozen snapshot"
     import_batches ||--o{ import_batch_errors : ""
     users ||--o{ import_batches : "uploaded_by"
+    import_batches |o--o{ records : "import_batch_id"
 
     link_type_registry {
         uuid id PK
@@ -693,7 +697,9 @@ erDiagram
         int valid_rows
         int invalid_rows
         int imported_rows
+        int processed_rows "async-confirm progress counter"
         varchar status "CHECK synced: VALIDATION_PENDING..CANCELLED"
+        text error_message "FAILED-status reason"
         timestamptz confirmed_at
         timestamptz created_at
         timestamptz updated_at
@@ -704,6 +710,7 @@ erDiagram
         int row_number
         varchar field_key
         varchar error_code
+        varchar severity "CHECK: ERROR|WARNING, default ERROR"
         text error_message
         timestamptz created_at
     }
