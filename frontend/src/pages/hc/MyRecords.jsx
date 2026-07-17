@@ -282,11 +282,8 @@ export default function MyRecords() {
         className="mx-auto max-w-7xl px-6 pb-10 -mt-4 space-y-5"
       >
 
-        {/* Unified Filter Strip — card floating over the page bg */}
-        <motion.div
-          variants={itemVariants}
-          className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] p-4 transition-shadow duration-200 hover:shadow-lg"
-        >
+        {/* Unified Filter Strip */}
+        <motion.div variants={itemVariants}>
           <UnifiedFilterStrip
             filters={filters}
             onFilterChange={setFilters}

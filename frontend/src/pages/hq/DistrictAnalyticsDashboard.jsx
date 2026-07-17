@@ -7,11 +7,21 @@ import {
 } from 'recharts';
 import {
   Building, PhoneCall, FileCheck, ArrowRight, ShieldAlert,
-  Award, Filter, Calendar, MapPin, ChevronRight, TrendingUp, AlertTriangle, X
+  Award, Filter, Calendar, MapPin, ChevronRight, TrendingUp, AlertTriangle, X, UserX
 } from 'lucide-react';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import { Spinner } from '../../components/ui/Spinner.jsx';
+
+// Formats a Date to 'YYYY-MM-DD' using local date parts — record_date from the
+// API is a plain DATE string with no timezone, so comparisons must avoid the
+// UTC shift that toISOString() can introduce.
+function toDateStr(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export default function DistrictAnalyticsDashboard() {
   const navigate = useNavigate();
@@ -45,26 +55,28 @@ export default function DistrictAnalyticsDashboard() {
 
   // Client-side date filter based on Daily, Weekly, Monthly toggles
   const filteredRecords = useMemo(() => {
-    // Current date metadata is 2026-07-08
-    const baseDate = new Date('2026-07-08'); 
-    
+    const baseDate = new Date();
+    baseDate.setHours(0, 0, 0, 0);
+    const todayStr = toDateStr(baseDate);
+
     return rawRecords.filter(r => {
       // Must be submitted or compiled status to show in analytics
       if (!['submitted', 'PENDING_SHO', 'DISTRICT_REVIEW', 'HQ_RECEIVED', 'CLOSED', 'COMPILED'].includes(r.current_status)) {
         return false;
       }
-      
+
       const recordDate = new Date(r.record_date);
-      const diffTime = Math.abs(baseDate - recordDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      // Days in the past relative to today; negative (future-dated) records
+      // fall outside the trend chart's day buckets, so exclude them here too
+      // to keep the stat tiles and the graph in agreement.
+      const diffDays = Math.floor((baseDate - recordDate) / (1000 * 60 * 60 * 24));
 
       if (timeframe === 'Daily') {
-        // Match base date (2026-07-08)
-        return r.record_date === '2026-07-08';
+        return r.record_date === todayStr;
       } else if (timeframe === 'Weekly') {
-        return diffDays <= 7;
+        return diffDays >= 0 && diffDays <= 7;
       } else if (timeframe === 'Monthly') {
-        return diffDays <= 30;
+        return diffDays >= 0 && diffDays <= 30;
       }
       return true;
     });
@@ -158,15 +170,15 @@ export default function DistrictAnalyticsDashboard() {
     );
 
     // Timeline range: last 30 days if Monthly, else 7 days
-    const baseDate = new Date('2026-07-08');
+    const baseDate = new Date();
+    baseDate.setHours(0, 0, 0, 0);
     const numDays = timeframe === 'Monthly' ? 30 : 7;
-    
+
     const datesList = [];
     for (let i = numDays - 1; i >= 0; i--) {
       const d = new Date(baseDate);
       d.setDate(baseDate.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      datesList.push(dateStr);
+      datesList.push(toDateStr(d));
     }
 
     const timelineMap = {};
@@ -205,6 +217,53 @@ export default function DistrictAnalyticsDashboard() {
     return Object.values(timelineMap);
   }, [rawRecords, selectedDistrictId, timeframe]);
 
+  // Police-station leaderboard within the selected district, ranked by activeMetric
+  const stationData = useMemo(() => {
+    if (!selectedDistrictId) return [];
+
+    const subDivIds = new Set(
+      rawNodes.filter(n => n.node_type === 'SUB_DIVISION' && n.parent_id === selectedDistrictId).map(n => n.id)
+    );
+    const stations = rawNodes.filter(n => n.node_type === 'PS' && subDivIds.has(n.parent_id));
+
+    const statsMap = {};
+    stations.forEach(s => {
+      statsMap[s.id] = {
+        id: s.id,
+        name: s.name_en || s.name,
+        name_hi: s.name_hi || s.name,
+        cases: 0,
+        arrests: 0,
+        pcr: 0,
+        missing: 0,
+        total: 0
+      };
+    });
+
+    filteredRecords.forEach(r => {
+      if (r.district_id !== selectedDistrictId) return;
+      const stationStats = statsMap[r.ps_id];
+      if (stationStats) {
+        const type = (r.record_type || '').toUpperCase();
+        if (type === 'CASE' || type === 'CASES') {
+          stationStats.cases++;
+          stationStats.total++;
+        } else if (type === 'ARREST') {
+          stationStats.arrests++;
+          stationStats.total++;
+        } else if (type === 'PCR_CALL') {
+          stationStats.pcr++;
+          stationStats.total++;
+        } else if (type === 'MISSING') {
+          stationStats.missing++;
+          stationStats.total++;
+        }
+      }
+    });
+
+    return Object.values(statsMap).sort((a, b) => b[activeMetric] - a[activeMetric]);
+  }, [rawNodes, filteredRecords, selectedDistrictId, activeMetric]);
+
   const handleSelectDistrict = (districtId) => {
     setSelectedDistrictId(districtId);
     setTimeout(() => {
@@ -231,11 +290,17 @@ export default function DistrictAnalyticsDashboard() {
       icon: PhoneCall, 
       activeClass: 'bg-gradient-to-br from-[#2E0854] to-[#17022e] border-[#17022e] text-white shadow-md shadow-purple-900/20' 
     },
-    { 
-      key: 'arrests', 
-      label: 'Arrests', 
-      icon: FileCheck, 
-      activeClass: 'bg-gradient-to-br from-[#2E0854] to-[#17022e] border-[#17022e] text-white shadow-md shadow-purple-900/20' 
+    {
+      key: 'arrests',
+      label: 'Arrests',
+      icon: FileCheck,
+      activeClass: 'bg-gradient-to-br from-[#2E0854] to-[#17022e] border-[#17022e] text-white shadow-md shadow-purple-900/20'
+    },
+    {
+      key: 'missing',
+      label: 'Missing Persons',
+      icon: UserX,
+      activeClass: 'bg-gradient-to-br from-[#2E0854] to-[#17022e] border-[#17022e] text-white shadow-md shadow-purple-900/20'
     }
   ];
 
@@ -334,7 +399,7 @@ export default function DistrictAnalyticsDashboard() {
             </div>
             <div className="mt-4">
               <div className="text-3xl font-extrabold text-slate-900 tabular-nums">{summaryKpis.total}</div>
-              <p className="mt-1 text-xs text-slate-500">Across Delhi ({timeframe})</p>
+              <p className="mt-1 text-xs text-slate-500">({timeframe})</p>
             </div>
           </div>
 
@@ -502,7 +567,7 @@ export default function DistrictAnalyticsDashboard() {
                           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg text-xs text-slate-800">
                             <p className="font-bold text-purple-950 mb-1">{data.name}</p>
                             <p className="font-semibold">{activeMetric.toUpperCase()}: <span className="font-extrabold text-purple-600">{data[activeMetric]}</span></p>
-                            <p className="text-[10px] text-slate-400 mt-1">Cases: {data.cases} | Arrests: {data.arrests} | PCR: {data.pcr}</p>
+                            <p className="text-[10px] text-slate-400 mt-1">Cases: {data.cases} | Arrests: {data.arrests} | PCR: {data.pcr} | Missing: {data.missing}</p>
                           </div>
                         );
                       }
@@ -603,19 +668,31 @@ export default function DistrictAnalyticsDashboard() {
             </div>
 
             <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
-              {/* Left Column: Metrics summary for selected district */}
-              <div className="lg:col-span-3 flex flex-col gap-4">
-                <div className="rounded-2xl border border-purple-800 bg-purple-950/40 p-4">
-                  <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">Cases</span>
-                  <div className="text-3xl font-black text-white mt-1 tabular-nums">{selectedDistrict.cases}</div>
+              {/* Left Column: PS leaderboard for the selected district */}
+              <div className="lg:col-span-3 rounded-2xl border border-purple-800 bg-purple-950/40 p-4 flex flex-col gap-3">
+                <div>
+                  <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">PS Leaderboard</span>
+                  <p className="text-[10px] text-purple-400 mt-0.5">Ranked by {activeMetric.toUpperCase()}</p>
                 </div>
-                <div className="rounded-2xl border border-purple-800 bg-purple-950/40 p-4">
-                  <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">PCR Calls</span>
-                  <div className="text-3xl font-black text-white mt-1 tabular-nums">{selectedDistrict.pcr}</div>
-                </div>
-                <div className="rounded-2xl border border-purple-800 bg-purple-950/40 p-4">
-                  <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">Arrests</span>
-                  <div className="text-3xl font-black text-white mt-1 tabular-nums">{selectedDistrict.arrests}</div>
+                <div className="flex flex-col gap-2 overflow-y-auto max-h-[260px] pr-1">
+                  {stationData.length === 0 && (
+                    <p className="text-xs text-purple-300/70">No stations found for this district.</p>
+                  )}
+                  {stationData.map((s, idx) => (
+                    <div
+                      key={s.id}
+                      onClick={() => navigate('/hq/stations', { state: { districtId: selectedDistrictId, psId: s.id } })}
+                      className="flex items-center justify-between gap-2 rounded-xl border border-purple-800/60 bg-purple-900/30 px-3 py-2 cursor-pointer hover:bg-purple-800/40 hover:border-purple-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-purple-800/60 text-[10px] font-black text-purple-200">
+                          {idx + 1}
+                        </span>
+                        <span className="truncate text-xs font-semibold text-white hover:underline">{s.name}</span>
+                      </div>
+                      <span className="shrink-0 text-sm font-black text-purple-200 tabular-nums">{s[activeMetric]}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -653,7 +730,7 @@ export default function DistrictAnalyticsDashboard() {
                                 {activeMetric.toUpperCase()}: <span className="font-black text-purple-300">{data[activeMetric]}</span>
                               </p>
                               <p className="text-[10px] text-purple-300 mt-1 border-t border-purple-800/80 pt-1">
-                                Cases: {data.cases} | Arrests: {data.arrests} | PCR: {data.pcr}
+                                Cases: {data.cases} | Arrests: {data.arrests} | PCR: {data.pcr} | Missing: {data.missing}
                               </p>
                             </div>
                           );

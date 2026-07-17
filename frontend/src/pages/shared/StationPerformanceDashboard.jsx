@@ -32,10 +32,14 @@ export default function StationPerformanceDashboard() {
     dateTo: "",
   });
 
-  // Initialize district ID filter from routing state (drill-down from District Analytics page)
+  // Initialize district/PS filters from routing state (drill-down from District Analytics page)
   useEffect(() => {
-    if (location.state?.districtId) {
-      setFilters((prev) => ({ ...prev, districtId: location.state.districtId }));
+    if (location.state?.districtId || location.state?.psId) {
+      setFilters((prev) => ({
+        ...prev,
+        districtId: location.state.districtId || prev.districtId,
+        psId: location.state.psId || prev.psId,
+      }));
     }
   }, [location.state]);
 

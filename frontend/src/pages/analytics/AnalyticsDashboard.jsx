@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
+import StatCard from '../../components/ui/StatCard.jsx';
 
 // ── Shared chart tooltip style ────────────────────────────────────────────────
 const CHART_TOOLTIP = {
@@ -28,32 +29,6 @@ const CHART_TOOLTIP = {
 };
 
 const COLORS = ['#003087', '#D97706', '#059669', '#DC2626', '#7C3AED', '#0891B2', '#EA580C'];
-
-// ── KPI Card Component ────────────────────────────────────────────────────────
-function KpiCard({ label, value, icon: Icon, color, sub }) {
-  const tileMeta = {
-    'text-amber-500':   { bg: 'bg-[#FFFBEB]', border: 'border-[#FDE68A]' },
-    'text-emerald-500': { bg: 'bg-[#ECFDF5]', border: 'border-[#6EE7B7]' },
-    'text-blue-500':    { bg: 'bg-[#EFF6FF]', border: 'border-[#BFDBFE]' },
-    'text-violet-500':  { bg: 'bg-[#F5F3FF]', border: 'border-[#C4B5FD]' },
-  };
-  const tile = tileMeta[color] || { bg: 'bg-[#F0F4F9]', border: 'border-[#E2E8F0]' };
-  return (
-    <div className="group rounded-2xl border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[0_8px_30px_var(--accent-glow)] text-[var(--text-main-theme)]">
-      <div className="flex items-center justify-between gap-4">
-        <div className="space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#718096]">{label}</span>
-          <div className="text-3xl font-bold tabular-nums text-[var(--text-main-theme)]">{value ?? '—'}</div>
-          {sub && <span className="text-[10px] text-[#718096]">{sub}</span>}
-        </div>
-        <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border ${tile.border} ${tile.bg} transition-transform duration-200 group-hover:scale-110 ${color}`}>
-          <Icon size={20} />
-        </div>
-      </div>
-      <div className="mt-3 text-xs text-[#718096]">Last 30 days</div>
-    </div>
-  );
-}
 
 // ── Status Badge colours ───────────────────────────────────────────────────────
 const STATUS_COLORS = {
@@ -168,20 +143,14 @@ export default function AnalyticsDashboard() {
 
   // ── Shared panel section label ─────────────────────────────────────────────
   const SectionLabel = ({ children }) => (
-    <div className="mb-5 flex items-center gap-3">
-      <div className="h-5 w-1 rounded-full bg-gradient-to-b from-[var(--accent-color)] to-[var(--accent-color-hover)]" />
-      <h2 className="text-xs font-bold uppercase tracking-widest text-[#4A5568]">{children}</h2>
-      <div className="h-px flex-1 bg-[var(--border-card-theme)]/70" />
-    </div>
+    <h2 className="mb-3 text-label font-semibold uppercase tracking-wide text-[#4A5568]">{children}</h2>
   );
 
   // ── Shared empty-state ─────────────────────────────────────────────────────
   const EmptyState = ({ icon: EIcon, message }) => (
     <div className="flex h-full flex-col items-center justify-center gap-3 py-12">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/80">
-        <EIcon size={24} className="text-[#A0AEC0]" />
-      </div>
-      <p className="text-xs font-medium text-[#718096]">{message}</p>
+      <EIcon size={24} className="text-[#A0AEC0]" />
+      <p className="text-meta font-medium text-[#718096]">{message}</p>
     </div>
   );
 
@@ -262,13 +231,20 @@ export default function AnalyticsDashboard() {
           {summaryLoading ? (
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-28 animate-pulse rounded-2xl border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 shadow-sm" />
+                <div key={i} className="h-28 animate-pulse rounded-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60" />
               ))}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
               {kpiCards.map((card) => (
-                <KpiCard key={card.label} {...card} />
+                <StatCard
+                  key={card.label}
+                  label={card.label}
+                  value={card.value ?? '—'}
+                  icon={card.icon}
+                  iconColor={card.color}
+                  subtext={card.sub}
+                />
               ))}
             </div>
           )}
@@ -280,18 +256,15 @@ export default function AnalyticsDashboard() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
             {/* Crime Head Breakdown — Donut */}
-            <div className="overflow-hidden rounded-3xl border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[0_8px_30px_var(--accent-glow)]">
-              <div className="relative flex items-center gap-3 border-b border-[var(--border-card-theme)]/70 bg-gradient-to-r from-[var(--bg-page-main)]/80 to-[var(--bg-page-main)]/40 px-6 py-4">
-                <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b from-[var(--accent-color)] to-[var(--accent-color-hover)]" />
-                <div className="ml-3 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent-color)] to-[var(--accent-color-hover)] shadow-[0_4px_12px_var(--accent-glow)]">
-                  <PieIcon size={14} className="text-white" />
-                </div>
+            <div className="overflow-hidden rounded-card border border-[var(--border-card-theme)] bg-white">
+              <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
+                <PieIcon size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
                 <div>
                   <p className="text-sm font-bold text-[var(--text-main-theme)]">Heinous Offence Ratios</p>
-                  <p className="text-xs text-[var(--text-main-theme)] opacity-70">Heinous offence breakdown · Donut view</p>
+                  <p className="text-meta text-[var(--text-main-theme)] opacity-70">Heinous offence breakdown · Donut view</p>
                 </div>
               </div>
-              <div className="p-5">
+              <div className="p-4">
                 {categoryData.length === 0 ? (
                   <EmptyState icon={AlertCircle} message="No category data available" />
                 ) : (
@@ -322,18 +295,15 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Combined Time-Series Trends — Line */}
-            <div className="overflow-hidden rounded-3xl border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[0_8px_30px_var(--accent-glow)]">
-              <div className="relative flex items-center gap-3 border-b border-[var(--border-card-theme)]/70 bg-gradient-to-r from-[var(--bg-page-main)]/80 to-[var(--bg-page-main)]/40 px-6 py-4">
-                <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b from-[var(--accent-color)] to-[var(--accent-color-hover)]" />
-                <div className="ml-3 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent-color)] to-[var(--accent-color-hover)] shadow-[0_4px_12px_var(--accent-glow)]">
-                  <LineIcon size={14} className="text-white" />
-                </div>
+            <div className="overflow-hidden rounded-card border border-[var(--border-card-theme)] bg-white">
+              <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
+                <LineIcon size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
                 <div>
                   <p className="text-sm font-bold text-[var(--text-main-theme)]">Daily Activity Timeline</p>
-                  <p className="text-xs text-[var(--text-main-theme)] opacity-70">Combined trends · {period} view</p>
+                  <p className="text-meta text-[var(--text-main-theme)] opacity-70">Combined trends · {period} view</p>
                 </div>
               </div>
-              <div className="p-5">
+              <div className="p-4">
                 {trendData.length === 0 ? (
                   <EmptyState icon={TrendingUp} message="No trend data available" />
                 ) : (
@@ -361,18 +331,15 @@ export default function AnalyticsDashboard() {
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
 
           {/* Workflow Status Distribution */}
-          <div className="overflow-hidden rounded-3xl border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[0_8px_30px_var(--accent-glow)]">
-            <div className="relative flex items-center gap-3 border-b border-[var(--border-card-theme)]/70 bg-gradient-to-r from-[var(--bg-page-main)]/80 to-[var(--bg-page-main)]/40 px-6 py-4">
-              <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b from-[var(--accent-color)] to-[var(--accent-color-hover)]" />
-              <div className="ml-3 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent-color)] to-[var(--accent-color-hover)] shadow-[0_4px_12px_var(--accent-glow)]">
-                <Activity size={14} className="text-white" />
-              </div>
+          <div className="overflow-hidden rounded-card border border-[var(--border-card-theme)] bg-white">
+            <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
+              <Activity size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
               <div>
                 <p className="text-sm font-bold text-[var(--text-main-theme)]">Workflow Status Distribution</p>
-                <p className="text-xs text-[var(--text-main-theme)] opacity-70">{statusData.length} status stages · All record types</p>
+                <p className="text-meta text-[var(--text-main-theme)] opacity-70">{statusData.length} status stages · All record types</p>
               </div>
             </div>
-            <div className="p-5">
+            <div className="p-4">
               {statusData.length === 0 ? (
                 <EmptyState icon={AlertCircle} message="No status data available" />
               ) : (
@@ -383,8 +350,8 @@ export default function AnalyticsDashboard() {
                     const cls = STATUS_COLORS[row.status] || 'bg-[#F0F4F9] text-[#718096] border-[#E2E8F0]';
                     const bar = STATUS_BAR[row.status]  || 'bg-[var(--accent-color)]';
                     return (
-                      <div key={row.status} className="group flex items-center gap-3 rounded-xl border border-transparent px-2 py-1.5 text-xs transition-all duration-150 hover:border-[var(--border-card-theme)] hover:bg-[var(--bg-page-main)]/40">
-                        <span className={`inline-flex w-36 flex-shrink-0 justify-center rounded-lg border px-2 py-1 text-[10px] font-bold ${cls}`}>
+                      <div key={row.status} className="flex items-center gap-3 px-2 py-1.5 text-meta">
+                        <span className={`inline-flex w-36 flex-shrink-0 justify-center rounded-control border px-2 py-1 text-label font-bold ${cls}`}>
                           {row.status}
                         </span>
                         <div className="flex-1 h-2 overflow-hidden rounded-full bg-[var(--bg-page-main)]">
@@ -406,18 +373,15 @@ export default function AnalyticsDashboard() {
           </div>
 
           {/* Station Comparative Performance */}
-          <div className="overflow-hidden rounded-3xl border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[0_8px_30px_var(--accent-glow)]">
-            <div className="relative flex items-center gap-3 border-b border-[var(--border-card-theme)]/70 bg-gradient-to-r from-[var(--bg-page-main)]/80 to-[var(--bg-page-main)]/40 px-6 py-4">
-              <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b from-[var(--accent-color)] to-[var(--accent-color-hover)]" />
-              <div className="ml-3 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent-color)] to-[var(--accent-color-hover)] shadow-[0_4px_12px_var(--accent-glow)]">
-                <BarChart3 size={14} className="text-white" />
-              </div>
+          <div className="overflow-hidden rounded-card border border-[var(--border-card-theme)] bg-white">
+            <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
+              <BarChart3 size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
               <div>
                 <p className="text-sm font-bold text-[var(--text-main-theme)]">Station Comparative Performance</p>
-                <p className="text-xs text-[var(--text-main-theme)] opacity-70">Top {Math.min(8, stationData.length)} stations · Cases, Arrests, PCR</p>
+                <p className="text-meta text-[var(--text-main-theme)] opacity-70">Top {Math.min(8, stationData.length)} stations · Cases, Arrests, PCR</p>
               </div>
             </div>
-            <div className="p-5">
+            <div className="p-4">
               {stationData.length === 0 ? (
                 <EmptyState icon={AlertCircle} message="No station data available" />
               ) : (
@@ -451,7 +415,7 @@ export default function AnalyticsDashboard() {
         {/* Footer */}
         <div className="mt-8 flex items-center justify-center gap-2">
           <div className="h-px w-20 bg-[var(--border-card-theme)]" />
-          <p className="text-xs font-medium text-[var(--text-main-theme)] opacity-60">
+          <p className="text-meta font-medium text-[var(--text-main-theme)] opacity-60">
             Delhi Police Command System · Data refreshes on page load · All times IST
           </p>
           <div className="h-px w-20 bg-[var(--border-card-theme)]" />

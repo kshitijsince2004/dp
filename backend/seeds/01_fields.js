@@ -1369,7 +1369,7 @@ const generatedFields = [
   {
     id: 'complainant_same_as_victim',
     field_key: 'complainant_same_as_victim',
-    field_type: 'SELECT',
+    field_type: 'RADIO',
     applicable_record_types: JSON.stringify(['CASE']),
     label_en: 'Is Complainant same as Victim?',
     label_hi: 'क्या शिकायतकर्ता ही पीड़ित है?',

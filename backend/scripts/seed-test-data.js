@@ -439,7 +439,9 @@ async function seed() {
   await db('record_revisions').del();
   try { await db('record_links').del(); } catch (_) {}
   await db('records').del();
-  await db('filter_presets').del();
+  // Only clear the SYSTEM-scope presets this script owns (FP_01-03) — leave other scopes
+  // (e.g. HQ_DURATION, seeded separately by backend/seeds/05_duration_presets.js) untouched.
+  await db('filter_presets').where({ scope: 'SYSTEM' }).del();
   for (const t of ['level_data_contracts','workflow_transitions_config','legacy_amendments','legacy_import_batches','scheduled_reports']) {
     try { await db(t).del(); } catch (_) {}
   }

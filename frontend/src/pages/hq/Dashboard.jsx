@@ -2,44 +2,50 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
-  Building, ShieldAlert, FileCheck, PhoneCall, Filter, CheckCircle2, ArrowUpRight, ArrowDownRight
+  Building, ShieldAlert, FileCheck, PhoneCall, Filter, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import api from '../../utils/api.js';
 import phqImage from '../../assets/phq.jpeg';
 import useAuthStore from '../../store/authStore.js';
 import SearchableSelect from '../../components/forms/SearchableSelect.jsx';
+import StatCard from '../../components/ui/StatCard.jsx';
+
+const FILTER_SELECT_CLASS = 'w-full rounded-control border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-[#1A202C] min-h-[38px]';
 
 // One color per year-offset-from-current (index 0 = current year), so a given year's
 // line color never repaints when the Duration selection changes. Max 5 lines (Last 5 Years).
-const YEAR_LINE_COLORS = ['#003087', '#7C3AED', '#059669', '#D97706', '#DC2626'];
+const YEAR_BAR_COLORS = ['#003087', '#7C3AED', '#059669', '#D97706', '#DC2626'];
 
-function CrimeHeadTooltip({ active, label, payload }) {
+function CrimeHeadBarTooltip({ active, label, payload }) {
   if (!active || !payload || !payload.length) return null;
+  const total = payload.reduce((sum, entry) => sum + (Number(entry.value) || 0), 0);
   return (
-    <div className="rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-lg text-xs">
+    <div className="w-[180px] rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-lg text-xs">
       <p className="mb-1.5 font-bold text-[#0A1628]">{label}</p>
       {payload.map((entry) => (
-        <div key={entry.dataKey} className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1.5 text-[#4A5568]">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
-            {entry.name}
-          </span>
-          <span className="font-semibold tabular-nums text-[#1A202C]">{entry.value}</span>
+        <div key={entry.dataKey} className="flex items-center gap-2 py-0.5">
+          <span className="h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ backgroundColor: entry.color }} />
+          <span className="text-[#4A5568]">{entry.name}</span>
+          <span className="ml-auto font-mono font-semibold tabular-nums text-[#1A202C]">{entry.value}</span>
         </div>
       ))}
+      <div className="mt-1.5 flex items-center border-t border-[#E2E8F0] pt-1.5 font-semibold text-[#1A202C]">
+        Total
+        <span className="ml-auto font-mono tabular-nums">{total}</span>
+      </div>
     </div>
   );
 }
 
-function CrimeHeadLineChart({ rows, years }) {
+function CrimeHeadBarChart({ rows, years }) {
   return (
     <div className="overflow-x-auto p-6">
       <div style={{ width: Math.max(1100, rows.length * 42), height: 380 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={rows} margin={{ top: 10, right: 20, left: 0, bottom: 90 }}>
+          <BarChart data={rows} margin={{ top: 10, right: 20, left: 0, bottom: 90 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
             <XAxis
               dataKey="crime_head"
@@ -48,24 +54,28 @@ function CrimeHeadLineChart({ rows, years }) {
               interval={0}
               height={110}
               tick={{ fontSize: 10, fill: '#718096' }}
-              stroke="#CBD5E0"
+              tickLine={false}
+              axisLine={false}
             />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#718096' }} stroke="#CBD5E0" />
-            <Tooltip content={<CrimeHeadTooltip />} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#718096' }} tickLine={false} axisLine={false} />
+            <Tooltip content={<CrimeHeadBarTooltip />} cursor={{ fill: '#F8FAFF' }} />
             <Legend verticalAlign="top" height={36} />
-            {years.map((y, i) => (
-              <Line
-                key={y}
-                type="monotone"
-                dataKey={String(y)}
-                name={String(y)}
-                stroke={YEAR_LINE_COLORS[i % YEAR_LINE_COLORS.length]}
-                strokeWidth={i === 0 ? 3 : 2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-            ))}
-          </LineChart>
+            {years.map((y, i) => {
+              const isBottom = i === 0;
+              const isTop = i === years.length - 1;
+              const radius = years.length === 1 ? [4, 4, 4, 4] : isBottom ? [0, 0, 4, 4] : isTop ? [4, 4, 0, 0] : [0, 0, 0, 0];
+              return (
+                <Bar
+                  key={y}
+                  dataKey={String(y)}
+                  name={String(y)}
+                  stackId="a"
+                  fill={YEAR_BAR_COLORS[i % YEAR_BAR_COLORS.length]}
+                  radius={radius}
+                />
+              );
+            })}
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
@@ -224,100 +234,64 @@ export default function HQDashboard() {
 
         {/* ── Overview Stat Cards ── */}
         <div className="mt-8">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="h-5 w-1 rounded-full bg-gradient-to-b from-[var(--accent-color-hover)] to-[var(--accent-color)]" />
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#4A5568]">Operational Overview</h2>
-            <div className="h-px flex-1 bg-[#E2E8F0]" />
-          </div>
+          <div className="mb-3 text-label font-semibold uppercase tracking-wide text-[#4A5568]">Operational Overview</div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {cards.map((card, idx) => {
-              const Icon = card.icon;
-              const tileBg  = idx === 0 ? 'bg-[#FFFBEB]' : idx === 1 ? 'bg-[#EFF6FF]' : 'bg-[#ECFDF5]';
-              const tileBdr = idx === 0 ? 'border-[#FDE68A]' : idx === 1 ? 'border-[#BFDBFE]' : 'border-[#6EE7B7]';
-              return (
-                <div
-                  key={idx}
-                  className="group rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[var(--accent-glow)]"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-3xl font-bold tabular-nums text-[#0A1628]">{card.value}</div>
-                      <div className="mt-2 text-sm font-medium text-[#4A5568]">{card.label}</div>
-                    </div>
-                    <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border ${tileBdr} ${tileBg} transition-transform duration-200 group-hover:scale-110 ${card.color}`}>
-                      <Icon size={20} />
-                    </div>
-                  </div>
-                  <div className="mt-3 text-xs text-[#718096]">Delhi-wide · Last 30 days</div>
-                </div>
-              );
-            })}
+            {cards.map((card, idx) => (
+              <StatCard
+                key={idx}
+                label={card.label}
+                value={card.value}
+                icon={card.icon}
+                iconColor={card.color}
+                subtext="Delhi-wide · Last 30 days"
+              />
+            ))}
           </div>
         </div>
 
         {/* ── Scope Filters ── */}
-        <div className="mt-6 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[var(--accent-glow)]">
+        <div className="mt-6 overflow-hidden rounded-card border border-slate-200 bg-white">
           {/* Panel header */}
-          <div className="flex items-center gap-3 border-b border-[#E2E8F0] bg-gradient-to-r from-[#F8FAFF] to-white px-6 py-4">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent-color-hover)] to-[var(--accent-color)] shadow-md shadow-blue-500/20">
-              <Filter size={13} className="text-white" />
-            </div>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <Filter size={14} className="text-slate-400" />
             <div>
               <p className="text-sm font-bold text-[#1A202C]">Scope Filters</p>
-              <p className="text-xs text-[#718096]">Choose the year range and optional custom date span for the crime-head trend</p>
             </div>
-            {activeFilterCount > 0 ? (
-              <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#003087] px-3 py-1 text-xs font-semibold text-white shadow-sm">
-                <CheckCircle2 size={10} />
-                {activeFilterCount} active
-              </span>
-            ) : (
-              <span className="ml-auto rounded-full border border-[#E2E8F0] bg-[#F8FAFF] px-3 py-1 text-xs font-medium text-[#718096]">
-                No filters
-              </span>
-            )}
+            <span className="ml-auto text-meta text-slate-500">
+              {activeFilterCount > 0 ? `${activeFilterCount} active` : 'No filters'}
+            </span>
           </div>
 
           {/* Controls */}
-          <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-end sm:flex-wrap">
+          <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:flex-wrap">
             <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
-              <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">Duration</label>
+              <label className="text-label font-semibold uppercase tracking-wide text-[#718096]">Duration</label>
               <SearchableSelect
                 value={durationPresetId}
                 onChange={(val) => setDurationPresetId(val)}
                 options={presetOptions}
                 placeholder="Select duration"
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
-                style={{
-                  minHeight: '42px',
-                  border: '1px solid #E2E8F0',
-                  paddingLeft: '16px',
-                  paddingRight: '20px',
-                  borderRadius: '12px',
-                  backgroundColor: '#F8FAFF'
-                }}
+                className={FILTER_SELECT_CLASS}
               />
             </div>
 
             <div className="flex flex-col gap-1.5 w-full sm:w-[200px]">
-              <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">From Date</label>
+              <label className="text-label font-semibold uppercase tracking-wide text-[#718096]">From Date</label>
               <input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
-                style={{ minHeight: '42px' }}
+                className={FILTER_SELECT_CLASS}
               />
             </div>
 
             <div className="flex flex-col gap-1.5 w-full sm:w-[200px]">
-              <label className="text-xs font-semibold uppercase tracking-wide text-[#718096]">To Date</label>
+              <label className="text-label font-semibold uppercase tracking-wide text-[#718096]">To Date</label>
               <input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none"
-                style={{ minHeight: '42px' }}
+                className={FILTER_SELECT_CLASS}
               />
             </div>
 
@@ -329,8 +303,7 @@ export default function HQDashboard() {
                   setDateFrom('');
                   setDateTo('');
                 }}
-                className="self-end rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-xs font-semibold text-[#718096] shadow-sm transition-all duration-150 hover:border-[#DC2626] hover:text-[#DC2626] cursor-pointer"
-                style={{ minHeight: '42px' }}
+                className="self-end rounded-control border border-slate-300 bg-white px-3 py-2 text-meta font-semibold text-[#718096] transition-colors hover:border-[#DC2626] hover:text-[#DC2626] cursor-pointer"
               >
                 Clear filters
               </button>
@@ -339,20 +312,15 @@ export default function HQDashboard() {
         </div>
 
         {/* ── Crime-Head Year Trend ── */}
-        <div className="mt-6 overflow-hidden rounded-3xl border border-[#E2E8F0] bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-[#003087]/5">
+        <div className="mt-6 overflow-hidden rounded-card border border-slate-200 bg-white">
           {/* Panel header */}
-          <div className="relative flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] bg-gradient-to-r from-[#F8FAFF] via-white to-[#F0F4F9] px-6 py-5">
-            {/* Left accent bar */}
-            <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b from-[#003087] to-[#0046C0]" />
-
-            <div className="flex items-center gap-3 pl-4">
-              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent-color-hover)] to-[var(--accent-color)] shadow-md shadow-blue-500/20">
-                <ShieldAlert size={16} className="text-white" />
-              </div>
+          <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <ShieldAlert size={16} className="text-slate-400 shrink-0" />
               <div>
-                <h3 className="text-base font-bold text-[#1A202C]">Crime-Head Trend — All Districts Combined</h3>
+                <h3 className="text-sm font-bold text-[#1A202C]">Crime Head Trend</h3>
                 {changeRate && (
-                  <p className="mt-0.5 text-xs text-[#718096]">
+                  <p className="mt-0.5 text-meta text-[#718096]">
                     {changeRate.current_range.from} to {changeRate.current_range.to}
                   </p>
                 )}
@@ -360,7 +328,7 @@ export default function HQDashboard() {
             </div>
 
             {changeRate && (
-              <span className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${changeRate.pct_change >= 0 ? 'bg-[#ECFDF5] text-[#059669] border-[#6EE7B7]' : 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]'}`}>
+              <span className={`ml-auto inline-flex items-center gap-1.5 text-meta font-semibold ${changeRate.pct_change >= 0 ? 'text-[#059669]' : 'text-[#DC2626]'}`}>
                 {changeRate.pct_change >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
                 {Math.abs(changeRate.pct_change)}% vs previous period
               </span>
@@ -368,26 +336,22 @@ export default function HQDashboard() {
           </div>
 
           {/* Heinous crime heads */}
-          <div className="border-b border-[#E2E8F0] px-6 pt-4">
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#DC2626]">
-              Heinous Crime Heads · {heinousRows.length}
-            </span>
+          <div className="px-4 pt-3 text-label font-semibold uppercase tracking-wide text-[#4A5568]">
+            Heinous Crime Heads
           </div>
-          <CrimeHeadLineChart rows={heinousRows} years={years} />
+          <CrimeHeadBarChart rows={heinousRows} years={years} />
 
           {/* Non-heinous crime heads */}
-          <div className="border-y border-[#E2E8F0] bg-[#F8FAFF] px-6 pt-4">
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#4A5568]">
-              Non-Heinous Crime Heads · {nonHeinousRows.length}
-            </span>
+          <div className="border-y border-slate-200 px-4 pt-3 text-label font-semibold uppercase tracking-wide text-[#4A5568]">
+            Non-Heinous Crime Heads · {nonHeinousRows.length}
           </div>
-          <CrimeHeadLineChart rows={nonHeinousRows} years={years} />
+          <CrimeHeadBarChart rows={nonHeinousRows} years={years} />
         </div>
 
         {/* Footer */}
         <div className="mt-8 flex items-center justify-center gap-2">
           <div className="h-px w-20 bg-[#E2E8F0]" />
-          <p className="text-xs font-medium text-[#A0AEC0]">
+          <p className="text-meta font-medium text-[#A0AEC0]">
             Delhi Police Command System · Data refreshes on page load · All times IST
           </p>
           <div className="h-px w-20 bg-[#E2E8F0]" />

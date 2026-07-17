@@ -175,7 +175,7 @@ export default function Queue() {
       <div className="mx-auto max-w-7xl px-6 pb-10">
 
         {/* Record Category Tabs */}
-        <div className="mt-6 theme-card bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl border border-[var(--border-card-theme)] shadow-sm px-2 py-2 flex flex-wrap gap-1">
+        <div className="mt-6 theme-card bg-white rounded-control border border-[var(--border-card-theme)] px-2 py-2 flex flex-wrap gap-1">
           {['ALL', 'CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB'].map((tab) => {
             const count = countFor(tab);
             return (
@@ -202,7 +202,7 @@ export default function Queue() {
         </div>
 
         {selectedIds.length > 0 && (
-          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-card p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500 text-xs font-bold text-white">
                 {selectedIds.length}
@@ -235,7 +235,7 @@ export default function Queue() {
         {/* Queue Listing */}
         <div className="mt-5">
           {isLoading ? (
-            <div className="theme-card rounded-3xl bg-[var(--bg-page-main)]/60 backdrop-blur-md border border-[var(--border-card-theme)] shadow-sm flex flex-col items-center justify-center p-20 text-[var(--text-main-theme)] gap-4">
+            <div className="theme-card rounded-card bg-white border border-[var(--border-card-theme)] flex flex-col items-center justify-center p-20 text-[var(--text-main-theme)] gap-4">
               <div className="animate-spin rounded-full h-10 w-10 border-b-[3px] border-[var(--accent-color)]" />
               <p className="text-sm font-semibold text-[var(--text-main-theme)]">
                 {t('common.loading', 'Syncing digital registry logs...')}
@@ -243,11 +243,9 @@ export default function Queue() {
             </div>
 
           ) : filteredQueue.length === 0 ? (
-            <div className="theme-card rounded-3xl bg-[var(--bg-page-main)]/60 backdrop-blur-md border border-[var(--border-card-theme)] shadow-sm p-16 text-center">
+            <div className="theme-card rounded-card bg-white border border-[var(--border-card-theme)] p-16 text-center">
               <div className="flex items-center justify-center mb-5">
-                <div className="h-20 w-20 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-                  <ShieldCheck size={40} className="text-emerald-600" />
-                </div>
+                <ShieldCheck size={40} className="text-emerald-600" />
               </div>
               <p className="text-lg font-bold text-[var(--text-main-theme)] mb-1">Queue Clean &amp; Approved</p>
               <p className="text-sm text-[var(--text-main-theme)] opacity-70 max-w-sm mx-auto font-semibold">
@@ -256,7 +254,7 @@ export default function Queue() {
             </div>
 
           ) : (
-            <div className="theme-card rounded-3xl bg-[var(--bg-page-main)]/60 backdrop-blur-md border border-[var(--border-card-theme)] shadow-sm overflow-hidden">
+            <div className="theme-card rounded-card bg-white border border-[var(--border-card-theme)] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
@@ -345,7 +343,7 @@ export default function Queue() {
                           <td className="p-4 pr-6 text-right whitespace-nowrap">
                             <button
                               onClick={() => navigate(`/records/${rec.id}`)}
-                              className="inline-flex items-center gap-2 bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer border-none shadow-sm hover:shadow-md active:scale-95"
+                              className="inline-flex items-center gap-2 bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-5 py-2.5 rounded-control text-sm font-bold transition-colors duration-200 cursor-pointer border-none"
                             >
                               <span>Review</span>
                               <ArrowRight size={14} />

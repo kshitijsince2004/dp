@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import api from "../../utils/api.js";
 import useAuthStore from "../../store/authStore.js";
+import StatCard from "../../components/ui/StatCard.jsx";
 import {
   FileText,
   ShieldCheck,
@@ -38,12 +39,12 @@ const STAT_CARD_META = [
 ];
 
 const ACCENT_STYLES = {
-  green: { iconColor: "text-[#059669]", iconBg: "bg-[#ECFDF5]", iconBorder: "border-[#A7F3D0]" },
-  violet: { iconColor: "text-[#7C3AED]", iconBg: "bg-[#F5F3FF]", iconBorder: "border-[#C084FC]" },
-  amber: { iconColor: "text-[#D97706]", iconBg: "bg-[#FFFBEB]", iconBorder: "border-[#FDE68A]" },
-  blue: { iconColor: "text-[#2563EB]", iconBg: "bg-[#EFF6FF]", iconBorder: "border-[#93C5FD]" },
-  rose: { iconColor: "text-[#E11D48]", iconBg: "bg-[#FFF1F2]", iconBorder: "border-[#FDA4AF]" },
-  muted: { iconColor: "text-[#94A3B8]", iconBg: "bg-[#F8FAFC]", iconBorder: "border-[#E2E8F0]" },
+  green: { iconColor: "text-[#059669]" },
+  violet: { iconColor: "text-[#7C3AED]" },
+  amber: { iconColor: "text-[#D97706]" },
+  blue: { iconColor: "text-[#2563EB]" },
+  rose: { iconColor: "text-[#E11D48]" },
+  muted: { iconColor: "text-[#94A3B8]" },
 };
 
 const formatChange = (changePct, period) => {
@@ -204,14 +205,13 @@ export default function PSDashboard() {
   const currentPeriod = activePeriod.toLowerCase();
   const statCards = STAT_CARD_META.map((meta) => {
     if (meta.deferred) {
-      const style = ACCENT_STYLES.muted;
       return {
         label: meta.label,
         value: "—",
         change: "Not yet available",
         icon: meta.icon,
-        badgeClass: "bg-slate-50 text-slate-400 border-slate-200",
-        ...style,
+        isUp: null,
+        ...ACCENT_STYLES.muted,
       };
     }
 
@@ -221,16 +221,12 @@ export default function PSDashboard() {
     const isUp = changePct >= 0;
     const style = ACCENT_STYLES[meta.accent] || ACCENT_STYLES.muted;
 
-    const badgeClass = isUp
-      ? "bg-[#ECFDF5] text-[#059669] border-[#6EE7B7]"
-      : "bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]";
-
     return {
       label: meta.label,
       value: summary ? String(count) : "--",
       change: summary ? formatChange(changePct, currentPeriod) : "--",
       icon: meta.icon,
-      badgeClass,
+      isUp,
       ...style,
     };
   });
@@ -317,46 +313,34 @@ export default function PSDashboard() {
       </div>
 
       {/* Main Content Container */}
-      <div className="mx-auto max-w-7xl px-6 py-8 space-y-6 border-slate-900">
+      <div className="mx-auto max-w-7xl px-4 py-5 space-y-4">
 
         {/* Key metrics strip — pulled out of the hero so 8 cards have room to breathe */}
         <div>
-          <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628] mb-3">Key Metrics</div>
+          <div className="text-label font-semibold uppercase tracking-wide text-[#0A1628] mb-3">Key Metrics</div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {statCards.map((card) => (
-              <div
+              <StatCard
                 key={card.label}
-                className="bg-white rounded-2xl p-4 border border-slate-200 text-slate-800 shadow-sm hover:shadow-md transition-shadow duration-200 flex items-center justify-between gap-2 group"
-              >
-                <div className="space-y-1 min-w-0">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block leading-tight">
-                    {card.label}
-                  </span>
-                  <div className="text-2xl font-extrabold tracking-tight text-slate-800">
-                    {card.value}
-                  </div>
-                  <div className="pt-1">
-                    <span className={`inline-flex items-center text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${card.badgeClass}`}>
-                      {card.change}
-                    </span>
-                  </div>
-                </div>
-                <div className={`shrink-0 p-2.5 rounded-xl border ${card.iconBg} ${card.iconBorder} ${card.iconColor} shadow-inner transform group-hover:scale-105 transition-transform duration-200`}>
-                  <card.icon size={18} className="stroke-[2.2]" />
-                </div>
-              </div>
+                label={card.label}
+                value={card.value}
+                icon={card.icon}
+                iconColor={card.iconColor}
+                trend={card.change}
+                trendDirection={card.isUp === false ? "down" : "up"}
+              />
             ))}
           </div>
         </div>
 
         {/* Arrest chart + Left Out Accused panel */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+          <div className="bg-white rounded-card p-4 border border-slate-200">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">Arrest &amp; Case Volume Trend</div>
+                <div className="text-label font-semibold uppercase tracking-wide text-[#0A1628]">Arrest &amp; Case Volume Trend</div>
               </div>
-              <div className="flex items-center gap-3 text-[10px] font-semibold text-slate-500">
+              <div className="flex items-center gap-3 text-meta font-semibold text-slate-500">
                 <span className="flex items-center gap-1.5">
                   <Dot color="#10B981" />
                   Arrest
@@ -423,22 +407,22 @@ export default function PSDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div className="bg-white rounded-card p-4 border border-slate-200 flex flex-col justify-between">
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">
+              <div className="text-label font-semibold uppercase tracking-wide text-[#0A1628]">
                 Left Out Accused
               </div>
-              <div className="text-[10px] font-semibold text-slate-400 mt-0.5">(Heinous cases only)</div>
+              <div className="text-meta font-semibold text-slate-400 mt-0.5">(Heinous cases only)</div>
               <div className="mt-4 space-y-3.5">
                 {leftOutAccused.length === 0 && (
-                  <div className="text-[11px] text-slate-400 font-semibold">No left out accused in heinous cases.</div>
+                  <div className="text-meta text-slate-400 font-semibold">No left out accused in heinous cases.</div>
                 )}
                 {leftOutAccused.map((accused) => (
                   <div key={accused.name} className="border-b border-slate-100 pb-2.5 last:border-0 last:pb-0">
-                    <div className="text-xs font-bold text-slate-800">
+                    <div className="text-body font-bold text-slate-800">
                       {accused.name}
                     </div>
-                    <div className="mt-1 text-[11px] text-slate-400 font-semibold leading-relaxed">{accused.note}</div>
+                    <div className="mt-1 text-meta text-slate-400 font-semibold leading-relaxed">{accused.note}</div>
                   </div>
                 ))}
               </div>
@@ -448,17 +432,17 @@ export default function PSDashboard() {
 
         {/* Crime-head matrix + Case Status chart */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">Crime Head Breakdown</div>
-            <div className="mt-3 max-h-[360px] overflow-y-auto overflow-x-auto rounded-lg border border-slate-100">
-              <table className="w-full text-xs border-collapse">
+          <div className="bg-white rounded-card p-4 border border-slate-200">
+            <div className="text-label font-semibold uppercase tracking-wide text-[#0A1628]">Crime Head Breakdown</div>
+            <div className="mt-3 max-h-[360px] overflow-y-auto overflow-x-auto">
+              <table className="w-full text-body border-collapse">
                 <thead>
                   <tr className="text-slate-400 border-b border-slate-800">
-                    <th className="sticky left-0 top-0 z-20 bg-slate-900 pb-2.5 pt-2 pl-2 text-left font-bold uppercase tracking-wider text-[10px]">Crime Head</th>
+                    <th className="sticky left-0 top-0 z-20 bg-slate-900 pb-2.5 pt-2 pl-2 text-left font-bold uppercase tracking-wider text-label">Crime Head</th>
                     {MATRIX_COLUMNS.map((col) => (
                       <th
                         key={col}
-                        className={`sticky top-0 z-10 bg-slate-900 pb-2.5 pt-2 text-right font-bold uppercase tracking-wider text-[10px] ${col === "Workout" ? "pr-2" : ""}`}
+                        className={`sticky top-0 z-10 bg-slate-900 pb-2.5 pt-2 text-right font-bold uppercase tracking-wider text-label ${col === "Workout" ? "pr-2" : ""}`}
                       >
                         {col}
                       </th>
@@ -468,7 +452,7 @@ export default function PSDashboard() {
                 <tbody>
                   {crimeHeadMatrix.rows.length === 0 && (
                     <tr>
-                      <td colSpan={MATRIX_COLUMNS.length + 1} className="py-6 text-center text-[11px] text-slate-400 font-semibold">
+                      <td colSpan={MATRIX_COLUMNS.length + 1} className="py-6 text-center text-meta text-slate-400 font-semibold">
                         No crime-head classified records in this period.
                       </td>
                     </tr>
@@ -497,8 +481,8 @@ export default function PSDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-            <div className="text-xs font-bold uppercase tracking-wide text-[#0A1628]">Case Status</div>
+          <div className="bg-white rounded-card p-4 border border-slate-200">
+            <div className="text-label font-semibold uppercase tracking-wide text-[#0A1628]">Case Status</div>
             <div className="mt-2 h-[230px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={caseStatusRows} margin={{ top: 10, right: 10, left: -15, bottom: 55 }}>

@@ -7,6 +7,7 @@ import { Shield, BookOpen, FileCheck, PhoneCall, TrendingUp, BarChart3, Radio, M
 import { motion } from 'framer-motion';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
+import StatCard from '../../components/ui/StatCard.jsx';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -96,13 +97,6 @@ export default function DistrictDashboard() {
     { label: 'Accused Arrests Filed',       value: stats.arrests_today || 0, color: 'text-emerald-600', icon: FileCheck, change: '+8%', isUp: true },
   ];
 
-  /* ── per-card icon tile colours matching Dashboard palette ── */
-  const cardTile = [
-    { bg: 'bg-[#FFFBEB]', border: 'border-[#FDE68A]' },
-    { bg: 'bg-[#EFF6FF]', border: 'border-[#BFDBFE]' },
-    { bg: 'bg-[#ECFDF5]', border: 'border-[#6EE7B7]' },
-  ];
-
   return (
     <div className="min-h-screen theme-district-page page-bg">
  
@@ -158,11 +152,7 @@ export default function DistrictDashboard() {
  
         {/* ── Action strip ── */}
         <motion.div variants={itemVariants} className="mt-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-5 w-1 rounded-full bg-gradient-to-b from-[var(--accent-color-hover)] to-[var(--accent-color)]" />
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#4A5568]">Operational Overview</h2>
-            <div className="h-px w-24 bg-[#E2E8F0]" />
-          </div>
+          <h2 className="text-label font-semibold uppercase tracking-wide text-[#4A5568]">Operational Overview</h2>
           <button
             onClick={() => navigate('/compile')}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--accent-color)] to-[var(--accent-color-hover)] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-red-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/30 active:scale-[0.98] cursor-pointer"
@@ -175,55 +165,35 @@ export default function DistrictDashboard() {
         {/* ── Stats Cards ── */}
         <motion.div
           variants={containerVariants}
-          className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3"
+          className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3"
         >
-          {cards.map((card, idx) => {
-            const Icon = card.icon;
-            return (
-              <motion.div
-                key={idx}
-                variants={itemVariants}
-                className="group rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[var(--accent-glow)] cursor-pointer"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#718096]">{card.label}</span>
-                    <div className="flex items-baseline gap-2">
-                      <div className="text-3xl font-extrabold tracking-tight text-[#0A1628] tabular-nums">
-                        {card.value}
-                      </div>
-                      <span className={`flex items-center gap-0.5 text-xs font-bold ${card.isUp ? 'text-[#059669]' : 'text-[#DC2626]'}`}>
-                        {card.isUp ? '↑' : '↓'} {card.change}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border ${cardTile[idx].border} ${cardTile[idx].bg} transition-transform duration-200 group-hover:scale-110 ${card.color}`}>
-                    <Icon size={22} />
-                  </div>
-                </div>
-                <div className="mt-3 text-xs text-[#718096]">Last 30 days</div>
-              </motion.div>
-            );
-          })}
+          {cards.map((card, idx) => (
+            <motion.div key={idx} variants={itemVariants}>
+              <StatCard
+                label={card.label}
+                value={card.value}
+                icon={card.icon}
+                iconColor={card.color}
+                trend={`${card.isUp ? '↑' : '↓'} ${card.change}`}
+                trendDirection={card.isUp ? 'up' : 'down'}
+                subtext="Last 30 days"
+              />
+            </motion.div>
+          ))}
         </motion.div>
  
         {/* ── Station Chart Panel ── */}
         <motion.div
           variants={itemVariants}
-          className="mt-6 overflow-hidden rounded-3xl border border-[#E2E8F0] bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[var(--accent-glow)]"
+          className="mt-6 overflow-hidden rounded-card border border-slate-200 bg-white"
         >
           {/* Panel header */}
-          <div className="relative flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] bg-gradient-to-r from-[#F8FAFF] via-white to-[#F0F4F9] px-6 py-5">
-            {/* Left accent bar */}
-            <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b from-[var(--accent-color-hover)] to-[var(--accent-color)]" />
- 
-            <div className="flex items-center gap-3 pl-4">
-              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent-color-hover)] to-[var(--accent-color)] shadow-md shadow-red-500/20">
-                <BarChart3 size={16} className="text-white" />
-              </div>
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <BarChart3 size={16} className="text-slate-400 shrink-0" />
               <div>
-                <h3 className="text-base font-bold text-[#1A202C]">Station-wise Operational Volume</h3>
-                <p className="mt-0.5 text-xs text-[#718096]">Comparative FIR Cases · PCR Calls · Arrests across all stations</p>
+                <h3 className="text-sm font-bold text-[#1A202C]">Station-wise Operational Volume</h3>
+                <p className="mt-0.5 text-meta text-[#718096]">Comparative FIR Cases · PCR Calls · Arrests across all stations</p>
               </div>
             </div>
 
@@ -231,10 +201,10 @@ export default function DistrictDashboard() {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setActiveMetric('cases')}
-                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 shadow-sm text-xs font-bold transition-all duration-150 cursor-pointer ${
+                className={`flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-meta font-bold cursor-pointer ${
                   activeMetric === 'cases'
-                    ? 'border-[#D97706] bg-[#FFFBEB] text-[#D97706] opacity-100 ring-2 ring-[#D97706]/10 scale-105'
-                    : 'border-slate-200 bg-white text-slate-400 opacity-60 hover:opacity-90'
+                    ? 'border-[#D97706] bg-[#FFFBEB] text-[#D97706]'
+                    : 'border-slate-200 bg-white text-slate-400'
                 }`}
               >
                 <span className={`h-2 w-2 rounded-full ${activeMetric === 'cases' ? 'bg-[#D97706]' : 'bg-slate-300'}`} />
@@ -242,10 +212,10 @@ export default function DistrictDashboard() {
               </button>
               <button
                 onClick={() => setActiveMetric('pcr')}
-                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 shadow-sm text-xs font-bold transition-all duration-150 cursor-pointer ${
+                className={`flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-meta font-bold cursor-pointer ${
                   activeMetric === 'pcr'
-                    ? 'border-[#003087] bg-[#EFF6FF] text-[#003087] opacity-100 ring-2 ring-[#003087]/10 scale-105'
-                    : 'border-slate-200 bg-white text-slate-400 opacity-60 hover:opacity-90'
+                    ? 'border-[#003087] bg-[#EFF6FF] text-[#003087]'
+                    : 'border-slate-200 bg-white text-slate-400'
                 }`}
               >
                 <span className={`h-2 w-2 rounded-full ${activeMetric === 'pcr' ? 'bg-[#003087]' : 'bg-slate-300'}`} />
@@ -253,10 +223,10 @@ export default function DistrictDashboard() {
               </button>
               <button
                 onClick={() => setActiveMetric('arrests')}
-                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 shadow-sm text-xs font-bold transition-all duration-150 cursor-pointer ${
+                className={`flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-meta font-bold cursor-pointer ${
                   activeMetric === 'arrests'
-                    ? 'border-[#059669] bg-[#ECFDF5] text-[#059669] opacity-100 ring-2 ring-[#059669]/10 scale-105'
-                    : 'border-slate-200 bg-white text-slate-400 opacity-60 hover:opacity-90'
+                    ? 'border-[#059669] bg-[#ECFDF5] text-[#059669]'
+                    : 'border-slate-200 bg-white text-slate-400'
                 }`}
               >
                 <span className={`h-2 w-2 rounded-full ${activeMetric === 'arrests' ? 'bg-[#059669]' : 'bg-slate-300'}`} />
@@ -266,7 +236,7 @@ export default function DistrictDashboard() {
           </div>
 
           {/* Chart */}
-          <div className="p-6">
+          <div className="p-4">
             <div className="h-[340px] w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
@@ -305,7 +275,7 @@ export default function DistrictDashboard() {
         {/* Footer */}
         <div className="mt-8 flex items-center justify-center gap-2">
           <div className="h-px w-20 bg-[#E2E8F0]" />
-          <p className="text-xs font-medium text-[#A0AEC0]">
+          <p className="text-meta font-medium text-[#A0AEC0]">
             Delhi Police Command System · Data refreshes on page load · All times IST
           </p>
           <div className="h-px w-20 bg-[#E2E8F0]" />

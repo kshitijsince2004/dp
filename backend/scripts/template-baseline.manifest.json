@@ -1551,16 +1551,11 @@
         },
         {
           "col": 11,
-          "key": "prop_elec_device_type",
+          "key": "prop_cash_amount",
           "section": "Property Details",
-          "label": "Device Type",
-          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
-            ]
-          }
+          "label": "Amount (₹)",
+          "hint": "number",
+          "validation": null
         },
         {
           "col": 12,
@@ -1577,6 +1572,19 @@
         },
         {
           "col": 13,
+          "key": "prop_elec_device_type",
+          "section": "Property Details",
+          "label": "Device Type",
+          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
+            ]
+          }
+        },
+        {
+          "col": 14,
           "key": "prop_doc_type",
           "section": "Property Details",
           "label": "Document Type",
@@ -1589,7 +1597,7 @@
           }
         },
         {
-          "col": 14,
+          "col": 15,
           "key": "prop_drug_type",
           "section": "Property Details",
           "label": "Drug / Substance Type",
@@ -1602,7 +1610,7 @@
           }
         },
         {
-          "col": 15,
+          "col": 16,
           "key": "prop_arms_type",
           "section": "Property Details",
           "label": "Weapon Type",
@@ -1615,7 +1623,7 @@
           }
         },
         {
-          "col": 16,
+          "col": 17,
           "key": "prop_other_desc",
           "section": "Property Details",
           "label": "Item Description",
@@ -1623,52 +1631,7 @@
           "validation": null
         },
         {
-          "col": 17,
-          "key": "prop_cash_amount",
-          "section": "Property Details",
-          "label": "Amount (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
           "col": 18,
-          "key": "prop_cash_currency",
-          "section": "Property Details",
-          "label": "Currency Type",
-          "hint": "select: INR, USD, EUR, GBP, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"INR,USD,EUR,GBP,Other\""
-            ]
-          }
-        },
-        {
-          "col": 19,
-          "key": "prop_other_value",
-          "section": "Property Details",
-          "label": "Estimated Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 20,
-          "key": "prop_arms_make",
-          "section": "Property Details",
-          "label": "Make / Manufacturer",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 21,
-          "key": "prop_drug_quantity",
-          "section": "Property Details",
-          "label": "Quantity",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 22,
           "key": "prop_doc_number",
           "section": "Property Details",
           "label": "Document Number",
@@ -1676,15 +1639,7 @@
           "validation": null
         },
         {
-          "col": 23,
-          "key": "prop_elec_brand",
-          "section": "Property Details",
-          "label": "Make / Brand",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 24,
+          "col": 19,
           "key": "prop_gold_material",
           "section": "Property Details",
           "label": "Material",
@@ -1697,31 +1652,60 @@
           }
         },
         {
-          "col": 25,
-          "key": "prop_arms_serial",
+          "col": 20,
+          "key": "prop_elec_brand",
           "section": "Property Details",
-          "label": "Serial Number",
+          "label": "Make / Brand",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 21,
+          "key": "prop_other_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 22,
+          "key": "prop_drug_quantity",
+          "section": "Property Details",
+          "label": "Quantity",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 23,
+          "key": "prop_arms_make",
+          "section": "Property Details",
+          "label": "Make / Manufacturer",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 24,
+          "key": "prop_cash_currency",
+          "section": "Property Details",
+          "label": "Currency Type",
+          "hint": "select: INR, USD, EUR, GBP, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"INR,USD,EUR,GBP,Other\""
+            ]
+          }
+        },
+        {
+          "col": 25,
+          "key": "prop_doc_holder",
+          "section": "Property Details",
+          "label": "Document Holder Name",
           "hint": "text",
           "validation": null
         },
         {
           "col": 26,
-          "key": "prop_gold_weight",
-          "section": "Property Details",
-          "label": "Weight (grams)",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 27,
-          "key": "prop_cash_denomination",
-          "section": "Property Details",
-          "label": "Denomination Details",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 28,
           "key": "prop_elec_model",
           "section": "Property Details",
           "label": "Model",
@@ -1729,7 +1713,31 @@
           "validation": null
         },
         {
+          "col": 27,
+          "key": "prop_arms_serial",
+          "section": "Property Details",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 28,
+          "key": "prop_cash_denomination",
+          "section": "Property Details",
+          "label": "Denomination Details",
+          "hint": "text",
+          "validation": null
+        },
+        {
           "col": 29,
+          "key": "prop_gold_weight",
+          "section": "Property Details",
+          "label": "Weight (grams)",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 30,
           "key": "prop_drug_unit",
           "section": "Property Details",
           "label": "Unit",
@@ -1742,14 +1750,6 @@
           }
         },
         {
-          "col": 30,
-          "key": "prop_doc_holder",
-          "section": "Property Details",
-          "label": "Document Holder Name",
-          "hint": "text",
-          "validation": null
-        },
-        {
           "col": 31,
           "key": "prop_drug_value",
           "section": "Property Details",
@@ -1759,22 +1759,6 @@
         },
         {
           "col": 32,
-          "key": "prop_doc_issuing_auth",
-          "section": "Property Details",
-          "label": "Issuing Authority",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 33,
-          "key": "prop_arms_ammo_count",
-          "section": "Property Details",
-          "label": "Ammunition Count",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 34,
           "key": "prop_gold_value",
           "section": "Property Details",
           "label": "Estimated Value (₹)",
@@ -1782,7 +1766,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 33,
           "key": "prop_elec_serial",
           "section": "Property Details",
           "label": "Serial Number",
@@ -1790,19 +1774,35 @@
           "validation": null
         },
         {
-          "col": 36,
-          "key": "prop_arms_license",
+          "col": 34,
+          "key": "prop_doc_issuing_auth",
           "section": "Property Details",
-          "label": "License Number",
+          "label": "Issuing Authority",
           "hint": "text",
           "validation": null
         },
         {
-          "col": 37,
+          "col": 35,
+          "key": "prop_arms_ammo_count",
+          "section": "Property Details",
+          "label": "Ammunition Count",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 36,
           "key": "prop_elec_value",
           "section": "Property Details",
           "label": "Estimated Value (₹)",
           "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": "prop_arms_license",
+          "section": "Property Details",
+          "label": "License Number",
+          "hint": "text",
           "validation": null
         }
       ],
@@ -2673,16 +2673,11 @@
         },
         {
           "col": 11,
-          "key": "prop_elec_device_type",
+          "key": "prop_cash_amount",
           "section": "Property Details",
-          "label": "Device Type",
-          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
-            ]
-          }
+          "label": "Amount (₹)",
+          "hint": "number",
+          "validation": null
         },
         {
           "col": 12,
@@ -2699,6 +2694,19 @@
         },
         {
           "col": 13,
+          "key": "prop_elec_device_type",
+          "section": "Property Details",
+          "label": "Device Type",
+          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
+            ]
+          }
+        },
+        {
+          "col": 14,
           "key": "prop_doc_type",
           "section": "Property Details",
           "label": "Document Type",
@@ -2711,7 +2719,7 @@
           }
         },
         {
-          "col": 14,
+          "col": 15,
           "key": "prop_drug_type",
           "section": "Property Details",
           "label": "Drug / Substance Type",
@@ -2724,7 +2732,7 @@
           }
         },
         {
-          "col": 15,
+          "col": 16,
           "key": "prop_arms_type",
           "section": "Property Details",
           "label": "Weapon Type",
@@ -2737,7 +2745,7 @@
           }
         },
         {
-          "col": 16,
+          "col": 17,
           "key": "prop_other_desc",
           "section": "Property Details",
           "label": "Item Description",
@@ -2745,52 +2753,7 @@
           "validation": null
         },
         {
-          "col": 17,
-          "key": "prop_cash_amount",
-          "section": "Property Details",
-          "label": "Amount (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
           "col": 18,
-          "key": "prop_cash_currency",
-          "section": "Property Details",
-          "label": "Currency Type",
-          "hint": "select: INR, USD, EUR, GBP, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"INR,USD,EUR,GBP,Other\""
-            ]
-          }
-        },
-        {
-          "col": 19,
-          "key": "prop_other_value",
-          "section": "Property Details",
-          "label": "Estimated Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 20,
-          "key": "prop_arms_make",
-          "section": "Property Details",
-          "label": "Make / Manufacturer",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 21,
-          "key": "prop_drug_quantity",
-          "section": "Property Details",
-          "label": "Quantity",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 22,
           "key": "prop_doc_number",
           "section": "Property Details",
           "label": "Document Number",
@@ -2798,15 +2761,7 @@
           "validation": null
         },
         {
-          "col": 23,
-          "key": "prop_elec_brand",
-          "section": "Property Details",
-          "label": "Make / Brand",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 24,
+          "col": 19,
           "key": "prop_gold_material",
           "section": "Property Details",
           "label": "Material",
@@ -2819,31 +2774,60 @@
           }
         },
         {
-          "col": 25,
-          "key": "prop_arms_serial",
+          "col": 20,
+          "key": "prop_elec_brand",
           "section": "Property Details",
-          "label": "Serial Number",
+          "label": "Make / Brand",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 21,
+          "key": "prop_other_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 22,
+          "key": "prop_drug_quantity",
+          "section": "Property Details",
+          "label": "Quantity",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 23,
+          "key": "prop_arms_make",
+          "section": "Property Details",
+          "label": "Make / Manufacturer",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 24,
+          "key": "prop_cash_currency",
+          "section": "Property Details",
+          "label": "Currency Type",
+          "hint": "select: INR, USD, EUR, GBP, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"INR,USD,EUR,GBP,Other\""
+            ]
+          }
+        },
+        {
+          "col": 25,
+          "key": "prop_doc_holder",
+          "section": "Property Details",
+          "label": "Document Holder Name",
           "hint": "text",
           "validation": null
         },
         {
           "col": 26,
-          "key": "prop_gold_weight",
-          "section": "Property Details",
-          "label": "Weight (grams)",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 27,
-          "key": "prop_cash_denomination",
-          "section": "Property Details",
-          "label": "Denomination Details",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 28,
           "key": "prop_elec_model",
           "section": "Property Details",
           "label": "Model",
@@ -2851,7 +2835,31 @@
           "validation": null
         },
         {
+          "col": 27,
+          "key": "prop_arms_serial",
+          "section": "Property Details",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 28,
+          "key": "prop_cash_denomination",
+          "section": "Property Details",
+          "label": "Denomination Details",
+          "hint": "text",
+          "validation": null
+        },
+        {
           "col": 29,
+          "key": "prop_gold_weight",
+          "section": "Property Details",
+          "label": "Weight (grams)",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 30,
           "key": "prop_drug_unit",
           "section": "Property Details",
           "label": "Unit",
@@ -2864,14 +2872,6 @@
           }
         },
         {
-          "col": 30,
-          "key": "prop_doc_holder",
-          "section": "Property Details",
-          "label": "Document Holder Name",
-          "hint": "text",
-          "validation": null
-        },
-        {
           "col": 31,
           "key": "prop_drug_value",
           "section": "Property Details",
@@ -2881,22 +2881,6 @@
         },
         {
           "col": 32,
-          "key": "prop_doc_issuing_auth",
-          "section": "Property Details",
-          "label": "Issuing Authority",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 33,
-          "key": "prop_arms_ammo_count",
-          "section": "Property Details",
-          "label": "Ammunition Count",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 34,
           "key": "prop_gold_value",
           "section": "Property Details",
           "label": "Estimated Value (₹)",
@@ -2904,7 +2888,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 33,
           "key": "prop_elec_serial",
           "section": "Property Details",
           "label": "Serial Number",
@@ -2912,19 +2896,35 @@
           "validation": null
         },
         {
-          "col": 36,
-          "key": "prop_arms_license",
+          "col": 34,
+          "key": "prop_doc_issuing_auth",
           "section": "Property Details",
-          "label": "License Number",
+          "label": "Issuing Authority",
           "hint": "text",
           "validation": null
         },
         {
-          "col": 37,
+          "col": 35,
+          "key": "prop_arms_ammo_count",
+          "section": "Property Details",
+          "label": "Ammunition Count",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 36,
           "key": "prop_elec_value",
           "section": "Property Details",
           "label": "Estimated Value (₹)",
           "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": "prop_arms_license",
+          "section": "Property Details",
+          "label": "License Number",
+          "hint": "text",
           "validation": null
         }
       ],
@@ -4119,16 +4119,11 @@
         },
         {
           "col": 16,
-          "key": "prop_elec_device_type",
+          "key": "prop_cash_amount",
           "section": "General Information",
-          "label": "Device Type",
-          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
-            ]
-          }
+          "label": "Amount (₹)",
+          "hint": "number",
+          "validation": null
         },
         {
           "col": 17,
@@ -4145,6 +4140,19 @@
         },
         {
           "col": 18,
+          "key": "prop_elec_device_type",
+          "section": "General Information",
+          "label": "Device Type",
+          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
+            ]
+          }
+        },
+        {
+          "col": 19,
           "key": "prop_doc_type",
           "section": "General Information",
           "label": "Document Type",
@@ -4157,7 +4165,7 @@
           }
         },
         {
-          "col": 19,
+          "col": 20,
           "key": "prop_drug_type",
           "section": "General Information",
           "label": "Drug / Substance Type",
@@ -4170,7 +4178,7 @@
           }
         },
         {
-          "col": 20,
+          "col": 21,
           "key": "prop_arms_type",
           "section": "General Information",
           "label": "Weapon Type",
@@ -4183,7 +4191,7 @@
           }
         },
         {
-          "col": 21,
+          "col": 22,
           "key": "prop_other_desc",
           "section": "General Information",
           "label": "Item Description",
@@ -4191,52 +4199,7 @@
           "validation": null
         },
         {
-          "col": 22,
-          "key": "prop_cash_amount",
-          "section": "General Information",
-          "label": "Amount (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
           "col": 23,
-          "key": "prop_cash_currency",
-          "section": "General Information",
-          "label": "Currency Type",
-          "hint": "select: INR, USD, EUR, GBP, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Indian Rupee (INR),US Dollar (USD),Euro (EUR),British Pound (GBP),Other\""
-            ]
-          }
-        },
-        {
-          "col": 24,
-          "key": "prop_other_value",
-          "section": "General Information",
-          "label": "Estimated Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 25,
-          "key": "prop_arms_make",
-          "section": "General Information",
-          "label": "Make / Manufacturer",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 26,
-          "key": "prop_drug_quantity",
-          "section": "General Information",
-          "label": "Quantity",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 27,
           "key": "prop_doc_number",
           "section": "General Information",
           "label": "Document Number",
@@ -4244,15 +4207,7 @@
           "validation": null
         },
         {
-          "col": 28,
-          "key": "prop_elec_brand",
-          "section": "General Information",
-          "label": "Make / Brand",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 29,
+          "col": 24,
           "key": "prop_gold_material",
           "section": "General Information",
           "label": "Material",
@@ -4265,31 +4220,60 @@
           }
         },
         {
-          "col": 30,
-          "key": "prop_arms_serial",
+          "col": 25,
+          "key": "prop_elec_brand",
           "section": "General Information",
-          "label": "Serial Number",
+          "label": "Make / Brand",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 26,
+          "key": "prop_other_value",
+          "section": "General Information",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 27,
+          "key": "prop_drug_quantity",
+          "section": "General Information",
+          "label": "Quantity",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 28,
+          "key": "prop_arms_make",
+          "section": "General Information",
+          "label": "Make / Manufacturer",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 29,
+          "key": "prop_cash_currency",
+          "section": "General Information",
+          "label": "Currency Type",
+          "hint": "select: INR, USD, EUR, GBP, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Indian Rupee (INR),US Dollar (USD),Euro (EUR),British Pound (GBP),Other\""
+            ]
+          }
+        },
+        {
+          "col": 30,
+          "key": "prop_doc_holder",
+          "section": "General Information",
+          "label": "Document Holder Name",
           "hint": "text",
           "validation": null
         },
         {
           "col": 31,
-          "key": "prop_gold_weight",
-          "section": "General Information",
-          "label": "Weight (grams)",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 32,
-          "key": "prop_cash_denomination",
-          "section": "General Information",
-          "label": "Denomination Details",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 33,
           "key": "prop_elec_model",
           "section": "General Information",
           "label": "Model",
@@ -4297,7 +4281,31 @@
           "validation": null
         },
         {
+          "col": 32,
+          "key": "prop_arms_serial",
+          "section": "General Information",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 33,
+          "key": "prop_cash_denomination",
+          "section": "General Information",
+          "label": "Denomination Details",
+          "hint": "text",
+          "validation": null
+        },
+        {
           "col": 34,
+          "key": "prop_gold_weight",
+          "section": "General Information",
+          "label": "Weight (grams)",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 35,
           "key": "prop_drug_unit",
           "section": "General Information",
           "label": "Unit",
@@ -4310,14 +4318,6 @@
           }
         },
         {
-          "col": 35,
-          "key": "prop_doc_holder",
-          "section": "General Information",
-          "label": "Document Holder Name",
-          "hint": "text",
-          "validation": null
-        },
-        {
           "col": 36,
           "key": "prop_drug_value",
           "section": "General Information",
@@ -4327,22 +4327,6 @@
         },
         {
           "col": 37,
-          "key": "prop_doc_issuing_auth",
-          "section": "General Information",
-          "label": "Issuing Authority",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 38,
-          "key": "prop_arms_ammo_count",
-          "section": "General Information",
-          "label": "Ammunition Count",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 39,
           "key": "prop_gold_value",
           "section": "General Information",
           "label": "Estimated Value (₹)",
@@ -4350,7 +4334,7 @@
           "validation": null
         },
         {
-          "col": 40,
+          "col": 38,
           "key": "prop_elec_serial",
           "section": "General Information",
           "label": "Serial Number",
@@ -4358,19 +4342,35 @@
           "validation": null
         },
         {
-          "col": 41,
-          "key": "prop_arms_license",
+          "col": 39,
+          "key": "prop_doc_issuing_auth",
           "section": "General Information",
-          "label": "License Number",
+          "label": "Issuing Authority",
           "hint": "text",
           "validation": null
         },
         {
-          "col": 42,
+          "col": 40,
+          "key": "prop_arms_ammo_count",
+          "section": "General Information",
+          "label": "Ammunition Count",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 41,
           "key": "prop_elec_value",
           "section": "General Information",
           "label": "Estimated Value (₹)",
           "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 42,
+          "key": "prop_arms_license",
+          "section": "General Information",
+          "label": "License Number",
+          "hint": "text",
           "validation": null
         }
       ],

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Filter, ListFilter, Shield } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { DatePicker, Input, Select } from 'antd';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
@@ -72,90 +72,73 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
   ];
 
   return (
-    <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-3 flex flex-wrap items-center gap-4 transition-all hover:shadow-md mb-6">
+    <div className="bg-white border border-slate-300 rounded-card p-3 flex flex-wrap items-center gap-3 mb-4">
       {/* Category Filter */}
-      <div className="flex items-center gap-2">
-        <ListFilter size={16} className="text-[var(--accent-color)]" />
-        <Select 
-          value={filters.type || 'ALL'} 
-          onChange={handleTypeChange}
-          style={{ width: 160 }}
-          variant="borderless"
-          className="bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-slate-700"
-          popupMatchSelectWidth={false}
-        >
-          {recordTypes.map(rt => (
-            <Option key={rt.value} value={rt.value}>{rt.label}</Option>
-          ))}
-        </Select>
-      </div>
-
-      <div className="h-6 w-px bg-slate-200 hidden md:block"></div>
+      <Select
+        value={filters.type || 'ALL'}
+        onChange={handleTypeChange}
+        style={{ width: 160 }}
+        variant="outlined"
+        className="rounded-control"
+        popupMatchSelectWidth={false}
+      >
+        {recordTypes.map(rt => (
+          <Option key={rt.value} value={rt.value}>{rt.label}</Option>
+        ))}
+      </Select>
 
       {/* Status Filter */}
       {allowedStatuses.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-[var(--accent-color)]" />
-          <Select 
-            value={filters.status || 'ALL'} 
-            onChange={handleStatusChange}
-            style={{ minWidth: 160 }}
-            variant="borderless"
-            className="bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-slate-700"
-            popupMatchSelectWidth={false}
-          >
-            <Option value="ALL">{t('common.allStatuses', 'All Statuses')}</Option>
-            {allowedStatuses.filter(s => s !== 'ALL').map(st => (
-              <Option key={st} value={st}>{t(`status.${st}`, st)}</Option>
-            ))}
-          </Select>
-        </div>
-      )}
-
-      {allowedStatuses.length > 0 && <div className="h-6 w-px bg-slate-200 hidden md:block"></div>}
-
-      {/* Local Head Filter */}
-      <div className="flex items-center gap-2">
-        <Shield size={16} className="text-[var(--accent-color)]" />
-        <Select 
-          value={filters.localHead || 'ALL'} 
-          onChange={handleLocalHeadChange}
-          style={{ minWidth: 170, maxWidth: 240 }}
-          variant="borderless"
-          className="bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-slate-700"
+        <Select
+          value={filters.status || 'ALL'}
+          onChange={handleStatusChange}
+          style={{ minWidth: 160 }}
+          variant="outlined"
+          className="rounded-control"
           popupMatchSelectWidth={false}
-          showSearch
-          optionFilterProp="children"
         >
-          <Option value="ALL">{t('common.allLocalHeads', 'All Local Heads')}</Option>
-          {localHeads.map(lh => (
-            <Option key={lh.value} value={lh.label}>{lh.label}</Option>
+          <Option value="ALL">{t('common.allStatuses', 'All Statuses')}</Option>
+          {allowedStatuses.filter(s => s !== 'ALL').map(st => (
+            <Option key={st} value={st}>{t(`status.${st}`, st)}</Option>
           ))}
         </Select>
-      </div>
+      )}
 
-      <div className="h-6 w-px bg-slate-200 hidden md:block"></div>
+      {/* Local Head Filter */}
+      <Select
+        value={filters.localHead || 'ALL'}
+        onChange={handleLocalHeadChange}
+        style={{ minWidth: 170, maxWidth: 240 }}
+        variant="outlined"
+        className="rounded-control"
+        popupMatchSelectWidth={false}
+        showSearch
+        optionFilterProp="children"
+      >
+        <Option value="ALL">{t('common.allLocalHeads', 'All Local Heads')}</Option>
+        {localHeads.map(lh => (
+          <Option key={lh.value} value={lh.label}>{lh.label}</Option>
+        ))}
+      </Select>
 
       {/* Date Range Filter */}
-      <div className="flex items-center gap-2 flex-grow sm:flex-grow-0">
-        <RangePicker 
+      <div className="flex items-center flex-grow sm:flex-grow-0">
+        <RangePicker
           onChange={handleDateRangeChange}
           value={filters.dateFrom && filters.dateTo ? [dayjs(filters.dateFrom, 'DD/MM/YYYY'), dayjs(filters.dateTo, 'DD/MM/YYYY')] : null}
-          className="bg-slate-50 border-transparent hover:bg-slate-100 hover:border-[var(--accent-color)] transition-colors shadow-none rounded-lg w-full sm:w-auto font-medium"
+          className="rounded-control w-full sm:w-auto"
           format="DD/MM/YYYY"
         />
       </div>
 
-      <div className="h-6 w-px bg-slate-200 hidden lg:block"></div>
-
       {/* Search Input */}
-      <div className="flex items-center gap-2 flex-grow">
-        <Input 
+      <div className="flex items-center flex-grow">
+        <Input
           placeholder={t('common.searchPlaceholder', 'Search by case number, name, or keyword...')}
           value={localSearch}
           onChange={e => setLocalSearch(e.target.value)}
           prefix={<Search size={16} className="text-slate-400" />}
-          className="bg-slate-50 border-transparent hover:bg-slate-100 hover:border-[var(--accent-color)] focus:bg-white focus:border-[var(--accent-color)] transition-colors shadow-none rounded-lg py-1.5 px-3 font-medium"
+          className="rounded-control py-1.5 px-3"
           allowClear
         />
       </div>
