@@ -8,10 +8,20 @@
 // Never hardcode "field X goes to column Y" outside this file — if a field moves, only
 // `config/fields/*.json` changes.
 import {
-  normalizeText, normalizeDate, normalizePhone, normalizeFirNo, toBool,
+  normalizeText, normalizeDate, normalizePhone, normalizeFirNo, toBool, normalizeEnumUpper,
   resolveAct, resolveSection, resolveMajorHead, resolveMinorHead,
   resolveLocalHead, resolveBeat,
 } from './records.normalize.js';
+
+// T7.1 — columns whose CHECK constraint vocabulary is UPPERCASE while field_registry's option
+// values are Title Case (see records.normalize.js's normalizeEnumUpper doc comment). Keyed by
+// table so the same column name on an unrelated table (there isn't one today, but the map is
+// explicit rather than a bare column-name Set for exactly that reason) is never accidentally
+// swept in.
+const ENUM_UPPER_COLUMNS = {
+  persons: new Set(['gender', 'relation_type']),
+  record_properties: new Set(['status']),
+};
 
 export const DETAIL_TABLES = {
   CASE: 'fir_details', ARREST: 'arrest_details', PCR_CALL: 'pcr_call_details',
@@ -261,10 +271,12 @@ function normalizeLocationValue(column, raw) {
   return coerceByType(columnCache?.locations?.[column], raw);
 }
 
-/** Detail-table columns that hold a LABEL needing async ref.* resolution before insert. */
-async function resolveDetailFkLabels(trx, recordType, detail) {
-  if ('beat_id' in detail) detail.beat_id = await resolveBeat(trx, detail.beat_id);
-  if ('local_head_id' in detail) detail.local_head_id = await resolveLocalHead(trx, detail.local_head_id);
+/** Detail-table columns that hold a LABEL needing async ref.* resolution before insert.
+ * `psId` (T3) scopes resolveBeat's bare-number fallback — only the write-path callers that
+ * already know the record's target PS pass it; the resolver itself tolerates its absence. */
+async function resolveDetailFkLabels(trx, recordType, detail, psId = null) {
+  if ('beat_id' in detail) detail.beat_id = (await resolveBeat(trx, detail.beat_id, psId)).id;
+  if ('local_head_id' in detail) detail.local_head_id = (await resolveLocalHead(trx, detail.local_head_id)).id;
   return detail;
 }
 
@@ -360,6 +372,7 @@ function subtypeTableForColumn(column) {
 
 function normalizePersonValue(table, column, raw) {
   if (column === 'mobile') return normalizePhone(raw);
+  if (ENUM_UPPER_COLUMNS.persons?.has(column)) return normalizeEnumUpper(raw);
   return coerceByType(columnCache?.[table]?.[column], raw);
 }
 
@@ -408,6 +421,7 @@ async function splitPersons(trx, registry, recordType, data, personsInput) {
 // ── properties ─────────────────────────────────────────────────────────────────────────
 
 function normalizePropertyValue(column, raw) {
+  if (ENUM_UPPER_COLUMNS.record_properties?.has(column)) return normalizeEnumUpper(raw);
   return coerceByType(columnCache?.record_properties?.[column], raw);
 }
 
@@ -524,8 +538,8 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
     // as-entered act label itself so the row is legal (honest, not a real ref.acts row).
     if (actId == null && !otherActName) otherActName = r.act || null;
     if (actId == null && !otherActName) continue; // truly nothing to build a row from
-    const majorHeadId = r.major ? await resolveMajorHead(trx, r.major) : null;
-    const minorHeadId = r.minor ? await resolveMinorHead(trx, r.minor, majorHeadId) : null;
+    const majorHeadId = r.major ? (await resolveMajorHead(trx, r.major)).id : null;
+    const minorHeadId = r.minor ? (await resolveMinorHead(trx, r.minor, majorHeadId)).id : null;
     built.push({
       act_id: actId, other_act_name: otherActName, section_id: sectionId,
       major_head_id: majorHeadId, minor_head_id: minorHeadId,
@@ -536,7 +550,7 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
 
   const crimeHeadLabel = recordType === 'ARREST' ? data.crime_head : null;
   if (crimeHeadLabel) {
-    const crimeHeadMajorId = await resolveMajorHead(trx, crimeHeadLabel);
+    const { id: crimeHeadMajorId } = await resolveMajorHead(trx, crimeHeadLabel);
     if (crimeHeadMajorId) {
       const match = built.find((row) => row.major_head_id === crimeHeadMajorId);
       if (match) {
@@ -559,11 +573,13 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
  *   { spine, detail, detailExtra, detailLocationFields, personEntries, propertyEntries,
  *     offenceRows }
  * No DB writes happen here — records.service.js owns the transaction and insert order.
+ * `psId` (T3, optional) scopes resolveBeat's bare-number fallback to the record's actual PS —
+ * callers pass the scope they already know (`user.ps_id` / `scope.ps_id` / `record.ps_id`).
  */
-export async function splitPayload(trx, registry, recordType, { data = {}, persons = [], properties = [], offences = [] }) {
+export async function splitPayload(trx, registry, recordType, { data = {}, persons = [], properties = [], offences = [] }, psId = null) {
   await loadColumns(trx); // warms the cache; not otherwise consumed here today
   const { spine, detail, detailExtra, detailLocationFields } = splitFlatFields(registry, recordType, data);
-  await resolveDetailFkLabels(trx, recordType, detail);
+  await resolveDetailFkLabels(trx, recordType, detail, psId);
 
   const personEntries = await splitPersons(trx, registry, recordType, data, persons);
   const propertyEntries = await splitProperties(registry, recordType, data, properties);

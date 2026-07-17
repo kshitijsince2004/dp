@@ -14,6 +14,7 @@
     "sync-config": "node scripts/sync-config.mjs",
     "load-ref": "node scripts/load-ref.mjs",
     "import:parity": "node scripts/import-bridge-parity.js",
+    "import:corpus": "node scripts/import-reliability/replay-corpus.mjs",
     "test": "node scripts/verify_.js"
   },
   "dependencies": {

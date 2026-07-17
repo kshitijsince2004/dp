@@ -59,14 +59,26 @@ const storage = multer.diskStorage({
   }
 });
 
-const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+// Browsers do not always send the canonical xlsx MIME — Linux/Chrome commonly sends
+// application/octet-stream or application/zip for .xlsx files. The extension check
+// below is the real gate; the controller re-checks the extension on disk, and ExcelJS
+// will throw on anything that isn't a valid Office Open XML archive, so broadening the
+// allowed MIME set here adds zero security risk while fixing silent upload rejection.
+const XLSX_ALLOWED_MIMES = new Set([
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/wps-office.xlsx',   // WPS Office on Linux
+  'application/octet-stream',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/x-zip',
+]);
 
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB — generous for a single PS's bulk upload
   fileFilter: (req, file, cb) => {
     const extOk = path.extname(file.originalname).toLowerCase() === '.xlsx';
-    const mimeOk = file.mimetype === XLSX_MIME;
+    const mimeOk = XLSX_ALLOWED_MIMES.has(file.mimetype);
     if (!extOk || !mimeOk) {
       // multer surfaces this as an error on req.file being absent; the controller's own
       // "No file uploaded" / extension check is the actual user-facing message either way,

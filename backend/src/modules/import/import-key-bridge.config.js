@@ -90,6 +90,24 @@ const BRIDGES = { CASE, ARREST, KALANDRA, UIDB, MISSING };
 // its template IS generated directly from the registry, so this is true by construction).
 export const getBridge = (recordType) => BRIDGES[recordType] || {};
 
+// T10 (03-TRIAGE-MATRIX.md/F5) — the subset of a bridge's {drop:true} entries that are
+// GENUINELY discarded, i.e. never read back by any `compose` entry's `from` list in the SAME
+// bridge. CASE's `occurrence_time` also carries `drop:true`, but only as a belt-and-braces
+// no-op — import.compose.js's `applyBridge` already consumes it while composing
+// `occurrence_from_date_time` from `['occurrence_date', 'occurrence_time']`, so its value IS
+// imported (merged into that composed field); warning an operator that it "isn't imported"
+// would be actively wrong. Purely data-driven off BRIDGES itself — no separate hand-maintained
+// exclusion list to fall out of sync when a bridge entry changes.
+export function getDropOnlyKeys(recordType) {
+  const bridge = getBridge(recordType);
+  const composedFromKeys = new Set(
+    Object.values(bridge).flatMap((entry) => (entry.compose ? entry.compose.from : []))
+  );
+  return Object.entries(bridge)
+    .filter(([key, entry]) => entry.drop && !composedFromKeys.has(key))
+    .map(([key]) => key);
+}
+
 // ARREST/KALANDRA person-sheet fields that are semantically RECORD-level (arrest_details),
 // even though officers fill them once per arrestee row on the "Person Arrested Detail" sheet
 // — the template's layout puts them there, but their field_registry storage targets

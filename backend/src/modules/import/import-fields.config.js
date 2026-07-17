@@ -625,3 +625,55 @@ export const KALANDRA_SHEETS_CONFIG = {
   act_section: kalandraActSectionFields.map(f => f.field_key),
   person: kalandraPersonFields.map(f => f.field_key)
 };
+
+// ─── T1 keystone sets (03-TRIAGE-MATRIX.md, architect ruling under D1) ──────────────────
+// Single source of truth (FIX 2a, 2026-07) — previously import.validate.js and
+// import.parse.js each hand-maintained their own copy (KEYSTONE_FIELDS / GHOST_ROW_KEYSTONE_
+// COLUMNS respectively), free to drift; they had in fact drifted (MISSING's set differed).
+// field_key -> always required, ERROR in BOTH modes, independent of field_registry/curated
+// `required`. KALANDRA reuses ARREST's set minus fir_date (Kalandra has no FIR date field at
+// all — GD Number is its own linked_fir_dd_no keystone, already in the shared ARREST set).
+//
+// PCR_CALL is deliberately empty here, NOT populated with a "call date/time" field: the
+// matrix's PCR_CALL keystone is already enforced structurally, unconditionally, by the
+// composed-level RECORD_DATE_MISSING check (getRecordDate('PCR_CALL') -> rowData.gd_date) —
+// no row-level field exists to promote. `gd_no` (the template's single "GD Number, Date &
+// Time" column) is the closest candidate but is a free-text identifier column, not a
+// date-typed field, and is currently registry-optional; promoting it to a hard ERROR-in-
+// both-modes keystone would be a real requiredness change beyond what the matrix specifies.
+// Flagged for architect review rather than improvised — see the Wave report.
+export const KEYSTONE_FIELDS = {
+  CASE: new Set(['fir_no', 'fir_date']),
+  ARREST: new Set(['linked_fir_dd_no', 'date_of_arrest', 'arrested_first_name']),
+  // KALANDRA reuses ARREST's person sheet verbatim (still has date_of_arrest, arrested_first_name)
+  // — only fir_date is dropped (kalandraGeneralFields filters it out; GD Number is the keystone
+  // in linked_fir_dd_no's place, already shared with ARREST).
+  KALANDRA: new Set(['linked_fir_dd_no', 'date_of_arrest', 'arrested_first_name']),
+  MISSING: new Set(['missing_name']),
+  UIDB: new Set(['found_date', 'found_place']),
+  PCR_CALL: new Set(),
+};
+
+// MISSING's date keystone is an OR-group (missing_date OR gd_date/"date reported" — either
+// satisfies), not a flat per-field requirement — kept separate from KEYSTONE_FIELDS (which
+// assumes one field = one requirement) both for the row-level required check
+// (import.validate.js's validateRowFields) and for deriving the parse-time ghost-row keystone
+// signal (import.parse.js) — a row carrying ONLY an OR-group field still reads as real data.
+export const OR_GROUP_KEYSTONES = {
+  MISSING: [{
+    fields: ['missing_date', 'gd_date'],
+    label: 'Date Missing Since / GD Date',
+    message: 'Either "Date Missing Since" or "GD Date" is required for a Missing Person record.',
+  }],
+};
+
+// Derived, not hand-copied: every field_key that counts as a "this row has real data"
+// signal for the ghost-row skip (import.parse.js) — the keystone set plus every OR-group
+// field, per record type. Replaces the old separate GHOST_ROW_KEYSTONE_COLUMNS hand-copy.
+export const keystoneColumnsFor = (recordType) => {
+  const cols = new Set(KEYSTONE_FIELDS[recordType] || []);
+  for (const group of OR_GROUP_KEYSTONES[recordType] || []) {
+    for (const f of group.fields) cols.add(f);
+  }
+  return cols;
+};

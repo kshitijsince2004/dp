@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Archive, Upload, Eye, CheckCircle2, XCircle,
   AlertTriangle, Loader2, Clock, RefreshCw, FileSpreadsheet,
-  Link, AlertCircle, Ban
+  Link, AlertCircle, Ban, ChevronDown, ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore.js';
@@ -32,33 +32,136 @@ function StatusBadge({ status }) {
 // Terminal statuses a confirmed batch can land on — polling stops here.
 const TERMINAL_STATUSES = new Set(['IMPORTED', 'FAILED', 'CANCELLED']);
 
+// Compresses a sorted-or-unsorted list of row numbers into human-readable ranges,
+// e.g. [5,6,7,8,...,27,29,31] -> ["5–27", "29", "31"]. Presentation-only — T8.
+function compressRows(rows) {
+  const sorted = [...new Set(rows)].sort((a, b) => a - b);
+  if (!sorted.length) return [];
+  const ranges = [];
+  let start = sorted[0];
+  let prev = sorted[0];
+  for (let i = 1; i < sorted.length; i++) {
+    const cur = sorted[i];
+    if (cur === prev + 1) {
+      prev = cur;
+      continue;
+    }
+    ranges.push(start === prev ? `${start}` : `${start}–${prev}`);
+    start = cur;
+    prev = cur;
+  }
+  ranges.push(start === prev ? `${start}` : `${start}–${prev}`);
+  return ranges;
+}
+
+// Groups identical findings (same code + field + message text) across rows into one entry
+// with the affected row numbers attached (T8 — presentation-only grouping; the backend's
+// per-row rows in import_batch_errors are untouched, this just re-shapes what's already in
+// the response). Distinct messages (e.g. different interpolated PIS numbers/section text)
+// are never merged — only byte-identical message text collapses.
+function groupErrorEntries(list) {
+  const groups = new Map();
+  for (const err of list) {
+    const row = err.row ?? err.row_number;
+    const code = err.code ?? err.error_code ?? '';
+    const fieldKey = err.field_key ?? '';
+    const message = err.message ?? err.error_message ?? '';
+    const key = `${code}|${fieldKey}|${message}`;
+    if (!groups.has(key)) {
+      groups.set(key, { key, code, field_key: err.field_key ?? null, message, rows: [] });
+    }
+    if (row !== undefined && row !== null) groups.get(key).rows.push(row);
+  }
+  return Array.from(groups.values())
+    .map((g) => {
+      const rows = [...new Set(g.rows)].sort((a, b) => a - b);
+      return { ...g, rows, count: rows.length || 1 };
+    })
+    // Descending by affected-row count — the walls (IO/beat/requiredness) surface first.
+    .sort((a, b) => b.count - a.count);
+}
+
+// One collapsed finding line: message + row-count badge + optional field-key chip +
+// expand toggle revealing the compressed row-range list. Reused for both ERROR and WARNING
+// sections with only the color tokens swapped.
+function ErrorGroupRow({ group, tone }) {
+  const [expanded, setExpanded] = useState(false);
+  const ranges = compressRows(group.rows);
+  const colors = tone === 'error'
+    ? {
+        wrap: 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400',
+        chip: 'bg-rose-500/20',
+        border: 'border-rose-500/20',
+      }
+    : {
+        wrap: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
+        chip: 'bg-amber-500/20',
+        border: 'border-amber-500/20',
+      };
+  return (
+    <div className={`font-mono text-[10px] border rounded-lg px-3 py-2 ${colors.wrap}`}>
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        className="w-full flex justify-between items-start gap-4 text-left cursor-pointer bg-transparent border-none p-0"
+      >
+        <div className="flex items-start gap-1.5">
+          {ranges.length > 0 ? (
+            expanded ? <ChevronDown size={11} className="mt-0.5 shrink-0" /> : <ChevronRight size={11} className="mt-0.5 shrink-0" />
+          ) : null}
+          <span>{group.message}</span>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {group.field_key && (
+            <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${colors.chip}`}>
+              {group.field_key}
+            </span>
+          )}
+          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${colors.chip}`}>
+            {group.count} row{group.count === 1 ? '' : 's'}
+          </span>
+        </div>
+      </button>
+      {expanded && ranges.length > 0 && (
+        <div className={`mt-1.5 pt-1.5 border-t ${colors.border} opacity-90`}>
+          Rows: {ranges.join(', ')}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Splits a batch's error rows into ERROR (row rejected) vs WARNING (imported anyway, e.g.
-// legacy leniency downgrades — docs/new-db-integration/03-import.md C6) sections.
+// legacy leniency downgrades — docs/new-db-integration/03-import.md C6) sections, then groups
+// identical findings within each section so N rows sharing the same message collapse into one
+// line with an expandable row-range list (T8 — the IO/beat/requiredness "walls").
 function ErrorList({ errors = [] }) {
   if (!errors.length) return null;
   const hardErrors = errors.filter((e) => e.severity !== 'WARNING');
   const warnings = errors.filter((e) => e.severity === 'WARNING');
+  const hardGroups = groupErrorEntries(hardErrors);
+  const warnGroups = groupErrorEntries(warnings);
+  const totalDistinct = hardGroups.length + warnGroups.length;
   return (
     <div className="space-y-3">
+      <p className="text-[var(--text-main-theme)] font-bold text-xs flex items-center gap-2 flex-wrap">
+        <span className="text-rose-600 dark:text-rose-400">Errors ({hardErrors.length})</span>
+        <span className="opacity-30">·</span>
+        <span className="text-amber-600 dark:text-amber-400">Warnings ({warnings.length})</span>
+        <span className="opacity-60 font-semibold text-[10px]">
+          — across {totalDistinct} distinct issue{totalDistinct === 1 ? '' : 's'}
+        </span>
+      </p>
       {hardErrors.length > 0 && (
         <div className="border border-rose-500/30 bg-rose-500/5 rounded-2xl p-5 space-y-3">
           <p className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-2 text-xs">
             <AlertTriangle size={14} />
             Errors ({hardErrors.length}) — these rows were skipped
+            <span className="opacity-60 font-semibold text-[10px]">({hardGroups.length} distinct)</span>
           </p>
-          <div className="max-h-48 overflow-y-auto space-y-1.5 pr-2">
-            {hardErrors.map((err, i) => (
-              <div key={i} className="font-mono text-[10px] bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 px-3 py-2 rounded-lg flex justify-between items-start gap-4">
-                <div>
-                  <span className="font-bold mr-2">Row {err.row ?? err.row_number}:</span>
-                  <span>{err.message ?? err.error_message}</span>
-                </div>
-                {(err.field_key) && (
-                  <span className="bg-rose-500/20 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                    {err.field_key}
-                  </span>
-                )}
-              </div>
+          <div className="max-h-64 overflow-y-auto space-y-1.5 pr-2">
+            {hardGroups.map((g) => (
+              <ErrorGroupRow key={g.key} group={g} tone="error" />
             ))}
           </div>
         </div>
@@ -68,20 +171,11 @@ function ErrorList({ errors = [] }) {
           <p className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-2 text-xs">
             <AlertCircle size={14} />
             Warnings ({warnings.length}) — imported anyway, review recommended
+            <span className="opacity-60 font-semibold text-[10px]">({warnGroups.length} distinct)</span>
           </p>
-          <div className="max-h-48 overflow-y-auto space-y-1.5 pr-2">
-            {warnings.map((err, i) => (
-              <div key={i} className="font-mono text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-3 py-2 rounded-lg flex justify-between items-start gap-4">
-                <div>
-                  <span className="font-bold mr-2">Row {err.row ?? err.row_number}:</span>
-                  <span>{err.message ?? err.error_message}</span>
-                </div>
-                {(err.field_key) && (
-                  <span className="bg-amber-500/20 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
-                    {err.field_key}
-                  </span>
-                )}
-              </div>
+          <div className="max-h-64 overflow-y-auto space-y-1.5 pr-2">
+            {warnGroups.map((g) => (
+              <ErrorGroupRow key={g.key} group={g} tone="warning" />
             ))}
           </div>
         </div>

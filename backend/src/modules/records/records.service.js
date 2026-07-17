@@ -604,7 +604,7 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
 export const createRecord = async (user, recordType, recordDate, data, ipAddress, { persons = [], properties = [], offences = [] } = {}) => {
   const dbRecord = await db.transaction(async (trx) => {
     const registry = await mapper.loadRegistry(trx, recordType);
-    const split = await mapper.splitPayload(trx, registry, recordType, { data, persons, properties, offences });
+    const split = await mapper.splitPayload(trx, registry, recordType, { data, persons, properties, offences }, user.ps_id);
     return insertRecordCore(trx, user, recordType, recordDate, data, ipAddress, split);
   });
 
@@ -635,7 +635,7 @@ export const createImportedRecord = async (
 
   const dbRecord = await db.transaction(async (trx) => {
     const registry = await mapper.loadRegistry(trx, recordType);
-    const split = await mapper.splitPayload(trx, registry, recordType, { data, persons, properties, offences });
+    const split = await mapper.splitPayload(trx, registry, recordType, { data, persons, properties, offences }, scope.ps_id);
     return insertRecordCore(trx, user, recordType, recordDate, data, ipAddress, split, {
       scope, status, level: 'PS', changeType: 'IMPORT',
       importStamps: { isLegacy, sourceSystem: 'BULK_IMPORT', legacyRef: sourceRef, batchId },
@@ -677,7 +677,7 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
 
     const split = await mapper.splitPayload(trx, registry, recordType, {
       data, persons: persons ?? [], properties: properties ?? [], offences: offences ?? [],
-    });
+    }, record.ps_id);
 
     const statusChanges = await detectDetailStatusChanges(oldDetail, split.detail, detailTable);
 
@@ -814,8 +814,8 @@ export const overrideCaseHead = async (id, user, newHead, reason, ipAddress) => 
     if (!record) throw new Error('Record not found');
     const detailTable = mapper.DETAIL_TABLES[record.record_type];
 
-    const newMajorHeadId = await resolveMajorHead(trx, newHead);
-    const newLocalHeadId = await resolveLocalHead(trx, newHead);
+    const { id: newMajorHeadId } = await resolveMajorHead(trx, newHead);
+    const { id: newLocalHeadId } = await resolveLocalHead(trx, newHead);
 
     let oldValue = null;
     if (newMajorHeadId) {

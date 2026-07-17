@@ -948,7 +948,7 @@
    }
   ],
   "validation_rules": {
-   "required": false
+   "required": true
   },
   "visible_to_levels": [
    "PS",
@@ -1286,7 +1286,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "required": true
+  }
  },
  {
   "field_key": "major_heads",

@@ -8,22 +8,104 @@ import fs from 'fs';
 import db from '../../config/db.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { logger } from '../../utils/logger.js';
-import { readWorkbook, INVALID_PARENT_CODE, effectiveRecordType } from './import.parse.js';
+import { readWorkbook, INVALID_PARENT_CODE, effectiveRecordType, UNKNOWN_LAYOUT_MESSAGE } from './import.parse.js';
 import { validateBatch } from './import.validate.js';
 import { createImportedRecord } from '../records/records.service.js';
 import { normalizeRegistryRow, parseApplicableTypes } from './registry-sync.util.js';
 
 const MAX_INLINE_ERRORS = 500;
 
+// FIX 3 (2026-07) — Postgres's default-generated name for the `UNIQUE (ps_id, fir_year, fir_no)`
+// constraint on fir_details (migrations/20260711000003_locations_records_details.js:92; no
+// explicit CONSTRAINT name given there, so Postgres auto-names it `<table>_<cols>_key`).
+// Verified live against the dev DB: `SELECT conname FROM pg_constraint WHERE conrelid =
+// 'fir_details'::regclass AND contype = 'u'` -> `fir_details_ps_id_fir_year_fir_no_key`. This
+// is the ONLY 23505 processBatch's write loop is allowed to downgrade to a WARNING — every
+// other unique-violation (a different table/index entirely) is a genuine write failure.
+const FIR_DETAILS_UNIQUE_CONSTRAINT = 'fir_details_ps_id_fir_year_fir_no_key';
+
 /** Registry rows applicable to `recordType`, active, pre-shimmed (WP0's normalizeRegistryRow)
- * — the same map readWorkbook/validateBatch/composeRecordPayload all consume. */
+ * — the same map readWorkbook/validateBatch/composeRecordPayload all consume.
+ *
+ * FIX 4 follow-up (2026-07): field_registry has NO 'KALANDRA' entries in applicable_record_types
+ * anywhere (it is stored/classified as ARREST — effectiveRecordType() is the one shared
+ * translation point, same as createImportedRecord's writeRecordType). Filtering against the raw
+ * import recordType silently returned an EMPTY map for KALANDRA batches — breaking registry-
+ * driven coercion, requiredness, and auto-included-field detection for every KALANDRA row, not
+ * just the advisory submit-requirements check FIX 4 fixed directly. Translate here too, so every
+ * caller (createBatch/processBatch, and everything downstream: readWorkbook, validateBatch) gets
+ * the same ARREST-backed registry KALANDRA has always been meant to use. */
 async function buildRegistryMap(recordType) {
+  const effectiveType = effectiveRecordType(recordType);
   const rows = (await db('field_registry').where('is_active', true)).map(normalizeRegistryRow);
   const map = {};
   for (const f of rows) {
-    if (parseApplicableTypes(f.applicable_record_types).includes(recordType)) map[f.field_key] = f;
+    if (parseApplicableTypes(f.applicable_record_types).includes(effectiveType)) map[f.field_key] = f;
   }
   return map;
+}
+
+/**
+ * T2 (03-TRIAGE-MATRIX.md/D2) — legacy-only IO auto-provision. Called from processBatch right
+ * before createImportedRecord, for rows import.validate.js flagged with
+ * `payload.needsIoAutoProvision` (an unregistered PIS on a legacy row). Idempotent per
+ * `pis_no` — `investigating_officers.pis_no` carries a GLOBAL unique index (not PS-scoped;
+ * `migrations/20260711000001_org_identity.js:52`), so this looks up by PIS ALONE first (never
+ * scoped to `psId`) and reuses whatever it finds, even if registered under a different PS —
+ * that's still strictly better than a 23505 crash, and matches what the unique index actually
+ * enforces. `investigating_officers` has no `extra`/`source_system` column (unlike
+ * records/detail tables) — T7.1's migration is scoped to the gender/property CHECK expansion
+ * only, so no schema change is added here either; provenance is instead embedded directly in
+ * `name` (visible to any SHO listing IOs for verification) rather than a new column. Exact
+ * provenance mechanism was explicitly left to "architect's call at implementation" (D2) —
+ * flagged in the Wave A report as the concrete choice made.
+ */
+/** T7.2/T7.3 — the exact sanitized error_message shape for a generic write failure (any DB/JS
+ * throw from createImportedRecord OTHER than the already-handled 23505 unique-violation race).
+ * Pulled out to its own exported function purely so it's directly unit-testable (T7.3) without
+ * needing a live DB round-trip to prove "never err.message verbatim" — same object literal
+ * processBatch inserted inline before this refactor, no behavior change. */
+export function sanitizedWriteFailedRow(batchId, rowIdx) {
+  return {
+    batch_id: batchId, row_number: rowIdx, field_key: null,
+    error_code: 'WRITE_FAILED', severity: 'ERROR',
+    error_message: `This row could not be saved due to a system error (ref: ${batchId}/${rowIdx}). Report this to your administrator.`,
+  };
+}
+
+export async function ensureAutoProvisionedIo(trx, psId, pisNo) {
+  const norm = String(pisNo || '').trim();
+  if (!norm) throw new Error('ensureAutoProvisionedIo requires a non-empty PIS number');
+
+  const existing = await trx('investigating_officers').whereRaw('LOWER(pis_no) = LOWER(?)', [norm]).first();
+  if (existing) return existing;
+
+  try {
+    // FIX 5 (2026-07): `users`/`investigating_officers.name` is varchar(100). The previous
+    // template ("Auto-registered IO (PIS ${norm}) — pending SHO verification") is 52 fixed
+    // chars + up to 50 for a PIS number = up to 102 chars, overflowing the column and turning
+    // a legitimate legacy-IO auto-provision into a raw DB error. Shortened while keeping the
+    // "Auto-registered" prefix (the provenance/queryability marker SHOs and any later
+    // `WHERE name LIKE 'Auto-registered%'` audit rely on) — still 26 fixed chars + PIS, so a
+    // PIS up to 74 chars fits without truncation; `.slice(0, 100)` is the defensive backstop
+    // for anything longer than that.
+    const name = `Auto-registered IO (PIS ${norm})`.slice(0, 100);
+    const [row] = await trx('investigating_officers').insert({
+      ps_id: psId,
+      pis_no: norm,
+      name,
+      is_active: true,
+    }).returning('*');
+    return row;
+  } catch (err) {
+    if (err.code === '23505') {
+      // Idempotency race backstop — another row in this batch (or a concurrent process)
+      // inserted this exact pis_no between our SELECT and INSERT.
+      const row = await trx('investigating_officers').whereRaw('LOWER(pis_no) = LOWER(?)', [norm]).first();
+      if (row) return row;
+    }
+    throw err;
+  }
 }
 
 /** Walks hierarchy_nodes.parent_id up from a PS to its DISTRICT ancestor — same pattern the
@@ -84,6 +166,12 @@ export async function createBatch({ user, recordType, isLegacy, targetPsId, file
 
   const registryMap = await buildRegistryMap(recordType);
   const parsed = await readWorkbook(recordType, filePath, registryMap);
+  if (parsed && parsed.unknownLayout) {
+    // T9 (03-TRIAGE-MATRIX.md) — the file's headers didn't fingerprint-match any known layout
+    // (current or a registered historical one) well enough to trust; friendly single-message
+    // rejection instead of a per-row cascade of missing-column errors.
+    throw new ApiError(400, UNKNOWN_LAYOUT_MESSAGE);
+  }
   if (!parsed) {
     throw new ApiError(400, 'Invalid template: main worksheet not found');
   }
@@ -270,6 +358,7 @@ export async function processBatch(batchId) {
 
     const registryMap = await buildRegistryMap(batch.record_type);
     const parsed = await readWorkbook(batch.record_type, batch.file_path, registryMap);
+    if (parsed && parsed.unknownLayout) throw new Error(UNKNOWN_LAYOUT_MESSAGE);
     if (!parsed) throw new Error('Could not re-read the workbook at confirm time');
 
     const batchScope = await resolveBatchScope(batch.ps_id);
@@ -306,6 +395,15 @@ export async function processBatch(batchId) {
     let importedRows = 0;
     const newErrorRows = [];
 
+    // FIX 6 — per-batch IO auto-provision cache. Several rows in the same legacy batch
+    // commonly share one IO (one officer investigating multiple FIRs/arrests), so without this
+    // ensureAutoProvisionedIo's SELECT-then-maybe-INSERT ran once per ROW instead of once per
+    // distinct PIS. ensureAutoProvisionedIo itself stays the source of truth (DB lookup +
+    // idempotent insert-or-reuse on a real race) — this is purely an in-memory front for the
+    // common within-batch repeat, keyed the same way the DB unique index is (case-insensitive
+    // PIS, global — not PS-scoped, matching ensureAutoProvisionedIo's own lookup).
+    const ioProvisionCache = new Map(); // normalized pis_no -> ioRow
+
     for (const { payload } of composedPayloads) {
       processedRows++;
 
@@ -316,6 +414,32 @@ export async function processBatch(batchId) {
       if (existing) continue;
 
       try {
+        // T2 — legacy IO auto-provision happens INSIDE this row's own try/catch: if it throws
+        // (e.g. a genuinely malformed PIS despite passing validate-time's basic non-empty
+        // check), this row alone gets WRITE_FAILED, same as any other per-row write failure —
+        // never a whole-batch abort, and never a second, separate write path from
+        // createImportedRecord's (P1.2 — investigating_officers is not a record/detail table,
+        // so a small dedicated insert here doesn't violate "one write path for records").
+        if (payload.needsIoAutoProvision) {
+          const pisKey = String(payload.data.io_pis || '').trim().toLowerCase();
+          let io = pisKey ? ioProvisionCache.get(pisKey) : undefined;
+          if (!io) {
+            // FIX 9 (2026-07, accepted deviation — documented, not restructured): this insert
+            // runs OUTSIDE the row's own createImportedRecord transaction (that transaction is
+            // owned entirely by createImportedRecord itself, one write path per P1.2). If the
+            // row's write below then fails, this IO row is NOT rolled back — it persists,
+            // orphaned from any record. That's accepted as strictly better than the
+            // alternative (re-provisioning it again on the operator's retry would just hit
+            // ensureAutoProvisionedIo's own idempotent lookup-or-reuse and return the same
+            // row): the insert is idempotent per pis_no, already marked "pending SHO
+            // verification" in its name for exactly this kind of manual review, and reused
+            // cleanly on any retry — never a duplicate, never silently lost.
+            io = await ensureAutoProvisionedIo(db, batchScope.psId, payload.data.io_pis);
+            if (pisKey) ioProvisionCache.set(pisKey, io);
+          }
+          payload.data.io_id = io.id;
+        }
+
         await createImportedRecord(
           uploader, writeRecordType, payload.recordDate, payload.data, null,
           { persons: payload.persons, properties: payload.properties, offences: payload.offences },
@@ -323,7 +447,17 @@ export async function processBatch(batchId) {
         );
         importedRows++;
       } catch (err) {
-        if (err.code === '23505') {
+        // FIX 3 (2026-07): a 23505 is unique_violation for ANY constraint on ANY table this
+        // write touches (records/fir_details/arrest_details/persons/record_properties/
+        // investigating_officers/...), not only the fir_details (ps_id, fir_year, fir_no) race
+        // this catch block was written for. Treating every 23505 as that one specific race
+        // mislabeled genuinely different failures (e.g. a stray duplicate on some other unique
+        // index) as a benign "already imported by a concurrent process" WARNING instead of a
+        // real WRITE_FAILED ERROR. Discriminate on the actual constraint name — only the named
+        // fir_details unique constraint gets the friendly downgrade; everything else (including
+        // an undefined err.constraint, a driver/pool edge case) falls through to the sanitized
+        // WRITE_FAILED path with the raw error logged for debugging.
+        if (err.code === '23505' && err.constraint === FIR_DETAILS_UNIQUE_CONSTRAINT) {
           // Unique-violation backstop (P2 enforce layer) — a race validateBatch's own
           // DUPLICATE_IN_DB check (run moments earlier, above) didn't catch: another process
           // wrote the same fir_details (ps_id, fir_year, fir_no) between that check and this
@@ -335,11 +469,18 @@ export async function processBatch(batchId) {
             error_message: 'This FIR was imported by a concurrent process between validation and confirmation.',
           });
         } else {
+          // T7.2 (03-TRIAGE-MATRIX.md/F6/F7) — never surface err.message verbatim to an
+          // operator (DB_LEAK: raw constraint/SQL text is not actionable for a non-technical
+          // police operator). Matrix text: "raw error goes to logger + import_batch_errors
+          // metadata (a non-operator-facing column/field)" — `import_batch_errors` has NO
+          // metadata/extra column today (migrations/...0006, checked) and this wave's ONE
+          // permitted migration is scoped to T7.1's CHECK expansion, not new columns — so the
+          // raw text goes to the logger only (debuggability preserved there); `error_message`
+          // (the only place a batch-detail viewer/frontend reads from) gets the sanitized text
+          // exclusively. Flagged in the Wave A report: a future wave adding a metadata column
+          // would let both live in the DB as the matrix originally described.
           logger.error(`[ImportService] processBatch ${batchId}: row ${payload.rowIdx} write failed: ${err.message}`);
-          newErrorRows.push({
-            batch_id: batchId, row_number: payload.rowIdx, field_key: null,
-            error_code: 'WRITE_FAILED', severity: 'ERROR', error_message: err.message,
-          });
+          newErrorRows.push(sanitizedWriteFailedRow(batchId, payload.rowIdx));
         }
       }
 

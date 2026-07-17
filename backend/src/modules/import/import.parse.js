@@ -14,7 +14,11 @@ import {
   arrestGeneralFields, arrestActSectionFields, arrestPersonFields, arrestPropertyFields,
   kalandraGeneralFields, kalandraActSectionFields, kalandraPersonFields,
   uidbGeneralFields, uidbActSectionFields, missingGeneralFields,
+  keystoneColumnsFor,
 } from './import-fields.config.js';
+import { autoIncludedRegistryFields } from './registry-sync.util.js';
+import { getKnownLayouts } from './layout-manifests.js';
+import { CASE_SECTION_MAP, ARREST_SECTION_MAP } from './template-builder.service.js';
 
 // Sentinel error_code used to persist invalid parent keys (FIR / linked_fir_dd_no) from
 // validation to confirm. Never shown to users — filtered from all error-display paths.
@@ -872,32 +876,56 @@ const extractRowData = (row, colMap, registryFieldsMap, recordType, coercionFiel
   return rowData;
 };
 
-// Helper to parse sheets. `coercionFieldsByKey` (field_key → registry row) supplies
-// type-aware coercion (DATE/TIME/SELECT) for every column — including registry fields
-// added after this code shipped, which appear in the template automatically and must
-// import just as cleanly as curated ones.
-export const parseWorksheet = (worksheet, recordType, fieldsList, coercionFieldsByKey = null) => {
+// T6 (03-TRIAGE-MATRIX.md/F2/E4) — ghost/trailing-row skip. A row with <=2 non-empty cells is
+// almost always a stray copy-paste artifact/trailing formatting rather than real data, UNLESS
+// one of those 1-2 filled cells is a keystone column for this record type — a keystone value
+// present is a strong enough signal that the row is really data (a genuinely too-sparse real
+// row still gets caught downstream by the normal required-field/keystone ERRORs, which is the
+// correct outcome for that case, not a silent skip). The keystone set itself now lives in
+// import-fields.config.js (FIX 2a, 2026-07) as the SAME map import.validate.js's row-level
+// required-field check uses (`keystoneColumnsFor` = KEYSTONE_FIELDS ∪ every OR-group field) —
+// previously this file kept its own hand-copy (GHOST_ROW_KEYSTONE_COLUMNS) which had already
+// drifted from import.validate.js's KEYSTONE_FIELDS for MISSING.
+//
+// FIX 2b (2026-07): the <=2-non-empty-cell skip is now restricted to the PARENT sheet only
+// (`isParentSheet`). A child/role sheet (Victim/Accused/Property/Person Arrested/Act & Sections)
+// keeps ONLY the always-applied zero-non-empty-cell skip — a sparse-but-real child row (e.g.
+// a bare parent-key reference plus one filled field) must reach validation and fail loudly
+// (PARENT_KEY_BLANK / REQUIRED_MISSING) rather than vanish silently. Ghost/trailing-artifact
+// rows are overwhelmingly a parent-sheet phenomenon (a stray copy-pasted FIR row); child sheets
+// don't get the same benefit of the doubt.
+export const parseWorksheet = (worksheet, recordType, fieldsList, coercionFieldsByKey = null, isParentSheet = true) => {
   const { colMap, dataStartRow } = buildColumnMap(worksheet, recordType, fieldsList);
   const registryFieldsMap = {};
   for (const f of fieldsList) {
     registryFieldsMap[f.field_key] = f;
   }
+  const keystoneCols = keystoneColumnsFor(recordType);
 
   const rows = [];
+  const skippedGhostRows = [];
   worksheet.eachRow((row, rowIdx) => {
     if (rowIdx < dataStartRow) return;
 
-    let isEmpty = true;
-    row.eachCell({ includeEmpty: false }, () => {
-      isEmpty = false;
+    let nonEmptyCount = 0;
+    let hasKeystoneValue = false;
+    row.eachCell({ includeEmpty: false }, (cell, colIdx) => {
+      nonEmptyCount++;
+      const key = colMap[colIdx];
+      if (key && keystoneCols.has(key)) hasKeystoneValue = true;
     });
-    if (isEmpty) return;
+    if (nonEmptyCount === 0) return; // fully blank rows were always silently skipped
+
+    if (isParentSheet && nonEmptyCount <= 2 && !hasKeystoneValue) {
+      skippedGhostRows.push(rowIdx);
+      return;
+    }
 
     const rowData = extractRowData(row, colMap, registryFieldsMap, recordType, coercionFieldsByKey);
     rows.push({ rowData, rowIdx });
   });
 
-  return { rows };
+  return { rows, skippedGhostRows };
 };
 
 // ── Shared workbook reader (NEW this integration) ────────────────────────────────────────
@@ -922,6 +950,169 @@ const SHEET_FIELD_LISTS = {
 // no child sheets to key against; PCR_CALL is single-sheet-only).
 const PARENT_KEY_FIELD = { CASE: 'fir_no', ARREST: 'linked_fir_dd_no', KALANDRA: 'linked_fir_dd_no', UIDB: 'gd_no' };
 
+// ── T9 (03-TRIAGE-MATRIX.md) — parse-time layout version detection ─────────────────────────
+// Shown to the operator when NO known layout (layout-manifests.js) fingerprints well enough to
+// trust per-column parsing — replaces what would otherwise be a per-row cascade of
+// REQUIRED_MISSING findings against columns that were never really there.
+export const UNKNOWN_LAYOUT_MESSAGE = "This file doesn't match any known PHAROS import template. Download the current template from this page and copy your data into it.";
+
+// A layout must score at least this well (mean Jaccard similarity across every sheet role both
+// it and the workbook actually have) to be trusted at all — below this, the file is rejected
+// as unknown rather than parsed against a poor-fit guess. Chosen with wide margin: real
+// current/old-template files score >=0.65 even against the WRONG one of the two candidates
+// (they share most columns), while a genuinely unrelated/garbage header set scores ~0 against
+// both (buildColumnMap's own key-resolution finds nothing in common) — see the Wave B report
+// for the worked numbers.
+const LAYOUT_REJECT_THRESHOLD = 0.35;
+
+function jaccardSimilarity(a, b) {
+  if (!a.size && !b.size) return 1;
+  let intersection = 0;
+  for (const k of a) if (b.has(k)) intersection++;
+  const union = a.size + b.size - intersection;
+  return union === 0 ? 1 : intersection / union;
+}
+
+/**
+ * Fingerprints this workbook's ALREADY-detected header columns (buildColumnMap's own
+ * key-resolution — the exact same one real parsing uses, so a "known" verdict here is exactly
+ * what will actually get parsed) against every layout layout-manifests.js registers for this
+ * record type, and picks the single best match: the mean Jaccard similarity across every sheet
+ * role BOTH the candidate layout defines AND this workbook actually has a resolved worksheet
+ * for (a batch missing an optional child sheet — e.g. no accused rows at all — never counts
+ * against either candidate, since neither gets a score contribution from an absent sheet).
+ *
+ * Returns `{ unknown: true }` when even the best-scoring layout falls below
+ * LAYOUT_REJECT_THRESHOLD — this file doesn't resemble ANY known template closely enough to
+ * trust. Otherwise `{ unknown: false, layoutId }`; `layoutId === 'current'` means nothing to
+ * report, any other id is a known OLDER layout (still parsed normally — bridging only the
+ * columns that exist — plus one batch-level WARNING import.validate.js emits).
+ *
+ * `roleWorksheets` = { [role]: Worksheet | null } for every role `fieldLists` defines (parent
+ * always present; a child role may be null when that sheet simply wasn't found — normal and
+ * harmless, matches readWorkbook's own `childSheets[role] = []` fallback).
+ */
+function classifyLayout(roleWorksheets, recordType, fieldLists) {
+  const knownLayouts = getKnownLayouts(recordType);
+  // No manifest coverage at all for this type (PCR_CALL) — never fingerprinted, never
+  // rejected/warned; readWorkbook's generic branch doesn't even call this function, but a type
+  // present in SHEET_FIELD_LISTS with zero layout-manifests.js coverage degrades the same way.
+  if (!knownLayouts.length) return { unknown: false, layoutId: 'current' };
+
+  const detectedByRole = {};
+  for (const [role, ws] of Object.entries(roleWorksheets)) {
+    if (!ws) continue;
+    const { colMap } = buildColumnMap(ws, recordType, fieldLists[role] || []);
+    detectedByRole[role] = new Set(Object.values(colMap).filter(Boolean));
+  }
+
+  let best = null;
+  for (const layout of knownLayouts) {
+    let sum = 0;
+    let count = 0;
+    for (const [role, detected] of Object.entries(detectedByRole)) {
+      const expected = layout.sheets[role];
+      if (!expected) continue; // this layout doesn't define this role — skip, not a mismatch
+      sum += jaccardSimilarity(detected, expected);
+      count++;
+    }
+    const score = count ? sum / count : 0;
+    if (!best || score > best.score) best = { layoutId: layout.id, score };
+  }
+
+  if (!best || best.score < LAYOUT_REJECT_THRESHOLD) return { unknown: true };
+  return { unknown: false, layoutId: best.layoutId };
+}
+
+// T1/F1 gap #2 (03-TRIAGE-MATRIX.md): registry auto-included fields (registry-sync.util.js's
+// autoIncludedRegistryFields — the same set template-builder.service.js appends to the actual
+// Excel template) never appeared in ANY curated sheetFieldLists role, so they were parsed
+// (buildColumnMap's raw-key fallback finds them fine) but NEVER required-checked, no matter
+// what field_registry says. This heuristic buckets each auto-included field to the sheet ROLE
+// it most likely landed on, by its field_registry `section` string, so the required-check can
+// actually reach it.
+//
+// FIX 7 (2026-07): template-builder.service.js now exports its actual, authoritative
+// section->{sheet,label} maps (CASE_SECTION_MAP / ARREST_SECTION_MAP — the exact map that
+// decides where a field really lands in the emitted Excel template; exporting them changed no
+// template bytes, proven by template-regression.js's byte-parity gate re-run after this
+// change). Consulted FIRST below; the heuristic beneath it is now only a fallback for a
+// `section` string absent from the authoritative map (still possible — the map is keyed by a
+// curated set of section names, not guaranteed to cover every registry row's `section`).
+const SHEET_NAME_TO_ROLE = {
+  CASE: {
+    'General Information': 'parent',
+    'Victim Information': 'victim',
+    'Act and Sections': 'act',
+    'Accused Detail': 'accused',
+    'Property Details': 'property',
+  },
+  // ARREST and KALANDRA (which imports/parses via the ARREST sheet structure) share one
+  // sheet->role table — template-builder.service.js itself resolves KALANDRA's template off
+  // ARREST_SECTION_MAP (recordType === 'CASE' ? CASE_SECTION_MAP : ARREST_SECTION_MAP).
+  ARREST: {
+    'General Info': 'parent',
+    'Person Arrested Detail': 'person',
+    'Act and Sections': 'act',
+    'Property Details': 'property',
+  },
+};
+
+function authoritativeRoleForAutoField(recordType, field) {
+  const sectionMap = recordType === 'CASE' ? CASE_SECTION_MAP
+    : (recordType === 'ARREST' || recordType === 'KALANDRA') ? ARREST_SECTION_MAP
+    : null;
+  if (!sectionMap) return null;
+  const entry = sectionMap[field.section];
+  if (!entry) return null;
+  const sheetToRole = recordType === 'CASE' ? SHEET_NAME_TO_ROLE.CASE : SHEET_NAME_TO_ROLE.ARREST;
+  return sheetToRole[entry.sheet] || null;
+}
+
+// Best-effort APPROXIMATION, used only when authoritativeRoleForAutoField above returns null
+// (the field's `section` string isn't a key in template-builder.service.js's own map at all).
+// Known residual gap: an auto-included field this heuristic guesses wrong for is
+// required-checked against the wrong role's rows (a false negative — it silently isn't
+// checked — not a false positive), flagged in the Wave A report.
+function heuristicRoleForAutoField(recordType, field) {
+  const section = String(field.section || '').toLowerCase();
+  if (recordType === 'CASE') {
+    if (section.startsWith('victim')) return 'victim';
+    if (section.startsWith('accused')) return 'accused';
+    if (section.includes('property')) return 'property';
+    if (section.includes('act_section') || section.includes('offence')) return 'act';
+    return 'parent';
+  }
+  if (recordType === 'ARREST' || recordType === 'KALANDRA') {
+    if (section.includes('arrest') || section.includes('arrestee')) return 'person';
+    if (section.includes('property')) return 'property';
+    if (section.includes('act_section') || section.includes('offence')) return 'act';
+    return 'parent';
+  }
+  if (recordType === 'UIDB' && (section.includes('act_section') || section.includes('offence'))) return 'act';
+  return 'parent'; // UIDB (non-act) / MISSING have one effective data sheet besides act_section
+}
+
+function roleForAutoField(recordType, field) {
+  return authoritativeRoleForAutoField(recordType, field) || heuristicRoleForAutoField(recordType, field);
+}
+
+/** Appends registry auto-included fields (not already covered by ANY curated role's keys) to
+ * their heuristically-routed role's required-check list. Returns a NEW sheetFieldLists object
+ * — never mutates the curated arrays (import-fields.config.js's exports are shared/reused). */
+function withAutoIncludedFields(recordType, curatedFieldLists, registryFieldsList) {
+  const allCuratedKeys = new Set(Object.values(curatedFieldLists).flat().map((f) => f.field_key));
+  const autoFields = autoIncludedRegistryFields(recordType, registryFieldsList, allCuratedKeys);
+  const augmented = {};
+  for (const [role, list] of Object.entries(curatedFieldLists)) augmented[role] = [...list];
+  for (const f of autoFields) {
+    const role = roleForAutoField(recordType, f);
+    if (!augmented[role]) augmented[role] = [];
+    augmented[role].push(f);
+  }
+  return augmented;
+}
+
 /**
  * `registryMap` = field_key → normalized field_registry row (already shimmed via
  * registry-sync.util.js's normalizeRegistryRow) for every ACTIVE field applicable to
@@ -943,13 +1134,16 @@ export const readWorkbook = async (recordType, filePath, registryMap) => {
   if (!fieldLists) {
     // PCR_CALL / any other generic type: single worksheet, no curated list, no children —
     // matches the old confirm/validate 'else' branch exactly (findWorksheet is skipped
-    // entirely there too; worksheets[0] is authoritative).
+    // entirely there too; worksheets[0] is authoritative). Already 100% registry-driven
+    // (sheetFieldLists.parent IS registryFieldsList), so T1's gap #2 never applied here.
     const ws = workbook.worksheets[0] || workbook.getWorksheet(1);
     if (!ws) return null;
-    const { rows } = parseWorksheet(ws, recordType, registryFieldsList, registryMap);
+    const { rows, skippedGhostRows } = parseWorksheet(ws, recordType, registryFieldsList, registryMap);
     return {
       parentRows: rows, childSheets: {}, parentIndex: null, parentKeyField: null,
       sheetFieldLists: { parent: registryFieldsList },
+      ghostRowsSkipped: skippedGhostRows.length ? [{ sheet: 'parent', rows: skippedGhostRows }] : [],
+      layoutVersion: 'current', // PCR_CALL has no layout-manifests.js coverage — never fingerprinted
     };
   }
 
@@ -957,21 +1151,47 @@ export const readWorkbook = async (recordType, filePath, registryMap) => {
   const parentWorksheet = findWorksheet(workbook, aliases.parent || []) || workbook.worksheets[0];
   if (!parentWorksheet) return null;
 
+  // Resolve every child sheet ONCE — reused for both T9's fingerprint check (immediately below)
+  // and the real per-role parse loop further down, instead of two separate findWorksheet passes.
+  const roleWorksheets = { parent: parentWorksheet };
+  for (const role of Object.keys(fieldLists)) {
+    if (role === 'parent') continue;
+    roleWorksheets[role] = findWorksheet(workbook, aliases[role] || []);
+  }
+
+  // T9 (03-TRIAGE-MATRIX.md) — must run before any real per-row parsing: an unrecognized
+  // layout fails fast with ONE friendly message, never a per-row required-field cascade against
+  // columns that were never really there (see classifyLayout's doc comment).
+  const layout = classifyLayout(roleWorksheets, recordType, fieldLists);
+  if (layout.unknown) {
+    return { unknownLayout: true };
+  }
+
+  const ghostRowsSkipped = [];
   const parentKeyField = PARENT_KEY_FIELD[recordType] || null;
-  const { rows: parentRows } = parseWorksheet(parentWorksheet, recordType, fieldLists.parent, registryMap);
+  const { rows: parentRows, skippedGhostRows: parentGhosts } = parseWorksheet(parentWorksheet, recordType, fieldLists.parent, registryMap);
+  if (parentGhosts.length) ghostRowsSkipped.push({ sheet: 'parent', rows: parentGhosts });
   const parentIndex = parentKeyField ? buildParentKeyIndex(parentRows.map((r) => r.rowData[parentKeyField])) : null;
 
   const childSheets = {};
   for (const role of Object.keys(fieldLists)) {
     if (role === 'parent') continue;
-    const ws = findWorksheet(workbook, aliases[role] || []);
+    const ws = roleWorksheets[role];
     if (!ws) { childSheets[role] = []; continue; }
-    const { rows } = parseWorksheet(ws, recordType, fieldLists[role], registryMap);
+    // FIX 2b — child/role sheets are never parent sheets: only the zero-non-empty-cell skip
+    // applies (isParentSheet=false), so a sparse-but-real child row reaches validation instead
+    // of being silently dropped by the <=2-cell ghost-row heuristic.
+    const { rows, skippedGhostRows } = parseWorksheet(ws, recordType, fieldLists[role], registryMap, false);
+    if (skippedGhostRows.length) ghostRowsSkipped.push({ sheet: role, rows: skippedGhostRows });
     childSheets[role] = rows;
   }
 
   // sheetFieldLists is exposed so import.validate.js's row-level required-field checks reuse
   // the SAME per-role curated list this function itself parsed with — no second copy of the
-  // CASE/ARREST/KALANDRA/UIDB/MISSING sheet-role wiring anywhere else in the module.
-  return { parentRows, childSheets, parentIndex, parentKeyField, sheetFieldLists: fieldLists };
+  // CASE/ARREST/KALANDRA/UIDB/MISSING sheet-role wiring anywhere else in the module. T1 gap #2:
+  // augmented with registry auto-included fields, heuristically routed to a role (see
+  // withAutoIncludedFields) — parsing itself (above) is untouched, only what gets
+  // required-checked changes.
+  const sheetFieldLists = withAutoIncludedFields(recordType, fieldLists, registryFieldsList);
+  return { parentRows, childSheets, parentIndex, parentKeyField, sheetFieldLists, ghostRowsSkipped, layoutVersion: layout.layoutId };
 };

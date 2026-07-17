@@ -4069,7 +4069,7 @@
    "name_part": 1
   },
   "validation_rules": {
-   "required": false
+   "required": true
   },
   "visible_to_levels": [
    "PS",

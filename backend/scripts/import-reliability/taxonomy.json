@@ -1,0 +1,179 @@
+{
+  "taxonomy_version": "1.0.0",
+  "description": "Data-driven failure-class taxonomy for the Import Reliability Framework. Both parse_error_log.py and replay-corpus.mjs classify every finding through this file — new failure classes are new entries here, never a code change. Seeded from docs/import-ux-study/00-EXECUTION-PLAN.md §1 (E1-E6, hypotheses from one CASE batch) plus two classes (E3B, E7) discovered necessary while building the batch-001-case.txt fixture and confirmed against live import_batch_errors rows on 2026-07-16.",
+  "classes": [
+    {
+      "id": "E1",
+      "name": "Environment/data precondition",
+      "description": "The operator cannot fix this from inside the sheet at all — it depends on server-side state (an IO's registration for the PS) that the template has no way to satisfy. Needs a product answer (pre-registration flow / auto-provision / batch IO import), not a validation fix.",
+      "match": {
+        "error_codes": ["IO_NOT_REGISTERED"],
+        "message_patterns": [
+          "is not registered for this police station"
+        ]
+      }
+    },
+    {
+      "id": "E2",
+      "name": "Reference matching too strict",
+      "description": "A ref.* label the operator typed (beat, local head, act, section, major/minor head) failed to resolve against the reference tables even though a human would consider it a match (bare beat number vs. full code, casing, synonyms). Candidate for tolerant/PS-scoped matching rules.",
+      "match": {
+        "error_codes": [
+          "REF_UNRESOLVED_BEAT",
+          "REF_UNRESOLVED_LOCAL_HEAD",
+          "REF_UNRESOLVED_SECTION",
+          "REF_UNRESOLVED_MAJOR_HEAD",
+          "REF_UNRESOLVED_MINOR_HEAD",
+          "ACT_UNKNOWN"
+        ],
+        "message_patterns": [
+          "could not be matched(?! to a known section)",
+          "could not be matched to a known section",
+          "is not in the acts list"
+        ]
+      }
+    },
+    {
+      "id": "E3",
+      "name": "Child-sheet parent-key not repeated",
+      "description": "The parent row HAS the key (fir_no / linked_fir_dd_no / gd_no); the operator simply didn't re-type it on the child sheet, so the child row can't be linked back, or fails its own required-field check on the very same key column (REQUIRED_MISSING where field_key is the parent-key field and the sheet is a child sheet, not 'parent'). Systematic across almost every operator file. Wave A (T5, 03-TRIAGE-MATRIX.md) split the old single PARENT_KEY_MISSING code into PARENT_KEY_BLANK (cell was empty) vs PARENT_KEY_UNMATCHED (cell had a value that matched no parent row) for distinct, operator-actionable messages — both still land in this class. PARENT_KEY_MISSING kept in this class's match list for backward compat with pre-Wave-A artifacts; current code never emits it. The single-parent-row narrow auto-recovery (PARENT_KEY_RECOVERED, a WARNING) is its own class, E10, below — it no longer reaches E3 at all.",
+      "match": {
+        "error_codes": ["PARENT_KEY_MISSING", "PARENT_KEY_BLANK", "PARENT_KEY_UNMATCHED", "__INVALID_PARENT__"],
+        "message_patterns": [
+          "does not exist in the parent sheet",
+          "does not match any row in the parent sheet",
+          "must repeat the parent row's",
+          "\"FIR Number\" is required in sheet \"(?!parent\")",
+          "\"GD Number\" is required in sheet \"(?!parent\")"
+        ]
+      }
+    },
+    {
+      "id": "E4",
+      "name": "Ghost/trailing rows",
+      "description": "Rows with no real operator data (stray cell, trailing formatting, copy-paste artifact) parsed as if they were data rows — every parent-required field fires blank at once, often followed by a RECORD_DATE_MISSING. Measured directly by analyze_behaviour.py's ghost-row census (<=2 non-blank cells); in the error log this shows up as a cluster of REQUIRED_MISSING + RECORD_DATE_MISSING on the same row for fields spanning unrelated sections of the parent sheet. Pure auto-recovery candidate (skip silently, don't error).",
+      "match": {
+        "error_codes": ["RECORD_DATE_MISSING"],
+        "message_patterns": [
+          "No usable date found for this record"
+        ]
+      }
+    },
+    {
+      "id": "E5",
+      "name": "Raw SQL/DB errors reaching operators",
+      "description": "A database-level error (constraint violation, raw SQL text) surfaces verbatim in the operator-facing error log, alongside validation errors for the same row. Two defects: (a) an insert was attempted despite the row already having ERROR-severity validation findings, (b) the DB's internal error text is shown to a non-technical police operator. Reserved for expensive-reasoning triage (validation/insert ordering fix), not an auto-recovery candidate.",
+      "match": {
+        "error_codes": ["WRITE_FAILED"],
+        "message_patterns": [
+          "violates .*constraint",
+          "duplicate key value violates",
+          "null value in column",
+          "^insert into \\\""
+        ]
+      }
+    },
+    {
+      "id": "E6",
+      "name": "Submit-requirements warnings flood",
+      "description": "The same 3-4 advisory submit-requirement fields are warned on every single row of a batch (expected for legacy/incomplete data, since DRAFT rows are allowed to be incomplete) — per-row repetition is pure UI noise. Candidate: aggregate to one batch-level summary instead of one WARNING per row.",
+      "match": {
+        "error_codes": ["SUBMIT_REQUIREMENTS_PENDING"],
+        "message_patterns": [
+          "^Missing required fields before submit:"
+        ]
+      }
+    },
+    {
+      "id": "E7",
+      "name": "Other required-field gaps",
+      "description": "Genuine REQUIRED_MISSING findings that are NOT the child-sheet parent-key case (E3) — the operator actually left a substantive field blank (Victim First Name, Local Head, FIR Date, District, Police Station, Crime Head, Sections, etc.). Discovered necessary while building the batch-001-case.txt fixture: E1-E6 as hypothesized in 00-EXECUTION-PLAN.md §1 had no bucket for these, and they are NOT noise (unlike E6) or structural (E3) — they are plain data-entry gaps. Kept separate from UNCLASSIFIED because the volume and per-field breakdown matters for the requiredness-policy decision (Phase 2).",
+      "match": {
+        "error_codes": ["REQUIRED_MISSING", "DUPLICATE_IN_SHEET", "DUPLICATE_IN_DB", "PS_MISMATCH"],
+        "message_patterns": [
+          "is required in sheet",
+          "Duplicate .* found in sheet",
+          "already exists in the database",
+          "does not match this batch's target"
+        ]
+      }
+    },
+    {
+      "id": "E8",
+      "name": "IO handling — legacy auto-provision / missing (T2, D2)",
+      "description": "Legacy-only IO leniency (03-TRIAGE-MATRIX.md T2): an unregistered PIS number on a legacy row no longer blocks the row (IO_NOT_REGISTERED/E1 stays for non-legacy) — it's either auto-provisioned into investigating_officers at confirm time (IO_AUTO_PROVISIONED) or, when no IO info was given at all, imported with a NULL io_id (IO_MISSING). Both are WARNING-only, both leave a mandatory audit trail, neither invalidates the parent.",
+      "match": {
+        "error_codes": ["IO_AUTO_PROVISIONED", "IO_MISSING"],
+        "message_patterns": [
+          "will be auto-registered from the sheet",
+          "record will be saved without a linked IO"
+        ]
+      }
+    },
+    {
+      "id": "E9",
+      "name": "Reference match recovered via tolerant normalization (T3/T4)",
+      "description": "A ref.* label resolved successfully, but only after the noise-strip/unique-substring (local/major/minor head), zero-pad/whitespace (sections), or PS-scoped bare-number (beat) fallback — never fuzzy/Levenshtein. Distinct from E2 (still genuinely unresolved) — these are successful, tolerant matches that still get a mandatory WARNING trail so a normalized match is never silent/unauditable.",
+      "match": {
+        "error_codes": ["BEAT_RECOVERED", "LOCAL_HEAD_RECOVERED", "MAJOR_HEAD_RECOVERED", "MINOR_HEAD_RECOVERED", "SECTION_RECOVERED"],
+        "message_patterns": [
+          "matched .*after normalizing",
+          "matched to a beat number in this station"
+        ]
+      }
+    },
+    {
+      "id": "E10",
+      "name": "Parent-key auto-linked — single-parent recovery (T5)",
+      "description": "A blank child-sheet parent-key cell was auto-linked to the file's only parent row (narrow recovery — only fires when the parent sheet has EXACTLY one row, never positional, never for the ambiguous multi-parent case, which stays E3). WARNING-only, never invalidates the parent.",
+      "match": {
+        "error_codes": ["PARENT_KEY_RECOVERED"],
+        "message_patterns": [
+          "auto-linked to this file's only parent row"
+        ]
+      }
+    },
+    {
+      "id": "E11",
+      "name": "Ghost/stray rows skipped at parse time (T6)",
+      "description": "Batch-level notice (row 0) listing rows with <=2 non-empty cells and no keystone value, skipped before validation ever saw them (parse-time, import.parse.js). Distinct from E4 (RECORD_DATE_MISSING cascades from a ghost row that WASN'T caught by this rule, e.g. because a widened definition still let it through, or a pre-Wave-A corpus snapshot) — after Wave A, most of what E4 measured should instead show up here as a WARNING, never reaching REQUIRED_MISSING/RECORD_DATE_MISSING at all.",
+      "match": {
+        "error_codes": ["GHOST_ROWS_SKIPPED"],
+        "message_patterns": [
+          "appear empty/stray"
+        ]
+      }
+    },
+    {
+      "id": "E12",
+      "name": "Older template layout accepted (T9)",
+      "description": "Batch-level notice (row 0): the uploaded file's headers matched a known OLDER template layout (not the current live template) closely enough to parse safely — e.g. the ~30-column-simpler pre-2026-07 Property Details sheet reconstructed from the import-reliability corpus (layout-manifests.js). The file is accepted and parsed using that layout's own column set (bridging only the columns it actually has); this notice is purely informational, telling the operator to download the current template for next time. A file matching NO known layout at all is rejected outright (a thrown, non-persisted error — see UNKNOWN_LAYOUT_MESSAGE in import.parse.js) and never reaches import_batch_errors, so it has no taxonomy entry of its own here.",
+      "match": {
+        "error_codes": ["LEGACY_TEMPLATE_LAYOUT"],
+        "message_patterns": [
+          "uses an older template version"
+        ]
+      }
+    },
+    {
+      "id": "E13",
+      "name": "Silent-drop column carried a value (T10/F5)",
+      "description": "Batch-level notice (row 0) naming ONE {drop:true}-bridged template column (import-key-bridge.config.js's getDropOnlyKeys — genuinely discarded columns only, never one actually consumed by a `compose` entry elsewhere in the same bridge) that the operator filled in somewhere in the file even though nothing downstream stores it (e.g. CASE's under_section/complaint_no/cctns_number/date_of_arrest, UIDB/MISSING's gd_time). One warning per column per batch, never per row.",
+      "match": {
+        "error_codes": ["COLUMN_DROPPED_INFORMATIONAL"],
+        "message_patterns": [
+          "is informational and is not imported"
+        ]
+      }
+    },
+    {
+      "id": "UNCLASSIFIED",
+      "name": "Unclassified",
+      "description": "Catch-all for any error_code/message that matches no class above. A non-empty UNCLASSIFIED bucket after a corpus run is itself a signal that the taxonomy needs a new entry, not that the tooling is broken.",
+      "match": {
+        "error_codes": [],
+        "message_patterns": []
+      }
+    }
+  ]
+}

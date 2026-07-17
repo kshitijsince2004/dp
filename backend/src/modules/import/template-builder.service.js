@@ -188,8 +188,13 @@ function parseRange(rangeStr) {
   };
 }
 
-// Maps backend field section to spreadsheet sheet and section label
-const CASE_SECTION_MAP = {
+// Maps backend field section to spreadsheet sheet and section label. Exported (FIX 7, 2026-07)
+// so import.parse.js's roleForAutoField can consult the SAME authoritative mapping instead of
+// only a best-effort heuristic guess at which sheet role an auto-included field lands on —
+// adding this export changes NO emitted template bytes (nothing here writes to the workbook
+// differently; template-regression.js's byte-parity gate is the proof, re-run after this
+// change). Do not otherwise modify this map or its private usage below.
+export const CASE_SECTION_MAP = {
   general_info: { sheet: 'General Information', label: 'General Information' },
   incident_details: { sheet: 'General Information', label: 'General Information' },
   investigation_officer: { sheet: 'General Information', label: 'IO Details' },
@@ -219,7 +224,7 @@ const CASE_SECTION_MAP = {
   recovered_property: { sheet: 'Property Details', label: 'Property Details' }
 };
 
-const ARREST_SECTION_MAP = {
+export const ARREST_SECTION_MAP = {
   general_info: { sheet: 'General Info', label: 'General Information' },
   incident_details: { sheet: 'General Info', label: 'General Information' },
   arrest_details: { sheet: 'Person Arrested Detail', label: 'Particular Details' },
