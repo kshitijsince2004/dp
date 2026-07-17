@@ -516,6 +516,12 @@ export const TEMPLATE_EXCLUDE_KEYS = {
     // the composed payload when a legacy row's local_head/beat can't be resolved; never an
     // officer-filled template cell.
     'local_head_raw', 'beat_raw',
+    // 2026-07-17: gd_date/gd_time became CASE-applicable in the registry (the interactive
+    // CASE form's GD composite was silently losing them on draft reload — they now persist
+    // to fir_details.gd_date/gd_time). Excluded here for the same reason as ARREST's entry
+    // below: the frozen CASE template never had GD Date/Time columns, and auto-append must
+    // not add them (P3).
+    'gd_date', 'gd_time',
   ]),
   ARREST: new Set([
     // general info variants not used by the arrest template

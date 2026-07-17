@@ -1110,8 +1110,15 @@ export function buildFieldMetaMap(fieldsList, allFields) {
   for (const f of fieldsList || []) {
     if (!f || !f.field_key || map.has(f.field_key)) continue;
     const registryMatch = f.field_type ? f : (allFields || []).find((af) => af.field_key === f.field_key);
+    // Curated template columns that exist only as bridge keys (occurrence_date, gd_date on
+    // some sheets, …) have NO registry row under that key — but their config entries declare
+    // the format via `hint`. Without this fallback those date/time columns silently skip
+    // hardening entirely (they shipped with numFmt 'General', fully exposed to Excel's
+    // locale parser and its day/year-swapping year-first fallback).
+    const hint = String(f.hint || '').toLowerCase();
+    const hintType = hint === 'dd-mm-yyyy' ? 'DATE' : (hint === 'hh:mm' ? 'TIME' : null);
     map.set(f.field_key, {
-      field_type: registryMatch ? registryMatch.field_type : null,
+      field_type: (registryMatch ? registryMatch.field_type : null) ?? hintType,
       required: f.required === true || (registryMatch && registryMatch.required === true),
     });
   }
@@ -1136,32 +1143,62 @@ export function applyFieldLevelHardening(workbook, fieldMetaByKey) {
     for (const [colStr, key] of Object.entries(colKeys)) {
       const col = Number(colStr);
       const meta = fieldMetaByKey.get(key);
-      if (!meta) continue;
-      const { field_type, required } = meta;
+      // Curated-only bridge keys (occurrence_date, missing_date, date_of_arrest, …) have no
+      // registry row and often no meta entry at all — infer DATE/TIME from the key name so
+      // they aren't silently skipped. Verified against every row-1 key on all five
+      // templates: the date/time vocabularies are disjoint and have no false positives.
+      const lowerKey = key.toLowerCase();
+      let field_type = (meta && meta.field_type) || null;
+      if (!field_type) {
+        if (lowerKey.includes('date') && !lowerKey.includes('time')) field_type = 'DATE';
+        else if (lowerKey.includes('time') && !lowerKey.includes('date')) field_type = 'TIME';
+      }
+      if (!meta && !field_type) continue;
+      const required = meta ? meta.required : false;
 
-      // Column-level numFmt — safe regardless of any per-cell dataValidation state.
+      // numFmt: set at BOTH column and cell level. Column-level alone is NOT enough — the
+      // base workbooks' data cells carry their own style records, and a styled cell ignores
+      // the column format entirely (this is why the original dd-mm-yyyy/'@' column formats
+      // never actually reached most cells).
+      let numFmt = null;
       if (field_type === 'DATE') {
-        ws.getColumn(col).numFmt = 'dd-mm-yyyy';
+        // Text format, NOT 'dd-mm-yyyy': a display format still lets Excel's locale
+        // parser interpret the TYPED text first, and its year-first fallback silently
+        // swaps day/year — "23-3-27" became 2023-03-27 (shown as 27-03-2023) on en-US
+        // Excel. With '@' the cell stores the literal digits the officer typed and the
+        // import pipeline (parseFlexibleDate, day-first, 2-digit year = 20xx) is the
+        // only parser. Date cells from older real-date workbooks still import fine —
+        // import.parse handles Date-object cells explicitly.
+        numFmt = '@';
       } else if (field_type === 'TIME') {
-        ws.getColumn(col).numFmt = 'hh:mm';
+        numFmt = 'hh:mm';
       } else if (FIR_LIKE_KEYS.has(key) || isPincodeKey(key)) {
         // Forces text storage — stops Excel silently mangling "123/2025" into a date serial
         // (the headline bug this hardening pass exists to fix) or eating a pincode's leading
         // zero the moment the cell is typed into.
-        ws.getColumn(col).numFmt = '@';
+        numFmt = '@';
       }
+      if (numFmt) ws.getColumn(col).numFmt = numFmt;
 
       for (let r = 5; r <= 1000; r++) {
         const cell = ws.getCell(r, col);
+        // Clone the style object rather than assigning cell.numFmt directly — cells
+        // copied during column splicing (deleteColumnAt) SHARE style object references
+        // in ExcelJS, so a direct numFmt mutation on one column leaks into its sibling
+        // (observed: date_of_arrest inheriting time_of_arrest's 'hh:mm').
+        if (numFmt) cell.style = { ...cell.style, numFmt };
         const dv = cell.dataValidation;
 
         if (!dv) {
           if (field_type === 'DATE') {
+            // Text-compatible check only (cells are numFmt '@' now — a type:'date'
+            // validation on a text cell would stop-block every entry). Real date
+            // parsing/range checking happens server-side at import validate time.
             cell.dataValidation = {
-              type: 'date', operator: 'greaterThan', allowBlank: !required,
-              formulae: ['1900-01-01'],
+              type: 'textLength', operator: 'between', allowBlank: !required,
+              formulae: [6, 10],
               showErrorMessage: true, errorStyle: 'stop',
-              errorTitle: 'Invalid date', error: 'Enter a valid date (dd-mm-yyyy) after 01-01-1900.',
+              errorTitle: 'Invalid date', error: 'Type the date as DD-MM-YYYY (e.g. 23-03-2027).',
             };
           } else if (isAgeKey(key) && field_type === 'NUMBER') {
             cell.dataValidation = {

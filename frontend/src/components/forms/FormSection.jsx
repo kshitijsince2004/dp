@@ -306,12 +306,16 @@ function isFullWidth(field) {
   return fw.includes((field.field_type || '').toUpperCase()) || field.full_width === true;
 }
 
-function evaluateShowWhen(condition, values) {
+// Exported: the ONE show_when evaluator — used by the render path here AND by
+// DynamicForm's validateSection. Render and validation must always agree on
+// visibility, or validation blocks on fields the user cannot see.
+export function evaluateShowWhen(condition, values) {
   if (!condition) return true;
   if (condition.and) {
     return condition.and.every(c => evaluateShowWhen(c, values));
   }
   const { field: targetField, value: targetValue, operator } = condition;
+  if (!targetField) return true;
   const currentValue = values[targetField];
   if (operator === 'filled') {
     return currentValue !== undefined && currentValue !== null && String(currentValue).trim() !== '';
@@ -431,19 +435,7 @@ function RepeaterSection({
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                   {section.fields.map((field) => {
                     const key = field.field_key;
-                    if (field.show_when) {
-                      const { field: triggerKey, value: triggerValue, operator } = field.show_when;
-                      const currentValue = entry[triggerKey];
-                      let isMatch = false;
-                      if (operator === 'filled') {
-                        isMatch = currentValue !== undefined && currentValue !== null && String(currentValue).trim() !== '';
-                      } else {
-                        isMatch = Array.isArray(triggerValue)
-                          ? triggerValue.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase())
-                          : String(currentValue || '').toLowerCase() === String(triggerValue || '').toLowerCase();
-                      }
-                      if (!isMatch) return null;
-                    }
+                    if (!evaluateShowWhen(field.show_when, entry)) return null;
 
 
                     const rules = parseRules(field.validation_rules);

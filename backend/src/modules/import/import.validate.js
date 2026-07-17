@@ -353,7 +353,10 @@ async function checkSubmitRequirements(trx, recordType, payload, isLegacy) {
     // place that translation happens). Passing the raw import recordType silently made this
     // advisory check a no-op for every KALANDRA row. Apply the same translation the write
     // path (createImportedRecord) and buildRegistryMap already apply.
-    await validateRequiredFields(trx, effectiveRecordType(recordType), payload.data);
+    // persons[] passed along so repeater-role required fields (victim_first_name,
+    // arrested_perm_same) are checked per entry — omitting it made this advisory warn
+    // "missing" on every non-legacy CASE/ARREST row regardless of the actual data.
+    await validateRequiredFields(trx, effectiveRecordType(recordType), payload.data, { persons: payload.persons || [] });
     return [];
   } catch (err) {
     return [{

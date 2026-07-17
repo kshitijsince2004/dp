@@ -2,6 +2,7 @@
  {
   "field_key": "gd_time",
   "record_types": [
+   "CASE",
    "ARREST"
   ],
   "field_type": "TIME",
@@ -11,7 +12,7 @@
   },
   "section": "general_info",
   "storage": {
-   "table": "arrest_details",
+   "table": "$detail",
    "column": "gd_time"
   },
   "validation_rules": {

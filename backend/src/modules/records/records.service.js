@@ -370,15 +370,47 @@ function isFieldVisible(f, flatData) {
   return actual === sw.value;
 }
 
-export async function validateRequiredFields(trx, recordType, flatData) {
+export async function validateRequiredFields(trx, recordType, flatData, { persons = [] } = {}) {
   const registry = await mapper.loadRegistry(trx, recordType);
   const missing = [];
+
+  // Repeater-role person fields (VICTIM/ARRESTEE/ACCUSED/WITNESS) never appear in flatData —
+  // recomposeRecord routes them into persons[].data — so they must be validated per entry.
+  // Checking them against flatData made every required repeater field (victim_first_name,
+  // arrested_perm_same) report "missing" unconditionally, blocking every CASE/ARREST submit.
+  const entriesByRole = new Map();
+  for (const p of persons) {
+    const role = mapper.roleForPersonType(p.person_type);
+    if (!entriesByRole.has(role)) entriesByRole.set(role, []);
+    entriesByRole.get(role).push(p.data || {});
+  }
+
+  const isEmpty = (val) => val === undefined || val === null || val === '';
+
   for (const f of registry) {
     if (f.storage === 'ui_only') continue;
     if (f.validation_rules?.required !== true) continue;
+
+    const shape = mapper.resolveStorage(f.storage, recordType);
+    const repeaterRole = (shape && typeof shape === 'object' && shape.role && mapper.REPEATER_ROLES.has(shape.role))
+      ? shape.role : null;
+    if (repeaterRole) {
+      // Zero entries of the role = nothing to check: whether a victim/arrestee must exist at
+      // all is workflow policy, not field requiredness (P2 — reject only the impossible).
+      // show_when conditions on repeater fields reference sibling fields of the same entry,
+      // so visibility is evaluated per entry (entry values shadow flat ones).
+      for (const entryData of entriesByRole.get(repeaterRole) || []) {
+        if (!isFieldVisible(f, { ...flatData, ...entryData })) continue;
+        if (isEmpty(entryData[f.field_key])) {
+          missing.push(f.labels?.en || f.field_key);
+          break;
+        }
+      }
+      continue;
+    }
+
     if (!isFieldVisible(f, flatData)) continue;
-    const val = flatData[f.field_key];
-    if (val === undefined || val === null || val === '') missing.push(f.labels?.en || f.field_key);
+    if (isEmpty(flatData[f.field_key])) missing.push(f.labels?.en || f.field_key);
   }
   if (missing.length) {
     const err = new Error(`Missing required fields before submit: ${missing.join(', ')}`);
@@ -747,11 +779,11 @@ export const submitRecord = async (id, user, ipAddress) => {
   await db.transaction(async (trx) => {
     const full = await fetchRecordFull(trx, id);
     const registry = await mapper.loadRegistry(trx, record.record_type);
-    const { data: flatData } = await mapper.recomposeRecord(trx, registry, record.record_type, {
+    const { data: flatData, persons } = await mapper.recomposeRecord(trx, registry, record.record_type, {
       spineRow: record, detailRow: full.detail, personRows: full.personRows, propertyRows: full.propertyRows,
       offenceRows: full.offenceRows, locationsById: full.locationsById,
     });
-    await validateRequiredFields(trx, record.record_type, flatData);
+    await validateRequiredFields(trx, record.record_type, flatData, { persons });
   });
 
   await transitionRecord(id, user, 'submit', null, null, ipAddress);

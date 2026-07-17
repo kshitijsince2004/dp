@@ -168,6 +168,7 @@
  {
   "field_key": "gd_date",
   "record_types": [
+   "CASE",
    "ARREST",
    "MISSING",
    "UIDB"

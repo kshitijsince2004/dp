@@ -38,6 +38,9 @@ export const REPEATER_ROLES = new Set(['ARRESTEE', 'VICTIM', 'ACCUSED', 'WITNESS
 // unchanged (already matches a role name, e.g. 'VICTIM', 'ACCUSED').
 const PERSON_TYPE_TO_ROLE = { ARRESTED: 'ARRESTEE' };
 const ROLE_TO_PERSON_TYPE = { ARRESTEE: 'ARRESTED' };
+export function roleForPersonType(personType) {
+  return PERSON_TYPE_TO_ROLE[personType] || personType;
+}
 
 // slot -> {table: detailTableName, column} for record/detail-level (no person role) locations.
 export const DETAIL_LOCATION_SLOTS = {
@@ -181,7 +184,7 @@ export async function loadRegistry(trx, recordType) {
 }
 
 /** Resolve a `{per_type:{...}}` wrapper down to the shape for this record type (or null). */
-function resolveStorage(storage, recordType) {
+export function resolveStorage(storage, recordType) {
   if (storage && storage.per_type) return storage.per_type[recordType] ?? null;
   return storage;
 }
@@ -734,7 +737,11 @@ function recomposePersonFields(personFields, personRow, into, cols) {
 
 function recomposePropertyRow(registry, recordType, propertyRow) {
   const { scalar, grouped } = propertyFieldsList(registry, recordType);
-  const flat = { id: propertyRow.id, person_index: propertyRow.person_index ?? null };
+  // `person_id` is how the frontend re-links an arrested person's per-person property list
+  // when a draft is reopened (persons[] entries carry their `id`); without it every reopened
+  // ARREST draft showed the arrestee's properties as record-level orphans and re-saving
+  // delete-and-reinserted them, destroying `record_status_events.property_id` history.
+  const flat = { id: propertyRow.id, person_id: propertyRow.person_id ?? null, person_index: propertyRow.person_index ?? null };
   for (const { field: f, shape } of scalar) {
     if (shape.extra) {
       const bag = propertyRow.extra || {};

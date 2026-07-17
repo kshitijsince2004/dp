@@ -12,7 +12,7 @@ import { findNodeById } from '../../utils/hierarchyData.js';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../utils/api.js';
 
-import FormSection from './FormSection.jsx';
+import FormSection, { evaluateShowWhen } from './FormSection.jsx';
 import FormToolbar from './FormToolbar.jsx';
 import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
@@ -833,10 +833,11 @@ export default function DynamicForm({
           </fieldset>
 
           {occRadioFields.map((radioField) => (
-            <fieldset key={radioField.field_key} className="border border-[#7a9cc5] rounded px-2 py-3">
+            <fieldset key={radioField.field_key} className={`border rounded px-2 py-3 ${touched[radioField.field_key] && errors[radioField.field_key] ? 'border-red-400 bg-red-50' : 'border-[#7a9cc5]'}`}>
               <div className="flex items-center gap-6 text-[12px]">
                 <span className="font-medium">
                   {lang === 'hi' ? (radioField.label_hi || radioField.label_en) : radioField.label_en}
+                  {!!parseRules(radioField.validation_rules).required && <span className="text-red-500 font-bold ml-0.5">*</span>}
                 </span>
                 {getFieldOptions(sectionFields, radioField.field_key).map((opt) => (
                   <label key={opt.value} className="flex items-center gap-1">
@@ -2908,6 +2909,11 @@ useEffect(() => {
   prevInitialIdRef.current = initialValues?.id;
 }, [recordType, caseType, initialValues?.id]);
 /* ── Seed repeater entries from initialPersons / initialProperties ─────── */
+// Shapes here are the backend recompose contract (records.mapper.js recomposeRecord):
+// persons[] = { id, person_type, data: {<field_key>: value} }; properties[] are FLAT
+// objects already keyed by field_key (property_major_category, …) plus { id, person_id }.
+// `id` MUST round-trip on every entry — the backend upsert is id-preserving and DELETES
+// any existing person/property row the client doesn't echo back with its id.
 useEffect(() => {
   if (!finalSchema.length) return;
   const initial = {};
@@ -2920,33 +2926,32 @@ useEffect(() => {
       );
       if (matching.length > 0) {
         initial[section.section] = matching.map(p => {
-          const personData = { ...(p.data || {}) };
+          const personData = { id: p.id, ...(p.data || {}) };
           // ARRESTED persons carry their own property list (per-person, not record-level)
           if (section.person_type === 'ARRESTED') {
             personData.property_details = initialProperties
               .filter(prop => prop.person_id === p.id)
               .map(prop => ({
-                property_major_category: prop.major_category || '',
-                property_minor_category: prop.minor_category || '',
-                property_stolen_recovered: prop.status || 'Stolen',
-                property_details: prop.details || '',
+                ...prop,
+                property_stolen_recovered: prop.property_stolen_recovered || 'Stolen',
               }));
           }
           return personData;
         });
       }
     } else if (section.entity_type === 'property') {
-      if (initialProperties.length > 0) {
-        initial[section.section] = initialProperties.map(prop => ({
-          property_major_category: prop.major_category || '',
-          property_minor_category: prop.minor_category || '',
-          property_stolen_recovered: prop.status || 'Stolen',
-          property_details: prop.details || '',
+      // Only record-level properties — per-person ones are nested under their arrestee above.
+      const recordLevel = initialProperties.filter(prop => !prop.person_id);
+      if (recordLevel.length > 0) {
+        initial[section.section] = recordLevel.map(prop => ({
+          ...prop,
+          property_stolen_recovered: prop.property_stolen_recovered || 'Stolen',
         }));
       }
     }
   }
   if (Object.keys(initial).length > 0) {
+    repeaterSeedSkipRef.current = true; // seeding is not a user edit — don't autosave it back
     setRepeaterState(prev => ({ ...prev, ...initial }));
   }
 }, [initialPersons, initialProperties, finalSchema.length]);
@@ -2958,6 +2963,7 @@ useEffect(() => {
   if (!readOnly && recordType === 'CASE') {
     const propertyList = repeaterState?.property_details || [];
     if (propertyList.length === 0) {
+      repeaterSeedSkipRef.current = true; // starter row is not a user edit — don't autosave it
       setRepeaterState(prev => ({
         ...prev,
         property_details: [{
@@ -2971,6 +2977,28 @@ useEffect(() => {
     }
   }
 }, [repeaterState?.property_details?.length, readOnly, recordType]);
+
+/* ── Autosave repeater (persons/properties) changes ─────────────────────── */
+// Victim/Accused/Arrested entries and property rows live in `repeaterState`, NOT in
+// `values` — the field-level autosave never sees them. Before this effect existed, they
+// were only sent on the final wizard Submit: every draft saved via autosave or the
+// "Save Draft" button silently dropped them (the "victim info doesn't get saved" bug).
+// Seed/starter-row writes raise repeaterSeedSkipRef (a flag, not a counter — multiple
+// programmatic writes can batch into a single commit and therefore a single run of this
+// effect) so reopening a draft doesn't immediately PUT its own data back.
+const repeaterSeedSkipRef = useRef(false);
+const repeaterAutosaveReadyRef = useRef(false);
+useEffect(() => {
+  if (!repeaterAutosaveReadyRef.current) { repeaterAutosaveReadyRef.current = true; return; }
+  if (readOnly) return;
+  if (repeaterSeedSkipRef.current) { repeaterSeedSkipRef.current = false; return; }
+  const { persons, properties } = buildRepeaterPayload();
+  // Never CREATE a record off repeater churn alone (e.g. deleting the blank starter row).
+  if (!activeRecordIdRef.current && persons.length === 0 && properties.length === 0) return;
+  const data = { ...values };
+  if (data.time_of_occurrence !== undefined) data.occurrence_time = data.time_of_occurrence;
+  triggerAutosave(data, activeRecordIdRef.current, persons, properties);
+}, [repeaterState]);
 
 useEffect(() => {
   const seed = { ...(initialValues?.data || initialValues || {}) };
@@ -3086,6 +3114,15 @@ useEffect(() => {
     updatedSeed.gd_date_time = `${updatedSeed.gd_date} ${timePart.substring(0, 5)}`;
   }
 
+  // Backfill crime_head (primary offence head) for drafts saved before the
+  // add/delete-row handlers started writing it — it's derived from the first
+  // Major Head row, and without it ARREST's required-field check can't pass.
+  if (!updatedSeed.crime_head) {
+    const firstMajor = String(updatedSeed.major_heads || updatedSeed.major_head || '')
+      .split(',').map(s => s.trim()).filter(Boolean)[0];
+    if (firstMajor) updatedSeed.crime_head = firstMajor;
+  }
+
   console.log('[PHAROS-DEBUG][seed-effect] setValues() about to run — final composite snapshot being written into form state:', {
     gd_no: updatedSeed.gd_no, gd_date: updatedSeed.gd_date, gd_time: updatedSeed.gd_time,
     fir_no: updatedSeed.fir_no, fir_date: updatedSeed.fir_date, fir_time: updatedSeed.fir_time,
@@ -3131,15 +3168,13 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
     fieldCount: section.fields.length,
   });
   section.fields.forEach((field) => {
-    // Skip validating if field is hidden by condition
+    // Skip validating if field is hidden by condition — MUST use the same
+    // evaluator as the render path (FormSection), or we block on invisible fields.
     if (field.show_when) {
       const isShown = (() => {
         try {
           const cond = typeof field.show_when === 'string' ? JSON.parse(field.show_when) : field.show_when;
-          if (!cond || !cond.field) return true;
-          const val = currentValues[cond.field];
-          const checkVals = Array.isArray(cond.value) ? cond.value : [cond.value];
-          return checkVals.some(v => String(v || '').toLowerCase() === String(val || '').toLowerCase());
+          return evaluateShowWhen(cond, currentValues);
         } catch (e) {
           return true;
         }
@@ -3152,54 +3187,30 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
 
     const rules = parseRules(field.validation_rules);
 
-    if (field.field_key === 'gd_no') {
-      const num = currentValues.gd_no;
-      const dt = currentValues.gd_date;
-      const tm = currentValues.gd_time;
-      const isAllFilled = !!(num && dt && tm);
-      // Anchored on the NUMBER, not "any of the three": a stray gd_date/gd_time with no
-      // gd_no must never block Next. That case is real, not hypothetical — this exact
-      // draft had fir_date pre-poisoned (autosaved by the old, now-removed, seed
-      // auto-population code) with no fir_no ever entered, and the previous
-      // "isAnyFilled && !isAllFilled" check blocked on it regardless of `required`. Only
-      // once the officer actually types the number do date+time become mandatory.
-      console.log('[PHAROS-DEBUG][validateSection] gd_no composite check:', {
-        num: JSON.stringify(num), dt: JSON.stringify(dt), tm: JSON.stringify(tm),
-        isAllFilled, required: !!rules.required,
-        currentValuesIsLiveValues: currentValues === values,
+    // Composite Number+Date(+Time) widgets. Anchored on the NUMBER — a stray date with
+    // no number must never block Next. Time is deliberately NOT validated: fir_time has
+    // no storage anywhere (fir_details.fir_date is a DATE column), and *_time values
+    // that aren't registry fields for this record type vanish on draft reload while the
+    // picker still displays a default "00:00" — demanding them made every reopened
+    // draft fail with "fill all three" on data the officer had genuinely entered.
+    if (field.field_key === 'gd_no' || field.field_key === 'fir_no') {
+      const prefix = field.field_key === 'gd_no' ? 'gd' : 'fir';
+      const num = currentValues[`${prefix}_no`];
+      const dt = currentValues[`${prefix}_date`];
+      console.log('[PHAROS-DEBUG][validateSection]', field.field_key, 'composite check:', {
+        num: JSON.stringify(num), dt: JSON.stringify(dt), required: !!rules.required,
       });
-
-      if (rules.required && !isAllFilled) {
-        errs.gd_no = lang === 'hi'
-          ? 'जीडी नंबर, दिनांक और समय तीनों भरना आवश्यक है।'
-          : 'GD Number, Date and Time are all required.';
-      } else if (num && !isAllFilled) {
-        errs.gd_no = lang === 'hi'
-          ? 'जीडी नंबर, दिनांक और समय तीनों भरें।'
-          : 'Please fill all three: GD Number, Date and Time.';
-      }
-      return;
-    }
-
-    if (field.field_key === 'fir_no') {
-      const num = currentValues.fir_no;
-      const dt = currentValues.fir_date;
-      const tm = currentValues.fir_time;
-      const isAllFilled = !!(num && dt && tm);
-      console.log('[PHAROS-DEBUG][validateSection] fir_no composite check:', {
-        num: JSON.stringify(num), dt: JSON.stringify(dt), tm: JSON.stringify(tm),
-        isAllFilled, required: !!rules.required,
-        currentValuesIsLiveValues: currentValues === values,
-      });
-
-      if (rules.required && !isAllFilled) {
-        errs.fir_no = lang === 'hi'
-          ? 'प्राथमिकी संख्या, दिनांक और समय तीनों भरना आवश्यक है।'
-          : 'FIR Number, Date and Time are all required.';
-      } else if (num && !isAllFilled) {
-        errs.fir_no = lang === 'hi'
-          ? 'प्राथमिकी संख्या, दिनांक और समय तीनों भरें।'
-          : 'Please fill all three: FIR Number, Date and Time.';
+      const labels = prefix === 'gd'
+        ? { en: 'GD', hi: 'जीडी' }
+        : { en: 'FIR', hi: 'प्राथमिकी' };
+      if (rules.required && !(num && dt)) {
+        errs[field.field_key] = lang === 'hi'
+          ? `${labels.hi} नंबर और दिनांक भरना आवश्यक है।`
+          : `${labels.en} Number and Date are required.`;
+      } else if (num && !dt) {
+        errs[field.field_key] = lang === 'hi'
+          ? `${labels.hi} दिनांक भी भरें।`
+          : `Please also fill the ${labels.en} Date.`;
       }
       return;
     }
@@ -3214,6 +3225,15 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
     });
 
     if (isEmpty) {
+      // `sections` has no direct input — it is only written by the Acts & Sections
+      // table's "+ Add Acts & Section" modal. Point the officer at that button
+      // instead of naming a field they cannot find on the form.
+      if (field.field_key === 'sections') {
+        errs.sections = lang === 'hi'
+          ? 'कम से कम एक अधिनियम और धारा जोड़ें ("+ Add Acts & Section" बटन से)।'
+          : 'Add at least one Act & Section (use the "+ Add Acts & Section" button).';
+        return;
+      }
       const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
       errs[field.field_key] = lang === 'hi'
         ? `${label} आवश्यक है`
@@ -3310,8 +3330,11 @@ const handleChange = useCallback((key, val) => {
     if (errors[key]) {
       setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
     }
-    // Auto-save using custom hook (2 seconds debounce)
-    triggerAutosave(next, activeRecordIdRef.current);
+    // Auto-save using custom hook (2 seconds debounce). Repeater data rides along on
+    // every save — a flat-field autosave that omitted `persons` used to be the write
+    // that (on create) froze the record's persons at [] forever.
+    const { persons, properties } = buildRepeaterPayload();
+    triggerAutosave(next, activeRecordIdRef.current, persons, properties);
     return next;
   });
 
@@ -3459,6 +3482,11 @@ const handleAddMajorMinorRow = useCallback(() => {
   const updatedMinors = [...majorMinorRows.map(r => r.minorHead), selectedMinorHead].join(', ');
   handleChange('major_heads', updatedMajors);
   handleChange('minor_heads', updatedMinors);
+  // crime_head = primary offence head (registry storage: offence.major_head_id, primary).
+  // The first Major Head row IS that value — without this write, ARREST's required
+  // crime_head is never satisfiable and step validation blocks Next forever.
+  const firstMajor = majorMinorRows[0]?.majorHead || selectedMajorHead;
+  handleChange('crime_head', firstMajor);
   setSelectedMajorHead('');
   setSelectedMinorHead('');
 }, [selectedMajorHead, selectedMinorHead, majorMinorRows, handleChange]);
@@ -3468,6 +3496,7 @@ const handleDeleteMajorMinorRow = useCallback((index) => {
   setMajorMinorRows(updated);
   handleChange('major_heads', updated.map(r => r.majorHead).join(', '));
   handleChange('minor_heads', updated.map(r => r.minorHead).join(', '));
+  handleChange('crime_head', updated[0]?.majorHead || '');
 }, [majorMinorRows, handleChange]);
 
 // Single bundle of everything <ActsSectionsTable> needs, so every call site (ARREST/UIDB
@@ -3644,6 +3673,56 @@ const handleStepClick = (targetIdx) => {
   setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 };
 
+/* ── Build persons/properties from repeater sections ───────────────────── */
+// The ONE builder for every path that persists the record — final Submit, the "Save
+// Draft" button, field-level autosave, and the repeaterState watcher. Repeater data
+// must ride along on ALL of them: the backend's update path treats an absent `persons`
+// key as "don't touch" but create defaults it to [], and any list that IS sent must
+// echo existing entries (with their ids) or the id-preserving upsert deletes them.
+// Latest-ref pattern: handleChange is memoized on [readOnly, errors, triggerAutosave,
+// values] and does NOT recreate when repeaterState changes — a closure over repeaterState
+// here would let a keystroke autosave a persons list from BEFORE the last modal save,
+// and the backend's echo-or-delete upsert would then destroy the just-added entry.
+const repeaterPayloadSourceRef = useRef({ finalSchema, repeaterState });
+repeaterPayloadSourceRef.current = { finalSchema, repeaterState };
+const buildRepeaterPayload = useCallback(() => {
+  const { finalSchema: schema, repeaterState: state } = repeaterPayloadSourceRef.current;
+  const persons = [];
+  const properties = [];
+  for (const section of schema) {
+    if (!section.is_repeater) continue;
+    const entries = state[section.section] || [];
+    if (section.entity_type === 'person' && section.person_type) {
+      for (const entry of entries) {
+        // ARRESTED persons carry their own property list (per-person, not record-level) —
+        // pull it out of the person's data blob and flatten into the top-level properties
+        // array, tagged with this person's index so the backend can link each item back
+        // to the right person after it generates real person IDs. `id` (present on entries
+        // loaded from an existing record's recomposed persons[]) is likewise pulled to the
+        // top level — the backend's id-preserving upsert matches edits by `persons[].id`,
+        // not by a nested `data.id`.
+        const { property_details: personProperties, id: personId, ...personData } = entry;
+        const personIndex = persons.length;
+        persons.push({ id: personId ?? undefined, person_type: section.person_type, data: personData });
+        if (section.person_type === 'ARRESTED' && Array.isArray(personProperties)) {
+          for (const prop of personProperties) {
+            if (!prop.id && !prop.property_major_category && !prop.property_details) continue; // skip blank starter rows
+            properties.push({ ...prop, person_index: personIndex });
+          }
+        }
+      }
+    } else if (section.entity_type === 'property') {
+      for (const entry of entries) {
+        // Skip never-saved blank starter rows (CASE auto-populates one) — but an entry
+        // with an id is an existing DB row and must always be echoed back.
+        if (!entry.id && !entry.property_major_category && !entry.property_details) continue;
+        properties.push(entry);
+      }
+    }
+  }
+  return { persons, properties };
+}, []);
+
 /* ── Final form submission ─────────────────────────────────────────────── */
 const handleFormSubmit = (e) => {
   e.preventDefault();
@@ -3681,37 +3760,7 @@ const handleFormSubmit = (e) => {
     finalValues.occurrence_time = finalValues.time_of_occurrence;
   }
 
-  // Build persons and properties from repeater sections
-  const persons = [];
-  const properties = [];
-  for (const section of finalSchema) {
-    if (!section.is_repeater) continue;
-    const entries = repeaterState[section.section] || [];
-    if (section.entity_type === 'person' && section.person_type) {
-      for (const entry of entries) {
-        // ARRESTED persons carry their own property list (per-person, not record-level) —
-        // pull it out of the person's data blob and flatten into the top-level properties
-        // array, tagged with this person's index so the backend can link each item back
-        // to the right person after it generates real person IDs. `id` (present on entries
-        // loaded from an existing record's recomposed persons[]) is likewise pulled to the
-        // top level — the backend's id-preserving upsert matches edits by `persons[].id`,
-        // not by a nested `data.id`.
-        const { property_details: personProperties, id: personId, ...personData } = entry;
-        const personIndex = persons.length;
-        persons.push({ id: personId ?? undefined, person_type: section.person_type, data: personData });
-        if (section.person_type === 'ARRESTED' && Array.isArray(personProperties)) {
-          for (const prop of personProperties) {
-            if (!prop.property_major_category && !prop.property_details) continue; // skip blank starter rows
-            properties.push({ ...prop, person_index: personIndex });
-          }
-        }
-      }
-    } else if (section.entity_type === 'property') {
-      for (const entry of entries) {
-        properties.push(entry);
-      }
-    }
-  }
+  const { persons, properties } = buildRepeaterPayload();
 
   onSubmit?.(finalValues, persons, properties, activeRecordIdRef.current);
 };
@@ -3722,7 +3771,11 @@ const handleManualSave = () => {
   if (finalValues.time_of_occurrence !== undefined) {
     finalValues.occurrence_time = finalValues.time_of_occurrence;
   }
-  saveImmediately(finalValues, activeRecordIdRef.current);
+  // persons/properties MUST ride along — omitting them dropped every victim/accused/
+  // arrested entry and property row from manually-saved drafts (create defaulted them
+  // to [] server-side, so the repeater data was never written at all).
+  const { persons, properties } = buildRepeaterPayload();
+  saveImmediately(finalValues, activeRecordIdRef.current, persons, properties);
   toast.success(lang === 'hi' ? 'ड्राफ्ट सहेज लिया गया है।' : 'Draft saved successfully.');
 };
 
@@ -3836,7 +3889,7 @@ return (
               <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
               {msg}
             </div>
-          ))}is
+          ))}
       </div>
     )}
 
