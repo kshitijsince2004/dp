@@ -16,7 +16,12 @@
           "section": "General Information",
           "label": "FIR Date and time",
           "hint": "dd-mm-yyyy",
-          "validation": null
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         },
         {
           "col": 3,
@@ -96,7 +101,7 @@
           "key": "occurrence_date",
           "section": "General Information",
           "label": "Date of Occurrence",
-          "hint": "dd-mm-yyyy",
+          "hint": "e.g. SID-889021",
           "validation": null
         },
         {
@@ -104,7 +109,7 @@
           "key": "occurrence_time",
           "section": "General Information",
           "label": "Occurrence Time",
-          "hint": "HH:MM",
+          "hint": "e.g. CCTNS-202699104",
           "validation": null
         },
         {
@@ -195,10 +200,28 @@
           "section": "Complainant Personal Details",
           "label": "Complainant Mobile No.",
           "hint": "10-digit mobile number",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              10
+            ]
+          }
         },
         {
           "col": 21,
+          "key": "complainant_qualification",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Qualification",
+          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
+            ]
+          }
+        },
+        {
+          "col": 22,
           "key": "complainant_age_year",
           "section": "Complainant Personal Details",
           "label": "Complainant Age (Years)",
@@ -206,7 +229,7 @@
           "validation": null
         },
         {
-          "col": 22,
+          "col": 23,
           "key": "complainant_house_no",
           "section": "Complainant Present Address",
           "label": "Complainant House No.",
@@ -214,7 +237,7 @@
           "validation": null
         },
         {
-          "col": 23,
+          "col": 24,
           "key": "complainant_street",
           "section": "Complainant Present Address",
           "label": "Complainant Street",
@@ -222,7 +245,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 25,
           "key": "complainant_colony",
           "section": "Complainant Present Address",
           "label": "Complainant Colony",
@@ -230,7 +253,7 @@
           "validation": null
         },
         {
-          "col": 25,
+          "col": 26,
           "key": "complainant_city_town_village",
           "section": "Complainant Present Address",
           "label": "Complainant Village / City / Town",
@@ -238,7 +261,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 27,
           "key": "complainant_tehsil_block_mandal",
           "section": "Complainant Present Address",
           "label": "Complainant Tehsil / Block / Mandal",
@@ -246,7 +269,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 28,
           "key": "complainant_country",
           "section": "Complainant Present Address",
           "label": "Complainant Nationality",
@@ -259,11 +282,11 @@
           }
         },
         {
-          "col": 28,
+          "col": 29,
           "key": "complainant_state",
           "section": "Complainant Present Address",
           "label": "Complainant State",
-          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "hint": "select (37 options): Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -272,20 +295,20 @@
           }
         },
         {
-          "col": 29,
+          "col": 30,
           "key": "complainant_district",
           "section": "Complainant Present Address",
           "label": "Complainant District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "Select from dropdown (depends on selected State)",
           "validation": {
             "type": "list",
             "formulae": [
-              "OPT_DISTRICT"
+              "INDIRECT(IFERROR(VLOOKUP($AC5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 30,
+          "col": 31,
           "key": "complainant_police_station",
           "section": "Complainant Present Address",
           "label": "Complainant Police Station",
@@ -293,20 +316,25 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AC5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AD5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 31,
+          "col": 32,
           "key": "complainant_pincode",
           "section": "Complainant Present Address",
           "label": "Complainant Pin Code",
           "hint": "6-digit PIN code",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
-          "col": 32,
+          "col": 33,
           "key": "complainant_perm_same",
           "section": "Complainant Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -319,7 +347,7 @@
           }
         },
         {
-          "col": 33,
+          "col": 34,
           "key": "complainant_perm_house_no",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent House No.",
@@ -327,7 +355,7 @@
           "validation": null
         },
         {
-          "col": 34,
+          "col": 35,
           "key": "complainant_perm_street",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Street",
@@ -335,7 +363,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 36,
           "key": "complainant_perm_colony",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Colony",
@@ -343,7 +371,7 @@
           "validation": null
         },
         {
-          "col": 36,
+          "col": 37,
           "key": "complainant_perm_city_town_village",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Village / City / Town",
@@ -351,7 +379,7 @@
           "validation": null
         },
         {
-          "col": 37,
+          "col": 38,
           "key": "complainant_perm_tehsil_block_mandal",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Tehsil / Block / Mandal",
@@ -359,7 +387,7 @@
           "validation": null
         },
         {
-          "col": 38,
+          "col": 39,
           "key": "complainant_perm_country",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Nationality",
@@ -372,11 +400,11 @@
           }
         },
         {
-          "col": 39,
+          "col": 40,
           "key": "complainant_perm_state",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent State",
-          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "hint": "select (37 options): Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -385,20 +413,20 @@
           }
         },
         {
-          "col": 40,
+          "col": 41,
           "key": "complainant_perm_district",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "Select from dropdown (depends on selected State)",
           "validation": {
             "type": "list",
             "formulae": [
-              "OPT_DISTRICT"
+              "INDIRECT(IFERROR(VLOOKUP($AN5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 41,
+          "col": 42,
           "key": "complainant_perm_police_station",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Police Station",
@@ -406,20 +434,25 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AN5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AO5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 42,
+          "col": 43,
           "key": "complainant_perm_pincode",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Pin Code",
           "hint": "6-digit PIN code",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
-          "col": 43,
+          "col": 44,
           "key": "occurrence_house_no",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence House No.",
@@ -427,7 +460,7 @@
           "validation": null
         },
         {
-          "col": 44,
+          "col": 45,
           "key": "occurrence_street",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Street",
@@ -435,7 +468,7 @@
           "validation": null
         },
         {
-          "col": 45,
+          "col": 46,
           "key": "occurrence_colony",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Colony",
@@ -443,7 +476,7 @@
           "validation": null
         },
         {
-          "col": 46,
+          "col": 47,
           "key": "occurrence_city_town_village",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Village / City / Town",
@@ -451,7 +484,7 @@
           "validation": null
         },
         {
-          "col": 47,
+          "col": 48,
           "key": "occurrence_tehsil_block_mandal",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Tehsil / Block / Mandal",
@@ -459,11 +492,11 @@
           "validation": null
         },
         {
-          "col": 48,
+          "col": 49,
           "key": "occurrence_district",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "Select from dropdown (depends on selected State)",
           "validation": {
             "type": "list",
             "formulae": [
@@ -472,7 +505,7 @@
           }
         },
         {
-          "col": 49,
+          "col": 50,
           "key": "occurrence_police_station",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Police Station",
@@ -480,20 +513,25 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AV5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AW5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 50,
+          "col": 51,
           "key": "occurrence_pincode",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Pin Code",
           "hint": "6-digit PIN code",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
-          "col": 51,
+          "col": 52,
           "key": "occurrence_landmark",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Landmark",
@@ -501,31 +539,15 @@
           "validation": null
         },
         {
-          "col": 52,
-          "key": "io_name",
-          "section": "IO Details",
-          "label": "IO / Officer Name",
-          "hint": "e.g. Inspector Ravindra Singh",
-          "validation": null
-        },
-        {
           "col": 53,
           "key": "io_pis",
           "section": "IO Details",
           "label": "PIS No. of IO",
-          "hint": "e.g. 28080214",
+          "hint": "PIS number of a registered IO, e.g. 28080214",
           "validation": null
         },
         {
           "col": 54,
-          "key": "io_mobile",
-          "section": "IO Details",
-          "label": "IO Mobile No.",
-          "hint": "IO contact number",
-          "validation": null
-        },
-        {
-          "col": 55,
           "key": "case_status",
           "section": "Action Taken",
           "label": "Status",
@@ -538,7 +560,7 @@
           }
         },
         {
-          "col": 56,
+          "col": 55,
           "key": "disposal_type",
           "section": "Action Taken",
           "label": "Disposal Type",
@@ -551,7 +573,7 @@
           }
         },
         {
-          "col": 57,
+          "col": 56,
           "key": "rc_no",
           "section": "Action Taken",
           "label": "RC No.",
@@ -559,17 +581,35 @@
           "validation": null
         },
         {
+          "col": 57,
+          "key": "work_out",
+          "section": "General Information",
+          "label": "WorkOut",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
           "col": 58,
-          "key": null,
-          "section": "Action Taken",
-          "label": null,
-          "hint": null,
-          "validation": null
+          "key": "work_out_date",
+          "section": "General Information",
+          "label": "WorkOut Date",
+          "hint": "[Required] date (dd-mm-yyyy)",
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         },
         {
           "col": 59,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -577,7 +617,7 @@
         {
           "col": 60,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -585,7 +625,7 @@
         {
           "col": 61,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -593,7 +633,7 @@
         {
           "col": 62,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -601,7 +641,7 @@
         {
           "col": 63,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -609,7 +649,7 @@
         {
           "col": 64,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -617,7 +657,7 @@
         {
           "col": 65,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -625,7 +665,7 @@
         {
           "col": 66,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -633,7 +673,23 @@
         {
           "col": 67,
           "key": null,
-          "section": "Action Taken",
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 68,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 69,
+          "key": null,
+          "section": "General Information",
           "label": null,
           "hint": null,
           "validation": null
@@ -641,12 +697,12 @@
       ],
       "row2Merges": [
         "A2:K2",
-        "AG2:AP2",
-        "AQ2:AY2",
-        "AZ2:BB2",
-        "BC2:BO2",
-        "L2:U2",
-        "V2:AF2"
+        "AH2:AQ2",
+        "AR2:AZ2",
+        "BB2:BD2",
+        "BE2:BQ2",
+        "L2:V2",
+        "W2:AG2"
       ]
     },
     "Victim Information": {
@@ -739,7 +795,12 @@
           "section": "Victim Personal Details",
           "label": "Victim Mobile No.",
           "hint": "10-digit mobile number",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              10
+            ]
+          }
         },
         {
           "col": 11,
@@ -807,7 +868,7 @@
           "key": "victim_state",
           "section": "Victim Present Address",
           "label": "Victim State",
-          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "hint": "select (37 options): Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -820,11 +881,11 @@
           "key": "victim_district",
           "section": "Victim Present Address",
           "label": "Victim District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "Select from dropdown (depends on selected State)",
           "validation": {
             "type": "list",
             "formulae": [
-              "OPT_DISTRICT"
+              "INDIRECT(IFERROR(VLOOKUP($R5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
@@ -833,7 +894,7 @@
           "key": "victim_police_station",
           "section": "Victim Present Address",
           "label": "Victim Police Station",
-          "hint": "select (192 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
+          "hint": "select (225 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -847,7 +908,12 @@
           "section": "Victim Present Address",
           "label": "Victim Pin Code",
           "hint": "text",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
           "col": 22,
@@ -920,7 +986,7 @@
           "key": "victim_perm_state",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent State",
-          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "hint": "select (37 options): Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -933,11 +999,11 @@
           "key": "victim_perm_district",
           "section": "Victim Permanent Address",
           "label": "Victim Permanent District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "Select from dropdown (depends on selected State)",
           "validation": {
             "type": "list",
             "formulae": [
-              "OPT_DISTRICT"
+              "INDIRECT(IFERROR(VLOOKUP($AC5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
@@ -960,7 +1026,12 @@
           "section": "Victim Permanent Address",
           "label": "Victim Permanent Pin Code",
           "hint": "6-digit PIN code",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
           "col": 33,
@@ -1167,10 +1238,28 @@
           "section": "Accused Personal Details",
           "label": "Accused Mobile No.",
           "hint": "10-digit mobile number",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              10
+            ]
+          }
         },
         {
           "col": 11,
+          "key": "accused_qualification",
+          "section": "Accused Personal Details",
+          "label": "Accused Qualification",
+          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
+            ]
+          }
+        },
+        {
+          "col": 12,
           "key": "accused_age_year",
           "section": "Accused Personal Details",
           "label": "Accused Age (Years)",
@@ -1178,7 +1267,7 @@
           "validation": null
         },
         {
-          "col": 12,
+          "col": 13,
           "key": "accused_house_no",
           "section": "Accused Present Address",
           "label": "Accused House No.",
@@ -1186,7 +1275,7 @@
           "validation": null
         },
         {
-          "col": 13,
+          "col": 14,
           "key": "accused_street",
           "section": "Accused Present Address",
           "label": "Accused Street",
@@ -1194,7 +1283,7 @@
           "validation": null
         },
         {
-          "col": 14,
+          "col": 15,
           "key": "accused_colony",
           "section": "Accused Present Address",
           "label": "Accused Colony",
@@ -1202,7 +1291,7 @@
           "validation": null
         },
         {
-          "col": 15,
+          "col": 16,
           "key": "accused_city_town_village",
           "section": "Accused Present Address",
           "label": "Accused Village / City / Town",
@@ -1210,7 +1299,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 17,
           "key": "accused_tehsil_block_mandal",
           "section": "Accused Present Address",
           "label": "Accused Tehsil / Block / Mandal",
@@ -1218,7 +1307,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 18,
           "key": "accused_country",
           "section": "Accused Present Address",
           "label": "Accused Nationality",
@@ -1231,11 +1320,11 @@
           }
         },
         {
-          "col": 18,
+          "col": 19,
           "key": "accused_state",
           "section": "Accused Present Address",
           "label": "Accused State",
-          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "hint": "select (37 options): Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1244,20 +1333,20 @@
           }
         },
         {
-          "col": 19,
+          "col": 20,
           "key": "accused_district",
           "section": "Accused Present Address",
           "label": "Accused District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "Select from dropdown (depends on selected State)",
           "validation": {
             "type": "list",
             "formulae": [
-              "OPT_DISTRICT"
+              "INDIRECT(IFERROR(VLOOKUP($S5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 20,
+          "col": 21,
           "key": "accused_police_station",
           "section": "Accused Present Address",
           "label": "Accused Police Station",
@@ -1265,20 +1354,25 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($S5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($T5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 21,
+          "col": 22,
           "key": "accused_pincode",
           "section": "Accused Present Address",
           "label": "Accused Pin Code",
           "hint": "6-digit PIN code",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
-          "col": 22,
+          "col": 23,
           "key": "accused_perm_same",
           "section": "Accused Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -1291,7 +1385,7 @@
           }
         },
         {
-          "col": 23,
+          "col": 24,
           "key": "accused_perm_house_no",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent House No.",
@@ -1299,7 +1393,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 25,
           "key": "accused_perm_street",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Street",
@@ -1307,7 +1401,7 @@
           "validation": null
         },
         {
-          "col": 25,
+          "col": 26,
           "key": "accused_perm_colony",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Colony",
@@ -1315,7 +1409,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 27,
           "key": "accused_perm_city_town_village",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Village / City / Town",
@@ -1323,7 +1417,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 28,
           "key": "accused_perm_tehsil_block_mandal",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Tehsil / Block / Mandal",
@@ -1331,7 +1425,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 29,
           "key": "accused_perm_country",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Nationality",
@@ -1344,11 +1438,11 @@
           }
         },
         {
-          "col": 29,
+          "col": 30,
           "key": "accused_perm_state",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent State",
-          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "hint": "select (37 options): Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1357,20 +1451,20 @@
           }
         },
         {
-          "col": 30,
+          "col": 31,
           "key": "accused_perm_district",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "Select from dropdown (depends on selected State)",
           "validation": {
             "type": "list",
             "formulae": [
-              "OPT_DISTRICT"
+              "INDIRECT(IFERROR(VLOOKUP($AD5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 31,
+          "col": 32,
           "key": "accused_perm_police_station",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Police Station",
@@ -1378,25 +1472,22 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AD5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AE5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 32,
+          "col": 33,
           "key": "accused_perm_pincode",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Pin Code",
           "hint": "6-digit PIN code",
-          "validation": null
-        },
-        {
-          "col": 33,
-          "key": null,
-          "section": "Accused Permanent Address",
-          "label": null,
-          "hint": null,
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
           "col": 34,
@@ -1432,9 +1523,9 @@
         }
       ],
       "row2Merges": [
-        "B2:K2",
-        "L2:V2",
-        "W2:AK2"
+        "B2:L2",
+        "M2:W2",
+        "X2:AK2"
       ]
     },
     "Property Details": {
@@ -1551,6 +1642,19 @@
         },
         {
           "col": 11,
+          "key": "prop_arms_type",
+          "section": "Property Details",
+          "label": "Weapon Type",
+          "hint": "select: Pistol, Revolver, Rifle, Country-made gun, Knife, Sword/Machete, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Pistol,Revolver,Rifle,Country-made gun,Knife,Sword/Machete,Other\""
+            ]
+          }
+        },
+        {
+          "col": 12,
           "key": "prop_cash_amount",
           "section": "Property Details",
           "label": "Amount (₹)",
@@ -1558,33 +1662,7 @@
           "validation": null
         },
         {
-          "col": 12,
-          "key": "prop_gold_item_type",
-          "section": "Property Details",
-          "label": "Item Type",
-          "hint": "select: Ring, Necklace, Bracelet, Chain, Earring, Bangles, Watch, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Ring,Necklace,Bracelet,Chain,Earring,Bangles,Watch,Other\""
-            ]
-          }
-        },
-        {
           "col": 13,
-          "key": "prop_elec_device_type",
-          "section": "Property Details",
-          "label": "Device Type",
-          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
-            ]
-          }
-        },
-        {
-          "col": 14,
           "key": "prop_doc_type",
           "section": "Property Details",
           "label": "Document Type",
@@ -1597,7 +1675,7 @@
           }
         },
         {
-          "col": 15,
+          "col": 14,
           "key": "prop_drug_type",
           "section": "Property Details",
           "label": "Drug / Substance Type",
@@ -1610,15 +1688,28 @@
           }
         },
         {
-          "col": 16,
-          "key": "prop_arms_type",
+          "col": 15,
+          "key": "prop_elec_device_type",
           "section": "Property Details",
-          "label": "Weapon Type",
-          "hint": "select: Pistol, Revolver, Rifle, Country-made gun, Knife, Sword/Machete, Other",
+          "label": "Device Type",
+          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Pistol,Revolver,Rifle,Country-made gun,Knife,Sword/Machete,Other\""
+              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
+            ]
+          }
+        },
+        {
+          "col": 16,
+          "key": "prop_gold_item_type",
+          "section": "Property Details",
+          "label": "Item Type",
+          "hint": "select: Ring, Necklace, Bracelet, Chain, Earring, Bangles, Watch, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Ring,Necklace,Bracelet,Chain,Earring,Bangles,Watch,Other\""
             ]
           }
         },
@@ -1632,51 +1723,6 @@
         },
         {
           "col": 18,
-          "key": "prop_doc_number",
-          "section": "Property Details",
-          "label": "Document Number",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 19,
-          "key": "prop_gold_material",
-          "section": "Property Details",
-          "label": "Material",
-          "hint": "select: Gold, Silver, Diamond, Platinum, Mixed, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Gold,Silver,Diamond,Platinum,Mixed,Other\""
-            ]
-          }
-        },
-        {
-          "col": 20,
-          "key": "prop_elec_brand",
-          "section": "Property Details",
-          "label": "Make / Brand",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 21,
-          "key": "prop_other_value",
-          "section": "Property Details",
-          "label": "Estimated Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 22,
-          "key": "prop_drug_quantity",
-          "section": "Property Details",
-          "label": "Quantity",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 23,
           "key": "prop_arms_make",
           "section": "Property Details",
           "label": "Make / Manufacturer",
@@ -1684,7 +1730,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 19,
           "key": "prop_cash_currency",
           "section": "Property Details",
           "label": "Currency Type",
@@ -1697,23 +1743,57 @@
           }
         },
         {
+          "col": 20,
+          "key": "prop_doc_number",
+          "section": "Property Details",
+          "label": "Document Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 21,
+          "key": "prop_drug_quantity",
+          "section": "Property Details",
+          "label": "Quantity",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 22,
+          "key": "prop_elec_brand",
+          "section": "Property Details",
+          "label": "Make / Brand",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 23,
+          "key": "prop_gold_material",
+          "section": "Property Details",
+          "label": "Material",
+          "hint": "select: Gold, Silver, Diamond, Platinum, Mixed, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Gold,Silver,Diamond,Platinum,Mixed,Other\""
+            ]
+          }
+        },
+        {
+          "col": 24,
+          "key": "prop_other_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": {
+            "type": "decimal",
+            "formulae": [
+              0
+            ]
+          }
+        },
+        {
           "col": 25,
-          "key": "prop_doc_holder",
-          "section": "Property Details",
-          "label": "Document Holder Name",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 26,
-          "key": "prop_elec_model",
-          "section": "Property Details",
-          "label": "Model",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 27,
           "key": "prop_arms_serial",
           "section": "Property Details",
           "label": "Serial Number",
@@ -1721,7 +1801,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 26,
           "key": "prop_cash_denomination",
           "section": "Property Details",
           "label": "Denomination Details",
@@ -1729,15 +1809,15 @@
           "validation": null
         },
         {
-          "col": 29,
-          "key": "prop_gold_weight",
+          "col": 27,
+          "key": "prop_doc_holder",
           "section": "Property Details",
-          "label": "Weight (grams)",
+          "label": "Document Holder Name",
           "hint": "text",
           "validation": null
         },
         {
-          "col": 30,
+          "col": 28,
           "key": "prop_drug_unit",
           "section": "Property Details",
           "label": "Unit",
@@ -1750,39 +1830,23 @@
           }
         },
         {
+          "col": 29,
+          "key": "prop_elec_model",
+          "section": "Property Details",
+          "label": "Model",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 30,
+          "key": "prop_gold_weight",
+          "section": "Property Details",
+          "label": "Weight (grams)",
+          "hint": "text",
+          "validation": null
+        },
+        {
           "col": 31,
-          "key": "prop_drug_value",
-          "section": "Property Details",
-          "label": "Estimated Street Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 32,
-          "key": "prop_gold_value",
-          "section": "Property Details",
-          "label": "Estimated Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 33,
-          "key": "prop_elec_serial",
-          "section": "Property Details",
-          "label": "Serial Number",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 34,
-          "key": "prop_doc_issuing_auth",
-          "section": "Property Details",
-          "label": "Issuing Authority",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 35,
           "key": "prop_arms_ammo_count",
           "section": "Property Details",
           "label": "Ammunition Count",
@@ -1790,19 +1854,51 @@
           "validation": null
         },
         {
-          "col": 36,
-          "key": "prop_elec_value",
+          "col": 32,
+          "key": "prop_doc_issuing_auth",
+          "section": "Property Details",
+          "label": "Issuing Authority",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 33,
+          "key": "prop_drug_value",
+          "section": "Property Details",
+          "label": "Estimated Street Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 34,
+          "key": "prop_elec_serial",
+          "section": "Property Details",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 35,
+          "key": "prop_gold_value",
           "section": "Property Details",
           "label": "Estimated Value (₹)",
           "hint": "number",
           "validation": null
         },
         {
-          "col": 37,
+          "col": 36,
           "key": "prop_arms_license",
           "section": "Property Details",
           "label": "License Number",
           "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": "prop_elec_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
           "validation": null
         }
       ],
@@ -1828,7 +1924,12 @@
           "section": "General Info",
           "label": "FIR Date",
           "hint": "dd-mm-yyyy",
-          "validation": null
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         },
         {
           "col": 3,
@@ -1888,7 +1989,12 @@
           "section": "Arrest Details",
           "label": "Date Of Arrest",
           "hint": "YYYY-MM-DD",
-          "validation": null
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         },
         {
           "col": 8,
@@ -1900,39 +2006,34 @@
         },
         {
           "col": 9,
-          "key": "io_name",
+          "key": "io_pis",
           "section": "IO Details",
-          "label": "IO / Officer Name",
-          "hint": "e.g. Inspector Ravindra Singh",
+          "label": "PIS No. of IO",
+          "hint": "PIS number of a registered IO, e.g. 28080214",
           "validation": null
         },
         {
           "col": 10,
-          "key": "io_pis",
+          "key": null,
           "section": "IO Details",
-          "label": "PIS No. of IO",
-          "hint": "e.g. 28080214",
+          "label": null,
+          "hint": null,
           "validation": null
         },
         {
           "col": 11,
-          "key": "io_rank",
+          "key": null,
           "section": "IO Details",
-          "label": "IO Rank",
-          "hint": "e.g. SI",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Constable,Head Constable,Assistant Sub Inspector,Sub Inspector,Inspector,Deputy Superintendent of Police,Superintendent of Police\""
-            ]
-          }
+          "label": null,
+          "hint": null,
+          "validation": null
         },
         {
           "col": 12,
-          "key": "io_mobile",
+          "key": null,
           "section": "IO Details",
-          "label": "IO Mobile No.",
-          "hint": "IO contact number",
+          "label": null,
+          "hint": null,
           "validation": null
         },
         {
@@ -2034,7 +2135,12 @@
           "section": "Arrest Detail",
           "label": "Date Of Arrest",
           "hint": "dd-mm-yyyy",
-          "validation": null
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         },
         {
           "col": 3,
@@ -2073,7 +2179,7 @@
           "key": "arrest_district",
           "section": "Arrest Detail",
           "label": "District of Arrest",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "Select from dropdown (depends on selected State)",
           "validation": {
             "type": "list",
             "formulae": [
@@ -2169,10 +2275,28 @@
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Mobile No.",
           "hint": "10-digit mobile number",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              10
+            ]
+          }
         },
         {
           "col": 18,
+          "key": "arrested_qualification",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Qualification",
+          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
+            ]
+          }
+        },
+        {
+          "col": 19,
           "key": "arrested_age_year",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Age (Years)",
@@ -2180,7 +2304,7 @@
           "validation": null
         },
         {
-          "col": 19,
+          "col": 20,
           "key": "arrested_house_no",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person House No.",
@@ -2188,7 +2312,7 @@
           "validation": null
         },
         {
-          "col": 20,
+          "col": 21,
           "key": "arrested_street",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Street",
@@ -2196,7 +2320,7 @@
           "validation": null
         },
         {
-          "col": 21,
+          "col": 22,
           "key": "arrested_colony",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Colony",
@@ -2204,7 +2328,7 @@
           "validation": null
         },
         {
-          "col": 22,
+          "col": 23,
           "key": "arrested_city_town_village",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Village / City / Town",
@@ -2212,7 +2336,7 @@
           "validation": null
         },
         {
-          "col": 23,
+          "col": 24,
           "key": "arrested_tehsil_block_mandal",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Tehsil / Block / Mandal",
@@ -2220,7 +2344,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 25,
           "key": "arrested_country",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Nationality",
@@ -2233,11 +2357,11 @@
           }
         },
         {
-          "col": 25,
+          "col": 26,
           "key": "arrested_state",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person State",
-          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "hint": "select (37 options): Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -2246,20 +2370,20 @@
           }
         },
         {
-          "col": 26,
+          "col": 27,
           "key": "arrested_district",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "Select from dropdown (depends on selected State)",
           "validation": {
             "type": "list",
             "formulae": [
-              "OPT_DISTRICT"
+              "INDIRECT(IFERROR(VLOOKUP($Z5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 27,
+          "col": 28,
           "key": "arrested_police_station",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Police Station",
@@ -2267,20 +2391,25 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($Z5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AA5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 28,
+          "col": 29,
           "key": "arrested_pincode",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Pin Code",
           "hint": "6-digit PIN code",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
-          "col": 29,
+          "col": 30,
           "key": "arrested_perm_same",
           "section": "Arrested Person Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -2293,7 +2422,7 @@
           }
         },
         {
-          "col": 30,
+          "col": 31,
           "key": "arrested_perm_house_no",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent House No.",
@@ -2301,7 +2430,7 @@
           "validation": null
         },
         {
-          "col": 31,
+          "col": 32,
           "key": "arrested_perm_street",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Street",
@@ -2309,7 +2438,7 @@
           "validation": null
         },
         {
-          "col": 32,
+          "col": 33,
           "key": "arrested_perm_colony",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Colony",
@@ -2317,7 +2446,7 @@
           "validation": null
         },
         {
-          "col": 33,
+          "col": 34,
           "key": "arrested_perm_city_town_village",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Village / City / Town",
@@ -2325,7 +2454,7 @@
           "validation": null
         },
         {
-          "col": 34,
+          "col": 35,
           "key": "arrested_perm_tehsil_block_mandal",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Tehsil / Block / Mandal",
@@ -2333,7 +2462,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 36,
           "key": "arrested_perm_country",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Nationality",
@@ -2346,11 +2475,11 @@
           }
         },
         {
-          "col": 36,
+          "col": 37,
           "key": "arrested_perm_state",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent State",
-          "hint": "select (33 options): Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh...",
+          "hint": "select (37 options): Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -2359,20 +2488,20 @@
           }
         },
         {
-          "col": 37,
+          "col": 38,
           "key": "arrested_perm_district",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent District",
-          "hint": "select (15 options): Central District, Dwarka District, East District, New Delhi District, North District...",
+          "hint": "Select from dropdown (depends on selected State)",
           "validation": {
             "type": "list",
             "formulae": [
-              "OPT_DISTRICT"
+              "INDIRECT(IFERROR(VLOOKUP($AK5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 38,
+          "col": 39,
           "key": "arrested_perm_police_station",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Police Station",
@@ -2380,20 +2509,25 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AK5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AL5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 39,
+          "col": 40,
           "key": "arrested_perm_pincode",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Pin Code",
           "hint": "6-digit PIN code",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
-          "col": 40,
+          "col": 41,
           "key": "nafis_prepared",
           "section": "Particular Details",
           "label": "NAFIS Prepared",
@@ -2406,7 +2540,7 @@
           }
         },
         {
-          "col": 41,
+          "col": 42,
           "key": "dossier_prepared",
           "section": "Particular Details",
           "label": "Dossier Prepared",
@@ -2419,7 +2553,7 @@
           }
         },
         {
-          "col": 42,
+          "col": 43,
           "key": "prev_involvement",
           "section": "Particular Details",
           "label": "Previous involvement",
@@ -2432,7 +2566,7 @@
           }
         },
         {
-          "col": 43,
+          "col": 44,
           "key": "bad_character",
           "section": "Particular Details",
           "label": "Bad Character (BC)",
@@ -2440,7 +2574,7 @@
           "validation": null
         },
         {
-          "col": 44,
+          "col": 45,
           "key": "proclaimed_offender",
           "section": "Particular Details",
           "label": "Proclaimed Offender (PO)",
@@ -2453,7 +2587,7 @@
           }
         },
         {
-          "col": 45,
+          "col": 46,
           "key": "verifying_officer_name",
           "section": "Particular Details",
           "label": "Arresting Officer Name",
@@ -2461,15 +2595,20 @@
           "validation": null
         },
         {
-          "col": 46,
+          "col": 47,
           "key": "verifying_officer_rank",
           "section": "Particular Details",
           "label": "Arresting Officer Rank",
-          "hint": "",
-          "validation": null
+          "hint": "select: Constable, Head Constable, Assistant Sub Inspector, Sub Inspector, Inspector, Deputy Superintendent of Police, Superintendent of Police",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Constable,Head Constable,Assistant Sub Inspector,Sub Inspector,Inspector,Deputy Superintendent of Police,Superintendent of Police\""
+            ]
+          }
         },
         {
-          "col": 47,
+          "col": 48,
           "key": "status",
           "section": "Particular Details",
           "label": "Custody status",
@@ -2482,7 +2621,7 @@
           }
         },
         {
-          "col": 48,
+          "col": 49,
           "key": "scheme_of_arrest",
           "section": "Particular Details",
           "label": "Scheme of arrest",
@@ -2495,47 +2634,85 @@
           }
         },
         {
-          "col": 49,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
           "col": 50,
-          "key": null,
+          "key": "integrated_pi",
           "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
+          "label": "Arrested via Integrated PI",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
         },
         {
           "col": 51,
-          "key": null,
+          "key": "group_patrolling",
           "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
+          "label": "Arrested via Group Patrolling",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
         },
         {
           "col": 52,
-          "key": null,
+          "key": "cycle_patrolling",
           "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
+          "label": "Arrested via Cycle Patrolling",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
         },
         {
           "col": 53,
-          "key": null,
+          "key": "by_antisnatching_team",
           "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
+          "label": "Arrested via Anti-Snatching Team",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
         },
         {
           "col": 54,
+          "key": "by_prahari",
+          "section": "Particular Details",
+          "label": "Arrested via PRAHARI Scheme",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 55,
+          "key": "by_eyes_ears_scheme_members",
+          "section": "Particular Details",
+          "label": "Arrested via Eyes & Ears Scheme",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 56,
           "key": null,
           "section": "Particular Details",
           "label": null,
@@ -2543,7 +2720,39 @@
           "validation": null
         },
         {
-          "col": 55,
+          "col": 57,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 58,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 59,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 60,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 61,
           "key": null,
           "section": "Particular Details",
           "label": null,
@@ -2552,11 +2761,11 @@
         }
       ],
       "row2Merges": [
-        "AD2:AM2",
-        "AN2:BC2",
+        "AE2:AN2",
+        "AO2:BI2",
         "B2:H2",
-        "I2:R2",
-        "S2:AC2"
+        "I2:S2",
+        "T2:AD2"
       ]
     },
     "Property Details": {
@@ -2673,6 +2882,19 @@
         },
         {
           "col": 11,
+          "key": "prop_arms_type",
+          "section": "Property Details",
+          "label": "Weapon Type",
+          "hint": "select: Pistol, Revolver, Rifle, Country-made gun, Knife, Sword/Machete, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Pistol,Revolver,Rifle,Country-made gun,Knife,Sword/Machete,Other\""
+            ]
+          }
+        },
+        {
+          "col": 12,
           "key": "prop_cash_amount",
           "section": "Property Details",
           "label": "Amount (₹)",
@@ -2680,33 +2902,7 @@
           "validation": null
         },
         {
-          "col": 12,
-          "key": "prop_gold_item_type",
-          "section": "Property Details",
-          "label": "Item Type",
-          "hint": "select: Ring, Necklace, Bracelet, Chain, Earring, Bangles, Watch, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Ring,Necklace,Bracelet,Chain,Earring,Bangles,Watch,Other\""
-            ]
-          }
-        },
-        {
           "col": 13,
-          "key": "prop_elec_device_type",
-          "section": "Property Details",
-          "label": "Device Type",
-          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
-            ]
-          }
-        },
-        {
-          "col": 14,
           "key": "prop_doc_type",
           "section": "Property Details",
           "label": "Document Type",
@@ -2719,7 +2915,7 @@
           }
         },
         {
-          "col": 15,
+          "col": 14,
           "key": "prop_drug_type",
           "section": "Property Details",
           "label": "Drug / Substance Type",
@@ -2732,15 +2928,28 @@
           }
         },
         {
-          "col": 16,
-          "key": "prop_arms_type",
+          "col": 15,
+          "key": "prop_elec_device_type",
           "section": "Property Details",
-          "label": "Weapon Type",
-          "hint": "select: Pistol, Revolver, Rifle, Country-made gun, Knife, Sword/Machete, Other",
+          "label": "Device Type",
+          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Pistol,Revolver,Rifle,Country-made gun,Knife,Sword/Machete,Other\""
+              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
+            ]
+          }
+        },
+        {
+          "col": 16,
+          "key": "prop_gold_item_type",
+          "section": "Property Details",
+          "label": "Item Type",
+          "hint": "select: Ring, Necklace, Bracelet, Chain, Earring, Bangles, Watch, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Ring,Necklace,Bracelet,Chain,Earring,Bangles,Watch,Other\""
             ]
           }
         },
@@ -2754,51 +2963,6 @@
         },
         {
           "col": 18,
-          "key": "prop_doc_number",
-          "section": "Property Details",
-          "label": "Document Number",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 19,
-          "key": "prop_gold_material",
-          "section": "Property Details",
-          "label": "Material",
-          "hint": "select: Gold, Silver, Diamond, Platinum, Mixed, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Gold,Silver,Diamond,Platinum,Mixed,Other\""
-            ]
-          }
-        },
-        {
-          "col": 20,
-          "key": "prop_elec_brand",
-          "section": "Property Details",
-          "label": "Make / Brand",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 21,
-          "key": "prop_other_value",
-          "section": "Property Details",
-          "label": "Estimated Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 22,
-          "key": "prop_drug_quantity",
-          "section": "Property Details",
-          "label": "Quantity",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 23,
           "key": "prop_arms_make",
           "section": "Property Details",
           "label": "Make / Manufacturer",
@@ -2806,7 +2970,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 19,
           "key": "prop_cash_currency",
           "section": "Property Details",
           "label": "Currency Type",
@@ -2819,23 +2983,57 @@
           }
         },
         {
+          "col": 20,
+          "key": "prop_doc_number",
+          "section": "Property Details",
+          "label": "Document Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 21,
+          "key": "prop_drug_quantity",
+          "section": "Property Details",
+          "label": "Quantity",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 22,
+          "key": "prop_elec_brand",
+          "section": "Property Details",
+          "label": "Make / Brand",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 23,
+          "key": "prop_gold_material",
+          "section": "Property Details",
+          "label": "Material",
+          "hint": "select: Gold, Silver, Diamond, Platinum, Mixed, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Gold,Silver,Diamond,Platinum,Mixed,Other\""
+            ]
+          }
+        },
+        {
+          "col": 24,
+          "key": "prop_other_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": {
+            "type": "decimal",
+            "formulae": [
+              0
+            ]
+          }
+        },
+        {
           "col": 25,
-          "key": "prop_doc_holder",
-          "section": "Property Details",
-          "label": "Document Holder Name",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 26,
-          "key": "prop_elec_model",
-          "section": "Property Details",
-          "label": "Model",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 27,
           "key": "prop_arms_serial",
           "section": "Property Details",
           "label": "Serial Number",
@@ -2843,7 +3041,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 26,
           "key": "prop_cash_denomination",
           "section": "Property Details",
           "label": "Denomination Details",
@@ -2851,15 +3049,15 @@
           "validation": null
         },
         {
-          "col": 29,
-          "key": "prop_gold_weight",
+          "col": 27,
+          "key": "prop_doc_holder",
           "section": "Property Details",
-          "label": "Weight (grams)",
+          "label": "Document Holder Name",
           "hint": "text",
           "validation": null
         },
         {
-          "col": 30,
+          "col": 28,
           "key": "prop_drug_unit",
           "section": "Property Details",
           "label": "Unit",
@@ -2872,39 +3070,23 @@
           }
         },
         {
+          "col": 29,
+          "key": "prop_elec_model",
+          "section": "Property Details",
+          "label": "Model",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 30,
+          "key": "prop_gold_weight",
+          "section": "Property Details",
+          "label": "Weight (grams)",
+          "hint": "text",
+          "validation": null
+        },
+        {
           "col": 31,
-          "key": "prop_drug_value",
-          "section": "Property Details",
-          "label": "Estimated Street Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 32,
-          "key": "prop_gold_value",
-          "section": "Property Details",
-          "label": "Estimated Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 33,
-          "key": "prop_elec_serial",
-          "section": "Property Details",
-          "label": "Serial Number",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 34,
-          "key": "prop_doc_issuing_auth",
-          "section": "Property Details",
-          "label": "Issuing Authority",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 35,
           "key": "prop_arms_ammo_count",
           "section": "Property Details",
           "label": "Ammunition Count",
@@ -2912,19 +3094,51 @@
           "validation": null
         },
         {
-          "col": 36,
-          "key": "prop_elec_value",
+          "col": 32,
+          "key": "prop_doc_issuing_auth",
+          "section": "Property Details",
+          "label": "Issuing Authority",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 33,
+          "key": "prop_drug_value",
+          "section": "Property Details",
+          "label": "Estimated Street Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 34,
+          "key": "prop_elec_serial",
+          "section": "Property Details",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 35,
+          "key": "prop_gold_value",
           "section": "Property Details",
           "label": "Estimated Value (₹)",
           "hint": "number",
           "validation": null
         },
         {
-          "col": 37,
+          "col": 36,
           "key": "prop_arms_license",
           "section": "Property Details",
           "label": "License Number",
           "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 37,
+          "key": "prop_elec_value",
+          "section": "Property Details",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
           "validation": null
         }
       ],
@@ -2950,7 +3164,12 @@
           "section": "General Information",
           "label": "GD Date",
           "hint": "dd-mm-yyyy",
-          "validation": null
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         },
         {
           "col": 3,
@@ -2978,7 +3197,7 @@
           "key": "identified",
           "section": "UIDB Details",
           "label": "Body Identified",
-          "hint": "select: true, false",
+          "hint": "[Required] select: true, false",
           "validation": {
             "type": "list",
             "formulae": [
@@ -2991,7 +3210,7 @@
           "key": "deceased_name",
           "section": "UIDB Details",
           "label": "Name of Deceased",
-          "hint": "text",
+          "hint": "[Required] text",
           "validation": null
         },
         {
@@ -3031,11 +3250,11 @@
           "key": "deceased_state",
           "section": "UIDB Details",
           "label": "Deceased Present State",
-          "hint": "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
+          "hint": "select: Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra and Nagar Haveli and Daman and Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu and Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$A$2:$A$34"
+              "'_Lookups'!$A$2:$A$38"
             ]
           }
         },
@@ -3044,11 +3263,11 @@
           "key": "deceased_district",
           "section": "UIDB Details",
           "label": "Deceased Present District",
-          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "hint": "select: Adilabad, Agar Malwa, Agra, Ahmedabad, Ahmednagar, Aizawl, Ajmer, Akola, Alappuzha, Aligarh, Alipurduar, Alirajpur, Alluri Sitharama Raju, Almora, Alwar, Ambala, Ambedkar Nagar, Amethi, Amravati, Amreli, Amritsar, Amroha, Anakapalli, Anand, Ananthapuramu, Anantnag, Angul, Anjaw, Annamayya, Anuppur, Araria, Aravalli, Ariyalur, Arwal, Ashoknagar, Auraiya, Aurangabad, Ayodhya, Azamgarh, Bagalakote, Bageshwar, Bagpat, Bahraich, Baksa, Balaghat, Balangir, Balasore, Ballari, Ballia, Balod, Baloda Bazar, Balrampur, Balrampur-Ramanujganj, Banaskantha, Banda, Bandipore, Banka, Bankura, Banswara, Bapatla, Barabanki, Baramulla, Baran, Bareilly, Bargarh, Barmer, Barnala, Barpeta, Barwani, Bastar, Basti, Bathinda, Beed, Begusarai, Belagavi, Bemetara, Bengaluru Rural, Bengaluru Urban, Betul, Bhadohi, Bhadradri Kothagudem, Bhadrak, Bhagalpur, Bhandara, Bharatpur, Bharuch, Bhavnagar, Bhilwara, Bhind, Bhiwani, Bhojpur, Bhopal, Bidar, Bijapur, Bijnor, Bikaner, Bilaspur, Birbhum, Bishnupur, Bokaro, Bongaigaon, Botad, Boudh, Budaun, Budgam, Bulandshahr, Buldhana, Bundi, Burhanpur, Buxar, Cachar, Central Delhi, Chamarajanagara, Chamba, Chamoli, Champawat, Champhai, Chandauli, Chandel, Chandigarh, Chandrapur, Changlang, Charaideo, Charkhi Dadri, Chatra, Chengalpattu, Chennai, Chhatarpur, Chhindwara, Chhota Udaipur, Chikkaballapura, Chikkamagaluru, Chirang, Chitradurga, Chitrakoot, Chittoor, Chittorgarh, Chümoukedima, Churachandpur, Churu, Coimbatore, Cooch Behar, Cuddalore, Cuttack, Dadra and Nagar Haveli, Dahod, Dakshin Dinajpur, Dakshina Kannada, Daman, Damoh, Dang, Dantewada, Darbhanga, Darjeeling, Darrang, Datia, Dausa, Davanagere, Debagarh, Dehradun, Deoghar, Deoria, Devbhumi Dwarka, Dewas, Dhalai, Dhamtari, Dhanbad, Dhar, Dharmapuri, Dharwada, Dhemaji, Dhenkanal, Dholpur, Dhubri, Dhule, Dibrugarh, Dima Hasao, Dimapur, Dindigul, Dindori, Diu, Doda, Dr. B.R. Ambedkar Konaseema, Dumka, Dungarpur, Durg, East Champaran, East Delhi, East Garo Hills, East Godavari, East Jaintia Hills, East Kameng, East Khasi Hills, East Siang, East Sikkim, East Singhbhum, Eastern West Khasi Hills, Eluru, Ernakulam, Erode, Etah, Etawah, Faridabad, Faridkot, Farrukhabad, Fatehabad, Fatehgarh Sahib, Fatehpur, Fazilka, Firozabad, Firozpur, Gadaga, Gadchiroli, Gajapati, Ganderbal, Gandhinagar, Ganjam, Garhwa, Gariaband, Gaurela-Pendra-Marwahi, Gautam Buddha Nagar, Gaya, Ghaziabad, Ghazipur, Gir Somnath, Giridih, Goalpara, Godda, Golaghat, Gomati, Gonda, Gondia, Gopalganj, Gorakhpur, Gumla, Guna, Guntur, Gurdaspur, Gurugram, Gwalior, Hailakandi, Hamirpur, Hanamkonda, Hanumangarh, Hapur, Harda, Hardoi, Haridwar, Hassan, Hathras, Haveri, Hazaribag, Hingoli, Hisar, Hnahthial, Hooghly, Hoshangabad, Hoshiarpur, Howrah, Hyderabad, Idukki, Imphal East, Imphal West, Indore, Itanagar capital complex, Jabalpur, Jagatsinghpur, Jagtial, Jaipur, Jaisalmer, Jajpur, Jalandhar, Jalaun, Jalgaon, Jalna, Jalore, Jalpaiguri, Jammu, Jamnagar, Jamtara, Jamui, Jangaon, Janjgir-Champa, Jashpur, Jaunpur, Jayashankar Bhupalpally, Jehanabad, Jhabua, Jhajjar, Jhalawar, Jhansi, Jhargram, Jharsuguda, Jhunjhunu, Jind, Jiribam, Jodhpur, Jogulamba Gadwal, Jorhat, Junagadh, Kabirdham, Kaimur, Kaithal, Kakching, Kakinada, Kalaburagi, Kalahandi, Kalimpong, Kallakurichi, Kamareddy, Kamjong, Kamle, Kamrup, Kamrup Metropolitan, Kanchipuram, Kandhamal, Kangpokpi, Kangra, Kanker, Kannauj, Kannur, Kanpur Dehat, Kanpur Nagar, Kanyakumari, Kapurthala, Karaikal, Karauli, Karbi Anglong, Kargil, Karimganj, Karimnagar, Karnal, Karur, Kasaragod, Kasganj, Kathua, Katihar, Katni, Kaushambi, Kendrapara, Kendujhar, Khagaria, Khairagarh-Chhuikhadan-Gandai, Khammam, Khandwa, Khargone, Khawzawl, Kheda, Khordha, Khowai, Khunti, Kinnaur, Kiphire, Kishanganj, Kishtwar, Kodagu, Koderma, Kohima, Kokrajhar, Kolar, Kolasib, Kolhapur, Kolkata, Kollam, Kondagaon, Koppala, Koraput, Korba, Korea, Kota, Kottayam, Kozhikode, Kra Daadi, Krishna, Krishnagiri, Kulgam, Kullu, Kumuram Bheem Asifabad, Kupwara, Kurnool, Kurukshetra, Kurung Kumey, Kushinagar, Kutch, Lahaul and Spiti, Lakhimpur, Lakhimpur Kheri, Lakhisarai, Lakshadweep, Lalitpur, Latehar, Latur, Lawngtlai, Leh, Lepa Rada, Lohardaga, Lohit, Longding, Longleng, Lower Dibang Valley, Lower Siang, Lower Subansiri, Lucknow, Ludhiana, Lunglei, Madhepura, Madhubani, Madurai, Mahabubabad, Maharajganj, Mahasamund, Mahbubnagar, Mahé, Mahendragarh, Mahisagar, Mahoba, Mainpuri, Majuli, Malappuram, Maldah, Malerkotla, Malkangiri, Mamit, Mancherial, Mandi, Mandla, Mandsaur, Mandya, Manendragarh-Chirmiri-Bharatpur, Mansa, Mathura, Mau, Mayiladuthurai, Mayurbhanj, Medak, Medchal–Malkajgiri, Meerut, Mehsana, Mirzapur, Moga, Mohla-Manpur-Ambagarh Chowki, Mokokchung, Mon, Moradabad, Morbi, Morena, Morigaon, Mulugu, Mumbai City, Mumbai Suburban, Mungeli, Munger, Murshidabad, Muzaffarnagar, Muzaffarpur, Mysuru, Nabarangpur, Nadia, Nagaon, Nagapattinam, Nagarkurnool, Nagaur, Nagpur, Nainital, Nalanda, Nalbari, Nalgonda, Namakkal, Namsai, Nanded, Nandurbar, Nandyal, Narayanpet, Narayanpur, Narmada, Narsinghpur, Nashik, Navsari, Nawada, Nayagarh, Neemuch, New Delhi, Nicobar, Nilgiris, Nirmal, Niuland, Niwari, Nizamabad, Noklak, Noney, North 24 Parganas, North and Middle Andaman, North Delhi, North East Delhi, North Garo Hills, North Goa, North Sikkim, North Tripura, North West Delhi, NTR, Nuapada, Nuh, Osmanabad, Pakke-Kessang, Pakur, Pakyong, Palakkad, Palamu, Palghar, Pali, Palnadu, Palwal, Panchkula, Panchmahal, Panipat, Panna, Papum Pare, Parbhani, Parvathipuram Manyam, Paschim Bardhaman, Paschim Medinipur, Patan, Pathanamthitta, Pathankot, Patiala, Patna, Pauri Garhwal, Peddapalli, Perambalur, Peren, Phek, Pherzawl, Pilibhit, Pithoragarh, Poonch, Porbandar, Prakasam, Pratapgarh, Prayagraj, Puducherry, Pudukkottai, Pulwama, Pune, Purba Bardhaman, Purba Medinipur, Puri, Purnia, Purulia, Raebareli, Raichuru, Raigad, Raigarh, Raipur, Raisen, Rajanna Sircilla, Rajgarh, Rajkot, Rajnandgaon, Rajouri, Rajsamand, Ramanagara, Ramanathapuram, Ramban, Ramgarh, Rampur, Ranchi, Ranga Reddy, Ranipet, Ratlam, Ratnagiri, Rayagada, Reasi, Rewa, Rewari, Ri Bhoi, Rohtak, Rohtas, Rudraprayag, Rupnagar, Sabarkantha, Sagar, Saharanpur, Saharsa, Sahibganj, Sahibzada Ajit Singh Nagar, Saiha, Saitual, Salem, Samastipur, Samba, Sambalpur, Sambhal, Sangareddy, Sangli, Sangrur, Sant Kabir Nagar, Saran, Sarangarh-Bilaigarh, Satara, Satna, Sawai Madhopur, Sehore, Senapati, Seoni, Sepahijala, Seraikela-Kharsawan, Serchhip, Shahdara, Shahdol, Shahid Bhagat Singh Nagar, Shahjahanpur, Shajapur, Shakti, Shamator, Shamli, Sheikhpura, Sheohar, Sheopur, Shi Yomi, Shimla, Shivamogga, Shivpuri, Shopian, Shravasti, Siang, Siddharthnagar, Siddipet, Sidhi, Sikar, Simdega, Sindhudurg, Singrauli, Sirmaur, Sirohi, Sirsa, Sitamarhi, Sitapur, Sivaganga, Sivasagar, Siwan, Solan, Solapur, Sonbhadra, Sonipat, Sonitpur, Soreng, South 24 Parganas, South Andaman, South Delhi, South East Delhi, South Garo Hills, South Goa, South Salmara Mankachar, South Sikkim, South Tripura, South West Delhi, South West Garo Hills, South West Khasi Hills, Sri Ganganagar, Sri Muktsar Sahib, Sri Potti Sriramulu Nellore, Sri Sathya Sai, Srikakulam, Srinagar, Subarnapur, Sukma, Sultanpur, Sundargarh, Supaul, Surajpur, Surat, Surendranagar, Surguja, Suryapet, Tamenglong, Tapi, Tarn Taran, Tawang, Tehri Garhwal, Tengnoupal, Tenkasi, Thane, Thanjavur, Theni, Thiruvananthapuram, Thoothukudi, Thoubal, Thrissur, Tikamgarh, Tinsukia, Tirap, Tiruchirappalli, Tirunelveli, Tirupati, Tirupattur, Tiruppur, Tiruvallur, Tiruvannamalai, Tiruvarur, Tonk, Tseminyü, Tuensang, Tumakuru, Udaipur, Udalguri, Udham Singh Nagar, Udhampur, Udupi, Ujjain, Ukhrul, Umaria, Una, Unakoti, Unnao, Upper Dibang Valley, Upper Siang, Upper Subansiri, Uttar Dinajpur, Uttara Kannada, Uttarkashi, Vadodara, Vaishali, Valsad, Varanasi, Vellore, Vidisha, Vijayanagara, Vijayapura, Vikarabad, Viluppuram, Virudhunagar, Visakhapatnam, Vizianagaram, Wanaparthy, Warangal, Wardha, Washim, Wayanad, West Champaran, West Delhi, West Garo Hills, West Godavari, West Jaintia Hills, West Kameng, West Karbi Anglong, West Khasi Hills, West Siang, West Sikkim, West Singhbhum, West Tripura, Wokha, Yadadri Bhuvanagiri, Yadgiri, Yamunanagar, Yanam, Yavatmal, YSR, Zunheboto",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$B$2:$B$16"
+              "INDIRECT(IFERROR(VLOOKUP($K5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
@@ -3058,14 +3277,19 @@
           "section": "UIDB Details",
           "label": "Deceased Present Pin Code",
           "hint": "text",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
           "col": 14,
           "key": "deceased_perm_same",
           "section": "UIDB Details",
           "label": "Is Permanent Address same as Present Address?",
-          "hint": "select: Yes, No",
+          "hint": "[Required] select: Yes, No",
           "validation": {
             "type": "list",
             "formulae": [
@@ -3110,11 +3334,11 @@
           "key": "deceased_perm_state",
           "section": "UIDB Details",
           "label": "Deceased Permanent State",
-          "hint": "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
+          "hint": "select: Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra and Nagar Haveli and Daman and Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu and Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$C$2:$C$34"
+              "'_Lookups'!$C$2:$C$38"
             ]
           }
         },
@@ -3123,11 +3347,11 @@
           "key": "deceased_perm_district",
           "section": "UIDB Details",
           "label": "Deceased Permanent District",
-          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "hint": "select: Adilabad, Agar Malwa, Agra, Ahmedabad, Ahmednagar, Aizawl, Ajmer, Akola, Alappuzha, Aligarh, Alipurduar, Alirajpur, Alluri Sitharama Raju, Almora, Alwar, Ambala, Ambedkar Nagar, Amethi, Amravati, Amreli, Amritsar, Amroha, Anakapalli, Anand, Ananthapuramu, Anantnag, Angul, Anjaw, Annamayya, Anuppur, Araria, Aravalli, Ariyalur, Arwal, Ashoknagar, Auraiya, Aurangabad, Ayodhya, Azamgarh, Bagalakote, Bageshwar, Bagpat, Bahraich, Baksa, Balaghat, Balangir, Balasore, Ballari, Ballia, Balod, Baloda Bazar, Balrampur, Balrampur-Ramanujganj, Banaskantha, Banda, Bandipore, Banka, Bankura, Banswara, Bapatla, Barabanki, Baramulla, Baran, Bareilly, Bargarh, Barmer, Barnala, Barpeta, Barwani, Bastar, Basti, Bathinda, Beed, Begusarai, Belagavi, Bemetara, Bengaluru Rural, Bengaluru Urban, Betul, Bhadohi, Bhadradri Kothagudem, Bhadrak, Bhagalpur, Bhandara, Bharatpur, Bharuch, Bhavnagar, Bhilwara, Bhind, Bhiwani, Bhojpur, Bhopal, Bidar, Bijapur, Bijnor, Bikaner, Bilaspur, Birbhum, Bishnupur, Bokaro, Bongaigaon, Botad, Boudh, Budaun, Budgam, Bulandshahr, Buldhana, Bundi, Burhanpur, Buxar, Cachar, Central Delhi, Chamarajanagara, Chamba, Chamoli, Champawat, Champhai, Chandauli, Chandel, Chandigarh, Chandrapur, Changlang, Charaideo, Charkhi Dadri, Chatra, Chengalpattu, Chennai, Chhatarpur, Chhindwara, Chhota Udaipur, Chikkaballapura, Chikkamagaluru, Chirang, Chitradurga, Chitrakoot, Chittoor, Chittorgarh, Chümoukedima, Churachandpur, Churu, Coimbatore, Cooch Behar, Cuddalore, Cuttack, Dadra and Nagar Haveli, Dahod, Dakshin Dinajpur, Dakshina Kannada, Daman, Damoh, Dang, Dantewada, Darbhanga, Darjeeling, Darrang, Datia, Dausa, Davanagere, Debagarh, Dehradun, Deoghar, Deoria, Devbhumi Dwarka, Dewas, Dhalai, Dhamtari, Dhanbad, Dhar, Dharmapuri, Dharwada, Dhemaji, Dhenkanal, Dholpur, Dhubri, Dhule, Dibrugarh, Dima Hasao, Dimapur, Dindigul, Dindori, Diu, Doda, Dr. B.R. Ambedkar Konaseema, Dumka, Dungarpur, Durg, East Champaran, East Delhi, East Garo Hills, East Godavari, East Jaintia Hills, East Kameng, East Khasi Hills, East Siang, East Sikkim, East Singhbhum, Eastern West Khasi Hills, Eluru, Ernakulam, Erode, Etah, Etawah, Faridabad, Faridkot, Farrukhabad, Fatehabad, Fatehgarh Sahib, Fatehpur, Fazilka, Firozabad, Firozpur, Gadaga, Gadchiroli, Gajapati, Ganderbal, Gandhinagar, Ganjam, Garhwa, Gariaband, Gaurela-Pendra-Marwahi, Gautam Buddha Nagar, Gaya, Ghaziabad, Ghazipur, Gir Somnath, Giridih, Goalpara, Godda, Golaghat, Gomati, Gonda, Gondia, Gopalganj, Gorakhpur, Gumla, Guna, Guntur, Gurdaspur, Gurugram, Gwalior, Hailakandi, Hamirpur, Hanamkonda, Hanumangarh, Hapur, Harda, Hardoi, Haridwar, Hassan, Hathras, Haveri, Hazaribag, Hingoli, Hisar, Hnahthial, Hooghly, Hoshangabad, Hoshiarpur, Howrah, Hyderabad, Idukki, Imphal East, Imphal West, Indore, Itanagar capital complex, Jabalpur, Jagatsinghpur, Jagtial, Jaipur, Jaisalmer, Jajpur, Jalandhar, Jalaun, Jalgaon, Jalna, Jalore, Jalpaiguri, Jammu, Jamnagar, Jamtara, Jamui, Jangaon, Janjgir-Champa, Jashpur, Jaunpur, Jayashankar Bhupalpally, Jehanabad, Jhabua, Jhajjar, Jhalawar, Jhansi, Jhargram, Jharsuguda, Jhunjhunu, Jind, Jiribam, Jodhpur, Jogulamba Gadwal, Jorhat, Junagadh, Kabirdham, Kaimur, Kaithal, Kakching, Kakinada, Kalaburagi, Kalahandi, Kalimpong, Kallakurichi, Kamareddy, Kamjong, Kamle, Kamrup, Kamrup Metropolitan, Kanchipuram, Kandhamal, Kangpokpi, Kangra, Kanker, Kannauj, Kannur, Kanpur Dehat, Kanpur Nagar, Kanyakumari, Kapurthala, Karaikal, Karauli, Karbi Anglong, Kargil, Karimganj, Karimnagar, Karnal, Karur, Kasaragod, Kasganj, Kathua, Katihar, Katni, Kaushambi, Kendrapara, Kendujhar, Khagaria, Khairagarh-Chhuikhadan-Gandai, Khammam, Khandwa, Khargone, Khawzawl, Kheda, Khordha, Khowai, Khunti, Kinnaur, Kiphire, Kishanganj, Kishtwar, Kodagu, Koderma, Kohima, Kokrajhar, Kolar, Kolasib, Kolhapur, Kolkata, Kollam, Kondagaon, Koppala, Koraput, Korba, Korea, Kota, Kottayam, Kozhikode, Kra Daadi, Krishna, Krishnagiri, Kulgam, Kullu, Kumuram Bheem Asifabad, Kupwara, Kurnool, Kurukshetra, Kurung Kumey, Kushinagar, Kutch, Lahaul and Spiti, Lakhimpur, Lakhimpur Kheri, Lakhisarai, Lakshadweep, Lalitpur, Latehar, Latur, Lawngtlai, Leh, Lepa Rada, Lohardaga, Lohit, Longding, Longleng, Lower Dibang Valley, Lower Siang, Lower Subansiri, Lucknow, Ludhiana, Lunglei, Madhepura, Madhubani, Madurai, Mahabubabad, Maharajganj, Mahasamund, Mahbubnagar, Mahé, Mahendragarh, Mahisagar, Mahoba, Mainpuri, Majuli, Malappuram, Maldah, Malerkotla, Malkangiri, Mamit, Mancherial, Mandi, Mandla, Mandsaur, Mandya, Manendragarh-Chirmiri-Bharatpur, Mansa, Mathura, Mau, Mayiladuthurai, Mayurbhanj, Medak, Medchal–Malkajgiri, Meerut, Mehsana, Mirzapur, Moga, Mohla-Manpur-Ambagarh Chowki, Mokokchung, Mon, Moradabad, Morbi, Morena, Morigaon, Mulugu, Mumbai City, Mumbai Suburban, Mungeli, Munger, Murshidabad, Muzaffarnagar, Muzaffarpur, Mysuru, Nabarangpur, Nadia, Nagaon, Nagapattinam, Nagarkurnool, Nagaur, Nagpur, Nainital, Nalanda, Nalbari, Nalgonda, Namakkal, Namsai, Nanded, Nandurbar, Nandyal, Narayanpet, Narayanpur, Narmada, Narsinghpur, Nashik, Navsari, Nawada, Nayagarh, Neemuch, New Delhi, Nicobar, Nilgiris, Nirmal, Niuland, Niwari, Nizamabad, Noklak, Noney, North 24 Parganas, North and Middle Andaman, North Delhi, North East Delhi, North Garo Hills, North Goa, North Sikkim, North Tripura, North West Delhi, NTR, Nuapada, Nuh, Osmanabad, Pakke-Kessang, Pakur, Pakyong, Palakkad, Palamu, Palghar, Pali, Palnadu, Palwal, Panchkula, Panchmahal, Panipat, Panna, Papum Pare, Parbhani, Parvathipuram Manyam, Paschim Bardhaman, Paschim Medinipur, Patan, Pathanamthitta, Pathankot, Patiala, Patna, Pauri Garhwal, Peddapalli, Perambalur, Peren, Phek, Pherzawl, Pilibhit, Pithoragarh, Poonch, Porbandar, Prakasam, Pratapgarh, Prayagraj, Puducherry, Pudukkottai, Pulwama, Pune, Purba Bardhaman, Purba Medinipur, Puri, Purnia, Purulia, Raebareli, Raichuru, Raigad, Raigarh, Raipur, Raisen, Rajanna Sircilla, Rajgarh, Rajkot, Rajnandgaon, Rajouri, Rajsamand, Ramanagara, Ramanathapuram, Ramban, Ramgarh, Rampur, Ranchi, Ranga Reddy, Ranipet, Ratlam, Ratnagiri, Rayagada, Reasi, Rewa, Rewari, Ri Bhoi, Rohtak, Rohtas, Rudraprayag, Rupnagar, Sabarkantha, Sagar, Saharanpur, Saharsa, Sahibganj, Sahibzada Ajit Singh Nagar, Saiha, Saitual, Salem, Samastipur, Samba, Sambalpur, Sambhal, Sangareddy, Sangli, Sangrur, Sant Kabir Nagar, Saran, Sarangarh-Bilaigarh, Satara, Satna, Sawai Madhopur, Sehore, Senapati, Seoni, Sepahijala, Seraikela-Kharsawan, Serchhip, Shahdara, Shahdol, Shahid Bhagat Singh Nagar, Shahjahanpur, Shajapur, Shakti, Shamator, Shamli, Sheikhpura, Sheohar, Sheopur, Shi Yomi, Shimla, Shivamogga, Shivpuri, Shopian, Shravasti, Siang, Siddharthnagar, Siddipet, Sidhi, Sikar, Simdega, Sindhudurg, Singrauli, Sirmaur, Sirohi, Sirsa, Sitamarhi, Sitapur, Sivaganga, Sivasagar, Siwan, Solan, Solapur, Sonbhadra, Sonipat, Sonitpur, Soreng, South 24 Parganas, South Andaman, South Delhi, South East Delhi, South Garo Hills, South Goa, South Salmara Mankachar, South Sikkim, South Tripura, South West Delhi, South West Garo Hills, South West Khasi Hills, Sri Ganganagar, Sri Muktsar Sahib, Sri Potti Sriramulu Nellore, Sri Sathya Sai, Srikakulam, Srinagar, Subarnapur, Sukma, Sultanpur, Sundargarh, Supaul, Surajpur, Surat, Surendranagar, Surguja, Suryapet, Tamenglong, Tapi, Tarn Taran, Tawang, Tehri Garhwal, Tengnoupal, Tenkasi, Thane, Thanjavur, Theni, Thiruvananthapuram, Thoothukudi, Thoubal, Thrissur, Tikamgarh, Tinsukia, Tirap, Tiruchirappalli, Tirunelveli, Tirupati, Tirupattur, Tiruppur, Tiruvallur, Tiruvannamalai, Tiruvarur, Tonk, Tseminyü, Tuensang, Tumakuru, Udaipur, Udalguri, Udham Singh Nagar, Udhampur, Udupi, Ujjain, Ukhrul, Umaria, Una, Unakoti, Unnao, Upper Dibang Valley, Upper Siang, Upper Subansiri, Uttar Dinajpur, Uttara Kannada, Uttarkashi, Vadodara, Vaishali, Valsad, Varanasi, Vellore, Vidisha, Vijayanagara, Vijayapura, Vikarabad, Viluppuram, Virudhunagar, Visakhapatnam, Vizianagaram, Wanaparthy, Warangal, Wardha, Washim, Wayanad, West Champaran, West Delhi, West Garo Hills, West Godavari, West Jaintia Hills, West Kameng, West Karbi Anglong, West Khasi Hills, West Siang, West Sikkim, West Singhbhum, West Tripura, Wokha, Yadadri Bhuvanagiri, Yadgiri, Yamunanagar, Yanam, Yavatmal, YSR, Zunheboto",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$D$2:$D$16"
+              "INDIRECT(IFERROR(VLOOKUP($S5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
@@ -3137,7 +3361,12 @@
           "section": "UIDB Details",
           "label": "Deceased Permanent Pin Code",
           "hint": "text",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
           "col": 22,
@@ -3145,7 +3374,12 @@
           "section": "UIDB Details",
           "label": "Date Body Found",
           "hint": "date (dd-mm-yyyy)",
-          "validation": null
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         },
         {
           "col": 23,
@@ -3315,7 +3549,12 @@
           "section": "Informant & Contact Details",
           "label": "Informant Mobile",
           "hint": "number",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              10
+            ]
+          }
         },
         {
           "col": 43,
@@ -3378,43 +3617,27 @@
           "section": "Inquest Details",
           "label": "Date of Filed by ACP/SDM",
           "hint": "date (dd-mm-yyyy)",
-          "validation": null
-        },
-        {
-          "col": 49,
-          "key": "io_name",
-          "section": "IO Details",
-          "label": "IO / Officer Name",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 50,
-          "key": "io_rank",
-          "section": "IO Details",
-          "label": "IO Rank",
-          "hint": "select: Constable, Head Constable, Assistant Sub Inspector, Sub Inspector, Inspector, Deputy Superintendent of Police, Superintendent of Police",
           "validation": {
-            "type": "list",
+            "type": "date",
             "formulae": [
-              "\"Constable,Head Constable,Assistant Sub Inspector,Sub Inspector,Inspector,Deputy Superintendent of Police,Superintendent of Police\""
+              "1900-01-01T00:00:00.000Z"
             ]
           }
         },
         {
-          "col": 51,
+          "col": 49,
           "key": "io_pis",
           "section": "IO Details",
           "label": "PIS No. of IO",
-          "hint": "text",
+          "hint": "PIS number of a registered IO, e.g. 28080214",
           "validation": null
         },
         {
-          "col": 52,
-          "key": "io_mobile",
-          "section": "IO Details",
-          "label": "IO Mobile No.",
-          "hint": "number",
+          "col": 50,
+          "key": "uidb_no",
+          "section": "General Information",
+          "label": "UIDB Gazette Number",
+          "hint": "[Required] text",
           "validation": null
         }
       ],
@@ -3423,7 +3646,6 @@
         "AD2:AM2",
         "AN2:AQ2",
         "AR2:AV2",
-        "AW2:AZ2",
         "E2:AC2"
       ]
     },
@@ -3525,7 +3747,12 @@
           "section": "General Information",
           "label": "GD Date",
           "hint": "dd-mm-yyyy",
-          "validation": null
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         },
         {
           "col": 4,
@@ -3566,7 +3793,7 @@
           "key": "mp_known",
           "section": "Address Details",
           "label": "Is Missing Person Identified / Known?",
-          "hint": "",
+          "hint": "[Required] select: true, false",
           "validation": {
             "type": "list",
             "formulae": [
@@ -3579,7 +3806,7 @@
           "key": "missing_name",
           "section": "Address Details",
           "label": "Name of Missing Person",
-          "hint": "text",
+          "hint": "[Required] text",
           "validation": null
         },
         {
@@ -3619,11 +3846,11 @@
           "key": "mp_state",
           "section": "Address Details",
           "label": "Present State",
-          "hint": "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
+          "hint": "select: Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra and Nagar Haveli and Daman and Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu and Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$A$2:$A$34"
+              "'_Lookups'!$A$2:$A$38"
             ]
           }
         },
@@ -3632,11 +3859,11 @@
           "key": "mp_district",
           "section": "Address Details",
           "label": "Present District",
-          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "hint": "select: Adilabad, Agar Malwa, Agra, Ahmedabad, Ahmednagar, Aizawl, Ajmer, Akola, Alappuzha, Aligarh, Alipurduar, Alirajpur, Alluri Sitharama Raju, Almora, Alwar, Ambala, Ambedkar Nagar, Amethi, Amravati, Amreli, Amritsar, Amroha, Anakapalli, Anand, Ananthapuramu, Anantnag, Angul, Anjaw, Annamayya, Anuppur, Araria, Aravalli, Ariyalur, Arwal, Ashoknagar, Auraiya, Aurangabad, Ayodhya, Azamgarh, Bagalakote, Bageshwar, Bagpat, Bahraich, Baksa, Balaghat, Balangir, Balasore, Ballari, Ballia, Balod, Baloda Bazar, Balrampur, Balrampur-Ramanujganj, Banaskantha, Banda, Bandipore, Banka, Bankura, Banswara, Bapatla, Barabanki, Baramulla, Baran, Bareilly, Bargarh, Barmer, Barnala, Barpeta, Barwani, Bastar, Basti, Bathinda, Beed, Begusarai, Belagavi, Bemetara, Bengaluru Rural, Bengaluru Urban, Betul, Bhadohi, Bhadradri Kothagudem, Bhadrak, Bhagalpur, Bhandara, Bharatpur, Bharuch, Bhavnagar, Bhilwara, Bhind, Bhiwani, Bhojpur, Bhopal, Bidar, Bijapur, Bijnor, Bikaner, Bilaspur, Birbhum, Bishnupur, Bokaro, Bongaigaon, Botad, Boudh, Budaun, Budgam, Bulandshahr, Buldhana, Bundi, Burhanpur, Buxar, Cachar, Central Delhi, Chamarajanagara, Chamba, Chamoli, Champawat, Champhai, Chandauli, Chandel, Chandigarh, Chandrapur, Changlang, Charaideo, Charkhi Dadri, Chatra, Chengalpattu, Chennai, Chhatarpur, Chhindwara, Chhota Udaipur, Chikkaballapura, Chikkamagaluru, Chirang, Chitradurga, Chitrakoot, Chittoor, Chittorgarh, Chümoukedima, Churachandpur, Churu, Coimbatore, Cooch Behar, Cuddalore, Cuttack, Dadra and Nagar Haveli, Dahod, Dakshin Dinajpur, Dakshina Kannada, Daman, Damoh, Dang, Dantewada, Darbhanga, Darjeeling, Darrang, Datia, Dausa, Davanagere, Debagarh, Dehradun, Deoghar, Deoria, Devbhumi Dwarka, Dewas, Dhalai, Dhamtari, Dhanbad, Dhar, Dharmapuri, Dharwada, Dhemaji, Dhenkanal, Dholpur, Dhubri, Dhule, Dibrugarh, Dima Hasao, Dimapur, Dindigul, Dindori, Diu, Doda, Dr. B.R. Ambedkar Konaseema, Dumka, Dungarpur, Durg, East Champaran, East Delhi, East Garo Hills, East Godavari, East Jaintia Hills, East Kameng, East Khasi Hills, East Siang, East Sikkim, East Singhbhum, Eastern West Khasi Hills, Eluru, Ernakulam, Erode, Etah, Etawah, Faridabad, Faridkot, Farrukhabad, Fatehabad, Fatehgarh Sahib, Fatehpur, Fazilka, Firozabad, Firozpur, Gadaga, Gadchiroli, Gajapati, Ganderbal, Gandhinagar, Ganjam, Garhwa, Gariaband, Gaurela-Pendra-Marwahi, Gautam Buddha Nagar, Gaya, Ghaziabad, Ghazipur, Gir Somnath, Giridih, Goalpara, Godda, Golaghat, Gomati, Gonda, Gondia, Gopalganj, Gorakhpur, Gumla, Guna, Guntur, Gurdaspur, Gurugram, Gwalior, Hailakandi, Hamirpur, Hanamkonda, Hanumangarh, Hapur, Harda, Hardoi, Haridwar, Hassan, Hathras, Haveri, Hazaribag, Hingoli, Hisar, Hnahthial, Hooghly, Hoshangabad, Hoshiarpur, Howrah, Hyderabad, Idukki, Imphal East, Imphal West, Indore, Itanagar capital complex, Jabalpur, Jagatsinghpur, Jagtial, Jaipur, Jaisalmer, Jajpur, Jalandhar, Jalaun, Jalgaon, Jalna, Jalore, Jalpaiguri, Jammu, Jamnagar, Jamtara, Jamui, Jangaon, Janjgir-Champa, Jashpur, Jaunpur, Jayashankar Bhupalpally, Jehanabad, Jhabua, Jhajjar, Jhalawar, Jhansi, Jhargram, Jharsuguda, Jhunjhunu, Jind, Jiribam, Jodhpur, Jogulamba Gadwal, Jorhat, Junagadh, Kabirdham, Kaimur, Kaithal, Kakching, Kakinada, Kalaburagi, Kalahandi, Kalimpong, Kallakurichi, Kamareddy, Kamjong, Kamle, Kamrup, Kamrup Metropolitan, Kanchipuram, Kandhamal, Kangpokpi, Kangra, Kanker, Kannauj, Kannur, Kanpur Dehat, Kanpur Nagar, Kanyakumari, Kapurthala, Karaikal, Karauli, Karbi Anglong, Kargil, Karimganj, Karimnagar, Karnal, Karur, Kasaragod, Kasganj, Kathua, Katihar, Katni, Kaushambi, Kendrapara, Kendujhar, Khagaria, Khairagarh-Chhuikhadan-Gandai, Khammam, Khandwa, Khargone, Khawzawl, Kheda, Khordha, Khowai, Khunti, Kinnaur, Kiphire, Kishanganj, Kishtwar, Kodagu, Koderma, Kohima, Kokrajhar, Kolar, Kolasib, Kolhapur, Kolkata, Kollam, Kondagaon, Koppala, Koraput, Korba, Korea, Kota, Kottayam, Kozhikode, Kra Daadi, Krishna, Krishnagiri, Kulgam, Kullu, Kumuram Bheem Asifabad, Kupwara, Kurnool, Kurukshetra, Kurung Kumey, Kushinagar, Kutch, Lahaul and Spiti, Lakhimpur, Lakhimpur Kheri, Lakhisarai, Lakshadweep, Lalitpur, Latehar, Latur, Lawngtlai, Leh, Lepa Rada, Lohardaga, Lohit, Longding, Longleng, Lower Dibang Valley, Lower Siang, Lower Subansiri, Lucknow, Ludhiana, Lunglei, Madhepura, Madhubani, Madurai, Mahabubabad, Maharajganj, Mahasamund, Mahbubnagar, Mahé, Mahendragarh, Mahisagar, Mahoba, Mainpuri, Majuli, Malappuram, Maldah, Malerkotla, Malkangiri, Mamit, Mancherial, Mandi, Mandla, Mandsaur, Mandya, Manendragarh-Chirmiri-Bharatpur, Mansa, Mathura, Mau, Mayiladuthurai, Mayurbhanj, Medak, Medchal–Malkajgiri, Meerut, Mehsana, Mirzapur, Moga, Mohla-Manpur-Ambagarh Chowki, Mokokchung, Mon, Moradabad, Morbi, Morena, Morigaon, Mulugu, Mumbai City, Mumbai Suburban, Mungeli, Munger, Murshidabad, Muzaffarnagar, Muzaffarpur, Mysuru, Nabarangpur, Nadia, Nagaon, Nagapattinam, Nagarkurnool, Nagaur, Nagpur, Nainital, Nalanda, Nalbari, Nalgonda, Namakkal, Namsai, Nanded, Nandurbar, Nandyal, Narayanpet, Narayanpur, Narmada, Narsinghpur, Nashik, Navsari, Nawada, Nayagarh, Neemuch, New Delhi, Nicobar, Nilgiris, Nirmal, Niuland, Niwari, Nizamabad, Noklak, Noney, North 24 Parganas, North and Middle Andaman, North Delhi, North East Delhi, North Garo Hills, North Goa, North Sikkim, North Tripura, North West Delhi, NTR, Nuapada, Nuh, Osmanabad, Pakke-Kessang, Pakur, Pakyong, Palakkad, Palamu, Palghar, Pali, Palnadu, Palwal, Panchkula, Panchmahal, Panipat, Panna, Papum Pare, Parbhani, Parvathipuram Manyam, Paschim Bardhaman, Paschim Medinipur, Patan, Pathanamthitta, Pathankot, Patiala, Patna, Pauri Garhwal, Peddapalli, Perambalur, Peren, Phek, Pherzawl, Pilibhit, Pithoragarh, Poonch, Porbandar, Prakasam, Pratapgarh, Prayagraj, Puducherry, Pudukkottai, Pulwama, Pune, Purba Bardhaman, Purba Medinipur, Puri, Purnia, Purulia, Raebareli, Raichuru, Raigad, Raigarh, Raipur, Raisen, Rajanna Sircilla, Rajgarh, Rajkot, Rajnandgaon, Rajouri, Rajsamand, Ramanagara, Ramanathapuram, Ramban, Ramgarh, Rampur, Ranchi, Ranga Reddy, Ranipet, Ratlam, Ratnagiri, Rayagada, Reasi, Rewa, Rewari, Ri Bhoi, Rohtak, Rohtas, Rudraprayag, Rupnagar, Sabarkantha, Sagar, Saharanpur, Saharsa, Sahibganj, Sahibzada Ajit Singh Nagar, Saiha, Saitual, Salem, Samastipur, Samba, Sambalpur, Sambhal, Sangareddy, Sangli, Sangrur, Sant Kabir Nagar, Saran, Sarangarh-Bilaigarh, Satara, Satna, Sawai Madhopur, Sehore, Senapati, Seoni, Sepahijala, Seraikela-Kharsawan, Serchhip, Shahdara, Shahdol, Shahid Bhagat Singh Nagar, Shahjahanpur, Shajapur, Shakti, Shamator, Shamli, Sheikhpura, Sheohar, Sheopur, Shi Yomi, Shimla, Shivamogga, Shivpuri, Shopian, Shravasti, Siang, Siddharthnagar, Siddipet, Sidhi, Sikar, Simdega, Sindhudurg, Singrauli, Sirmaur, Sirohi, Sirsa, Sitamarhi, Sitapur, Sivaganga, Sivasagar, Siwan, Solan, Solapur, Sonbhadra, Sonipat, Sonitpur, Soreng, South 24 Parganas, South Andaman, South Delhi, South East Delhi, South Garo Hills, South Goa, South Salmara Mankachar, South Sikkim, South Tripura, South West Delhi, South West Garo Hills, South West Khasi Hills, Sri Ganganagar, Sri Muktsar Sahib, Sri Potti Sriramulu Nellore, Sri Sathya Sai, Srikakulam, Srinagar, Subarnapur, Sukma, Sultanpur, Sundargarh, Supaul, Surajpur, Surat, Surendranagar, Surguja, Suryapet, Tamenglong, Tapi, Tarn Taran, Tawang, Tehri Garhwal, Tengnoupal, Tenkasi, Thane, Thanjavur, Theni, Thiruvananthapuram, Thoothukudi, Thoubal, Thrissur, Tikamgarh, Tinsukia, Tirap, Tiruchirappalli, Tirunelveli, Tirupati, Tirupattur, Tiruppur, Tiruvallur, Tiruvannamalai, Tiruvarur, Tonk, Tseminyü, Tuensang, Tumakuru, Udaipur, Udalguri, Udham Singh Nagar, Udhampur, Udupi, Ujjain, Ukhrul, Umaria, Una, Unakoti, Unnao, Upper Dibang Valley, Upper Siang, Upper Subansiri, Uttar Dinajpur, Uttara Kannada, Uttarkashi, Vadodara, Vaishali, Valsad, Varanasi, Vellore, Vidisha, Vijayanagara, Vijayapura, Vikarabad, Viluppuram, Virudhunagar, Visakhapatnam, Vizianagaram, Wanaparthy, Warangal, Wardha, Washim, Wayanad, West Champaran, West Delhi, West Garo Hills, West Godavari, West Jaintia Hills, West Kameng, West Karbi Anglong, West Khasi Hills, West Siang, West Sikkim, West Singhbhum, West Tripura, Wokha, Yadadri Bhuvanagiri, Yadgiri, Yamunanagar, Yanam, Yavatmal, YSR, Zunheboto",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$B$2:$B$16"
+              "INDIRECT(IFERROR(VLOOKUP($M5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
@@ -3646,14 +3873,19 @@
           "section": "Address Details",
           "label": "Present Pin Code",
           "hint": "text",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
           "col": 16,
           "key": "mp_perm_same",
           "section": "Address Details",
           "label": "Is Permanent Address same as Present Address?",
-          "hint": "select: Yes, No",
+          "hint": "[Required] select: Yes, No",
           "validation": {
             "type": "list",
             "formulae": [
@@ -3698,11 +3930,11 @@
           "key": "mp_perm_state",
           "section": "Address Details",
           "label": "Permanent State",
-          "hint": "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
+          "hint": "select: Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra and Nagar Haveli and Daman and Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu and Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$C$2:$C$34"
+              "'_Lookups'!$C$2:$C$38"
             ]
           }
         },
@@ -3711,11 +3943,11 @@
           "key": "mp_perm_district",
           "section": "Address Details",
           "label": "Permanent District",
-          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "hint": "select: Adilabad, Agar Malwa, Agra, Ahmedabad, Ahmednagar, Aizawl, Ajmer, Akola, Alappuzha, Aligarh, Alipurduar, Alirajpur, Alluri Sitharama Raju, Almora, Alwar, Ambala, Ambedkar Nagar, Amethi, Amravati, Amreli, Amritsar, Amroha, Anakapalli, Anand, Ananthapuramu, Anantnag, Angul, Anjaw, Annamayya, Anuppur, Araria, Aravalli, Ariyalur, Arwal, Ashoknagar, Auraiya, Aurangabad, Ayodhya, Azamgarh, Bagalakote, Bageshwar, Bagpat, Bahraich, Baksa, Balaghat, Balangir, Balasore, Ballari, Ballia, Balod, Baloda Bazar, Balrampur, Balrampur-Ramanujganj, Banaskantha, Banda, Bandipore, Banka, Bankura, Banswara, Bapatla, Barabanki, Baramulla, Baran, Bareilly, Bargarh, Barmer, Barnala, Barpeta, Barwani, Bastar, Basti, Bathinda, Beed, Begusarai, Belagavi, Bemetara, Bengaluru Rural, Bengaluru Urban, Betul, Bhadohi, Bhadradri Kothagudem, Bhadrak, Bhagalpur, Bhandara, Bharatpur, Bharuch, Bhavnagar, Bhilwara, Bhind, Bhiwani, Bhojpur, Bhopal, Bidar, Bijapur, Bijnor, Bikaner, Bilaspur, Birbhum, Bishnupur, Bokaro, Bongaigaon, Botad, Boudh, Budaun, Budgam, Bulandshahr, Buldhana, Bundi, Burhanpur, Buxar, Cachar, Central Delhi, Chamarajanagara, Chamba, Chamoli, Champawat, Champhai, Chandauli, Chandel, Chandigarh, Chandrapur, Changlang, Charaideo, Charkhi Dadri, Chatra, Chengalpattu, Chennai, Chhatarpur, Chhindwara, Chhota Udaipur, Chikkaballapura, Chikkamagaluru, Chirang, Chitradurga, Chitrakoot, Chittoor, Chittorgarh, Chümoukedima, Churachandpur, Churu, Coimbatore, Cooch Behar, Cuddalore, Cuttack, Dadra and Nagar Haveli, Dahod, Dakshin Dinajpur, Dakshina Kannada, Daman, Damoh, Dang, Dantewada, Darbhanga, Darjeeling, Darrang, Datia, Dausa, Davanagere, Debagarh, Dehradun, Deoghar, Deoria, Devbhumi Dwarka, Dewas, Dhalai, Dhamtari, Dhanbad, Dhar, Dharmapuri, Dharwada, Dhemaji, Dhenkanal, Dholpur, Dhubri, Dhule, Dibrugarh, Dima Hasao, Dimapur, Dindigul, Dindori, Diu, Doda, Dr. B.R. Ambedkar Konaseema, Dumka, Dungarpur, Durg, East Champaran, East Delhi, East Garo Hills, East Godavari, East Jaintia Hills, East Kameng, East Khasi Hills, East Siang, East Sikkim, East Singhbhum, Eastern West Khasi Hills, Eluru, Ernakulam, Erode, Etah, Etawah, Faridabad, Faridkot, Farrukhabad, Fatehabad, Fatehgarh Sahib, Fatehpur, Fazilka, Firozabad, Firozpur, Gadaga, Gadchiroli, Gajapati, Ganderbal, Gandhinagar, Ganjam, Garhwa, Gariaband, Gaurela-Pendra-Marwahi, Gautam Buddha Nagar, Gaya, Ghaziabad, Ghazipur, Gir Somnath, Giridih, Goalpara, Godda, Golaghat, Gomati, Gonda, Gondia, Gopalganj, Gorakhpur, Gumla, Guna, Guntur, Gurdaspur, Gurugram, Gwalior, Hailakandi, Hamirpur, Hanamkonda, Hanumangarh, Hapur, Harda, Hardoi, Haridwar, Hassan, Hathras, Haveri, Hazaribag, Hingoli, Hisar, Hnahthial, Hooghly, Hoshangabad, Hoshiarpur, Howrah, Hyderabad, Idukki, Imphal East, Imphal West, Indore, Itanagar capital complex, Jabalpur, Jagatsinghpur, Jagtial, Jaipur, Jaisalmer, Jajpur, Jalandhar, Jalaun, Jalgaon, Jalna, Jalore, Jalpaiguri, Jammu, Jamnagar, Jamtara, Jamui, Jangaon, Janjgir-Champa, Jashpur, Jaunpur, Jayashankar Bhupalpally, Jehanabad, Jhabua, Jhajjar, Jhalawar, Jhansi, Jhargram, Jharsuguda, Jhunjhunu, Jind, Jiribam, Jodhpur, Jogulamba Gadwal, Jorhat, Junagadh, Kabirdham, Kaimur, Kaithal, Kakching, Kakinada, Kalaburagi, Kalahandi, Kalimpong, Kallakurichi, Kamareddy, Kamjong, Kamle, Kamrup, Kamrup Metropolitan, Kanchipuram, Kandhamal, Kangpokpi, Kangra, Kanker, Kannauj, Kannur, Kanpur Dehat, Kanpur Nagar, Kanyakumari, Kapurthala, Karaikal, Karauli, Karbi Anglong, Kargil, Karimganj, Karimnagar, Karnal, Karur, Kasaragod, Kasganj, Kathua, Katihar, Katni, Kaushambi, Kendrapara, Kendujhar, Khagaria, Khairagarh-Chhuikhadan-Gandai, Khammam, Khandwa, Khargone, Khawzawl, Kheda, Khordha, Khowai, Khunti, Kinnaur, Kiphire, Kishanganj, Kishtwar, Kodagu, Koderma, Kohima, Kokrajhar, Kolar, Kolasib, Kolhapur, Kolkata, Kollam, Kondagaon, Koppala, Koraput, Korba, Korea, Kota, Kottayam, Kozhikode, Kra Daadi, Krishna, Krishnagiri, Kulgam, Kullu, Kumuram Bheem Asifabad, Kupwara, Kurnool, Kurukshetra, Kurung Kumey, Kushinagar, Kutch, Lahaul and Spiti, Lakhimpur, Lakhimpur Kheri, Lakhisarai, Lakshadweep, Lalitpur, Latehar, Latur, Lawngtlai, Leh, Lepa Rada, Lohardaga, Lohit, Longding, Longleng, Lower Dibang Valley, Lower Siang, Lower Subansiri, Lucknow, Ludhiana, Lunglei, Madhepura, Madhubani, Madurai, Mahabubabad, Maharajganj, Mahasamund, Mahbubnagar, Mahé, Mahendragarh, Mahisagar, Mahoba, Mainpuri, Majuli, Malappuram, Maldah, Malerkotla, Malkangiri, Mamit, Mancherial, Mandi, Mandla, Mandsaur, Mandya, Manendragarh-Chirmiri-Bharatpur, Mansa, Mathura, Mau, Mayiladuthurai, Mayurbhanj, Medak, Medchal–Malkajgiri, Meerut, Mehsana, Mirzapur, Moga, Mohla-Manpur-Ambagarh Chowki, Mokokchung, Mon, Moradabad, Morbi, Morena, Morigaon, Mulugu, Mumbai City, Mumbai Suburban, Mungeli, Munger, Murshidabad, Muzaffarnagar, Muzaffarpur, Mysuru, Nabarangpur, Nadia, Nagaon, Nagapattinam, Nagarkurnool, Nagaur, Nagpur, Nainital, Nalanda, Nalbari, Nalgonda, Namakkal, Namsai, Nanded, Nandurbar, Nandyal, Narayanpet, Narayanpur, Narmada, Narsinghpur, Nashik, Navsari, Nawada, Nayagarh, Neemuch, New Delhi, Nicobar, Nilgiris, Nirmal, Niuland, Niwari, Nizamabad, Noklak, Noney, North 24 Parganas, North and Middle Andaman, North Delhi, North East Delhi, North Garo Hills, North Goa, North Sikkim, North Tripura, North West Delhi, NTR, Nuapada, Nuh, Osmanabad, Pakke-Kessang, Pakur, Pakyong, Palakkad, Palamu, Palghar, Pali, Palnadu, Palwal, Panchkula, Panchmahal, Panipat, Panna, Papum Pare, Parbhani, Parvathipuram Manyam, Paschim Bardhaman, Paschim Medinipur, Patan, Pathanamthitta, Pathankot, Patiala, Patna, Pauri Garhwal, Peddapalli, Perambalur, Peren, Phek, Pherzawl, Pilibhit, Pithoragarh, Poonch, Porbandar, Prakasam, Pratapgarh, Prayagraj, Puducherry, Pudukkottai, Pulwama, Pune, Purba Bardhaman, Purba Medinipur, Puri, Purnia, Purulia, Raebareli, Raichuru, Raigad, Raigarh, Raipur, Raisen, Rajanna Sircilla, Rajgarh, Rajkot, Rajnandgaon, Rajouri, Rajsamand, Ramanagara, Ramanathapuram, Ramban, Ramgarh, Rampur, Ranchi, Ranga Reddy, Ranipet, Ratlam, Ratnagiri, Rayagada, Reasi, Rewa, Rewari, Ri Bhoi, Rohtak, Rohtas, Rudraprayag, Rupnagar, Sabarkantha, Sagar, Saharanpur, Saharsa, Sahibganj, Sahibzada Ajit Singh Nagar, Saiha, Saitual, Salem, Samastipur, Samba, Sambalpur, Sambhal, Sangareddy, Sangli, Sangrur, Sant Kabir Nagar, Saran, Sarangarh-Bilaigarh, Satara, Satna, Sawai Madhopur, Sehore, Senapati, Seoni, Sepahijala, Seraikela-Kharsawan, Serchhip, Shahdara, Shahdol, Shahid Bhagat Singh Nagar, Shahjahanpur, Shajapur, Shakti, Shamator, Shamli, Sheikhpura, Sheohar, Sheopur, Shi Yomi, Shimla, Shivamogga, Shivpuri, Shopian, Shravasti, Siang, Siddharthnagar, Siddipet, Sidhi, Sikar, Simdega, Sindhudurg, Singrauli, Sirmaur, Sirohi, Sirsa, Sitamarhi, Sitapur, Sivaganga, Sivasagar, Siwan, Solan, Solapur, Sonbhadra, Sonipat, Sonitpur, Soreng, South 24 Parganas, South Andaman, South Delhi, South East Delhi, South Garo Hills, South Goa, South Salmara Mankachar, South Sikkim, South Tripura, South West Delhi, South West Garo Hills, South West Khasi Hills, Sri Ganganagar, Sri Muktsar Sahib, Sri Potti Sriramulu Nellore, Sri Sathya Sai, Srikakulam, Srinagar, Subarnapur, Sukma, Sultanpur, Sundargarh, Supaul, Surajpur, Surat, Surendranagar, Surguja, Suryapet, Tamenglong, Tapi, Tarn Taran, Tawang, Tehri Garhwal, Tengnoupal, Tenkasi, Thane, Thanjavur, Theni, Thiruvananthapuram, Thoothukudi, Thoubal, Thrissur, Tikamgarh, Tinsukia, Tirap, Tiruchirappalli, Tirunelveli, Tirupati, Tirupattur, Tiruppur, Tiruvallur, Tiruvannamalai, Tiruvarur, Tonk, Tseminyü, Tuensang, Tumakuru, Udaipur, Udalguri, Udham Singh Nagar, Udhampur, Udupi, Ujjain, Ukhrul, Umaria, Una, Unakoti, Unnao, Upper Dibang Valley, Upper Siang, Upper Subansiri, Uttar Dinajpur, Uttara Kannada, Uttarkashi, Vadodara, Vaishali, Valsad, Varanasi, Vellore, Vidisha, Vijayanagara, Vijayapura, Vikarabad, Viluppuram, Virudhunagar, Visakhapatnam, Vizianagaram, Wanaparthy, Warangal, Wardha, Washim, Wayanad, West Champaran, West Delhi, West Garo Hills, West Godavari, West Jaintia Hills, West Kameng, West Karbi Anglong, West Khasi Hills, West Siang, West Sikkim, West Singhbhum, West Tripura, Wokha, Yadadri Bhuvanagiri, Yadgiri, Yamunanagar, Yanam, Yavatmal, YSR, Zunheboto",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$D$2:$D$16"
+              "INDIRECT(IFERROR(VLOOKUP($U5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
@@ -3725,7 +3957,12 @@
           "section": "Address Details",
           "label": "Permanent Pin Code",
           "hint": "text",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
           "col": 24,
@@ -3746,7 +3983,13 @@
           "section": "Address Details",
           "label": "Age",
           "hint": "number",
-          "validation": null
+          "validation": {
+            "type": "whole",
+            "formulae": [
+              0,
+              120
+            ]
+          }
         },
         {
           "col": 26,
@@ -3767,7 +4010,12 @@
           "section": "Address Details",
           "label": "Date Missing Since",
           "hint": "date (dd-mm-yyyy)",
-          "validation": null
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         },
         {
           "col": 28,
@@ -3825,7 +4073,12 @@
           "section": "Informant & Contact Details",
           "label": "Informant Mobile",
           "hint": "number",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              10
+            ]
+          }
         },
         {
           "col": 34,
@@ -3909,47 +4162,39 @@
         },
         {
           "col": 44,
-          "key": "io_name",
+          "key": "io_pis",
           "section": "IO Details",
-          "label": "IO / Officer Name",
-          "hint": "text",
+          "label": "PIS No. of IO",
+          "hint": "PIS number of a registered IO, e.g. 28080214",
           "validation": null
         },
         {
           "col": 45,
-          "key": "io_rank",
-          "section": "IO Details",
-          "label": "IO Rank",
-          "hint": "select: Constable, Head Constable, Assistant Sub Inspector, Sub Inspector, Inspector, Deputy Superintendent of Police, Superintendent of Police",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Constable,Head Constable,Assistant Sub Inspector,Sub Inspector,Inspector,Deputy Superintendent of Police,Superintendent of Police\""
-            ]
-          }
+          "key": "missing_fir_no",
+          "section": "General Information",
+          "label": "FIR No.",
+          "hint": "[Required] text",
+          "validation": null
         },
         {
           "col": 46,
-          "key": "io_pis",
-          "section": "IO Details",
-          "label": "PIS No. of IO",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 47,
-          "key": "io_mobile",
-          "section": "IO Details",
-          "label": "IO Mobile No.",
-          "hint": "number",
-          "validation": null
+          "key": "missing_fir_date",
+          "section": "General Information",
+          "label": "FIR Date",
+          "hint": "date (dd-mm-yyyy)",
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         }
       ],
       "row2Merges": [
         "A2:F2",
         "AE2:AH2",
         "AI2:AQ2",
-        "AR2:AU2",
+        "AS2:AT2",
         "G2:AD2"
       ]
     }
@@ -3971,7 +4216,12 @@
           "section": "General Information",
           "label": "GD Date",
           "hint": "dd-mm-yyyy",
-          "validation": null
+          "validation": {
+            "type": "date",
+            "formulae": [
+              "1900-01-01T00:00:00.000Z"
+            ]
+          }
         },
         {
           "col": 3,
@@ -3998,8 +4248,8 @@
           "col": 5,
           "key": "heinous_offence",
           "section": "General Information",
-          "label": "Heinous Offences",
-          "hint": "select: true, false",
+          "label": "Heinous Offence",
+          "hint": "select: ",
           "validation": {
             "type": "list",
             "formulae": [
@@ -4029,49 +4279,98 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$C$2:$C$193"
+              "'_Lookups'!$C$2:$C$226"
             ]
           }
         },
         {
           "col": 8,
-          "key": "io_name",
+          "key": "io_pis",
           "section": "Investigating Officer Details",
-          "label": "IO / Officer Name",
-          "hint": "e.g. Inspector Ravindra Singh",
+          "label": "PIS No. of IO",
+          "hint": "PIS number of a registered IO, e.g. 28080214",
           "validation": null
         },
         {
           "col": 9,
-          "key": "io_pis",
-          "section": "Investigating Officer Details",
-          "label": "PIS No. of IO",
-          "hint": "e.g. 28080214",
-          "validation": null
-        },
-        {
-          "col": 10,
-          "key": "io_rank",
-          "section": "Investigating Officer Details",
-          "label": "IO Rank",
-          "hint": "e.g. SI",
+          "key": "integrated_pi",
+          "section": "General Information",
+          "label": "Arrested via Integrated PI",
+          "hint": "select: Yes, No",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Constable,Head Constable,Assistant Sub Inspector,Sub Inspector,Inspector,Deputy Superintendent of Police,Superintendent of Police\""
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 10,
+          "key": "group_patrolling",
+          "section": "General Information",
+          "label": "Arrested via Group Patrolling",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
             ]
           }
         },
         {
           "col": 11,
-          "key": "io_mobile",
-          "section": "Investigating Officer Details",
-          "label": "IO Mobile No.",
-          "hint": "IO contact number",
-          "validation": null
+          "key": "cycle_patrolling",
+          "section": "General Information",
+          "label": "Arrested via Cycle Patrolling",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
         },
         {
           "col": 12,
+          "key": "by_antisnatching_team",
+          "section": "General Information",
+          "label": "Arrested via Anti-Snatching Team",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 13,
+          "key": "by_prahari",
+          "section": "General Information",
+          "label": "Arrested via PRAHARI Scheme",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 14,
+          "key": "by_eyes_ears_scheme_members",
+          "section": "General Information",
+          "label": "Arrested via Eyes & Ears Scheme",
+          "hint": "select: Yes, No",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Yes,No\""
+            ]
+          }
+        },
+        {
+          "col": 15,
           "key": "prop_vehicle_no",
           "section": "General Information",
           "label": "Vehicle Registration No.",
@@ -4079,7 +4378,7 @@
           "validation": null
         },
         {
-          "col": 13,
+          "col": 16,
           "key": "prop_vehicle_type",
           "section": "General Information",
           "label": "Vehicle Type",
@@ -4092,7 +4391,7 @@
           }
         },
         {
-          "col": 14,
+          "col": 17,
           "key": "prop_cd_24h",
           "section": "General Information",
           "label": "1st CD Uploaded Within 24 Hours",
@@ -4105,7 +4404,7 @@
           }
         },
         {
-          "col": 15,
+          "col": 18,
           "key": "prop_cctv",
           "section": "General Information",
           "label": "CCTV Footage Collected",
@@ -4118,67 +4417,7 @@
           }
         },
         {
-          "col": 16,
-          "key": "prop_cash_amount",
-          "section": "General Information",
-          "label": "Amount (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 17,
-          "key": "prop_gold_item_type",
-          "section": "General Information",
-          "label": "Item Type",
-          "hint": "select: Ring, Necklace, Bracelet, Chain, Earring, Bangles, Watch, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Ring,Necklace,Bracelet,Chain,Earring,Bangles,Watch,Other\""
-            ]
-          }
-        },
-        {
-          "col": 18,
-          "key": "prop_elec_device_type",
-          "section": "General Information",
-          "label": "Device Type",
-          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
-            ]
-          }
-        },
-        {
           "col": 19,
-          "key": "prop_doc_type",
-          "section": "General Information",
-          "label": "Document Type",
-          "hint": "select: Passport, Aadhar Card, PAN Card, Driving License, Voter ID, Ration Card, Bank Passbook, Cheque Book, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Passport,Aadhar Card,PAN Card,Driving License,Voter ID,Ration Card,Bank Passbook,Cheque Book,Other\""
-            ]
-          }
-        },
-        {
-          "col": 20,
-          "key": "prop_drug_type",
-          "section": "General Information",
-          "label": "Drug / Substance Type",
-          "hint": "select: Heroin/Smack, Cannabis/Ganja, Cocaine, Methamphetamine, Opium/Afim, Tablets/Pills, Chemical Precursor, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Heroin / Smack,Cannabis / Ganja / Charas,Cocaine,Methamphetamine / Ice,Opium / Afim,Tablets / Pills,Chemical Precursor,Other\""
-            ]
-          }
-        },
-        {
-          "col": 21,
           "key": "prop_arms_type",
           "section": "General Information",
           "label": "Weapon Type",
@@ -4191,7 +4430,67 @@
           }
         },
         {
+          "col": 20,
+          "key": "prop_cash_amount",
+          "section": "General Information",
+          "label": "Amount (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 21,
+          "key": "prop_doc_type",
+          "section": "General Information",
+          "label": "Document Type",
+          "hint": "select: Passport, Aadhar Card, PAN Card, Driving License, Voter ID, Ration Card, Bank Passbook, Cheque Book, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Passport,Aadhar Card,PAN Card,Driving License,Voter ID,Ration Card,Bank Passbook,Cheque Book,Other\""
+            ]
+          }
+        },
+        {
           "col": 22,
+          "key": "prop_drug_type",
+          "section": "General Information",
+          "label": "Drug / Substance Type",
+          "hint": "select: Heroin/Smack, Cannabis/Ganja, Cocaine, Methamphetamine, Opium/Afim, Tablets/Pills, Chemical Precursor, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Heroin / Smack,Cannabis / Ganja / Charas,Cocaine,Methamphetamine / Ice,Opium / Afim,Tablets / Pills,Chemical Precursor,Other\""
+            ]
+          }
+        },
+        {
+          "col": 23,
+          "key": "prop_elec_device_type",
+          "section": "General Information",
+          "label": "Device Type",
+          "hint": "select: Laptop, Tablet, Smart TV, Camera, Speaker, Headphones, Gaming Console, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Laptop,Tablet,Smart TV,Camera,Speaker,Headphones,Gaming Console,Other\""
+            ]
+          }
+        },
+        {
+          "col": 24,
+          "key": "prop_gold_item_type",
+          "section": "General Information",
+          "label": "Item Type",
+          "hint": "select: Ring, Necklace, Bracelet, Chain, Earring, Bangles, Watch, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Ring,Necklace,Bracelet,Chain,Earring,Bangles,Watch,Other\""
+            ]
+          }
+        },
+        {
+          "col": 25,
           "key": "prop_other_desc",
           "section": "General Information",
           "label": "Item Description",
@@ -4199,52 +4498,7 @@
           "validation": null
         },
         {
-          "col": 23,
-          "key": "prop_doc_number",
-          "section": "General Information",
-          "label": "Document Number",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 24,
-          "key": "prop_gold_material",
-          "section": "General Information",
-          "label": "Material",
-          "hint": "select: Gold, Silver, Diamond, Platinum, Mixed, Other",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Gold,Silver,Diamond,Platinum,Mixed,Other\""
-            ]
-          }
-        },
-        {
-          "col": 25,
-          "key": "prop_elec_brand",
-          "section": "General Information",
-          "label": "Make / Brand",
-          "hint": "text",
-          "validation": null
-        },
-        {
           "col": 26,
-          "key": "prop_other_value",
-          "section": "General Information",
-          "label": "Estimated Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
-          "col": 27,
-          "key": "prop_drug_quantity",
-          "section": "General Information",
-          "label": "Quantity",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 28,
           "key": "prop_arms_make",
           "section": "General Information",
           "label": "Make / Manufacturer",
@@ -4252,7 +4506,7 @@
           "validation": null
         },
         {
-          "col": 29,
+          "col": 27,
           "key": "prop_cash_currency",
           "section": "General Information",
           "label": "Currency Type",
@@ -4265,23 +4519,57 @@
           }
         },
         {
-          "col": 30,
-          "key": "prop_doc_holder",
+          "col": 28,
+          "key": "prop_doc_number",
           "section": "General Information",
-          "label": "Document Holder Name",
+          "label": "Document Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 29,
+          "key": "prop_drug_quantity",
+          "section": "General Information",
+          "label": "Quantity",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 30,
+          "key": "prop_elec_brand",
+          "section": "General Information",
+          "label": "Make / Brand",
           "hint": "text",
           "validation": null
         },
         {
           "col": 31,
-          "key": "prop_elec_model",
+          "key": "prop_gold_material",
           "section": "General Information",
-          "label": "Model",
-          "hint": "text",
-          "validation": null
+          "label": "Material",
+          "hint": "select: Gold, Silver, Diamond, Platinum, Mixed, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Gold,Silver,Diamond,Platinum,Mixed,Other\""
+            ]
+          }
         },
         {
           "col": 32,
+          "key": "prop_other_value",
+          "section": "General Information",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": {
+            "type": "decimal",
+            "formulae": [
+              0
+            ]
+          }
+        },
+        {
+          "col": 33,
           "key": "prop_arms_serial",
           "section": "General Information",
           "label": "Serial Number",
@@ -4289,7 +4577,7 @@
           "validation": null
         },
         {
-          "col": 33,
+          "col": 34,
           "key": "prop_cash_denomination",
           "section": "General Information",
           "label": "Denomination Details",
@@ -4297,15 +4585,15 @@
           "validation": null
         },
         {
-          "col": 34,
-          "key": "prop_gold_weight",
+          "col": 35,
+          "key": "prop_doc_holder",
           "section": "General Information",
-          "label": "Weight (grams)",
+          "label": "Document Holder Name",
           "hint": "text",
           "validation": null
         },
         {
-          "col": 35,
+          "col": 36,
           "key": "prop_drug_unit",
           "section": "General Information",
           "label": "Unit",
@@ -4318,39 +4606,23 @@
           }
         },
         {
-          "col": 36,
-          "key": "prop_drug_value",
-          "section": "General Information",
-          "label": "Estimated Street Value (₹)",
-          "hint": "number",
-          "validation": null
-        },
-        {
           "col": 37,
-          "key": "prop_gold_value",
+          "key": "prop_elec_model",
           "section": "General Information",
-          "label": "Estimated Value (₹)",
-          "hint": "number",
+          "label": "Model",
+          "hint": "text",
           "validation": null
         },
         {
           "col": 38,
-          "key": "prop_elec_serial",
+          "key": "prop_gold_weight",
           "section": "General Information",
-          "label": "Serial Number",
+          "label": "Weight (grams)",
           "hint": "text",
           "validation": null
         },
         {
           "col": 39,
-          "key": "prop_doc_issuing_auth",
-          "section": "General Information",
-          "label": "Issuing Authority",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 40,
           "key": "prop_arms_ammo_count",
           "section": "General Information",
           "label": "Ammunition Count",
@@ -4358,7 +4630,47 @@
           "validation": null
         },
         {
+          "col": 40,
+          "key": "prop_doc_issuing_auth",
+          "section": "General Information",
+          "label": "Issuing Authority",
+          "hint": "text",
+          "validation": null
+        },
+        {
           "col": 41,
+          "key": "prop_drug_value",
+          "section": "General Information",
+          "label": "Estimated Street Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 42,
+          "key": "prop_elec_serial",
+          "section": "General Information",
+          "label": "Serial Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 43,
+          "key": "prop_gold_value",
+          "section": "General Information",
+          "label": "Estimated Value (₹)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 44,
+          "key": "prop_arms_license",
+          "section": "General Information",
+          "label": "License Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 45,
           "key": "prop_elec_value",
           "section": "General Information",
           "label": "Estimated Value (₹)",
@@ -4366,18 +4678,22 @@
           "validation": null
         },
         {
-          "col": 42,
-          "key": "prop_arms_license",
-          "section": "General Information",
-          "label": "License Number",
-          "hint": "text",
-          "validation": null
+          "col": 46,
+          "key": "arrested_qualification",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Qualification",
+          "hint": "select: Uneducated, 10th, 10+2, Graduate, Post-Graduate",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
+            ]
+          }
         }
       ],
       "row2Merges": [
         "A2:G2",
-        "H2:K2",
-        "L2:AP2"
+        "I2:AS2"
       ]
     },
     "Act and Sections": {
@@ -4598,7 +4914,12 @@
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Mobile No.",
           "hint": "10-digit mobile number",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              10
+            ]
+          }
         },
         {
           "col": 18,
@@ -4653,7 +4974,7 @@
           "key": "arrested_country",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Nationality",
-          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghanistan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "hint": "select: Indian, Tibetan, Afghan, Åland Islands, Albanian, Algerian, American, Andorran, Angolan, Antiguans, Argentinean, Armenian, Australian, Austrian, Azerbaijani, Bahamian, Bahraini, Bangladeshi, Barbadian, Batswana, Belarusian, Belgian, Belizean, Beninese, Bermuda, Bhutanese, Bolivian, Bonaire, Sint Eustatius and Saba, Bosnian - Herzegovinian, Bouvet Island, Brazilian, British, British Indian Ocean Territory, Bruneian, Bulgarian, Burkinabe, Burmese, Burundian, Cambodian, Cameroonian, Canadian, Cape Verdean, Cayman Islands, Central African, Chadian, Chilean, Chinese, Christmas Island, Cocos (Keeling) Islands, Colombian, Comoran, Congolese (Democratic Republic of the Congo), Congolese (Republic of the Congo), Cook Islands, Costa Rican, Croatian, Cuban, Curaçao, Cypriot, Czech, Danish, Djibouti, Dominican (Dominica), Dominican (Dominican Republic), Dutch, East Timorese, Ecuadorean, Egyptian, Emirian, Equatorial Guinean, Eritrean, Estonian, Ethiopian, Falkland Islands (Malvinas), Faroe Islands, Fijian, Filipino, Finnish, French, French (French Guiana), French (French Polynesia), French (French Southern Territories), Gabonese, Gambian, Georgian, German, Ghanaian, Gibraltar, Greek, Greenland, Grenadian, Guadeloupe, Guam, Guatemalan, Guernsey, Guinea-Bissauan, Guinean, Guyanese, Haitian, Heard Island and Mcdonald Islands, Holy See (Vatican City State), Honduran, Hong Kong, Hungarian, I-Kiribati, Icelandic, Indonesian, Iranian, Iraqi, Irish, Israeli, Italian, Ivorian, Jamaican, Japanese, Jersey, Jordanian, Kazakhstani, Kenyan, Kittian and Nevisian, Kosovo, Kuwaiti, Kyrgyz, Laotian, Latvian, Lebanese, Liberian, Libyan, Liechtensteiner, Lithuanian, Luxembourger, Macao, Macedonian, Malagasy, Malawian, Malaysian, Maldivan, Malian, Maltese, Manx, Marshallese, Martinique, Mauritanian, Mauritian, Mayotte, Mexican, Micronesian, Moldovan, Monacan, Mongolian, Montenegrin, Montserrat, Moroccan, Mosotho, Mozambican, Namibian, Nauruan, Nepalese, New Caledonia, New Zealander, Nicaraguan, Nigerian, Nigerien, Niue, Norfolk Island, North Korean, Northern Mariana Islands, Norwegian, Omani, Pakistani, Palauan, Palestinian Territory, Occupied, Panamanian, Papua New Guinea, Paraguayan, Peruvian, Pitcairn, Polish, Portuguese, Puerto Rico, Qatari, Reunion, Romanian, Russian, Rwandan, Saint Barthélemy, Saint Helena, Saint Lucian, Saint Martin (French part), Saint Pierre and Miquelon, Saint Vincent and the Grenadines, Salvadoran, Samoan, San Marinese, Sao Tomean, Saudi, Senegalese, Serbian, Seychellois, Sierra Leonean, Singaporean, Sint Maarten (Dutch part), Slovakian, Slovenian, Solomon Islander, Somali, South African, South Georgia and the South Sandwich Islands, South Korean, South Sudan, Spanish, Sri Lankan, Sudanese, Surinamer, Svalbard and Jan Mayen, Swazi, Swedish, Swiss, Syrian, Taiwanese, Tajik, Tanzanian, Thai, Togolese, Tokelau, Tongan, Trinidadian or Tobagonian, Tunisian, Turkish, Turkmenistan, Turks and Caicos Islands, Tuvaluan, Ugandan, Ukrainian, United States Minor Outlying Islands, Uruguayan, Uzbekistani, Vanuatu, Venezuelan, Vietnamese, Virgin Islands, British, Virgin Islands, U.S., Welsh, Western Sahara, Yemenite, Zambian, Zimbabwean, Other",
           "validation": {
             "type": "list",
             "formulae": [
@@ -4666,11 +4987,11 @@
           "key": "arrested_state",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person State",
-          "hint": "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
+          "hint": "select: Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra and Nagar Haveli and Daman and Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu and Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$G$2:$G$34"
+              "'_Lookups'!$G$2:$G$38"
             ]
           }
         },
@@ -4679,11 +5000,11 @@
           "key": "arrested_district",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person District",
-          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "hint": "select: Adilabad, Agar Malwa, Agra, Ahmedabad, Ahmednagar, Aizawl, Ajmer, Akola, Alappuzha, Aligarh, Alipurduar, Alirajpur, Alluri Sitharama Raju, Almora, Alwar, Ambala, Ambedkar Nagar, Amethi, Amravati, Amreli, Amritsar, Amroha, Anakapalli, Anand, Ananthapuramu, Anantnag, Angul, Anjaw, Annamayya, Anuppur, Araria, Aravalli, Ariyalur, Arwal, Ashoknagar, Auraiya, Aurangabad, Ayodhya, Azamgarh, Bagalakote, Bageshwar, Bagpat, Bahraich, Baksa, Balaghat, Balangir, Balasore, Ballari, Ballia, Balod, Baloda Bazar, Balrampur, Balrampur-Ramanujganj, Banaskantha, Banda, Bandipore, Banka, Bankura, Banswara, Bapatla, Barabanki, Baramulla, Baran, Bareilly, Bargarh, Barmer, Barnala, Barpeta, Barwani, Bastar, Basti, Bathinda, Beed, Begusarai, Belagavi, Bemetara, Bengaluru Rural, Bengaluru Urban, Betul, Bhadohi, Bhadradri Kothagudem, Bhadrak, Bhagalpur, Bhandara, Bharatpur, Bharuch, Bhavnagar, Bhilwara, Bhind, Bhiwani, Bhojpur, Bhopal, Bidar, Bijapur, Bijnor, Bikaner, Bilaspur, Birbhum, Bishnupur, Bokaro, Bongaigaon, Botad, Boudh, Budaun, Budgam, Bulandshahr, Buldhana, Bundi, Burhanpur, Buxar, Cachar, Central Delhi, Chamarajanagara, Chamba, Chamoli, Champawat, Champhai, Chandauli, Chandel, Chandigarh, Chandrapur, Changlang, Charaideo, Charkhi Dadri, Chatra, Chengalpattu, Chennai, Chhatarpur, Chhindwara, Chhota Udaipur, Chikkaballapura, Chikkamagaluru, Chirang, Chitradurga, Chitrakoot, Chittoor, Chittorgarh, Chümoukedima, Churachandpur, Churu, Coimbatore, Cooch Behar, Cuddalore, Cuttack, Dadra and Nagar Haveli, Dahod, Dakshin Dinajpur, Dakshina Kannada, Daman, Damoh, Dang, Dantewada, Darbhanga, Darjeeling, Darrang, Datia, Dausa, Davanagere, Debagarh, Dehradun, Deoghar, Deoria, Devbhumi Dwarka, Dewas, Dhalai, Dhamtari, Dhanbad, Dhar, Dharmapuri, Dharwada, Dhemaji, Dhenkanal, Dholpur, Dhubri, Dhule, Dibrugarh, Dima Hasao, Dimapur, Dindigul, Dindori, Diu, Doda, Dr. B.R. Ambedkar Konaseema, Dumka, Dungarpur, Durg, East Champaran, East Delhi, East Garo Hills, East Godavari, East Jaintia Hills, East Kameng, East Khasi Hills, East Siang, East Sikkim, East Singhbhum, Eastern West Khasi Hills, Eluru, Ernakulam, Erode, Etah, Etawah, Faridabad, Faridkot, Farrukhabad, Fatehabad, Fatehgarh Sahib, Fatehpur, Fazilka, Firozabad, Firozpur, Gadaga, Gadchiroli, Gajapati, Ganderbal, Gandhinagar, Ganjam, Garhwa, Gariaband, Gaurela-Pendra-Marwahi, Gautam Buddha Nagar, Gaya, Ghaziabad, Ghazipur, Gir Somnath, Giridih, Goalpara, Godda, Golaghat, Gomati, Gonda, Gondia, Gopalganj, Gorakhpur, Gumla, Guna, Guntur, Gurdaspur, Gurugram, Gwalior, Hailakandi, Hamirpur, Hanamkonda, Hanumangarh, Hapur, Harda, Hardoi, Haridwar, Hassan, Hathras, Haveri, Hazaribag, Hingoli, Hisar, Hnahthial, Hooghly, Hoshangabad, Hoshiarpur, Howrah, Hyderabad, Idukki, Imphal East, Imphal West, Indore, Itanagar capital complex, Jabalpur, Jagatsinghpur, Jagtial, Jaipur, Jaisalmer, Jajpur, Jalandhar, Jalaun, Jalgaon, Jalna, Jalore, Jalpaiguri, Jammu, Jamnagar, Jamtara, Jamui, Jangaon, Janjgir-Champa, Jashpur, Jaunpur, Jayashankar Bhupalpally, Jehanabad, Jhabua, Jhajjar, Jhalawar, Jhansi, Jhargram, Jharsuguda, Jhunjhunu, Jind, Jiribam, Jodhpur, Jogulamba Gadwal, Jorhat, Junagadh, Kabirdham, Kaimur, Kaithal, Kakching, Kakinada, Kalaburagi, Kalahandi, Kalimpong, Kallakurichi, Kamareddy, Kamjong, Kamle, Kamrup, Kamrup Metropolitan, Kanchipuram, Kandhamal, Kangpokpi, Kangra, Kanker, Kannauj, Kannur, Kanpur Dehat, Kanpur Nagar, Kanyakumari, Kapurthala, Karaikal, Karauli, Karbi Anglong, Kargil, Karimganj, Karimnagar, Karnal, Karur, Kasaragod, Kasganj, Kathua, Katihar, Katni, Kaushambi, Kendrapara, Kendujhar, Khagaria, Khairagarh-Chhuikhadan-Gandai, Khammam, Khandwa, Khargone, Khawzawl, Kheda, Khordha, Khowai, Khunti, Kinnaur, Kiphire, Kishanganj, Kishtwar, Kodagu, Koderma, Kohima, Kokrajhar, Kolar, Kolasib, Kolhapur, Kolkata, Kollam, Kondagaon, Koppala, Koraput, Korba, Korea, Kota, Kottayam, Kozhikode, Kra Daadi, Krishna, Krishnagiri, Kulgam, Kullu, Kumuram Bheem Asifabad, Kupwara, Kurnool, Kurukshetra, Kurung Kumey, Kushinagar, Kutch, Lahaul and Spiti, Lakhimpur, Lakhimpur Kheri, Lakhisarai, Lakshadweep, Lalitpur, Latehar, Latur, Lawngtlai, Leh, Lepa Rada, Lohardaga, Lohit, Longding, Longleng, Lower Dibang Valley, Lower Siang, Lower Subansiri, Lucknow, Ludhiana, Lunglei, Madhepura, Madhubani, Madurai, Mahabubabad, Maharajganj, Mahasamund, Mahbubnagar, Mahé, Mahendragarh, Mahisagar, Mahoba, Mainpuri, Majuli, Malappuram, Maldah, Malerkotla, Malkangiri, Mamit, Mancherial, Mandi, Mandla, Mandsaur, Mandya, Manendragarh-Chirmiri-Bharatpur, Mansa, Mathura, Mau, Mayiladuthurai, Mayurbhanj, Medak, Medchal–Malkajgiri, Meerut, Mehsana, Mirzapur, Moga, Mohla-Manpur-Ambagarh Chowki, Mokokchung, Mon, Moradabad, Morbi, Morena, Morigaon, Mulugu, Mumbai City, Mumbai Suburban, Mungeli, Munger, Murshidabad, Muzaffarnagar, Muzaffarpur, Mysuru, Nabarangpur, Nadia, Nagaon, Nagapattinam, Nagarkurnool, Nagaur, Nagpur, Nainital, Nalanda, Nalbari, Nalgonda, Namakkal, Namsai, Nanded, Nandurbar, Nandyal, Narayanpet, Narayanpur, Narmada, Narsinghpur, Nashik, Navsari, Nawada, Nayagarh, Neemuch, New Delhi, Nicobar, Nilgiris, Nirmal, Niuland, Niwari, Nizamabad, Noklak, Noney, North 24 Parganas, North and Middle Andaman, North Delhi, North East Delhi, North Garo Hills, North Goa, North Sikkim, North Tripura, North West Delhi, NTR, Nuapada, Nuh, Osmanabad, Pakke-Kessang, Pakur, Pakyong, Palakkad, Palamu, Palghar, Pali, Palnadu, Palwal, Panchkula, Panchmahal, Panipat, Panna, Papum Pare, Parbhani, Parvathipuram Manyam, Paschim Bardhaman, Paschim Medinipur, Patan, Pathanamthitta, Pathankot, Patiala, Patna, Pauri Garhwal, Peddapalli, Perambalur, Peren, Phek, Pherzawl, Pilibhit, Pithoragarh, Poonch, Porbandar, Prakasam, Pratapgarh, Prayagraj, Puducherry, Pudukkottai, Pulwama, Pune, Purba Bardhaman, Purba Medinipur, Puri, Purnia, Purulia, Raebareli, Raichuru, Raigad, Raigarh, Raipur, Raisen, Rajanna Sircilla, Rajgarh, Rajkot, Rajnandgaon, Rajouri, Rajsamand, Ramanagara, Ramanathapuram, Ramban, Ramgarh, Rampur, Ranchi, Ranga Reddy, Ranipet, Ratlam, Ratnagiri, Rayagada, Reasi, Rewa, Rewari, Ri Bhoi, Rohtak, Rohtas, Rudraprayag, Rupnagar, Sabarkantha, Sagar, Saharanpur, Saharsa, Sahibganj, Sahibzada Ajit Singh Nagar, Saiha, Saitual, Salem, Samastipur, Samba, Sambalpur, Sambhal, Sangareddy, Sangli, Sangrur, Sant Kabir Nagar, Saran, Sarangarh-Bilaigarh, Satara, Satna, Sawai Madhopur, Sehore, Senapati, Seoni, Sepahijala, Seraikela-Kharsawan, Serchhip, Shahdara, Shahdol, Shahid Bhagat Singh Nagar, Shahjahanpur, Shajapur, Shakti, Shamator, Shamli, Sheikhpura, Sheohar, Sheopur, Shi Yomi, Shimla, Shivamogga, Shivpuri, Shopian, Shravasti, Siang, Siddharthnagar, Siddipet, Sidhi, Sikar, Simdega, Sindhudurg, Singrauli, Sirmaur, Sirohi, Sirsa, Sitamarhi, Sitapur, Sivaganga, Sivasagar, Siwan, Solan, Solapur, Sonbhadra, Sonipat, Sonitpur, Soreng, South 24 Parganas, South Andaman, South Delhi, South East Delhi, South Garo Hills, South Goa, South Salmara Mankachar, South Sikkim, South Tripura, South West Delhi, South West Garo Hills, South West Khasi Hills, Sri Ganganagar, Sri Muktsar Sahib, Sri Potti Sriramulu Nellore, Sri Sathya Sai, Srikakulam, Srinagar, Subarnapur, Sukma, Sultanpur, Sundargarh, Supaul, Surajpur, Surat, Surendranagar, Surguja, Suryapet, Tamenglong, Tapi, Tarn Taran, Tawang, Tehri Garhwal, Tengnoupal, Tenkasi, Thane, Thanjavur, Theni, Thiruvananthapuram, Thoothukudi, Thoubal, Thrissur, Tikamgarh, Tinsukia, Tirap, Tiruchirappalli, Tirunelveli, Tirupati, Tirupattur, Tiruppur, Tiruvallur, Tiruvannamalai, Tiruvarur, Tonk, Tseminyü, Tuensang, Tumakuru, Udaipur, Udalguri, Udham Singh Nagar, Udhampur, Udupi, Ujjain, Ukhrul, Umaria, Una, Unakoti, Unnao, Upper Dibang Valley, Upper Siang, Upper Subansiri, Uttar Dinajpur, Uttara Kannada, Uttarkashi, Vadodara, Vaishali, Valsad, Varanasi, Vellore, Vidisha, Vijayanagara, Vijayapura, Vikarabad, Viluppuram, Virudhunagar, Visakhapatnam, Vizianagaram, Wanaparthy, Warangal, Wardha, Washim, Wayanad, West Champaran, West Delhi, West Garo Hills, West Godavari, West Jaintia Hills, West Kameng, West Karbi Anglong, West Khasi Hills, West Siang, West Sikkim, West Singhbhum, West Tripura, Wokha, Yadadri Bhuvanagiri, Yadgiri, Yamunanagar, Yanam, Yavatmal, YSR, Zunheboto",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$H$2:$H$16"
+              "INDIRECT(IFERROR(VLOOKUP($Y5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
@@ -4696,7 +5017,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$I$2:$I$193"
+              "'_Lookups'!$I$2:$I$226"
             ]
           }
         },
@@ -4706,14 +5027,19 @@
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Pin Code",
           "hint": "6-digit PIN code",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
           "col": 29,
           "key": "arrested_perm_same",
           "section": "Arrested Person Permanent Address",
           "label": "Is Permanent Address same as Present Address?",
-          "hint": "boolean",
+          "hint": "[Required] boolean",
           "validation": {
             "type": "list",
             "formulae": [
@@ -4766,7 +5092,7 @@
           "key": "arrested_perm_country",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Nationality",
-          "hint": "select: Indian, Nepalese, Bhutanese, Bangladeshi, Pakistani, Sri Lankan, Afghanistan, Myanmar, Tibetan, American, British, Canadian, Other",
+          "hint": "select: Indian, Tibetan, Afghan, Åland Islands, Albanian, Algerian, American, Andorran, Angolan, Antiguans, Argentinean, Armenian, Australian, Austrian, Azerbaijani, Bahamian, Bahraini, Bangladeshi, Barbadian, Batswana, Belarusian, Belgian, Belizean, Beninese, Bermuda, Bhutanese, Bolivian, Bonaire, Sint Eustatius and Saba, Bosnian - Herzegovinian, Bouvet Island, Brazilian, British, British Indian Ocean Territory, Bruneian, Bulgarian, Burkinabe, Burmese, Burundian, Cambodian, Cameroonian, Canadian, Cape Verdean, Cayman Islands, Central African, Chadian, Chilean, Chinese, Christmas Island, Cocos (Keeling) Islands, Colombian, Comoran, Congolese (Democratic Republic of the Congo), Congolese (Republic of the Congo), Cook Islands, Costa Rican, Croatian, Cuban, Curaçao, Cypriot, Czech, Danish, Djibouti, Dominican (Dominica), Dominican (Dominican Republic), Dutch, East Timorese, Ecuadorean, Egyptian, Emirian, Equatorial Guinean, Eritrean, Estonian, Ethiopian, Falkland Islands (Malvinas), Faroe Islands, Fijian, Filipino, Finnish, French, French (French Guiana), French (French Polynesia), French (French Southern Territories), Gabonese, Gambian, Georgian, German, Ghanaian, Gibraltar, Greek, Greenland, Grenadian, Guadeloupe, Guam, Guatemalan, Guernsey, Guinea-Bissauan, Guinean, Guyanese, Haitian, Heard Island and Mcdonald Islands, Holy See (Vatican City State), Honduran, Hong Kong, Hungarian, I-Kiribati, Icelandic, Indonesian, Iranian, Iraqi, Irish, Israeli, Italian, Ivorian, Jamaican, Japanese, Jersey, Jordanian, Kazakhstani, Kenyan, Kittian and Nevisian, Kosovo, Kuwaiti, Kyrgyz, Laotian, Latvian, Lebanese, Liberian, Libyan, Liechtensteiner, Lithuanian, Luxembourger, Macao, Macedonian, Malagasy, Malawian, Malaysian, Maldivan, Malian, Maltese, Manx, Marshallese, Martinique, Mauritanian, Mauritian, Mayotte, Mexican, Micronesian, Moldovan, Monacan, Mongolian, Montenegrin, Montserrat, Moroccan, Mosotho, Mozambican, Namibian, Nauruan, Nepalese, New Caledonia, New Zealander, Nicaraguan, Nigerian, Nigerien, Niue, Norfolk Island, North Korean, Northern Mariana Islands, Norwegian, Omani, Pakistani, Palauan, Palestinian Territory, Occupied, Panamanian, Papua New Guinea, Paraguayan, Peruvian, Pitcairn, Polish, Portuguese, Puerto Rico, Qatari, Reunion, Romanian, Russian, Rwandan, Saint Barthélemy, Saint Helena, Saint Lucian, Saint Martin (French part), Saint Pierre and Miquelon, Saint Vincent and the Grenadines, Salvadoran, Samoan, San Marinese, Sao Tomean, Saudi, Senegalese, Serbian, Seychellois, Sierra Leonean, Singaporean, Sint Maarten (Dutch part), Slovakian, Slovenian, Solomon Islander, Somali, South African, South Georgia and the South Sandwich Islands, South Korean, South Sudan, Spanish, Sri Lankan, Sudanese, Surinamer, Svalbard and Jan Mayen, Swazi, Swedish, Swiss, Syrian, Taiwanese, Tajik, Tanzanian, Thai, Togolese, Tokelau, Tongan, Trinidadian or Tobagonian, Tunisian, Turkish, Turkmenistan, Turks and Caicos Islands, Tuvaluan, Ugandan, Ukrainian, United States Minor Outlying Islands, Uruguayan, Uzbekistani, Vanuatu, Venezuelan, Vietnamese, Virgin Islands, British, Virgin Islands, U.S., Welsh, Western Sahara, Yemenite, Zambian, Zimbabwean, Other",
           "validation": {
             "type": "list",
             "formulae": [
@@ -4779,11 +5105,11 @@
           "key": "arrested_perm_state",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent State",
-          "hint": "select: Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chhattisgarh, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
+          "hint": "select: Andaman and Nicobar, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra and Nagar Haveli and Daman and Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu and Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal, Other UT/State",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$K$2:$K$34"
+              "'_Lookups'!$K$2:$K$38"
             ]
           }
         },
@@ -4792,11 +5118,11 @@
           "key": "arrested_perm_district",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent District",
-          "hint": "select: South District (SD), South East District (SED), New Delhi District (NDD), South West District (SWD), West District (WD), Outer District (OD), Dwarka District (DW), North West District (NWD), Rohini District (RND), Outer North District (OND), Central District (CD), North District (ND), East District (ED), North East District (NED), Shahdara District (SHD)",
+          "hint": "select: Adilabad, Agar Malwa, Agra, Ahmedabad, Ahmednagar, Aizawl, Ajmer, Akola, Alappuzha, Aligarh, Alipurduar, Alirajpur, Alluri Sitharama Raju, Almora, Alwar, Ambala, Ambedkar Nagar, Amethi, Amravati, Amreli, Amritsar, Amroha, Anakapalli, Anand, Ananthapuramu, Anantnag, Angul, Anjaw, Annamayya, Anuppur, Araria, Aravalli, Ariyalur, Arwal, Ashoknagar, Auraiya, Aurangabad, Ayodhya, Azamgarh, Bagalakote, Bageshwar, Bagpat, Bahraich, Baksa, Balaghat, Balangir, Balasore, Ballari, Ballia, Balod, Baloda Bazar, Balrampur, Balrampur-Ramanujganj, Banaskantha, Banda, Bandipore, Banka, Bankura, Banswara, Bapatla, Barabanki, Baramulla, Baran, Bareilly, Bargarh, Barmer, Barnala, Barpeta, Barwani, Bastar, Basti, Bathinda, Beed, Begusarai, Belagavi, Bemetara, Bengaluru Rural, Bengaluru Urban, Betul, Bhadohi, Bhadradri Kothagudem, Bhadrak, Bhagalpur, Bhandara, Bharatpur, Bharuch, Bhavnagar, Bhilwara, Bhind, Bhiwani, Bhojpur, Bhopal, Bidar, Bijapur, Bijnor, Bikaner, Bilaspur, Birbhum, Bishnupur, Bokaro, Bongaigaon, Botad, Boudh, Budaun, Budgam, Bulandshahr, Buldhana, Bundi, Burhanpur, Buxar, Cachar, Central Delhi, Chamarajanagara, Chamba, Chamoli, Champawat, Champhai, Chandauli, Chandel, Chandigarh, Chandrapur, Changlang, Charaideo, Charkhi Dadri, Chatra, Chengalpattu, Chennai, Chhatarpur, Chhindwara, Chhota Udaipur, Chikkaballapura, Chikkamagaluru, Chirang, Chitradurga, Chitrakoot, Chittoor, Chittorgarh, Chümoukedima, Churachandpur, Churu, Coimbatore, Cooch Behar, Cuddalore, Cuttack, Dadra and Nagar Haveli, Dahod, Dakshin Dinajpur, Dakshina Kannada, Daman, Damoh, Dang, Dantewada, Darbhanga, Darjeeling, Darrang, Datia, Dausa, Davanagere, Debagarh, Dehradun, Deoghar, Deoria, Devbhumi Dwarka, Dewas, Dhalai, Dhamtari, Dhanbad, Dhar, Dharmapuri, Dharwada, Dhemaji, Dhenkanal, Dholpur, Dhubri, Dhule, Dibrugarh, Dima Hasao, Dimapur, Dindigul, Dindori, Diu, Doda, Dr. B.R. Ambedkar Konaseema, Dumka, Dungarpur, Durg, East Champaran, East Delhi, East Garo Hills, East Godavari, East Jaintia Hills, East Kameng, East Khasi Hills, East Siang, East Sikkim, East Singhbhum, Eastern West Khasi Hills, Eluru, Ernakulam, Erode, Etah, Etawah, Faridabad, Faridkot, Farrukhabad, Fatehabad, Fatehgarh Sahib, Fatehpur, Fazilka, Firozabad, Firozpur, Gadaga, Gadchiroli, Gajapati, Ganderbal, Gandhinagar, Ganjam, Garhwa, Gariaband, Gaurela-Pendra-Marwahi, Gautam Buddha Nagar, Gaya, Ghaziabad, Ghazipur, Gir Somnath, Giridih, Goalpara, Godda, Golaghat, Gomati, Gonda, Gondia, Gopalganj, Gorakhpur, Gumla, Guna, Guntur, Gurdaspur, Gurugram, Gwalior, Hailakandi, Hamirpur, Hanamkonda, Hanumangarh, Hapur, Harda, Hardoi, Haridwar, Hassan, Hathras, Haveri, Hazaribag, Hingoli, Hisar, Hnahthial, Hooghly, Hoshangabad, Hoshiarpur, Howrah, Hyderabad, Idukki, Imphal East, Imphal West, Indore, Itanagar capital complex, Jabalpur, Jagatsinghpur, Jagtial, Jaipur, Jaisalmer, Jajpur, Jalandhar, Jalaun, Jalgaon, Jalna, Jalore, Jalpaiguri, Jammu, Jamnagar, Jamtara, Jamui, Jangaon, Janjgir-Champa, Jashpur, Jaunpur, Jayashankar Bhupalpally, Jehanabad, Jhabua, Jhajjar, Jhalawar, Jhansi, Jhargram, Jharsuguda, Jhunjhunu, Jind, Jiribam, Jodhpur, Jogulamba Gadwal, Jorhat, Junagadh, Kabirdham, Kaimur, Kaithal, Kakching, Kakinada, Kalaburagi, Kalahandi, Kalimpong, Kallakurichi, Kamareddy, Kamjong, Kamle, Kamrup, Kamrup Metropolitan, Kanchipuram, Kandhamal, Kangpokpi, Kangra, Kanker, Kannauj, Kannur, Kanpur Dehat, Kanpur Nagar, Kanyakumari, Kapurthala, Karaikal, Karauli, Karbi Anglong, Kargil, Karimganj, Karimnagar, Karnal, Karur, Kasaragod, Kasganj, Kathua, Katihar, Katni, Kaushambi, Kendrapara, Kendujhar, Khagaria, Khairagarh-Chhuikhadan-Gandai, Khammam, Khandwa, Khargone, Khawzawl, Kheda, Khordha, Khowai, Khunti, Kinnaur, Kiphire, Kishanganj, Kishtwar, Kodagu, Koderma, Kohima, Kokrajhar, Kolar, Kolasib, Kolhapur, Kolkata, Kollam, Kondagaon, Koppala, Koraput, Korba, Korea, Kota, Kottayam, Kozhikode, Kra Daadi, Krishna, Krishnagiri, Kulgam, Kullu, Kumuram Bheem Asifabad, Kupwara, Kurnool, Kurukshetra, Kurung Kumey, Kushinagar, Kutch, Lahaul and Spiti, Lakhimpur, Lakhimpur Kheri, Lakhisarai, Lakshadweep, Lalitpur, Latehar, Latur, Lawngtlai, Leh, Lepa Rada, Lohardaga, Lohit, Longding, Longleng, Lower Dibang Valley, Lower Siang, Lower Subansiri, Lucknow, Ludhiana, Lunglei, Madhepura, Madhubani, Madurai, Mahabubabad, Maharajganj, Mahasamund, Mahbubnagar, Mahé, Mahendragarh, Mahisagar, Mahoba, Mainpuri, Majuli, Malappuram, Maldah, Malerkotla, Malkangiri, Mamit, Mancherial, Mandi, Mandla, Mandsaur, Mandya, Manendragarh-Chirmiri-Bharatpur, Mansa, Mathura, Mau, Mayiladuthurai, Mayurbhanj, Medak, Medchal–Malkajgiri, Meerut, Mehsana, Mirzapur, Moga, Mohla-Manpur-Ambagarh Chowki, Mokokchung, Mon, Moradabad, Morbi, Morena, Morigaon, Mulugu, Mumbai City, Mumbai Suburban, Mungeli, Munger, Murshidabad, Muzaffarnagar, Muzaffarpur, Mysuru, Nabarangpur, Nadia, Nagaon, Nagapattinam, Nagarkurnool, Nagaur, Nagpur, Nainital, Nalanda, Nalbari, Nalgonda, Namakkal, Namsai, Nanded, Nandurbar, Nandyal, Narayanpet, Narayanpur, Narmada, Narsinghpur, Nashik, Navsari, Nawada, Nayagarh, Neemuch, New Delhi, Nicobar, Nilgiris, Nirmal, Niuland, Niwari, Nizamabad, Noklak, Noney, North 24 Parganas, North and Middle Andaman, North Delhi, North East Delhi, North Garo Hills, North Goa, North Sikkim, North Tripura, North West Delhi, NTR, Nuapada, Nuh, Osmanabad, Pakke-Kessang, Pakur, Pakyong, Palakkad, Palamu, Palghar, Pali, Palnadu, Palwal, Panchkula, Panchmahal, Panipat, Panna, Papum Pare, Parbhani, Parvathipuram Manyam, Paschim Bardhaman, Paschim Medinipur, Patan, Pathanamthitta, Pathankot, Patiala, Patna, Pauri Garhwal, Peddapalli, Perambalur, Peren, Phek, Pherzawl, Pilibhit, Pithoragarh, Poonch, Porbandar, Prakasam, Pratapgarh, Prayagraj, Puducherry, Pudukkottai, Pulwama, Pune, Purba Bardhaman, Purba Medinipur, Puri, Purnia, Purulia, Raebareli, Raichuru, Raigad, Raigarh, Raipur, Raisen, Rajanna Sircilla, Rajgarh, Rajkot, Rajnandgaon, Rajouri, Rajsamand, Ramanagara, Ramanathapuram, Ramban, Ramgarh, Rampur, Ranchi, Ranga Reddy, Ranipet, Ratlam, Ratnagiri, Rayagada, Reasi, Rewa, Rewari, Ri Bhoi, Rohtak, Rohtas, Rudraprayag, Rupnagar, Sabarkantha, Sagar, Saharanpur, Saharsa, Sahibganj, Sahibzada Ajit Singh Nagar, Saiha, Saitual, Salem, Samastipur, Samba, Sambalpur, Sambhal, Sangareddy, Sangli, Sangrur, Sant Kabir Nagar, Saran, Sarangarh-Bilaigarh, Satara, Satna, Sawai Madhopur, Sehore, Senapati, Seoni, Sepahijala, Seraikela-Kharsawan, Serchhip, Shahdara, Shahdol, Shahid Bhagat Singh Nagar, Shahjahanpur, Shajapur, Shakti, Shamator, Shamli, Sheikhpura, Sheohar, Sheopur, Shi Yomi, Shimla, Shivamogga, Shivpuri, Shopian, Shravasti, Siang, Siddharthnagar, Siddipet, Sidhi, Sikar, Simdega, Sindhudurg, Singrauli, Sirmaur, Sirohi, Sirsa, Sitamarhi, Sitapur, Sivaganga, Sivasagar, Siwan, Solan, Solapur, Sonbhadra, Sonipat, Sonitpur, Soreng, South 24 Parganas, South Andaman, South Delhi, South East Delhi, South Garo Hills, South Goa, South Salmara Mankachar, South Sikkim, South Tripura, South West Delhi, South West Garo Hills, South West Khasi Hills, Sri Ganganagar, Sri Muktsar Sahib, Sri Potti Sriramulu Nellore, Sri Sathya Sai, Srikakulam, Srinagar, Subarnapur, Sukma, Sultanpur, Sundargarh, Supaul, Surajpur, Surat, Surendranagar, Surguja, Suryapet, Tamenglong, Tapi, Tarn Taran, Tawang, Tehri Garhwal, Tengnoupal, Tenkasi, Thane, Thanjavur, Theni, Thiruvananthapuram, Thoothukudi, Thoubal, Thrissur, Tikamgarh, Tinsukia, Tirap, Tiruchirappalli, Tirunelveli, Tirupati, Tirupattur, Tiruppur, Tiruvallur, Tiruvannamalai, Tiruvarur, Tonk, Tseminyü, Tuensang, Tumakuru, Udaipur, Udalguri, Udham Singh Nagar, Udhampur, Udupi, Ujjain, Ukhrul, Umaria, Una, Unakoti, Unnao, Upper Dibang Valley, Upper Siang, Upper Subansiri, Uttar Dinajpur, Uttara Kannada, Uttarkashi, Vadodara, Vaishali, Valsad, Varanasi, Vellore, Vidisha, Vijayanagara, Vijayapura, Vikarabad, Viluppuram, Virudhunagar, Visakhapatnam, Vizianagaram, Wanaparthy, Warangal, Wardha, Washim, Wayanad, West Champaran, West Delhi, West Garo Hills, West Godavari, West Jaintia Hills, West Kameng, West Karbi Anglong, West Khasi Hills, West Siang, West Sikkim, West Singhbhum, West Tripura, Wokha, Yadadri Bhuvanagiri, Yadgiri, Yamunanagar, Yanam, Yavatmal, YSR, Zunheboto",
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$L$2:$L$16"
+              "INDIRECT(IFERROR(VLOOKUP($AJ5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
@@ -4809,7 +5135,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$M$2:$M$193"
+              "'_Lookups'!$M$2:$M$226"
             ]
           }
         },
@@ -4819,7 +5145,12 @@
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Pin Code",
           "hint": "6-digit PIN code",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6
+            ]
+          }
         },
         {
           "col": 40,
@@ -4899,7 +5230,7 @@
           "key": "verifying_officer_rank",
           "section": "Verification & Police Record",
           "label": "Arresting Officer Rank",
-          "hint": "",
+          "hint": "select: Constable, Head Constable, Assistant Sub Inspector, Sub Inspector, Inspector, Deputy Superintendent of Police, Superintendent of Police",
           "validation": {
             "type": "list",
             "formulae": [

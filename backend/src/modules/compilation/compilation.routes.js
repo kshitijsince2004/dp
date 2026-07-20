@@ -1,6 +1,7 @@
 import express from 'express';
 import * as compilationController from './compilation.controller.js';
 import { authMiddleware } from '../../middleware/auth.middleware.js';
+import { allow } from '../../middleware/rbac.middleware.js';
 
 const router = express.Router();
 
@@ -137,13 +138,14 @@ const router = express.Router();
 // GET /api/compilations
 router.get('/', authMiddleware, compilationController.getCompilations);
 
-// POST /api/compilations
-router.post('/', authMiddleware, compilationController.createCompilation);
+// POST /api/compilations — DISTRICT_OFFICER only (matches workflow config's district.compile
+// allowed_roles; this endpoint transitions member records, not just an admin listing).
+router.post('/', authMiddleware, allow('DISTRICT_OFFICER'), compilationController.createCompilation);
 
 // GET /api/compilations/:id
 router.get('/:id', authMiddleware, compilationController.getCompilation);
 
 // POST /api/compilations/:id/submit
-router.post('/:id/submit', authMiddleware, compilationController.submitCompilation);
+router.post('/:id/submit', authMiddleware, allow('DISTRICT_OFFICER'), compilationController.submitCompilation);
 
 export default router;

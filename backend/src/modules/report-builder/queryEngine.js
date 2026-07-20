@@ -40,12 +40,16 @@ const isPostgres = () => {
 
 /**
  * Build the SQL expression to read a field from records.data JSONB.
+ * `alias` defaults to the literal table name 'records' (used by single-table
+ * queries); joined queries alias the records table (e.g. 'L') and must pass
+ * that alias through, or Postgres rejects the query with "invalid reference
+ * to FROM-clause entry for table records".
  */
-function jsonFieldExpr(fieldKey) {
+function jsonFieldExpr(fieldKey, alias = 'records') {
   if (isPostgres()) {
-    return `CAST(records.data AS jsonb)->>'${fieldKey}'`;
+    return `CAST(${alias}.data AS jsonb)->>'${fieldKey}'`;
   }
-  return `json_extract(records.data, '$.${fieldKey}')`;
+  return `json_extract(${alias}.data, '$.${fieldKey}')`;
 }
 
 /**
@@ -53,25 +57,28 @@ function jsonFieldExpr(fieldKey) {
  * -date operators need a real comparable date, not a lexicographic string
  * compare, so parse the extracted text before comparing.
  */
-function jsonDateFieldExpr(fieldKey) {
+function jsonDateFieldExpr(fieldKey, alias = 'records') {
   if (isPostgres()) {
-    return `to_date(NULLIF(CAST(records.data AS jsonb)->>'${fieldKey}', ''), 'DD/MM/YYYY')`;
+    return `to_date(NULLIF(CAST(${alias}.data AS jsonb)->>'${fieldKey}', ''), 'DD/MM/YYYY')`;
   }
-  const extract = `json_extract(records.data, '$.${fieldKey}')`;
+  const extract = `json_extract(${alias}.data, '$.${fieldKey}')`;
   return `(substr(${extract}, 7, 4) || '-' || substr(${extract}, 4, 2) || '-' || substr(${extract}, 1, 2))`;
 }
 
 /**
  * Resolve a field to its SQL expression or column reference (for LIVE queries).
+ * `aliasOverride` re-targets both the `db_col` literal (which is always written
+ * as `records.<col>`) and the JSONB extract expression onto a joined query's
+ * table alias (e.g. 'L' in executeJoinedQuery/executePersonJoinedQuery).
  */
-function resolveFieldExpr(fieldDef) {
+function resolveFieldExpr(fieldDef, aliasOverride = null) {
   if (fieldDef.is_db_col) {
-    return fieldDef.db_col; // e.g. 'records.record_date'
+    return aliasOverride ? fieldDef.db_col.replace(/^records\./, `${aliasOverride}.`) : fieldDef.db_col; // e.g. 'records.record_date' -> 'L.record_date'
   }
   if (fieldDef.data_type === 'date') {
-    return jsonDateFieldExpr(fieldDef.key);
+    return jsonDateFieldExpr(fieldDef.key, aliasOverride || 'records');
   }
-  return jsonFieldExpr(fieldDef.key);
+  return jsonFieldExpr(fieldDef.key, aliasOverride || 'records');
 }
 
 // Operators whose value is compared against a date field and needs
@@ -149,8 +156,10 @@ function applyCondition(builder, expr, op, value, raw = false) {
 
 /**
  * Recursively apply a filter spec tree (AND/OR groups) to a Knex builder (LIVE path).
+ * `aliasOverride` must be passed whenever `builder`'s records table isn't literally
+ * named `records` (e.g. joined queries alias it `L`) — see resolveFieldExpr().
  */
-function applyFilterSpec(builder, spec, primaryTable, validatedFieldMap) {
+function applyFilterSpec(builder, spec, primaryTable, validatedFieldMap, aliasOverride = null) {
   if (!spec || !Array.isArray(spec.conditions) || spec.conditions.length === 0) return;
   const isOr = (spec.logic || 'AND').toUpperCase() === 'OR';
 
@@ -160,7 +169,7 @@ function applyFilterSpec(builder, spec, primaryTable, validatedFieldMap) {
       const applyFn = isOr && idx > 0 ? 'orWhere' : 'where';
       if (cond.logic && Array.isArray(cond.conditions)) {
         inner[applyFn](function () {
-          applyFilterSpec(this, cond, primaryTable, validatedFieldMap);
+          applyFilterSpec(this, cond, primaryTable, validatedFieldMap, aliasOverride);
         });
       } else {
         const { field, table: condTable, operator, value } = cond;
@@ -169,7 +178,7 @@ function applyFilterSpec(builder, spec, primaryTable, validatedFieldMap) {
         const fieldDef = validatedFieldMap.get(mapKey);
         if (!fieldDef) return;
 
-        const expr = resolveFieldExpr(fieldDef);
+        const expr = resolveFieldExpr(fieldDef, aliasOverride);
         const isRaw = !fieldDef.is_db_col;
         const v = fieldDef.data_type === 'date' && DATE_VALUE_OPS.has(String(operator).toUpperCase())
           ? toISOMaybe(value)
@@ -359,7 +368,12 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
       `${factTable}.workflow_status as _status`,
       `${factTable}.source_updated_at as _created_at`,
       'ps.name_en as _ps_name',
-      'dist.name_en as _district_name'
+      'dist.name_en as _district_name',
+      // "_ps_id"/"_district_id" are the _SYSTEM field keys the UI labels "Police Station"/
+      // "District" — aliased to the resolved names (not raw ids) so that column actually
+      // shows something readable once selected (previously always came back blank).
+      'ps.name_en as _ps_id',
+      'dist.name_en as _district_id'
     ];
 
     // Select only requested fact columns
@@ -475,6 +489,10 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
         _created_at: row.created_at,
         _ps_name: row.ps_name,
         _district_name: row.district_name,
+        // "_ps_id"/"_district_id" are the _SYSTEM field keys the UI labels "Police Station"/
+        // "District" — aliased to the resolved names so the column isn't blank once selected.
+        _ps_id: row.ps_name,
+        _district_id: row.district_name,
       };
       for (const fKey of selectedDataFields) {
         if (!fKey.startsWith('_')) {
@@ -499,6 +517,14 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
   const { ok, errors, validatedFieldMap, joinDef } = validateQuerySpec(spec, userRole);
   if (!ok) throw new Error(`Query validation failed: ${errors.join('; ')}`);
   if (!joinDef) throw new Error(`Join ${table}+${join} is not configured`);
+
+  // Person-entity joins (CASE+CASE_ACCUSED, CASE+CASE_VICTIM, ARREST+ARREST_ARRESTED) link the
+  // primary record to its record_persons rows by FK (record_id + person_type), not by a JSONB
+  // field-value match like the joins below — this data never lives in the warehouse fact
+  // tables, so it always runs against the LIVE operational tables.
+  if (joinDef.join_type === 'person') {
+    return executePersonJoinedQuery(spec, jurisdictionQuery, validatedFieldMap, joinDef, { limit, offset, page });
+  }
 
   const { join_on } = joinDef;
   const leftTable  = join_on.left.table;
@@ -608,7 +634,7 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
       .select(
         'L.id as L_id', 'L.record_date as L_record_date',
         'L.current_status as L_status', 'L.ps_id as L_ps_id',
-        'L.district_id as L_district_id',
+        'L.district_id as L_district_id', 'L.created_at as L_created_at',
         'L.data as L_data',
         'ps.name_en as ps_name', 'dist.name_en as district_name'
       )
@@ -636,7 +662,7 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
 
     if (leftFilters.conditions.length > 0) {
       leftQ = leftQ.where(function () {
-        applyFilterSpec(this, leftFilters, leftTable, validatedFieldMap);
+        applyFilterSpec(this, leftFilters, leftTable, validatedFieldMap, 'L');
       });
     }
 
@@ -680,8 +706,15 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
         _left_status: left.L_status,
         _ps_name: left.ps_name,
         _district_name: left.district_name,
+        _ps_id: left.ps_name,
+        _district_id: left.district_name,
+        _created_at: left.L_created_at,
       };
       for (const fKey of leftFields) {
+        // System fields (_record_date, _status, etc.) are real columns already
+        // projected above as _left_*, not JSONB keys — skip them here or they'd
+        // wrongly come back null (mirrors the same guard in executeSingleTableQuery).
+        if (fKey.startsWith('_')) continue;
         row[`${leftTable}__${fKey}`] = left.L_data[fKey] ?? null;
       }
       if (right) {
@@ -689,6 +722,7 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
         row._right_record_date = right.R_record_date;
         row._right_status = right.R_status;
         for (const fKey of rightFields) {
+          if (fKey.startsWith('_')) continue;
           row[`${rightTable}__${fKey}`] = right.R_data[fKey] ?? null;
         }
       }
@@ -697,6 +731,119 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
 
     return { rows: projected, total, page: parseInt(page, 10) || 1, pageSize: limit };
   }
+}
+
+/**
+ * Person-entity join (CASE+CASE_ACCUSED, CASE+CASE_VICTIM, ARREST+ARREST_ARRESTED).
+ * Unlike executeJoinedQuery's field-value joins, the "right side" here is the
+ * record_persons table, linked by FK (record_id) and filtered by person_type — a
+ * record with N persons of that type produces N output rows (one row with right=null
+ * if it has none), same row-multiplication behaviour as the FIR+Arrest/FIR+Missing joins.
+ */
+async function executePersonJoinedQuery(spec, jurisdictionQuery, validatedFieldMap, joinDef, { limit, offset, page }) {
+  const { table: leftTable, join: rightTable, fields, filters } = spec;
+  const personType = joinDef.person_type;
+
+  let leftQ = db('records as L')
+    .select(
+      'L.id as L_id', 'L.record_date as L_record_date',
+      'L.current_status as L_status', 'L.ps_id as L_ps_id',
+      'L.district_id as L_district_id', 'L.created_at as L_created_at',
+      'L.data as L_data',
+      'ps.name_en as ps_name', 'dist.name_en as district_name'
+    )
+    .leftJoin('hierarchy_nodes as ps', 'L.ps_id', 'ps.id')
+    .leftJoin('hierarchy_nodes as dist', 'L.district_id', 'dist.id')
+    .where('L.record_type', leftTable);
+
+  if (jurisdictionQuery.ps_id) leftQ = leftQ.where('L.ps_id', jurisdictionQuery.ps_id);
+  if (jurisdictionQuery.district_id) leftQ = leftQ.where('L.district_id', jurisdictionQuery.district_id);
+  if (jurisdictionQuery.sub_div_id) leftQ = leftQ.where('L.sub_div_id', jurisdictionQuery.sub_div_id);
+
+  // Only record-level (left table) filter conditions are applied here — filtering on the
+  // person sub-fields themselves isn't wired up yet (mirrors the same gap that already
+  // exists for the right side of the LIVE fallback in executeJoinedQuery above).
+  const leftFilters = { logic: 'AND', conditions: [] };
+  if (filters && filters.conditions) {
+    for (const cond of (filters.conditions || [])) {
+      if ((cond.table || leftTable) === leftTable) leftFilters.conditions.push(cond);
+    }
+  }
+  if (leftFilters.conditions.length > 0) {
+    leftQ = leftQ.where(function () {
+      applyFilterSpec(this, leftFilters, leftTable, validatedFieldMap, 'L');
+    });
+  }
+
+  const leftRows = await leftQ;
+  const leftIds = leftRows.map(r => r.L_id);
+
+  let personRows = [];
+  if (leftIds.length > 0) {
+    personRows = await db('record_persons as RP')
+      .select('RP.id as R_id', 'RP.record_id as R_record_id', 'RP.data as R_data')
+      .where('RP.person_type', personType)
+      .whereIn('RP.record_id', leftIds)
+      .orderBy('RP.sort_order', 'asc');
+  }
+
+  const personsByRecordId = new Map();
+  for (const p of personRows) {
+    const pData = typeof p.R_data === 'string' ? JSON.parse(p.R_data || '{}') : (p.R_data || {});
+    if (!personsByRecordId.has(p.R_record_id)) personsByRecordId.set(p.R_record_id, []);
+    personsByRecordId.get(p.R_record_id).push({ R_id: p.R_id, R_data: pData });
+  }
+
+  const joinedRows = [];
+  for (const lRow of leftRows) {
+    const lData = typeof lRow.L_data === 'string' ? JSON.parse(lRow.L_data || '{}') : (lRow.L_data || {});
+    const matching = personsByRecordId.get(lRow.L_id) || [];
+    if (matching.length === 0) {
+      joinedRows.push({ left: { ...lRow, L_data: lData }, right: null });
+    } else {
+      for (const rRow of matching) {
+        joinedRows.push({ left: { ...lRow, L_data: lData }, right: rRow });
+      }
+    }
+  }
+
+  const total = joinedRows.length;
+  const paged = joinedRows.slice(offset, offset + limit);
+
+  const leftFields  = fields.filter(f => (typeof f === 'string' ? { field: f, table: leftTable } : f).table === leftTable).map(f => typeof f === 'string' ? f : f.field);
+  const rightFields = fields.filter(f => (typeof f === 'string' ? { field: f, table: leftTable } : f).table !== leftTable).map(f => typeof f === 'string' ? f : f.field);
+
+  const projected = paged.map(({ left, right }) => {
+    const row = {
+      _left_id: left.L_id,
+      _left_record_date: left.L_record_date,
+      _left_status: left.L_status,
+      _ps_name: left.ps_name,
+      _district_name: left.district_name,
+      _ps_id: left.ps_name,
+      _district_id: left.district_name,
+      _created_at: left.L_created_at,
+    };
+    for (const fKey of leftFields) {
+      // System fields (_record_date, _status, etc.) are real columns already
+      // projected above as _left_*, not JSONB keys — skip them here or they'd
+      // wrongly come back null (mirrors the same guard in executeSingleTableQuery).
+      if (fKey.startsWith('_')) continue;
+      row[`${leftTable}__${fKey}`] = left.L_data[fKey] ?? null;
+    }
+    if (right) {
+      row._right_id = right.R_id;
+      for (const fKey of rightFields) {
+        // System fields don't meaningfully exist on a record_persons row either
+        // (the frontend offers them generically for every joined table) — skip.
+        if (fKey.startsWith('_')) continue;
+        row[`${rightTable}__${fKey}`] = right.R_data[fKey] ?? null;
+      }
+    }
+    return row;
+  });
+
+  return { rows: projected, total, page: parseInt(page, 10) || 1, pageSize: limit };
 }
 
 /**

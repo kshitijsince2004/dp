@@ -55,6 +55,31 @@ export const ALLOWED_JOINS = {
     },
     label_en: 'FIR + Missing Persons (DD Ref)',
     label_hi: 'एफआईआर + लापता व्यक्ति (डीडी संदर्भ)'
+  },
+  // Person-entity joins: link the primary record to its repeater persons in record_persons
+  // by FK (record_id + person_type), not by a JSONB field-value match like the joins above.
+  // This data never lives in the warehouse fact tables, so queryEngine.js always runs these
+  // against the LIVE operational tables (see join_type === 'person' handling there).
+  'CASE+CASE_ACCUSED': {
+    tables: ['CASE', 'CASE_ACCUSED'],
+    join_type: 'person',
+    person_type: 'ACCUSED',
+    label_en: 'FIR + Accused Persons',
+    label_hi: 'एफआईआर + अभियुक्त'
+  },
+  'CASE+CASE_VICTIM': {
+    tables: ['CASE', 'CASE_VICTIM'],
+    join_type: 'person',
+    person_type: 'VICTIM',
+    label_en: 'FIR + Victims',
+    label_hi: 'एफआईआर + पीड़ित'
+  },
+  'ARREST+ARREST_ARRESTED': {
+    tables: ['ARREST', 'ARREST_ARRESTED'],
+    join_type: 'person',
+    person_type: 'ARRESTED',
+    label_en: 'Arrests + Arrested Persons (Full Details)',
+    label_hi: 'गिरफ्तारी + गिरफ्तार व्यक्ति (पूर्ण विवरण)'
   }
 };
 
@@ -141,7 +166,7 @@ function personAddressFieldSet(prefix, labelPrefix, group, isPii) {
   const presentSuffixes = [
     ['house_no', 'House No.'], ['street', 'Street'], ['colony', 'Colony'],
     ['city_town_village', 'City / Town / Village'], ['tehsil_block_mandal', 'Tehsil / Block / Mandal'],
-    ['present_address', 'Present Address'], ['country', 'Country'], ['state', 'State'],
+    ['present_address', 'Present Address'], ['country', 'Nationality'], ['state', 'State'],
     ['district', 'District'], ['police_station', 'Police Station'], ['pincode', 'Pincode'],
   ];
   const permSuffixes = presentSuffixes.filter(([s]) => s !== 'present_address');
@@ -158,20 +183,6 @@ function personAddressFieldSet(prefix, labelPrefix, group, isPii) {
   fields.push(mk(`${prefix}_perm_same`, `${labelPrefix} Permanent Address Same as Present?`, { data_type: 'enum', operators: ENUM_OPS, options: YES_NO_OPTIONS }));
   fields.push(...permSuffixes.map(([suffix, label]) => mk(`${prefix}_perm_${suffix}`, `${labelPrefix} Permanent ${label}`)));
   return fields;
-}
-
-/** A plain (non-person) address block: 10 fields, no perm variant — for occurrence/intimation-style locations. */
-function plainAddressFieldSet(prefix, labelPrefix, group) {
-  const suffixes = [
-    ['house_no', 'House No.'], ['street', 'Street'], ['colony', 'Colony'],
-    ['city_town_village', 'City / Town / Village'], ['tehsil_block_mandal', 'Tehsil / Block / Mandal'],
-    ['country', 'Country'], ['state', 'State'], ['district', 'District'],
-    ['police_station', 'Police Station'], ['pincode', 'Pincode'],
-  ];
-  return suffixes.map(([suffix, label]) => ({
-    key: `${prefix}_${suffix}`, label_en: `${labelPrefix} ${label}`, label_hi: `${labelPrefix} ${label}`,
-    data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group,
-  }));
 }
 
 /** Personal-info sub-fields for a person entity (16 fields: name parts, contact, DOB, etc). */
@@ -198,6 +209,22 @@ function personalInfoFieldSet(prefix, labelPrefix, group, isPii = true) {
     is_pii: isPii, ...(isPii ? { pii_min_role: 'DISTRICT_OFFICER' } : {}),
     is_db_col: false, group,
   }));
+}
+
+/**
+ * Full person block (personal info + address, 36 fields) for repeater-backed entities
+ * (accused/victim/arrested persons) whose data lives in record_persons.data — NOT in
+ * records.data JSONB like every other field in this file. `personType` is tagged onto
+ * each field via `person_entity` so callers know it must be sourced from record_persons
+ * (see queryEngine.js's join_type === 'person' handling), and matches the person_type
+ * value records.service.js writes to record_persons rows for this entity.
+ */
+function personEntityFieldSet(prefix, labelPrefix, groupPrefix, personType) {
+  const fields = [
+    ...personalInfoFieldSet(prefix, labelPrefix, `${groupPrefix}_personal_info`, true),
+    ...personAddressFieldSet(prefix, labelPrefix, `${groupPrefix}_address_detail`, true),
+  ];
+  return fields.map(f => ({ ...f, person_entity: personType }));
 }
 
 /** IO Rank/PIS/Mobile — io_name usually already exists per table and just gets tagged with the group separately. */
@@ -344,9 +371,6 @@ export const REPORTABLE_FIELDS = {
 
     // ── IO Info group (add rank/pis/mobile — io_name already tagged above) ──
     ...ioInfoExtraFields('io_info'),
-
-    // ── Intimation Address group (10 fields) ─────────────────────────────
-    ...plainAddressFieldSet('intimation', 'Intimation', 'intimation_address'),
 
     // ── Special Scheme group (7 fields) ──────────────────────────────────
     { key: 'scheme', label_en: 'Scheme', label_hi: 'Scheme', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'special_scheme' },
@@ -500,6 +524,17 @@ export const REPORTABLE_FIELDS = {
     { key: 'filed_by_acp_sdm', label_en: 'Filed by ACP/SDM', label_hi: 'Filed by ACP/SDM', data_type: 'enum', operators: ENUM_OPS, options: YES_NO_OPTIONS, is_pii: false, is_db_col: false, group: 'inquest_details' },
     { key: 'filed_by_acp_sdm_date', label_en: 'Filed by ACP/SDM Date', label_hi: 'Filed by ACP/SDM Date', data_type: 'date', operators: DATE_OPS, is_pii: false, is_db_col: false, group: 'inquest_details' },
   ],
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Virtual "join-only" tables for repeater person entities — not selectable as a
+  // primary table (not in ALLOWED_TABLES), only reachable via the CASE+CASE_ACCUSED /
+  // CASE+CASE_VICTIM / ARREST+ARREST_ARRESTED joins (see ALLOWED_JOINS above). Their
+  // data lives in record_persons.data, not records.data — queryEngine.js's
+  // join_type === 'person' handling reads it directly, never through the warehouse.
+  // ─────────────────────────────────────────────────────────────────────────
+  CASE_ACCUSED: personEntityFieldSet('accused', 'Accused', 'accused', 'ACCUSED'),
+  CASE_VICTIM: personEntityFieldSet('victim', 'Victim', 'victim', 'VICTIM'),
+  ARREST_ARRESTED: personEntityFieldSet('arrested', 'Arrested Person', 'arrested', 'ARRESTED'),
 };
 
 /**
@@ -519,7 +554,6 @@ export const GROUP_LABELS = {
   'CASE.financial_fraud': { label_en: 'Financial / Fraud Details', label_hi: 'Financial / Fraud Details' },
 
   'ARREST.io_info': { label_en: 'IO Info', label_hi: 'IO Info' },
-  'ARREST.intimation_address': { label_en: 'Intimation Address', label_hi: 'Intimation Address' },
   'ARREST.special_scheme': { label_en: 'Special Scheme', label_hi: 'Special Scheme' },
   'ARREST.custody_status_detail': { label_en: 'Custody Status Details', label_hi: 'Custody Status Details' },
 
@@ -540,6 +574,15 @@ export const GROUP_LABELS = {
   'UIDB.physical_description': { label_en: 'Physical Description', label_hi: 'Physical Description' },
   'UIDB.inquest_details': { label_en: 'Inquest Details', label_hi: 'Inquest Details' },
   'UIDB.contacts_assigned': { label_en: 'Contacts Assigned', label_hi: 'Contacts Assigned' },
+
+  'CASE_ACCUSED.accused_personal_info': { label_en: 'Accused Personal Info', label_hi: 'Accused Personal Info' },
+  'CASE_ACCUSED.accused_address_detail': { label_en: 'Accused Address', label_hi: 'Accused Address' },
+
+  'CASE_VICTIM.victim_personal_info': { label_en: 'Victim Personal Info', label_hi: 'Victim Personal Info' },
+  'CASE_VICTIM.victim_address_detail': { label_en: 'Victim Address', label_hi: 'Victim Address' },
+
+  'ARREST_ARRESTED.arrested_personal_info': { label_en: 'Arrested Person Personal Info', label_hi: 'Arrested Person Personal Info' },
+  'ARREST_ARRESTED.arrested_address_detail': { label_en: 'Arrested Person Address', label_hi: 'Arrested Person Address' },
 };
 
 /**

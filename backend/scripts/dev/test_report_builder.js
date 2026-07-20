@@ -79,7 +79,7 @@ await test('Login as hq_admin', async () => {
   });
   const data = await res.json();
   if (res.status !== 200) throw new Error(`Login failed: ${JSON.stringify(data)}`);
-  token = data.data?.accessToken || data.data?.token;
+  token = data.data?.access_token || data.data?.token;
   if (!token) throw new Error('No token in response');
   
   // Extract CSRF token from Set-Cookie header

@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore.js';
 
 const QUICK_PROFILES = [
-  { badge: "HQ001",  abbr: "HQ",  role: "Research Cell",          name: "HQ Analyst",          theme: "hq"  },
+  { badge: "HQA001", abbr: "HQ",  role: "Research Cell",          name: "HQ Analyst",          theme: "hq"  },
   { badge: "DO001",  abbr: "DCP", role: "SO Branch/DCP",       name: "New Delhi District",    theme: "dcp" },
   { badge: "ACP001", abbr: "ACP", role: "ACP Sub Division",     name: "Parliament St Subdiv",  theme: "acp" },
   { badge: "SHO001", abbr: "SHO", role: "SHO",  name: "Parliament St PS",      theme: "sho" },

@@ -25,53 +25,24 @@ export const NR_PREFIX = 'OPT_';
 
 // ────────────────────────────────────────────────────────────────────────────────────────
 
-import nationality from 'i18n-nationality';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+// Geo/demographic lists come from the ONE source module (WP11 — see
+// backend/src/config/geoData.js: nationality via i18n-nationality, India states/districts
+// via the reviewed LGD snapshot in config/ref-data/). Re-exported under the names this
+// module's consumers (import.parse.js, import.controller.js, template-builder.service.js)
+// have always used.
+import {
+  NATIONALITY_OPTS, INDIA_STATES, ALL_INDIA_DISTRICTS, INDIA_COUNTRY, DELHI_STATE,
+} from '../../config/geoData.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export const COUNTRY_OPTS = NATIONALITY_OPTS;
+export const STATE_OPTS = INDIA_STATES;
+export { ALL_INDIA_DISTRICTS };
 
-const jsonPath = path.resolve(__dirname, '../../../node_modules/i18n-nationality/langs/en.json');
-let enNationality = {};
-try {
-  enNationality = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-} catch (e) {
-  enNationality = {
-    "IN": "Indian",
-    "NP": "Nepalese",
-    "BT": "Bhutanese",
-    "BD": "Bangladeshi",
-    "PK": "Pakistani",
-    "LK": "Sri Lankan",
-    "AF": "Afghanistan",
-    "MM": "Myanmar",
-    "US": "American",
-    "GB": "British",
-    "CA": "Canadian"
-  };
-}
-
-nationality.registerLocale(enNationality);
-
-const rawOpts = nationality.getNames('en');
-const demonymList = Object.values(rawOpts).filter(Boolean);
-const exclude = new Set(['Indian', 'Tibetan', 'Other']);
-const cleanList = demonymList.filter(d => !exclude.has(d));
-cleanList.sort((a, b) => a.localeCompare(b));
-
-export const COUNTRY_OPTS = ['Indian', 'Tibetan', ...cleanList, 'Other'];
-
-export const STATE_OPTS = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 
-  'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu & Kashmir', 
-  'Jharkhand', 'Karnataka', 'Kerala', 'Ladakh', 'Madhya Pradesh', 'Maharashtra', 
-  'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 
-  'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 
-  'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Other UT/State'
-];
-
+// POLICE districts (Delhi Police operational districts, hierarchy-derived naming) — used
+// ONLY by the record-level `district` column (which police district owns the record) and
+// the occurrence address (Delhi-scoped by decision D-A). Person/present/permanent ADDRESS
+// `*_district` fields are INDIA-scoped and cascade from their sibling state via the LGD
+// snapshot instead — never this list.
 export const DISTRICT_OPTS = [
   "South District (SD)", "South East District (SED)", "New Delhi District (NDD)",
   "South West District (SWD)", "West District (WD)", "Outer District (OD)",
@@ -106,7 +77,9 @@ const getPersonFieldsList = (prefix, labelPrefixEn, labelPrefixHi) => {
     { field_key: `${prefix}_present_address`, label_en: `${labelPrefixEn} Full Present Address`, label_hi: `${labelPrefixHi} वर्तमान पता`, required: false, hint: 'Full residential address' },
     { field_key: `${prefix}_country`, label_en: `${labelPrefixEn} Nationality`, label_hi: `${labelPrefixHi} राष्ट्रीयता`, required: false, options: COUNTRY_OPTS },
     { field_key: `${prefix}_state`, label_en: `${labelPrefixEn} State`, label_hi: `${labelPrefixHi} राज्य`, required: false, options: STATE_OPTS },
-    { field_key: `${prefix}_district`, label_en: `${labelPrefixEn} District`, label_hi: `${labelPrefixHi} जिला`, required: false, options: DISTRICT_OPTS },
+    // Person ADDRESS districts are India-scoped (WP11): the full-India superset backs the
+    // dropdown, and Excel's state→district cascade narrows it per the selected state.
+    { field_key: `${prefix}_district`, label_en: `${labelPrefixEn} District`, label_hi: `${labelPrefixHi} जिला`, required: false, options: ALL_INDIA_DISTRICTS },
     { field_key: `${prefix}_police_station`, label_en: `${labelPrefixEn} Police Station`, label_hi: `${labelPrefixHi} पुलिस स्टेशन (PS)`, required: false, hint: 'Police Station' },
     { field_key: `${prefix}_pincode`, label_en: `${labelPrefixEn} Pin Code`, label_hi: `${labelPrefixHi} पिन कोड`, required: false, hint: '6-digit PIN code' }
   ];
@@ -121,7 +94,9 @@ const getAddressFieldsList = (prefix, labelPrefixEn, labelPrefixHi) => {
     { field_key: `${prefix}_tehsil_block_mandal`, label_en: `${labelPrefixEn} Tehsil / Block / Mandal`, label_hi: `${labelPrefixHi} तहसील / ब्लॉक / मंडल`, required: false, hint: 'Tehsil' },
     { field_key: `${prefix}_country`, label_en: `${labelPrefixEn} Nationality`, label_hi: `${labelPrefixHi} राष्ट्रीयता`, required: false, options: COUNTRY_OPTS },
     { field_key: `${prefix}_state`, label_en: `${labelPrefixEn} State`, label_hi: `${labelPrefixHi} राज्य`, required: false, options: STATE_OPTS },
-    { field_key: `${prefix}_district`, label_en: `${labelPrefixEn} District`, label_hi: `${labelPrefixHi} जिला`, required: false, options: DISTRICT_OPTS },
+    // Same India-scope rule as getPersonFieldsList above. The OCCURRENCE call site overrides
+    // this back to the police-district list (occurrence is Delhi-scoped by decision D-A).
+    { field_key: `${prefix}_district`, label_en: `${labelPrefixEn} District`, label_hi: `${labelPrefixHi} जिला`, required: false, options: ALL_INDIA_DISTRICTS },
     { field_key: `${prefix}_police_station`, label_en: `${labelPrefixEn} Police Station`, label_hi: `${labelPrefixHi} पुलिस स्टेशन (PS)`, required: false, hint: 'Police Station' },
     { field_key: `${prefix}_pincode`, label_en: `${labelPrefixEn} Pin Code`, label_hi: `${labelPrefixHi} पिन कोड`, required: false, hint: '6-digit PIN code' }
   ];
@@ -132,7 +107,7 @@ export const caseGeneralFields = [
   { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: true, hint: 'dd-mm-yyyy' },
   { field_key: 'district', label_en: 'District', label_hi: 'जिला', required: true, hint: 'e.g. New Delhi District (NDD)' },
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
-  { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: false, hint: 'e.g. Theft / Larceny' },
+  { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: true, hint: 'e.g. Theft / Larceny' },
   { field_key: 'heinous_offence', label_en: 'Heinous Offence', label_hi: 'जघन्य अपराध', required: false, options: ['Yes', 'No'] },
   { field_key: 'under_section', label_en: 'Under Section', label_hi: 'धारा के अंतर्गत', required: false, hint: 'e.g. Section 379 IPC' },
   { field_key: 'case_type', label_en: 'Case Type', label_hi: 'मामले का प्रकार', required: false, hint: 'e.g. Property Theft' },
@@ -146,12 +121,18 @@ export const caseGeneralFields = [
   ...getPersonFieldsList('complainant', 'Complainant', 'शिकायतकर्ता').filter(f => f.field_key !== 'complainant_npr'&& f.field_key !== 'complainant_present_address'&& f.field_key !== 'complainant_birth_year'&& f.field_key !== 'complainant_dob'),
   { field_key: 'complainant_perm_same', label_en: 'Is Complainant Permanent Same As Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: false, options: ['Yes', 'No'] },
   ...getAddressFieldsList('complainant_perm', 'Complainant Permanent Address', 'शिकायतकर्ता का स्थायी पता'),
-  ...getAddressFieldsList('occurrence', 'Place of Occurrence Address', 'घटनास्थल का पता विवरण').filter(f => f.field_key !== 'occurrence_country' && f.field_key !== 'occurrence_state'),
+  // Occurrence is Delhi-scoped (D-A): no country/state columns, and its district is the
+  // Delhi POLICE district list (drives the district→police-station cascade), never the
+  // India address superset the shared helper now defaults to.
+  ...getAddressFieldsList('occurrence', 'Place of Occurrence Address', 'घटनास्थल का पता विवरण')
+    .filter(f => f.field_key !== 'occurrence_country' && f.field_key !== 'occurrence_state')
+    .map(f => f.field_key === 'occurrence_district' ? { ...f, options: DISTRICT_OPTS } : f),
   { field_key: 'occurrence_landmark', label_en: 'Place of Occurrence Landmark', label_hi: 'घटनास्थल का मार्ग-चिह्न', required: false, hint: 'Landmark' },
 
-  { field_key: 'io_name', label_en: 'IO Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },
-  { field_key: 'io_pis', label_en: 'PIS Number', label_hi: 'पीआईएस संख्या', required: false, hint: 'e.g. 28080214' },
-  { field_key: 'io_mobile', label_en: 'Mobile Number', label_hi: 'मोबाइल नंबर', required: false, hint: 'IO contact number' },
+  // 2026-07-16 (WP10, explicit user-approved template exception): IO detail columns
+  // (name/rank/mobile) removed — the single PIS-number column below is resolved against
+  // investigating_officers (batch's target PS) at import validation; unknown PIS = ERROR.
+  { field_key: 'io_pis', label_en: 'IO ID (PIS No.)', label_hi: 'जांच अधिकारी आईडी (पीआईएस नंबर)', required: false, hint: 'PIS number of a registered IO, e.g. 28080214' },
   { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'dd-mm-yyyy' },
   { field_key: 'case_status', label_en: 'Status', label_hi: 'स्थिति', required: false },
   { field_key: 'disposal_type', label_en: 'Disposal Type', label_hi: 'निपटान प्रकार', required: false },
@@ -162,7 +143,7 @@ export const caseActSectionFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'Must match General Information FIR Number' },
   { field_key: 'act', label_en: 'Act', label_hi: 'अधिनियम', required: true, hint: 'e.g. IPC / BNS' },
   { field_key: 'sections', label_en: 'Sections', label_hi: 'धाराएं', required: true, hint: 'e.g. Sec 379/411' },
-  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching' },
+  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: true, hint: 'e.g. Burglary / Snatching' },
   { field_key: 'minor_head', label_en: 'Minor Head', label_hi: 'लघु शीर्ष', required: false, hint: 'e.g. Cycle Theft / Dowry Death' }
 ];
 
@@ -210,7 +191,8 @@ export const caseAccusedFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'Must match General Information FIR Number' },
   //{ field_key: 'accused_npr', label_en: 'Accused NPR No.', label_hi: 'अभियुक्त एनपीआर संख्या', required: false, hint: 'NPR Number' },
   ...getPersonFieldsList('accused', 'Accused', 'अभियुक्त')
-    .filter(f => f.field_key !== 'accused_dob' && f.field_key !== 'accused_birth_year' && f.field_key !== 'accused_present_address' && f.field_key !== 'accused_npr'),
+    .filter(f => f.field_key !== 'accused_dob' && f.field_key !== 'accused_birth_year' && f.field_key !== 'accused_present_address' && f.field_key !== 'accused_npr')
+    .map(f => f.field_key === 'accused_gender' ? { ...f, required: true } : f),
   { field_key: 'accused_perm_same', label_en: 'Is Accused Permanent Address Same As Present?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: false, options: ['Yes', 'No'] },
   ...getAddressFieldsList('accused_perm', 'Accused Permanent Address', 'अभियुक्त का स्थायी पता')
 ];
@@ -233,23 +215,21 @@ export const arrestGeneralFields = [
   { field_key: 'heinous_offence', label_en: 'Heinous Offence', label_hi: 'जघन्य अपराध', required: false, options: ['Yes', 'No'] },
   { field_key: 'district', label_en: 'District', label_hi: 'जिला', required: true, hint: 'e.g. New Delhi District (NDD)' },
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
-  { field_key: 'io_name', label_en: 'IO / Officer Name', label_hi: 'जांच अधिकारी का नाम', required: false, hint: 'e.g. Inspector Ravindra Singh' },
-  { field_key: 'io_pis', label_en: 'PIS No. of IO', label_hi: 'पीआईएस संख्या', required: false, hint: 'e.g. 28080214' },
-  { field_key: 'io_rank', label_en: 'IO Rank', label_hi: 'पद', required: false, hint: 'e.g. SI' },
-  { field_key: 'io_mobile', label_en: 'IO Mobile No.', label_hi: 'मोबाइल नंबर', required: false, hint: 'IO contact number' }
+  // 2026-07-16 (WP10): IO detail columns removed — single resolved PIS column, see CASE note.
+  { field_key: 'io_pis', label_en: 'IO ID (PIS No.)', label_hi: 'जांच अधिकारी आईडी (पीआईएस नंबर)', required: false, hint: 'PIS number of a registered IO, e.g. 28080214' }
 ];
 
 export const arrestActSectionFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'Must match General Info sheet' },
   { field_key: 'act', label_en: 'Act', label_hi: 'अधिनियम', required: true, hint: 'e.g. IPC / BNS' },
   { field_key: 'sections', label_en: 'Sections', label_hi: 'धाराएं', required: true, hint: 'e.g. Sec 379/411' },
-  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching' },
+  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: true, hint: 'e.g. Burglary / Snatching' },
   { field_key: 'minor_head', label_en: 'Minor Head', label_hi: 'लघु शीर्ष', required: false, hint: 'e.g. Cycle Theft / Dowry Death' }
 ];
 
 export const arrestPersonFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'Must match General Info sheet' },
-  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: false, hint: 'dd-mm-yyyy' },
+  { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: true, hint: 'dd-mm-yyyy' },
   { field_key: 'time_of_arrest', label_en: 'Time Of Arrest', label_hi: 'गिरफ्तारी का समय', required: false, hint: 'HH:MM' },
   { field_key: 'arrest_place', label_en: 'House No. of Arrest', label_hi: 'गिरफ्तारी का मकान संख्या', required: false },
   { field_key: 'arrest_street', label_en: 'Street of Arrest', label_hi: 'गिरफ्तारी का गली / सड़क', required: false },
@@ -257,7 +237,8 @@ export const arrestPersonFields = [
   { field_key: 'arrest_district', label_en: 'District of Arrest', label_hi: 'गिरफ्तारी का जिला', required: false },
   { field_key: 'arrest_landmark', label_en: 'Landmark of Arrest', label_hi: 'गिरफ्तारी का लैंडमार्क', required: false },
   ...getPersonFieldsList('arrested', 'Arrested Person', 'गिरफ्तार व्यक्ति')
-    .filter(f => f.field_key !== 'arrested_dob' && f.field_key !== 'arrested_birth_year' && f.field_key !== 'arrested_npr' &&f.field_key !== 'arrested_present_address'),
+    .filter(f => f.field_key !== 'arrested_dob' && f.field_key !== 'arrested_birth_year' && f.field_key !== 'arrested_npr' && f.field_key !== 'arrested_present_address')
+    .map(f => f.field_key === 'arrested_gender' ? { ...f, required: true } : f),
   { field_key: 'arrested_perm_same', label_en: 'Is Permanent Address same as Present Address?', label_hi: 'क्या स्थायी पता वर्तमान पते के समान है?', required: true, options: ['Yes', 'No'] },
   //{ field_key: 'arrested_perm_address', label_en: 'Full Permanent Address', label_hi: 'स्थायी पता', required: false },
   ...getAddressFieldsList('arrested_perm', 'Arrested Person Permanent Address', 'गिरफ्तार व्यक्ति का स्थायी पता'),
@@ -378,7 +359,7 @@ export const uidbGeneralFields = [
   { field_key: 'found_time', label_en: 'Time Body Found', label_hi: 'शव मिलने का समय', required: false, section: 'corpse_desc' },
   { field_key: 'found_latitude', label_en: 'Place Body Found Latitude', label_hi: 'शव मिलने का स्थान अक्षांश', required: false, section: 'corpse_desc' },
   { field_key: 'found_longitude', label_en: 'Place Body Found Longitude', label_hi: 'शव मिलने का स्थान रेखांश', required: false, section: 'corpse_desc' },
-  { field_key: 'approx_age', label_en: 'Approximate Age', label_hi: 'अनुमानित उम्र', required: false, section: 'corpse_desc' },
+  { field_key: 'approx_age', label_en: 'Approximate Age', label_hi: 'अनुमानित उम्र', required: true, section: 'corpse_desc' },
   { field_key: 'description', label_en: 'Physical Description', label_hi: 'शारीरिक हुलिया', required: false, section: 'corpse_desc' },
   { field_key: 'identification_marks', label_en: 'Identification Marks', label_hi: 'पहचान चिन्ह', required: false, section: 'corpse_desc' },
 
@@ -408,10 +389,8 @@ export const uidbGeneralFields = [
   { field_key: 'filed_by_acp_sdm_date', label_en: 'Date of Filed by ACP/SDM', label_hi: 'एसीपी / एसडीएम द्वारा दायर करने की तिथि', required: false, section: 'inquest_details' },
 
   // --- IO Details (investigation_officer) ---
-  { field_key: 'io_name', label_en: 'IO / Officer Name', label_hi: 'जांच अधिकारी का नाम', required: false, section: 'investigation_officer' },
-  { field_key: 'io_rank', label_en: 'IO Rank', label_hi: 'जांच अधिकारी का पद', required: false, options: ['Constable', 'Head Constable', 'Assistant Sub Inspector', 'Sub Inspector', 'Inspector', 'Deputy Superintendent of Police', 'Superintendent of Police'], section: 'investigation_officer' },
-  { field_key: 'io_pis', label_en: 'PIS No. of IO', label_hi: 'जांच अधिकारी का पीआईएस नंबर', required: false, section: 'investigation_officer' },
-  { field_key: 'io_mobile', label_en: 'IO Mobile No.', label_hi: 'जांच अधिकारी का मोबाइल', required: false, section: 'investigation_officer' }
+  // 2026-07-16 (WP10): IO detail columns removed — single resolved PIS column, see CASE note.
+  { field_key: 'io_pis', label_en: 'IO ID (PIS No.)', label_hi: 'जांच अधिकारी आईडी (पीआईएस नंबर)', required: false, section: 'investigation_officer', hint: 'PIS number of a registered IO, e.g. 28080214' }
 ];
 
 export const missingGeneralFields = [
@@ -441,9 +420,9 @@ export const missingGeneralFields = [
   { field_key: 'mp_perm_pincode', label_en: 'Permanent Pin Code', label_hi: 'स्थायी पिन कोड', required: false, section: 'person_details' },
   //{ field_key: 'missing_address', label_en: 'Full Permanent Address', label_hi: 'स्थायी पता विवरण', required: false, section: 'person_details' },
   { field_key: 'gender', label_en: 'Gender', label_hi: 'लिंग', required: false, options: ['Male', 'Female', 'Transgender', 'Unknown'], section: 'person_details' },
-  { field_key: 'age', label_en: 'Age', label_hi: 'उम्र', required: false, section: 'person_details' },
-  { field_key: 'major_minor', label_en: 'Major / Minor', label_hi: 'वयस्क / अवयस्क', required: false, options: ['Major', 'Minor'], section: 'person_details' },
-  { field_key: 'missing_date', label_en: 'Date Missing Since', label_hi: 'लापता होने की तिथि', required: false, section: 'person_details' },
+  { field_key: 'age', label_en: 'Age', label_hi: 'उम्र', required: true, section: 'person_details' },
+  { field_key: 'major_minor', label_en: 'Major / Minor', label_hi: 'वयस्क / अवयस्क', required: false, options: ['Major', 'Minor'], hint: 'select: Major, Minor', section: 'person_details' },
+  { field_key: 'missing_date', label_en: 'Date Missing Since', label_hi: 'लापता होने की तिथि', required: true, section: 'person_details' },
   { field_key: 'missing_place', label_en: 'Last Seen Place', label_hi: 'अंतिम बार देखे जाने का स्थान', required: false, section: 'person_details' },
   { field_key: 'Mental State', label_en: 'Mental State', label_hi: 'मानसिक स्थिति', required: false, section: 'person_details' },
   { field_key: 'physical_description', label_en: 'Physical Description', label_hi: 'शारीरिक हुलिया', required: false, section: 'person_details' },
@@ -462,10 +441,8 @@ export const missingGeneralFields = [
   { field_key: 'hair', label_en: 'Hair', label_hi: 'बाल', required: false, section: 'person_details' },
   { field_key: 'moustache', label_en: 'Moustache', label_hi: 'मूंछ', required: false, section: 'person_details' },
   { field_key: 'beard', label_en: 'Beard', label_hi: 'दाढ़ी', required: false, section: 'person_details' },
-  { field_key: 'io_name', label_en: 'IO / Officer Name', label_hi: 'जांच अधिकारी का नाम', required: false, section: 'investigation_officer' },
-  { field_key: 'io_rank', label_en: 'IO Rank', label_hi: 'जांच अधिकारी का पद', required: false, options: ['Constable', 'Head Constable', 'Assistant Sub Inspector', 'Sub Inspector', 'Inspector', 'Deputy Superintendent of Police', 'Superintendent of Police'], section: 'investigation_officer' },
-  { field_key: 'io_pis', label_en: 'PIS No. of IO', label_hi: 'जांच अधिकारी का पीआईएस नंबर', required: false, section: 'investigation_officer' },
-  { field_key: 'io_mobile', label_en: 'IO Mobile No.', label_hi: 'जांच अधिकारी का मोबाइल', required: false, section: 'investigation_officer' }
+  // 2026-07-16 (WP10): IO detail columns removed — single resolved PIS column, see CASE note.
+  { field_key: 'io_pis', label_en: 'IO ID (PIS No.)', label_hi: 'जांच अधिकारी आईडी (पीआईएस नंबर)', required: false, section: 'investigation_officer', hint: 'PIS number of a registered IO, e.g. 28080214' }
 ];
 
 // ─── Registry-driven template inclusion ─────────────────────────────────────────────────
@@ -522,13 +499,51 @@ export const TEMPLATE_EXCLUDE_KEYS = {
     'accused_npr', 'accused_dob', 'accused_birth_year', 'accused_present_address',
     'victim_npr', 'victim_qualification', 'victim_dob', 'victim_birth_year',
     'victim_present_address',
-    'io_rank',
+    // 2026-07-16 WP10: IO detail columns removed from the template (single io_pis column
+    // remains, resolved to records.io_id at validation) — excluded so the still-active
+    // registry rows don't auto-append them back as new columns.
+    'io_rank', 'io_name', 'io_mobile',
+    // 2026-07-16 Integration 3 WP0 review: registry-driven auto-append now correctly
+    // recognises these (a schema-rename bug was silently hiding them). Excluded here per
+    // explicit user decision, not oversight — see docs/new-db-integration/03-import.md:
+    // major_heads/minor_heads duplicate the per-section major_head/minor_head already on
+    // the Act and Sections sheet; io_id is resolved from the existing io_name/io_pis
+    // curated columns at import time instead of asking for a raw FK; transfer_to has no
+    // import workflow yet.
+    'major_heads', 'minor_heads', 'io_id', 'transfer_to',
+    // 2026-07-16 Integration 3 WP4: system-set raw-preservation fields for legacy leniency
+    // (docs/new-db-integration/03-import.md C6) — import.validate.js stamps these directly on
+    // the composed payload when a legacy row's local_head/beat can't be resolved; never an
+    // officer-filled template cell.
+    'local_head_raw', 'beat_raw',
   ]),
   ARREST: new Set([
     // general info variants not used by the arrest template
     'case_type', 'fir_no', 'gd_no', 'arrest_date', 'arrest_place', 'complainant_name',
     'other_status_reason', 'recovery', 'nafis_dossier', 'case_status', 'listed_criminal',
     'arresting_officer', 'arresting_officer_mobile',
+    // 2026-07-16 Integration 3 WP0 review — same rationale as CASE above.
+    'major_heads', 'minor_heads', 'io_id',
+    // 2026-07-16 WP10: IO detail columns removed — same rationale as CASE above.
+    'io_name', 'io_rank', 'io_mobile',
+    // 2026-07-16 Integration 3 WP3: both added to field_registry this integration to close a
+    // real gap (a schema column with no storage destination — see
+    // docs/new-db-integration/03-import.md). arrest_time is the template's time_of_arrest
+    // column under its real registry key (import-key-bridge.config.js renames at import time
+    // — excluding it here stops it from ALSO auto-appending as a second, duplicate column).
+    // is_dd_based is a synthetic composer-set flag (which template/parent-key-field was used),
+    // never an officer-filled cell — same registry-column marks it readonly/not
+    // visible/editable on the interactive form too.
+    'arrest_time', 'is_dd_based',
+    // 2026-07-16 Integration 3 WP4: same rationale as CASE's local_head_raw/beat_raw above
+    // (beat_raw doesn't apply to ARREST — beat_no itself is CASE-only).
+    'local_head_raw',
+    // gd_date/gd_time (also added this integration, for KALANDRA/UIDB/MISSING) are already
+    // explicit curated columns on kalandraGeneralFields — excluding them from ARREST's
+    // auto-include set stops them duplicating there AND stops them spontaneously appearing
+    // as new, unrequested columns on the regular (non-Kalandra) ARREST template, which never
+    // asked for a GD date/time and has fir_date as its own date-of-record instead.
+    'gd_date', 'gd_time',
     // intimation section never wired into the template
     'intimation_date_time', 'intimated_relative_name', 'intimated_relative_relation',
     'intimation_mode', 'intimation_house_no', 'intimation_street', 'intimation_colony',
@@ -544,11 +559,42 @@ export const TEMPLATE_EXCLUDE_KEYS = {
   ]),
   UIDB: new Set([
     'deceased_address', 'deceased_perm_address', 'local_head', 'heinous_offence', 'case_status', 'missing_relation_type',
+    // 2026-07-16 Integration 3 WP0 review — same rationale as CASE above.
+    'major_heads', 'minor_heads', 'io_id',
+    // 2026-07-16 WP10: IO detail columns removed — same rationale as CASE above.
+    'io_name', 'io_rank', 'io_mobile',
+    // 2026-07-16 Integration 3 WP4 — same rationale as CASE's local_head_raw above.
+    'local_head_raw',
   ]),
   MISSING: new Set([
     'mp_address', 'missing_address', 'operator_name', 'case_status', 'missing_relation_type',
+    // 2026-07-16 Integration 3 WP0 review: io_id resolved from existing IO columns at
+    // import time, not asked as a raw FK; case_registered is redundant with whether
+    // missing_fir_no is filled in — no separate boolean needed.
+    'io_id', 'case_registered',
+    // 2026-07-16 WP10: IO detail columns removed — same rationale as CASE above.
+    'io_name', 'io_rank', 'io_mobile',
+  ]),
+  // 2026-07-16 WP10: PCR_CALL's template is generated by the generic registry-driven branch
+  // (no curated list) — with the IO detail columns removed everywhere else, the same three
+  // are excluded here so the generic branch (which now respects isTemplateExcluded) matches;
+  // io_pis stays as PCR_CALL's single IO column, resolved the same way. io_id same as above.
+  PCR_CALL: new Set([
+    'io_name', 'io_rank', 'io_mobile', 'io_id',
   ]),
 };
+
+// Fields whose field_registry.validation_rules.required is true but which the bulk-import
+// flow deliberately does NOT enforce as required — the record still imports (DRAFT/PS) and
+// gets completed later via the interactive form. Consulted by both template generation
+// (header coloring/hint "[Required]" prefix) and import validation (WP4's
+// SUBMIT_REQUIREMENTS_PENDING vs REQUIRED_MISSING split). User decision 2026-07-16: covers
+// work_out_date (ruling 23a addendum) and missing_fir_no/missing_fir_date (populated once
+// the linked CASE is created/imported and linkResolver resolves it — see
+// docs/new-db-integration/03-import.md).
+export const IMPORT_OPTIONAL_REQUIRED_KEYS = new Set([
+  'work_out_date', 'missing_fir_no', 'missing_fir_date',
+]);
 
 export const CASE_SHEETS_CONFIG = {
   general: caseGeneralFields.map(f => f.field_key),
@@ -578,4 +624,56 @@ export const KALANDRA_SHEETS_CONFIG = {
   general: kalandraGeneralFields.map(f => f.field_key),
   act_section: kalandraActSectionFields.map(f => f.field_key),
   person: kalandraPersonFields.map(f => f.field_key)
+};
+
+// ─── T1 keystone sets (03-TRIAGE-MATRIX.md, architect ruling under D1) ──────────────────
+// Single source of truth (FIX 2a, 2026-07) — previously import.validate.js and
+// import.parse.js each hand-maintained their own copy (KEYSTONE_FIELDS / GHOST_ROW_KEYSTONE_
+// COLUMNS respectively), free to drift; they had in fact drifted (MISSING's set differed).
+// field_key -> always required, ERROR in BOTH modes, independent of field_registry/curated
+// `required`. KALANDRA reuses ARREST's set minus fir_date (Kalandra has no FIR date field at
+// all — GD Number is its own linked_fir_dd_no keystone, already in the shared ARREST set).
+//
+// PCR_CALL is deliberately empty here, NOT populated with a "call date/time" field: the
+// matrix's PCR_CALL keystone is already enforced structurally, unconditionally, by the
+// composed-level RECORD_DATE_MISSING check (getRecordDate('PCR_CALL') -> rowData.gd_date) —
+// no row-level field exists to promote. `gd_no` (the template's single "GD Number, Date &
+// Time" column) is the closest candidate but is a free-text identifier column, not a
+// date-typed field, and is currently registry-optional; promoting it to a hard ERROR-in-
+// both-modes keystone would be a real requiredness change beyond what the matrix specifies.
+// Flagged for architect review rather than improvised — see the Wave report.
+export const KEYSTONE_FIELDS = {
+  CASE: new Set(['fir_no', 'fir_date']),
+  ARREST: new Set(['linked_fir_dd_no', 'date_of_arrest', 'arrested_first_name']),
+  // KALANDRA reuses ARREST's person sheet verbatim (still has date_of_arrest, arrested_first_name)
+  // — only fir_date is dropped (kalandraGeneralFields filters it out; GD Number is the keystone
+  // in linked_fir_dd_no's place, already shared with ARREST).
+  KALANDRA: new Set(['linked_fir_dd_no', 'date_of_arrest', 'arrested_first_name']),
+  MISSING: new Set(['missing_name']),
+  UIDB: new Set(['found_date', 'found_place']),
+  PCR_CALL: new Set(),
+};
+
+// MISSING's date keystone is an OR-group (missing_date OR gd_date/"date reported" — either
+// satisfies), not a flat per-field requirement — kept separate from KEYSTONE_FIELDS (which
+// assumes one field = one requirement) both for the row-level required check
+// (import.validate.js's validateRowFields) and for deriving the parse-time ghost-row keystone
+// signal (import.parse.js) — a row carrying ONLY an OR-group field still reads as real data.
+export const OR_GROUP_KEYSTONES = {
+  MISSING: [{
+    fields: ['missing_date', 'gd_date'],
+    label: 'Date Missing Since / GD Date',
+    message: 'Either "Date Missing Since" or "GD Date" is required for a Missing Person record.',
+  }],
+};
+
+// Derived, not hand-copied: every field_key that counts as a "this row has real data"
+// signal for the ghost-row skip (import.parse.js) — the keystone set plus every OR-group
+// field, per record type. Replaces the old separate GHOST_ROW_KEYSTONE_COLUMNS hand-copy.
+export const keystoneColumnsFor = (recordType) => {
+  const cols = new Set(KEYSTONE_FIELDS[recordType] || []);
+  for (const group of OR_GROUP_KEYSTONES[recordType] || []) {
+    for (const f of group.fields) cols.add(f);
+  }
+  return cols;
 };

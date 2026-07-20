@@ -3,6 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users as UsersIcon, Plus, UserCheck, UserX, ShieldAlert, X, Trash2, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
+import useAuthStore from '../../store/authStore.js';
+
+// Roles the backend actually grants POST/PUT/DELETE on /users to (users.router.js) —
+// HQ_ANALYST/DISTRICT_OFFICER can list (GET) but not mutate; mirror that here so the
+// action buttons aren't shown for a request that would just 403.
+const CAN_MUTATE_ROLES = ['SYSTEM_ADMIN', 'SHO'];
 
 const ROLE_LABELS = {
   HC: 'Head Constable (Data Entry)',
@@ -26,6 +32,9 @@ const ROLE_COLORS = {
 
 export default function Users() {
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuthStore();
+  const isSHO = currentUser?.role === 'SHO';
+  const canMutate = CAN_MUTATE_ROLES.includes(currentUser?.role);
   const [modalOpen, setModalOpen] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -139,20 +148,24 @@ export default function Users() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2 font-display">
             <UsersIcon className="text-[var(--accent-color)]" />
-            <span>Users Register Console</span>
+            <span>{isSHO ? 'My Police Station — Officers' : 'Users Register Console'}</span>
           </h1>
           <p className="text-slate-500 text-xs mt-1 font-semibold">
-            Manage officer accounts, roles, and jurisdiction permissions across the PHAROS platform.
+            {isSHO
+              ? 'Register and manage Head Constable (HC) accounts for your own police station.'
+              : 'Manage officer accounts, roles, and jurisdiction permissions across the PHAROS platform.'}
           </p>
         </div>
- 
-        <button
-          onClick={() => setModalOpen(true)}
-          className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md border-none active:scale-95"
-        >
-          <Plus size={14} />
-          <span>Register New Officer</span>
-        </button>
+
+        {canMutate && (
+          <button
+            onClick={() => setModalOpen(true)}
+            className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md border-none active:scale-95"
+          >
+            <Plus size={14} />
+            <span>{isSHO ? 'Register New HC' : 'Register New Officer'}</span>
+          </button>
+        )}
       </div>
  
       {/* ── Users Table ────────────────────────────────────────────────────── */}
@@ -178,7 +191,7 @@ export default function Users() {
                   <th className="p-3.5">Role</th>
                   <th className="p-3.5">Station / District</th>
                   <th className="p-3.5">Auth Status</th>
-                  <th className="p-3.5 pr-5 text-right">Actions</th>
+                  {canMutate && <th className="p-3.5 pr-5 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-600">
@@ -191,7 +204,7 @@ export default function Users() {
                         {item.badge_no || item.badgeNo || '—'}
                       </td>
                       <td className="p-3.5 font-semibold text-slate-750">
-                        {item.name_en || item.username || '—'}
+                        {item.name || item.username || '—'}
                       </td>
                       <td className="p-3.5">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${ROLE_COLORS[roleKey] || 'text-slate-500 bg-slate-50 border-slate-200'}`}>
@@ -210,6 +223,7 @@ export default function Users() {
                           {isActive ? 'ACTIVE' : 'DEACTIVATED'}
                         </span>
                       </td>
+                      {canMutate && (
                       <td className="p-3.5 pr-5 text-right space-x-1.5 whitespace-nowrap">
                         {/* Toggle Active */}
                         <button
@@ -239,7 +253,7 @@ export default function Users() {
                         {/* Delete */}
                         <button
                           onClick={() => {
-                            if (window.confirm(`Permanently remove ${item.name_en || item.username} from the registry?`)) {
+                            if (window.confirm(`Permanently remove ${item.name || item.username} from the registry?`)) {
                               deleteUserMutation.mutate(item.id);
                             }
                           }}
@@ -250,6 +264,7 @@ export default function Users() {
                           <Trash2 size={12} />
                         </button>
                       </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -303,18 +318,26 @@ export default function Users() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-zinc-400 font-semibold">Role *</label>
-                  <select
-                    value={form.role}
-                    onChange={(e) => setForm({ ...form, role: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] transition-all cursor-pointer"
-                  >
-                    <option value="HC">Head Constable (HC)</option>
-                    <option value="SHO">Station House Officer (SHO)</option>
-                    <option value="DISTRICT_OFFICER">DCP District Officer</option>
-                    <option value="HQ_ANALYST">HQ Analyst</option>
-                    <option value="HQ_ADMIN">HQ Administrator</option>
-                    <option value="SYSTEM_ADMIN">System Admin</option>
-                  </select>
+                  {isSHO ? (
+                    // SHO may only ever create HC users — the backend stamps this server-side
+                    // regardless, but the form shouldn't imply a choice that doesn't exist.
+                    <div className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-400">
+                      Head Constable (HC)
+                    </div>
+                  ) : (
+                    <select
+                      value={form.role}
+                      onChange={(e) => setForm({ ...form, role: e.target.value })}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] transition-all cursor-pointer"
+                    >
+                      <option value="HC">Head Constable (HC)</option>
+                      <option value="SHO">Station House Officer (SHO)</option>
+                      <option value="DISTRICT_OFFICER">DCP District Officer</option>
+                      <option value="HQ_ANALYST">HQ Analyst</option>
+                      <option value="HQ_ADMIN">HQ Administrator</option>
+                      <option value="SYSTEM_ADMIN">System Admin</option>
+                    </select>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -331,6 +354,9 @@ export default function Users() {
                 </div>
               </div>
 
+              {/* SHO's PS is stamped server-side from their own JWT (never trusted from this
+                  form) — no scope fields to show. */}
+              {!isSHO && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-zinc-400 font-semibold">Police Station ID</label>
@@ -354,6 +380,7 @@ export default function Users() {
                   />
                 </div>
               </div>
+              )}
 
               <div className="bg-zinc-950 border border-zinc-800/80 p-2.5 rounded text-[11px] text-zinc-500 flex gap-2">
                 <ShieldAlert size={14} className="flex-shrink-0 mt-0.5 text-amber-600" />
@@ -397,7 +424,7 @@ export default function Users() {
 
             <div className="p-5 space-y-4 text-xs">
               <p className="text-zinc-400">
-                Resetting password for <strong className="text-zinc-200">{selectedUser.name_en || selectedUser.username}</strong> ({selectedUser.badge_no || selectedUser.badgeNo}).
+                Resetting password for <strong className="text-zinc-200">{selectedUser.name || selectedUser.username}</strong> ({selectedUser.badge_no || selectedUser.badgeNo}).
               </p>
 
               <div className="space-y-1.5">

@@ -1,0 +1,67 @@
+[
+ {
+  "id": "T_ARREST_REGISTER",
+  "name_en": "Arrest Register (Proforma-2)",
+  "name_hi": "गिरफ्तारी पंजी (प्रपत्र-2)",
+  "applicable_record_types": "[\"ARREST\"]",
+  "applicable_levels": "[\"PS\",\"DISTRICT\",\"HQ\"]",
+  "template_definition": "{\"layout\":\"A4_PORTRAIT\",\"header\":{\"title_en\":\"ARREST REGISTER\",\"title_hi\":\"गिरफ्तारी पंजी\"},\"sections\":[{\"title_en\":\"Arrest Details\",\"title_hi\":\"गिरफ्तारी विवरण\",\"fields\":[\"arrested_name\",\"arrest_date\",\"crime_head\",\"sections\",\"io_name\",\"status\"]}]}",
+  "output_formats": "[\"PDF\",\"EXCEL\"]",
+  "is_active": true,
+  "created_by": "U_SA001",
+  "created_at": null,
+  "template_type": "PROFORMA"
+ },
+ {
+  "id": "T_DAILY_24HR_DIARY",
+  "name_en": "24-Hour Daily Diary (Important Cases)",
+  "name_hi": "24 घंटे की दैनिक डायरी (महत्वपूर्ण मामले)",
+  "applicable_record_types": "[\"CASE\"]",
+  "applicable_levels": "[\"DISTRICT\",\"HQ\"]",
+  "template_definition": "{\"layout\":\"A4_PORTRAIT\",\"header\":{\"title_en\":\"DELHI POLICE DAILY REPORT\",\"title_hi\":\"दिल्ली पुलिस दैनिक रिपोर्ट\"},\"sections\":[{\"title_en\":\"Details of Important Cases Registered During Last 24 Hours\",\"title_hi\":\"पिछले 24 घंटों के दौरान पंजीकृत महत्वपूर्ण मामलों का विवरण\",\"fields\":[\"fir_no\",\"fir_date\",\"gd_no\",\"occurrence_place\",\"brief_facts\"]}]}",
+  "output_formats": "[\"PDF\",\"EXCEL\"]",
+  "is_active": true,
+  "created_by": "U_SA001",
+  "created_at": null,
+  "template_type": "PROFORMA"
+ },
+ {
+  "id": "T_DAILY_CRIME_STATEMENT",
+  "name_en": "PS-wise Daily Crime Statement",
+  "name_hi": "थानेवार दैनिक अपराध विवरण",
+  "applicable_record_types": "[\"CASE\"]",
+  "applicable_levels": "[\"DISTRICT\",\"HQ\"]",
+  "template_definition": "{\"layout\":\"A4_LANDSCAPE\",\"header\":{\"title_en\":\"DAILY CRIME STATEMENT\",\"title_hi\":\"दैनिक अपराध विवरण\"},\"sections\":[{\"title_en\":\"Police Station Crime Distribution Table\",\"title_hi\":\"थानेवार अपराध वितरण तालिका\",\"fields\":[\"ps_id\",\"case_head\",\"status\"]}]}",
+  "output_formats": "[\"PDF\",\"EXCEL\"]",
+  "is_active": true,
+  "created_by": "U_SA001",
+  "created_at": null,
+  "template_type": "PROFORMA"
+ },
+ {
+  "id": "T_DAILY_CRIME_STMT",
+  "name_en": "PS-wise Daily Crime Statement (Short)",
+  "name_hi": "थानेवार दैनिक अपराध विवरण (संक्षिप्त)",
+  "applicable_record_types": "[\"CASE\"]",
+  "applicable_levels": "[\"DISTRICT\",\"HQ\"]",
+  "template_definition": "{\"layout\":\"A4_LANDSCAPE\",\"header\":{\"title_en\":\"DAILY CRIME STATEMENT\",\"title_hi\":\"दैनिक अपराध विवरण\"},\"sections\":[{\"title_en\":\"PS Crime Table\",\"title_hi\":\"थानेवार तालिका\",\"fields\":[\"ps_id\",\"local_head\",\"status\"]}]}",
+  "output_formats": "[\"PDF\",\"EXCEL\"]",
+  "is_active": true,
+  "created_by": "U_SA001",
+  "created_at": null,
+  "template_type": "PROFORMA"
+ },
+ {
+  "id": "T_MISSING_PERSON",
+  "name_en": "Missing Persons Register",
+  "name_hi": "लापता व्यक्ति पंजी",
+  "applicable_record_types": "[\"MISSING\"]",
+  "applicable_levels": "[\"PS\",\"DISTRICT\",\"HQ\"]",
+  "template_definition": "{\"layout\":\"A4_PORTRAIT\",\"header\":{\"title_en\":\"MISSING PERSONS REGISTER\",\"title_hi\":\"लापता व्यक्ति पंजी\"},\"sections\":[{\"title_en\":\"Person Details\",\"title_hi\":\"व्यक्ति विवरण\",\"fields\":[\"dd_no\",\"missing_name\",\"age\",\"gender\",\"missing_date\",\"missing_place\",\"status\"]}]}",
+  "output_formats": "[\"PDF\",\"EXCEL\"]",
+  "is_active": true,
+  "created_by": "U_SA001",
+  "created_at": null,
+  "template_type": "PROFORMA"
+ }
+]

@@ -6,47 +6,51 @@
 // generic Saved Filter Presets panel used elsewhere.
 //
 // Strategy: ON CONFLICT (id) DO UPDATE — safe to re-run indefinitely.
+//
+// filter_presets is English-only (name, record_types) per the DB restructure — field_registry
+// is the one live bilingual table. filters.controller.js mirrors `name` into name_en/name_hi
+// in its API response so existing frontend consumers keep working unchanged.
+//
+// id is a real `uuid` column on the rebuilt schema (was a free-text slug before), so these are
+// fixed UUID literals rather than readable slugs — still stable across reseeds for the ON
+// CONFLICT upsert, and their fixed order keeps `ORDER BY id ASC` matching display order.
 
 export async function seed(knex) {
   const presets = [
     {
-      id: 'hq_dur_1_current_year',
-      name_en: 'Current Year',
-      name_hi: 'चालू वर्ष',
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Current Year',
       scope: 'HQ_DURATION',
       scope_id: null,
       filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'current_year_minus_n', value: 0 }] }),
-      applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'UIDB']),
+      record_types: JSON.stringify(['CASE', 'ARREST', 'UIDB']),
       is_active: true,
     },
     {
-      id: 'hq_dur_2_last_year',
-      name_en: 'Last Year',
-      name_hi: 'पिछला वर्ष',
+      id: '00000000-0000-4000-8000-000000000002',
+      name: 'Last Year',
       scope: 'HQ_DURATION',
       scope_id: null,
       filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'current_year_minus_n', value: 1 }] }),
-      applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'UIDB']),
+      record_types: JSON.stringify(['CASE', 'ARREST', 'UIDB']),
       is_active: true,
     },
     {
-      id: 'hq_dur_3_last_2_years',
-      name_en: 'Last 2 Years',
-      name_hi: 'पिछले 2 वर्ष',
+      id: '00000000-0000-4000-8000-000000000003',
+      name: 'Last 2 Years',
       scope: 'HQ_DURATION',
       scope_id: null,
       filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'current_year_minus_n', value: 2 }] }),
-      applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'UIDB']),
+      record_types: JSON.stringify(['CASE', 'ARREST', 'UIDB']),
       is_active: true,
     },
     {
-      id: 'hq_dur_4_last_5_years',
-      name_en: 'Last 5 Years',
-      name_hi: 'पिछले 5 वर्ष',
+      id: '00000000-0000-4000-8000-000000000004',
+      name: 'Last 5 Years',
       scope: 'HQ_DURATION',
       scope_id: null,
       filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'current_year_minus_n', value: 4 }] }),
-      applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'UIDB']),
+      record_types: JSON.stringify(['CASE', 'ARREST', 'UIDB']),
       is_active: true,
     },
   ];

@@ -58,4 +58,35 @@ Thumbs.db
 # Local dev artifacts
 walkthrough.md
 scratch/
+scratch.cjs
+tmp_out.js
+temp-future-plan
+
+# Temp / prototype directories
+temp template/
+
+# Sample data & import test files
+sample files/
+*.xlsx
+*.xls
+*.csv
+
+# OCR / Tesseract data
+*.traineddata
+tesseract_output.txt
+
+# Commit message drafts
+COMMIT_MSG.txt
+
+# One-off HTML prototypes
+phase3.html
+
+# Backups
+backups_archive/
+
+# Project context file for AI assistants — kept local only, not pushed
+CLAUDE.md
+CLAUDE.local.md
+daily-diary-excel-backend.md
+presentation_deliverables.md
 

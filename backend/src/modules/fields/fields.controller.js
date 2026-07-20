@@ -3,7 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { publish } from '../../events/eventBus.js';
 import { logger } from '../../utils/logger.js';
 import * as fieldsService from './fields.service.js';
+import * as ioService from '../io/io.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from './classificationSources.config.js';
+import { INDIA_STATES, DISTRICTS_BY_STATE } from '../../config/geoData.js';
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -119,15 +121,32 @@ export const getFieldsForForm = async (req, res) => {
       }
     });
 
-    const rawFields = await query;
+    const rawFieldsTyped = await query;
+    // field_registry's real columns are `record_types` (not `applicable_record_types`),
+    // `labels`/`section_labels` jsonb `{en,hi}` (not flat `label_en`/`label_hi`/
+    // `section_label_en`/`section_label_hi` columns — those never existed on the rebuilt
+    // schema). Unpack once here so the rest of this function's field-shaping logic — and
+    // the HTTP response shape the frontend already consumes — stay byte-compatible.
+    const rawFields = rawFieldsTyped.map((f) => {
+      const labels = parseJsonField(f.labels) || {};
+      const sectionLabels = parseJsonField(f.section_labels) || {};
+      return {
+        ...f,
+        applicable_record_types: f.record_types,
+        label_en: labels.en || f.field_key,
+        label_hi: labels.hi || labels.en || f.field_key,
+        section_label_en: sectionLabels.en || null,
+        section_label_hi: sectionLabels.hi || null,
+      };
+    });
 
-    // Small local shaping helper — raw excel_* rows -> {value,label_en,label_hi} option shape,
+    // Small local shaping helper — raw ref.* rows -> {value,label_en,label_hi} option shape,
     // using labelCol as both the value and the display label (matches the existing, established
     // convention for these per-act/per-crime fields, whose show_when clauses compare against the
     // human-readable label, not the underlying numeric code).
     const toValueLabel = (labelCol) => (r) => ({ value: r[labelCol], label_en: r[labelCol], label_hi: r[labelCol] });
 
-    // 1. Acts — load dynamically from excel_acts and map to expected frontend keys
+    // 1. Acts — load dynamically from ref.acts and map to expected frontend keys
     const dbActs = await fieldsService.getActs();
     const actOptions = dbActs.map(act => {
       let value = act.act_long;
@@ -188,7 +207,7 @@ export const getFieldsForForm = async (req, res) => {
     const allGroupedActCodes = Object.values(ACT_GROUP_CODES).flat();
     const generalSectionOptions = (await fieldsService.getSectionsForActs(allGroupedActCodes)).map(toValueLabel('section'));
 
-    // 3. Major Heads per Act — joins on major_head_code via excel_major_minor_mapping, filtered
+    // 3. Major Heads per Act — joins on major_head_code via ref.major_minor_mapping, filtered
     // by the real act_cd(s), no name-string matching.
     const ipcMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES.IPC)).map(toValueLabel('major_head'));
     const exciseMajorHeadOptions = (await fieldsService.getMajorHeadsForActs(ACT_GROUP_CODES['Delhi Excise Act'])).map(toValueLabel('major_head'));
@@ -889,7 +908,7 @@ export const listAllFields = async (req, res) => {
     if (record_type) {
       const norm = normalizeRecordType(record_type);
       // Works for both native PG array and JSON-string storage
-      query = query.whereRaw(`applicable_record_types::text ILIKE ?`, [`%${norm}%`]);
+      query = query.whereRaw(`record_types::text ILIKE ?`, [`%${norm}%`]);
     }
 
     if (is_active !== undefined) {
@@ -901,12 +920,20 @@ export const listAllFields = async (req, res) => {
       .orderBy('section', 'asc')
       .orderBy('sort_order', 'asc');
 
-    const formatted = fields.map((f) => ({
-      ...f,
-      applicable_record_types: parseJsonField(f.applicable_record_types),
-      options: parseJsonField(f.options),
-      validation_rules: parseJsonField(f.validation_rules),
-    }));
+    const formatted = fields.map((f) => {
+      const labels = parseJsonField(f.labels) || {};
+      const sectionLabels = parseJsonField(f.section_labels) || {};
+      return {
+        ...f,
+        applicable_record_types: parseJsonField(f.record_types),
+        label_en: labels.en || f.field_key,
+        label_hi: labels.hi || labels.en || f.field_key,
+        section_label_en: sectionLabels.en || null,
+        section_label_hi: sectionLabels.hi || null,
+        options: parseJsonField(f.options),
+        validation_rules: parseJsonField(f.validation_rules),
+      };
+    });
 
     return res.status(200).json({ success: true, data: { fields: formatted, total: formatted.length } });
   } catch (error) {
@@ -973,26 +1000,32 @@ export const createRegistryField = async (req, res) => {
     const payload = {
       id: uuidv4(),
       field_key: normalizedKey,
-      label_en,
-      label_hi: label_hi || label_en,
+      labels: JSON.stringify({ en: label_en, hi: label_hi || label_en }),
       field_type: field_type.toUpperCase(),
       section: targetSection,
-      section_label_en: section_label_en || null,
-      section_label_hi: section_label_hi || null,
-      applicable_record_types: applicable_record_types.map(normalizeRecordType),
+      section_labels: (section_label_en || section_label_hi)
+        ? JSON.stringify({ en: section_label_en || null, hi: section_label_hi || null })
+        : null,
+      record_types: JSON.stringify(applicable_record_types.map(normalizeRecordType)),
+      storage: JSON.stringify('extra'), // no-deploy default (config/README.md) — promote via a real storage mapping when reporting-grade
       options: options?.length ? JSON.stringify(options) : null,
       validation_rules: Object.keys(validationRulesObj).length ? JSON.stringify(validationRulesObj) : null,
-      visible_to_levels: ['PS', 'DISTRICT', 'HQ'],
-      editable_by_levels: ['PS'],
+      visible_to_levels: JSON.stringify(['PS', 'DISTRICT', 'HQ']),
+      editable_by_levels: JSON.stringify(['PS']),
       sort_order: sort_order ?? 0,
       is_active: true,
       scope_level,
       scope_id,
-      created_by: userId,
       repeater_entity,
     };
 
-    const [newField] = await db('field_registry').insert(payload).returning('*');
+    const [newFieldRow] = await db('field_registry').insert(payload).returning('*');
+    const newField = {
+      ...newFieldRow,
+      applicable_record_types: newFieldRow.record_types,
+      label_en, label_hi: label_hi || label_en,
+      section_label_en: section_label_en || null, section_label_hi: section_label_hi || null,
+    };
 
     try {
       await publish('field.created', {
@@ -1035,8 +1068,13 @@ export const updateRegistryField = async (req, res) => {
     // HQ_ADMIN/SYSTEM_ADMIN can modify any field (allowed by router)
 
     const updates = {};
-    if (label_en)                      updates.label_en = label_en;
-    if (label_hi !== undefined)        updates.label_hi = label_hi;
+    if (label_en || label_hi !== undefined) {
+      const existingLabels = parseJsonField(existing.labels) || {};
+      updates.labels = JSON.stringify({
+        en: label_en || existingLabels.en,
+        hi: label_hi !== undefined ? label_hi : existingLabels.hi,
+      });
+    }
     if (field_type)                    updates.field_type = field_type.toUpperCase();
     if (section) {
       updates.section = section;
@@ -1050,10 +1088,15 @@ export const updateRegistryField = async (req, res) => {
       }
       updates.repeater_entity = repeater_entity;
     }
-    if (section_label_en !== undefined) updates.section_label_en = section_label_en;
-    if (section_label_hi !== undefined) updates.section_label_hi = section_label_hi;
+    if (section_label_en !== undefined || section_label_hi !== undefined) {
+      const existingSectionLabels = parseJsonField(existing.section_labels) || {};
+      updates.section_labels = JSON.stringify({
+        en: section_label_en !== undefined ? section_label_en : existingSectionLabels.en,
+        hi: section_label_hi !== undefined ? section_label_hi : existingSectionLabels.hi,
+      });
+    }
     if (applicable_record_types?.length) {
-      updates.applicable_record_types = applicable_record_types.map(normalizeRecordType);
+      updates.record_types = JSON.stringify(applicable_record_types.map(normalizeRecordType));
     }
     if (options !== undefined)         updates.options = options?.length ? JSON.stringify(options) : null;
     if (sort_order !== undefined)      updates.sort_order = sort_order;
@@ -1065,7 +1108,15 @@ export const updateRegistryField = async (req, res) => {
       updates.validation_rules = JSON.stringify(base);
     }
 
-    const [updated] = await db('field_registry').where({ id }).update(updates).returning('*');
+    const [updatedRow] = await db('field_registry').where({ id }).update(updates).returning('*');
+    const updatedLabels = parseJsonField(updatedRow.labels) || {};
+    const updatedSectionLabels = parseJsonField(updatedRow.section_labels) || {};
+    const updated = {
+      ...updatedRow,
+      applicable_record_types: updatedRow.record_types,
+      label_en: updatedLabels.en, label_hi: updatedLabels.hi,
+      section_label_en: updatedSectionLabels.en || null, section_label_hi: updatedSectionLabels.hi || null,
+    };
 
     try { await publish('field.updated', { field_id: id, ts: Date.now() }); } catch (_) {}
 
@@ -1145,13 +1196,13 @@ export const listMajorHeads = async (req, res) => {
     if (sectionCodesRaw) {
       const sectionCodes = sectionCodesRaw.split(',').map(s => s.trim()).filter(Boolean);
       if (sectionCodes.length > 0) {
-        const mappings = await db('excel_major_minor_mapping')
+        const mappings = await db('ref.major_minor_mapping')
           .whereIn('section_code', sectionCodes)
           .distinct('major_head_code');
         const majorCds = mappings.map(m => m.major_head_code);
 
         if (majorCds.length > 0) {
-          data = await db('excel_major_heads')
+          data = await db('ref.major_heads')
             .whereIn('major_head_code', majorCds)
             .select('major_head as value', 'major_head as label')
             .orderBy('major_head', 'asc');
@@ -1190,8 +1241,8 @@ export const listMajorHeads = async (req, res) => {
           continue;
         }
 
-        // 2. Try exact match against excel_acts.act_long
-        const exactMatches = await db('excel_acts')
+        // 2. Try exact match against ref.acts.act_long
+        const exactMatches = await db('ref.acts')
           .whereRaw('LOWER(act_long) = LOWER(?)', [name])
           .select('act_cd');
         if (exactMatches.length > 0) {
@@ -1210,7 +1261,7 @@ export const listMajorHeads = async (req, res) => {
 
         if (keywords.length > 0) {
           // Build an AND query: act_long must contain ALL significant keywords
-          let query = db('excel_acts');
+          let query = db('ref.acts');
           for (const kw of keywords) {
             query = query.whereRaw('LOWER(act_long) LIKE ?', [`%${kw.toLowerCase()}%`]);
           }
@@ -1221,7 +1272,7 @@ export const listMajorHeads = async (req, res) => {
           }
 
           // 4. Fallback: OR query — any keyword matches
-          let orQuery = db('excel_acts').where(function() {
+          let orQuery = db('ref.acts').where(function() {
             for (const kw of keywords) {
               this.orWhereRaw('LOWER(act_long) LIKE ?', [`%${kw.toLowerCase()}%`]);
             }
@@ -1233,13 +1284,13 @@ export const listMajorHeads = async (req, res) => {
 
       const actCdList = Array.from(actCds);
       if (actCdList.length > 0) {
-        const mappings = await db('excel_major_minor_mapping')
+        const mappings = await db('ref.major_minor_mapping')
           .whereIn('act_cd', actCdList)
           .distinct('major_head_code');
         const majorCds = mappings.map(m => m.major_head_code);
 
         if (majorCds.length > 0) {
-          data = await db('excel_major_heads')
+          data = await db('ref.major_heads')
             .whereIn('major_head_code', majorCds)
             .select('major_head as value', 'major_head as label')
             .orderBy('major_head', 'asc');
@@ -1249,7 +1300,7 @@ export const listMajorHeads = async (req, res) => {
 
     // Fallback: if no acts requested, return all major heads
     if (!actNameRaw) {
-      data = await db('excel_major_heads')
+      data = await db('ref.major_heads')
         .select('major_head as value', 'major_head as label')
         .orderBy('major_head', 'asc');
     }
@@ -1300,7 +1351,7 @@ export const listMinorHeadsForMajorHead = async (req, res) => {
     let code = parseInt(major_head_code, 10);
     if (isNaN(code)) {
       // Resolve string name to numeric code
-      const mh = await db('excel_major_heads')
+      const mh = await db('ref.major_heads')
         .where('major_head', 'ilike', major_head_code)
         .first();
       if (mh) {
@@ -1350,7 +1401,7 @@ export const listPropertyItems = async (req, res) => {
   try {
     const raw = await fieldsService.getPropertyItemsForCategory(parent_cd);
     // The GENERIC branch (fieldsService) already returns {value,label} rows. The ARMS branch
-    // returns raw column names for its three sub-lists, and the default (excel_other_property_items)
+    // returns raw column names for its three sub-lists, and the default (ref.other_property_items)
     // branch returns raw {property_cd,property} rows — both are shaped into {value,label} here.
     let data;
     if (raw?.type === 'ARMS') {
@@ -1398,6 +1449,40 @@ export const listLocalHeads = async (req, res) => {
     return res.status(200).json({ success: true, data });
   } catch (error) {
     logger.error('listLocalHeads failed', { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// India states -> districts map (WP11) — drives the form's address state→district cascading
+// (FieldRenderer narrows a *_district dropdown to the sibling *_state's districts). Static
+// checked-in data (config/ref-data LGD snapshot via geoData.js), so long client cache is safe.
+export const listStateDistricts = async (req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    return res.status(200).json({
+      success: true,
+      data: { states: INDIA_STATES, districtsByState: DISTRICTS_BY_STATE },
+    });
+  } catch (error) {
+    logger.error('listStateDistricts failed', { error: error.message });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// io_id's options_source target (item 5/7) — the record-form dropdown that replaces free-text
+// io_name entry. Scoped through req.jurisdictionQuery like every other endpoint (P5) — the
+// SHO/HC creating a record only ever sees IOs curated for their own PS, ACP their sub-division.
+export const listInvestigatingOfficersLookup = async (req, res) => {
+  try {
+    const rows = await ioService.listIOs(req.jurisdictionQuery, {});
+    const data = rows.map((r) => ({
+      value: r.id,
+      label: [r.name, r.rank, r.pis_no].filter(Boolean).join(' — '),
+      rank: r.rank, pis_no: r.pis_no, mobile: r.mobile,
+    }));
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    logger.error('listInvestigatingOfficersLookup failed', { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };

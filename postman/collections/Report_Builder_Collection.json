@@ -20,7 +20,7 @@
           "exec": [
             "if (pm.response.code === 200) {",
             "  const body = pm.response.json();",
-            "  pm.collectionVariables.set('access_token', body.data?.accessToken || body.data?.token || '');",
+            "  pm.collectionVariables.set('access_token', body.data?.access_token || body.data?.token || '');",
             "  pm.test('Login successful', () => pm.expect(pm.response.code).to.equal(200));",
             "}"
           ]

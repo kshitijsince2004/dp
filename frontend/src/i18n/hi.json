@@ -58,6 +58,27 @@
     "HQ_ADMIN": "मुख्यालय प्रशासक",
     "SYSTEM_ADMIN": "सिस्टम व्यवस्थापक"
   },
+  "notifications": {
+    "RECORD_SUBMITTED": {
+      "title": "नया रिकॉर्ड अनुमोदन के लिए लंबित है",
+      "message": "एक नया {{record_type}} प्रविष्टि आपके अनुमोदन के लिए लंबित है।"
+    },
+    "RECORD_APPROVED": {
+      "title": "रिकॉर्ड स्वीकृत",
+      "message": "आपका {{record_type}} रिकॉर्ड स्वीकृत हो गया है।"
+    },
+    "RECORD_SENT_BACK": {
+      "title": "संशोधन के लिए रिकॉर्ड वापस भेजा गया",
+      "message": "आपका {{record_type}} रिकॉर्ड वापस भेजा गया। कारण: {{comment}}"
+    },
+    "COMPILATION_SUBMITTED": {
+      "title": "जिला संकलन प्रस्तुत किया गया",
+      "message": "{{period}} अवधि का जिला संकलन HQ समीक्षा के लिए तैयार है।"
+    },
+    "noReason": "कोई कारण नहीं दिया गया।",
+    "fallbackTitle": "सूचना",
+    "fallbackToast": "नई सूचना"
+  },
   "views": {
     "SYSTEM_ADMIN": "सिस्टम एडमिन",
     "HQ": "मुख्यालय",

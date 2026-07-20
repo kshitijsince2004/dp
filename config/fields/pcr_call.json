@@ -1,0 +1,1694 @@
+[
+ {
+  "field_key": "pcr_no",
+  "record_types": [
+   "PCR_CALL"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "PCR Number",
+   "hi": "पीसीआर नंबर"
+  },
+  "section": "informant_contact",
+  "storage": {
+   "table": "pcr_call_details",
+   "column": "pcr_no"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "call_head",
+  "record_types": [
+   "PCR_CALL"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Call Category (Head)",
+   "hi": "कॉल श्रेणी"
+  },
+  "section": "complaint_details",
+  "storage": {
+   "table": "pcr_call_details",
+   "column": "call_head"
+  },
+  "options": [
+   {
+    "value": "AANDHI (THUNDERSTORM)",
+    "label_en": "AANDHI (THUNDERSTORM)",
+    "label_hi": "AANDHI (THUNDERSTORM)"
+   },
+   {
+    "value": "ABDUCTION",
+    "label_en": "ABDUCTION",
+    "label_hi": "ABDUCTION"
+   },
+   {
+    "value": "ACCIDENT FATAL",
+    "label_en": "ACCIDENT FATAL",
+    "label_hi": "ACCIDENT FATAL"
+   },
+   {
+    "value": "ACCIDENT SIMPLE",
+    "label_en": "ACCIDENT SIMPLE",
+    "label_hi": "ACCIDENT SIMPLE"
+   },
+   {
+    "value": "ACCIDENT WITH INJURY",
+    "label_en": "ACCIDENT WITH INJURY",
+    "label_hi": "ACCIDENT WITH INJURY"
+   },
+   {
+    "value": "ACCIDENT WITHOUT INJURY",
+    "label_en": "ACCIDENT WITHOUT INJURY",
+    "label_hi": "ACCIDENT WITHOUT INJURY"
+   },
+   {
+    "value": "ACT",
+    "label_en": "ACT",
+    "label_hi": "ACT"
+   },
+   {
+    "value": "ADDICTION ALCOHOL OR DRUGS AND NEGLECT OF FAMILY",
+    "label_en": "ADDICTION ALCOHOL OR DRUGS AND NEGLECT OF FAMILY",
+    "label_hi": "ADDICTION ALCOHOL OR DRUGS AND NEGLECT OF FAMILY"
+   },
+   {
+    "value": "ADDICTION ALCOHOL OR DRUGS AND NEGLECT OF FAMILY (A & NF)",
+    "label_en": "ADDICTION ALCOHOL OR DRUGS AND NEGLECT OF FAMILY (A & NF)",
+    "label_hi": "ADDICTION ALCOHOL OR DRUGS AND NEGLECT OF FAMILY (A & NF)"
+   },
+   {
+    "value": "AGITATION",
+    "label_en": "AGITATION",
+    "label_hi": "AGITATION"
+   },
+   {
+    "value": "AIR & NOISE POLLUTION FROM GENERATOR",
+    "label_en": "AIR & NOISE POLLUTION FROM GENERATOR",
+    "label_hi": "AIR & NOISE POLLUTION FROM GENERATOR"
+   },
+   {
+    "value": "ANTI SOCIAL SLOGAN GRAFFITI",
+    "label_en": "ANTI SOCIAL SLOGAN GRAFFITI",
+    "label_hi": "ANTI SOCIAL SLOGAN GRAFFITI"
+   },
+   {
+    "value": "ARMS ACT",
+    "label_en": "ARMS ACT",
+    "label_hi": "ARMS ACT"
+   },
+   {
+    "value": "ASSEMBLY ELECTION",
+    "label_en": "ASSEMBLY ELECTION",
+    "label_hi": "ASSEMBLY ELECTION"
+   },
+   {
+    "value": "AT OTHER PLACE",
+    "label_en": "AT OTHER PLACE",
+    "label_hi": "AT OTHER PLACE"
+   },
+   {
+    "value": "AT RAILWAY STATION",
+    "label_en": "AT RAILWAY STATION",
+    "label_hi": "AT RAILWAY STATION"
+   },
+   {
+    "value": "ATM ROBBERY",
+    "label_en": "ATM ROBBERY",
+    "label_hi": "ATM ROBBERY"
+   },
+   {
+    "value": "ATT TO MURDER",
+    "label_en": "ATT TO MURDER",
+    "label_hi": "ATT TO MURDER"
+   },
+   {
+    "value": "ATT TO SUICIDE FEMALE",
+    "label_en": "ATT TO SUICIDE FEMALE",
+    "label_hi": "ATT TO SUICIDE FEMALE"
+   },
+   {
+    "value": "ATT TO SUICIDE MALE",
+    "label_en": "ATT TO SUICIDE MALE",
+    "label_hi": "ATT TO SUICIDE MALE"
+   },
+   {
+    "value": "ATT TO SUICIDE TRANSGENDER",
+    "label_en": "ATT TO SUICIDE TRANSGENDER",
+    "label_hi": "ATT TO SUICIDE TRANSGENDER"
+   },
+   {
+    "value": "ATTACK BY BLADE",
+    "label_en": "ATTACK BY BLADE",
+    "label_hi": "ATTACK BY BLADE"
+   },
+   {
+    "value": "ATTACK ON DOCTOR AND MEDICAL STAFF",
+    "label_en": "ATTACK ON DOCTOR AND MEDICAL STAFF",
+    "label_hi": "ATTACK ON DOCTOR AND MEDICAL STAFF"
+   },
+   {
+    "value": "BANK ROBBERY",
+    "label_en": "BANK ROBBERY",
+    "label_hi": "BANK ROBBERY"
+   },
+   {
+    "value": "BED AVAILABILITY",
+    "label_en": "BED AVAILABILITY",
+    "label_hi": "BED AVAILABILITY"
+   },
+   {
+    "value": "BHARAT BANDH",
+    "label_en": "BHARAT BANDH",
+    "label_hi": "BHARAT BANDH"
+   },
+   {
+    "value": "BIRD FLU",
+    "label_en": "BIRD FLU",
+    "label_hi": "BIRD FLU"
+   },
+   {
+    "value": "BOMB BLAST",
+    "label_en": "BOMB BLAST",
+    "label_hi": "BOMB BLAST"
+   },
+   {
+    "value": "BOMB INFORMATION",
+    "label_en": "BOMB INFORMATION",
+    "label_hi": "BOMB INFORMATION"
+   },
+   {
+    "value": "BUILDING COLLAPSE",
+    "label_en": "BUILDING COLLAPSE",
+    "label_hi": "BUILDING COLLAPSE"
+   },
+   {
+    "value": "BURGLARY",
+    "label_en": "BURGLARY",
+    "label_hi": "BURGLARY"
+   },
+   {
+    "value": "BURN INJURED",
+    "label_en": "BURN INJURED",
+    "label_hi": "BURN INJURED"
+   },
+   {
+    "value": "BURNT DEAD",
+    "label_en": "BURNT DEAD",
+    "label_hi": "BURNT DEAD"
+   },
+   {
+    "value": "BY AUTO DRIVER",
+    "label_en": "BY AUTO DRIVER",
+    "label_hi": "BY AUTO DRIVER"
+   },
+   {
+    "value": "BY BUS DRIVER",
+    "label_en": "BY BUS DRIVER",
+    "label_hi": "BY BUS DRIVER"
+   },
+   {
+    "value": "BY CO-PASSENGER",
+    "label_en": "BY CO-PASSENGER",
+    "label_hi": "BY CO-PASSENGER"
+   },
+   {
+    "value": "BY E-RICKSHAW DRIVER",
+    "label_en": "BY E-RICKSHAW DRIVER",
+    "label_hi": "BY E-RICKSHAW DRIVER"
+   },
+   {
+    "value": "BY PHONE",
+    "label_en": "BY PHONE",
+    "label_hi": "BY PHONE"
+   },
+   {
+    "value": "BY RTV DRIVER",
+    "label_en": "BY RTV DRIVER",
+    "label_hi": "BY RTV DRIVER"
+   },
+   {
+    "value": "BY TAXI DRIVER",
+    "label_en": "BY TAXI DRIVER",
+    "label_hi": "BY TAXI DRIVER"
+   },
+   {
+    "value": "BY USING PIN, OTP",
+    "label_en": "BY USING PIN, OTP",
+    "label_hi": "BY USING PIN, OTP"
+   },
+   {
+    "value": "CAR JACKING",
+    "label_en": "CAR JACKING",
+    "label_hi": "CAR JACKING"
+   },
+   {
+    "value": "CARD SWAPPING",
+    "label_en": "CARD SWAPPING",
+    "label_hi": "CARD SWAPPING"
+   },
+   {
+    "value": "CARDACE VEHICLE BREAK DOWN",
+    "label_en": "CARDACE VEHICLE BREAK DOWN",
+    "label_hi": "CARDACE VEHICLE BREAK DOWN"
+   },
+   {
+    "value": "CARDACE VEHICLE HIT",
+    "label_en": "CARDACE VEHICLE HIT",
+    "label_hi": "CARDACE VEHICLE HIT"
+   },
+   {
+    "value": "CHAIN SNATCHING",
+    "label_en": "CHAIN SNATCHING",
+    "label_hi": "CHAIN SNATCHING"
+   },
+   {
+    "value": "CHEATING FORGERY",
+    "label_en": "CHEATING FORGERY",
+    "label_hi": "CHEATING FORGERY"
+   },
+   {
+    "value": "CHILD ABUSE",
+    "label_en": "CHILD ABUSE",
+    "label_hi": "CHILD ABUSE"
+   },
+   {
+    "value": "CHILD DISTRESS HELPLINE",
+    "label_en": "CHILD DISTRESS HELPLINE",
+    "label_hi": "CHILD DISTRESS HELPLINE"
+   },
+   {
+    "value": "CHILD LABOUR",
+    "label_en": "CHILD LABOUR",
+    "label_hi": "CHILD LABOUR"
+   },
+   {
+    "value": "CHINESE MANJHA",
+    "label_en": "CHINESE MANJHA",
+    "label_hi": "CHINESE MANJHA"
+   },
+   {
+    "value": "CHURCH",
+    "label_en": "CHURCH",
+    "label_hi": "CHURCH"
+   },
+   {
+    "value": "COMMUMAL RIOTS",
+    "label_en": "COMMUMAL RIOTS",
+    "label_hi": "COMMUMAL RIOTS"
+   },
+   {
+    "value": "COMPLAINT",
+    "label_en": "COMPLAINT",
+    "label_hi": "COMPLAINT"
+   },
+   {
+    "value": "CONSUME",
+    "label_en": "CONSUME",
+    "label_hi": "CONSUME"
+   },
+   {
+    "value": "CORONA",
+    "label_en": "CORONA",
+    "label_hi": "CORONA"
+   },
+   {
+    "value": "CORONA INFECTED",
+    "label_en": "CORONA INFECTED",
+    "label_hi": "CORONA INFECTED"
+   },
+   {
+    "value": "CORONA SUSPECTED",
+    "label_en": "CORONA SUSPECTED",
+    "label_hi": "CORONA SUSPECTED"
+   },
+   {
+    "value": "COUNSELLING",
+    "label_en": "COUNSELLING",
+    "label_hi": "COUNSELLING"
+   },
+   {
+    "value": "COW RELATED",
+    "label_en": "COW RELATED",
+    "label_hi": "COW RELATED"
+   },
+   {
+    "value": "CRIME AGAINST FOREIGNERS",
+    "label_en": "CRIME AGAINST FOREIGNERS",
+    "label_hi": "CRIME AGAINST FOREIGNERS"
+   },
+   {
+    "value": "CRIME BY FOREIGNER",
+    "label_en": "CRIME BY FOREIGNER",
+    "label_hi": "CRIME BY FOREIGNER"
+   },
+   {
+    "value": "CRIMINAL BREACH OF TRUST",
+    "label_en": "CRIMINAL BREACH OF TRUST",
+    "label_hi": "CRIMINAL BREACH OF TRUST"
+   },
+   {
+    "value": "DACOITY",
+    "label_en": "DACOITY",
+    "label_hi": "DACOITY"
+   },
+   {
+    "value": "DAY BURGLARY",
+    "label_en": "DAY BURGLARY",
+    "label_hi": "DAY BURGLARY"
+   },
+   {
+    "value": "DEAD BODY ANIMAL",
+    "label_en": "DEAD BODY ANIMAL",
+    "label_hi": "DEAD BODY ANIMAL"
+   },
+   {
+    "value": "DEAD BODY FEMALE",
+    "label_en": "DEAD BODY FEMALE",
+    "label_hi": "DEAD BODY FEMALE"
+   },
+   {
+    "value": "DEAD BODY MALE",
+    "label_en": "DEAD BODY MALE",
+    "label_hi": "DEAD BODY MALE"
+   },
+   {
+    "value": "DEAD BODY TRANSGENDER",
+    "label_en": "DEAD BODY TRANSGENDER",
+    "label_hi": "DEAD BODY TRANSGENDER"
+   },
+   {
+    "value": "DEATH",
+    "label_en": "DEATH",
+    "label_hi": "DEATH"
+   },
+   {
+    "value": "DEBIT OR CREDIT CARD FRAUD OR SIM SWAP FRAUD",
+    "label_en": "DEBIT OR CREDIT CARD FRAUD OR SIM SWAP FRAUD",
+    "label_hi": "DEBIT OR CREDIT CARD FRAUD OR SIM SWAP FRAUD"
+   },
+   {
+    "value": "DEMAT OR DEPOSITORY FRAUD",
+    "label_en": "DEMAT OR DEPOSITORY FRAUD",
+    "label_hi": "DEMAT OR DEPOSITORY FRAUD"
+   },
+   {
+    "value": "DEMOLITION",
+    "label_en": "DEMOLITION",
+    "label_hi": "DEMOLITION"
+   },
+   {
+    "value": "DETECTION OF MISSING VEHICLE (LPR)",
+    "label_en": "DETECTION OF MISSING VEHICLE (LPR)",
+    "label_hi": "DETECTION OF MISSING VEHICLE (LPR)"
+   },
+   {
+    "value": "DIVORCE RELATED CASE",
+    "label_en": "DIVORCE RELATED CASE",
+    "label_hi": "DIVORCE RELATED CASE"
+   },
+   {
+    "value": "DOMESTIC MENTAL TORTURE",
+    "label_en": "DOMESTIC MENTAL TORTURE",
+    "label_hi": "DOMESTIC MENTAL TORTURE"
+   },
+   {
+    "value": "DOMESTIC VIOLENCE",
+    "label_en": "DOMESTIC VIOLENCE",
+    "label_hi": "DOMESTIC VIOLENCE"
+   },
+   {
+    "value": "DOWRY DEMAND",
+    "label_en": "DOWRY DEMAND",
+    "label_hi": "DOWRY DEMAND"
+   },
+   {
+    "value": "DRONE",
+    "label_en": "DRONE",
+    "label_hi": "DRONE"
+   },
+   {
+    "value": "DRONE UAV",
+    "label_en": "DRONE UAV",
+    "label_hi": "DRONE UAV"
+   },
+   {
+    "value": "DROWN",
+    "label_en": "DROWN",
+    "label_hi": "DROWN"
+   },
+   {
+    "value": "DRUNKARD",
+    "label_en": "DRUNKARD",
+    "label_hi": "DRUNKARD"
+   },
+   {
+    "value": "DSGMC ELECTION",
+    "label_en": "DSGMC ELECTION",
+    "label_hi": "DSGMC ELECTION"
+   },
+   {
+    "value": "EARTHQUAKE",
+    "label_en": "EARTHQUAKE",
+    "label_hi": "EARTHQUAKE"
+   },
+   {
+    "value": "ELECTION",
+    "label_en": "ELECTION",
+    "label_hi": "ELECTION"
+   },
+   {
+    "value": "ELECTION DUSU",
+    "label_en": "ELECTION DUSU",
+    "label_hi": "ELECTION DUSU"
+   },
+   {
+    "value": "ELECTRICITY",
+    "label_en": "ELECTRICITY",
+    "label_hi": "ELECTRICITY"
+   },
+   {
+    "value": "ENCROACHMENT",
+    "label_en": "ENCROACHMENT",
+    "label_hi": "ENCROACHMENT"
+   },
+   {
+    "value": "EVE TEASING",
+    "label_en": "EVE TEASING",
+    "label_hi": "EVE TEASING"
+   },
+   {
+    "value": "EXCISE",
+    "label_en": "EXCISE",
+    "label_hi": "EXCISE"
+   },
+   {
+    "value": "EXPLOSIVE",
+    "label_en": "EXPLOSIVE",
+    "label_hi": "EXPLOSIVE"
+   },
+   {
+    "value": "EXTORTION",
+    "label_en": "EXTORTION",
+    "label_hi": "EXTORTION"
+   },
+   {
+    "value": "EXTORTION FOR GOODS OR PROPERTY",
+    "label_en": "EXTORTION FOR GOODS OR PROPERTY",
+    "label_hi": "EXTORTION FOR GOODS OR PROPERTY"
+   },
+   {
+    "value": "EXTORTION FOR MONEY",
+    "label_en": "EXTORTION FOR MONEY",
+    "label_hi": "EXTORTION FOR MONEY"
+   },
+   {
+    "value": "EXTRA MARITAL RELATION OF HUSBAND",
+    "label_en": "EXTRA MARITAL RELATION OF HUSBAND",
+    "label_hi": "EXTRA MARITAL RELATION OF HUSBAND"
+   },
+   {
+    "value": "EYES AND EARS",
+    "label_en": "EYES AND EARS",
+    "label_hi": "EYES AND EARS"
+   },
+   {
+    "value": "FAKE CURRENCY",
+    "label_en": "FAKE CURRENCY",
+    "label_hi": "FAKE CURRENCY"
+   },
+   {
+    "value": "FALLEN TREE",
+    "label_en": "FALLEN TREE",
+    "label_hi": "FALLEN TREE"
+   },
+   {
+    "value": "FEMALE",
+    "label_en": "FEMALE",
+    "label_hi": "FEMALE"
+   },
+   {
+    "value": "FIRE CRACKERS",
+    "label_en": "FIRE CRACKERS",
+    "label_hi": "FIRE CRACKERS"
+   },
+   {
+    "value": "FIRE MAJOR",
+    "label_en": "FIRE MAJOR",
+    "label_hi": "FIRE MAJOR"
+   },
+   {
+    "value": "FIRE MINOR",
+    "label_en": "FIRE MINOR",
+    "label_hi": "FIRE MINOR"
+   },
+   {
+    "value": "FIRING",
+    "label_en": "FIRING",
+    "label_hi": "FIRING"
+   },
+   {
+    "value": "FLOOD",
+    "label_en": "FLOOD",
+    "label_hi": "FLOOD"
+   },
+   {
+    "value": "FOOD RELATED",
+    "label_en": "FOOD RELATED",
+    "label_hi": "FOOD RELATED"
+   },
+   {
+    "value": "FOUND",
+    "label_en": "FOUND",
+    "label_hi": "FOUND"
+   },
+   {
+    "value": "FOUR WHEELER",
+    "label_en": "FOUR WHEELER",
+    "label_hi": "FOUR WHEELER"
+   },
+   {
+    "value": "GAMBLING",
+    "label_en": "GAMBLING",
+    "label_hi": "GAMBLING"
+   },
+   {
+    "value": "GANDHI JAYANTI",
+    "label_en": "GANDHI JAYANTI",
+    "label_hi": "GANDHI JAYANTI"
+   },
+   {
+    "value": "GURUDWARA",
+    "label_en": "GURUDWARA",
+    "label_hi": "GURUDWARA"
+   },
+   {
+    "value": "Gathering Or Protest at Distribution Centers",
+    "label_en": "Gathering Or Protest at Distribution Centers",
+    "label_hi": "Gathering Or Protest at Distribution Centers"
+   },
+   {
+    "value": "HACKING",
+    "label_en": "HACKING",
+    "label_hi": "HACKING"
+   },
+   {
+    "value": "HARASSMENT BY HOTEL OR SHOP OWNER",
+    "label_en": "HARASSMENT BY HOTEL OR SHOP OWNER",
+    "label_hi": "HARASSMENT BY HOTEL OR SHOP OWNER"
+   },
+   {
+    "value": "HARASSMENT BY TAXI OR AUTO DRIVER",
+    "label_en": "HARASSMENT BY TAXI OR AUTO DRIVER",
+    "label_hi": "HARASSMENT BY TAXI OR AUTO DRIVER"
+   },
+   {
+    "value": "HEAVY RAIN",
+    "label_en": "HEAVY RAIN",
+    "label_hi": "HEAVY RAIN"
+   },
+   {
+    "value": "HOLI QUARREL",
+    "label_en": "HOLI QUARREL",
+    "label_hi": "HOLI QUARREL"
+   },
+   {
+    "value": "HOUSE THEFT",
+    "label_en": "HOUSE THEFT",
+    "label_hi": "HOUSE THEFT"
+   },
+   {
+    "value": "HUNGER",
+    "label_en": "HUNGER",
+    "label_hi": "HUNGER"
+   },
+   {
+    "value": "HURT",
+    "label_en": "HURT",
+    "label_hi": "HURT"
+   },
+   {
+    "value": "ILLEGAL CONSTRUCTION",
+    "label_en": "ILLEGAL CONSTRUCTION",
+    "label_hi": "ILLEGAL CONSTRUCTION"
+   },
+   {
+    "value": "ILLEGAL PARKING",
+    "label_en": "ILLEGAL PARKING",
+    "label_hi": "ILLEGAL PARKING"
+   },
+   {
+    "value": "ILLEGAL SALE",
+    "label_en": "ILLEGAL SALE",
+    "label_hi": "ILLEGAL SALE"
+   },
+   {
+    "value": "ILLEGAL SALE OF LIQUOR",
+    "label_en": "ILLEGAL SALE OF LIQUOR",
+    "label_hi": "ILLEGAL SALE OF LIQUOR"
+   },
+   {
+    "value": "IN RUNNING TRAIN",
+    "label_en": "IN RUNNING TRAIN",
+    "label_hi": "IN RUNNING TRAIN"
+   },
+   {
+    "value": "INDEPENDENCE DAY",
+    "label_en": "INDEPENDENCE DAY",
+    "label_hi": "INDEPENDENCE DAY"
+   },
+   {
+    "value": "INFORMATION RELATED TO NGO'S AND OTHERS",
+    "label_en": "INFORMATION RELATED TO NGO'S AND OTHERS",
+    "label_hi": "INFORMATION RELATED TO NGO'S AND OTHERS"
+   },
+   {
+    "value": "INJURED",
+    "label_en": "INJURED",
+    "label_hi": "INJURED"
+   },
+   {
+    "value": "INTERNET BANKING RELATED FRAUD",
+    "label_en": "INTERNET BANKING RELATED FRAUD",
+    "label_hi": "INTERNET BANKING RELATED FRAUD"
+   },
+   {
+    "value": "IT ACT",
+    "label_en": "IT ACT",
+    "label_hi": "IT ACT"
+   },
+   {
+    "value": "KIDNAPPING",
+    "label_en": "KIDNAPPING",
+    "label_hi": "KIDNAPPING"
+   },
+   {
+    "value": "KIDNAPPING FOR RANSOM",
+    "label_en": "KIDNAPPING FOR RANSOM",
+    "label_hi": "KIDNAPPING FOR RANSOM"
+   },
+   {
+    "value": "LOCK DOWN",
+    "label_en": "LOCK DOWN",
+    "label_hi": "LOCK DOWN"
+   },
+   {
+    "value": "LOK SABHA ELECTION",
+    "label_en": "LOK SABHA ELECTION",
+    "label_hi": "LOK SABHA ELECTION"
+   },
+   {
+    "value": "LOST",
+    "label_en": "LOST",
+    "label_hi": "LOST"
+   },
+   {
+    "value": "LOUD SPEAKER FROM 10PM TO 6AM",
+    "label_en": "LOUD SPEAKER FROM 10PM TO 6AM",
+    "label_hi": "LOUD SPEAKER FROM 10PM TO 6AM"
+   },
+   {
+    "value": "LOUD SPEAKER FROM 6AM TO 10PM",
+    "label_en": "LOUD SPEAKER FROM 6AM TO 10PM",
+    "label_hi": "LOUD SPEAKER FROM 6AM TO 10PM"
+   },
+   {
+    "value": "M V THEFT",
+    "label_en": "M V THEFT",
+    "label_hi": "M V THEFT"
+   },
+   {
+    "value": "MADRASA",
+    "label_en": "MADRASA",
+    "label_hi": "MADRASA"
+   },
+   {
+    "value": "MAINTENANCE ALLOWANCE",
+    "label_en": "MAINTENANCE ALLOWANCE",
+    "label_hi": "MAINTENANCE ALLOWANCE"
+   },
+   {
+    "value": "MALE",
+    "label_en": "MALE",
+    "label_hi": "MALE"
+   },
+   {
+    "value": "MANDIR",
+    "label_en": "MANDIR",
+    "label_hi": "MANDIR"
+   },
+   {
+    "value": "MANUFACTURING OF FIRE CRACKERS",
+    "label_en": "MANUFACTURING OF FIRE CRACKERS",
+    "label_hi": "MANUFACTURING OF FIRE CRACKERS"
+   },
+   {
+    "value": "MASJID",
+    "label_en": "MASJID",
+    "label_hi": "MASJID"
+   },
+   {
+    "value": "MASS GATHERING",
+    "label_en": "MASS GATHERING",
+    "label_hi": "MASS GATHERING"
+   },
+   {
+    "value": "MAZAR",
+    "label_en": "MAZAR",
+    "label_hi": "MAZAR"
+   },
+   {
+    "value": "MCD ELECTION",
+    "label_en": "MCD ELECTION",
+    "label_hi": "MCD ELECTION"
+   },
+   {
+    "value": "MEDICAL ASSISTANCE",
+    "label_en": "MEDICAL ASSISTANCE",
+    "label_hi": "MEDICAL ASSISTANCE"
+   },
+   {
+    "value": "MEDICAL EMERGENCY",
+    "label_en": "MEDICAL EMERGENCY",
+    "label_hi": "MEDICAL EMERGENCY"
+   },
+   {
+    "value": "MEDICAL FORGERY",
+    "label_en": "MEDICAL FORGERY",
+    "label_hi": "MEDICAL FORGERY"
+   },
+   {
+    "value": "MIGRANT LABOUR",
+    "label_en": "MIGRANT LABOUR",
+    "label_hi": "MIGRANT LABOUR"
+   },
+   {
+    "value": "MISCELLANEOUS",
+    "label_en": "MISCELLANEOUS",
+    "label_hi": "MISCELLANEOUS"
+   },
+   {
+    "value": "MISSING ANIMAL",
+    "label_en": "MISSING ANIMAL",
+    "label_hi": "MISSING ANIMAL"
+   },
+   {
+    "value": "MISSING CHILD",
+    "label_en": "MISSING CHILD",
+    "label_hi": "MISSING CHILD"
+   },
+   {
+    "value": "MISSING FEMALE",
+    "label_en": "MISSING FEMALE",
+    "label_hi": "MISSING FEMALE"
+   },
+   {
+    "value": "MISSING MALE",
+    "label_en": "MISSING MALE",
+    "label_hi": "MISSING MALE"
+   },
+   {
+    "value": "MISSING TRANSGENDER",
+    "label_en": "MISSING TRANSGENDER",
+    "label_hi": "MISSING TRANSGENDER"
+   },
+   {
+    "value": "MLC",
+    "label_en": "MLC",
+    "label_hi": "MLC"
+   },
+   {
+    "value": "MOB VIOLENCE",
+    "label_en": "MOB VIOLENCE",
+    "label_hi": "MOB VIOLENCE"
+   },
+   {
+    "value": "MOBILE SNATCHING",
+    "label_en": "MOBILE SNATCHING",
+    "label_hi": "MOBILE SNATCHING"
+   },
+   {
+    "value": "MOCK DRILL",
+    "label_en": "MOCK DRILL",
+    "label_hi": "MOCK DRILL"
+   },
+   {
+    "value": "MOLESTATION",
+    "label_en": "MOLESTATION",
+    "label_hi": "MOLESTATION"
+   },
+   {
+    "value": "MONETARY DISPUTE",
+    "label_en": "MONETARY DISPUTE",
+    "label_hi": "MONETARY DISPUTE"
+   },
+   {
+    "value": "MURDER",
+    "label_en": "MURDER",
+    "label_hi": "MURDER"
+   },
+   {
+    "value": "NDPS ACT",
+    "label_en": "NDPS ACT",
+    "label_hi": "NDPS ACT"
+   },
+   {
+    "value": "NEW CURRENCY",
+    "label_en": "NEW CURRENCY",
+    "label_hi": "NEW CURRENCY"
+   },
+   {
+    "value": "NIGHT BURGLARY",
+    "label_en": "NIGHT BURGLARY",
+    "label_hi": "NIGHT BURGLARY"
+   },
+   {
+    "value": "NOISE POLLUTION",
+    "label_en": "NOISE POLLUTION",
+    "label_hi": "NOISE POLLUTION"
+   },
+   {
+    "value": "NOISE POLLUTION  FROM 10PM TO 6AM",
+    "label_en": "NOISE POLLUTION  FROM 10PM TO 6AM",
+    "label_hi": "NOISE POLLUTION  FROM 10PM TO 6AM"
+   },
+   {
+    "value": "NOISE POLLUTION  FROM 6AM TO 10PM",
+    "label_en": "NOISE POLLUTION  FROM 6AM TO 10PM",
+    "label_hi": "NOISE POLLUTION  FROM 6AM TO 10PM"
+   },
+   {
+    "value": "NP BURSTING OF FIRE CRACKERS",
+    "label_en": "NP BURSTING OF FIRE CRACKERS",
+    "label_hi": "NP BURSTING OF FIRE CRACKERS"
+   },
+   {
+    "value": "NP CONST MARBLE CUTTING MC  RES  AREA",
+    "label_en": "NP CONST MARBLE CUTTING MC  RES  AREA",
+    "label_hi": "NP CONST MARBLE CUTTING MC  RES  AREA"
+   },
+   {
+    "value": "NP FIRE CRACKERS",
+    "label_en": "NP FIRE CRACKERS",
+    "label_hi": "NP FIRE CRACKERS"
+   },
+   {
+    "value": "NP GEN SET FIVE KVA IN RES AREA TEN PM TO SIX AM",
+    "label_en": "NP GEN SET FIVE KVA IN RES AREA TEN PM TO SIX AM",
+    "label_hi": "NP GEN SET FIVE KVA IN RES AREA TEN PM TO SIX AM"
+   },
+   {
+    "value": "NP HONKING IN SILENT ZONE",
+    "label_en": "NP HONKING IN SILENT ZONE",
+    "label_hi": "NP HONKING IN SILENT ZONE"
+   },
+   {
+    "value": "NP LS OR DJ SIX AM TO TEN PM",
+    "label_en": "NP LS OR DJ SIX AM TO TEN PM",
+    "label_hi": "NP LS OR DJ SIX AM TO TEN PM"
+   },
+   {
+    "value": "NP LS OR DJ TEN PM SIX AM",
+    "label_en": "NP LS OR DJ TEN PM SIX AM",
+    "label_hi": "NP LS OR DJ TEN PM SIX AM"
+   },
+   {
+    "value": "NP PRESSURE HORN",
+    "label_en": "NP PRESSURE HORN",
+    "label_hi": "NP PRESSURE HORN"
+   },
+   {
+    "value": "NP VEH MODIFIED EXHAUST AND SILENCERS",
+    "label_en": "NP VEH MODIFIED EXHAUST AND SILENCERS",
+    "label_hi": "NP VEH MODIFIED EXHAUST AND SILENCERS"
+   },
+   {
+    "value": "OBJECTIONABLE FLAG PROTEST DEMONSTRATION",
+    "label_en": "OBJECTIONABLE FLAG PROTEST DEMONSTRATION",
+    "label_hi": "OBJECTIONABLE FLAG PROTEST DEMONSTRATION"
+   },
+   {
+    "value": "ODD EVEN VEHICLE",
+    "label_en": "ODD EVEN VEHICLE",
+    "label_hi": "ODD EVEN VEHICLE"
+   },
+   {
+    "value": "ODD EVEN VEHICLE SCHEME",
+    "label_en": "ODD EVEN VEHICLE SCHEME",
+    "label_hi": "ODD EVEN VEHICLE SCHEME"
+   },
+   {
+    "value": "OFFICE ROBBERY",
+    "label_en": "OFFICE ROBBERY",
+    "label_hi": "OFFICE ROBBERY"
+   },
+   {
+    "value": "OTHER ACCIDENT",
+    "label_en": "OTHER ACCIDENT",
+    "label_hi": "OTHER ACCIDENT"
+   },
+   {
+    "value": "OTHER ACT",
+    "label_en": "OTHER ACT",
+    "label_hi": "OTHER ACT"
+   },
+   {
+    "value": "OTHER ELECTION",
+    "label_en": "OTHER ELECTION",
+    "label_hi": "OTHER ELECTION"
+   },
+   {
+    "value": "OTHER FESTIVAL",
+    "label_en": "OTHER FESTIVAL",
+    "label_hi": "OTHER FESTIVAL"
+   },
+   {
+    "value": "OTHER FLYING OBJECTS",
+    "label_en": "OTHER FLYING OBJECTS",
+    "label_hi": "OTHER FLYING OBJECTS"
+   },
+   {
+    "value": "OTHER SNATCHING",
+    "label_en": "OTHER SNATCHING",
+    "label_hi": "OTHER SNATCHING"
+   },
+   {
+    "value": "OTHER THEFT",
+    "label_en": "OTHER THEFT",
+    "label_hi": "OTHER THEFT"
+   },
+   {
+    "value": "OTHERS",
+    "label_en": "OTHERS",
+    "label_hi": "OTHERS"
+   },
+   {
+    "value": "OXYGEN CYLINDER",
+    "label_en": "OXYGEN CYLINDER",
+    "label_hi": "OXYGEN CYLINDER"
+   },
+   {
+    "value": "PARKING DISPUTE",
+    "label_en": "PARKING DISPUTE",
+    "label_hi": "PARKING DISPUTE"
+   },
+   {
+    "value": "PICK POCKETING",
+    "label_en": "PICK POCKETING",
+    "label_hi": "PICK POCKETING"
+   },
+   {
+    "value": "PICK-POCKETING IN MARKET",
+    "label_en": "PICK-POCKETING IN MARKET",
+    "label_hi": "PICK-POCKETING IN MARKET"
+   },
+   {
+    "value": "PICK-POCKETING IN OTHER PLACE",
+    "label_en": "PICK-POCKETING IN OTHER PLACE",
+    "label_hi": "PICK-POCKETING IN OTHER PLACE"
+   },
+   {
+    "value": "PICK-POCKETING IN PUBLIC TRANSPORT",
+    "label_en": "PICK-POCKETING IN PUBLIC TRANSPORT",
+    "label_hi": "PICK-POCKETING IN PUBLIC TRANSPORT"
+   },
+   {
+    "value": "PIG RELATED",
+    "label_en": "PIG RELATED",
+    "label_hi": "PIG RELATED"
+   },
+   {
+    "value": "PLANE ACCIDENT",
+    "label_en": "PLANE ACCIDENT",
+    "label_hi": "PLANE ACCIDENT"
+   },
+   {
+    "value": "POCSO ACT",
+    "label_en": "POCSO ACT",
+    "label_hi": "POCSO ACT"
+   },
+   {
+    "value": "POLICE PERSONNEL INFECTED",
+    "label_en": "POLICE PERSONNEL INFECTED",
+    "label_hi": "POLICE PERSONNEL INFECTED"
+   },
+   {
+    "value": "POLICE PERSONNEL SUSPECTED",
+    "label_en": "POLICE PERSONNEL SUSPECTED",
+    "label_hi": "POLICE PERSONNEL SUSPECTED"
+   },
+   {
+    "value": "PROPERTY DISPUTE",
+    "label_en": "PROPERTY DISPUTE",
+    "label_hi": "PROPERTY DISPUTE"
+   },
+   {
+    "value": "QUARREL",
+    "label_en": "QUARREL",
+    "label_hi": "QUARREL"
+   },
+   {
+    "value": "QUARREL WITH SOME PERSON",
+    "label_en": "QUARREL WITH SOME PERSON",
+    "label_hi": "QUARREL WITH SOME PERSON"
+   },
+   {
+    "value": "RAPE",
+    "label_en": "RAPE",
+    "label_hi": "RAPE"
+   },
+   {
+    "value": "RASH DRIVING",
+    "label_en": "RASH DRIVING",
+    "label_hi": "RASH DRIVING"
+   },
+   {
+    "value": "RATION RELATED",
+    "label_en": "RATION RELATED",
+    "label_hi": "RATION RELATED"
+   },
+   {
+    "value": "RECOVERY",
+    "label_en": "RECOVERY",
+    "label_hi": "RECOVERY"
+   },
+   {
+    "value": "REPUBLIC DAY",
+    "label_en": "REPUBLIC DAY",
+    "label_hi": "REPUBLIC DAY"
+   },
+   {
+    "value": "RIOT",
+    "label_en": "RIOT",
+    "label_hi": "RIOT"
+   },
+   {
+    "value": "ROAD RAGE",
+    "label_en": "ROAD RAGE",
+    "label_hi": "ROAD RAGE"
+   },
+   {
+    "value": "ROBBERY",
+    "label_en": "ROBBERY",
+    "label_hi": "ROBBERY"
+   },
+   {
+    "value": "SALE AND STORAGE OF CHINESE MANJHA",
+    "label_en": "SALE AND STORAGE OF CHINESE MANJHA",
+    "label_hi": "SALE AND STORAGE OF CHINESE MANJHA"
+   },
+   {
+    "value": "SELLING OF FIRE CRACKERS",
+    "label_en": "SELLING OF FIRE CRACKERS",
+    "label_hi": "SELLING OF FIRE CRACKERS"
+   },
+   {
+    "value": "SERVENT THEFT",
+    "label_en": "SERVENT THEFT",
+    "label_hi": "SERVENT THEFT"
+   },
+   {
+    "value": "SEXUAL HARASSMENT AT HOME (SHAT)",
+    "label_en": "SEXUAL HARASSMENT AT HOME (SHAT)",
+    "label_hi": "SEXUAL HARASSMENT AT HOME (SHAT)"
+   },
+   {
+    "value": "SHOOTOUT",
+    "label_en": "SHOOTOUT",
+    "label_hi": "SHOOTOUT"
+   },
+   {
+    "value": "SHORTAGE OF CNG",
+    "label_en": "SHORTAGE OF CNG",
+    "label_hi": "SHORTAGE OF CNG"
+   },
+   {
+    "value": "SHORTAGE OF DIESEL",
+    "label_en": "SHORTAGE OF DIESEL",
+    "label_hi": "SHORTAGE OF DIESEL"
+   },
+   {
+    "value": "SHORTAGE OF LPG",
+    "label_en": "SHORTAGE OF LPG",
+    "label_hi": "SHORTAGE OF LPG"
+   },
+   {
+    "value": "SHORTAGE OF PETROL",
+    "label_en": "SHORTAGE OF PETROL",
+    "label_hi": "SHORTAGE OF PETROL"
+   },
+   {
+    "value": "SHOUTING",
+    "label_en": "SHOUTING",
+    "label_hi": "SHOUTING"
+   },
+   {
+    "value": "SIMPLE HURT",
+    "label_en": "SIMPLE HURT",
+    "label_hi": "SIMPLE HURT"
+   },
+   {
+    "value": "SNATCHING",
+    "label_en": "SNATCHING",
+    "label_hi": "SNATCHING"
+   },
+   {
+    "value": "SNATCHING PROPERTY",
+    "label_en": "SNATCHING PROPERTY",
+    "label_hi": "SNATCHING PROPERTY"
+   },
+   {
+    "value": "SNATCHING TSR CAR JACKING",
+    "label_en": "SNATCHING TSR CAR JACKING",
+    "label_hi": "SNATCHING TSR CAR JACKING"
+   },
+   {
+    "value": "SOS SR CITIZEN",
+    "label_en": "SOS SR CITIZEN",
+    "label_hi": "SOS SR CITIZEN"
+   },
+   {
+    "value": "SR CITIZEN ABUSE",
+    "label_en": "SR CITIZEN ABUSE",
+    "label_hi": "SR CITIZEN ABUSE"
+   },
+   {
+    "value": "SR CITIZEN CONFINEMENT",
+    "label_en": "SR CITIZEN CONFINEMENT",
+    "label_hi": "SR CITIZEN CONFINEMENT"
+   },
+   {
+    "value": "SR CITIZEN HELPLINE",
+    "label_en": "SR CITIZEN HELPLINE",
+    "label_hi": "SR CITIZEN HELPLINE"
+   },
+   {
+    "value": "STABBING",
+    "label_en": "STABBING",
+    "label_hi": "STABBING"
+   },
+   {
+    "value": "STALKING",
+    "label_en": "STALKING",
+    "label_hi": "STALKING"
+   },
+   {
+    "value": "STORAGE OF FIRE CRACKERS",
+    "label_en": "STORAGE OF FIRE CRACKERS",
+    "label_hi": "STORAGE OF FIRE CRACKERS"
+   },
+   {
+    "value": "STUDENT UNION ELECTION",
+    "label_en": "STUDENT UNION ELECTION",
+    "label_hi": "STUDENT UNION ELECTION"
+   },
+   {
+    "value": "SUDDEN LAW AND ORDER PROBLEM",
+    "label_en": "SUDDEN LAW AND ORDER PROBLEM",
+    "label_hi": "SUDDEN LAW AND ORDER PROBLEM"
+   },
+   {
+    "value": "SUICIDE",
+    "label_en": "SUICIDE",
+    "label_hi": "SUICIDE"
+   },
+   {
+    "value": "SUICIDE BOMBER",
+    "label_en": "SUICIDE BOMBER",
+    "label_hi": "SUICIDE BOMBER"
+   },
+   {
+    "value": "SUICIDE F",
+    "label_en": "SUICIDE F",
+    "label_hi": "SUICIDE F"
+   },
+   {
+    "value": "SUICIDE M",
+    "label_en": "SUICIDE M",
+    "label_hi": "SUICIDE M"
+   },
+   {
+    "value": "SUICIDE TRANSGENDER",
+    "label_en": "SUICIDE TRANSGENDER",
+    "label_hi": "SUICIDE TRANSGENDER"
+   },
+   {
+    "value": "SUSPICIOUS OBJECTS OR PERSON",
+    "label_en": "SUSPICIOUS OBJECTS OR PERSON",
+    "label_hi": "SUSPICIOUS OBJECTS OR PERSON"
+   },
+   {
+    "value": "TAZIA",
+    "label_en": "TAZIA",
+    "label_hi": "TAZIA"
+   },
+   {
+    "value": "TENANT LANDLORD DISPUTE",
+    "label_en": "TENANT LANDLORD DISPUTE",
+    "label_hi": "TENANT LANDLORD DISPUTE"
+   },
+   {
+    "value": "TERRORIST AND DISRUPTIVE ACTIVITIES",
+    "label_en": "TERRORIST AND DISRUPTIVE ACTIVITIES",
+    "label_hi": "TERRORIST AND DISRUPTIVE ACTIVITIES"
+   },
+   {
+    "value": "TERRORIST ATTACK",
+    "label_en": "TERRORIST ATTACK",
+    "label_hi": "TERRORIST ATTACK"
+   },
+   {
+    "value": "THEFT",
+    "label_en": "THEFT",
+    "label_hi": "THEFT"
+   },
+   {
+    "value": "THEFT IN HOUSE",
+    "label_en": "THEFT IN HOUSE",
+    "label_hi": "THEFT IN HOUSE"
+   },
+   {
+    "value": "THEFT IN OFFICE",
+    "label_en": "THEFT IN OFFICE",
+    "label_hi": "THEFT IN OFFICE"
+   },
+   {
+    "value": "THEFT IN OTHER PREMISES",
+    "label_en": "THEFT IN OTHER PREMISES",
+    "label_hi": "THEFT IN OTHER PREMISES"
+   },
+   {
+    "value": "THEFT IN SHOP",
+    "label_en": "THEFT IN SHOP",
+    "label_hi": "THEFT IN SHOP"
+   },
+   {
+    "value": "THREAT TO WOMEN",
+    "label_en": "THREAT TO WOMEN",
+    "label_hi": "THREAT TO WOMEN"
+   },
+   {
+    "value": "THREE WHEELER",
+    "label_en": "THREE WHEELER",
+    "label_hi": "THREE WHEELER"
+   },
+   {
+    "value": "TO AUTO DRIVER",
+    "label_en": "TO AUTO DRIVER",
+    "label_hi": "TO AUTO DRIVER"
+   },
+   {
+    "value": "TO BUS DRIVER",
+    "label_en": "TO BUS DRIVER",
+    "label_hi": "TO BUS DRIVER"
+   },
+   {
+    "value": "TO OTHER PERSON",
+    "label_en": "TO OTHER PERSON",
+    "label_hi": "TO OTHER PERSON"
+   },
+   {
+    "value": "TO PEDESTRIAN",
+    "label_en": "TO PEDESTRIAN",
+    "label_hi": "TO PEDESTRIAN"
+   },
+   {
+    "value": "TO RICKSHAW DRIVER",
+    "label_en": "TO RICKSHAW DRIVER",
+    "label_hi": "TO RICKSHAW DRIVER"
+   },
+   {
+    "value": "TO RTV DRIVER",
+    "label_en": "TO RTV DRIVER",
+    "label_hi": "TO RTV DRIVER"
+   },
+   {
+    "value": "TO TAXI DRIVER",
+    "label_en": "TO TAXI DRIVER",
+    "label_hi": "TO TAXI DRIVER"
+   },
+   {
+    "value": "TO TRUCK DRIVER",
+    "label_en": "TO TRUCK DRIVER",
+    "label_hi": "TO TRUCK DRIVER"
+   },
+   {
+    "value": "TOURISM RELATED INFORMATION",
+    "label_en": "TOURISM RELATED INFORMATION",
+    "label_hi": "TOURISM RELATED INFORMATION"
+   },
+   {
+    "value": "TRACED",
+    "label_en": "TRACED",
+    "label_hi": "TRACED"
+   },
+   {
+    "value": "TRADE FARE",
+    "label_en": "TRADE FARE",
+    "label_hi": "TRADE FARE"
+   },
+   {
+    "value": "TRAFFIC CONGESTION",
+    "label_en": "TRAFFIC CONGESTION",
+    "label_hi": "TRAFFIC CONGESTION"
+   },
+   {
+    "value": "TRAFFIC JAM",
+    "label_en": "TRAFFIC JAM",
+    "label_hi": "TRAFFIC JAM"
+   },
+   {
+    "value": "TRAIN ACCIDENT",
+    "label_en": "TRAIN ACCIDENT",
+    "label_hi": "TRAIN ACCIDENT"
+   },
+   {
+    "value": "TRANSGENDER",
+    "label_en": "TRANSGENDER",
+    "label_hi": "TRANSGENDER"
+   },
+   {
+    "value": "TSR REFUSAL DRIVER TO WOMEN EIGHT AM TO EIGHT PM",
+    "label_en": "TSR REFUSAL DRIVER TO WOMEN EIGHT AM TO EIGHT PM",
+    "label_hi": "TSR REFUSAL DRIVER TO WOMEN EIGHT AM TO EIGHT PM"
+   },
+   {
+    "value": "TSR REFUSAL TO WOMEN EIGHT PM TO EIGHT AM",
+    "label_en": "TSR REFUSAL TO WOMEN EIGHT PM TO EIGHT AM",
+    "label_hi": "TSR REFUSAL TO WOMEN EIGHT PM TO EIGHT AM"
+   },
+   {
+    "value": "TSR REFUSED",
+    "label_en": "TSR REFUSED",
+    "label_hi": "TSR REFUSED"
+   },
+   {
+    "value": "TWO WHEELER",
+    "label_en": "TWO WHEELER",
+    "label_hi": "TWO WHEELER"
+   },
+   {
+    "value": "TWO WHEELER ACCIDENT",
+    "label_en": "TWO WHEELER ACCIDENT",
+    "label_hi": "TWO WHEELER ACCIDENT"
+   },
+   {
+    "value": "UNAUTHORISED CONSTRUCTION",
+    "label_en": "UNAUTHORISED CONSTRUCTION",
+    "label_hi": "UNAUTHORISED CONSTRUCTION"
+   },
+   {
+    "value": "UNCLAIMED CHILD",
+    "label_en": "UNCLAIMED CHILD",
+    "label_hi": "UNCLAIMED CHILD"
+   },
+   {
+    "value": "UNCLAIMED PERSON",
+    "label_en": "UNCLAIMED PERSON",
+    "label_hi": "UNCLAIMED PERSON"
+   },
+   {
+    "value": "UNCLAIMED PROPERTY",
+    "label_en": "UNCLAIMED PROPERTY",
+    "label_hi": "UNCLAIMED PROPERTY"
+   },
+   {
+    "value": "UNCLAIMED VEHICLE",
+    "label_en": "UNCLAIMED VEHICLE",
+    "label_hi": "UNCLAIMED VEHICLE"
+   },
+   {
+    "value": "UNCONSCIOUS",
+    "label_en": "UNCONSCIOUS",
+    "label_hi": "UNCONSCIOUS"
+   },
+   {
+    "value": "UNEMPLOYMENT AND ECONOMIC DIFFICULTY-(U & ED)",
+    "label_en": "UNEMPLOYMENT AND ECONOMIC DIFFICULTY-(U & ED)",
+    "label_hi": "UNEMPLOYMENT AND ECONOMIC DIFFICULTY-(U & ED)"
+   },
+   {
+    "value": "UNIDENTIFIED",
+    "label_en": "UNIDENTIFIED",
+    "label_hi": "UNIDENTIFIED"
+   },
+   {
+    "value": "UNIDENTIFIED PERSON FOUND",
+    "label_en": "UNIDENTIFIED PERSON FOUND",
+    "label_hi": "UNIDENTIFIED PERSON FOUND"
+   },
+   {
+    "value": "WATER",
+    "label_en": "WATER",
+    "label_hi": "WATER"
+   },
+   {
+    "value": "WATER LOGGING",
+    "label_en": "WATER LOGGING",
+    "label_hi": "WATER LOGGING"
+   },
+   {
+    "value": "WILD LIFE",
+    "label_en": "WILD LIFE",
+    "label_hi": "WILD LIFE"
+   },
+   {
+    "value": "WITH NEIGHBOURS",
+    "label_en": "WITH NEIGHBOURS",
+    "label_hi": "WITH NEIGHBOURS"
+   },
+   {
+    "value": "WOMEN ABUSE",
+    "label_en": "WOMEN ABUSE",
+    "label_hi": "WOMEN ABUSE"
+   },
+   {
+    "value": "WOMEN THREAT",
+    "label_en": "WOMEN THREAT",
+    "label_hi": "WOMEN THREAT"
+   },
+   {
+    "value": "e-FIR Property Theft",
+    "label_en": "e-FIR Property Theft",
+    "label_hi": "e-FIR Property Theft"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "call_gist",
+  "record_types": [
+   "PCR_CALL"
+  ],
+  "field_type": "TEXTAREA",
+  "labels": {
+   "en": "PCR Call Gist",
+   "hi": "पीसीआर कॉल का विवरण"
+  },
+  "section": "complaint_details",
+  "storage": {
+   "table": "pcr_call_details",
+   "column": "call_gist"
+  },
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 6,
+  "full_width": true,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "caller_name",
+  "record_types": [
+   "PCR_CALL"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Caller Name",
+   "hi": "कॉलर का नाम"
+  },
+  "section": "informant_contact",
+  "storage": {
+   "entity": "person",
+   "role": "CALLER",
+   "column": "name"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 7,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "caller_mobile",
+  "record_types": [
+   "PCR_CALL"
+  ],
+  "field_type": "NUMBER",
+  "labels": {
+   "en": "Caller Mobile",
+   "hi": "कॉलर का मोबाइल"
+  },
+  "section": "informant_contact",
+  "storage": {
+   "entity": "person",
+   "role": "CALLER",
+   "column": "mobile"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 8,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "latitude",
+  "record_types": [
+   "PCR_CALL"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Latitude",
+   "hi": "अक्षांश"
+  },
+  "section": "incident_details",
+  "storage": {
+   "entity": "location",
+   "slot": "incident",
+   "column": "latitude"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 8.1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "longitude",
+  "record_types": [
+   "PCR_CALL"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Longitude",
+   "hi": "रेखांश"
+  },
+  "section": "incident_details",
+  "storage": {
+   "entity": "location",
+   "slot": "incident",
+   "column": "longitude"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 8.2,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrival_time",
+  "record_types": [
+   "PCR_CALL"
+  ],
+  "field_type": "TIME",
+  "labels": {
+   "en": "Arrival Time",
+   "hi": "पहुंचने का समय"
+  },
+  "section": "incident_details",
+  "storage": {
+   "table": "pcr_call_details",
+   "column": "arrival_time"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 10,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ }
+]

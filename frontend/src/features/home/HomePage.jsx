@@ -115,7 +115,7 @@ export default function HomePage() {
                   <div className="hologram-text-block">
                     <span className="hologram-title glow-text">PRISM</span>
                     <div className="hologram-line" />
-                    <span className="text-sm font-bold">Police Report Intelligence Statistic & Management System</span>
+                    <span className="text-sm font-bold">Police Report Intelligence & Statistic Management System</span>
                   </div>
                 </div>
 

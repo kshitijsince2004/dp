@@ -12,8 +12,13 @@ import { formatDMY, parseDMY } from '../../utils/dateFormat.js';
 
 const JOIN_OPTIONS = {
   CASE: [
-    { value: 'ARREST',  label: 'FIR + Arrests (joined by FIR No.)' },
-    { value: 'MISSING', label: 'FIR + Missing Persons (joined by DD No.)' },
+    { value: 'ARREST',       label: 'FIR + Arrests (joined by FIR No.)' },
+    { value: 'MISSING',      label: 'FIR + Missing Persons (joined by DD No.)' },
+    { value: 'CASE_ACCUSED', label: 'FIR + Accused Persons (one row per accused)' },
+    { value: 'CASE_VICTIM',  label: 'FIR + Victims (one row per victim)' },
+  ],
+  ARREST: [
+    { value: 'ARREST_ARRESTED', label: 'Arrests + Arrested Persons — Full Details (one row per person)' },
   ],
 };
 
@@ -23,6 +28,14 @@ const TABLE_LABELS = {
   PCR_CALL: 'PCR / Kalandra (PCR_CALL)',
   MISSING:  'Missing Persons (MISSING)',
   UIDB:     'Unidentified Bodies (UIDB)',
+};
+
+// Prettier prefix for join-only virtual tables when tagging field labels
+// (e.g. "[CASE_ACCUSED] Accused First Name" -> "[Accused] Accused First Name").
+const JOIN_TABLE_TAGS = {
+  CASE_ACCUSED: 'Accused',
+  CASE_VICTIM: 'Victim',
+  ARREST_ARRESTED: 'Arrested Person',
 };
 
 const today = formatDMY(new Date());
@@ -172,7 +185,8 @@ export default function CustomExcelBuilder() {
       // Group fields that share a `group` tag into ONE collapsed checkbox —
       // selecting it exports every member field as its own column (expanded
       // in handleExport), but the picker only shows one row for the whole group.
-      const groupLabelByKey = new Map((tData.groups || []).map(g => [g.key, tables.length > 1 ? `[${t}] ${g.label_en}` : g.label_en]));
+      const tableTag = JOIN_TABLE_TAGS[t] || t;
+      const groupLabelByKey = new Map((tData.groups || []).map(g => [g.key, tables.length > 1 ? `[${tableTag}] ${g.label_en}` : g.label_en]));
       const groupMembers = new Map(); // groupKey -> [{value, isPii}]
 
       for (const f of tData.fields) {
@@ -183,7 +197,7 @@ export default function CustomExcelBuilder() {
         }
         opts.push({
           value: `${t}.${f.key}`,
-          label: tables.length > 1 ? `[${t}] ${f.label_en}` : f.label_en,
+          label: tables.length > 1 ? `[${tableTag}] ${f.label_en}` : f.label_en,
           badge: f.is_pii ? 'PII' : null,
         });
       }
@@ -197,7 +211,7 @@ export default function CustomExcelBuilder() {
         });
       }
       for (const f of (tData.system_fields || [])) {
-        opts.push({ value: `${t}.${f.key}`, label: tables.length > 1 ? `[${t}] ${f.label_en}` : f.label_en, badge: null });
+        opts.push({ value: `${t}.${f.key}`, label: tables.length > 1 ? `[${tableTag}] ${f.label_en}` : f.label_en, badge: null });
       }
     }
     opts.sort((a, b) => a.label.localeCompare(b.label));

@@ -78,20 +78,26 @@ const DEFAULT_SYSTEM_PRESETS = [
 
 export const listPresets = async (req, res) => {
   try {
+    // filter_presets.scope_id is FK'd to hierarchy_nodes, so it can't hold a role name or a
+    // user id — ROLE-scoped presets aren't supported yet (createPreset falls back to USER).
+    // USER-scoped ownership is tracked via created_by instead, which already FKs to users.
     const list = await db('filter_presets')
       .where({ is_active: true })
       .andWhere(builder => {
         builder.where({ scope: 'SYSTEM' })
-          .orWhere({ scope: 'ROLE', scope_id: req.user.role })
-          .orWhere({ scope: 'USER', scope_id: req.user.id || req.user.userId });
+          .orWhere({ scope: 'USER', created_by: req.user.id || req.user.userId });
       });
 
     const parsedList = list.map(item => ({
       ...item,
       filter_spec: typeof item.filter_spec === 'string' ? JSON.parse(item.filter_spec) : item.filter_spec,
-      applicable_record_types: typeof item.applicable_record_types === 'string'
-        ? JSON.parse(item.applicable_record_types || '[]')
-        : item.applicable_record_types
+      // filter_presets is English-only (single `name` column) — mirror into name_en/name_hi
+      // so existing frontend consumers keep working unchanged.
+      name_en: item.name,
+      name_hi: item.name,
+      applicable_record_types: typeof item.record_types === 'string'
+        ? JSON.parse(item.record_types || '[]')
+        : item.record_types
     }));
 
     // If SYSTEM presets are not loaded in the DB, merge the default ones
@@ -122,9 +128,11 @@ export const listDurationPresets = async (req, res) => {
     const parsed = rows.map(r => ({
       ...r,
       filter_spec: typeof r.filter_spec === 'string' ? JSON.parse(r.filter_spec) : r.filter_spec,
-      applicable_record_types: typeof r.applicable_record_types === 'string'
-        ? JSON.parse(r.applicable_record_types || '[]')
-        : r.applicable_record_types
+      name_en: r.name,
+      name_hi: r.name,
+      applicable_record_types: typeof r.record_types === 'string'
+        ? JSON.parse(r.record_types || '[]')
+        : r.record_types
     }));
 
     return res.status(200).json({ status: 'success', data: parsed });
@@ -134,30 +142,29 @@ export const listDurationPresets = async (req, res) => {
 };
 
 export const createPreset = async (req, res) => {
-  const { name_en, name_hi, scope, scope_id, filter_spec, applicable_record_types } = req.body;
+  const { name_en, scope, filter_spec, applicable_record_types } = req.body;
 
-  if (!name_en || !name_hi || !filter_spec) {
-    return res.status(400).json({ status: 'error', message: 'name_en, name_hi, and filter_spec are required' });
+  if (!name_en || !filter_spec) {
+    return res.status(400).json({ status: 'error', message: 'name_en and filter_spec are required' });
   }
 
   try {
     const id = uuidv4();
-    const finalScope = scope || 'USER';
-    const finalScopeId = scope_id || (finalScope === 'ROLE' ? req.user.role : (req.user.id || req.user.userId));
+    // ROLE-scoped presets aren't supported yet — scope_id is FK'd to hierarchy_nodes and has no
+    // safe home for a role name under the current schema. Fall back to a personal USER preset.
+    const finalScope = scope === 'ROLE' ? 'USER' : (scope || 'USER');
 
     const row = {
       id,
-      name_en,
-      name_hi,
+      name: name_en,
       scope: finalScope,
-      scope_id: finalScopeId,
+      scope_id: null,
       filter_spec: typeof filter_spec === 'string' ? filter_spec : JSON.stringify(filter_spec),
-      applicable_record_types: Array.isArray(applicable_record_types)
+      record_types: Array.isArray(applicable_record_types)
         ? JSON.stringify(applicable_record_types)
         : (applicable_record_types || '[]'),
       created_by: req.user ? (req.user.id || req.user.userId) : null,
       is_active: true,
-      created_at: new Date().toISOString()
     };
 
     await db('filter_presets').insert(row);
@@ -166,10 +173,12 @@ export const createPreset = async (req, res) => {
       status: 'success',
       data: {
         ...row,
+        name_en: row.name,
+        name_hi: row.name,
         filter_spec: typeof row.filter_spec === 'string' ? JSON.parse(row.filter_spec) : row.filter_spec,
-        applicable_record_types: typeof row.applicable_record_types === 'string'
-          ? JSON.parse(row.applicable_record_types)
-          : row.applicable_record_types
+        applicable_record_types: typeof row.record_types === 'string'
+          ? JSON.parse(row.record_types)
+          : row.record_types
       }
     });
   } catch (error) {

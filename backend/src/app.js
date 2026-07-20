@@ -8,9 +8,10 @@ import rateLimit from 'express-rate-limit';
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
 import * as eventBus from './events/eventBus.js';
-import * as auditHandler from './events/handlers/auditHandler.js';
 import * as notifyHandler from './events/handlers/notifyHandler.js';
 import * as linkAuditHandler from './events/handlers/linkAuditHandler.js';
+import * as linkResolver from './events/handlers/linkResolver.js';
+import * as importConfirmHandler from './events/handlers/importConfirmHandler.js';
 import { initScheduler } from './modules/reports/scheduler.js';
 import { ipAllowlistMiddleware, csrfDoubleSubmitMiddleware } from './middleware/security.middleware.js';
 import { authMiddleware } from './middleware/auth.middleware.js';
@@ -29,13 +30,13 @@ import hierarchyRouter from './modules/hierarchy/hierarchy.router.js';
 import adminRouter from './modules/admin/admin.router.js';
 import auditRouter from './modules/audit/audit.router.js';
 import compilationRouter from './modules/compilation/compilation.routes.js';
-import legacyRouter from './modules/legacy/legacy.router.js';
 import levelContractsRouter from './modules/level-contracts/levelContracts.router.js';
 import filtersRouter from './modules/filters/filters.router.js';
 import notificationsRouter from './modules/notifications/notifications.routes.js';
 import dailyDiaryRouter from './modules/daily-diary/daily-diary.router.js';
 import warehouseRouter from './modules/warehouse/warehouse.router.js';
 import recordLinksRouter from './modules/record-links/record-links.router.js';
+import ioRouter from './modules/io/io.router.js';
 
 
 
@@ -121,14 +122,14 @@ app.use('/api/v1/admin/hierarchy', hierarchyRouter);
 app.use('/api/v1/hierarchy', hierarchyRouter);
 app.use('/api/hierarchy', hierarchyRouter);
 
+app.use('/api/v1/investigating-officers', ioRouter);
+app.use('/api/investigating-officers', ioRouter);
+
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/admin', adminRouter);
 
 app.use('/api/v1/audit', auditRouter);
 app.use('/api/audit', auditRouter);
-
-app.use('/api/v1/legacy', legacyRouter);
-app.use('/api/legacy', legacyRouter);
 
 app.use('/api/v1/level-contracts', levelContractsRouter);
 app.use('/api/level-contracts', levelContractsRouter);
@@ -177,9 +178,10 @@ const startServer = async () => {
   await eventBus.connect();
 
   // Start background handlers
-  await auditHandler.init();
   await notifyHandler.init();
   await linkAuditHandler.init();
+  await linkResolver.init();
+  await importConfirmHandler.init();
   await initScheduler();
 
   app.listen(env.PORT, () => {

@@ -1,0 +1,37 @@
+{
+ "code": "T_DAILY_24HR_DIARY",
+ "name": "24-Hour Daily Diary (Important Cases)",
+ "record_types": [
+  "CASE"
+ ],
+ "levels": [
+  "DISTRICT",
+  "HQ"
+ ],
+ "template_definition": {
+  "layout": "A4_PORTRAIT",
+  "header": {
+   "title_en": "DELHI POLICE DAILY REPORT",
+   "title_hi": "दिल्ली पुलिस दैनिक रिपोर्ट"
+  },
+  "sections": [
+   {
+    "title_en": "Details of Important Cases Registered During Last 24 Hours",
+    "title_hi": "पिछले 24 घंटों के दौरान पंजीकृत महत्वपूर्ण मामलों का विवरण",
+    "fields": [
+     "fir_no",
+     "fir_date",
+     "gd_no",
+     "occurrence_place",
+     "brief_facts"
+    ]
+   }
+  ]
+ },
+ "output_formats": [
+  "PDF",
+  "EXCEL"
+ ],
+ "template_type": "PROFORMA",
+ "is_active": true
+}

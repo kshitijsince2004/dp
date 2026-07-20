@@ -856,7 +856,12 @@ def generate_report(job_id):
             # Empty list from TEMPLATE_TO_TABLE_NAMES means no sheets defined yet → use all
             if active_tables is not None and len(active_tables) == 0:
                 active_tables = None
-            date_label = (filters or {}).get('date', '')
+            _dd_date = (filters or {}).get('date', '')
+            _dd_date_to = (filters or {}).get('date_to') or (filters or {}).get('dateTo')
+            if _dd_date_to and _dd_date_to != _dd_date:
+                date_label = f"{fmt_date(_dd_date)} to {fmt_date(_dd_date_to)}"
+            else:
+                date_label = fmt_date(_dd_date)
             sheets_data = map_all_sheets(classified, active_tables)
             active_sheet_defs = [s for s in REGISTRY_SHEETS if active_tables is None or s['table_name'] in active_tables]
             build_workbook(sheets_data, active_sheet_defs, file_path, date=date_label)

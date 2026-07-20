@@ -70,9 +70,7 @@ export const getCompilation = async (req, res, next) => {
 export const submitCompilation = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id || req.user?.userId || '00000000-0000-0000-0000-000000000000';
-
-    const compilation = await compilationService.submitCompilation(id, userId);
+    const compilation = await compilationService.submitCompilation(id, req.user);
     res.status(200).json({ status: 'success', success: true, data: compilation });
   } catch (error) {
     const statusCode = error.message.includes('not found') ? 404

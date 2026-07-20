@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import api from '../utils/api.js';
 import { formatDMY } from '../utils/dateFormat.js';
 
 export function useAutosave(module, recordId) {
   const [saveStatus, setSaveStatus] = useState('idle'); // idle | saving | saved | unsaved
-  const queryClient = useQueryClient();
   const timerRef = useRef(null);
 
   const mutation = useMutation({
@@ -30,12 +29,19 @@ export function useAutosave(module, recordId) {
         return res.data.data;
       }
     },
-    onSuccess: (savedRecord) => {
+    onSuccess: () => {
+      // Deliberately NOT invalidating the ['records', id] (or ['records'] prefix-matching
+      // it) query here. This form's `activeRecordIdRef` is set straight from
+      // `mutation.data` (see DynamicForm.jsx), so invalidation buys nothing for autosave
+      // itself — but it used to also invalidate the *currently open* record's own detail
+      // query, which is still mounted and rendering this form. React Query would refetch
+      // it in the background, DynamicForm's seed effect would see new `initialValues`
+      // content and call setValues() to reseed, and any field the user filled in after
+      // the autosave request was sent (but before this refetch resolved) got silently
+      // wiped — the exact bug reported as "date/time vanishes" and "required field looks
+      // filled but Next still blocks it". Other pages (record lists, dashboards) will
+      // simply pick up fresh data next time they mount.
       setSaveStatus('saved');
-      queryClient.invalidateQueries({ queryKey: ['records'] });
-      if (savedRecord?.id) {
-        queryClient.invalidateQueries({ queryKey: ['records', savedRecord.id] });
-      }
       setTimeout(() => setSaveStatus('idle'), 2000);
     },
     onError: () => {

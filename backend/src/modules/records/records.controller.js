@@ -1,8 +1,8 @@
 import * as recordsService from './records.service.js';
+import * as workflowEngine from '../workflow/workflow.engine.js';
 import { verifyRecordAccess } from '../../middleware/rbac.middleware.js';
 import { maskRecordData, maskRecordDetails } from '../level-contracts/levelContracts.service.js';
 import { toISO } from '../../utils/dateFormat.js';
-import path from 'path';
 
 export const getRecords = async (req, res) => {
   const type = req.query.type || req.query.record_type;
@@ -51,7 +51,7 @@ export const getRecord = async (req, res) => {
 };
 
 export const create = async (req, res) => {
-  const { record_type, data, persons = [], properties = [] } = req.body;
+  const { record_type, data, persons = [], properties = [], offences = [] } = req.body;
   // record_date is a native DATE column; frontend sends dd/mm/yyyy, parse to ISO.
   const record_date = toISO(req.body.record_date) || new Date().toISOString().split('T')[0];
   const ipAddress = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
@@ -67,7 +67,7 @@ export const create = async (req, res) => {
       record_date,
       data,
       ipAddress,
-      { persons, properties }
+      { persons, properties, offences }
     );
     return res.status(201).json({ success: true, data: record });
   } catch (error) {
@@ -78,7 +78,7 @@ export const create = async (req, res) => {
 
 export const update = async (req, res) => {
   const { id } = req.params;
-  const { data, persons, properties } = req.body;
+  const { data, persons, properties, offences } = req.body;
   const ipAddress = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
 
   if (!data) {
@@ -89,7 +89,7 @@ export const update = async (req, res) => {
     // Validate scope
     await verifyRecordAccess(id, req.user);
 
-    const record = await recordsService.updateRecord(id, req.user, data, ipAddress, { persons, properties });
+    const record = await recordsService.updateRecord(id, req.user, data, ipAddress, { persons, properties, offences });
     return res.status(200).json({ success: true, data: record });
   } catch (error) {
     const status = error.message.includes('Access denied') ? 403 : (error.status || 500);
@@ -99,13 +99,33 @@ export const update = async (req, res) => {
 
 export const submit = async (req, res) => {
   const { id } = req.params;
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
 
   try {
     await verifyRecordAccess(id, req.user);
-    await recordsService.submitRecord(id, req.user);
+    await recordsService.submitRecord(id, req.user, ipAddress);
     return res.status(200).json({ success: true, message: 'Record submitted successfully' });
   } catch (error) {
-    const status = error.message.includes('Access denied') ? 403 : 500;
+    const status = error.message.includes('Access denied') ? 403 : (error.status || 500);
+    return res.status(status).json({ success: false, message: error.message });
+  }
+};
+
+export const updateStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status_field, new_value, effective_date, comment, property_id } = req.body;
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
+
+  try {
+    await verifyRecordAccess(id, req.user);
+    const result = await recordsService.updateDomainStatus(
+      id, req.user,
+      { statusField: status_field, newValue: new_value, effectiveDate: effective_date, comment, propertyId: property_id },
+      ipAddress
+    );
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    const status = error.message.includes('Access denied') ? 403 : (error.status || 400);
     return res.status(status).json({ success: false, message: error.message });
   }
 };
@@ -156,26 +176,22 @@ export const overrideHead = async (req, res) => {
 };
 
 export const getQueue = async (req, res) => {
-  const { role } = req.user;
   const { type, status, dateFrom, dateTo, search, localHead, local_head } = req.query;
-  let targetStatus;
-
-  if (role === 'HC') {
-    targetStatus = ['DRAFT', 'SENT_BACK'];
-  } else if (role === 'SHO') {
-    targetStatus = ['PENDING_SHO'];
-  } else if (role === 'DISTRICT_OFFICER') {
-    targetStatus = ['DISTRICT_REVIEW'];
-  } else {
-    targetStatus = ['HQ_RECEIVED', 'DISTRICT_REVIEW', 'PENDING_SHO'];
-  }
-
-  let filterStatus = targetStatus;
-  if (status && status !== 'ALL') {
-    filterStatus = targetStatus.includes(status) ? status : targetStatus;
-  }
 
   try {
+    // Queue statuses derive from workflow config: the from_status values of the
+    // transitions this role may perform. Roles without transitions (HQ_ANALYST,
+    // ACP until its config rows land) get an empty queue by design.
+    const targetStatus = await workflowEngine.getQueueStatuses(req.user);
+    if (targetStatus.length === 0) {
+      return res.status(200).json({ success: true, data: { queue: [] } });
+    }
+
+    let filterStatus = targetStatus;
+    if (status && status !== 'ALL') {
+      filterStatus = targetStatus.includes(status) ? status : targetStatus;
+    }
+
     const records = await recordsService.listRecords(
       type,
       { 
@@ -261,50 +277,6 @@ export const checkDuplicate = async (req, res) => {
   }
 };
 
-export const uploadAttachment = async (req, res) => {
-  const { id } = req.params;
-  const file = req.file;
-
-  if (!file) {
-    return res.status(400).json({ success: false, message: 'No file uploaded' });
-  }
-
-  try {
-    await verifyRecordAccess(id, req.user);
-    const attachment = await recordsService.addAttachment(id, file, req.user);
-    return res.status(201).json({ success: true, data: attachment });
-  } catch (error) {
-    const status = error.message.includes('Access denied') ? 403 : 400;
-    return res.status(status).json({ success: false, message: error.message });
-  }
-};
-
-export const getAttachments = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    await verifyRecordAccess(id, req.user);
-    const attachments = await recordsService.listAttachments(id);
-    return res.status(200).json({ success: true, data: attachments });
-  } catch (error) {
-    const status = error.message.includes('Access denied') ? 403 : 400;
-    return res.status(status).json({ success: false, message: error.message });
-  }
-};
-
-export const deleteAttachment = async (req, res) => {
-  const { id, aid } = req.params;
-
-  try {
-    await verifyRecordAccess(id, req.user);
-    await recordsService.removeAttachment(id, aid, req.user);
-    return res.status(200).json({ success: true, message: 'Attachment deleted successfully' });
-  } catch (error) {
-    const status = error.message.includes('Access denied') ? 403 : 400;
-    return res.status(status).json({ success: false, message: error.message });
-  }
-};
-
 export const deleteRecord = async (req, res) => {
   const { id } = req.params;
 
@@ -316,12 +288,6 @@ export const deleteRecord = async (req, res) => {
     const status = error.message.includes('Access denied') ? 403 : (error.status || 500);
     return res.status(status).json({ success: false, message: error.message });
   }
-};
-
-export const downloadAttachment = async (req, res) => {
-  const { filename } = req.params;
-  const filePath = path.resolve('uploads', filename);
-  return res.sendFile(filePath);
 };
 
 export const searchRecords = async (req, res) => {

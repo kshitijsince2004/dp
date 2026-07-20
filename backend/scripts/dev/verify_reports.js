@@ -25,7 +25,7 @@ async function run() {
       badge_no: 'SA001',
       password: 'Test@1234'
     });
-    const token = loginRes.data.data.accessToken;
+    const token = loginRes.data.data.access_token;
     console.log('[Test Reports] Login successful');
 
     // 2. Fetch templates

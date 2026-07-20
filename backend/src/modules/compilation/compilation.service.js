@@ -3,21 +3,25 @@ import { publish } from '../../events/eventBus.js';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger.js';
 import { toDMY } from '../../utils/dateFormat.js';
+import { transitionRecord } from '../records/records.service.js';
 
 /**
- * Parse compiled_summary JSON from DB row.
+ * Parse compiled_summary JSON from DB row and attach its member records (from the
+ * `compilation_records` join table — `compilations.record_ids` is dead, DB_SCHEMA.md §5.2).
  */
-const parseSummary = (row) => {
+const parseSummary = async (row) => {
   if (!row) return row;
+  const members = await db('compilation_records')
+    .where({ compilation_id: row.id })
+    .select('record_id', 'ps_id_at_compile', 'district_id_at_compile', 'added_at');
   return {
     ...row,
     period: toDMY(row.period) || row.period,
     compiled_summary: typeof row.compiled_summary === 'string'
       ? JSON.parse(row.compiled_summary)
       : (row.compiled_summary || null),
-    record_ids: typeof row.record_ids === 'string'
-      ? JSON.parse(row.record_ids)
-      : (row.record_ids || []),
+    record_ids: members.map((m) => m.record_id),
+    members,
   };
 };
 
@@ -32,7 +36,7 @@ export const getCompilations = async (districtId, period, status) => {
   if (status) query = query.where({ status });
 
   const rows = await query.orderBy('submitted_at', 'desc');
-  return rows.map(parseSummary);
+  return Promise.all(rows.map(parseSummary));
 };
 
 /**
@@ -44,149 +48,121 @@ export const getCompilation = async (id) => {
 };
 
 /**
- * Create a new DRAFT compilation for a district + period.
- * Gathers all records in DISTRICT_REVIEW status for the district.
+ * Create (or refresh) a DRAFT compilation for a district + period.
+ * Gathers all records currently at DISTRICT_REVIEW status for the district and snapshots
+ * their scope into `compilation_records` (the frozen-at-compile-time membership table —
+ * a submitted compilation never changes when a member record later transfers, DB_SCHEMA.md
+ * §5.3). Membership is refreshed (delete+reinsert) each time this is called on the same
+ * DRAFT — a submitted compilation is never touched again by this function.
  */
 export const createCompilation = async (districtId, period, userId, fromDate, toDate) => {
   if (!districtId || !period) {
     throw new Error('districtId and period are required');
   }
 
-  // Find all records at DISTRICT_REVIEW level for this district, optionally scoped by date range
   let query = db('records')
     .where({ district_id: districtId, current_status: 'DISTRICT_REVIEW' });
 
-  if (fromDate) {
-    query = query.where('record_date', '>=', fromDate);
-  }
-  if (toDate) {
-    query = query.where('record_date', '<=', toDate);
-  }
+  if (fromDate) query = query.where('record_date', '>=', fromDate);
+  if (toDate) query = query.where('record_date', '<=', toDate);
 
-  const records = await query.select('id', 'record_type');
+  const records = await query.select('id', 'record_type', 'ps_id', 'district_id');
 
-  const recordIds = records.map(r => r.id);
+  logger.info(`[Compilation] ${records.length} DISTRICT_REVIEW records found for district ${districtId} on period ${period}.`);
 
-  // Allow empty compilations — non-zero records are enforced only at submit time
-  if (recordIds.length === 0) {
-    logger.info(`[Compilation] No DISTRICT_REVIEW records found for district ${districtId} on period ${period}. Creating empty compilation.`);
-  }
-
-  // Build summary breakdown by record type
   const byType = { CASE: 0, ARREST: 0, PCR_CALL: 0, MISSING: 0, UIDB: 0 };
-  records.forEach(r => {
+  records.forEach((r) => {
     const t = (r.record_type || '').toUpperCase();
     if (byType[t] !== undefined) byType[t]++;
   });
 
   const compiledSummary = {
-    total_records: recordIds.length,
-    firs: byType.CASE,
-    arrests: byType.ARREST,
-    pcrCalls: byType.PCR_CALL,
-    missing: byType.MISSING,
-    uidb: byType.UIDB,
-    period,
-    compiled_by: userId,
+    total_records: records.length,
+    firs: byType.CASE, arrests: byType.ARREST, pcrCalls: byType.PCR_CALL,
+    missing: byType.MISSING, uidb: byType.UIDB, period, compiled_by: userId,
   };
 
-  // Upsert: refresh an existing DRAFT rather than accumulating duplicate rows.
-  const existing = await db('compilations')
-    .where({ source_entity_id: districtId, period, status: 'DRAFT' })
-    .first();
+  const compilationId = await db.transaction(async (trx) => {
+    const existing = await trx('compilations')
+      .where({ source_entity_id: districtId, period, status: 'DRAFT' })
+      .first();
 
-  let compilationId;
-  if (existing) {
-    compilationId = existing.id;
-    await db('compilations').where({ id: compilationId }).update({
-      record_ids: JSON.stringify(recordIds),
-      compiled_summary: JSON.stringify(compiledSummary),
-      submitted_by: userId,
-    });
-  } else {
-    compilationId = uuidv4();
-    await db('compilations').insert({
-      id: compilationId,
-      source_level: 'DISTRICT',
-      target_level: 'HQ',
-      route: 'OPS_CHAIN',
-      source_entity_id: districtId,
-      period,
-      status: 'DRAFT',
-      record_ids: JSON.stringify(recordIds),
-      compiled_summary: JSON.stringify(compiledSummary),
-      submitted_by: userId,
-    });
-  }
+    let id;
+    if (existing) {
+      id = existing.id;
+      await trx('compilations').where({ id }).update({
+        compiled_summary: JSON.stringify(compiledSummary), submitted_by: userId, updated_at: trx.fn.now(),
+      });
+      await trx('compilation_records').where({ compilation_id: id }).delete();
+    } else {
+      id = uuidv4();
+      await trx('compilations').insert({
+        id, source_level: 'DISTRICT', target_level: 'HQ', route: 'OPS_CHAIN',
+        source_entity_id: districtId, period, status: 'DRAFT',
+        compiled_summary: JSON.stringify(compiledSummary), submitted_by: userId,
+      });
+    }
+
+    if (records.length) {
+      await trx('compilation_records').insert(records.map((r) => ({
+        compilation_id: id, record_id: r.id,
+        ps_id_at_compile: r.ps_id, district_id_at_compile: r.district_id,
+      })));
+    }
+
+    return id;
+  });
 
   const created = await db('compilations').where({ id: compilationId }).first();
   return parseSummary(created);
 };
 
 /**
- * Submit a DRAFT compilation to HQ.
- * Updates the compilation to SUBMITTED and marks all bundled records as COMPILED.
+ * Submit a DRAFT compilation: transitions every bundled record DISTRICT_REVIEW → COMPILED →
+ * JCP_REVIEW (config: `district.compile` then `compiled.submit`, both DISTRICT_OFFICER-only —
+ * config/workflow/main.json) through the single write path (`transitionRecord`), so each hop
+ * gets its own hash-chained revision + audit log exactly like every other transition. Records
+ * that have moved on already (someone else acted on them individually) are skipped, not
+ * fatal — the compilation still gets marked SUBMITTED for whatever it could carry forward.
  */
-export const submitCompilation = async (id, userId) => {
+export const submitCompilation = async (id, user) => {
   const compilation = await db('compilations').where({ id }).first();
   if (!compilation) throw new Error('Compilation not found');
   if (compilation.status !== 'DRAFT') throw new Error('Only DRAFT compilations can be submitted to HQ');
 
-  const precheck = typeof compilation.record_ids === 'string'
-    ? JSON.parse(compilation.record_ids)
-    : (compilation.record_ids || []);
-  if (!precheck || precheck.length === 0) {
+  const members = await db('compilation_records').where({ compilation_id: id }).select('record_id');
+  if (!members.length) {
     throw new Error('Cannot submit an empty compilation — no DISTRICT_REVIEW records were bundled.');
   }
 
   const [updatedCompilation] = await db('compilations')
     .where({ id })
-    .update({
-      status: 'SUBMITTED',
-      submitted_at: db.fn.now(),
-      submitted_by: userId,
-    })
+    .update({ status: 'SUBMITTED', submitted_at: db.fn.now(), submitted_by: user.id })
     .returning('*');
 
-  // Mark all bundled records as COMPILED
-  const recordIds = typeof compilation.record_ids === 'string'
-    ? JSON.parse(compilation.record_ids)
-    : (compilation.record_ids || []);
-
-  if (recordIds && recordIds.length > 0) {
-    await db('records').whereIn('id', recordIds).update({
-      current_status: 'HQ_RECEIVED',
-      current_level: 'HQ',
-      updated_at: db.fn.now(),
-    });
-
-    // Log workflow transitions for each record
-    for (const recordId of recordIds) {
-      try {
-        await db('workflow_transitions').insert({
-          id: uuidv4(),
-          record_id: recordId,
-          from_level: 'DISTRICT',
-          to_level: 'HQ',
-          from_status: 'DISTRICT_REVIEW',
-          to_status: 'HQ_RECEIVED',
-          action: 'COMPILED_SUBMITTED',
-          performed_by: userId,
-          performed_at: new Date().toISOString(),
-        });
-      } catch (e) {
-        // Non-fatal: don't block submission if transition log fails
-        logger.warn(`[Compilation] Failed to log transition for record: ${recordId} — ${e.message}`);
+  let advanced = 0;
+  for (const { record_id: recordId } of members) {
+    try {
+      const record = await db('records').where({ id: recordId }).first();
+      if (!record) continue;
+      if (record.current_status === 'DISTRICT_REVIEW') {
+        await transitionRecord(recordId, user, 'compile', null, null, null);
       }
+      const afterCompile = await db('records').where({ id: recordId }).first();
+      if (afterCompile.current_status === 'COMPILED') {
+        await transitionRecord(recordId, user, 'submit', null, null, null);
+      }
+      advanced++;
+    } catch (e) {
+      logger.warn(`[Compilation] Failed to advance record ${recordId} during submit: ${e.message}`);
     }
   }
+  logger.info(`[Compilation] Submitted ${id}: ${advanced}/${members.length} member records advanced to JCP_REVIEW.`);
 
   try {
     await publish('compilation.submitted', {
-      compilationId: id,
-      districtId: compilation.source_entity_id,
-      period: compilation.period,
-      submitted_by: userId,
+      compilationId: id, districtId: compilation.source_entity_id,
+      period: compilation.period, submitted_by: user.id,
     });
   } catch (e) {
     logger.warn('[Compilation] EventBus publish failed (non-fatal):', e.message);

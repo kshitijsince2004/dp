@@ -58,6 +58,8 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
         { id: "analytics",     label: t('nav.analytics',    'Analytics Console'), icon: BarChart3,    to: "/analytics" },
         { id: "queue",         label: t('nav.queue',        'Approval Desk'),     icon: ClipboardList, to: "/queue" },
         { id: "compile",       label: t('nav.compile',      'Compile Records'),   icon: FileSpreadsheet, to: "/compile" },
+        { id: "io-management", label: t('nav.ioManagement', 'Investigating Officers'), icon: Fingerprint, to: "/sho/investigating-officers" },
+        { id: "sho-users",     label: t('nav.shoUsers',     'My Station Users'),  icon: Users,        to: "/admin/users" },
         { id: "person-search", label: t('nav.personSearch', 'Person Search'),     icon: Search,       to: "/person-search" }
       );
     }
@@ -67,6 +69,7 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
       items.push(
         { id: "queue",         label: t('nav.queue',        'Approval Desk'),     icon: ClipboardList, to: "/queue" },
         { id: "station-wise",  label: t('nav.stationWise',  'Station Wise View'), icon: Building,      to: "/district/stations" },
+        { id: "io-management", label: t('nav.ioManagement', 'Investigating Officers'), icon: Fingerprint, to: "/sho/investigating-officers" },
         { id: "analytics",     label: t('nav.analytics',    'Analytics Console'), icon: BarChart3,     to: "/analytics" },
         { id: "reports",       label: t('nav.reports',      'Excel Export Manager'), icon: FileSpreadsheet, to: "/reports" },
         { id: "person-search", label: t('nav.personSearch', 'Person Search'),     icon: Search,        to: "/person-search" }

@@ -1,0 +1,14 @@
+{
+  "_doc": "Curated crime_category overlay for ref.local_heads (DB_SCHEMA.md ruling 16). Applied by `npm run load-ref` AFTER the sheet load; loader aborts if a local_head_cd listed here does not exist. Any local head not listed gets the DB default 'OTHER' (reports roll OTHER up with NON_HEINOUS; only HEINOUS is broken out).",
+  "_review_notes": "DRAFT generated 2026-07-11 from the old seed's 9-item heinous list. 'Acid attack' has no local head in the sheet. Terrorism-related candidates NOT yet classified — review and move to HEINOUS if Delhi Police practice requires: 148 (National Security Act 1980), 157 (Prevention of Terrorism Act 2002), 164 (UAPA 1967), 212 (UAPA Amendments 2008), 166 (Waging War Against The Country), 167 (Terror Funding And Fake Currency).",
+  "HEINOUS": {
+    "1": "Dacoity",
+    "2": "Murder",
+    "3": "Att. to Murder",
+    "4": "Robbery",
+    "5": "Riot",
+    "6": "Kid. For Ransom",
+    "7": "Rape"
+  },
+  "NON_HEINOUS": {}
+}

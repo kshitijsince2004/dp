@@ -170,6 +170,7 @@ export default function SearchableSelect({
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
+        onClick={() => setOpen(true)}
         placeholder={placeholder || (lang === 'hi' ? 'विकल्प चुनें' : 'select an option')}
         className={inputClass}
         style={style}

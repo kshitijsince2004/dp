@@ -14,20 +14,13 @@ const LoginPage    = lazy(() => import('../features/auth/LoginPage.jsx'));
 const RegisterPage = lazy(() => import('../features/auth/RegisterPage.jsx'));
 const NotFound     = lazy(() => import('../pages/NotFound.jsx'));
 
-// Police portal pages
-const Dashboard          = lazy(() => import('../pages/Dashboard.jsx'));
-const CaseManagement     = lazy(() => import('../pages/CaseManagement.jsx'));
-const ArrestManagement   = lazy(() => import('../pages/ArrestManagement.jsx'));
-const PCRCallEntry       = lazy(() => import('../pages/PCRCallEntry.jsx'));
-const UIDBManagement     = lazy(() => import('../pages/UIDBManagement.jsx'));
-const MissingPersonEntry = lazy(() => import('../pages/MissingPersonEntry.jsx'));
-
 // ── NEW PHAROS Pages (Dev 3 Sprint Track) ──────────────────────────────────────
 const MyRecords         = lazy(() => import('../pages/hc/MyRecords.jsx'));
 const NewRecord         = lazy(() => import('../pages/hc/NewRecord.jsx'));
 const PSDashboard       = lazy(() => import('../pages/hc/Dashboard.jsx'));
 const Queue             = lazy(() => import('../pages/sho/Queue.jsx'));
 const RecordDetail      = lazy(() => import('../pages/sho/RecordDetail.jsx'));
+const IOManagement      = lazy(() => import('../pages/sho/IOManagement.jsx'));
 const DistrictDashboard = lazy(() => import('../pages/district/Dashboard.jsx'));
 const CompilationUI     = lazy(() => import('../pages/district/CompilationUI.jsx'));
 const HQDashboard       = lazy(() => import('../pages/hq/Dashboard.jsx'));
@@ -99,31 +92,38 @@ export const AppRouter = () => (
             {/* Standard fallback/redirect for root dashboard layout */}
             <Route path="/" element={<RoleRedirect />} />
 
-            {/* Backwards compatible older views */}
-            <Route path="/dashboard/old-console" element={<Dashboard />} />
-            <Route path="/dashboard/case-management" element={<CaseManagement />} />
-            <Route path="/dashboard/arrest-management" element={<ArrestManagement />} />
-            <Route path="/dashboard/pcr-calls" element={<PCRCallEntry />} />
-            <Route path="/dashboard/uidb-management" element={<UIDBManagement />} />
-            <Route path="/dashboard/missing-persons" element={<MissingPersonEntry />} />
-
             {/* NEW PHAROS Pages (Dev 3 Sprint Track) */}
             <Route path="/ps/dashboard" element={<PSDashboard />} />
             <Route path="/records" element={<MyRecords />} />
             <Route path="/records/new/:type" element={<NewRecord />} />
             <Route path="/records/:id" element={<RecordDetail />} />
             <Route path="/queue" element={<Queue />} />
+            {/* IO curation (item 7) — SHO manages their own PS's investigating officers;
+                backend already scopes ACP (own sub-division) and SYSTEM_ADMIN (any) too. */}
+            <Route element={<ProtectedRoute roles={['SHO', 'ACP', 'SYSTEM_ADMIN']} />}>
+              <Route path="/sho/investigating-officers" element={<IOManagement />} />
+            </Route>
             <Route path="/district" element={<DistrictDashboard />} />
             <Route path="/compile" element={<CompilationUI />} />
             <Route path="/hq" element={<HQDashboard />} />
             <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/admin/users" element={<Users />} />
+            {/* SHO added (item 7): manages HC users for their own PS — backend already scopes
+                POST/PUT/DELETE /users to SHO+SYSTEM_ADMIN, this mirrors it at the route level
+                so other roles never even reach the page instead of seeing a 403 on submit. */}
+            <Route element={<ProtectedRoute roles={['SYSTEM_ADMIN', 'HQ_ADMIN', 'SHO', 'DISTRICT_OFFICER', 'HQ_ANALYST']} />}>
+              <Route path="/admin/users" element={<Users />} />
+            </Route>
             <Route path="/admin/hierarchy" element={<HierarchyManager />} />
             <Route path="/admin/fields" element={<FieldManager />} />
             <Route path="/admin/audit" element={<AuditPage />} />
             <Route path="/admin/level-contracts" element={<LevelContractsPage />} />
-            <Route path="/admin/legacy" element={<LegacyDataPage />} />
+            {/* Bulk import: HC/DISTRICT_OFFICER are the only roles the backend lets validate/
+                confirm/list batches (import.router.js allow('HC','DISTRICT_OFFICER'));
+                SYSTEM_ADMIN kept for admin visibility/debugging parity with other admin pages. */}
+            <Route element={<ProtectedRoute roles={['HC', 'DISTRICT_OFFICER', 'SYSTEM_ADMIN']} />}>
+              <Route path="/admin/legacy" element={<LegacyDataPage />} />
+            </Route>
 
             {/* Station Wise Views */}
             <Route path="/person-search" element={<PersonSearchPage />} />

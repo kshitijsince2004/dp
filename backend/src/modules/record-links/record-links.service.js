@@ -21,8 +21,7 @@ export const getLinksForRecord = async (recordId) => {
         rl.metadata,
         rl.created_at AS linked_at,
         ltr.code            AS link_type_code,
-        ltr.label_en        AS link_type_label_en,
-        ltr.label_hi        AS link_type_label_hi,
+        ltr.label           AS link_type_label,
         ltr.cardinality,
         CASE WHEN rl.source_record_id = :recordId THEN 'source' ELSE 'target' END AS my_role,
         CASE WHEN rl.source_record_id = :recordId
@@ -30,11 +29,10 @@ export const getLinksForRecord = async (recordId) => {
              ELSE rl.source_record_id
         END AS linked_record_id,
         r.record_type       AS linked_record_type,
-        r.data              AS linked_record_data,
         r.current_status    AS linked_record_status,
         r.record_date       AS linked_record_date,
-        ps.name_en          AS linked_ps_name,
-        u.name_en           AS linked_by_name
+        ps.name             AS linked_ps_name,
+        u.name              AS linked_by_name
       FROM record_links rl
       JOIN link_type_registry ltr ON rl.link_type_id = ltr.id
       JOIN records r ON r.id = CASE
@@ -47,12 +45,7 @@ export const getLinksForRecord = async (recordId) => {
       ORDER BY rl.created_at DESC
     `, { recordId });
 
-    return (result.rows || []).map(row => ({
-      ...row,
-      linked_record_data: typeof row.linked_record_data === 'string'
-        ? JSON.parse(row.linked_record_data)
-        : row.linked_record_data
-    }));
+    return result.rows || [];
   } catch (err) {
     logger.warn('[RecordLinks] getLinksForRecord failed (table may not exist yet):', err.message);
     return [];

@@ -17,10 +17,15 @@ def filter_records(classified):
 def map_row(r, idx):
     d = r['data']
 
-    # Occurrence: combine date + time; support from-to range if end fields are present
+    # Occurrence: combine date + time; support from-to range if end fields are present.
+    # r['record_date'] (the real DB column the report's date-range filter runs
+    # against) takes priority over any JSONB date field — gd_date/occurrence_date
+    # can hold stale/unrelated values (e.g. seeded independently of record_date),
+    # which made this column show dates outside the report's selected date range
+    # even though the row itself was correctly included by record_date.
     occ_datetime = format_occurrence(
-        d.get('occurrence_date') or d.get('fir_date'),
-        d.get('time_of_occurrence') or d.get('occurrence_time') or d.get('gd_time'),
+        r.get('record_date') or d.get('gd_date') or d.get('fir_date') or d.get('occurrence_date'),
+        d.get('gd_time') or d.get('time_of_occurrence') or d.get('occurrence_time'),
         d.get('occurrence_end_date'),
         d.get('occurrence_end_time'),
     )

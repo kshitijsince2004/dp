@@ -1,0 +1,1227 @@
+[
+ {
+  "field_key": "mp_known",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "Is Missing Person Identified / Known?",
+   "hi": "क्या लापता व्यक्ति की पहचान ज्ञात है?"
+  },
+  "section": "person_details",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING",
+   "column": "mp_known"
+  },
+  "options": [
+   {
+    "value": true,
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": false,
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "major_minor",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "Major / Minor",
+   "hi": "वयस्क / अवयस्क"
+  },
+  "section": "person_details",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING",
+   "extra": true
+  },
+  "options": [
+   {
+    "value": "Major",
+    "label_en": "Major",
+    "label_hi": "Major"
+   },
+   {
+    "value": "Minor",
+    "label_en": "Minor",
+    "label_hi": "Minor"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "source",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Source of Information",
+   "hi": "सूचना का स्रोत"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "missing_details",
+   "column": "source"
+  },
+  "options": [
+   {
+    "value": "PCR",
+    "label_en": "PCR Call",
+    "label_hi": "पीसीआर कॉल"
+   },
+   {
+    "value": "DD",
+    "label_en": "DD / Written Complaint",
+    "label_hi": "डीडी / लिखित शिकायत"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "missing_name",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Name of Missing Person",
+   "hi": "लापता व्यक्ति का नाम"
+  },
+  "section": "person_details",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING",
+   "column": "name"
+  },
+  "show_when": {
+   "field": "mp_known",
+   "value": true
+  },
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.05,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_house_no",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Present House No.",
+   "hi": "वर्तमान मकान संख्या"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "house_no",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_known",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_street",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Present Street",
+   "hi": "वर्तमान गली / सड़क"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "street",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_known",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.11,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_colony",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Present Colony",
+   "hi": "वर्तमान कॉलोनी"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "colony",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_known",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.12,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_city_town_village",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Present Village / City / Town",
+   "hi": "वर्तमान गांव / शहर / नगर"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "city_town_village",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_known",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.13,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_state",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Present State",
+   "hi": "वर्तमान राज्य"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "state",
+   "role": "MISSING"
+  },
+  "options": "$INDIA_STATES",
+  "show_when": {
+   "field": "mp_known",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.14,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_district",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Present District",
+   "hi": "वर्तमान जिला"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "district",
+   "role": "MISSING"
+  },
+  "options": "$INDIA_DISTRICTS",
+  "show_when": {
+   "field": "mp_known",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.15,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_pincode",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Present Pin Code",
+   "hi": "वर्तमान पिन कोड"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "pincode",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_known",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.16,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_address",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXTAREA",
+  "labels": {
+   "en": "Present Full Address",
+   "hi": "लापता व्यक्ति का वर्तमान पता (विस्तृत)"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "full_address",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_known",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.18,
+  "full_width": true,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_perm_same",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Is Permanent Address same as Present Address?",
+   "hi": "क्या स्थायी पता वर्तमान पते के समान है?"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING",
+   "column": "perm_same_as_present"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हां"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "show_when": {
+   "field": "mp_known",
+   "value": true
+  },
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.2,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_perm_house_no",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Permanent House No.",
+   "hi": "स्थायी मकान संख्या"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "house_no",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.21,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_perm_street",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Permanent Street",
+   "hi": "स्थायी गली / सड़क"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "street",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.22,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_perm_colony",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Permanent Colony",
+   "hi": "स्थायी कॉलोनी"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "colony",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.23,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_perm_city_town_village",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Permanent Village / City / Town",
+   "hi": "स्थायी गांव / शहर / नगर"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "city_town_village",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.24,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_perm_state",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Permanent State",
+   "hi": "स्थायी राज्य"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "state",
+   "role": "MISSING"
+  },
+  "options": "$INDIA_STATES",
+  "show_when": {
+   "field": "mp_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.25,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_perm_district",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Permanent District",
+   "hi": "स्थायी जिला"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "district",
+   "role": "MISSING"
+  },
+  "options": "$INDIA_DISTRICTS",
+  "show_when": {
+   "field": "mp_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.26,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "mp_perm_pincode",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Permanent Pin Code",
+   "hi": "स्थायी पिन कोड"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "pincode",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.27,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "missing_address",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXTAREA",
+  "labels": {
+   "en": "Full Permanent Address",
+   "hi": "लापता व्यक्ति का स्थायी पता (विस्तृत)"
+  },
+  "section": "missing_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "full_address",
+   "role": "MISSING"
+  },
+  "show_when": {
+   "field": "mp_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.29,
+  "full_width": true,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "age",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "NUMBER",
+  "labels": {
+   "en": "Age",
+   "hi": "उम्र"
+  },
+  "section": "person_details",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING",
+   "column": "age"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.31,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "missing_date",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "DATE",
+  "labels": {
+   "en": "Date Missing Since",
+   "hi": "लापता होने की तिथि"
+  },
+  "section": "person_details",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING",
+   "column": "missing_date"
+  },
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.41,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "missing_place",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Last Seen Place",
+   "hi": "अंतिम बार देखा गया स्थान"
+  },
+  "section": "person_details",
+  "storage": {
+   "entity": "location",
+   "slot": "missing",
+   "column": "full_address",
+   "role": "MISSING"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.42,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "Mental State",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "Mental State",
+   "hi": "मानसिक स्थिति"
+  },
+  "section": "person_details",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING",
+   "column": "mental_state"
+  },
+  "options": [
+   {
+    "value": "Normal",
+    "label_en": "Normal",
+    "label_hi": "सामान्य"
+   },
+   {
+    "value": "Abnormal",
+    "label_en": "Abnormal",
+    "label_hi": "असामान्य"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.45,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "physical_description",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXTAREA",
+  "labels": {
+   "en": "Physical Description",
+   "hi": "शारीरिक हुलिया"
+  },
+  "section": "missing_physical",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING",
+   "column": "physical_description"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2.46,
+  "full_width": true,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "missing_type",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "Missing / Found Type",
+   "hi": "लापता / मिला प्रकार"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "missing_details",
+   "column": "missing_type"
+  },
+  "options": [
+   {
+    "value": "Missing",
+    "label_en": "Missing",
+    "label_hi": "लापता"
+   },
+   {
+    "value": "Found",
+    "label_en": "Found",
+    "label_hi": "मिला"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 3,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "operator_name",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Operator Name to Whom MPS",
+   "hi": "ऑपरेटर का नाम जिसे एमपीएस भेजा गया"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "missing_details",
+   "column": "operator_name"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "missing_relation_type",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Relation Type",
+   "hi": "संबंध का प्रकार"
+  },
+  "section": "person_details",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING",
+   "column": "relation_type"
+  },
+  "options": [
+   {
+    "value": "Father",
+    "label_en": "Father",
+    "label_hi": "पिता"
+   },
+   {
+    "value": "Mother",
+    "label_en": "Mother",
+    "label_hi": "माता"
+   },
+   {
+    "value": "Husband",
+    "label_en": "Husband",
+    "label_hi": "पति"
+   },
+   {
+    "value": "Wife",
+    "label_en": "Wife",
+    "label_hi": "पत्नी"
+   },
+   {
+    "value": "Guardian",
+    "label_en": "Guardian",
+    "label_hi": "अभिभावक"
+   },
+   {
+    "value": "Other",
+    "label_en": "Other",
+    "label_hi": "अन्य"
+   }
+  ],
+  "show_when": {
+   "field": "missing_relative_name",
+   "operator": "filled"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 18,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "case_registered",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "FIR Registered?",
+   "hi": "क्या एफआईआर दर्ज है?"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "missing_details",
+   "column": "case_registered"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 19,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "missing_fir_no",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "FIR No.",
+   "hi": "एफआईआर संख्या"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "missing_details",
+   "column": "fir_no"
+  },
+  "validation_rules": {
+   "required": true
+  },
+  "show_when": {
+   "field": "case_registered",
+   "value": "Yes"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 20,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "missing_fir_date",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "DATE",
+  "labels": {
+   "en": "FIR Date",
+   "hi": "एफआईआर तिथि"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "missing_details",
+   "column": "fir_date"
+  },
+  "show_when": {
+   "field": "case_registered",
+   "value": "Yes"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 21,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ }
+]

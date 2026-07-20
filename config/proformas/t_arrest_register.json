@@ -1,0 +1,39 @@
+{
+ "code": "T_ARREST_REGISTER",
+ "name": "Arrest Register (Proforma-2)",
+ "record_types": [
+  "ARREST"
+ ],
+ "levels": [
+  "PS",
+  "DISTRICT",
+  "HQ"
+ ],
+ "template_definition": {
+  "layout": "A4_PORTRAIT",
+  "header": {
+   "title_en": "ARREST REGISTER",
+   "title_hi": "गिरफ्तारी पंजी"
+  },
+  "sections": [
+   {
+    "title_en": "Arrest Details",
+    "title_hi": "गिरफ्तारी विवरण",
+    "fields": [
+     "arrested_name",
+     "arrest_date",
+     "crime_head",
+     "sections",
+     "io_name",
+     "status"
+    ]
+   }
+  ]
+ },
+ "output_formats": [
+  "PDF",
+  "EXCEL"
+ ],
+ "template_type": "PROFORMA",
+ "is_active": true
+}

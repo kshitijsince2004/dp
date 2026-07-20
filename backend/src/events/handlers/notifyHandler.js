@@ -6,6 +6,8 @@ import { logger } from '../../utils/logger.js';
 
 /**
  * Helper: insert a notification row and push it instantly via SSE.
+ * New-schema shape (2026-07): { user_id, type, params, record_id } — `type` is
+ * an i18n key rendered at read time, `params` carries the interpolation values.
  */
 async function createNotification(notif) {
   const row = {
@@ -28,13 +30,11 @@ export async function init() {
       const record = await db('records').where({ id: record_id }).first();
       if (!record) return;
 
-      const shos = await db('users').where({ role: 'SHO', station_id: record.ps_id, is_active: true });
+      const shos = await db('users').where({ role: 'SHO', ps_id: record.ps_id, is_active: true });
       for (const sho of shos) {
         await createNotification({
-          title_en: 'New Record Pending Approval',
-          title_hi: 'नया रिकॉर्ड अनुमोदन के लिए लंबित है',
-          message_en: `A new ${record.record_type} entry is pending your approval.`,
-          message_hi: `एक नया ${record.record_type} प्रविष्टि आपके अनुमोदन के लिए लंबित है।`,
+          type: 'RECORD_SUBMITTED',
+          params: { record_type: record.record_type },
           user_id: sho.id,
           record_id,
         });
@@ -52,10 +52,8 @@ export async function init() {
       if (!record) return;
 
       await createNotification({
-        title_en: 'Record Approved',
-        title_hi: 'रिकॉर्ड स्वीकृत',
-        message_en: `Your ${record.record_type} record has been approved.`,
-        message_hi: `आपका ${record.record_type} रिकॉर्ड स्वीकृत हो गया है।`,
+        type: 'RECORD_APPROVED',
+        params: { record_type: record.record_type },
         user_id: record.created_by,
         record_id,
       });
@@ -72,10 +70,8 @@ export async function init() {
       if (!record) return;
 
       await createNotification({
-        title_en: 'Record Sent Back for Correction',
-        title_hi: 'संशोधन के लिए रिकॉर्ड वापस भेजा गया',
-        message_en: `Your ${record.record_type} record was sent back. Reason: ${comment || 'No reason given.'}`,
-        message_hi: `आपका ${record.record_type} रिकॉर्ड वापस भेजा गया। कारण: ${comment || 'कोई कारण नहीं दिया गया।'}`,
+        type: 'RECORD_SENT_BACK',
+        params: { record_type: record.record_type, comment: comment || null },
         user_id: record.created_by,
         record_id,
       });
@@ -94,12 +90,11 @@ export async function init() {
 
       for (const hqUser of hqUsers) {
         await createNotification({
-          title_en: 'District Compilation Submitted',
-          title_hi: 'जिला संकलन प्रस्तुत किया गया',
-          message_en: `A district compilation for period ${period} is ready for HQ review.`,
-          message_hi: `${period} अवधि का जिला संकलन HQ समीक्षा के लिए तैयार है।`,
+          type: 'COMPILATION_SUBMITTED',
+          // record_id FKs to records — a compilation id does NOT belong there
+          params: { period, compilation_id: compilation_id || null },
           user_id: hqUser.id,
-          record_id: compilation_id || null,
+          record_id: null,
         });
       }
     } catch (err) {

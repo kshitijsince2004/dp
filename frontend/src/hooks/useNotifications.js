@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore.js';
+import { renderNotification } from '../utils/notificationText.js';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const SSE_URL = `${BASE_URL}/v1/notifications/stream`;
@@ -24,6 +26,7 @@ const MAX_RECONNECT_DELAY_MS = 30000;
  */
 export function useNotifications() {
   const { user, isAuthenticated } = useAuthStore();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [notifications, setNotifications] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -98,7 +101,8 @@ export function useNotifications() {
           return [newNotif, ...prev];
         });
         // Show a toast for the live push
-        toast(newNotif.title_en || 'New notification', {
+        const { title } = renderNotification(t, newNotif);
+        toast(title || t('notifications.fallbackToast'), {
           icon: '🔔',
           style: {
             background: '#1e293b',
@@ -124,7 +128,7 @@ export function useNotifications() {
         if (mountedRef.current) connectSSE();
       }, delay);
     };
-  }, [isAuthenticated, fetchNotifications]);
+  }, [isAuthenticated, fetchNotifications, t]);
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   useEffect(() => {

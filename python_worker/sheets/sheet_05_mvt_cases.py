@@ -24,8 +24,8 @@ def map_row(r, idx):
         'ps': r.get('ps_name') or '',
         'fir_no': d.get('fir_no') or '',
         'us': d.get('sections') or '',
-        'date_of_occurrence': fmt_date(d.get('occurrence_date') or r.get('record_date')),
-        'time_of_occurrence': d.get('time_of_occurrence') or d.get('occurrence_time') or d.get('gd_time') or '',
+        'date_of_occurrence': fmt_date(r.get('record_date') or d.get('gd_date') or d.get('occurrence_date')),
+        'time_of_occurrence': d.get('gd_time') or d.get('time_of_occurrence') or d.get('occurrence_time') or '',
         'place_of_occurrence': d.get('occurrence_place') or '',
         'complainant_details': format_person_no_age(
             d.get('complainant_name'),

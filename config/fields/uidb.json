@@ -1,0 +1,1271 @@
+[
+ {
+  "field_key": "identified",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "Body Identified",
+   "hi": "शव की पहचान हुई"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "table": "uidb_details",
+   "column": "identified"
+  },
+  "options": [
+   {
+    "value": true,
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": false,
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_name",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Name of Deceased",
+   "hi": "मृतक का नाम"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "person",
+   "role": "DECEASED",
+   "column": "name"
+  },
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.05,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_house_no",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Deceased Present House No.",
+   "hi": "मृतक का मकान संख्या"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "house_no",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "uidb_no",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "UIDB Gazette Number",
+   "hi": "यूआईडीबी राजपत्र संख्या"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "uidb_details",
+   "column": "uidb_no"
+  },
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": false,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_street",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Deceased Present Street",
+   "hi": "मृतक का गली / सड़क"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "street",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.11,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_colony",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Deceased Present Colony",
+   "hi": "मृतक का कॉलोनी"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "colony",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.12,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_city_town_village",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Deceased Present Village / City / Town",
+   "hi": "मृतक का गांव / शहर / नगर"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "city_town_village",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.13,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_state",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Deceased Present State",
+   "hi": "मृतक का राज्य"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "state",
+   "role": "DECEASED"
+  },
+  "options": "$INDIA_STATES",
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.14,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_district",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Deceased Present District",
+   "hi": "मृतक का जिला"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "district",
+   "role": "DECEASED"
+  },
+  "options": "$INDIA_DISTRICTS",
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.15,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_pincode",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Deceased Present Pin Code",
+   "hi": "मृतक का पिन कोड"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "pincode",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.16,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_address",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXTAREA",
+  "labels": {
+   "en": "Deceased Full Present Address",
+   "hi": "मृतक का वर्तमान पता (विस्तृत)"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "full_address",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.18,
+  "full_width": true,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_perm_same",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "Is Permanent Address same as Present Address?",
+   "hi": "क्या स्थायी पता वर्तमान पते के समान है?"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "person",
+   "role": "DECEASED",
+   "column": "perm_same_as_present"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हां"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.2,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_perm_house_no",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Deceased Permanent House No.",
+   "hi": "मृतक का स्थायी मकान संख्या"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "house_no",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "deceased_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.21,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_perm_street",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Deceased Permanent Street",
+   "hi": "मृतक का स्थायी गली / सड़क"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "street",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "deceased_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.22,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_perm_colony",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Deceased Permanent Colony",
+   "hi": "मृतक का स्थायी कॉलोनी"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "colony",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "deceased_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.23,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_perm_city_town_village",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Deceased Permanent Village / City / Town",
+   "hi": "मृतक का स्थायी गांव / शहर / नगर"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "city_town_village",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "deceased_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.24,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_perm_state",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Deceased Permanent State",
+   "hi": "मृतक का स्थायी राज्य"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "state",
+   "role": "DECEASED"
+  },
+  "options": "$INDIA_STATES",
+  "show_when": {
+   "field": "deceased_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.25,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_perm_district",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Deceased Permanent District",
+   "hi": "मृतक का स्थायी जिला"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "district",
+   "role": "DECEASED"
+  },
+  "options": "$INDIA_DISTRICTS",
+  "show_when": {
+   "field": "deceased_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.26,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_perm_pincode",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Deceased Permanent Pin Code",
+   "hi": "मृतक का स्थायी पिन कोड"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "pincode",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "deceased_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.27,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "deceased_perm_address",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXTAREA",
+  "labels": {
+   "en": "Deceased Full Permanent Address",
+   "hi": "मृतक का स्थायी पता (विस्तृत)"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "full_address",
+   "role": "DECEASED"
+  },
+  "show_when": {
+   "field": "deceased_perm_same",
+   "value": "No"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1.29,
+  "full_width": true,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "found_date",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "DATE",
+  "labels": {
+   "en": "Date Body Found",
+   "hi": "शव मिलने की तिथि"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "table": "uidb_details",
+   "column": "found_date"
+  },
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "found_place",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Place Body Found",
+   "hi": "शव मिलने का स्थान"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "found",
+   "column": "full_address"
+  },
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 3,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "found_time",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TIME",
+  "labels": {
+   "en": "Time Body Found",
+   "hi": "शव मिलने का समय"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "table": "uidb_details",
+   "column": "found_time"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 4,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "found_latitude",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Place Body Found Latitude",
+   "hi": "शव मिलने का स्थान अक्षांश"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "found",
+   "column": "latitude"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 4.1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "found_longitude",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Place Body Found Longitude",
+   "hi": "शव मिलने का स्थान रेखांश"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "location",
+   "slot": "found",
+   "column": "longitude"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 4.2,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "approx_age",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Approximate Age",
+   "hi": "अनुमानित उम्र"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "person",
+   "role": "DECEASED",
+   "column": "age_range"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "description",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXTAREA",
+  "labels": {
+   "en": "Physical Description",
+   "hi": "शारीरिक हुलिया"
+  },
+  "section": "corpse_physical",
+  "storage": {
+   "entity": "person",
+   "role": "DECEASED",
+   "column": "physical_description"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 6,
+  "full_width": true,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "identification_marks",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Identification Marks",
+   "hi": "पहचान चिन्ह"
+  },
+  "section": "corpse_desc",
+  "storage": {
+   "entity": "person",
+   "role": "DECEASED",
+   "column": "identification_marks"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 6.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "cause_of_death",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Cause of Death",
+   "hi": "मृत्यु का कारण"
+  },
+  "section": "inquest_details",
+  "storage": {
+   "table": "uidb_details",
+   "column": "cause_of_death"
+  },
+  "options": [
+   {
+    "value": "Accidental",
+    "label_en": "Accidental",
+    "label_hi": "दुर्घटना"
+   },
+   {
+    "value": "Natural",
+    "label_en": "Natural",
+    "label_hi": "प्राकृतिक"
+   },
+   {
+    "value": "Suicide",
+    "label_en": "Suicide",
+    "label_hi": "आत्महत्या"
+   },
+   {
+    "value": "Drowning",
+    "label_en": "Drowning",
+    "label_hi": "डूबना"
+   },
+   {
+    "value": "Murder",
+    "label_en": "Murder",
+    "label_hi": "हत्या"
+   },
+   {
+    "value": "Unknown",
+    "label_en": "Unknown",
+    "label_hi": "अज्ञात"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 70,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "UIDB"
+ },
+ {
+  "field_key": "deceased_relative_name",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Relative Name",
+   "hi": "रिश्तेदार का नाम"
+  },
+  "section": "inquest_details",
+  "storage": {
+   "table": "uidb_details",
+   "column": "deceased_relative_name"
+  },
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 71,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "UIDB"
+ },
+ {
+  "field_key": "deceased_relation_type",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Relation with Deceased",
+   "hi": "मृतक से संबंध"
+  },
+  "section": "inquest_details",
+  "storage": {
+   "table": "uidb_details",
+   "column": "deceased_relation_type"
+  },
+  "options": [
+   {
+    "value": "Father",
+    "label_en": "Father",
+    "label_hi": "पिता"
+   },
+   {
+    "value": "Mother",
+    "label_en": "Mother",
+    "label_hi": "माता"
+   },
+   {
+    "value": "Husband",
+    "label_en": "Husband",
+    "label_hi": "पति"
+   },
+   {
+    "value": "Wife",
+    "label_en": "Wife",
+    "label_hi": "पत्नी"
+   },
+   {
+    "value": "Brother",
+    "label_en": "Brother",
+    "label_hi": "भाई"
+   },
+   {
+    "value": "Sister",
+    "label_en": "Sister",
+    "label_hi": "बहन"
+   },
+   {
+    "value": "Son",
+    "label_en": "Son",
+    "label_hi": "पुत्र"
+   },
+   {
+    "value": "Daughter",
+    "label_en": "Daughter",
+    "label_hi": "पुत्री"
+   },
+   {
+    "value": "Guardian",
+    "label_en": "Guardian",
+    "label_hi": "अभिभावक"
+   },
+   {
+    "value": "Friend",
+    "label_en": "Friend",
+    "label_hi": "मित्र"
+   },
+   {
+    "value": "Other",
+    "label_en": "Other",
+    "label_hi": "अन्य"
+   }
+  ],
+  "show_when": {
+   "field": "identified",
+   "value": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 71.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "UIDB"
+ },
+ {
+  "field_key": "filed_by_acp_sdm",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Inquest Filed by ACP / SDM",
+   "hi": "जांच एसीपी / एसडीएम द्वारा दायर"
+  },
+  "section": "inquest_details",
+  "storage": {
+   "table": "uidb_details",
+   "column": "filed_by_acp_sdm"
+  },
+  "options": [
+   {
+    "value": "SDM",
+    "label_en": "SDM",
+    "label_hi": "एसडीएम"
+   },
+   {
+    "value": "ACP",
+    "label_en": "ACP",
+    "label_hi": "एसीपी"
+   },
+   {
+    "value": "None",
+    "label_en": "None",
+    "label_hi": "कोई नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 72,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "filed_by_acp_sdm_date",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "DATE",
+  "labels": {
+   "en": "Date of Filed by ACP/SDM",
+   "hi": "एसीपी/एसडीएम द्वारा दायर करने की तिथि"
+  },
+  "section": "inquest_details",
+  "storage": {
+   "table": "uidb_details",
+   "column": "filed_by_acp_sdm_date"
+  },
+  "show_when": {
+   "field": "filed_by_acp_sdm",
+   "value": [
+    "SDM",
+    "ACP"
+   ]
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 73,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ }
+]
