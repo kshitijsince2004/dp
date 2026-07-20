@@ -2,9 +2,7 @@ import db from '../config/db.js';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { syncConfig } from '../../scripts/lib/sync-config-core.mjs';
-import { loadRef, computeRefSourceChecksum } from '../../scripts/lib/load-ref-core.mjs';
-
-const REF_CHECKSUM_KEY = 'ref_source_checksum';
+import { loadRef, computeRefSourceChecksum, REF_CHECKSUM_KEY } from '../../scripts/lib/load-ref-core.mjs';
 
 /**
  * Smart startup auto-load, run once at boot between connectDB() and
@@ -51,13 +49,31 @@ export async function runStartupAutoload() {
   }
 
   try {
+    // loadRef itself persists ref_source_checksum on success (shared with the CLI —
+    // see load-ref-core.mjs), so nothing extra to store here.
     await loadRef(db, (line) => logger.info(`[autoload:load-ref] ${line}`));
-    await db('system_meta')
-      .insert({ key: REF_CHECKSUM_KEY, value: JSON.stringify({ checksum: currentChecksum }), updated_at: db.fn.now() })
-      .onConflict('key')
-      .merge();
-    logger.info('[autoload] load-ref complete, checksum stored');
+    logger.info('[autoload] load-ref complete');
   } catch (err) {
+    // FK-safe guard: loadRef's ref.* reload is a destructive DELETE-all + re-insert inside a
+    // single transaction. Once records exist, record_offences/records FK-reference ref rows
+    // (ref.sections, ref.acts, ref.local_heads, …), so the delete pass raises a foreign-key
+    // violation (Postgres 23503) and the whole ref transaction ROLLS BACK — the previously
+    // loaded ref data is left fully intact. That must NOT abort startup: before this guard, a
+    // ref/overlay source edit on a DB that already had records made the server fail to boot
+    // (observed 2026-07-20). Downgrade that specific case to a loud warning and continue; any
+    // other failure (missing/corrupt source file, etc.) still aborts loudly as before.
+    // To actually APPLY ref/overlay changes once data exists, rebuild the disposable dev DB:
+    //   npm run db:reset && npm run db:migrate && npm run sync-config && npm run load-ref && npm run db:seed
+    const isFkViolation = err.code === '23503' || /violates foreign key/i.test(err.message || '');
+    if (isFkViolation) {
+      logger.warn(
+        '[autoload] load-ref SKIPPED — ref/overlay sources changed, but existing records ' +
+        'FK-reference ref.* rows, so a destructive reload is unsafe. Prior ref data left ' +
+        'intact; startup continues. To apply ref changes, rebuild the dev DB (db:reset → ' +
+        `db:migrate → sync-config → load-ref → db:seed). Underlying error: ${err.message}`
+      );
+      return;
+    }
     throw new Error(`[autoload] load-ref failed: ${err.message}`);
   }
 }

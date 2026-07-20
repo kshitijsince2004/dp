@@ -33,7 +33,8 @@ conflicts with a rule here, the change is wrong until the user explicitly amends
    5. daily-diary, analytics, compilation, record-links, filters, level-contracts
    6. Unified report engine
    7. Transfers module
-   8. Hash-chain enforcement + verification job + freeze runbook (LAST — hooks kept warm per P6)
+   8. ✅ **DONE** (2026-07-18, Integration 4) Hash-chain enforcement + verification job +
+      freeze runbook — see `docs/new-db-integration/04-audit-hash-chain.md`
 6. Kill-list code (`DB_SCHEMA.md` §11, `ARCHITECTURE.md` §12) is deleted as each module is
    adapted — never "fixed" to work against the new DB, never left half-dead.
 7. **Linking is asynchronous — one action at a time (ruling 23c).** A record write never
@@ -146,7 +147,12 @@ at the DB** — decided 2026-07-13.
    (bulk import rows for another PS are rejected per-row; record links may only be created
    by someone with access to at least the owning side, per `docs/RECORD-LINKAGE.md`).
 
-## P6 — Audit-readiness (deferred enforcement, warm hooks)
+## P6 — Audit-readiness (✅ ENFORCEMENT LANDED 2026-07-18, Integration 4)
+
+> **Update (2026-07-18):** hash-chain enforcement is now DONE — versioned tamper-evident
+> chain, `assertNotFrozen` on every write path, freeze-on-break, single-ordered-pass verifier,
+> cron job + CLI + endpoints (`docs/new-db-integration/04-audit-hash-chain.md`). The original
+> deferral text below is kept for historical context; the disciplines it lists all still hold.
 
 Audit/hash-chain is **not** a current core deliverable (decided 2026-07-13), but nothing we
 build may make its later implementation a refactor. The cheap disciplines stay ON:

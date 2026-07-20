@@ -31,6 +31,8 @@ const SOURCE_FILES = [
   path.join(CONFIG, 'ref-overlays', 'local_head_categories.json'),
 ];
 
+export const REF_CHECKSUM_KEY = 'ref_source_checksum';
+
 /**
  * sha256 over every ref/hierarchy source file's bytes — the startup auto-loader
  * compares this against system_meta.ref_source_checksum to decide whether a
@@ -395,4 +397,15 @@ export async function loadRef(db, log = console.log) {
   for (const [t, n] of Object.entries(counts)) log(`  ${t.padEnd(30)} ${n}`);
   const heinousCount = localHeads.filter(r => r.data.crime_category === 'HEINOUS').length;
   log(`\ncrime_category: ${heinousCount} HEINOUS, ${localHeads.length - heinousCount} defaulted/other (overlay: ${overlayPath})`);
+
+  // Persist the source checksum HERE, not only in the boot autoload: both entry points
+  // (CLI `npm run load-ref` and src/bootstrap/autoload.js) must store it, or the first
+  // boot after a manual rebuild re-runs load-ref against a DB whose records already
+  // FK-reference ref rows and dies on the delete pass (record_offences → ref.sections).
+  const checksum = computeRefSourceChecksum();
+  await db('system_meta')
+    .insert({ key: REF_CHECKSUM_KEY, value: JSON.stringify({ checksum }), updated_at: db.fn.now() })
+    .onConflict('key')
+    .merge();
+  log(`ref_source_checksum stored (${checksum.slice(0, 12)}…)`);
 }

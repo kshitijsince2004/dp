@@ -14,9 +14,8 @@ import { formatDMY } from '../../utils/dateFormat.js';
  *   onLoadPreset    - callback(filters) called when user clicks a preset to apply it
  */
 export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }) {
-  const { t, i18n } = useTranslation();
-  const currentLng = i18n.language || 'en';
-  
+  const { t } = useTranslation();
+
   const { presets, isLoading, savePreset, deletePreset, isSaving, isDeleting } = useFilterPresets();
   const [expanded, setExpanded] = useState(false);
   const [presetName, setPresetName] = useState('');
@@ -147,9 +146,10 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
           ) : (
             <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
               {presets.map((preset) => {
-                const displayName = currentLng === 'hi' 
-                  ? (preset.name_hi || preset.name_en) 
-                  : (preset.name_en || preset.name_hi);
+                // Bilingual name_hi is gone (single English `name` column,
+                // ADR 2026-07 — Hindi in ref./config data is additive later,
+                // never a redesign). name_en kept only as a compat alias.
+                const displayName = preset.name || preset.name_en;
                 return (
                   <div
                     key={preset.id}

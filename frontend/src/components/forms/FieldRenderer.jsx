@@ -13,6 +13,16 @@ import CheckboxField from './CheckboxField.jsx';
 import RadioField    from './RadioField.jsx';
 import { DISTRICTS_AND_STATIONS } from '../../utils/policeData.js';
 
+// #5 dual-mode (2026-07-20): all Delhi PS, flattened+deduped+sorted from the district map. Shown
+// for a PERSON-address PS field only when that person's state = Delhi (mirrors the import
+// template's flat OPT_POLICE_STATION list). Person DISTRICT uses admin names that don't key into
+// the police-district map, so a flat Delhi-wide list is the correct dual-mode dropdown.
+const DELHI_STATE = 'Delhi';
+const ALL_DELHI_PS = Array.from(new Set(Object.values(DISTRICTS_AND_STATIONS).flat())).sort((a, b) => a.localeCompare(b));
+// Delhi-scoped EVENT police-station fields (place of occurrence / arrest / the record's own PS) —
+// these keep the district-filtered Delhi list; everything else *_police_station is a person address.
+const EVENT_PS_KEYS = new Set(['occurrence_police_station', 'arrest_police_station', 'police_station']);
+
 const inputBase = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
 
 export default function FieldRenderer({
@@ -80,17 +90,25 @@ export default function FieldRenderer({
     options = sourceOptions;
   }
 
+  // #5 dual-mode: a person-address PS (complainant/victim/accused/arrested + perm) shows the Delhi
+  // PS dropdown ONLY when that person's state = Delhi, and is free-text otherwise (their address
+  // can be anywhere in India). Delhi-scoped EVENT PS fields (occurrence/arrest/record PS) keep the
+  // district-filtered Delhi list. `forcePsFreeText` flips the SELECT render to a text input below.
+  let forcePsFreeText = false;
   if (key.endsWith('_police_station') && values) {
     const prefix = key.substring(0, key.lastIndexOf('_police_station'));
-    const districtVal = values[`${prefix}_district`] || values.district;
-    if (districtVal && DISTRICTS_AND_STATIONS[districtVal]) {
-      options = DISTRICTS_AND_STATIONS[districtVal].map(ps => ({
-        value: ps,
-        label_en: ps,
-        label_hi: ps
-      }));
+    if (EVENT_PS_KEYS.has(key)) {
+      const districtVal = values[`${prefix}_district`] || values.district;
+      options = (districtVal && DISTRICTS_AND_STATIONS[districtVal])
+        ? DISTRICTS_AND_STATIONS[districtVal].map(ps => ({ value: ps, label_en: ps, label_hi: ps }))
+        : [];
     } else {
-      options = [];
+      const stateVal = values[`${prefix}_state`];
+      if (stateVal === DELHI_STATE) {
+        options = ALL_DELHI_PS.map(ps => ({ value: ps, label_en: ps, label_hi: ps }));
+      } else {
+        forcePsFreeText = true; // non-Delhi (or state not yet chosen) → free-type any PS
+      }
     }
   }
 
@@ -291,6 +309,12 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
 
   if (type === 'TEXTAREA') {
     return <TextAreaField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
+  }
+
+  // #5 dual-mode free-text: a non-Delhi person-address PS renders as a plain text input (their
+  // police station may be any station in India, not in the Delhi list) instead of an empty select.
+  if (forcePsFreeText) {
+    return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} className={inputClassName} />;
   }
 
   if (type === 'SELECT' || type === 'DROPDOWN') {

@@ -1,12 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../../config/db.js';
 import * as eventBus from '../../events/eventBus.js';
-import { computeRowHash, getPreviousHash } from '../../utils/hash.js';
+import { computeRowHash, getPreviousHash, CURRENT_HASH_VERSION } from '../../utils/hash.js';
 import { getLinksForRecord } from '../record-links/record-links.service.js';
 import { toISO } from '../../utils/dateFormat.js';
 import * as workflowEngine from '../workflow/workflow.engine.js';
 import * as mapper from './records.mapper.js';
-import { resolveMajorHead, resolveLocalHead } from './records.normalize.js';
+import { resolveMajorHead, resolveLocalHead, normalizeDate } from './records.normalize.js';
+import { getStatusOptionsForType } from '../fields/statusOptions.config.js';
 
 // ── shared write-path helpers (single write path, ARCHITECTURE.md §4.2) ─────────────────
 
@@ -190,22 +191,52 @@ async function replaceOffenceRows(trx, recordId, offenceRows) {
   await trx('record_offences').insert(offenceRows.map((o) => ({ id: uuidv4(), record_id: recordId, ...o })));
 }
 
+/** Frozen records (hash-chain break detected — DB_SCHEMA.md §9.4) reject every mutation until a
+ * privileged reviewer unfreezes them. Enforced on ALL write paths, not just transitions, so a
+ * freeze is a real tamper stop and not a suggestion. */
+function assertNotFrozen(record) {
+  if (record?.is_frozen) {
+    const err = new Error('Record is frozen pending audit review and cannot be modified.');
+    err.status = 423; // Locked
+    throw err;
+  }
+}
+
+/** THE single writer of `record_revisions` (P1.2 / DB_SCHEMA.md §4.3). Every change_type flows
+ * through here; the hash chain is computed nowhere else. */
 async function writeRevision(trx, { recordId, changeType, level, changedBy, comment, reason, ipAddress, fieldChanges }) {
-  const revCountRow = await trx('record_revisions').where({ record_id: recordId }).count('* as count').first();
-  const revisionNumber = (parseInt(revCountRow.count, 10) || 0) + 1;
+  // Serialize this record's chain. The row lock makes revision_number + prev_hash assignment
+  // atomic even for callers that did not already lock the record (create/update); callers that
+  // do lock (transition/override/status) simply re-hold it. UNIQUE(record_id, revision_number)
+  // stays as the last-line backstop if two writers ever slip past the lock.
+  await trx('records').where({ id: recordId }).forUpdate().first();
+
+  // max(revision_number)+1, not count(*)+1: correct even if a revision is ever missing (a gap),
+  // where count+1 would collide with an existing number.
+  const revMaxRow = await trx('record_revisions').where({ record_id: recordId }).max('revision_number as max').first();
+  const revisionNumber = (parseInt(revMaxRow?.max, 10) || 0) + 1;
   const prevHash = await getPreviousHash(recordId, trx);
-  const changedAt = new Date().toISOString();
-  const fieldChangesJson = JSON.stringify(fieldChanges || []);
-  const rowHash = computeRowHash({
-    record_id: recordId, revision_number: revisionNumber, changed_by: changedBy,
-    changed_at: changedAt, field_changes: fieldChangesJson,
-  }, prevHash);
-  await trx('record_revisions').insert({
-    id: uuidv4(), record_id: recordId, revision_number: revisionNumber, change_type: changeType,
-    field_changes: fieldChangesJson, level: level || 'PS', changed_by: changedBy, changed_at: changedAt,
-    comment: comment || null, reason: reason || null, ip_address: ipAddress || null,
-    prev_hash: prevHash, row_hash: rowHash, hash_version: 1,
-  });
+
+  // Build the exact row to persist, then hash THAT object — one source of truth means the
+  // hashed payload can never drift from the stored columns (the v1 bug this pass closed).
+  const revisionRow = {
+    id: uuidv4(),
+    record_id: recordId,
+    revision_number: revisionNumber,
+    change_type: changeType,
+    field_changes: JSON.stringify(fieldChanges || []),
+    level: level || 'PS',
+    changed_by: changedBy,
+    changed_at: new Date().toISOString(),
+    comment: comment || null,
+    reason: reason || null,
+    ip_address: ipAddress || null,
+    prev_hash: prevHash,
+    hash_version: CURRENT_HASH_VERSION,
+  };
+  revisionRow.row_hash = computeRowHash(revisionRow, prevHash);
+
+  await trx('record_revisions').insert(revisionRow);
 }
 
 async function writeAuditLog(trx, { recordId, action, user, fieldName, oldValue, newValue, reason, ipAddress }) {
@@ -230,13 +261,36 @@ function calculateDiff(oldFlat, newFlat) {
   return diff;
 }
 
-// Domain-status columns record_status_events tracks (DB_SCHEMA.md §4.8's CHECK set).
-const STATUS_FIELD_BY_DETAIL_COLUMN = {
-  fir_details: { case_status: 'case_status', is_worked_out: 'is_worked_out' },
-  missing_details: { missing_status: 'missing_status' },
-  uidb_details: { uidb_status: 'uidb_status' },
-  pcr_call_details: { final_call_status: 'final_call_status' },
-};
+// Domain-status columns record_status_events tracks (DB_SCHEMA.md §4.8's CHECK set) — the ONE
+// source of truth for "which status_field applies to which record type/detail column", shared by
+// updateDomainStatus (item 9) and getStatusOptions (WS8). Never duplicate this list elsewhere.
+//
+// Ruling 26 note: 'case_status' and 'custody_status' both ultimately target a column literally
+// named `case_status` — but on DIFFERENT detail tables (fir_details vs arrest_details) backing
+// DIFFERENT domain facts (a CASE's investigation status vs an ARREST's custody state). Before this
+// change, updateDomainStatus resolved the target column via `column in detailRow` alone, which
+// silently let statusField:'case_status' succeed against an ARREST record too (arrest_details
+// happens to have its own same-named column) — an accidental leak, not a documented feature (the
+// live frontend at RecordDetail.jsx even exploited it, see WS8 report). Gating by `recordType`
+// here, not just column presence, closes that leak: 'case_status' now only ever touches
+// fir_details, 'custody_status' only ever touches arrest_details.
+const STATUS_FIELD_DEFS = [
+  { statusField: 'case_status', recordType: 'CASE', column: 'case_status' },
+  { statusField: 'custody_status', recordType: 'ARREST', column: 'case_status' },
+  { statusField: 'missing_status', recordType: 'MISSING', column: 'missing_status' },
+  { statusField: 'uidb_status', recordType: 'UIDB', column: 'uidb_status' },
+  { statusField: 'final_call_status', recordType: 'PCR_CALL', column: 'final_call_status' },
+  { statusField: 'is_worked_out', recordType: 'CASE', column: 'is_worked_out', valueType: 'boolean' },
+];
+
+// Derived, not hand-duplicated: detailTable -> { column -> statusField }, used by
+// detectDetailStatusChanges so a plain updateRecord edit of a tracked column also emits a dated
+// event (parity with the dedicated updateDomainStatus endpoint).
+const STATUS_FIELD_BY_DETAIL_COLUMN = {};
+for (const d of STATUS_FIELD_DEFS) {
+  const table = mapper.DETAIL_TABLES[d.recordType];
+  (STATUS_FIELD_BY_DETAIL_COLUMN[table] ??= {})[d.column] = d.statusField;
+}
 
 async function detectDetailStatusChanges(oldDetail, newDetailCols, detailTable) {
   const map = STATUS_FIELD_BY_DETAIL_COLUMN[detailTable];
@@ -298,6 +352,10 @@ async function enrichDetailLabels(trx, detail) {
   if (detail.local_head_id != null) {
     const row = await trx('ref.local_heads').where({ local_head_cd: detail.local_head_id }).first();
     detail.local_head_id_label = row?.local_head || null;
+    // #7a (2026-07-20): heinousness is DERIVED (read-only), not stored/entered — carry the
+    // classification's crime_category ('HEINOUS' | 'OTHER') so recomposeRecord can surface the
+    // Heinous Offence flag. Same row we already fetched — no extra query.
+    detail.local_head_crime_category = row?.crime_category || null;
   }
   if (detail.beat_id) {
     const row = await trx('ref.beats').where({ beat_cd: detail.beat_id }).first();
@@ -583,6 +641,17 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
   const id = uuidv4();
   const detailTable = mapper.DETAIL_TABLES[recordType];
 
+  // records.record_date is a DATE column. The interactive path sends ISO already, but bulk import
+  // supplies the raw Excel value (often DD/MM/YYYY) — inserted verbatim, Postgres parses that with
+  // its own datestyle (MM/DD), so any day > 12 became an invalid month → pg 22008 datetime overflow
+  // and an opaque per-row "system error" (a large fraction of real import rows — #1 class,
+  // 2026-07-20). Normalize to ISO here so EVERY write path is safe; normalizeDate is idempotent on
+  // an already-ISO value, so the interactive path is unaffected. Fails CLOSED: an unparseable date
+  // stays as-is only if normalizeDate returns null (import.validate.js's RECORD_DATE_INVALID check
+  // already rejects those before write; this null-guard just avoids passing `null` to a NOT NULL
+  // column, surfacing a clear not-null error rather than a datetime-format crash if one slips past).
+  const normalizedRecordDate = normalizeDate(recordDate);
+
   const detailLocationIds = {};
   for (const [slot, cols] of Object.entries(split.detailLocationFields)) {
     detailLocationIds[slot] = await insertLocation(trx, cols);
@@ -594,7 +663,7 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
 
   await trx('records').insert({
     id, record_type: recordType, ps_id: scope.ps_id, district_id: scope.district_id, sub_div_id: scope.sub_div_id || null,
-    io_id: split.spine.io_id || null, current_status: status, current_level: level, record_date: recordDate,
+    io_id: split.spine.io_id || null, current_status: status, current_level: level, record_date: normalizedRecordDate,
     created_by: user.id, updated_by: user.id,
     ...(importStamps ? {
       is_legacy: !!importStamps.isLegacy,
@@ -690,6 +759,14 @@ const EDITABLE_STATUSES = ['DRAFT', 'SENT_BACK'];
 
 export const updateRecord = async (id, user, data, ipAddress, { persons, properties, offences } = {}) => {
   const dbRecord = await db.transaction(async (trx) => {
+    // Lock the spine before reading its full graph: updateRecord rewrites persons/properties/
+    // offences before writeRevision runs, so the entry lock (not just the one inside
+    // writeRevision) is what serializes two concurrent edits to the same record. The lock is
+    // taken here rather than in the shared fetchRecordFull, which read paths also use.
+    const locked = await trx('records').where({ id }).forUpdate().first();
+    if (!locked) throw new Error('Record not found');
+    assertNotFrozen(locked);
+
     const full = await fetchRecordFull(trx, id);
     if (!full) throw new Error('Record not found');
     const { record, detail: oldDetail, personRows: oldPersonRows, propertyRows: oldPropertyRows } = full;
@@ -795,7 +872,7 @@ export const transitionRecord = async (id, user, action, comment, targetFields, 
     // the single write path (ARCHITECTURE.md §4.2) now owns every change_type's revision write.
     const record = await trx('records').where({ id }).forUpdate().first();
     if (!record) throw new Error('Record not found');
-    if (record.is_frozen) throw new Error('Record is frozen pending audit review and cannot be transitioned.');
+    assertNotFrozen(record);
 
     const fromStatus = record.current_status;
     const rule = await workflowEngine.getRule(trx, { fromStatus, action, recordType: record.record_type });
@@ -844,6 +921,7 @@ export const overrideCaseHead = async (id, user, newHead, reason, ipAddress) => 
   const result = await db.transaction(async (trx) => {
     const record = await trx('records').where({ id }).forUpdate().first();
     if (!record) throw new Error('Record not found');
+    assertNotFrozen(record);
     const detailTable = mapper.DETAIL_TABLES[record.record_type];
 
     const { id: newMajorHeadId } = await resolveMajorHead(trx, newHead);
@@ -886,8 +964,11 @@ export const overrideCaseHead = async (id, user, newHead, reason, ipAddress) => 
  * or flip worked-out" action, distinct from workflow transitions. Writes the current-value
  * column AND a dated `record_status_events` row in one transaction (ruling 22).
  */
+// property_status is per-property (not per-record-type — gated via propertyId below), so it
+// lives outside STATUS_FIELD_DEFS but is still a legal statusField for this endpoint.
+const VALID_FIELDS = [...STATUS_FIELD_DEFS.map((d) => d.statusField), 'property_status'];
+
 export const updateDomainStatus = async (id, user, { statusField, newValue, effectiveDate, comment, propertyId } = {}, ipAddress) => {
-  const VALID_FIELDS = ['case_status', 'missing_status', 'uidb_status', 'final_call_status', 'property_status', 'is_worked_out'];
   if (!VALID_FIELDS.includes(statusField)) throw Object.assign(new Error(`Unknown status_field "${statusField}"`), { status: 422 });
   if (!newValue) throw Object.assign(new Error('new_value is required'), { status: 422 });
   const effDate = toISO(effectiveDate);
@@ -898,6 +979,7 @@ export const updateDomainStatus = async (id, user, { statusField, newValue, effe
   const result = await db.transaction(async (trx) => {
     const record = await trx('records').where({ id }).forUpdate().first();
     if (!record) throw new Error('Record not found');
+    assertNotFrozen(record);
     const detailTable = mapper.DETAIL_TABLES[record.record_type];
 
     let oldValue = null;
@@ -907,7 +989,14 @@ export const updateDomainStatus = async (id, user, { statusField, newValue, effe
       oldValue = prop.status;
       await trx('record_properties').where({ id: propertyId }).update({ status: newValue, updated_at: trx.fn.now() });
     } else {
-      const column = { case_status: 'case_status', missing_status: 'missing_status', uidb_status: 'uidb_status', final_call_status: 'final_call_status', is_worked_out: 'is_worked_out' }[statusField];
+      // Gate by recordType FIRST (not just column presence) — arrest_details and fir_details
+      // both happen to have a column literally named case_status, so a presence-only check would
+      // silently let 'case_status' apply to ARREST and vice versa (the leak ruling 26 closes).
+      const def = STATUS_FIELD_DEFS.find((d) => d.statusField === statusField);
+      if (record.record_type !== def.recordType) {
+        throw Object.assign(new Error(`"${statusField}" does not apply to record type ${record.record_type}`), { status: 422 });
+      }
+      const column = def.column;
       const detailRow = await trx(detailTable).where({ record_id: id }).first();
       if (!detailRow || !(column in detailRow)) throw Object.assign(new Error(`"${statusField}" does not apply to record type ${record.record_type}`), { status: 422 });
       oldValue = detailRow[column];
@@ -936,8 +1025,121 @@ export const updateDomainStatus = async (id, user, { statusField, newValue, effe
   return result;
 };
 
+/**
+ * `GET /records/:id/status-options` (WS8) — tells the frontend modal which domain-status
+ * field(s) this record's type can have updated via `updateDomainStatus`, and their option
+ * lists, WITHOUT the frontend hardcoding either the field set or the vocabulary (baseline P4).
+ * Field set + column resolution come from `STATUS_FIELD_DEFS`, the exact same source of truth
+ * `updateDomainStatus` gates against — this endpoint can never drift out of sync with what the
+ * PATCH actually accepts. `property_status` is per-property, not per-record, so it is
+ * deliberately excluded here (v1 is record-level only; a future property-status affordance
+ * would live on the property row, not this endpoint).
+ *
+ * Options come from ONE of two sources, never a locally-hardcoded copy:
+ *   - CASE's `case_status` and `is_worked_out` are genuinely registry-sourced: read from
+ *     `field_registry.options` for the registry field whose resolved storage shape matches the
+ *     target {detailTable, column} (`config/fields/case.json` carries real `options` arrays for
+ *     both).
+ *   - ARREST/PCR_CALL/MISSING/UIDB's `status`-backed fields are NOT registry-sourced —
+ *     `common.json`'s per_type `"status"` field carries no `options` array at all, because
+ *     field_registry has no way to express "this one field_key has a different vocabulary per
+ *     record_type, and for ARREST, per case-basis too". That vocabulary is (and always was) code,
+ *     living in `fields.controller.js`'s `getFieldsForForm` (what the intake form offers at
+ *     creation). `getStatusOptionsForType` (`modules/fields/statusOptions.config.js`) is that
+ *     dispatch extracted into one shared module BOTH `getFieldsForForm` and this function import
+ *     — never a second copy — so an officer can never be offered, on edit, a status value the
+ *     intake form wouldn't have offered at creation, and vice versa.
+ */
+export const getStatusOptions = async (id) => {
+  const record = await db('records').where({ id }).first();
+  if (!record) { const err = new Error('Record not found'); err.status = 404; throw err; }
+
+  const detailTable = mapper.DETAIL_TABLES[record.record_type];
+  const detailRow = await db(detailTable).where({ record_id: id }).first();
+  const registry = await mapper.loadRegistry(db, record.record_type);
+
+  const applicableDefs = STATUS_FIELD_DEFS.filter((d) => d.recordType === record.record_type);
+
+  const fields = applicableDefs.map((def) => {
+    const regField = registry.find((f) => {
+      const shape = mapper.resolveStorage(f.storage, record.record_type);
+      return shape && typeof shape === 'object' && shape.table === detailTable && shape.column === def.column;
+    });
+
+    const isBoolean = def.valueType === 'boolean';
+    const rawCurrent = detailRow ? detailRow[def.column] : null;
+
+    let options;
+    if (isBoolean) {
+      // is_worked_out is the one deliberate deviation from "options echo the source verbatim":
+      // the registry's work_out field carries string options 'Yes'/'No' (form display), but
+      // updateDomainStatus coerces newValue to a real boolean
+      // (`newValue === 'true' || newValue === true`) — echoing 'Yes' back verbatim would make a
+      // caller send the string 'Yes', which coerces to `false`. Values are true/false; labels
+      // stay Yes/No so the modal reads naturally.
+      options = [{ value: true, label: 'Yes' }, { value: false, label: 'No' }];
+    } else if (record.record_type === 'CASE') {
+      options = (regField?.options || []).map((o) => ({ value: o.value, label: o.label_en, label_hi: o.label_hi }));
+    } else {
+      // ARREST's vocabulary branches on the arrest's own basis (ruling 18): is_dd_based=false
+      // (under a case/FIR) uses the against-FIR list; true or unset (standalone Kalandra, or a
+      // pre-ruling-18 row where the discriminator was never answered) uses the Kalandra list —
+      // same fallback direction getFieldsForForm's caseType-absent case takes.
+      const isAgainstFir = record.record_type === 'ARREST' ? detailRow?.is_dd_based === false : undefined;
+      const raw = getStatusOptionsForType(record.record_type, { isAgainstFir }) || [];
+      options = raw.map((o) => ({ value: o.value, label: o.label_en, label_hi: o.label_hi }));
+    }
+
+    const entry = {
+      status_field: def.statusField,
+      label: regField?.labels?.en || def.statusField,
+      current_value: isBoolean ? (rawCurrent === null || rawCurrent === undefined ? null : !!rawCurrent) : (rawCurrent ?? null),
+      options,
+      value_type: isBoolean ? 'boolean' : 'enum',
+      requires_effective_date: true,
+    };
+    if (def.statusField === 'is_worked_out') {
+      entry.notes = 'A Yes/true value requires effective_date — it is stamped as fir_details.worked_out_date in the same transaction (ruling 23a).';
+    }
+    if (def.statusField === 'custody_status') {
+      entry.notes = 'Maps to arrest_details.case_status (the literal arrest_details.custody_status column is dead/unused — see docs/new-db-integration/03-import.md deferrals). Option list depends on is_dd_based (ruling 18): ' +
+        (detailRow?.is_dd_based === false ? 'this arrest is under a case/FIR (against-FIR list).' : 'this arrest is a standalone Kalandra (or is_dd_based is unset — Kalandra list, same fallback as the intake form).');
+    }
+    return entry;
+  });
+
+  return { record_id: id, record_type: record.record_type, is_frozen: !!record.is_frozen, fields };
+};
+
 export const getRecordRevisions = async (record_id) => {
   return db('record_revisions').where({ record_id }).orderBy('revision_number', 'asc');
+};
+
+/**
+ * The ONLY mutator of `records.is_frozen` — the freeze half of the hash-chain break procedure
+ * (DB_SCHEMA.md §9.4). Freeze/unfreeze is an audit-integrity fact, NOT a domain change: it
+ * writes a single `audit_logs` row and deliberately does NOT extend the hash chain (writing a
+ * revision in response to a break would be self-defeating). Called by the verification job on a
+ * detected break (system actor) and by the privileged unfreeze endpoint after review. Never
+ * gated by `assertNotFrozen` — this is the mechanism that lifts the freeze.
+ */
+export const setRecordFrozen = async (id, frozen, { user = null, reason = null } = {}) => {
+  return db.transaction(async (trx) => {
+    const record = await trx('records').where({ id }).forUpdate().first();
+    if (!record) { const err = new Error('Record not found'); err.status = 404; throw err; }
+    if (!!record.is_frozen === !!frozen) return { id, is_frozen: !!frozen, changed: false };
+
+    await trx('records').where({ id }).update({ is_frozen: !!frozen, updated_at: trx.fn.now() });
+    await trx('audit_logs').insert({
+      id: uuidv4(), table_name: 'records', record_id: id,
+      action: frozen ? 'FREEZE' : 'UNFREEZE',
+      changed_by_id: user?.id ?? null, changed_by_role: user?.role ?? 'SYSTEM',
+      changed_at: new Date().toISOString(), field_name: 'is_frozen',
+      old_value: JSON.stringify(!!record.is_frozen), new_value: JSON.stringify(!!frozen),
+      reason: reason || null, ip_address: null,
+    });
+    return { id, is_frozen: !!frozen, changed: true };
+  });
 };
 
 export const checkDuplicateRecord = async (recordType, firNumber, accusedName, date) => {
@@ -995,8 +1197,9 @@ export const searchRecordsWithSpec = async (recordType, filterSpec, jurisdiction
 
 export const deleteRecord = async (id, user) => {
   await db.transaction(async (trx) => {
-    const record = await trx('records').where({ id }).first();
+    const record = await trx('records').where({ id }).forUpdate().first();
     if (!record) { const err = new Error('Record not found'); err.status = 404; throw err; }
+    assertNotFrozen(record);
     if (record.current_status !== 'DRAFT') { const err = new Error('Only DRAFT records can be deleted'); err.status = 400; throw err; }
     await trx('records').where({ id }).delete(); // cascades detail/persons/properties/offences
     await writeAuditLog(trx, { recordId: id, action: 'DELETE', user });

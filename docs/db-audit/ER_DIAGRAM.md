@@ -249,7 +249,7 @@ erDiagram
         date gd_date
         time gd_time
         varchar case_type
-        varchar case_status
+        varchar case_status "custody status (ruling 26); dated changes tracked in record_status_events as 'custody_status', distinct from CASE's case_status"
         varchar fir_no "FIR block: required when NOT is_dd_based; as-entered provenance/fallback only — THE link = record_links UUID row (ruling 19)"
         date fir_date
         boolean is_dd_based "arrest-basis discriminator: false=under case, true=standalone Kalandra"
@@ -379,7 +379,7 @@ erDiagram
         varchar name
         varchar relative_name "the named relative (was parent_name)"
         varchar relation_type "CHECK synced: FATHER|MOTHER|HUSBAND|WIFE|GUARDIAN|OTHER; + gender derives S/O, D/O, W/O prefix at read"
-        varchar gender "CHECK: MALE|FEMALE|OTHER|UNKNOWN"
+        varchar gender "varchar(20); CHECK: MALE|FEMALE|TRANSGENDER|OTHER|UNKNOWN (widened T7.1/WS5, column widened from(10) too)"
         smallint age
         date dob "write path derives age from dob"
         boolean is_minor "GENERATED ALWAYS AS (age lt 18) STORED - DB-computed, all roles"
@@ -464,7 +464,7 @@ erDiagram
         uuid person_id "FK persons, SET NULL (added 2026-07-15) - which participant this was recovered from/associated with"
         int major_category_id "FK ref_property_categories (merged table, was ref_property_types)"
         int minor_category_id "FK ref_other_property_items"
-        varchar status "CHECK synced: STOLEN|RECOVERED|SEIZED|INTACT|UNCLAIMED"
+        varchar status "CHECK synced: STOLEN|RECOVERED|SEIZED|INTACT|UNCLAIMED|INVOLVED (widened T7.1/WS5)"
         text details
         varchar uid
         numeric estimated_value
@@ -549,7 +549,7 @@ erDiagram
         uuid id PK
         uuid record_id "FK records, CASCADE"
         uuid property_id "FK record_properties, CASCADE; NOT NULL iff property_status"
-        varchar status_field "CHECK synced: case_status|missing_status|uidb_status|final_call_status|property_status|is_worked_out"
+        varchar status_field "CHECK synced: case_status|missing_status|uidb_status|final_call_status|property_status|is_worked_out|custody_status"
         varchar old_value
         varchar new_value
         date effective_date "officer-entered real-world date - the diary pivot, backdating expected"

@@ -15,6 +15,8 @@
     "load-ref": "node scripts/load-ref.mjs",
     "import:parity": "node scripts/import-bridge-parity.js",
     "import:corpus": "node scripts/import-reliability/replay-corpus.mjs",
+    "audit:verify": "node scripts/verify-audit-chain.mjs",
+    "seed:test-data": "node scripts/seed-test-data.js",
     "test": "node scripts/verify_.js"
   },
   "dependencies": {

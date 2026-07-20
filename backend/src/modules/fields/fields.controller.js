@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger.js';
 import * as fieldsService from './fields.service.js';
 import * as ioService from '../io/io.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from './classificationSources.config.js';
+import { getStatusOptionsForType } from './statusOptions.config.js';
 import { INDIA_STATES, DISTRICTS_BY_STATE } from '../../config/geoData.js';
 
 const parseJsonField = (val) => {
@@ -312,43 +313,10 @@ export const getFieldsForForm = async (req, res) => {
               { value: 'TRANSFER', label_en: 'Transfer', label_hi: 'स्थानांतरण' }
             ];
           } else if (normalizedType === 'ARREST') {
-            const isAgainstFir = caseType === 'against_fir';
-            options = isAgainstFir ? [
-              { value: 'JC', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
-              { value: 'PC', label_en: 'Police Custody', label_hi: 'पुलिस हिरासत' },
-              { value: 'Bail', label_en: 'Bail', label_hi: 'जमानत' },
-              { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
-              { value: 'Release', label_en: 'Release', label_hi: 'रिहा' },
-              { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
-              { value: '35(3) BNS Notice', label_en: '35(3) BNS Notice', label_hi: '35(3) BNS Notice' }
-            ] : [
-              { value: 'JC', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
-              { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
-              { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
-              { value: 'Fine', label_en: 'Fine', label_hi: 'Fine' }
-            ];
-          } else if (normalizedType === 'PCR_CALL') {
-            options = [
-              { value: 'Action Taken', label_en: 'Action Taken', label_hi: 'कार्रवाई की गई' },
-              { value: 'Pending', label_en: 'Pending', label_hi: 'लंबित' },
-              { value: 'Referred', label_en: 'Referred', label_hi: 'स संदर्भित' },
-              { value: 'Closed', label_en: 'Closed', label_hi: 'बंद' }
-            ];
-          } else if (normalizedType === 'MISSING') {
-            options = [
-              { value: 'Un-traced', label_en: 'Un-traced', label_hi: 'लापता/सुराग नहीं' },
-              { value: 'Traced', label_en: 'Traced', label_hi: 'पता लगाया गया' },
-              { value: 'Referred', label_en: 'Referred', label_hi: 'स संदर्भित' },
-              { value: 'Closed', label_en: 'Closed', label_hi: 'बंद' }
-            ];
-          } else if (normalizedType === 'UIDB') {
-            options = [
-              { value: 'Referred to district hospital', label_en: 'Referred to district hospital', label_hi: 'जिला अस्पताल को संदर्भित' },
-              { value: 'Identified', label_en: 'Identified', label_hi: 'पहचाना गया' },
-              { value: 'body claimed', label_en: 'Body Claimed', label_hi: 'शव पर दावा किया गया' },
-              { value: 'Unidentified', label_en: 'Unidentified', label_hi: 'अज्ञात' },
-              { value: 'held in mortuary', label_en: 'Held in Mortuary', label_hi: 'मुर्दाघर में रखा गया' }
-            ];
+            options = getStatusOptionsForType('ARREST', { isAgainstFir: caseType === 'against_fir' });
+          } else {
+            // PCR_CALL / MISSING / UIDB — single vocabulary per type, no case-type branching.
+            options = getStatusOptionsForType(normalizedType) || options;
           }
         }
 
@@ -696,6 +664,22 @@ export const getFieldsForForm = async (req, res) => {
           fields: filteredFields.filter(f => ['procedure_slips', 'procedural_slips'].includes(f.section) && !f.repeater_entity)
         },
         {
+          // Record-level property section for ARREST — bulk import can't link a property to a
+          // specific arrestee (the frozen template captures no owner column), so imported ARREST
+          // properties land with person_id = NULL and were invisible (they don't attach to any
+          // arrestee's per-person list, and ARREST previously had no record-level property view —
+          // #8, 2026-07-20). This section renders them. `view_only_when_populated` tells the
+          // frontend to SHOW it only when the record actually has record-level properties, so
+          // interactive ARREST entry (properties entered per-arrestee) is completely unchanged.
+          section: 'property_details',
+          title_en: 'Property (Imported)',
+          title_hi: 'संपत्ति (आयातित)',
+          is_repeater: true,
+          entity_type: 'property',
+          view_only_when_populated: true,
+          fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')
+        },
+        {
           section: 'investigation_officer',
           title_en: 'Investigating Officer',
           title_hi: 'जांच अधिकारी',
@@ -749,13 +733,23 @@ export const getFieldsForForm = async (req, res) => {
         }
       ];
     } else if (normalizedType === 'UIDB') {
+      // #2 (2026-07-20) UIDB classification = CASCADE-ONLY. UIDB inherits the CASE/ARREST
+      // classification fields (record_types include UIDB), which land in incident_details and get
+      // bundled into General Information here. The `act_name` field renders as the interactive
+      // Act→Major-Head→Minor-Head cascade (ActsSectionsTable), so the standalone `local_head`
+      // dropdown + readonly `major_heads`/`minor_heads` summary rows were a DUPLICATE of the same
+      // classification. Exclude those three so UIDB shows the cascade only (user decision).
+      // NOTE: this removes the only interactive writer of uidb_details.local_head_id, so a NEW
+      // interactive UIDB record can't derive the (CASE/ARREST-oriented) Heinous flag — accepted:
+      // heinousness is a CASE/ARREST concern; the local_head_id COLUMN/storage is untouched.
+      const UIDB_CLASSIFICATION_DUPES = new Set(['local_head', 'local_head_raw', 'major_heads', 'minor_heads']);
       sections = [
         {
           section: 'general_info',
           title_en: 'General Information',
           title_hi: 'सामान्य जानकारी',
           is_repeater: false,
-          fields: filteredFields.filter(f => ['general_info', 'incident_details'].includes(f.section) && !f.repeater_entity)
+          fields: filteredFields.filter(f => ['general_info', 'incident_details'].includes(f.section) && !f.repeater_entity && !UIDB_CLASSIFICATION_DUPES.has(f.field_key))
         },
         {
           section: 'corpse_desc',

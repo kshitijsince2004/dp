@@ -68,8 +68,8 @@
   ],
   "field_type": "TEXT",
   "labels": {
-   "en": "FIR Number,Date & Time",
-   "hi": "प्राथमिकी (FIR) संख्या और दिनांक"
+   "en": "FIR Number",
+   "hi": "प्राथमिकी (FIR) संख्या"
   },
   "section": "general_info",
   "storage": {
@@ -139,8 +139,8 @@
   ],
   "field_type": "TEXT",
   "labels": {
-   "en": "GD Number, Date & Time",
-   "hi": "जीडी नंबर, दिनांक और समय"
+   "en": "GD Number",
+   "hi": "जीडी नंबर"
   },
   "section": "general_info",
   "storage": {
@@ -1093,7 +1093,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "informant_relation",
@@ -1386,7 +1389,19 @@
   "full_width": false,
   "readonly": true,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ]
  },
  {
   "field_key": "ipc_major_head",
@@ -5054,7 +5069,8 @@
   "section": "investigation_officer",
   "storage": "ui_only",
   "validation_rules": {
-   "required": false
+   "required": false,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",

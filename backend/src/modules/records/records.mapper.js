@@ -23,6 +23,67 @@ const ENUM_UPPER_COLUMNS = {
   record_properties: new Set(['status']),
 };
 
+// The exact CHECK-constraint vocabulary for each enum-upper column (must mirror the migration
+// CHECKs — 20260711000004_persons_properties.js). A value OUTSIDE its set crashes the whole
+// import row with pg 23514 + an opaque "system error": real 2026-07-20 examples were an accused
+// gender of "Yadav" (a surname mis-entered into the gender column) and a property status of
+// "Mobile" (the item name mis-entered into the status column). The frontend constrains
+// interactive entry to these via dropdowns, so out-of-vocabulary values only arrive through
+// messy bulk import — we coerce them (see normalizeEnumConstrained) instead of crashing.
+const ENUM_ALLOWED = {
+  persons: {
+    gender: new Set(['MALE', 'FEMALE', 'TRANSGENDER', 'OTHER', 'UNKNOWN']),
+    relation_type: new Set(['FATHER', 'MOTHER', 'HUSBAND', 'WIFE', 'GUARDIAN', 'OTHER']),
+  },
+  record_properties: {
+    status: new Set(['STOLEN', 'RECOVERED', 'SEIZED', 'INTACT', 'UNCLAIMED', 'INVOLVED']),
+  },
+};
+// Fallback for an out-of-vocabulary / empty value. gender & relation_type are nullable → null
+// (drop the bad value, keep the rest of the person). record_properties.status is
+// NOT NULL DEFAULT 'STOLEN' → coerce to 'STOLEN' (an explicit null would just trade a 23514 for
+// a 23502 not-null crash); this matches the column's own default, so a property with a
+// mis-entered/blank status still imports as a STOLEN property rather than sinking the record.
+const ENUM_FALLBACK = {
+  record_properties: { status: 'STOLEN' },
+};
+
+export const PINCODE_MIN_DIGITS = 5; // shortest plausible pincode; below this = not a pincode
+
+/** The SINGLE source of truth for "would this enum value be salvaged?". Returns null when `raw`
+ * is a valid in-vocabulary value OR is empty (empty isn't a "cleaned bad value" — it's just
+ * absent). Otherwise returns { to } = the coerced value the write path will store instead. Used
+ * by normalizeEnumConstrained (to actually coerce) AND by import.validate.js (to WARN the
+ * operator that a cell was salvaged — user decision 2026-07-20), so the two can never drift. */
+export function enumCoercion(table, column, raw) {
+  const up = normalizeEnumUpper(raw);
+  if (up === null) return null; // empty → absent, not salvaged
+  const allowed = ENUM_ALLOWED[table]?.[column];
+  if (!allowed || allowed.has(up)) return null; // valid in-vocabulary value
+  const fallback = ENUM_FALLBACK[table]?.[column];
+  return { to: fallback !== undefined ? fallback : null };
+}
+
+/** SINGLE source of truth for "would this pincode be salvaged to null?" — non-empty but fewer
+ * than PINCODE_MIN_DIGITS digits (e.g. the "6-digit PIN code" placeholder). null = kept as-is
+ * (after digit-strip). Mirrors normalizeLocationValue's pincode branch; shared with validate. */
+export function pincodeCoercion(raw) {
+  if (raw === null || raw === undefined) return null;
+  const s = String(raw).trim();
+  if (s === '') return null;
+  const digits = s.replace(/\D/g, '');
+  return digits.length < PINCODE_MIN_DIGITS ? { to: null } : null;
+}
+
+/** Uppercase-normalize an enum value AND constrain it to its column's CHECK vocabulary. In-set
+ * values pass through; out-of-set/empty values become the column's fallback (null unless
+ * ENUM_FALLBACK says otherwise). Prevents pg 23514/23502 from crashing an import row. */
+function normalizeEnumConstrained(table, column, raw) {
+  const coercion = enumCoercion(table, column, raw);
+  if (coercion) return coercion.to;
+  return normalizeEnumUpper(raw); // in-vocabulary (or empty → null)
+}
+
 export const DETAIL_TABLES = {
   CASE: 'fir_details', ARREST: 'arrest_details', PCR_CALL: 'pcr_call_details',
   MISSING: 'missing_details', UIDB: 'uidb_details',
@@ -64,17 +125,28 @@ export const PERSON_LOCATION_SLOTS = {
 // branch parses them correctly with no special-casing needed.
 
 let columnCache = null;
+// Parallel cache of character_maximum_length for varchar/char columns (null for unbounded
+// types). Loaded from the SAME information_schema query as columnCache so there's no extra
+// round-trip; kept separate so columnCache stays a plain column→data_type string map (what
+// coerceByType/decorateByType consume) rather than changing its shape everywhere.
+let columnMaxLenCache = null;
 /** information_schema introspection, cached for the process lifetime (mirrors
  * scripts/lib/sync-config-core.mjs's loadColumns — schema only changes via a migration +
  * restart, so a request-scoped or one-shot query would be wasted work). */
 async function loadColumns(trx) {
   if (columnCache) return columnCache;
   const rows = await trx.raw(
-    `SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_schema = 'public'`
+    `SELECT table_name, column_name, data_type, character_maximum_length
+       FROM information_schema.columns WHERE table_schema = 'public'`
   );
   const cols = {};
-  for (const r of rows.rows) (cols[r.table_name] ??= {})[r.column_name] = r.data_type;
+  const lens = {};
+  for (const r of rows.rows) {
+    (cols[r.table_name] ??= {})[r.column_name] = r.data_type;
+    (lens[r.table_name] ??= {})[r.column_name] = r.character_maximum_length ?? null;
+  }
   columnCache = cols;
+  columnMaxLenCache = lens;
   return cols;
 }
 
@@ -153,6 +225,23 @@ function decorateByType(dataType, val) {
     case 'timestamp without time zone': return formatDateTimeForFrontend(val);
     default: return val;
   }
+}
+
+/** Read-side inverse of records.normalize.js's `normalizeEnumUpper` (the write side), keyed by
+ * table+column exactly like ENUM_UPPER_COLUMNS. The write path stores these enums in their
+ * CHECK-constraint vocabulary — UPPERCASE ('MALE','FATHER','STOLEN') — but field_registry's
+ * option `value`s (what the frontend's SearchableSelect matches, case-SENSITIVELY, and what
+ * list/detail/export views render) are Title Case ('Male','Father','Stolen'). Without this
+ * inverse, recomposeRecord handed back raw 'MALE'; SearchableSelect found no matching option and
+ * displayed blank — the reported symptom for complainant/victim gender + relation_type + missing
+ * gender + property status, on BOTH interactive and imported records. Every enum-upper option in
+ * the vocabulary today is a single word, so Title Case is an exact inverse (the same single-word
+ * assumption the write-side uppercasing already relies on). If a multi-word enum value is ever
+ * added, promote this to an options-aware lookup rather than extending the string transform. */
+function decorateEnumUpper(table, column, val) {
+  if (typeof val !== 'string' || !val) return val;
+  if (!ENUM_UPPER_COLUMNS[table]?.has(column)) return val;
+  return val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
 }
 
 /** pg already auto-deserializes jsonb columns (arrays/objects arrive as real JS values, not
@@ -270,8 +359,36 @@ function normalizeDetailValue(table, column, raw) {
   return coerceByType(columnCache?.[table]?.[column], raw);
 }
 
+// Longest varchar location column is 500 (full_address); pincode is the narrowest at 10. Free
+// text entered by officers (or a template placeholder/hint left un-replaced, e.g. the literal
+// string "6-digit PIN code") routinely overshoots the narrow columns. Before the guard below, an
+// over-length value threw `value too long for type character varying(N)` (pg 22001) mid-insert,
+// failing the ENTIRE row with an opaque "system error" and no indication which field — the actual
+// root cause of the reported "ARREST bulk import not working" (#1, 2026-07-20). P2 "reject only
+// the impossible" + the import-reliability framework favour salvaging the row over crashing it.
 function normalizeLocationValue(column, raw) {
-  return coerceByType(columnCache?.locations?.[column], raw);
+  let val = coerceByType(columnCache?.locations?.[column], raw);
+  if (val === null || val === undefined) return val;
+
+  // pincode is digits-only by definition. Strip non-digits, then drop implausibly short results
+  // (< PINCODE_MIN_DIGITS — no real pincode is that short; a stray digit from placeholder prose
+  // like "6-digit PIN code" is not a pincode) to null rather than storing garbage. Genuine
+  // pincodes (6-digit IN, longer foreign) are preserved. The salvage-to-null decision is shared
+  // with import.validate.js via pincodeCoercion so the operator WARNING can't drift from this.
+  if (column === 'pincode' && typeof val === 'string') {
+    if (pincodeCoercion(val)) return null;
+    val = val.replace(/\D/g, '');
+  }
+
+  // Last-line width guard: never let a location varchar overflow its column and take down the
+  // whole row. Truncate to the column's real width (from information_schema) instead. Applies to
+  // EVERY location varchar (pincode included, after the digit-normalize above), so no location
+  // value can ever raise pg 22001 again.
+  if (typeof val === 'string') {
+    const maxLen = columnMaxLenCache?.locations?.[column];
+    if (maxLen && val.length > maxLen) val = val.slice(0, maxLen);
+  }
+  return val;
 }
 
 /** Detail-table columns that hold a LABEL needing async ref.* resolution before insert.
@@ -375,7 +492,7 @@ function subtypeTableForColumn(column) {
 
 function normalizePersonValue(table, column, raw) {
   if (column === 'mobile') return normalizePhone(raw);
-  if (ENUM_UPPER_COLUMNS.persons?.has(column)) return normalizeEnumUpper(raw);
+  if (ENUM_UPPER_COLUMNS.persons?.has(column)) return normalizeEnumConstrained('persons', column, raw);
   return coerceByType(columnCache?.[table]?.[column], raw);
 }
 
@@ -424,7 +541,7 @@ async function splitPersons(trx, registry, recordType, data, personsInput) {
 // ── properties ─────────────────────────────────────────────────────────────────────────
 
 function normalizePropertyValue(column, raw) {
-  if (ENUM_UPPER_COLUMNS.record_properties?.has(column)) return normalizeEnumUpper(raw);
+  if (ENUM_UPPER_COLUMNS.record_properties?.has(column)) return normalizeEnumConstrained('record_properties', column, raw);
   return coerceByType(columnCache?.record_properties?.[column], raw);
 }
 
@@ -671,6 +788,16 @@ export async function recomposeRecord(trx, registry, recordType, {
   if (detailRow?.local_head_id_label) data.local_head = detailRow.local_head_id_label;
   if (detailRow?.beat_id_label) data.beat_no = detailRow.beat_id_label;
 
+  // #7a (2026-07-20): Heinous Offence is DERIVED read-only from the record's local-head
+  // classification (ref.local_heads.crime_category = 'HEINOUS' | 'OTHER'), attached onto
+  // detailRow by the caller (enrichDetailLabels). The `heinous_offence` field is storage:ui_only
+  // (never written), so this recompose is its only source. Left BLANK when no classification is
+  // set (local_head_id null) rather than asserting 'No' — absence ≠ non-heinous. Applies wherever
+  // a local_head exists (CASE/ARREST today; UIDB while its local_head_id is populated).
+  if (detailRow?.local_head_crime_category) {
+    data.heinous_offence = detailRow.local_head_crime_category === 'HEINOUS' ? 'Yes' : 'No';
+  }
+
   // persons: singleton roles flatten into `data`; repeater roles build the `persons[]` array
   const persons = [];
   for (const p of personRows) {
@@ -730,7 +857,8 @@ function recomposePersonFields(personFields, personRow, into, cols) {
     const source = subtypeTable && personRow.subtypes?.[subtypeTable] ? personRow.subtypes[subtypeTable] : personRow;
     const sourceTableName = subtypeTable && personRow.subtypes?.[subtypeTable] ? subtypeTable : 'persons';
     if (source && shape.column in source && source[shape.column] !== undefined && source[shape.column] !== null) {
-      into[f.field_key] = decorateByType(cols?.[sourceTableName]?.[shape.column], source[shape.column]);
+      const typed = decorateByType(cols?.[sourceTableName]?.[shape.column], source[shape.column]);
+      into[f.field_key] = decorateEnumUpper(sourceTableName, shape.column, typed);
     }
   }
 }
@@ -749,7 +877,7 @@ function recomposePropertyRow(registry, recordType, propertyRow) {
       continue;
     }
     if (shape.column in propertyRow && propertyRow[shape.column] !== null && propertyRow[shape.column] !== undefined) {
-      flat[f.field_key] = propertyRow[shape.column];
+      flat[f.field_key] = decorateEnumUpper('record_properties', shape.column, propertyRow[shape.column]);
     }
   }
   for (const fields of Object.values(grouped)) {

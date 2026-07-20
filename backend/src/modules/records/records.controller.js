@@ -130,6 +130,22 @@ export const updateStatus = async (req, res) => {
   }
 };
 
+// Registry-driven status field/options catalog for the record's type (WS8) — feeds the
+// frontend's "update status" modal so it never hardcodes which fields exist or their
+// vocabulary (baseline P4). Same access guard as PATCH /:id/status.
+export const getStatusOptions = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await verifyRecordAccess(id, req.user);
+    const result = await recordsService.getStatusOptions(id);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    const status = error.message.includes('Access denied') ? 403 : (error.status || 500);
+    return res.status(status).json({ success: false, message: error.message });
+  }
+};
+
 export const approve = async (req, res) => {
   const { id } = req.params;
   const { comment } = req.body;

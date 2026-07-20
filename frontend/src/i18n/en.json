@@ -203,5 +203,26 @@
     "seized": "Seized",
     "propertyDescriptionPlaceholder": "Enter description details...",
     "propertyValuePlaceholder": "Enter value in INR"
+  },
+  "statusUpdate": {
+    "updateAction": "Update Status",
+    "title": "Update record status",
+    "whichStatus": "Which status would you like to update?",
+    "currentValue": "Current",
+    "notSet": "Not set",
+    "change": "Change",
+    "chooseValue": "-- Choose value --",
+    "chooseValueError": "Select a value before saving",
+    "chooseDateError": "Select the date this change happened",
+    "effectiveDateLabel": "When did this change happen?",
+    "workoutDateLabel": "Workout date",
+    "workoutDateHint": "This date is recorded as the official workout date for this case.",
+    "commentLabel": "Comment (optional)",
+    "frozenNotice": "This record is frozen pending audit review and cannot be modified.",
+    "save": "Save Status",
+    "saving": "Saving…",
+    "updateSuccess": "Status updated",
+    "updateFailed": "Failed to update status",
+    "loadError": "Failed to load status options"
   }
 }

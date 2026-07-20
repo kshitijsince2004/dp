@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { FileText, Plus, FileEdit, Trash2, Send, Filter, Eye, AlertCircle } from 'lucide-react';
+import { FileText, Plus, FileEdit, Trash2, Send, Filter, Eye, AlertCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import UnifiedFilterStrip from '../../components/common/UnifiedFilterStrip.jsx';
 import FilterPresetsPanel from '../../components/common/FilterPresetsPanel.jsx';
 import useAuthStore from '../../store/authStore.js';
+import StatusUpdateModal from '../../components/records/StatusUpdateModal.jsx';
 
 
 const pageVariants = {
@@ -38,6 +39,12 @@ export default function MyRecords() {
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkLoading, setBulkLoading] = useState(false);
+
+  // Domain status update modal (WS9) — lets an HC update a record's own progress
+  // (case_status/is_worked_out/custody_status/etc) straight from the records desk without
+  // navigating into the full detail view. Vocabulary/fields come entirely from the modal's
+  // own GET /records/:id/status-options call — nothing hardcoded here.
+  const [statusModalRecordId, setStatusModalRecordId] = useState(null);
 
   useEffect(() => {
     if (location.search.includes('scrollTo=table') || location.hash === '#records-table') {
@@ -460,6 +467,17 @@ export default function MyRecords() {
                               <Eye size={14} />
                             </button>
 
+                            {/* Update Status Action (WS9) — record's own domain progress,
+                                available regardless of workflow status (backend has no
+                                workflow-state gate on this, only the frozen check) */}
+                            <button
+                              onClick={() => setStatusModalRecordId(rec.id)}
+                              className="bg-violet-50 hover:bg-violet-500 text-violet-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-violet-200 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 active:scale-95"
+                              title={t('statusUpdate.updateAction', 'Update Status')}
+                            >
+                              <RefreshCw size={14} />
+                            </button>
+
                             {/* Edit Action */}
                             {isEditable && (
                               <button
@@ -511,6 +529,12 @@ export default function MyRecords() {
           )}
         </div>
       </motion.div>
+
+      <StatusUpdateModal
+        recordId={statusModalRecordId}
+        open={!!statusModalRecordId}
+        onClose={() => setStatusModalRecordId(null)}
+      />
     </div>
   );
 }

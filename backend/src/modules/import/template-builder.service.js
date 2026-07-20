@@ -21,7 +21,7 @@ import {
   NR_PREFIX,
 } from './import-fields.config.js';
 import { autoIncludedRegistryFields, normalizeRegistryRow } from './registry-sync.util.js';
-import { DISTRICTS_BY_STATE, ALL_INDIA_DISTRICTS } from '../../config/geoData.js';
+import { DISTRICTS_BY_STATE, ALL_INDIA_DISTRICTS, DELHI_STATE } from '../../config/geoData.js';
 import * as fieldsService from '../fields/fields.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from '../fields/classificationSources.config.js';
 import DataValidationsXform from 'exceljs/lib/xlsx/xform/sheet/data-validations-xform.js';
@@ -1785,15 +1785,35 @@ export class TemplateBuilderService {
           if (cell.value) colsByKey[String(cell.value).trim()] = c;
         });
 
+        const flatPsNR = namedRangeMap['police_station']; // all-Delhi-PS list (first pass)
         for (const [key, psCol] of Object.entries(colsByKey)) {
           if (key !== 'police_station' && !key.endsWith('_police_station')) continue;
           const prefix = key === 'police_station' ? '' : key.slice(0, key.length - '_police_station'.length);
           const distKey = prefix ? `${prefix}_district` : 'district';
           const distCol = colsByKey[distKey];
-          if (!distCol) continue; // no paired district column on this sheet — leave flat list
 
-          const distColLetter = numToColLetter(distCol);
-          const formula = `INDIRECT(VLOOKUP($${distColLetter}5,DISTRICT_TO_PS_NR,2,FALSE))`;
+          // #5 DUAL-MODE (2026-07-20): a PS column paired with a *_state sibling is a PERSON
+          // ADDRESS (complainant/victim/accused) — the address can be anywhere in India, so the
+          // Delhi PS list must appear ONLY when that person's state = Delhi, and be free-text
+          // otherwise. (Place-of-occurrence has NO _state sibling — it's Delhi-scoped by decision
+          // D-A — so it keeps the district→PS cascade below.) NOTE: person DISTRICT uses ADMIN
+          // district names ("New Delhi", "Central Delhi") which do NOT key into DISTRICT_TO_PS_NR
+          // (POLICE district names), so a district-filtered person dropdown can't work — we show
+          // the flat all-Delhi-PS list instead. When state≠Delhi, INDIRECT("") errors → no list →
+          // free-type (showErrorMessage:false). ⚠ Excel conditional-INDIRECT validation is finicky
+          // — verify the rendered dropdown in real Excel.
+          const stateKey = prefix ? `${prefix}_state` : null;
+          const stateCol = stateKey ? colsByKey[stateKey] : undefined;
+          let formula;
+          if (stateCol && flatPsNR) {
+            const stateColLetter = numToColLetter(stateCol);
+            formula = `INDIRECT(IF($${stateColLetter}5="${DELHI_STATE}","${flatPsNR}",""))`;
+          } else if (distCol) {
+            const distColLetter = numToColLetter(distCol);
+            formula = `INDIRECT(VLOOKUP($${distColLetter}5,DISTRICT_TO_PS_NR,2,FALSE))`;
+          } else {
+            continue; // no state or district pairing on this sheet — leave flat list
+          }
           for (let rIdx = 5; rIdx <= 500; rIdx++) {
             ws.getCell(rIdx, psCol).dataValidation = {
               type: 'list', allowBlank: true, showErrorMessage: false,

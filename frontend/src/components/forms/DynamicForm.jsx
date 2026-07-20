@@ -20,6 +20,7 @@ import SearchableSelect from './SearchableSelect.jsx';
 import DateInput from '../ui/DateInput.jsx';
 import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
+import { validateFieldPattern } from '../../utils/fieldPatterns.js';
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 function parseRules(rawRules) {
   if (!rawRules) return {};
@@ -71,7 +72,7 @@ function syncPermAddress(next, prefix, key, val, extraFields = []) {
  */
 const SECTION_KEY_ORDER = {
   CASE: ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'investigation_officer'],
+  ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
   UIDB: ['general_info', 'corpse_desc', 'corpse_physical', 'inquest_details', 'investigation_officer'],
   MISSING: ['general_info', 'person_details', 'missing_address', 'missing_physical', 'contacts_assigned', 'investigation_officer'],
 };
@@ -795,7 +796,11 @@ export default function DynamicForm({
   const renderOccurrenceStep = () => {
     const sectionFields = activeSection?.fields || [];
     const occInfoFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type !== 'RADIO');
-    const occPlaceFields = sectionFields.filter(f => f.sort_order >= 3 && f.sort_order < 4);
+    // Place-of-occurrence = every address field with sort_order >= 3 (house_no 3 … police_station
+    // 3.9, then pincode 4, latitude 4.1, longitude 4.2). The old `< 4` upper cap silently dropped
+    // occurrence_pincode / occurrence_latitude / occurrence_longitude from the form entirely
+    // (they exist in config + DB but never rendered). No occurrence field has sort_order >= 5.
+    const occPlaceFields = sectionFields.filter(f => f.sort_order >= 3);
 
     const occRadioFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type === 'RADIO');
 
@@ -850,7 +855,7 @@ export default function DynamicForm({
           ))}
         </div>
 
-        {/* RIGHT COLUMN — Place of Occurrence driven by backend address fields (sort_order 3.x) */}
+        {/* RIGHT COLUMN — Place of Occurrence driven by backend address fields (sort_order >= 3: address 3.x + pincode/lat/long 4.x) */}
         <div>
           <fieldset className="border border-[#7a9cc5] rounded px-2 py-2 h-full">
             <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
@@ -2044,6 +2049,14 @@ export default function DynamicForm({
 
         const section = bySection.get(key);
         if (!section) return null;
+        // view_only_when_populated (ARREST record-level "Property (Imported)" section, #8):
+        // render ONLY when the record actually has record-level properties (person_id == null —
+        // only bulk import produces these). This keeps interactive ARREST entry unchanged (no
+        // empty second property section) while making imported ARREST properties visible.
+        if (section.view_only_when_populated) {
+          const hasRecordLevelProps = (initialProperties || []).some(p => !p.person_id);
+          if (!hasRecordLevelProps) return null;
+        }
         return {
           section: key,
           title_en: section.title_en,
@@ -2053,6 +2066,7 @@ export default function DynamicForm({
           is_repeater: section.is_repeater,
           entity_type: section.entity_type,
           person_type: section.person_type,
+          view_only_when_populated: section.view_only_when_populated,
         };
       })
       .filter(Boolean);
@@ -2078,7 +2092,7 @@ export default function DynamicForm({
       }));
 
     return [...orderedSections, ...extraSections];
-  }, [schema, recordType, caseType, finalFirOptions]);
+  }, [schema, recordType, caseType, finalFirOptions, initialProperties]);
 
   const { triggerAutosave, saveImmediately, saveStatus, savedRecord } = useAutosave(
     recordType,
@@ -3186,6 +3200,15 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
     }
 
     const rules = parseRules(field.validation_rules);
+
+    // Format validation (#10, 2026-07-20) — runs for ANY non-empty value, required or not, so a
+    // name with digits / a non-numeric lat-long is rejected even on an optional field. Empty is
+    // left to the requiredness check below. Single source of rules: utils/fieldPatterns.js.
+    const patternErr = validateFieldPattern(rules, currentValues[field.field_key], lang);
+    if (patternErr) {
+      errs[field.field_key] = patternErr;
+      return;
+    }
 
     // Composite Number+Date(+Time) widgets. Anchored on the NUMBER — a stray date with
     // no number must never block Next. Time is deliberately NOT validated: fir_time has

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserCog, Plus, X, Trash2, UserCheck, UserX } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
+import { validatePattern } from '../../utils/fieldPatterns.js';
 
 const RANK_OPTIONS = [
   'Constable', 'Head Constable', 'Assistant Sub Inspector', 'Sub Inspector',
@@ -72,6 +73,15 @@ export default function IOManagement() {
     if (!form.name.trim()) {
       toast.error('Officer name is required');
       return;
+    }
+    // #10 (2026-07-20): same rules as the registry-driven forms (utils/fieldPatterns.js).
+    const nameErr = validatePattern('name', form.name);
+    if (nameErr) { toast.error(nameErr); return; }
+    // Mobile is optional; when present it must be exactly 10 digits. The input already filters
+    // to digits at keystroke, so the only reachable failure here is a short (1–9 digit) number.
+    if (form.mobile) {
+      const mobileErr = validatePattern('mobile', form.mobile);
+      if (mobileErr) { toast.error(mobileErr); return; }
     }
     createMutation.mutate(form);
   };
@@ -237,8 +247,13 @@ export default function IOManagement() {
                 <label className="text-zinc-400 font-semibold">Mobile</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   value={form.mobile}
-                  onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+                  // Constrain at keystroke: strip non-digits and cap at 10 so "abcd" / overlong
+                  // input can never be entered (was previously accepted, then silently truncated
+                  // to '' by io.service.js). Length is enforced on submit (handleCreate).
+                  onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                  maxLength={10}
                   placeholder="9876543210"
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] transition-all font-mono"
                 />

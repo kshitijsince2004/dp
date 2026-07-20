@@ -88,7 +88,18 @@ async function resolveCreatePsId(jurisdictionQuery, bodyPsId) {
   return bodyPsId;
 }
 
-const normalizeMobile = (mobile) => (mobile ? String(mobile).replace(/\D/g, '') : null);
+// Reject-not-truncate (#10, 2026-07-20): mobile is optional, but when provided it must be
+// exactly 10 digits. The old body `mobile ? …replace(/\D/g,'') : null` silently turned "abcd"
+// into '' (an empty string stored as if it were a real number) and accepted any length. Now a
+// blank stays null; anything else must reduce to exactly 10 digits or the whole create/update
+// is rejected (controller → 400). Frontend already constrains the input to ≤10 digits; this is
+// the API-layer last line of defense for direct callers.
+const normalizeMobile = (mobile) => {
+  if (mobile === undefined || mobile === null || String(mobile).trim() === '') return null;
+  const digits = String(mobile).replace(/\D/g, '');
+  if (digits.length !== 10) throw new Error('Mobile number must be exactly 10 digits');
+  return digits;
+};
 
 export async function createIO(jurisdictionQuery, body) {
   const name = (body.name || '').trim();

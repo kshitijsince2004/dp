@@ -54,13 +54,12 @@ export function useFilterPresets() {
       });
 
       const payload = {
-        name_en: name,
-        name_hi: name,
+        name,
         filter_spec: {
           logic: 'AND',
           conditions
         },
-        applicable_record_types: filters.type && filters.type !== 'ALL' ? [filters.type] : ['CASE', 'ARREST', 'PCR_CALL']
+        record_types: filters.type && filters.type !== 'ALL' ? [filters.type] : ['CASE', 'ARREST', 'PCR_CALL']
       };
 
       const res = await api.post('/filters/presets', payload);

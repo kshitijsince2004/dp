@@ -1826,7 +1826,8 @@
    "name_part": 1
   },
   "validation_rules": {
-   "required": false
+   "required": false,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -1875,7 +1876,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "arrested_last_name",
@@ -1908,7 +1912,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "arrested_nickname",
@@ -1940,7 +1947,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "nick_name",
@@ -1972,7 +1982,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "arrested_gender",

@@ -1,55 +1,53 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../../config/db.js';
 import * as eventBus from '../../events/eventBus.js';
-import { logger } from '../../utils/logger.js';
-
-const isPostgres = () => {
-  const c = db.client.config.client;
-  return c === 'postgresql' || c === 'pg';
-};
 
 export const getLinkTypes = async () => {
   return db('link_type_registry').where({ is_active: true }).orderBy('code');
 };
 
 export const getLinksForRecord = async (recordId) => {
-  if (!isPostgres()) return [];
-  try {
-    const result = await db.raw(`
-      SELECT
-        rl.id,
-        rl.metadata,
-        rl.created_at AS linked_at,
-        ltr.code            AS link_type_code,
-        ltr.label           AS link_type_label,
-        ltr.cardinality,
-        CASE WHEN rl.source_record_id = :recordId THEN 'source' ELSE 'target' END AS my_role,
-        CASE WHEN rl.source_record_id = :recordId
-             THEN rl.target_record_id
-             ELSE rl.source_record_id
-        END AS linked_record_id,
-        r.record_type       AS linked_record_type,
-        r.current_status    AS linked_record_status,
-        r.record_date       AS linked_record_date,
-        ps.name             AS linked_ps_name,
-        u.name              AS linked_by_name
-      FROM record_links rl
-      JOIN link_type_registry ltr ON rl.link_type_id = ltr.id
-      JOIN records r ON r.id = CASE
-          WHEN rl.source_record_id = :recordId THEN rl.target_record_id
-          ELSE rl.source_record_id
-        END
-      JOIN hierarchy_nodes ps ON ps.id = r.ps_id
-      JOIN users u ON rl.created_by = u.id
-      WHERE rl.source_record_id = :recordId OR rl.target_record_id = :recordId
-      ORDER BY rl.created_at DESC
-    `, { recordId });
+  const result = await db.raw(`
+    SELECT
+      rl.id,
+      rl.metadata,
+      rl.created_at AS linked_at,
+      ltr.code            AS link_type_code,
+      ltr.label           AS link_type_label,
+      ltr.cardinality,
+      CASE WHEN rl.source_record_id = :recordId THEN 'source' ELSE 'target' END AS my_role,
+      CASE WHEN rl.source_record_id = :recordId
+           THEN rl.target_record_id
+           ELSE rl.source_record_id
+      END AS linked_record_id,
+      r.record_type       AS linked_record_type,
+      r.current_status    AS linked_record_status,
+      r.record_date       AS linked_record_date,
+      ps.name             AS linked_ps_name,
+      u.name              AS linked_by_name
+    FROM record_links rl
+    JOIN link_type_registry ltr ON rl.link_type_id = ltr.id
+    JOIN records r ON r.id = CASE
+        WHEN rl.source_record_id = :recordId THEN rl.target_record_id
+        ELSE rl.source_record_id
+      END
+    JOIN hierarchy_nodes ps ON ps.id = r.ps_id
+    JOIN users u ON rl.created_by = u.id
+    WHERE rl.source_record_id = :recordId OR rl.target_record_id = :recordId
+    ORDER BY rl.created_at DESC
+  `, { recordId });
 
-    return result.rows || [];
-  } catch (err) {
-    logger.warn('[RecordLinks] getLinksForRecord failed (table may not exist yet):', err.message);
-    return [];
-  }
+  return result.rows || [];
+};
+
+// Fetch a single link row (with its link-type code) — used by the controller to resolve
+// the owning/source record before an access check on delete (P5.6 / RECORD-LINKAGE.md).
+export const getLinkById = async (linkId) => {
+  return db('record_links as rl')
+    .select('rl.*', 'ltr.code as link_type_code')
+    .join('link_type_registry as ltr', 'rl.link_type_id', 'ltr.id')
+    .where('rl.id', linkId)
+    .first();
 };
 
 export const createLink = async ({ sourceRecordId, targetRecordId, linkTypeCode, userId, metadata = {} }) => {
@@ -123,11 +121,7 @@ export const createLink = async ({ sourceRecordId, targetRecordId, linkTypeCode,
 };
 
 export const deleteLink = async (linkId, userId) => {
-  const link = await db('record_links as rl')
-    .select('rl.*', 'ltr.code as link_type_code')
-    .join('link_type_registry as ltr', 'rl.link_type_id', 'ltr.id')
-    .where('rl.id', linkId)
-    .first();
+  const link = await getLinkById(linkId);
 
   if (!link) {
     const err = new Error('Link not found');
@@ -147,53 +141,64 @@ export const deleteLink = async (linkId, userId) => {
   });
 };
 
-export const searchPersonAcrossArrests = async ({ searchTerm, fatherName, psId, districtId, limit = 50 }) => {
-  const pg = isPostgres();
-  const jsonExtract = (field) => {
-    return pg
-      ? `CAST(records.data AS jsonb)->>'${field}'`
-      : `json_extract(records.data, '$.${field}')`;
-  };
-
-  let query = db('records')
-    .select(
-      'records.id',
-      'records.current_status',
-      'records.record_date',
-      'records.ps_id',
-      db.raw(`${jsonExtract('arrested_name')} AS arrested_name`),
-      db.raw(`${jsonExtract('fullName')} AS full_name`),
-      db.raw(`${jsonExtract('father_name')} AS father_name`),
-      db.raw(`${jsonExtract('fatherName')} AS father_name_alt`),
-      db.raw(`${jsonExtract('parents_name')} AS parents_name`),
-      db.raw(`${jsonExtract('arrested_address')} AS address`),
-      db.raw(`${jsonExtract('address')} AS address_alt`),
-      db.raw(`${jsonExtract('arrest_date')} AS arrest_date`),
-      db.raw(`${jsonExtract('dateOfArrest')} AS arrest_date_alt`),
-      db.raw(`${jsonExtract('crime_head')} AS crime_head`),
-      db.raw(`${jsonExtract('crimeHead')} AS crime_head_alt`),
-      db.raw(`${jsonExtract('uid')} AS uid`),
-      'ps.name_en AS ps_name'
-    )
+// Person search across ARREST records (RECORD-LINKAGE.md §8, rebuilt for the typed schema —
+// the old jsonb blob column on the spine is gone). Arrestee facts live in `persons`
+// (role=ARRESTEE), joined THROUGH the `records` spine (baseline P5.3: detail/person rows are
+// never queried standalone). jurisdictionQuery is the enforced scope (P5) and is applied unconditionally;
+// psId/districtId are optional narrowing params for globally-scoped roles and are ANDed in,
+// so they can never widen beyond what enforceScope already granted.
+export const searchPersonAcrossArrests = async ({
+  searchTerm,
+  fatherName,
+  jurisdictionQuery = {},
+  psId,
+  districtId,
+  limit = 50
+}) => {
+  let query = db('persons as p')
+    .join('records', 'p.record_id', 'records.id')
     .join('hierarchy_nodes as ps', 'records.ps_id', 'ps.id')
-    .where('records.record_type', 'ARREST');
+    .leftJoin('arrestee_details as ad', 'p.id', 'ad.person_id')
+    .leftJoin('arrest_details as arr', 'records.id', 'arr.record_id')
+    .leftJoin('locations as loc', 'p.present_location_id', 'loc.id')
+    .where('records.record_type', 'ARREST')
+    .where('p.role', 'ARRESTEE')
+    .select(
+      'p.id as person_id',
+      'p.name as name',
+      'p.relative_name as relative_name',
+      'p.relation_type as relation_type',
+      'p.gender as gender',
+      'p.age as age',
+      'p.mobile as mobile',
+      db.raw(`NULLIF(CONCAT_WS(', ', loc.house_no, loc.street, loc.colony, loc.city_town_village, loc.district, loc.state), '') AS address`),
+      'records.id as record_id',
+      'records.record_type as record_type',
+      'records.record_date as record_date',
+      'records.current_status as current_status',
+      'ad.arrest_date as arrest_date',
+      'arr.fir_no as fir_no',
+      'ps.name as ps_name'
+    );
 
+  // Enforced jurisdiction scope (P5) — from enforceScope, never optional.
+  if (jurisdictionQuery.ps_id) query = query.where('records.ps_id', jurisdictionQuery.ps_id);
+  if (jurisdictionQuery.sub_div_id) query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id);
+  if (jurisdictionQuery.district_id) query = query.where('records.district_id', jurisdictionQuery.district_id);
+
+  // Optional narrowing within the enforced scope (meaningful for globally-scoped roles only —
+  // ANDed with the predicates above, so a scoped user's psId/districtId param can never widen).
   if (psId) query = query.where('records.ps_id', psId);
   if (districtId) query = query.where('records.district_id', districtId);
 
   if (searchTerm) {
-    if (pg) {
-      query = query.whereRaw('records.data::text ILIKE ?', [`%${searchTerm}%`]);
-    } else {
-      query = query.where('records.data', 'LIKE', `%${searchTerm}%`);
-    }
+    query = query.where((b) => {
+      b.where('p.name', 'ILIKE', `%${searchTerm}%`)
+        .orWhereRaw('p.nick_names::text ILIKE ?', [`%${searchTerm}%`]);
+    });
   }
   if (fatherName) {
-    if (pg) {
-      query = query.whereRaw(`(${jsonExtract('father_name')} ILIKE ? OR ${jsonExtract('fatherName')} ILIKE ? OR ${jsonExtract('parents_name')} ILIKE ?)`, [`%${fatherName}%`, `%${fatherName}%`, `%${fatherName}%`]);
-    } else {
-      query = query.where('records.data', 'LIKE', `%${fatherName}%`);
-    }
+    query = query.where('p.relative_name', 'ILIKE', `%${fatherName}%`);
   }
 
   return query.limit(limit).orderBy('records.record_date', 'desc');

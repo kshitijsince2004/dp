@@ -65,7 +65,8 @@
    "value": true
   },
   "validation_rules": {
-   "required": true
+   "required": true,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -133,9 +134,7 @@
    "table": "uidb_details",
    "column": "uidb_no"
   },
-  "validation_rules": {
-   "required": true
-  },
+  "validation_rules": {},
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -871,7 +870,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "latlong"
+  }
  },
  {
   "field_key": "found_longitude",
@@ -902,7 +904,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "latlong"
+  }
  },
  {
   "field_key": "approx_age",

@@ -645,7 +645,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "latlong"
+  }
  },
  {
   "field_key": "occurrence_longitude",
@@ -676,7 +679,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "latlong"
+  }
  },
  {
   "field_key": "beat_no",
@@ -1505,7 +1511,8 @@
    "name_part": 1
   },
   "validation_rules": {
-   "required": false
+   "required": false,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -1552,7 +1559,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "complainant_last_name",
@@ -1584,7 +1594,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "complainant_nickname",
@@ -1615,7 +1628,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "complainant_gender",
@@ -2789,7 +2805,8 @@
    "name_part": 1
   },
   "validation_rules": {
-   "required": false
+   "required": false,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -2838,7 +2855,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "accused_last_name",
@@ -2871,7 +2891,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "accused_nickname",
@@ -2903,7 +2926,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "accused_gender",
@@ -4069,7 +4095,8 @@
    "name_part": 1
   },
   "validation_rules": {
-   "required": true
+   "required": true,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -4118,7 +4145,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "victim_last_name",
@@ -4151,7 +4181,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "victim_nickname",
@@ -4183,7 +4216,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "victim_gender",

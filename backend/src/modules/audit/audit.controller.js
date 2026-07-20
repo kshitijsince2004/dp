@@ -1,6 +1,7 @@
 import db from '../../config/db.js';
-import { verifyAuditChain } from '../../utils/hash.js';
-import { publish } from '../../events/eventBus.js';
+import { runChainVerification } from './audit.service.js';
+import { setRecordFrozen } from '../records/records.service.js';
+import { verifyRecordAccess } from '../../middleware/rbac.middleware.js';
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -14,8 +15,11 @@ export const getRecordAudit = async (req, res) => {
   const { recordId } = req.params;
 
   try {
+    // Single-record op: verify geographical scope access before querying (P5.2)
+    await verifyRecordAccess(recordId, req.user);
+
     const revisions = await db('record_revisions')
-      .select('record_revisions.*', 'u.username', 'u.badge_no', 'u.name_en', 'u.name_hi')
+      .select('record_revisions.*', 'u.username', 'u.badge_no', 'u.name')
       .leftJoin('users as u', 'record_revisions.changed_by', 'u.id')
       .where('record_revisions.record_id', recordId)
       .orderBy('record_revisions.revision_number', 'asc');
@@ -31,7 +35,9 @@ export const getRecordAudit = async (req, res) => {
       data: formatted
     });
   } catch (error) {
-    return res.status(500).json({
+    // Mirror records.controller.js's access-denial mapping exactly.
+    const status = error.message.includes('Access denied') ? 403 : 500;
+    return res.status(status).json({
       status: 'error',
       success: false,
       message: error.message
@@ -47,6 +53,24 @@ export const getUserAudit = async (req, res) => {
   const offset = (page - 1) * limit;
 
   try {
+    // DISTRICT_OFFICER may only read the audit trail of users inside their own
+    // district — look up the target user first; deny if the districts differ.
+    // HQ_ANALYST/HQ_ADMIN/SYSTEM_ADMIN (already the only other roles `allow()`
+    // permits on this route) stay global.
+    if (req.user.role === 'DISTRICT_OFFICER') {
+      const targetUser = await db('users').where({ id: userId }).first();
+      if (!targetUser) {
+        return res.status(404).json({ status: 'error', success: false, message: 'User not found' });
+      }
+      if (targetUser.district_id !== req.user.district_id) {
+        return res.status(403).json({
+          status: 'error',
+          success: false,
+          message: 'Access denied: user falls outside your district jurisdiction'
+        });
+      }
+    }
+
     let query = db('record_revisions')
       .select('record_revisions.*', 'r.record_type', 'r.current_status')
       .leftJoin('records as r', 'record_revisions.record_id', 'r.id')
@@ -113,36 +137,35 @@ export const getAuditLogs = async (req, res) => {
   }
 };
 
+const actorFromReq = (req) => (req.user ? { id: req.user.userId || req.user.id, role: req.user.role } : null);
+
+/**
+ * GET  /audit/chain-verify        → read-only verification report (never mutates).
+ * POST /audit/chain-verify        → verification + enforcement: broken records are frozen and an
+ *                                   alert is published. `?freeze=false` runs the same pass without
+ *                                   freezing (a manual dry-run over the mutating verb).
+ * Both return the full break list so a monitor can see every affected record, not just the first.
+ */
 export const verifyAuditChainEndpoint = async (req, res) => {
   try {
-    const result = await verifyAuditChain(db);
-    if (!result.valid) {
-      // Publish critical alert
-      await publish('audit.chain_break_detected', {
-        broken_revision_id: result.broken_revision_id,
-        record_id: result.record_id,
-        detected_at: new Date().toISOString(),
-        scanner_user_id: req.user ? (req.user.userId || req.user.id) : null
-      });
-
-      return res.status(200).json({
-        status: 'success',
-        success: true,
-        data: {
-          valid: false,
-          broken_at: result.broken_revision_id,
-          record_id: result.record_id,
-          reason: result.reason
-        }
-      });
-    }
+    const enforce = req.method === 'POST' && req.query.freeze !== 'false';
+    const result = await runChainVerification({ freezeOnBreak: enforce, actor: actorFromReq(req) });
 
     return res.status(200).json({
       status: 'success',
       success: true,
       data: {
-        valid: true
-      }
+        valid: result.valid,
+        checked_records: result.checked_records,
+        checked_revisions: result.checked_revisions,
+        breaks: result.breaks,
+        unverifiable: result.unverifiable ?? [],
+        unverifiable_count: (result.unverifiable ?? []).length,
+        frozen: result.frozen,
+        freezeSkipped: result.freezeSkipped ?? false,
+        freezeSkippedReason: result.freezeSkippedReason ?? null,
+        enforced: enforce,
+      },
     });
   } catch (error) {
     return res.status(500).json({
@@ -150,6 +173,36 @@ export const verifyAuditChainEndpoint = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+/**
+ * POST /audit/records/:recordId/freeze — manually freeze a record pending audit review.
+ * POST /audit/records/:recordId/unfreeze — lift a freeze after a privileged review; a reason is
+ * mandatory so every unfreeze is accountable in `audit_logs`.
+ */
+export const freezeRecordEndpoint = async (req, res) => {
+  const { recordId } = req.params;
+  const { reason } = req.body || {};
+  try {
+    const result = await setRecordFrozen(recordId, true, { user: actorFromReq(req), reason });
+    return res.status(200).json({ status: 'success', success: true, data: result });
+  } catch (error) {
+    return res.status(error.status || 500).json({ status: 'error', success: false, message: error.message });
+  }
+};
+
+export const unfreezeRecordEndpoint = async (req, res) => {
+  const { recordId } = req.params;
+  const { reason } = req.body || {};
+  if (!reason || reason.trim().length < 10) {
+    return res.status(422).json({ status: 'error', success: false, message: 'An unfreeze reason of at least 10 characters is required.' });
+  }
+  try {
+    const result = await setRecordFrozen(recordId, false, { user: actorFromReq(req), reason });
+    return res.status(200).json({ status: 'success', success: true, data: result });
+  } catch (error) {
+    return res.status(error.status || 500).json({ status: 'error', success: false, message: error.message });
   }
 };
 

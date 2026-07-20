@@ -5,6 +5,7 @@ import { logger } from './src/utils/logger.js';
 import app from './src/app.js';
 import { createServer } from 'http';
 import { startWarehouseSync } from './src/modules/warehouse/warehouse.scheduler.js';
+import { startAuditVerification } from './src/modules/audit/audit.scheduler.js';
 import { runStartupAutoload } from './src/bootstrap/autoload.js';
 import * as notifyHandler from './src/events/handlers/notifyHandler.js';
 import * as linkAuditHandler from './src/events/handlers/linkAuditHandler.js';
@@ -56,6 +57,9 @@ const start = async () => {
 
       // Start warehouse sync scheduler
       startWarehouseSync();
+
+      // Start audit hash-chain verification scheduler (freezes records on a detected break)
+      startAuditVerification();
     });
   } catch (error) {
     logger.error(`Startup failed: ${error.message}`);

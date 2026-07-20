@@ -33,8 +33,10 @@
 // keep their existing per-rule leniency, documented at each site below.
 import {
   resolveAct, resolveSection, resolveMajorHead, resolveMinorHead, resolveLocalHead, resolveBeat,
+  normalizeDate,
 } from '../records/records.normalize.js';
 import { validateRequiredFields } from '../records/records.service.js';
+import { enumCoercion, pincodeCoercion, resolveStorage } from '../records/records.mapper.js';
 import { canonKey, effectiveRecordType } from './import.parse.js';
 import { composeRecordPayload, sourceRefFor } from './import.compose.js';
 import { getDropOnlyKeys } from './import-key-bridge.config.js';
@@ -392,11 +394,63 @@ async function findDuplicateFirsInDb(trx, psId, canonicalFirNos) {
  * `dbDuplicateFirs` is the pre-computed Set from findDuplicateFirsInDb (batch-level, computed
  * once by the caller — see validateBatch) — only meaningful (and only ever populated) for CASE.
  */
-async function validateComposedRow(trx, recordType, isLegacy, batchScope, payload, rawParentRow, dbDuplicateFirs, ioByPis) {
+/** Title Case a stored enum value for an operator-facing message ('STOLEN' -> 'Stolen'). */
+const titleCaseEnum = (v) => (v ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : v);
+
+/**
+ * Detect cells the write path will SALVAGE (discard or default a bad value) and emit an operator
+ * WARNING for each — user decision 2026-07-20. The row still imports; the operator gets a signal
+ * that catches column-misalignment (e.g. a whole file shifted so surnames land in the gender
+ * column) before the plausible-but-wrong record propagates into compilations/analytics. Reuses
+ * the EXACT coercion detectors the mapper's write path uses (enumCoercion/pincodeCoercion), so a
+ * warning can never claim a change the write path won't make, or miss one it will.
+ */
+function detectCoercionWarnings(recordType, payload, registryMap) {
+  const warnings = [];
+  const effType = effectiveRecordType(recordType);
+  const push = (field_key, label, from, to, kind) => warnings.push({
+    row: payload.rowIdx, field_key, code: 'VALUE_SALVAGED', severity: 'WARNING',
+    message: `${label}: "${from}" is not a recognized ${kind} — imported ${to == null ? 'blank' : `as "${titleCaseEnum(to)}"`}.`,
+  });
+  const colOf = (fk) => {
+    const st = resolveStorage(registryMap[fk]?.storage, effType);
+    return st && typeof st === 'object' ? st.column : null;
+  };
+  const scan = (obj) => {
+    for (const [fk, val] of Object.entries(obj || {})) {
+      if (val === null || val === undefined || String(val).trim() === '') continue;
+      const col = colOf(fk);
+      const label = registryMap[fk]?.label_en || fk;
+      if (col === 'gender' || col === 'relation_type') {
+        const c = enumCoercion('persons', col, val);
+        if (c) push(fk, label, val, c.to, col === 'gender' ? 'gender' : 'relation');
+      } else if (col === 'status') {
+        const c = enumCoercion('record_properties', 'status', val);
+        if (c) push(fk, label, val, c.to, 'status');
+      } else if (col === 'pincode') {
+        if (pincodeCoercion(val)) push(fk, label, val, null, 'pincode');
+      }
+    }
+  };
+  scan(payload.data);
+  for (const p of payload.persons || []) scan(p.data);
+  for (const pr of payload.properties || []) scan(pr);
+  return warnings;
+}
+
+async function validateComposedRow(trx, recordType, isLegacy, batchScope, payload, rawParentRow, dbDuplicateFirs, ioByPis, registryMap) {
   const errors = [];
+  errors.push(...detectCoercionWarnings(recordType, payload, registryMap));
 
   if (!payload.recordDate) {
     errors.push({ row: payload.rowIdx, field_key: null, code: 'RECORD_DATE_MISSING', severity: 'ERROR', message: 'No usable date found for this record (checked FIR/arrest/occurrence date fields).' });
+  } else if (!normalizeDate(payload.recordDate)) {
+    // Present but UNPARSEABLE — e.g. an Excel serial-mangled cell that surfaces as
+    // "31/12/+046027" (year 46027). record_date is NOT NULL and can't be fabricated the way a
+    // status default can, so this row genuinely cannot be written; reject it here with a clear,
+    // per-row reason instead of letting the raw value reach the DATE column and raise pg 22007
+    // (invalid datetime) mid-write as an opaque "system error" (#1 class, 2026-07-20).
+    errors.push({ row: payload.rowIdx, field_key: null, code: 'RECORD_DATE_INVALID', severity: 'ERROR', message: `The record date "${payload.recordDate}" is not a valid date — correct it in the source file and re-validate.` });
   }
 
   // T1 ARREST/KALANDRA keystone: "≥1 arrestee with first name" (03-TRIAGE-MATRIX.md) — the
@@ -683,7 +737,7 @@ export async function validateBatch(trx, { recordType, isLegacy, batchScope, par
   // PS_MISMATCH/IO_NOT_REGISTERED/non-legacy-ref-miss finding invalidates its parent too
   // (whole-FIR atomicity applies here exactly as it does to row-level findings).
   for (const { payload, rawParentRow } of composedPayloads) {
-    const errs = await validateComposedRow(trx, recordType, isLegacy, batchScope, payload, rawParentRow, dbDuplicateFirs, ioByPis);
+    const errs = await validateComposedRow(trx, recordType, isLegacy, batchScope, payload, rawParentRow, dbDuplicateFirs, ioByPis, registryMap);
     for (const e of errs) {
       errorRows.push(e);
       if (e.severity === 'ERROR') invalidate(parentCanonOf(rawParentRow));

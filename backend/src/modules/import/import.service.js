@@ -479,7 +479,13 @@ export async function processBatch(batchId) {
           // (the only place a batch-detail viewer/frontend reads from) gets the sanitized text
           // exclusively. Flagged in the Wave A report: a future wave adding a metadata column
           // would let both live in the DB as the matrix originally described.
-          logger.error(`[ImportService] processBatch ${batchId}: row ${payload.rowIdx} write failed: ${err.message}`);
+          // Log the raw error WITH pg diagnostics (code/constraint/table/column) so an admin can
+          // pinpoint the failing column fast — the 2026-07-20 arrest-import failure was an opaque
+          // `value too long for type character varying(10)` whose column wasn't obvious from the
+          // message alone. Operator-facing text stays sanitized (T7.2); this is logger-only.
+          const diag = [err.code && `code=${err.code}`, err.constraint && `constraint=${err.constraint}`,
+            err.table && `table=${err.table}`, err.column && `column=${err.column}`].filter(Boolean).join(' ');
+          logger.error(`[ImportService] processBatch ${batchId}: row ${payload.rowIdx} write failed: ${err.message}${diag ? ` [${diag}]` : ''}`);
           newErrorRows.push(sanitizedWriteFailedRow(batchId, payload.rowIdx));
         }
       }

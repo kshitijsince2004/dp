@@ -15,7 +15,13 @@ import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore.js';
 
 const QUICK_PROFILES = [
-  { badge: "HQ001",  abbr: "HQ",  role: "Research Cell",          name: "HQ Analyst",          theme: "hq"  },
+  // badge MUST match a seeded users.badge_no (backend/seeds/01_users.js) — the login POST
+  // sends this string straight through. HQ Analyst was "HQ001" (no such badge; the dev alias
+  // /neha|hqa001|analyst/ doesn't match "hq001" either) → 401 → bounce-to-login. Fixed to the
+  // real seed HQA001, and the two remaining HQ-tier roles added (HQD001 / SA001).
+  { badge: "SA001",  abbr: "SYS", role: "System Admin",           name: "System Administrator",  theme: "hq"  },
+  { badge: "HQD001", abbr: "ADM", role: "HQ Admin",               name: "Rajiv Ranjan",          theme: "hq"  },
+  { badge: "HQA001", abbr: "HQ",  role: "Research Cell",          name: "HQ Analyst",          theme: "hq"  },
   { badge: "DO001",  abbr: "DCP", role: "SO Branch/DCP",       name: "New Delhi District",    theme: "dcp" },
   { badge: "ACP001", abbr: "ACP", role: "ACP Sub Division",     name: "Parliament St Subdiv",  theme: "acp" },
   { badge: "SHO001", abbr: "SHO", role: "SHO",  name: "Parliament St PS",      theme: "sho" },

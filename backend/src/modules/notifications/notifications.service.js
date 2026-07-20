@@ -25,7 +25,7 @@ export const getUnreadCount = async (userId) => {
 export const markAsRead = async (id, userId) => {
   const [updated] = await db('notifications')
     .where({ id, user_id: userId })
-    .update({ is_read: true })
+    .update({ is_read: true, read_at: new Date() })
     .returning('*');
   return updated;
 };
@@ -33,6 +33,6 @@ export const markAsRead = async (id, userId) => {
 export const markAllAsRead = async (userId) => {
   await db('notifications')
     .where({ user_id: userId, is_read: false })
-    .update({ is_read: true });
+    .update({ is_read: true, read_at: new Date() });
 };
 

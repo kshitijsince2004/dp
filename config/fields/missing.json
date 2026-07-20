@@ -154,7 +154,8 @@
    "value": true
   },
   "validation_rules": {
-   "required": true
+   "required": true,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -1042,7 +1043,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "missing_relation_type",

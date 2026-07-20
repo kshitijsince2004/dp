@@ -1,109 +1,120 @@
 import db from '../../config/db.js';
-import { v4 as uuidv4 } from 'uuid';
 
+// Canonical record types (matches records.spine / DB_SCHEMA.md) — the previous
+// constants used 'CASES'/'PCR' in a couple of entries, which don't exist as a
+// record_type anywhere else in the codebase. Fixed here (Integration 5, WS2).
+const CANONICAL_RECORD_TYPES = ['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB'];
+
+// In-memory SYSTEM defaults merged into every listPresets response when the DB
+// doesn't already have a row with the same `id` (SYSTEM presets get seeded
+// into the DB over time — these are the fallback set until then). Shaped to
+// match filter_presets columns directly: single `name`, `record_types`.
 const DEFAULT_SYSTEM_PRESETS = [
   {
     id: 'sys_preset_today',
-    name_en: "Today's FIRs",
-    name_hi: "आज की एफआईआर",
+    name: "Today's FIRs",
     scope: 'SYSTEM',
-    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 1 }] }),
-    applicable_record_types: JSON.stringify(['CASES']),
+    scope_id: null,
+    filter_spec: { logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 1 }] },
+    record_types: ['CASE'],
     is_active: true
   },
   {
     id: 'sys_preset_pending_sho',
-    name_en: "Pending SHO approval",
-    name_hi: "एसएचओ अनुमोदन के लिए लंबित",
+    name: 'Pending SHO approval',
     scope: 'SYSTEM',
-    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_status', operator: 'eq', value: 'PENDING_SHO' }] }),
-    applicable_record_types: JSON.stringify(['CASES', 'ARREST', 'PCR']),
+    scope_id: null,
+    filter_spec: { logic: 'AND', conditions: [{ field: '_status', operator: 'eq', value: 'PENDING_SHO' }] },
+    record_types: ['CASE', 'ARREST', 'PCR_CALL'],
     is_active: true
   },
   {
     id: 'sys_preset_district_review',
-    name_en: "District review queue",
-    name_hi: "जिला समीक्षा कतार",
+    name: 'District review queue',
     scope: 'SYSTEM',
-    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_status', operator: 'eq', value: 'DISTRICT_REVIEW' }] }),
-    applicable_record_types: JSON.stringify(['CASES', 'ARREST', 'PCR']),
+    scope_id: null,
+    filter_spec: { logic: 'AND', conditions: [{ field: '_status', operator: 'eq', value: 'DISTRICT_REVIEW' }] },
+    record_types: ['CASE', 'ARREST', 'PCR_CALL'],
     is_active: true
   },
   {
     id: 'sys_preset_sla_breach',
-    name_en: "SLA approaching breach",
-    name_hi: "समय सीमा उल्लंघन के करीब",
+    name: 'SLA approaching breach',
     scope: 'SYSTEM',
-    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_sla_breached', operator: 'is_true' }] }),
-    applicable_record_types: JSON.stringify(['CASES', 'ARREST', 'PCR']),
+    scope_id: null,
+    filter_spec: { logic: 'AND', conditions: [{ field: '_sla_breached', operator: 'is_true' }] },
+    record_types: ['CASE', 'ARREST', 'PCR_CALL'],
     is_active: true
   },
   {
     id: 'sys_preset_last_30_days',
-    name_en: "Less than 30 days",
-    name_hi: "30 दिनों से कम",
+    name: 'Less than 30 days',
     scope: 'SYSTEM',
-    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 30 }] }),
-    applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB']),
+    scope_id: null,
+    filter_spec: { logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 30 }] },
+    record_types: CANONICAL_RECORD_TYPES,
     is_active: true
   },
   {
     id: 'sys_preset_last_60_days',
-    name_en: "Less than 60 days",
-    name_hi: "60 दिनों से कम",
+    name: 'Less than 60 days',
     scope: 'SYSTEM',
-    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 60 }] }),
-    applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB']),
+    scope_id: null,
+    filter_spec: { logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 60 }] },
+    record_types: CANONICAL_RECORD_TYPES,
     is_active: true
   },
   {
     id: 'sys_preset_last_90_days',
-    name_en: "Less than 90 days",
-    name_hi: "90 दिनों से कम",
+    name: 'Less than 90 days',
     scope: 'SYSTEM',
-    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 90 }] }),
-    applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB']),
+    scope_id: null,
+    filter_spec: { logic: 'AND', conditions: [{ field: '_record_date', operator: 'last_n_days', value: 90 }] },
+    record_types: CANONICAL_RECORD_TYPES,
     is_active: true
   },
   {
     id: 'sys_preset_older_than_90_days',
-    name_en: "More than 90 days",
-    name_hi: "90 दिनों से अधिक",
+    name: 'More than 90 days',
     scope: 'SYSTEM',
-    filter_spec: JSON.stringify({ logic: 'AND', conditions: [{ field: '_record_date', operator: 'older_than_n_days', value: 90 }] }),
-    applicable_record_types: JSON.stringify(['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB']),
+    scope_id: null,
+    filter_spec: { logic: 'AND', conditions: [{ field: '_record_date', operator: 'older_than_n_days', value: 90 }] },
+    record_types: CANONICAL_RECORD_TYPES,
     is_active: true
   }
 ];
 
+// Compat alias: name_en/applicable_record_types mirror the real `name`/
+// `record_types` columns for frontend consumers that still read the old keys
+// — deprecated, drain on touch (same pattern as hierarchy.controller.js
+// withNameAlias). node-pg already parses jsonb columns into JS values, so no
+// JSON.parse gymnastics are needed here on read.
+const withAliases = (row) => ({
+  ...row,
+  name_en: row.name,
+  record_types: row.record_types || [],
+  applicable_record_types: row.record_types || []
+});
+
 export const listPresets = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.userId;
+
     const list = await db('filter_presets')
       .where({ is_active: true })
       .andWhere(builder => {
         builder.where({ scope: 'SYSTEM' })
-          .orWhere({ scope: 'ROLE', scope_id: req.user.role })
-          .orWhere({ scope: 'USER', scope_id: req.user.id || req.user.userId });
+          .orWhere({ scope: 'USER', created_by: userId });
       });
 
-    const parsedList = list.map(item => ({
-      ...item,
-      filter_spec: typeof item.filter_spec === 'string' ? JSON.parse(item.filter_spec) : item.filter_spec,
-      applicable_record_types: typeof item.applicable_record_types === 'string'
-        ? JSON.parse(item.applicable_record_types || '[]')
-        : item.applicable_record_types
-    }));
+    const parsedList = list.map(withAliases);
 
-    // If SYSTEM presets are not loaded in the DB, merge the default ones
+    // Merge in-memory SYSTEM defaults for any not already present in the DB.
     const systemDbIds = new Set(parsedList.filter(p => p.scope === 'SYSTEM').map(p => p.id));
     const mergedList = [...parsedList];
     DEFAULT_SYSTEM_PRESETS.forEach(def => {
       if (!systemDbIds.has(def.id)) {
-        mergedList.push({
-          ...def,
-          filter_spec: JSON.parse(def.filter_spec),
-          applicable_record_types: JSON.parse(def.applicable_record_types)
-        });
+        mergedList.push(withAliases({ ...def }));
       }
     });
 
@@ -114,51 +125,61 @@ export const listPresets = async (req, res) => {
 };
 
 export const createPreset = async (req, res) => {
-  const { name_en, name_hi, scope, scope_id, filter_spec, applicable_record_types } = req.body;
+  const body = req.body || {};
+  const name = body.name || body.name_en;
+  const filter_spec = body.filter_spec;
+  const record_types = body.record_types || body.applicable_record_types || [];
+  const requestedScope = body.scope;
 
-  if (!name_en || !name_hi || !filter_spec) {
-    return res.status(400).json({ status: 'error', message: 'name_en, name_hi, and filter_spec are required' });
+  if (!name || !filter_spec) {
+    return res.status(400).json({ status: 'error', message: 'name and filter_spec are required' });
   }
 
+  // Only SYSTEM_ADMIN may create a SYSTEM-scoped preset (SYSTEM presets are
+  // visible to every user — anything else would be a privilege-escalation
+  // hole). Everyone else always gets a USER preset owned by themselves.
+  let scope = 'USER';
+  if (requestedScope === 'SYSTEM') {
+    if (req.user.role !== 'SYSTEM_ADMIN') {
+      return res.status(403).json({ status: 'error', message: 'Only SYSTEM_ADMIN can create SYSTEM presets' });
+    }
+    scope = 'SYSTEM';
+  }
+
+  // scope_id is reserved for future geographic (hierarchy-node-scoped)
+  // presets — never populated by USER/SYSTEM presets today.
+  const row = {
+    name,
+    scope,
+    scope_id: null,
+    filter_spec: JSON.stringify(filter_spec),
+    record_types: JSON.stringify(Array.isArray(record_types) ? record_types : []),
+    created_by: req.user.id || req.user.userId || null,
+    is_active: true,
+    updated_at: new Date().toISOString()
+  };
+
   try {
-    const id = uuidv4();
-    const finalScope = scope || 'USER';
-    const finalScopeId = scope_id || (finalScope === 'ROLE' ? req.user.role : (req.user.id || req.user.userId));
-
-    const row = {
-      id,
-      name_en,
-      name_hi,
-      scope: finalScope,
-      scope_id: finalScopeId,
-      filter_spec: typeof filter_spec === 'string' ? filter_spec : JSON.stringify(filter_spec),
-      applicable_record_types: Array.isArray(applicable_record_types)
-        ? JSON.stringify(applicable_record_types)
-        : (applicable_record_types || '[]'),
-      created_by: req.user ? (req.user.id || req.user.userId) : null,
-      is_active: true,
-      created_at: new Date().toISOString()
-    };
-
-    await db('filter_presets').insert(row);
-
-    return res.status(201).json({
-      status: 'success',
-      data: {
-        ...row,
-        filter_spec: typeof row.filter_spec === 'string' ? JSON.parse(row.filter_spec) : row.filter_spec,
-        applicable_record_types: typeof row.applicable_record_types === 'string'
-          ? JSON.parse(row.applicable_record_types)
-          : row.applicable_record_types
-      }
-    });
+    const [inserted] = await db('filter_presets').insert(row).returning('*');
+    return res.status(201).json({ status: 'success', data: withAliases(inserted) });
   } catch (error) {
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const deletePreset = async (req, res) => {
   const { id } = req.params;
+
+  // The in-memory DEFAULT_SYSTEM_PRESETS carry non-uuid ids (e.g.
+  // 'sys_preset_today') since they never get inserted into the (uuid PK)
+  // table. Without this guard, a delete attempt against one of them (the
+  // panel renders a delete control on every preset it lists) would hit the
+  // DB with an invalid uuid literal and 500 instead of 404.
+  if (!UUID_RE.test(id)) {
+    return res.status(404).json({ status: 'error', message: 'Preset not found' });
+  }
 
   try {
     const preset = await db('filter_presets').where({ id }).first();
@@ -166,15 +187,18 @@ export const deletePreset = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Preset not found' });
     }
 
-    // RBAC: users can only delete their own USER presets or ROLE presets if they are admin
+    const userId = req.user.id || req.user.userId;
+
+    // RBAC: SYSTEM presets only deletable by SYSTEM_ADMIN; USER presets by
+    // their owner or SYSTEM_ADMIN.
     if (preset.scope === 'SYSTEM' && req.user.role !== 'SYSTEM_ADMIN') {
       return res.status(403).json({ status: 'error', message: 'Only SYSTEM_ADMIN can delete system presets' });
     }
-    if (preset.scope === 'USER' && preset.created_by !== (req.user.id || req.user.userId) && req.user.role !== 'SYSTEM_ADMIN') {
+    if (preset.scope === 'USER' && preset.created_by !== userId && req.user.role !== 'SYSTEM_ADMIN') {
       return res.status(403).json({ status: 'error', message: 'Access denied: You can only delete your own presets' });
     }
 
-    await db('filter_presets').where({ id }).update({ is_active: false });
+    await db('filter_presets').where({ id }).update({ is_active: false, updated_at: new Date().toISOString() });
     return res.status(200).json({ status: 'success', message: 'Preset deleted successfully' });
   } catch (error) {
     return res.status(500).json({ status: 'error', message: error.message });

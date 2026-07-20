@@ -38,6 +38,20 @@ form into typed rows purely from these (no hardcoded field lists anywhere else):
 The leaf shapes are DB_SCHEMA.md §6.1's four; `per_type`/`$detail`/`offence`/`ui_only`
 are implementation-phase dispatch extensions recorded in `docs/db-audit/HANDOFF.md`.
 
+## Field validation (`validation_rules`)
+
+`validation_rules` on a field drives the frontend's constrain/validate layer. Keys:
+- `required: true` — blocks submit/Next when empty (registry + `show_when`-aware).
+- `pattern: "name" | "latlong" | "mobile"` (bugfix batch 2026-07-20) — a reusable format check
+  read by `DynamicForm.validateSection` via `frontend/src/utils/fieldPatterns.js` (the SINGLE
+  source of these validators): `name` = reject digits in person-name fields; `latlong` = numeric
+  (`^[+-]?\d+(\.\d+)?$`); `mobile` = exactly 10 digits. Runs for ANY non-empty value (required or
+  not). Add a new named pattern in `fieldPatterns.js`, then tag fields with
+  `validation_rules.pattern` + `npm run sync-config`. Do NOT scatter per-field regexes across
+  renderers. (Note: the bulk-IMPORT path does not run this frontend layer — its own
+  normalize/coercion in `records.mapper.js` is the server-side line; see
+  `docs/new-db-integration/03-import.md` addendum.)
+
 ## Workflow config notes
 
 `to_status: "@PRIOR"` on the transfer accept/reject rows = restore
