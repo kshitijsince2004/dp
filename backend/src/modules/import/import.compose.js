@@ -8,6 +8,12 @@
 import { getRecordDate, canonKey, mergeNonEmpty } from './import.parse.js';
 import { getBridge, ARREST_PERSON_SHEET_RECORD_LEVEL_KEYS } from './import-key-bridge.config.js';
 import { normalizeFirNo } from '../records/records.normalize.js';
+import { getLogger } from '../../utils/logger.js';
+
+// STYLE ANCHOR match — see import.parse.js's header comment. This is the "every column
+// bridged, every compose" layer: applyBridge logs each rename/compose/drop decision,
+// composeRecordPayload logs the assembled shape per parent row.
+const log = getLogger('import.compose');
 
 // Per-type act-sheet column names feeding the offences[] row builder — see
 // docs/new-db-integration/03-import.md and COMPOSER_ONLY_KEYS in
@@ -34,8 +40,15 @@ export function applyBridge(rowData, bridge) {
       delete out[key];
       if (out[entry.to] === undefined || out[entry.to] === null || out[entry.to] === '') {
         out[entry.to] = val;
+        log.debug('applyBridge: renamed key', { from: key, to: entry.to, hasValue: val !== null && val !== undefined && val !== '' });
+      } else {
+        log.debug('applyBridge: rename target already set — value dropped', { from: key, to: entry.to });
       }
-    } else if (entry.drop || entry.validateOnly) {
+    } else if (entry.drop) {
+      log.debug('applyBridge: dropped key', { key, hadValue: out[key] !== null && out[key] !== undefined && out[key] !== '' });
+      delete out[key];
+    } else if (entry.validateOnly) {
+      log.debug('applyBridge: validateOnly key consumed then dropped', { key });
       delete out[key];
     }
     // { compose } entries are handled by composeFields below, once, after every rename —
@@ -44,9 +57,15 @@ export function applyBridge(rowData, bridge) {
   for (const [key, entry] of Object.entries(bridge)) {
     if (!entry.compose) continue;
     const { targetKey, from, joiner } = entry.compose;
-    if (out[targetKey] !== undefined && out[targetKey] !== null && out[targetKey] !== '') continue; // already set — don't clobber
+    if (out[targetKey] !== undefined && out[targetKey] !== null && out[targetKey] !== '') {
+      log.debug('applyBridge: compose target already set — skipping composition', { targetKey, from });
+      continue; // already set — don't clobber
+    }
     const parts = from.map((k) => rowData[k]).filter((v) => v !== null && v !== undefined && v !== '');
-    if (parts.length) out[targetKey] = parts.join(joiner ?? ' ');
+    if (parts.length) {
+      out[targetKey] = parts.join(joiner ?? ' ');
+      log.debug('applyBridge: composed field from N cells', { targetKey, from, partsUsed: parts.length });
+    }
     for (const k of from) delete out[k];
   }
   return out;
@@ -91,6 +110,10 @@ function buildOffenceEntries(recordType, actRows) {
  *                     records.legacy_ref (docs/new-db-integration/03-import.md C4)
  */
 export function composeRecordPayload(recordType, parentRow, children, sourceRef) {
+  log.debug('composeRecordPayload: enter', {
+    recordType, sourceRef, parentRowIdx: parentRow.rowIdx,
+    childCounts: Object.fromEntries(Object.entries(children).map(([role, rows]) => [role, (rows || []).length])),
+  });
   const bridge = getBridge(recordType);
   const data = applyBridge(parentRow.rowData, bridge);
 
@@ -101,25 +124,36 @@ export function composeRecordPayload(recordType, parentRow, children, sourceRef)
     // normalizeFirNo is the ONE shared brain (records.normalize.js) — the write path applies
     // it again via the mapper, this early pass keeps validate-time dup/linkage checks on the
     // exact value that will be written.
-    if (data.fir_no) data.fir_no = normalizeFirNo(data.fir_no);
+    if (data.fir_no) {
+      const before = data.fir_no;
+      data.fir_no = normalizeFirNo(data.fir_no);
+      log.debug('composeRecordPayload: canonicalized fir_no', { recordType, sourceRef, before, after: data.fir_no });
+    }
   } else if (recordType === 'KALANDRA') {
     // Never fir_no — a DD/GD number routed to arrest_details.fir_no would make
     // linkResolver.js try to auto-link it to a CASE as though it were a real FIR (G2).
     delete data.fir_no;
     data.is_dd_based = true;
+    log.debug('composeRecordPayload: KALANDRA stamped is_dd_based, fir_no stripped (G2 safety)', { sourceRef });
   } else if (recordType === 'MISSING') {
     // missing_details.fir_no is the CASE_MISSING linkage key — same exact-string matching,
     // same canonical form as CASE's fir_no.
-    if (data.missing_fir_no) data.missing_fir_no = normalizeFirNo(data.missing_fir_no);
+    if (data.missing_fir_no) {
+      const before = data.missing_fir_no;
+      data.missing_fir_no = normalizeFirNo(data.missing_fir_no);
+      log.debug('composeRecordPayload: canonicalized missing_fir_no', { sourceRef, before, after: data.missing_fir_no });
+    }
     // case_registered is deliberately NOT a template column (redundant): whether a case is
     // registered for this missing person IS whether an FIR number was entered — derive it.
     data.case_registered = Boolean(data.missing_fir_no);
+    log.debug('composeRecordPayload: derived case_registered from missing_fir_no presence', { sourceRef, caseRegistered: data.case_registered });
   }
 
   const persons = [];
   if (recordType === 'CASE') {
     for (const c of children.victim || []) persons.push({ person_type: 'VICTIM', data: applyBridge(c.rowData, bridge) });
     for (const c of children.accused || []) persons.push({ person_type: 'ACCUSED', data: applyBridge(c.rowData, bridge) });
+    log.debug('composeRecordPayload: built CASE persons[]', { sourceRef, victims: (children.victim || []).length, accused: (children.accused || []).length });
   } else if (recordType === 'ARREST' || recordType === 'KALANDRA') {
     const personRows = (children.person || []).map((c) => applyBridge(c.rowData, bridge));
     for (const p of personRows) persons.push({ person_type: 'ARRESTED', data: p });
@@ -134,6 +168,9 @@ export function composeRecordPayload(recordType, parentRow, children, sourceRef)
       }
       mergeFirstNonEmpty(data, recordLevel);
     }
+    log.debug('composeRecordPayload: built ARRESTED persons[] + merged G6 record-level fields', {
+      recordType, sourceRef, arrestees: personRows.length, recordLevelKeys: ARREST_PERSON_SHEET_RECORD_LEVEL_KEYS.filter((k) => k in data),
+    });
   }
   // MISSING/UIDB/PCR_CALL singleton roles (MISSING, DECEASED) arrive as flat parent-row keys
   // already — the mapper reads them straight from `data`, no persons[] entries needed.
@@ -142,8 +179,10 @@ export function composeRecordPayload(recordType, parentRow, children, sourceRef)
   for (const c of children.property || []) {
     properties.push({ ...applyBridge(c.rowData, bridge), person_index: null });
   }
+  if (properties.length) log.debug('composeRecordPayload: built properties[]', { recordType, sourceRef, count: properties.length });
 
   const offences = buildOffenceEntries(recordType, children.act);
+  log.debug('composeRecordPayload: built offences[]', { recordType, sourceRef, count: offences.length });
 
   // getRecordDate('ARREST'|'KALANDRA', ...) reads date_of_arrest/arrest_date off the FLAT
   // row — but the bridge (date_of_arrest -> arrest_date) moves that value onto the arrestee's
@@ -154,10 +193,18 @@ export function composeRecordPayload(recordType, parentRow, children, sourceRef)
   // Mirrors the pre-Integration-3 controller's own explicit "fallback date_of_arrest ... from
   // first person row" comment — same intent, ported forward. Harmless for the mapper: a stray
   // flat `arrest_date` key is a person-entity field, so splitFlatFields skips it outright.
-  const recordDate = getRecordDate(recordType, data)
-    || ((recordType === 'ARREST' || recordType === 'KALANDRA') ? persons[0]?.data?.arrest_date : null)
-    || null;
+  const flatDate = getRecordDate(recordType, data);
+  const fallbackDate = !flatDate && (recordType === 'ARREST' || recordType === 'KALANDRA') ? persons[0]?.data?.arrest_date : null;
+  const recordDate = flatDate || fallbackDate || null;
+  if (!flatDate && fallbackDate) {
+    log.warn('composeRecordPayload: record_date fell back to first arrestee\'s arrest_date (flat row had none)', { recordType, sourceRef, recordDate });
+  } else if (!recordDate) {
+    log.warn('composeRecordPayload: no usable record_date resolved anywhere', { recordType, sourceRef });
+  }
 
+  log.info('composeRecordPayload: exit', {
+    recordType, sourceRef, recordDate, personsCount: persons.length, propertiesCount: properties.length, offencesCount: offences.length,
+  });
   return { data, persons, properties, offences, recordDate, sourceRef };
 }
 
@@ -166,6 +213,7 @@ export function composeRecordPayload(recordType, parentRow, children, sourceRef)
  * with no natural key — deterministic across re-reads of the same file (needed for the
  * import_batch_id + legacy_ref idempotency pair, C4). */
 export function sourceRefFor(parentKeyField, rowData, rowIdx) {
-  if (parentKeyField && rowData[parentKeyField]) return canonKey(rowData[parentKeyField]);
-  return `row:${rowIdx}`;
+  const ref = (parentKeyField && rowData[parentKeyField]) ? canonKey(rowData[parentKeyField]) : `row:${rowIdx}`;
+  log.debug('sourceRefFor: resolved', { parentKeyField, rowIdx, ref });
+  return ref;
 }

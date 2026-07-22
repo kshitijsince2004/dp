@@ -24,7 +24,7 @@
    }
   ],
   "validation_rules": {
-   "required": true
+   "required": false
   },
   "visible_to_levels": [
    "PS",
@@ -57,7 +57,7 @@
    "column": "occurrence_from_datetime"
   },
   "validation_rules": {
-   "required": true
+   "required": false
   },
   "visible_to_levels": [
    "PS",
@@ -90,7 +90,7 @@
    "column": "occurrence_to_datetime"
   },
   "validation_rules": {
-   "required": true
+   "required": false
   },
   "visible_to_levels": [
    "PS",

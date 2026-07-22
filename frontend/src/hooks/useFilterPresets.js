@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '../utils/api.js';
+import { log } from '../utils/logger.js';
 
 /**
  * useFilterPresets
@@ -19,10 +20,19 @@ export function useFilterPresets() {
   const { data: presets = [], isLoading } = useQuery({
     queryKey: ['filters', 'presets'],
     queryFn: async () => {
-      const res = await api.get('/filters/presets');
+      log.debug('hook:filter_presets:fetch_start', {});
+      let res;
+      try {
+        res = await api.get('/filters/presets');
+      } catch (err) {
+        log.error('hook:filter_presets:fetch_error', { message: err?.message, status: err?.response?.status });
+        throw err;
+      }
       // Backend returns { status: 'success', data: [...] }
       const raw = res.data?.data;
-      return Array.isArray(raw) ? raw : [];
+      const presets = Array.isArray(raw) ? raw : [];
+      log.info('hook:filter_presets:fetch_success', { count: presets.length });
+      return presets;
     },
     staleTime: 5 * 60 * 1000, // 5 min — presets change infrequently
   });
@@ -62,7 +72,9 @@ export function useFilterPresets() {
         record_types: filters.type && filters.type !== 'ALL' ? [filters.type] : ['CASE', 'ARREST', 'PCR_CALL']
       };
 
+      log.debug('hook:filter_presets:save_start', { name, conditionsCount: conditions.length });
       const res = await api.post('/filters/presets', payload);
+      log.info('hook:filter_presets:save_success', { name, presetId: res.data?.data?.id });
       return res.data?.data;
     },
     onSuccess: () => {
@@ -70,6 +82,7 @@ export function useFilterPresets() {
       queryClient.invalidateQueries({ queryKey: ['filters', 'presets'] });
     },
     onError: (err) => {
+      log.error('hook:filter_presets:save_error', { message: err?.message, status: err?.response?.status });
       toast.error(err.response?.data?.message || 'Failed to save preset');
     },
   });

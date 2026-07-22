@@ -1,4 +1,11 @@
 import db from '../../config/db.js';
+import { getLogger } from '../../utils/logger.js';
+
+// Logging-instrumentation-2026-07-22 (B5): matches records.service.js style. HANDOFF §5:
+// "filters: log preset resolution + masking decisions applied" (masking decisions live in
+// level-contracts.service.js; this file covers preset resolution — SYSTEM/USER scope + the
+// in-memory DEFAULT_SYSTEM_PRESETS merge).
+const log = getLogger('filters.controller');
 
 // Canonical record types (matches records.spine / DB_SCHEMA.md) — the previous
 // constants used 'CASES'/'PCR' in a couple of entries, which don't exist as a
@@ -99,6 +106,7 @@ const withAliases = (row) => ({
 export const listPresets = async (req, res) => {
   try {
     const userId = req.user.id || req.user.userId;
+    log.debug('listPresets: enter', { userId });
 
     const list = await db('filter_presets')
       .where({ is_active: true })
@@ -106,20 +114,26 @@ export const listPresets = async (req, res) => {
         builder.where({ scope: 'SYSTEM' })
           .orWhere({ scope: 'USER', created_by: userId });
       });
+    log.debug('listPresets: loaded filter_presets rows', { userId, dbCount: list.length });
 
     const parsedList = list.map(withAliases);
 
     // Merge in-memory SYSTEM defaults for any not already present in the DB.
     const systemDbIds = new Set(parsedList.filter(p => p.scope === 'SYSTEM').map(p => p.id));
     const mergedList = [...parsedList];
+    let mergedDefaults = 0;
     DEFAULT_SYSTEM_PRESETS.forEach(def => {
       if (!systemDbIds.has(def.id)) {
         mergedList.push(withAliases({ ...def }));
+        mergedDefaults++;
       }
     });
+    log.debug('listPresets: merged in-memory SYSTEM defaults', { userId, mergedDefaults, dbSystemCount: systemDbIds.size });
 
+    log.info('listPresets: exit', { userId, resultCount: mergedList.length });
     return res.status(200).json({ status: 'success', data: mergedList });
   } catch (error) {
+    log.error('listPresets: failed', { err: error });
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };
@@ -130,8 +144,10 @@ export const createPreset = async (req, res) => {
   const filter_spec = body.filter_spec;
   const record_types = body.record_types || body.applicable_record_types || [];
   const requestedScope = body.scope;
+  log.debug('createPreset: enter', { userId: req.user?.id, name, requestedScope, recordTypes: record_types });
 
   if (!name || !filter_spec) {
+    log.warn('createPreset: rejected — name or filter_spec missing', { userId: req.user?.id });
     return res.status(400).json({ status: 'error', message: 'name and filter_spec are required' });
   }
 
@@ -141,9 +157,11 @@ export const createPreset = async (req, res) => {
   let scope = 'USER';
   if (requestedScope === 'SYSTEM') {
     if (req.user.role !== 'SYSTEM_ADMIN') {
+      log.warn('createPreset: rejected — non-SYSTEM_ADMIN attempted SYSTEM scope', { userId: req.user?.id, role: req.user?.role });
       return res.status(403).json({ status: 'error', message: 'Only SYSTEM_ADMIN can create SYSTEM presets' });
     }
     scope = 'SYSTEM';
+    log.debug('createPreset: granted SYSTEM scope', { userId: req.user?.id });
   }
 
   // scope_id is reserved for future geographic (hierarchy-node-scoped)
@@ -161,8 +179,10 @@ export const createPreset = async (req, res) => {
 
   try {
     const [inserted] = await db('filter_presets').insert(row).returning('*');
+    log.info('createPreset: wrote filter_presets row', { presetId: inserted.id, scope, userId: req.user?.id });
     return res.status(201).json({ status: 'success', data: withAliases(inserted) });
   } catch (error) {
+    log.error('createPreset: failed', { userId: req.user?.id, err: error });
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };
@@ -171,6 +191,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export const deletePreset = async (req, res) => {
   const { id } = req.params;
+  log.debug('deletePreset: enter', { presetId: id, userId: req.user?.id });
 
   // The in-memory DEFAULT_SYSTEM_PRESETS carry non-uuid ids (e.g.
   // 'sys_preset_today') since they never get inserted into the (uuid PK)
@@ -178,12 +199,14 @@ export const deletePreset = async (req, res) => {
   // panel renders a delete control on every preset it lists) would hit the
   // DB with an invalid uuid literal and 500 instead of 404.
   if (!UUID_RE.test(id)) {
+    log.debug('deletePreset: non-uuid id (in-memory default preset), reporting 404', { presetId: id });
     return res.status(404).json({ status: 'error', message: 'Preset not found' });
   }
 
   try {
     const preset = await db('filter_presets').where({ id }).first();
     if (!preset) {
+      log.warn('deletePreset: rejected — preset not found', { presetId: id });
       return res.status(404).json({ status: 'error', message: 'Preset not found' });
     }
 
@@ -192,15 +215,19 @@ export const deletePreset = async (req, res) => {
     // RBAC: SYSTEM presets only deletable by SYSTEM_ADMIN; USER presets by
     // their owner or SYSTEM_ADMIN.
     if (preset.scope === 'SYSTEM' && req.user.role !== 'SYSTEM_ADMIN') {
+      log.warn('deletePreset: rejected — non-SYSTEM_ADMIN attempted to delete SYSTEM preset', { presetId: id, userId, role: req.user.role });
       return res.status(403).json({ status: 'error', message: 'Only SYSTEM_ADMIN can delete system presets' });
     }
     if (preset.scope === 'USER' && preset.created_by !== userId && req.user.role !== 'SYSTEM_ADMIN') {
+      log.warn('deletePreset: rejected — not the owner of USER preset', { presetId: id, userId, ownerId: preset.created_by });
       return res.status(403).json({ status: 'error', message: 'Access denied: You can only delete your own presets' });
     }
 
     await db('filter_presets').where({ id }).update({ is_active: false, updated_at: new Date().toISOString() });
+    log.info('deletePreset: soft-deleted filter_presets row', { presetId: id, scope: preset.scope, userId });
     return res.status(200).json({ status: 'success', message: 'Preset deleted successfully' });
   } catch (error) {
+    log.error('deletePreset: failed', { presetId: id, err: error });
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };

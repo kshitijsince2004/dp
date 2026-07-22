@@ -16,6 +16,8 @@ import { initScheduler } from './modules/reports/scheduler.js';
 import { ipAllowlistMiddleware, csrfDoubleSubmitMiddleware } from './middleware/security.middleware.js';
 import { authMiddleware } from './middleware/auth.middleware.js';
 import { getActsSectionsRegistry } from './modules/fields/fields.service.js';
+import { requestLoggerMiddleware } from './middleware/requestLogger.middleware.js';
+import logsRouter from './modules/logs/logs.router.js';
 
 // Import routers
 import authRouter from './modules/auth/auth.router.js';
@@ -60,6 +62,27 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// Request correlation + req/res logging (foundation, logging-instrumentation-2026-07-22).
+// Registered right after cookieParser, before everything else below, so every request from this
+// point on — including the client-log ingest route mounted next — runs inside an
+// AsyncLocalStorage context carrying a requestId (utils/requestContext.js), and the id is
+// already echoed on the response before any downstream middleware/handler runs.
+app.use(requestLoggerMiddleware);
+
+// Client-log ingest (`POST /api/logs/client` / `/api/v1/logs/client`) is mounted HERE —
+// deliberately BEFORE ipAllowlistMiddleware / csrfDoubleSubmitMiddleware / the apiLimiter
+// registration below — so it is exempt from all three without touching
+// middleware/security.middleware.js at all: Express never reaches a later app.use() for a
+// request this router has already fully handled (res.status(...).json(...) / .end()). It is
+// also never wrapped in authMiddleware (that's applied per-router elsewhere, not globally here),
+// so it accepts logs from a logged-out/broken-auth browser by design — see
+// docs/logging-instrumentation-2026-07-22/HANDOFF.md §6, traps #3 (auth leniency), #4
+// (rate-limit exempt) and #6 (CSRF exempt). logs.controller.js does its own best-effort JWT
+// decode to attach a userId when a token IS present, but never 401s on its absence.
+app.use('/api/v1/logs', logsRouter);
+app.use('/api/logs', logsRouter);
+
 app.use(ipAllowlistMiddleware);
 app.use(csrfDoubleSubmitMiddleware);
 app.use(morgan('dev'));

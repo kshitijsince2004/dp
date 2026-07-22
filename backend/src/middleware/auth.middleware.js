@@ -1,7 +1,15 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
-import { logger } from '../utils/logger.js';
+import { getLogger, logger } from '../utils/logger.js';
+import { setContext } from '../utils/requestContext.js';
 import { roleRateLimitMiddleware } from './security.middleware.js';
+
+// B3 scope (logging-instrumentation-2026-07-22, HANDOFF.md §3): auth is a bug hotspot —
+// token-present/verify-outcome is logged below, the token itself NEVER (only `{ hasToken }`
+// and, once decoded, `{ userId, role }`). Also wires the EXTRA TASK from the HANDOFF: once
+// `req.user` is set, `setContext({ userId, role })` enriches every downstream log line on this
+// request with who made it, not just the ambient requestId.
+const log = getLogger('auth.middleware');
 
 const isKeycloakEnabled = !!process.env.KEYCLOAK_URL;
 
@@ -39,7 +47,9 @@ if (isKeycloakEnabled) {
 
 export const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
+  log.debug('authMiddleware: enter', { hasToken: !!(authHeader && authHeader.startsWith('Bearer ')), method: req.method, path: req.path });
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    log.warn('authMiddleware: rejected — Bearer token missing', { method: req.method, path: req.path });
     return res.status(401).json({
       status: 'error',
       success: false,
@@ -51,6 +61,7 @@ export const authMiddleware = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   const proceed = () => {
+    log.debug('authMiddleware: proceeding to role rate limiter', { userId: req.user?.id, role: req.user?.role });
     roleRateLimitMiddleware(req, res, next);
   };
 
@@ -58,8 +69,15 @@ export const authMiddleware = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET);
     req.user = normalizeAuthUser(decoded);
+    // EXTRA TASK (HANDOFF.md, B3): req.user.id / req.user.role are the canonical fields
+    // normalizeAuthUser guarantees (id aliases decoded.sub, role passes through from the
+    // token payload verbatim) — enrich the ambient request context so every log line
+    // downstream of this point carries who made the request, not just the requestId.
+    setContext({ userId: req.user.id, role: req.user.role });
+    log.info('authMiddleware: local JWT verified', { userId: req.user.id, role: req.user.role, path: req.path });
     return proceed();
   } catch (error) {
+    log.debug('authMiddleware: local JWT verification failed, trying Keycloak fallback', { path: req.path, keycloakEnabled: isKeycloakEnabled, err: error.message });
     // 2. Custom JWT failed, try Keycloak if enabled
     if (isKeycloakEnabled && keycloak) {
       keycloak.grantManager.validateAccessToken(token)
@@ -76,8 +94,11 @@ export const authMiddleware = (req, res, next) => {
               district_id: content.districtId || content.district_id || null,
               sub_div_id: content.subDivId || content.sub_div_id || null,
             });
+            setContext({ userId: req.user.id, role: req.user.role });
+            log.info('authMiddleware: Keycloak token verified', { userId: req.user.id, role: req.user.role, path: req.path });
             return proceed();
           } else {
+            log.warn('authMiddleware: rejected — Keycloak token invalid/expired', { path: req.path });
             return res.status(401).json({
               status: 'error',
               success: false,
@@ -87,6 +108,7 @@ export const authMiddleware = (req, res, next) => {
           }
         })
         .catch(err => {
+          log.error('authMiddleware: Keycloak verification failed', { path: req.path, err });
           return res.status(401).json({
             status: 'error',
             success: false,
@@ -95,6 +117,7 @@ export const authMiddleware = (req, res, next) => {
           });
         });
     } else {
+      log.warn('authMiddleware: rejected — invalid/expired token, Keycloak not enabled', { path: req.path });
       return res.status(401).json({
         status: 'error',
         success: false,
@@ -114,7 +137,9 @@ export const requireAuth = () => authMiddleware;
  */
 export const sseAuthMiddleware = (req, res, next) => {
   const token = req.query.token;
+  log.debug('sseAuthMiddleware: enter', { hasToken: !!token, path: req.path });
   if (!token) {
+    log.warn('sseAuthMiddleware: rejected — token query param missing', { path: req.path });
     return res.status(401).json({
       status: 'error',
       success: false,
@@ -126,8 +151,11 @@ export const sseAuthMiddleware = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET);
     req.user = normalizeAuthUser(decoded);
+    setContext({ userId: req.user.id, role: req.user.role });
+    log.info('sseAuthMiddleware: SSE token verified', { userId: req.user.id, role: req.user.role, path: req.path });
     return next();
   } catch (error) {
+    log.warn('sseAuthMiddleware: rejected — invalid/expired SSE token', { path: req.path, err: error.message });
     return res.status(401).json({
       status: 'error',
       success: false,

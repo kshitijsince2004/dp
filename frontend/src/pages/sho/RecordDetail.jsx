@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
 import LinkedRecordsPanel from '../../components/common/LinkedRecordsPanel.jsx';
 import StatusUpdateModal from '../../components/records/StatusUpdateModal.jsx';
+import { log } from '../../utils/logger.js';
 
 export default function RecordDetail() {
   const { t } = useTranslation();
@@ -17,6 +18,11 @@ export default function RecordDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+
+  useEffect(() => {
+    log.debug('page:mount', { route: '/records/:id', recordId: id, userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/records/:id', recordId: id });
+  }, [id]);
 
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
   const [sendBackComment, setSendBackComment] = useState('');
@@ -34,13 +40,27 @@ export default function RecordDetail() {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [statusModalField, setStatusModalField] = useState(undefined);
 
-  // Fetch record details
+  // Fetch record details. refetchOnMount:'always' + staleTime:0 force a fresh fetch every time
+  // this view opens (#R2-2, 2026-07-20): edits ARE persisted by the backend, but useAutosave
+  // deliberately does NOT invalidate ['records', id] (to avoid a background refetch clobbering
+  // in-progress keystrokes), and the global staleTime is 60s — so reopening a just-saved record
+  // within a minute served the STALE pre-edit cache, looking like "my change reverted". Refetching
+  // on mount fixes that safely: a mount has no in-flight edit to clobber.
   const { data: recordPayload, isLoading } = useQuery({
     queryKey: ['records', id],
     queryFn: async () => {
-      const res = await api.get(`/records/${id}`);
-      return res.data.data;
+      log.debug('data:load_start', { what: 'record_detail', recordId: id });
+      try {
+        const res = await api.get(`/records/${id}`);
+        log.debug('data:load_success', { what: 'record_detail', recordId: id, status: res.data?.data?.record?.current_status });
+        return res.data.data;
+      } catch (err) {
+        log.error('data:load_error', { what: 'record_detail', recordId: id, err });
+        throw err;
+      }
     },
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const record = recordPayload?.record;
@@ -50,13 +70,16 @@ export default function RecordDetail() {
 
   const unlinkMutation = useMutation({
     mutationFn: async (linkId) => {
+      log.debug('action:unlink_start', { recordId: id, linkId });
       await api.delete(`/v1/record-links/${linkId}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, linkId) => {
+      log.info('action:unlink_success', { recordId: id, linkId });
       toast.success('Link removed');
       queryClient.invalidateQueries({ queryKey: ['records', id] });
     },
-    onError: (err) => {
+    onError: (err, linkId) => {
+      log.error('action:unlink_failed', { recordId: id, linkId, err });
       toast.error(err.response?.data?.message || 'Failed to remove link');
     }
   });
@@ -64,16 +87,19 @@ export default function RecordDetail() {
   // Approve mutation
   const approveMutation = useMutation({
     mutationFn: async () => {
+      log.debug('action:approve_start', { recordId: id });
       const res = await api.post(`/records/${id}/approve`);
       return res.data.data;
     },
     onSuccess: () => {
+      log.info('action:approve_success', { recordId: id });
       toast.success('Record approved successfully');
       queryClient.invalidateQueries({ queryKey: ['records', id] });
       queryClient.invalidateQueries({ queryKey: ['workflow', 'queue'] });
       navigate('/queue');
     },
     onError: (err) => {
+      log.error('action:approve_failed', { recordId: id, err });
       toast.error(err.response?.data?.message || 'Failed to approve record');
     },
   });
@@ -81,10 +107,12 @@ export default function RecordDetail() {
   // Send back mutation
   const sendBackMutation = useMutation({
     mutationFn: async (payload) => {
+      log.debug('action:send_back_start', { recordId: id, targetFields: payload.target_fields });
       const res = await api.post(`/records/${id}/send-back`, payload);
       return res.data.data;
     },
     onSuccess: () => {
+      log.info('action:send_back_success', { recordId: id });
       toast.success('Record sent back to Head Constable for correction');
       setSendBackModalOpen(false);
       setSendBackComment('');
@@ -94,6 +122,7 @@ export default function RecordDetail() {
       navigate('/queue');
     },
     onError: (err) => {
+      log.error('action:send_back_failed', { recordId: id, err });
       toast.error(err.response?.data?.message || 'Failed to send record back');
     },
   });
@@ -101,6 +130,7 @@ export default function RecordDetail() {
   // DCP Override Mutation
   const overrideMutation = useMutation({
     mutationFn: async (payload) => {
+      log.debug('action:override_start', { recordId: id, newValue: payload.new_value });
       const res = await api.patch(`/records/${id}/override`, {
         caseHeadId: payload.new_value,
         reason: payload.reason
@@ -108,12 +138,14 @@ export default function RecordDetail() {
       return res.data.data;
     },
     onSuccess: () => {
+      log.info('action:override_success', { recordId: id });
       toast.success('Classification overridden successfully');
       setOverrideOpen(false);
       setOverrideReason('');
       queryClient.invalidateQueries({ queryKey: ['records', id] });
     },
     onError: (err) => {
+      log.error('action:override_failed', { recordId: id, err });
       toast.error(err.response?.data?.message || 'Override failed');
     },
   });
@@ -124,6 +156,7 @@ export default function RecordDetail() {
       toast.error('Feedback comment is required');
       return;
     }
+    log.debug('action:send_back_click', { recordId: id, fieldCount: selectedFields.length });
     sendBackMutation.mutate({
       comment: sendBackComment,
       target_fields: selectedFields
@@ -140,6 +173,7 @@ export default function RecordDetail() {
       toast.error('Mandatory audit reason must be at least 10 characters');
       return;
     }
+    log.debug('action:override_click', { recordId: id, newValue: overrideVal });
     overrideMutation.mutate({
       new_value: overrideVal,
       reason: overrideReason
@@ -246,13 +280,14 @@ export default function RecordDetail() {
           {isPendingReview && (
             <>
               <button
-                onClick={() => setSendBackModalOpen(true)}
+                onClick={() => { log.debug('action:send_back_modal_open', { recordId: id }); setSendBackModalOpen(true); }}
                 className="bg-red-55/10 hover:bg-red-500 text-red-600 hover:text-white border-2 border-red-200/50 hover:border-red-500 px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer hover:shadow-md hover:shadow-red-500/25 hover:-translate-y-0.5"
               >
                 {t('actions.sendBack', 'Send Back')}
               </button>
               <button
                 onClick={() => {
+                  log.debug('action:approve_click', { recordId: id });
                   if (window.confirm('Confirm approval and escalation of this record?')) {
                     approveMutation.mutate();
                   }
@@ -267,7 +302,7 @@ export default function RecordDetail() {
 
           {isDCP && (
             <button
-              onClick={() => setOverrideOpen(true)}
+              onClick={() => { log.debug('action:override_modal_open', { recordId: id }); setOverrideOpen(true); }}
               className="bg-[var(--bg-page-main)] hover:bg-[var(--bg-page-main)]/80 text-[var(--text-main-theme)] border-2 border-[var(--border-card-theme)] hover:border-[var(--accent-color)] px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-2 hover:shadow-md border-none"
             >
               <Edit size={16} className="text-[var(--accent-color)]" />
@@ -317,7 +352,7 @@ export default function RecordDetail() {
                   <span>Case Progress</span>
                 </h3>
                 <button
-                  onClick={() => { setStatusModalField(undefined); setStatusModalOpen(true); }}
+                  onClick={() => { log.debug('action:status_update_modal_open', { recordId: id }); setStatusModalField(undefined); setStatusModalOpen(true); }}
                   className="text-[11px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
                 >
                   {t('statusUpdate.updateAction', 'Update Status')}
@@ -330,7 +365,7 @@ export default function RecordDetail() {
                     {record.data?.work_out_date ? ` (${record.data.work_out_date})` : ''}
                   </span>
                   <button
-                    onClick={() => { setStatusModalField('is_worked_out'); setStatusModalOpen(true); }}
+                    onClick={() => { log.debug('action:status_update_modal_open', { recordId: id, field: 'is_worked_out' }); setStatusModalField('is_worked_out'); setStatusModalOpen(true); }}
                     className="text-[11px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
                   >
                     Flip

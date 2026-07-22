@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   FileSignature, Loader2, AlertTriangle, ChevronDown, ChevronUp, Info, Settings2,
 } from 'lucide-react';
 import api from '../../utils/api.js';
+import { log } from '../../utils/logger.js';
 
 // ── Collapsible Contract Row ──────────────────────────────────────────────────
 // Level contracts are read-only over the API (config-as-data — see the banner below);
@@ -89,12 +90,25 @@ function ContractRow({ contract }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function LevelContractsPage() {
+  useEffect(() => {
+    log.debug('page:mount', { route: '/admin/level-contracts' });
+    return () => log.debug('page:unmount', { route: '/admin/level-contracts' });
+  }, []);
+
   const { data: contracts = [], isLoading, isError } = useQuery({
     queryKey: ['admin', 'level-contracts'],
     queryFn: async () => {
-      const res = await api.get('/level-contracts');
-      const raw = res.data?.data;
-      return Array.isArray(raw) ? raw : [];
+      log.debug('data:load_start', { what: 'level_contracts' });
+      try {
+        const res = await api.get('/level-contracts');
+        const raw = res.data?.data;
+        const rows = Array.isArray(raw) ? raw : [];
+        log.debug('data:load_success', { what: 'level_contracts', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'level_contracts', err });
+        throw err;
+      }
     },
   });
 

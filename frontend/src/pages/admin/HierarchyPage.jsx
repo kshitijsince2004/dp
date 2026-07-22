@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Tree, Card, Typography, Spin, Alert, Tag, Space } from 'antd';
 import { GitBranch, Landmark } from 'lucide-react';
 import axios from 'axios';
+import { log } from '../../utils/logger.js';
 
 const { Title, Paragraph } = Typography;
 
@@ -26,15 +27,23 @@ export const HierarchyPage = () => {
   };
 
   useEffect(() => {
+    log.debug('page:mount', { route: '/admin/hierarchy-tree' });
+    return () => log.debug('page:unmount', { route: '/admin/hierarchy-tree' });
+  }, []);
+
+  useEffect(() => {
     const fetchTree = async () => {
+      log.debug('data:load_start', { what: 'hierarchy_tree' });
       try {
         const res = await axios.get('/api/v1/admin/hierarchy/tree');
         // If tree is wrapped in an object or directly returned as an array, handle both
         const data = res.data.data.tree || res.data.data;
         const formatted = formatTreeNodes(Array.isArray(data) ? data : [data]);
+        log.debug('data:load_success', { what: 'hierarchy_tree' });
         setTreeData(formatted);
       } catch (err) {
         console.error('Failed to load tree:', err);
+        log.error('data:load_error', { what: 'hierarchy_tree', err });
         setError('Could not retrieve organizational tree');
       } finally {
         setLoading(false);

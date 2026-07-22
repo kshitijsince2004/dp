@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../utils/api.js';
+import { log } from '../utils/logger.js';
 
 const SYSTEM_FIELDS = [
   { field_key: 'uid',              field_type: 'TEXT', label_en: 'Record UID',        label_hi: 'रिकॉर्ड यूआईडी (UID)',          readonly: true, validation_rules: { required: false } },
@@ -40,9 +41,19 @@ export function useFormSchema(recordType, caseType) {
     queryFn: async () => {
       if (!recordType) return [];
       const url = `/fields/form/${recordType}${caseType ? `?caseType=${caseType}` : ''}`;
-      const res = await api.get(url);
+      log.debug('hook:form_schema:fetch_start', { recordType, caseType, url });
+      let res;
+      try {
+        res = await api.get(url);
+      } catch (err) {
+        log.error('hook:form_schema:fetch_error', { recordType, caseType, message: err?.message, status: err?.response?.status });
+        throw err;
+      }
       const raw = res.data?.data;
-      if (!raw) return [];
+      if (!raw) {
+        log.warn('hook:form_schema:empty_response', { recordType, caseType });
+        return [];
+      }
 
       // Accept flat sections array or wrapped { sections: [...] }
       const sections = Array.isArray(raw) ? raw : (raw.sections || []);
@@ -82,6 +93,7 @@ export function useFormSchema(recordType, caseType) {
         }
       }
 
+      log.info('hook:form_schema:fetch_success', { recordType, caseType, sectionsCount: normalized.length });
       return normalized;
     },
     enabled: !!recordType,

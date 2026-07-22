@@ -1,9 +1,17 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Ghost, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button.jsx';
+import { log } from '../utils/logger.js';
 
 export default function NotFound() {
+  const location = useLocation();
+
+  useEffect(() => {
+    log.debug('page:mount', { route: '404', attemptedPath: location.pathname });
+  }, [location.pathname]);
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
       <motion.div

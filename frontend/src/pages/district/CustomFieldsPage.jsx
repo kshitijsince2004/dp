@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layers, Plus, X, ToggleLeft, ToggleRight, Pencil, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
+import { log } from '../../utils/logger.js';
 
 const ensureArray = (val) => (Array.isArray(val) ? val : []);
 
@@ -118,12 +119,25 @@ export default function CustomFieldsPage() {
   const [editTarget, setEditTarget] = useState(null);
   const [filterType, setFilterType] = useState('ALL');
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/district/custom-fields', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/district/custom-fields' });
+  }, []);
+
   // District-scoped fields — shown in the management table
   const { data: fields = [], isLoading } = useQuery({
     queryKey: ['district', 'fields', user?.district_id],
     queryFn: async () => {
-      const res = await api.get('/fields');
-      return res.data?.data?.fields || [];
+      log.debug('data:load_start', { what: 'district_fields' });
+      try {
+        const res = await api.get('/fields');
+        const rows = res.data?.data?.fields || [];
+        log.debug('data:load_success', { what: 'district_fields', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'district_fields', err });
+        throw err;
+      }
     },
     staleTime: 60_000,
     enabled: !!user,
@@ -153,29 +167,37 @@ export default function CustomFieldsPage() {
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const createMutation = useMutation({
-    mutationFn: (payload) => api.post('/fields', payload),
-    onSuccess: () => {
+    mutationFn: (payload) => { log.info('action:field_create_start', { fieldKey: payload.field_key }); return api.post('/fields', payload); },
+    onSuccess: (res, payload) => {
+      log.info('action:field_create_success', { fieldKey: payload.field_key });
       toast.success('Custom field published for your district');
       closeModal();
       queryClient.invalidateQueries({ queryKey: ['district', 'fields'] });
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to create field'),
+    onError: (err, payload) => {
+      log.error('action:field_create_failed', { fieldKey: payload?.field_key, err });
+      toast.error(err.response?.data?.message || 'Failed to create field');
+    },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }) => api.patch(`/fields/${id}`, payload),
-    onSuccess: () => {
+    mutationFn: ({ id, payload }) => { log.info('action:field_update_start', { fieldId: id }); return api.patch(`/fields/${id}`, payload); },
+    onSuccess: (res, { id }) => {
+      log.info('action:field_update_success', { fieldId: id });
       toast.success('Field updated');
       closeModal();
       queryClient.invalidateQueries({ queryKey: ['district', 'fields'] });
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to update field'),
+    onError: (err, { id }) => {
+      log.error('action:field_update_failed', { fieldId: id, err });
+      toast.error(err.response?.data?.message || 'Failed to update field');
+    },
   });
 
   const toggleMutation = useMutation({
-    mutationFn: (id) => api.patch(`/fields/${id}/toggle`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['district', 'fields'] }),
-    onError: (err) => toast.error(err.response?.data?.message || 'Toggle failed'),
+    mutationFn: (id) => { log.debug('action:field_toggle_start', { fieldId: id }); return api.patch(`/fields/${id}/toggle`); },
+    onSuccess: (res, id) => { log.info('action:field_toggle_success', { fieldId: id }); queryClient.invalidateQueries({ queryKey: ['district', 'fields'] }); },
+    onError: (err, id) => { log.error('action:field_toggle_failed', { fieldId: id, err }); toast.error(err.response?.data?.message || 'Toggle failed'); },
   });
 
   // ── Modal helpers ──────────────────────────────────────────────────────────
@@ -220,6 +242,7 @@ export default function CustomFieldsPage() {
       options:                 form.field_type === 'SELECT' ? form.options : [],
     };
 
+    log.debug('action:field_form_submit', { editTarget, fieldKey: form.field_key || editTarget });
     if (editTarget) {
       updateMutation.mutate({ id: editTarget, payload });
     } else {

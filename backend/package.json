@@ -17,6 +17,7 @@
     "import:corpus": "node scripts/import-reliability/replay-corpus.mjs",
     "audit:verify": "node scripts/verify-audit-chain.mjs",
     "seed:test-data": "node scripts/seed-test-data.js",
+    "logs:clear": "node scripts/dev/clear-logs.mjs",
     "test": "node scripts/verify_.js"
   },
   "dependencies": {

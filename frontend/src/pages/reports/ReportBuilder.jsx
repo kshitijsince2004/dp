@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileSpreadsheet, Calendar, Download, RefreshCw, FileText, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -6,10 +6,16 @@ import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import DateInput from '../../components/ui/DateInput.jsx';
 import { formatDMY } from '../../utils/dateFormat.js';
+import { log } from '../../utils/logger.js';
 
 export default function ReportBuilder() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+
+  useEffect(() => {
+    log.debug('page:mount', { route: '/report-builder', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/report-builder' });
+  }, []);
 
   const getThemeClass = () => {
     const role = user?.role;
@@ -65,12 +71,14 @@ export default function ReportBuilder() {
 
   const generateMutation = useMutation({
     mutationFn: async (payload) => {
+      log.info('action:generate_report_start', payload);
       const res = await api.post('/reports/generate', payload);
       return res.data.data;
     },
     onSuccess: (data) => {
       const jobId = data?.job_id || data?.job?.id;
-      if (!jobId) { toast.error('Report job ID missing in response'); return; }
+      if (!jobId) { log.error('action:generate_report_no_job_id', { data }); toast.error('Report job ID missing in response'); return; }
+      log.info('action:generate_report_queued', { jobId });
 
       setGenerating(true);
       toast.loading('Compiling report in background...', { id: 'report-toast' });
@@ -81,6 +89,7 @@ export default function ReportBuilder() {
         try {
           const statusRes = await api.get(`/reports/status/${jobId}`);
           const jobStatus = statusRes.data.data?.status || statusRes.data.data?.job?.status;
+          log.debug('action:generate_report_poll_step', { jobId, attempt: attempts, status: jobStatus });
 
           if (jobStatus === 'READY' || jobStatus === 'FAILED' || attempts >= 15) {
             clearInterval(interval);
@@ -88,22 +97,27 @@ export default function ReportBuilder() {
             refetchHistory();
 
             if (jobStatus === 'READY') {
+              log.info('action:generate_report_ready', { jobId, attempts });
               setReportResult({ jobId, format });
               toast.success('Report ready for download!', { id: 'report-toast' });
             } else if (jobStatus === 'FAILED') {
+              log.error('action:generate_report_failed', { jobId, attempts });
               toast.error('Report generation failed. Check Python worker logs.', { id: 'report-toast' });
             } else {
+              log.warn('action:generate_report_timeout', { jobId, attempts });
               toast.error('Report is taking longer than expected. Check history later.', { id: 'report-toast' });
             }
           }
         } catch (e) {
           clearInterval(interval);
           setGenerating(false);
+          log.error('action:generate_report_poll_error', { jobId, err: e });
           toast.error('Failed to check report status', { id: 'report-toast' });
         }
       }, 2000);
     },
     onError: (err) => {
+      log.error('action:generate_report_start_failed', { err });
       toast.error(err.response?.data?.message || 'Failed to trigger report generation');
     }
   });
@@ -111,6 +125,7 @@ export default function ReportBuilder() {
   const handleGenerate = (e) => {
     e.preventDefault();
     if (!templateId) { toast.error('Select a template first'); return; }
+    log.debug('action:generate_report_click', { templateId, fromDate, toDate, format });
     setReportResult(null);
     generateMutation.mutate({
       template_id: templateId,
@@ -120,6 +135,7 @@ export default function ReportBuilder() {
   };
 
   const handleDownload = async (jobId, fmt) => {
+    log.debug('action:report_download_start', { jobId, fmt });
     try {
       const token = localStorage.getItem('access_token');
       const res = await fetch(`/api/v1/reports/download/${jobId}`, {
@@ -136,8 +152,10 @@ export default function ReportBuilder() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      log.info('action:report_download_success', { jobId });
       toast.success('Report downloaded');
     } catch (err) {
+      log.error('action:report_download_failed', { jobId, err });
       toast.error('Download failed: ' + err.message);
     }
   };

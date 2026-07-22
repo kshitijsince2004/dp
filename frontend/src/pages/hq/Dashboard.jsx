@@ -6,6 +6,7 @@ import api from '../../utils/api.js';
 import phqImage from '../../assets/phq.jpeg';
 import useAuthStore from '../../store/authStore.js';
 import SearchableSelect from '../../components/forms/SearchableSelect.jsx';
+import { log } from '../../utils/logger.js';
 
 export default function HQDashboard() {
   const { t, i18n } = useTranslation();
@@ -24,37 +25,52 @@ export default function HQDashboard() {
   const [datePresets, setDatePresets] = useState([]);
 
   useEffect(() => {
+    log.debug('page:mount', { route: '/hq', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/hq' });
+  }, []);
+
+  useEffect(() => {
+    log.debug('data:load_start', { what: 'local_heads_lookup' });
     api.get('/fields/lookup/local-heads')
       .then((res) => {
         if (res.data?.success && Array.isArray(res.data.data)) {
+          log.debug('data:load_success', { what: 'local_heads_lookup', count: res.data.data.length });
           setLocalHeads(res.data.data);
         }
       })
       .catch((err) => {
         console.error('Failed to fetch local heads:', err);
+        log.error('data:load_error', { what: 'local_heads_lookup', err });
       });
 
+    log.debug('data:load_start', { what: 'hierarchy_districts' });
     api.get('/hierarchy/nodes')
       .then((res) => {
         if (res.data?.data && Array.isArray(res.data.data)) {
           const distNodes = res.data.data.filter(n => n.node_type === 'DISTRICT');
+          log.debug('data:load_success', { what: 'hierarchy_districts', count: distNodes.length });
           setDistricts(distNodes);
         }
       })
       .catch((err) => {
         console.error('Failed to fetch districts:', err);
+        log.error('data:load_error', { what: 'hierarchy_districts', err });
       });
 
+    log.debug('data:load_start', { what: 'record_types_lookup' });
     api.get('/fields/lookup/record-types')
       .then((res) => {
         if (res.data?.success && Array.isArray(res.data.data)) {
+          log.debug('data:load_success', { what: 'record_types_lookup', count: res.data.data.length });
           setRecordTypes(res.data.data);
         }
       })
       .catch((err) => {
         console.error('Failed to fetch record types:', err);
+        log.error('data:load_error', { what: 'record_types_lookup', err });
       });
 
+    log.debug('data:load_start', { what: 'filter_presets' });
     api.get('/filters/presets')
       .then((res) => {
         const raw = res.data?.data;
@@ -64,11 +80,13 @@ export default function HQDashboard() {
             const conds = spec.conditions || [];
             return conds.some(c => c.field === '_record_date' && (c.operator === 'last_n_days' || c.operator === 'older_than_n_days'));
           });
+          log.debug('data:load_success', { what: 'filter_presets', count: filtered.length });
           setDatePresets(filtered);
         }
       })
       .catch((err) => {
         console.error('Failed to fetch presets:', err);
+        log.error('data:load_error', { what: 'filter_presets', err });
       });
   }, []);
 
@@ -151,8 +169,15 @@ export default function HQDashboard() {
   const { data: stats = {} } = useQuery({
     queryKey: ['analytics', 'overview', 'global'],
     queryFn: async () => {
-      const res = await api.get('/analytics/overview');
-      return res.data.data;
+      log.debug('data:load_start', { what: 'analytics_overview_global' });
+      try {
+        const res = await api.get('/analytics/overview');
+        log.debug('data:load_success', { what: 'analytics_overview_global' });
+        return res.data.data;
+      } catch (err) {
+        log.error('data:load_error', { what: 'analytics_overview_global', err });
+        throw err;
+      }
     },
   });
 
@@ -160,8 +185,16 @@ export default function HQDashboard() {
   const { data: records = [] } = useQuery({
     queryKey: ['records', 'all'],
     queryFn: async () => {
-      const res = await api.get('/records');
-      return res.data.data.cases ?? [];
+      log.debug('data:load_start', { what: 'records_all' });
+      try {
+        const res = await api.get('/records');
+        const rows = res.data.data.cases ?? [];
+        log.debug('data:load_success', { what: 'records_all', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'records_all', err });
+        throw err;
+      }
     },
   });
 
@@ -399,6 +432,7 @@ export default function HQDashboard() {
             {activeFilterCount > 0 && (
               <button
                 onClick={() => {
+                  log.debug('action:filters_clear', {});
                   setFilterDistrict('All');
                   setFilterType('All');
                   setFilterLocalHead('All');

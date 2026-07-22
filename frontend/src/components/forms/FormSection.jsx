@@ -3,6 +3,7 @@ import { AlertCircle, AlertTriangle, Plus, Trash2, ChevronDown, ChevronUp } from
 import FieldRenderer from './FieldRenderer.jsx';
 import SelectField from './SelectField.jsx';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
+import { log } from '../../utils/logger.js';
 
 const ACTS_OPTIONS = [
   { value: 'IPC', label_en: 'IPC', label_hi: 'आईपीसी (IPC)' },
@@ -335,11 +336,15 @@ function RepeaterSection({
 }) {
   const [collapsed, setCollapsed] = useState({});
 
+  log.debug('form:section_render', { section: section.section, isRepeater: true, entityType: section.entity_type, entryCount: entries.length });
+
   const addEntry = () => {
+    log.debug('form:repeater_add_entry', { section: section.section, entityType: section.entity_type, countAfter: entries.length + 1 });
     onEntriesChange([...entries, {}]);
   };
 
   const removeEntry = (idx) => {
+    log.debug('form:repeater_remove_entry', { section: section.section, entityType: section.entity_type, index: idx, countBefore: entries.length });
     const next = entries.filter((_, i) => i !== idx);
     onEntriesChange(next);
   };
@@ -350,6 +355,7 @@ function RepeaterSection({
   };
 
   const toggleCollapse = (idx) => {
+    log.debug('form:section_toggle_collapse', { section: section.section, index: idx, collapsedAfter: !collapsed[idx] });
     setCollapsed(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
 
@@ -492,6 +498,8 @@ export default function FormSection({
   recordType = null,
 }) {
   if (!section) return null;
+
+  log.debug('form:section_render', { section: section.section, isRepeater: !!section.is_repeater, fieldCount: section.fields?.length ?? 0 });
 
   if (section.is_repeater) {
     return (

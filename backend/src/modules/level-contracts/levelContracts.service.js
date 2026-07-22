@@ -1,5 +1,12 @@
 import db from '../../config/db.js';
 import { ROLE_LEVELS } from '../../utils/generateToken.js';
+import { getLogger } from '../../utils/logger.js';
+
+// Logging-instrumentation-2026-07-22 (B5): matches records.service.js style. HANDOFF §5 calls
+// this module out specifically: "level-contracts: log ... masking decisions applied" — masking
+// silently no-opped for a long time before Integration 5 (see the module header comment above),
+// so every masking decision (contract resolved, fallback used, no-contract fail-open) is logged.
+const log = getLogger('levelContracts.service');
 
 // ── config-as-data: level_data_contracts rows are SYNCED from config/contracts/*.json
 // (npm run sync-config, upsert key = `code`). This module is read-only over the API —
@@ -27,23 +34,28 @@ export const parseArray = (val) => {
 };
 
 export const getContracts = async () => {
+  log.debug('getContracts: enter');
   const list = await db('level_data_contracts').orderBy('updated_at', 'desc');
-  return list.map(item => ({
+  const result = list.map(item => ({
     ...item,
     visible_field_keys: parseArray(item.visible_field_keys),
     aggregate_definitions: typeof item.aggregate_definitions === 'string'
       ? JSON.parse(item.aggregate_definitions || '[]')
       : item.aggregate_definitions
   }));
+  log.debug('getContracts: exit', { count: result.length });
+  return result;
 };
 
 async function findActiveContract(recordType, toLevel) {
-  return db('level_data_contracts')
+  const contract = await db('level_data_contracts')
     .where({ to_level: toLevel, is_active: true })
     .andWhere((builder) => {
       builder.where('record_type', recordType).orWhere('record_type', '*');
     })
     .first();
+  log.debug('findActiveContract: resolved', { recordType, toLevel, found: !!contract, contractCode: contract?.code ?? null });
+  return contract;
 }
 
 // JCP/SCP sit between DISTRICT and HQ in the OPS_CHAIN (workflow: JCP_REVIEW ->
@@ -189,25 +201,44 @@ function maskRow(row, visibleKeys, structuralKeys) {
 }
 
 async function resolveMasking(recordType, user) {
-  if (!user || user.role === 'SYSTEM_ADMIN') return null;
+  log.debug('resolveMasking: enter', { recordType, userId: user?.id, role: user?.role });
+  if (!user || user.role === 'SYSTEM_ADMIN') {
+    log.debug('resolveMasking: fail-open — no user or SYSTEM_ADMIN, full detail', { recordType, role: user?.role });
+    return null;
+  }
   const userLevel = ROLE_LEVELS[user.role];
-  if (!userLevel || userLevel === 'PS') return null; // PS-level roles always see full detail
+  if (!userLevel || userLevel === 'PS') {
+    log.debug('resolveMasking: fail-open — PS-level role always sees full detail', { recordType, role: user.role, userLevel });
+    return null; // PS-level roles always see full detail
+  }
 
   let contract = await findActiveContract(recordType, userLevel);
   if (!contract && LEVEL_FALLBACK[userLevel]) {
+    log.debug('resolveMasking: no direct contract, trying JCP/SCP fallback', { recordType, userLevel, fallbackLevel: LEVEL_FALLBACK[userLevel] });
     contract = await findActiveContract(recordType, LEVEL_FALLBACK[userLevel]);
   }
-  if (!contract) return null; // no contract authored for this level => no masking (default)
-  return parseArray(contract.visible_field_keys);
+  if (!contract) {
+    log.debug('resolveMasking: fail-open — no contract authored for this level, no masking applied', { recordType, userLevel });
+    return null; // no contract authored for this level => no masking (default)
+  }
+  const visibleKeys = parseArray(contract.visible_field_keys);
+  log.debug('resolveMasking: exit — masking active', { recordType, userLevel, contractCode: contract.code, visibleKeyCount: visibleKeys.length });
+  return visibleKeys;
 }
 
 /** Masks one listRecords()/searchRecordsWithSpec() row (flat spine + joined display columns
  * + nested `data` summary). Used by records.controller.js getRecords/getQueue/searchRecords. */
 export const maskRecordData = async (record, user) => {
   if (!record) return record;
+  log.debug('maskRecordData: enter', { recordId: record.id, recordType: record.record_type, userId: user?.id, role: user?.role });
   const visibleKeys = await resolveMasking(record.record_type, user);
-  if (!visibleKeys) return record;
-  return maskRow(record, visibleKeys, STRUCTURAL_RECORD_KEYS);
+  if (!visibleKeys) {
+    log.debug('maskRecordData: exit — no masking applied', { recordId: record.id });
+    return record;
+  }
+  const masked = maskRow(record, visibleKeys, STRUCTURAL_RECORD_KEYS);
+  log.info('maskRecordData: exit — masking applied', { recordId: record.id, recordType: record.record_type, visibleKeyCount: visibleKeys.length });
+  return masked;
 };
 
 /** Masks a getRecordDetails() response: the spine `record` (+ its recomposed `data`), plus
@@ -216,13 +247,21 @@ export const maskRecordData = async (record, user) => {
  * references, not field_registry-driven data (see MASKING RULE §3 above). */
 export const maskRecordDetails = async (details, user) => {
   if (!details || !details.record) return details;
+  log.debug('maskRecordDetails: enter', { recordId: details.record.id, recordType: details.record.record_type, userId: user?.id, role: user?.role });
   const visibleKeys = await resolveMasking(details.record.record_type, user);
-  if (!visibleKeys) return details;
+  if (!visibleKeys) {
+    log.debug('maskRecordDetails: exit — no masking applied', { recordId: details.record.id });
+    return details;
+  }
 
   const record = maskRow(details.record, visibleKeys, STRUCTURAL_RECORD_KEYS);
   const persons = (details.persons || []).map((p) => maskRow(p, visibleKeys, PERSON_STRUCTURAL_KEYS));
   const properties = (details.properties || []).map((p) => maskRow(p, visibleKeys, PROPERTY_STRUCTURAL_KEYS));
   const offences = (details.offences || []).map((o) => maskOffenceRow(o, visibleKeys, details.record.record_type));
 
+  log.info('maskRecordDetails: exit — masking applied', {
+    recordId: details.record.id, recordType: details.record.record_type, visibleKeyCount: visibleKeys.length,
+    personCount: persons.length, propertyCount: properties.length, offenceCount: offences.length,
+  });
   return { ...details, record, persons, properties, offences };
 };

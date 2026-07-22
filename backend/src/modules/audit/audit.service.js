@@ -1,8 +1,13 @@
 import db from '../../config/db.js';
 import { verifyAuditChain } from '../../utils/hash.js';
 import { publish } from '../../events/eventBus.js';
-import { logger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import { setRecordFrozen } from '../records/records.service.js';
+
+// Logging-instrumentation-2026-07-22 (B5): matches records.service.js style — this module
+// gets the densest logging in B5's scope per HANDOFF §5 ("audit: log hash-chain verify steps
+// + any break detected").
+const log = getLogger('audit.service');
 
 /**
  * Run a full hash-chain verification pass and (optionally) execute the freeze half of the
@@ -27,18 +32,27 @@ import { setRecordFrozen } from '../records/records.service.js';
  *          `freezeSkippedReason`.
  */
 export async function runChainVerification({ freezeOnBreak = true, actor = null } = {}) {
+  log.debug('runChainVerification: enter', { freezeOnBreak, actorId: actor?.id ?? null });
   const result = await verifyAuditChain(db);
   const unverifiable = result.unverifiable ?? [];
   const frozen = [];
   let freezeSkipped = false;
   let freezeSkippedReason = null;
+  log.debug('runChainVerification: verifyAuditChain returned', {
+    valid: result.valid, checkedRecords: result.checked_records, checkedRevisions: result.checked_revisions,
+    breakCount: result.breaks.length, unverifiableCount: unverifiable.length,
+  });
 
   if (unverifiable.length) {
-    logger.warn(`[AuditVerify] ${unverifiable.length} revision(s) UNVERIFIABLE (unknown/newer hash_version) — not tamper evidence, not frozen. Likely a rolling deploy or rollback.`);
+    log.warn('runChainVerification: revisions UNVERIFIABLE (unknown/newer hash_version) — not tamper evidence, not frozen; likely a rolling deploy or rollback', {
+      unverifiableCount: unverifiable.length,
+    });
   }
 
   if (!result.valid) {
-    logger.error(`[AuditVerify] Hash-chain verification FAILED: ${result.breaks.length} broken chain(s) across ${result.checked_records} records.`);
+    log.error('runChainVerification: hash-chain verification FAILED', {
+      breakCount: result.breaks.length, checkedRecords: result.checked_records,
+    });
 
     // Circuit-breaker: a break count at/above these thresholds signals a systemic fault (bad
     // deploy, schema drift, verifier bug), never a targeted tamper — auto-freezing that many
@@ -46,24 +60,33 @@ export async function runChainVerification({ freezeOnBreak = true, actor = null 
     const parsedCap = Number.parseInt(process.env.AUDIT_VERIFY_MAX_FREEZE ?? '', 10);
     const absoluteCap = Number.isInteger(parsedCap) && parsedCap > 0 ? parsedCap : 100;
     const majorityLimit = 0.5 * result.checked_records;
+    log.debug('runChainVerification: circuit-breaker thresholds computed', { absoluteCap, majorityLimit, breakCount: result.breaks.length });
 
     if (freezeOnBreak && (result.breaks.length > absoluteCap || result.breaks.length > majorityLimit)) {
       freezeSkipped = true;
       freezeSkippedReason = result.breaks.length > absoluteCap
         ? `break_count ${result.breaks.length} exceeds absolute cap ${absoluteCap} (AUDIT_VERIFY_MAX_FREEZE)`
         : `break_count ${result.breaks.length} exceeds majority-of-records limit ${majorityLimit} of ${result.checked_records} checked`;
-      logger.error(`[AuditVerify] CIRCUIT-BREAKER TRIPPED — refusing to auto-freeze any record: ${freezeSkippedReason}. A break at this scale is almost certainly a systemic bug, not tampering. Manual review required before any freeze.`);
+      log.error('runChainVerification: CIRCUIT-BREAKER TRIPPED — refusing to auto-freeze any record; a break at this scale is almost certainly a systemic bug, not tampering, manual review required', {
+        breakCount: result.breaks.length, absoluteCap, majorityLimit, reason: freezeSkippedReason,
+      });
     } else if (freezeOnBreak) {
+      log.debug('runChainVerification: freezing broken records', { breakCount: result.breaks.length });
       for (const b of result.breaks) {
         try {
           const res = await setRecordFrozen(b.record_id, true, {
             user: actor,
             reason: `Hash-chain integrity break detected: ${b.reason}`.slice(0, 2000),
           });
-          if (res.changed) frozen.push(b.record_id);
+          if (res.changed) {
+            frozen.push(b.record_id);
+            log.info('runChainVerification: froze broken record', { recordId: b.record_id, reason: b.reason });
+          } else {
+            log.debug('runChainVerification: record already frozen, no change', { recordId: b.record_id });
+          }
         } catch (err) {
           // A freeze failure must never abort the rest of the sweep — log and continue.
-          logger.error(`[AuditVerify] Failed to freeze broken record ${b.record_id}: ${err.message}`);
+          log.error('runChainVerification: failed to freeze broken record', { recordId: b.record_id, err });
         }
       }
     }
@@ -85,15 +108,18 @@ export async function runChainVerification({ freezeOnBreak = true, actor = null 
         detected_at: new Date().toISOString(),
         scanner_user_id: actor?.id ?? null,
       });
+      log.debug('runChainVerification: published audit.chain_break_detected', { breakCount: result.breaks.length, frozenCount: frozen.length });
     } catch (err) {
-      logger.error(`[AuditVerify] Failed to publish chain-break alert: ${err.message}`);
+      log.error('runChainVerification: failed to publish chain-break alert', { err });
     }
   } else if (unverifiable.length) {
     // No KNOWN-version break, but unverifiable rows exist. That is NOT a clean pass: an unknown
     // hash_version is exactly the tamper-laundering signature the version CHECK now blocks at
     // write time, and any that predate/bypass the constraint must still raise an alert rather
     // than read GREEN. Publish the same alert (break_count 0), best-effort like the break path.
-    logger.warn(`[AuditVerify] Hash-chain has NO known-version breaks but ${unverifiable.length} UNVERIFIABLE revision(s) present across ${result.checked_records} records — NOT a clean pass; alerting.`);
+    log.warn('runChainVerification: NO known-version breaks but UNVERIFIABLE revisions present — NOT a clean pass, alerting', {
+      unverifiableCount: unverifiable.length, checkedRecords: result.checked_records,
+    });
     try {
       await publish('audit.chain_break_detected', {
         break_count: result.breaks.length,
@@ -107,12 +133,16 @@ export async function runChainVerification({ freezeOnBreak = true, actor = null 
         detected_at: new Date().toISOString(),
         scanner_user_id: actor?.id ?? null,
       });
+      log.debug('runChainVerification: published unverifiable-rows alert', { unverifiableCount: unverifiable.length });
     } catch (err) {
-      logger.error(`[AuditVerify] Failed to publish unverifiable-rows alert: ${err.message}`);
+      log.error('runChainVerification: failed to publish unverifiable-rows alert', { err });
     }
   } else {
-    logger.info(`[AuditVerify] Hash-chain intact: ${result.checked_revisions} revisions across ${result.checked_records} records verified.`);
+    log.info('runChainVerification: hash-chain intact', { checkedRevisions: result.checked_revisions, checkedRecords: result.checked_records });
   }
 
+  log.info('runChainVerification: exit', {
+    valid: result.valid, breakCount: result.breaks.length, frozenCount: frozen.length, freezeSkipped,
+  });
   return { ...result, frozen, freezeSkipped, freezeSkippedReason };
 }

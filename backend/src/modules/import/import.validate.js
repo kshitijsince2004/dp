@@ -41,6 +41,13 @@ import { canonKey, effectiveRecordType } from './import.parse.js';
 import { composeRecordPayload, sourceRefFor } from './import.compose.js';
 import { getDropOnlyKeys } from './import-key-bridge.config.js';
 import { KEYSTONE_FIELDS, OR_GROUP_KEYSTONES } from './import-fields.config.js';
+import { getLogger } from '../../utils/logger.js';
+
+// STYLE ANCHOR match — see import.parse.js's header comment. This is the "every value
+// validated/salvaged/rejected" layer: every finding this module pushes onto an errors[] array
+// also gets a log line at the matching level (debug for a routine per-field REQUIRED_MISSING,
+// warn for a salvage/recovery, the batch orchestrator logs its final counts at info).
+const log = getLogger('import.validate');
 
 // T1 keystone sets (03-TRIAGE-MATRIX.md, architect ruling under D1) — KEYSTONE_FIELDS /
 // OR_GROUP_KEYSTONES now live in import-fields.config.js (FIX 2a, 2026-07): a pure config
@@ -110,6 +117,7 @@ export const evaluateShowWhen = (showWhen, rowData) => {
  *     check replaces their individual requiredness entirely). */
 export function validateRowFields(rows, fieldsList, sheetName, parentIndex = null, parentKeyField = null, opts = {}) {
   const { registryMap = null, isLegacy = false, keystoneKeys = new Set(), soleParentRawKey = null, orGroups = [] } = opts;
+  log.debug('validateRowFields: enter', { sheetName, rowCount: rows.length, fieldCount: fieldsList.length, isLegacy, hasParentKey: !!parentKeyField });
   const orGroupFieldKeys = new Set(orGroups.flatMap((g) => g.fields));
   const errors = [];
   for (const { rowData, rowIdx } of rows) {
@@ -130,17 +138,20 @@ export function validateRowFields(rows, fieldsList, sheetName, parentIndex = nul
             row: rowIdx, field_key: parentKeyField, code: 'PARENT_KEY_RECOVERED', severity: 'WARNING',
             message: `Blank "${parentKeyField}" in sheet '${sheetName}' was auto-linked to this file's only parent row — verify this is correct.`,
           });
+          log.warn('validateRowFields: blank parent key auto-recovered (T5 sole-parent)', { sheetName, rowIdx, parentKeyField, soleParentRawKey });
         } else {
           errors.push({
             row: rowIdx, field_key: parentKeyField, code: 'PARENT_KEY_BLANK', severity: 'ERROR',
             message: `Fill the "${parentKeyField}" column on sheet '${sheetName}' — it must repeat the parent row's ${parentKeyField} so this row can be linked.`,
           });
+          log.debug('validateRowFields: rejected — blank parent key, no sole-parent recovery available', { sheetName, rowIdx, parentKeyField });
         }
       } else if (parentIndex.resolve(parentVal) === null) {
         errors.push({
           row: rowIdx, field_key: parentKeyField, code: 'PARENT_KEY_UNMATCHED', severity: 'ERROR',
           message: `Reference '${parentVal}' in sheet '${sheetName}' does not match any row in the parent sheet — check for a typo, or a missing parent row.`,
         });
+        log.debug('validateRowFields: rejected — parent key does not match any parent row', { sheetName, rowIdx, parentKeyField, parentVal });
       }
     }
     for (const field of fieldsList) {
@@ -155,6 +166,7 @@ export function validateRowFields(rows, fieldsList, sheetName, parentIndex = nul
           row: rowIdx, field_key: key, code: 'REQUIRED_MISSING', severity,
           message: `"${field.label_en}" is required in sheet "${sheetName}".`,
         });
+        log.debug('validateRowFields: required field missing', { sheetName, rowIdx, fieldKey: key, isKeystone, severity });
       }
     }
     for (const group of orGroups) {
@@ -164,9 +176,11 @@ export function validateRowFields(rows, fieldsList, sheetName, parentIndex = nul
           row: rowIdx, field_key: group.fields[0], code: 'REQUIRED_MISSING', severity: 'ERROR',
           message: group.message,
         });
+        log.debug('validateRowFields: OR-group keystone entirely blank', { sheetName, rowIdx, groupFields: group.fields });
       }
     }
   }
+  log.debug('validateRowFields: exit', { sheetName, rowCount: rows.length, errorCount: errors.length });
   return errors;
 }
 
@@ -185,10 +199,12 @@ export function checkDuplicatesInSheet(rows, keyOf, sheetName, codeLabel) {
         row: rowIdx, field_key: null, code: 'DUPLICATE_IN_SHEET', severity: 'ERROR',
         message: `Duplicate ${codeLabel} "${key}" found in sheet "${sheetName}".`,
       });
+      log.warn('checkDuplicatesInSheet: rejected — duplicate key within sheet', { sheetName, rowIdx, codeLabel, key });
     } else {
       seen.add(canon);
     }
   }
+  log.debug('checkDuplicatesInSheet: exit', { sheetName, rowCount: rows.length, duplicatesFound: errors.length });
   return errors;
 }
 
@@ -224,6 +240,7 @@ async function validateRefLabels(trx, recordType, payload, isLegacy, batchScope)
   const errors = [];
   const severity = isLegacy ? 'WARNING' : 'ERROR';
   const row = payload.rowIdx;
+  log.debug('validateRefLabels: enter', { recordType, row, isLegacy, offenceCount: payload.offences.length, localHead: payload.data.local_head || null, beatNo: payload.data.beat_no || null });
 
   // Mirrors records.mapper.js's buildOffenceRows exactly (actCds scoping, actId inferred from
   // a matched section when the act itself was a group alias, minor head scoped by major) — a
@@ -231,19 +248,24 @@ async function validateRefLabels(trx, recordType, payload, isLegacy, batchScope)
   for (const o of payload.offences) {
     if (!o.act && !o.section) continue;
     let { actId, actCds, otherActName } = await resolveAct(trx, o.act);
+    log.debug('validateRefLabels: resolveAct', { row, act: o.act, actId, otherActName: otherActName || null });
     if (actId == null && otherActName) {
       // Not an error — the schema explicitly sanctions free-text acts via other_act_name
       // (same as the interactive form). Informational only, both modes.
       errors.push({ row, field_key: 'act', code: 'ACT_UNKNOWN', severity: 'WARNING', message: `Act "${o.act}" is not in the acts list — will be stored as free text.` });
+      log.warn('validateRefLabels: act unknown — will store as free text', { row, act: o.act });
     }
     if (o.section) {
       const resolved = await resolveSection(trx, o.section, actCds);
+      log.debug('validateRefLabels: resolveSection', { row, section: o.section, act: o.act || null, resolved: !!resolved.sectionId, recovered: !!resolved.recovered });
       if (!resolved.sectionId) {
         errors.push({ row, field_key: 'sections', code: 'REF_UNRESOLVED_SECTION', severity, message: `Section "${o.section}" (act "${o.act || ''}") could not be matched to a known section.` });
+        log.warn('validateRefLabels: section unresolved', { row, section: o.section, act: o.act || null, severity });
       } else {
         if (actId == null && resolved.actCd != null) actId = resolved.actCd; // group alias resolved down to a specific act via its section
         if (resolved.recovered) {
           errors.push({ row, field_key: 'sections', code: 'SECTION_RECOVERED', severity: 'WARNING', message: `Section "${o.section}" matched after normalizing zero-padding/spacing — verify this is correct.` });
+          log.warn('validateRefLabels: section recovered via normalization', { row, section: o.section });
         }
       }
     }
@@ -252,19 +274,24 @@ async function validateRefLabels(trx, recordType, payload, isLegacy, batchScope)
       // NULL) would fail at write time with nothing to fall back on. Only reachable when a
       // row has a section but no act text at all.
       errors.push({ row, field_key: 'act', code: 'REF_UNRESOLVED_SECTION', severity, message: `Section "${o.section}" has no associated act to resolve against.` });
+      log.warn('validateRefLabels: no act at all to resolve section against', { row, section: o.section });
     }
     const { id: majorHeadId, recovered: majorRecovered } = o.major_head ? await resolveMajorHead(trx, o.major_head) : { id: null, recovered: false };
     if (o.major_head && !majorHeadId) {
       errors.push({ row, field_key: 'major_head', code: 'REF_UNRESOLVED_MAJOR_HEAD', severity, message: `Major head "${o.major_head}" could not be matched.` });
+      log.warn('validateRefLabels: major_head unresolved', { row, majorHead: o.major_head, severity });
     } else if (majorRecovered) {
       errors.push({ row, field_key: 'major_head', code: 'MAJOR_HEAD_RECOVERED', severity: 'WARNING', message: `Major head "${o.major_head}" matched after normalizing punctuation/spacing — verify this is correct.` });
+      log.warn('validateRefLabels: major_head recovered via normalization', { row, majorHead: o.major_head });
     }
     if (o.minor_head) {
       const { id: minorHeadId, recovered: minorRecovered } = await resolveMinorHead(trx, o.minor_head, majorHeadId);
       if (!minorHeadId) {
         errors.push({ row, field_key: 'minor_head', code: 'REF_UNRESOLVED_MINOR_HEAD', severity, message: `Minor head "${o.minor_head}" could not be matched.` });
+        log.warn('validateRefLabels: minor_head unresolved', { row, minorHead: o.minor_head, severity });
       } else if (minorRecovered) {
         errors.push({ row, field_key: 'minor_head', code: 'MINOR_HEAD_RECOVERED', severity: 'WARNING', message: `Minor head "${o.minor_head}" matched after normalizing punctuation/spacing — verify this is correct.` });
+        log.warn('validateRefLabels: minor_head recovered via normalization', { row, minorHead: o.minor_head });
       }
     }
   }
@@ -278,21 +305,34 @@ async function validateRefLabels(trx, recordType, payload, isLegacy, batchScope)
       // actually said via the sibling local_head_raw field (config/fields/common.json,
       // storage:"extra", added Integration 3 WP4), so the raw text survives on the record
       // itself, not just in this batch's error log.
-      if (isLegacy) payload.data.local_head_raw = payload.data.local_head;
+      if (isLegacy) {
+        payload.data.local_head_raw = payload.data.local_head;
+        log.warn('validateRefLabels: local_head unresolved — preserved raw text (legacy)', { row, localHead: payload.data.local_head });
+      } else {
+        log.warn('validateRefLabels: local_head unresolved', { row, localHead: payload.data.local_head, severity });
+      }
     } else if (recovered) {
       errors.push({ row, field_key: 'local_head', code: 'LOCAL_HEAD_RECOVERED', severity: 'WARNING', message: `Local head "${payload.data.local_head}" matched after normalizing punctuation/spacing — verify this is correct.` });
+      log.warn('validateRefLabels: local_head recovered via normalization', { row, localHead: payload.data.local_head });
     }
   }
   if (payload.data.beat_no) {
     const { id, recovered } = await resolveBeat(trx, payload.data.beat_no, batchScope?.psId);
     if (!id) {
       errors.push({ row, field_key: 'beat_no', code: 'REF_UNRESOLVED_BEAT', severity, message: `Beat "${payload.data.beat_no}" could not be matched.` });
-      if (isLegacy) payload.data.beat_raw = payload.data.beat_no;
+      if (isLegacy) {
+        payload.data.beat_raw = payload.data.beat_no;
+        log.warn('validateRefLabels: beat_no unresolved — preserved raw text (legacy)', { row, beatNo: payload.data.beat_no });
+      } else {
+        log.warn('validateRefLabels: beat_no unresolved', { row, beatNo: payload.data.beat_no, severity });
+      }
     } else if (recovered) {
       errors.push({ row, field_key: 'beat_no', code: 'BEAT_RECOVERED', severity: 'WARNING', message: `Beat "${payload.data.beat_no}" matched to a beat number in this station after normalizing — verify this is correct.` });
+      log.warn('validateRefLabels: beat_no recovered via normalization', { row, beatNo: payload.data.beat_no });
     }
   }
 
+  log.debug('validateRefLabels: exit', { recordType, row, errorCount: errors.length });
   return errors;
 }
 
@@ -326,6 +366,7 @@ function checkPsMismatch(rawParentRow, batchScope) {
         row: rawParentRow.rowIdx, field_key: 'district', code: 'PS_MISMATCH', severity: 'ERROR',
         message: `District "${districtCell}" does not match this batch's target district ("${batchScope.districtName}").`,
       });
+      log.warn('checkPsMismatch: district mismatch', { row: rawParentRow.rowIdx, districtCell, targetDistrict: batchScope.districtName });
     }
   }
   const psCell = rawParentRow.rowData.police_station;
@@ -336,6 +377,7 @@ function checkPsMismatch(rawParentRow, batchScope) {
         row: rawParentRow.rowIdx, field_key: 'police_station', code: 'PS_MISMATCH', severity: 'ERROR',
         message: `Police Station "${psCell}" does not match this batch's target station ("${batchScope.psName}").`,
       });
+      log.warn('checkPsMismatch: police station mismatch', { row: rawParentRow.rowIdx, psCell, targetPs: batchScope.psName });
     }
   }
   return errors;
@@ -347,7 +389,7 @@ function checkPsMismatch(rawParentRow, batchScope) {
  * for the submit endpoint, which wants a hard failure) — caught here and downgraded to a
  * WARNING row instead of letting it abort the whole batch validation (G10). */
 async function checkSubmitRequirements(trx, recordType, payload, isLegacy) {
-  if (isLegacy) return [];
+  if (isLegacy) { log.debug('checkSubmitRequirements: skipped — legacy import', { recordType, row: payload.rowIdx }); return []; }
   try {
     // FIX 4 (2026-07): validateRequiredFields is a loadRegistry-based check keyed by
     // field_registry.applicable_record_types — 'KALANDRA' itself matches ZERO rows there
@@ -359,8 +401,10 @@ async function checkSubmitRequirements(trx, recordType, payload, isLegacy) {
     // arrested_perm_same) are checked per entry — omitting it made this advisory warn
     // "missing" on every non-legacy CASE/ARREST row regardless of the actual data.
     await validateRequiredFields(trx, effectiveRecordType(recordType), payload.data, { persons: payload.persons || [] });
+    log.debug('checkSubmitRequirements: passed', { recordType, row: payload.rowIdx });
     return [];
   } catch (err) {
+    log.warn('checkSubmitRequirements: advisory — submit requirements not yet met', { recordType, row: payload.rowIdx, err });
     return [{
       row: payload.rowIdx, field_key: null, code: 'SUBMIT_REQUIREMENTS_PENDING', severity: 'WARNING',
       message: err.message,
@@ -382,10 +426,12 @@ async function checkSubmitRequirements(trx, recordType, payload, isLegacy) {
  * every real duplicate was missed). Fetch the PS's fir_nos and canonicalize in JS instead,
  * matching how canonKey() is used everywhere else in this module. */
 async function findDuplicateFirsInDb(trx, psId, canonicalFirNos) {
-  if (!canonicalFirNos.length) return new Set();
+  if (!canonicalFirNos.length) { log.debug('findDuplicateFirsInDb: no candidate FIRs, skipping DB check', { psId }); return new Set(); }
   const rows = await trx('fir_details').where({ ps_id: psId }).whereNotNull('fir_no').select('fir_no');
   const dbCanon = new Set(rows.map((r) => canonKey(r.fir_no)));
-  return new Set(canonicalFirNos.filter((k) => dbCanon.has(k)));
+  const duplicates = new Set(canonicalFirNos.filter((k) => dbCanon.has(k)));
+  log.debug('findDuplicateFirsInDb: exit', { psId, candidateCount: canonicalFirNos.length, existingFirCount: rows.length, duplicatesFound: duplicates.size });
+  return duplicates;
 }
 
 /**
@@ -408,10 +454,13 @@ const titleCaseEnum = (v) => (v ? v.charAt(0).toUpperCase() + v.slice(1).toLower
 function detectCoercionWarnings(recordType, payload, registryMap) {
   const warnings = [];
   const effType = effectiveRecordType(recordType);
-  const push = (field_key, label, from, to, kind) => warnings.push({
-    row: payload.rowIdx, field_key, code: 'VALUE_SALVAGED', severity: 'WARNING',
-    message: `${label}: "${from}" is not a recognized ${kind} — imported ${to == null ? 'blank' : `as "${titleCaseEnum(to)}"`}.`,
-  });
+  const push = (field_key, label, from, to, kind) => {
+    warnings.push({
+      row: payload.rowIdx, field_key, code: 'VALUE_SALVAGED', severity: 'WARNING',
+      message: `${label}: "${from}" is not a recognized ${kind} — imported ${to == null ? 'blank' : `as "${titleCaseEnum(to)}"`}.`,
+    });
+    log.warn('detectCoercionWarnings: value salvaged', { recordType, row: payload.rowIdx, fieldKey: field_key, kind, from, to: to || null });
+  };
   const colOf = (fk) => {
     const st = resolveStorage(registryMap[fk]?.storage, effType);
     return st && typeof st === 'object' ? st.column : null;
@@ -435,15 +484,18 @@ function detectCoercionWarnings(recordType, payload, registryMap) {
   scan(payload.data);
   for (const p of payload.persons || []) scan(p.data);
   for (const pr of payload.properties || []) scan(pr);
+  log.debug('detectCoercionWarnings: exit', { recordType, row: payload.rowIdx, salvagedCount: warnings.length });
   return warnings;
 }
 
 async function validateComposedRow(trx, recordType, isLegacy, batchScope, payload, rawParentRow, dbDuplicateFirs, ioByPis, registryMap) {
+  log.debug('validateComposedRow: enter', { recordType, row: payload.rowIdx, isLegacy, recordDate: payload.recordDate || null });
   const errors = [];
   errors.push(...detectCoercionWarnings(recordType, payload, registryMap));
 
   if (!payload.recordDate) {
     errors.push({ row: payload.rowIdx, field_key: null, code: 'RECORD_DATE_MISSING', severity: 'ERROR', message: 'No usable date found for this record (checked FIR/arrest/occurrence date fields).' });
+    log.warn('validateComposedRow: rejected — no usable record date', { recordType, row: payload.rowIdx });
   } else if (!normalizeDate(payload.recordDate)) {
     // Present but UNPARSEABLE — e.g. an Excel serial-mangled cell that surfaces as
     // "31/12/+046027" (year 46027). record_date is NOT NULL and can't be fabricated the way a
@@ -451,6 +503,7 @@ async function validateComposedRow(trx, recordType, isLegacy, batchScope, payloa
     // per-row reason instead of letting the raw value reach the DATE column and raise pg 22007
     // (invalid datetime) mid-write as an opaque "system error" (#1 class, 2026-07-20).
     errors.push({ row: payload.rowIdx, field_key: null, code: 'RECORD_DATE_INVALID', severity: 'ERROR', message: `The record date "${payload.recordDate}" is not a valid date — correct it in the source file and re-validate.` });
+    log.warn('validateComposedRow: rejected — record date unparseable', { recordType, row: payload.rowIdx, recordDate: payload.recordDate });
   }
 
   // T1 ARREST/KALANDRA keystone: "≥1 arrestee with first name" (03-TRIAGE-MATRIX.md) — the
@@ -466,6 +519,7 @@ async function validateComposedRow(trx, recordType, isLegacy, batchScope, payloa
         row: payload.rowIdx, field_key: 'arrested_first_name', code: 'REQUIRED_MISSING', severity: 'ERROR',
         message: 'At least one Arrested Person (with First Name filled in) is required on the Person Arrested sheet.',
       });
+      log.warn('validateComposedRow: rejected — no arrestee with a first name', { recordType, row: payload.rowIdx });
     }
   }
 
@@ -475,7 +529,16 @@ async function validateComposedRow(trx, recordType, isLegacy, batchScope, payloa
   // key (ACT_SHEET_KEYS in import.compose.js) with no registry row, so it can only be enforced
   // here, on the composed offences[]. Not a keystone: legacy demotes to WARNING like every other
   // registry-required field.
-  if (recordType === 'CASE' || recordType === 'UIDB') {
+  // #E (2026-07-20): for CASE, crime heads (act/section/crime_head/local_head) are mandatory ONLY
+  // for CCTNS + Zero FIR registration types; all other case_type values are RELAXED (user domain
+  // rule). UIDB is unchanged (always requires a major head). case_type is a parent-sheet field
+  // merged into payload.data at compose time; normalize casing/spacing before comparing since real
+  // Excel entries vary even with a dropdown. The two crime-head-carrying values are
+  // 'cctns(manual FIR)' and 'zero FIR' (see config/fields/common.json case_type options).
+  const CRIME_HEAD_CASE_TYPES = new Set(['cctns(manual fir)', 'zero fir']);
+  const caseTypeNorm = String(payload.data.case_type || '').trim().toLowerCase();
+  const caseNeedsCrimeHead = recordType === 'CASE' && CRIME_HEAD_CASE_TYPES.has(caseTypeNorm);
+  if (recordType === 'UIDB' || caseNeedsCrimeHead) {
     const headField = recordType === 'UIDB' ? 'major_head' : 'crime_head';
     const hasClassifiedOffence = (payload.offences || []).some(
       (o) => String(o.major_head || '').trim() !== ''
@@ -484,8 +547,11 @@ async function validateComposedRow(trx, recordType, isLegacy, batchScope, payloa
       errors.push({
         row: payload.rowIdx, field_key: headField, code: 'REQUIRED_MISSING',
         severity: isLegacy ? 'WARNING' : 'ERROR',
-        message: 'No Crime Head found on the "Act and Sections" sheet — at least one offence row with a Crime Head is required.',
+        message: recordType === 'CASE'
+          ? `No Crime Head found on the "Act and Sections" sheet — required because Case Type is "${payload.data.case_type}" (CCTNS / Zero FIR).`
+          : 'No Crime Head found on the "Act and Sections" sheet — at least one offence row with a Crime Head is required.',
       });
+      log.warn('validateComposedRow: rejected — no classified offence (crime head)', { recordType, row: payload.rowIdx, headField, caseType: payload.data.case_type || null });
     }
   }
 
@@ -494,6 +560,7 @@ async function validateComposedRow(trx, recordType, isLegacy, batchScope, payloa
       row: payload.rowIdx, field_key: 'fir_no', code: 'DUPLICATE_IN_DB', severity: 'ERROR',
       message: `FIR number "${payload.data.fir_no}" already exists in the database for this Police Station.`,
     });
+    log.warn('validateComposedRow: rejected — FIR already exists in DB', { recordType, row: payload.rowIdx, firNo: payload.data.fir_no });
   }
 
   // IO resolution (WP10 2026-07-16 + T2 03-TRIAGE-MATRIX.md/D2 2026-07-16). The template's
@@ -590,6 +657,11 @@ function groupWrappedRowsByParent(rows, keyField, parentIndex) {
  */
 export async function validateBatch(trx, { recordType, isLegacy, batchScope, parsed, registryMap }) {
   const { parentRows, childSheets, parentIndex, parentKeyField, sheetFieldLists, ghostRowsSkipped } = parsed;
+  log.debug('validateBatch: enter', {
+    recordType, isLegacy, psId: batchScope?.psId, districtId: batchScope?.districtId,
+    parentRowCount: parentRows.length,
+    childSheetCounts: Object.fromEntries(Object.entries(childSheets).map(([role, rows]) => [role, rows.length])),
+  });
   const errorRows = [];
   const invalidParentKeys = new Set();
 
@@ -601,6 +673,7 @@ export async function validateBatch(trx, { recordType, isLegacy, batchScope, par
         row: 0, field_key: null, code: 'GHOST_ROWS_SKIPPED', severity: 'WARNING',
         message: `Sheet "${sheet}": row(s) ${rows.join(', ')} appear empty/stray (1-2 filled cells, no key data) and were skipped.`,
       });
+      log.warn('validateBatch: batch-level notice — ghost rows skipped at parse time', { recordType, sheet, rows });
     }
   }
 
@@ -614,6 +687,7 @@ export async function validateBatch(trx, { recordType, isLegacy, batchScope, par
       row: 0, field_key: null, code: 'LEGACY_TEMPLATE_LAYOUT', severity: 'WARNING',
       message: 'This file uses an older template version — please download the current template for future imports.',
     });
+    log.warn('validateBatch: batch-level notice — file uses an older (non-current) known template layout', { recordType, layoutVersion: parsed.layoutVersion });
   }
 
   // T10 (03-TRIAGE-MATRIX.md/F5) — silent-drop warning: a {drop:true}-bridged template column
@@ -640,6 +714,7 @@ export async function validateBatch(trx, { recordType, isLegacy, batchScope, par
           row: 0, field_key: key, code: 'COLUMN_DROPPED_INFORMATIONAL', severity: 'WARNING',
           message: `Column "${labelForDroppedKey(key)}" is informational and is not imported.`,
         });
+        log.debug('validateBatch: batch-level notice — informational column was filled but is dropped', { recordType, fieldKey: key });
       }
     }
   }
@@ -663,6 +738,7 @@ export async function validateBatch(trx, { recordType, isLegacy, batchScope, par
     ? parentRows[0].rowData[parentKeyField] : null;
 
   // 1. Parent sheet: required fields (no parent-key check for the parent sheet itself).
+  log.debug('validateBatch: step 1 — parent sheet required-field check', { recordType, rowCount: parentRows.length });
   for (const e of validateRowFields(parentRows, sheetFieldLists.parent, 'parent', null, null, rowOpts)) {
     errorRows.push(e);
     if (e.severity === 'ERROR') {
@@ -670,20 +746,24 @@ export async function validateBatch(trx, { recordType, isLegacy, batchScope, par
       if (r) invalidate(parentCanonOf(r));
     }
   }
+  log.debug('validateBatch: step 1 exit', { recordType, invalidatedSoFar: invalidParentKeys.size });
 
   // 2. Parent sheet: duplicate-in-sheet by its own key (skip single-sheet types with no key).
   if (parentKeyField) {
+    log.debug('validateBatch: step 2 — parent sheet duplicate-in-sheet check', { recordType, parentKeyField });
     for (const e of checkDuplicatesInSheet(parentRows, (rd) => rd[parentKeyField], 'parent', parentKeyField)) {
       errorRows.push(e);
       const r = parentRows.find((pr) => pr.rowIdx === e.row);
       if (r) invalidate(parentCanonOf(r));
     }
+    log.debug('validateBatch: step 2 exit', { recordType, invalidatedSoFar: invalidParentKeys.size });
   }
 
   // 3. Child sheets: required fields + parent-key existence, each error's parent invalidated.
   for (const [role, rows] of Object.entries(childSheets)) {
     const fieldsList = sheetFieldLists[role];
-    if (!fieldsList) continue;
+    if (!fieldsList) { log.debug('validateBatch: step 3 — child sheet has no field list, skipping', { recordType, role }); continue; }
+    log.debug('validateBatch: step 3 — child sheet required/parent-key check', { recordType, role, rowCount: rows.length });
     for (const e of validateRowFields(rows, fieldsList, role, parentIndex, parentKeyField, { ...rowOpts, soleParentRawKey })) {
       errorRows.push(e);
       if (e.severity === 'ERROR') {
@@ -692,6 +772,7 @@ export async function validateBatch(trx, { recordType, isLegacy, batchScope, par
       }
     }
   }
+  log.debug('validateBatch: step 3 exit — all child sheets checked', { recordType, invalidatedSoFar: invalidParentKeys.size });
 
   // 4. Compose every parent NOT already invalidated, grouping its children.
   const groupedByRole = {};
@@ -714,12 +795,14 @@ export async function validateBatch(trx, { recordType, isLegacy, batchScope, par
     payload.rowIdx = parentRow.rowIdx; // for composed-level error attribution
     composedPayloads.push({ payload, rawParentRow: parentRow });
   }
+  log.debug('validateBatch: step 4 exit — composed surviving parents', { recordType, composedCount: composedPayloads.length, skippedAlreadyInvalid: parentRows.length - composedPayloads.length });
 
   // 5. Batched duplicate-in-DB (CASE only — see findDuplicateFirsInDb).
   let dbDuplicateFirs = new Set();
   if (recordType === 'CASE') {
     const candidateFirs = composedPayloads.map((c) => c.payload.data.fir_no).filter(Boolean).map(canonKey);
     dbDuplicateFirs = await findDuplicateFirsInDb(trx, batchScope.psId, candidateFirs);
+    log.debug('validateBatch: step 5 exit — DB duplicate FIR check', { recordType, candidateCount: candidateFirs.length, duplicatesFound: dbDuplicateFirs.size });
   }
 
   // 5b. Registered IOs for the batch's target PS, fetched once and matched normalized-to-
@@ -732,10 +815,12 @@ export async function validateBatch(trx, { recordType, isLegacy, batchScope, par
   const ioByPis = new Map(
     ioRows.filter((r) => r.pis_no).map((r) => [String(r.pis_no).trim().toLowerCase(), r])
   );
+  log.debug('validateBatch: step 5b exit — registered IOs fetched for batch PS', { recordType, psId: batchScope.psId, ioCount: ioByPis.size });
 
   // 6. Composed-level checks per surviving parent; a DUPLICATE_IN_DB/RECORD_DATE_MISSING/
   // PS_MISMATCH/IO_NOT_REGISTERED/non-legacy-ref-miss finding invalidates its parent too
   // (whole-FIR atomicity applies here exactly as it does to row-level findings).
+  log.debug('validateBatch: step 6 — composed-level checks starting', { recordType, composedCount: composedPayloads.length });
   for (const { payload, rawParentRow } of composedPayloads) {
     const errs = await validateComposedRow(trx, recordType, isLegacy, batchScope, payload, rawParentRow, dbDuplicateFirs, ioByPis, registryMap);
     for (const e of errs) {
@@ -743,9 +828,16 @@ export async function validateBatch(trx, { recordType, isLegacy, batchScope, par
       if (e.severity === 'ERROR') invalidate(parentCanonOf(rawParentRow));
     }
   }
+  log.debug('validateBatch: step 6 exit — composed-level checks done', { recordType, invalidatedSoFar: invalidParentKeys.size });
 
   const finalPayloads = composedPayloads.filter((c) => !invalidParentKeys.has(parentCanonOf(c.rawParentRow)));
   const counts = { total: parentRows.length, valid: finalPayloads.length, invalid: parentRows.length - finalPayloads.length };
 
+  log.info('validateBatch: exit', {
+    recordType, isLegacy, psId: batchScope?.psId,
+    total: counts.total, valid: counts.valid, invalid: counts.invalid,
+    errorRowCount: errorRows.length,
+    errorSeverityCounts: errorRows.reduce((acc, e) => { acc[e.severity] = (acc[e.severity] || 0) + 1; return acc; }, {}),
+  });
   return { errorRows, invalidParentKeys, composedPayloads: finalPayloads, counts };
 }

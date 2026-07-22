@@ -1,7 +1,9 @@
 import * as eventBus from '../eventBus.js';
 import db from '../../config/db.js';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
+
+const log = getLogger('linkResolver');
 
 // Async link resolution (ruling 23c, ENGINEERING_BASELINE.md P1.7): a record write never
 // resolves cross-record links inside its own transaction. It stores the as-entered FIR
@@ -29,10 +31,11 @@ const RESOLVERS = {
  * record.updated for a busy CASE.
  */
 async function backfillOrphansForCase(caseRecord, fir) {
+  log.debug('backfillOrphansForCase: enter', { recordId: caseRecord.id, psId: caseRecord.ps_id, firNo: fir.fir_no, firYear: fir.fir_year ?? null });
   for (const [type, cfg] of Object.entries(RESOLVERS)) {
     const linkType = await db('link_type_registry').where({ code: cfg.linkTypeCode, is_active: true }).first();
     if (!linkType) {
-      logger.warn(`[LinkResolver] link_type_registry code "${cfg.linkTypeCode}" not found — run npm run db:seed`);
+      log.warn('backfillOrphansForCase: link_type_registry code not found — run npm run db:seed', { recordId: caseRecord.id, linkTypeCode: cfg.linkTypeCode });
       continue;
     }
 
@@ -40,6 +43,7 @@ async function backfillOrphansForCase(caseRecord, fir) {
       .join('records as r', 'r.id', 'd.record_id')
       .where({ 'd.fir_no': fir.fir_no, 'r.ps_id': caseRecord.ps_id, 'r.record_type': type })
       .select('d.record_id', 'd.fir_date', 'r.created_by');
+    log.debug('backfillOrphansForCase: found candidates', { recordId: caseRecord.id, targetType: type, firNo: fir.fir_no, candidateCount: candidates.length });
 
     for (const cand of candidates) {
       // Same fir_year-disjunct leniency as the forward direction (mirrored): only require
@@ -48,7 +52,10 @@ async function backfillOrphansForCase(caseRecord, fir) {
       // no-op in practice until then, not dead code.
       if (fir.fir_year != null && cand.fir_date) {
         const candYear = new Date(cand.fir_date).getFullYear();
-        if (candYear !== fir.fir_year) continue;
+        if (candYear !== fir.fir_year) {
+          log.debug('backfillOrphansForCase: skipped candidate — fir_year mismatch', { recordId: caseRecord.id, candidateRecordId: cand.record_id, firYear: fir.fir_year, candYear });
+          continue;
+        }
       }
 
       await db('record_links')
@@ -60,26 +67,44 @@ async function backfillOrphansForCase(caseRecord, fir) {
         })
         .onConflict(['source_record_id', 'target_record_id', 'link_type_id'])
         .ignore();
+      log.info('backfillOrphansForCase: attempted CASE-to-orphan link (onConflict ignore, may be pre-existing)', {
+        sourceRecordId: caseRecord.id, targetRecordId: cand.record_id, linkTypeCode: cfg.linkTypeCode,
+      });
     }
   }
+  log.debug('backfillOrphansForCase: exit', { recordId: caseRecord.id, firNo: fir.fir_no });
 }
 
 async function resolveAndLink(recordId) {
+  log.debug('resolveAndLink: enter', { recordId });
   const record = await db('records').where({ id: recordId }).first();
-  if (!record) return;
+  if (!record) {
+    log.warn('resolveAndLink: record not found, skipping', { recordId });
+    return;
+  }
 
   if (record.record_type === 'CASE') {
+    log.debug('resolveAndLink: record is CASE, taking back-resolve branch', { recordId });
     const fir = await db('fir_details').where({ record_id: recordId }).first();
-    if (!fir || !fir.fir_no) return;
+    if (!fir || !fir.fir_no) {
+      log.debug('resolveAndLink: CASE has no fir_no yet, nothing to backfill', { recordId });
+      return;
+    }
     await backfillOrphansForCase(record, fir);
     return;
   }
 
   const cfg = RESOLVERS[record.record_type];
-  if (!cfg) return;
+  if (!cfg) {
+    log.debug('resolveAndLink: record_type has no resolver, skipping', { recordId, recordType: record.record_type });
+    return;
+  }
 
   const detail = await db(cfg.detailTable).where({ record_id: recordId }).first();
-  if (!detail || !detail.fir_no) return;
+  if (!detail || !detail.fir_no) {
+    log.debug('resolveAndLink: detail row missing fir_no, nothing to resolve', { recordId, recordType: record.record_type });
+    return;
+  }
 
   // `fir_details.fir_year` is allocator-assigned (ARCHITECTURE.md §6.2 FIR number
   // counter) — that allocator isn't built yet (deferred with the transfers module, per
@@ -94,13 +119,14 @@ async function resolveAndLink(recordId) {
   if (firYear) caseFir = caseFir.andWhere((b) => b.whereNull('fir_year').orWhere('fir_year', firYear));
   const match = await caseFir.first();
   if (!match) {
-    logger.debug(`[LinkResolver] No CASE match yet for ${record.record_type} ${recordId} (fir_no=${detail.fir_no})`);
+    log.debug('resolveAndLink: no CASE match yet', { recordId, recordType: record.record_type, firNo: detail.fir_no, psId: record.ps_id });
     return;
   }
+  log.debug('resolveAndLink: matched CASE', { recordId, recordType: record.record_type, matchedRecordId: match.record_id, firNo: detail.fir_no });
 
   const linkType = await db('link_type_registry').where({ code: cfg.linkTypeCode, is_active: true }).first();
   if (!linkType) {
-    logger.warn(`[LinkResolver] link_type_registry code "${cfg.linkTypeCode}" not found — run npm run db:seed`);
+    log.warn('resolveAndLink: link_type_registry code not found — run npm run db:seed', { recordId, linkTypeCode: cfg.linkTypeCode });
     return;
   }
 
@@ -113,23 +139,32 @@ async function resolveAndLink(recordId) {
     })
     .onConflict(['source_record_id', 'target_record_id', 'link_type_id'])
     .ignore();
+  log.info('resolveAndLink: attempted record-to-CASE link (onConflict ignore, may be pre-existing)', {
+    sourceRecordId: match.record_id, targetRecordId: recordId, linkTypeCode: cfg.linkTypeCode,
+  });
 }
 
 export async function init() {
+  log.info('init: registering event subscriptions', { events: ['record.created', 'record.updated'] });
+
   await eventBus.subscribe('record.created', 'link-resolver-queue', async (payload) => {
+    const recordId = payload.record_id;
+    log.debug('record.created: received', { recordId });
     try {
-      const recordId = payload.record_id;
       if (recordId) await resolveAndLink(recordId);
+      else log.warn('record.created: payload missing record_id, skipping', {});
     } catch (err) {
-      logger.error('[LinkResolver] record.created handling failed:', err.message);
+      log.error('record.created: handling failed', { recordId, err });
     }
   });
   await eventBus.subscribe('record.updated', 'link-resolver-queue-updated', async (payload) => {
+    const recordId = payload.record_id;
+    log.debug('record.updated: received', { recordId });
     try {
-      const recordId = payload.record_id;
       if (recordId) await resolveAndLink(recordId);
+      else log.warn('record.updated: payload missing record_id, skipping', {});
     } catch (err) {
-      logger.error('[LinkResolver] record.updated handling failed:', err.message);
+      log.error('record.updated: handling failed', { recordId, err });
     }
   });
 }

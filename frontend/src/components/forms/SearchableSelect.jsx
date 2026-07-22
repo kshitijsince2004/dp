@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { log } from '../../utils/logger.js';
 
 
 export default function SearchableSelect({
@@ -121,8 +122,10 @@ export default function SearchableSelect({
                   } else {
                     nextValues = [...selectedValues, opt.value];
                   }
+                  log.debug('form:searchable_select_change', { multiple: true, action: isChecked ? 'deselect' : 'select', value: opt.value });
                   onChange(Array.isArray(value) ? nextValues : nextValues.join(', '));
                 } else {
+                  log.debug('form:searchable_select_change', { multiple: false, value: opt.value });
                   onChange(opt.value);
                   closeDropdown();
                 }

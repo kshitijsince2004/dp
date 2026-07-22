@@ -185,3 +185,20 @@ build may make its later implementation a refactor. The cheap disciplines stay O
 - [ ] Append-only preserved: revision + audit_log in-transaction, event after commit
 - [ ] Cross-module effects via RabbitMQ, not direct imports
 - [ ] Kill-list code deleted, not resurrected
+- [ ] New backend code uses `getLogger('module.name')` + structured `log.*(msg, data)`, matching the `records.service.js` anchor; `requestId` is ambient (never threaded); secrets pass through `redact()`. New frontend code uses the `log` singleton (`utils/logger.js`). See §13b of `CLAUDE.md` + `docs/logging-instrumentation-2026-07-22/HANDOFF.md`.
+
+---
+
+## Standing practice — Logging (2026-07-22)
+
+Full-stack debug logging is a permanent facility, not a one-off. Convention: structured,
+dev-gated, correlation-id-driven (`AsyncLocalStorage` backend / `x-request-id` frontend),
+redaction-mandatory. Anchor file = `backend/src/modules/records/records.service.js`. Frontend
+logs ship to `/api/logs/client` and land in `backend/logs/frontend/`. When adding a module or
+touching a hot path, instrument it in the same style rather than leaving it dark.
+
+**Multi-agent lesson (binding):** subagents that share ONE working tree must NEVER run
+tree-wide git ops (`git stash`, `git reset`, `git checkout -- .`). During the 2026-07-22
+logging fan-out these silently reverted concurrent agents' in-flight edits (recovered via the
+Edit tool's stale-read guard, but fragile). Lint via explicit file paths only. For large
+parallel fan-outs, prefer per-agent git worktrees for structural isolation.

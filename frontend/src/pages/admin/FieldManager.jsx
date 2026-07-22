@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings, Plus, X, ChevronDown, ChevronRight, ToggleLeft, ToggleRight, Globe, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
+import { log } from '../../utils/logger.js';
 
 const ensureArray = (val) => (Array.isArray(val) ? val : []);
 
@@ -49,12 +50,25 @@ export default function FieldManager() {
   const [form,             setForm]              = useState(emptyForm());
   const [editTarget,       setEditTarget]        = useState(null);
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/admin/fields' });
+    return () => log.debug('page:unmount', { route: '/admin/fields' });
+  }, []);
+
   // ── Data ──────────────────────────────────────────────────────────────────
   const { data: allFields = [], isLoading } = useQuery({
     queryKey: ['admin', 'fields', 'all'],
     queryFn: async () => {
-      const res = await api.get('/fields');
-      return res.data?.data?.fields || [];
+      log.debug('data:load_start', { what: 'admin_fields_all' });
+      try {
+        const res = await api.get('/fields');
+        const rows = res.data?.data?.fields || [];
+        log.debug('data:load_success', { what: 'admin_fields_all', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'admin_fields_all', err });
+        throw err;
+      }
     },
     staleTime: 60_000,
   });
@@ -82,29 +96,31 @@ export default function FieldManager() {
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const createMutation = useMutation({
-    mutationFn: (payload) => api.post('/fields', payload),
-    onSuccess: () => {
+    mutationFn: (payload) => { log.info('action:field_create_start', { fieldKey: payload.field_key }); return api.post('/fields', payload); },
+    onSuccess: (res, payload) => {
+      log.info('action:field_create_success', { fieldKey: payload.field_key });
       toast.success('Field published to registry');
       closeModal();
       queryClient.invalidateQueries({ queryKey: ['admin', 'fields', 'all'] });
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to create field'),
+    onError: (err, payload) => { log.error('action:field_create_failed', { fieldKey: payload?.field_key, err }); toast.error(err.response?.data?.message || 'Failed to create field'); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }) => api.patch(`/fields/${id}`, payload),
-    onSuccess: () => {
+    mutationFn: ({ id, payload }) => { log.info('action:field_update_start', { fieldId: id }); return api.patch(`/fields/${id}`, payload); },
+    onSuccess: (res, { id }) => {
+      log.info('action:field_update_success', { fieldId: id });
       toast.success('Field updated');
       closeModal();
       queryClient.invalidateQueries({ queryKey: ['admin', 'fields', 'all'] });
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to update field'),
+    onError: (err, { id }) => { log.error('action:field_update_failed', { fieldId: id, err }); toast.error(err.response?.data?.message || 'Failed to update field'); },
   });
 
   const toggleMutation = useMutation({
-    mutationFn: (id) => api.patch(`/fields/${id}/toggle`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'fields', 'all'] }),
-    onError: (err) => toast.error(err.response?.data?.message || 'Toggle failed'),
+    mutationFn: (id) => { log.debug('action:field_toggle_start', { fieldId: id }); return api.patch(`/fields/${id}/toggle`); },
+    onSuccess: (res, id) => { log.info('action:field_toggle_success', { fieldId: id }); queryClient.invalidateQueries({ queryKey: ['admin', 'fields', 'all'] }); },
+    onError: (err, id) => { log.error('action:field_toggle_failed', { fieldId: id, err }); toast.error(err.response?.data?.message || 'Toggle failed'); },
   });
 
   // ── Modal helpers ──────────────────────────────────────────────────────────
@@ -149,6 +165,7 @@ export default function FieldManager() {
       options:                 form.field_type === 'SELECT' ? form.options : [],
     };
 
+    log.debug('action:field_form_submit', { editTarget, fieldKey: form.field_key || editTarget });
     if (editTarget) {
       updateMutation.mutate({ id: editTarget, payload });
     } else {
@@ -203,7 +220,7 @@ export default function FieldManager() {
           { key: 'global',   label: 'Global Field Registry', icon: <Globe size={12} /> },
           { key: 'district', label: 'District Extensions' },
         ].map((tab) => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+          <button key={tab.key} onClick={() => { log.debug('action:field_tab_change', { tab: tab.key }); setActiveTab(tab.key); }}
             className={`px-5 py-3 text-xs font-bold tracking-wide border-b-2 transition-all -mb-[2px] flex items-center gap-1.5 cursor-pointer border-none bg-transparent ${
               activeTab === tab.key
                 ? 'border-[var(--accent-color)] text-[var(--accent-color)]'

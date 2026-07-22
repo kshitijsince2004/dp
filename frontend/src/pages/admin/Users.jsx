@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users as UsersIcon, Plus, UserCheck, UserX, ShieldAlert, X, Trash2, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
+import { log } from '../../utils/logger.js';
 
 // Roles the backend actually grants POST/PUT/DELETE on /users to (users.router.js) —
 // HQ_ANALYST/DISTRICT_OFFICER can list (GET) but not mutate; mirror that here so the
@@ -52,30 +53,46 @@ export default function Users() {
 
   const resetForm = () => setForm({ badgeNo: '', name_en: '', role: 'HC', password: '', psId: '', districtId: '' });
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/admin/users', userId: currentUser?.id, role: currentUser?.role });
+    return () => log.debug('page:unmount', { route: '/admin/users' });
+  }, []);
+
   // ── Fetch Users ──────────────────────────────────────────────────────────
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin', 'users'],
     queryFn: async () => {
-      const res = await api.get('/users');
-      // Backend returns { data: [...] } or { data: { data: [...] } }
-      const payload = res.data?.data;
-      return Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+      log.debug('data:load_start', { what: 'admin_users' });
+      try {
+        const res = await api.get('/users');
+        // Backend returns { data: [...] } or { data: { data: [...] } }
+        const payload = res.data?.data;
+        const rows = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+        log.debug('data:load_success', { what: 'admin_users', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'admin_users', err });
+        throw err;
+      }
     },
   });
 
   // ── Create User ───────────────────────────────────────────────────────────
   const createUserMutation = useMutation({
     mutationFn: async (payload) => {
+      log.info('action:user_create_start', { badgeNo: payload.badgeNo, role: payload.role, hasPassword: !!payload.password });
       const res = await api.post('/users', payload);
       return res.data.data;
     },
-    onSuccess: () => {
+    onSuccess: (data, payload) => {
+      log.info('action:user_create_success', { badgeNo: payload.badgeNo, role: payload.role });
       toast.success('User profile registered successfully');
       setModalOpen(false);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
-    onError: (err) => {
+    onError: (err, payload) => {
+      log.error('action:user_create_failed', { badgeNo: payload?.badgeNo, err });
       toast.error(err.response?.data?.message || 'Failed to register user');
     },
   });
@@ -83,14 +100,17 @@ export default function Users() {
   // ── Toggle Active Status ──────────────────────────────────────────────────
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, is_active }) => {
+      log.debug('action:user_toggle_status_start', { userId: id, newActive: !is_active });
       const res = await api.put(`/users/${id}`, { is_active: !is_active });
       return res.data.data;
     },
-    onSuccess: (_, { is_active }) => {
+    onSuccess: (_, { id, is_active }) => {
+      log.info('action:user_toggle_status_success', { userId: id, newActive: !is_active });
       toast.success(is_active ? 'User deactivated' : 'User reactivated');
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
-    onError: (err) => {
+    onError: (err, { id }) => {
+      log.error('action:user_toggle_status_failed', { userId: id, err });
       toast.error(err.response?.data?.message || 'Failed to update user status');
     },
   });
@@ -98,13 +118,16 @@ export default function Users() {
   // ── Delete User ───────────────────────────────────────────────────────────
   const deleteUserMutation = useMutation({
     mutationFn: async (id) => {
+      log.info('action:user_delete_start', { userId: id });
       await api.delete(`/users/${id}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
+      log.info('action:user_delete_success', { userId: id });
       toast.success('User removed from registry');
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
-    onError: (err) => {
+    onError: (err, id) => {
+      log.error('action:user_delete_failed', { userId: id, err });
       toast.error(err.response?.data?.message || 'Failed to remove user');
     },
   });
@@ -112,16 +135,19 @@ export default function Users() {
   // ── Reset Password ────────────────────────────────────────────────────────
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ id, newPassword }) => {
+      log.info('action:user_reset_password_start', { userId: id, hasNewPassword: !!newPassword, newPasswordLength: newPassword?.length ?? 0 });
       const res = await api.post(`/users/${id}/reset-password`, { newPassword });
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (_, { id }) => {
+      log.info('action:user_reset_password_success', { userId: id });
       toast.success('Password reset successfully');
       setResetModalOpen(false);
       setNewPassword('');
       setSelectedUser(null);
     },
-    onError: (err) => {
+    onError: (err, { id }) => {
+      log.error('action:user_reset_password_failed', { userId: id, err });
       toast.error(err.response?.data?.message || 'Failed to reset password');
     },
   });
@@ -132,6 +158,7 @@ export default function Users() {
       toast.error('Badge No, Name, Role, and Password are required');
       return;
     }
+    log.debug('action:user_form_submit', { badgeNo: form.badgeNo, role: form.role });
     createUserMutation.mutate(form);
   };
 
@@ -253,6 +280,7 @@ export default function Users() {
                         {/* Delete */}
                         <button
                           onClick={() => {
+                            log.debug('action:user_delete_click', { userId: item.id });
                             if (window.confirm(`Permanently remove ${item.name || item.username} from the registry?`)) {
                               deleteUserMutation.mutate(item.id);
                             }

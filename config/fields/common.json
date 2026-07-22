@@ -338,8 +338,7 @@
   "field_key": "local_head",
   "record_types": [
    "CASE",
-   "ARREST",
-   "UIDB"
+   "ARREST"
   ],
   "field_type": "SELECT",
   "labels": {

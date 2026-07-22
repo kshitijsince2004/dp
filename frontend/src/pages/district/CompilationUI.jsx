@@ -7,6 +7,7 @@ import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import DateInput from '../../components/ui/DateInput.jsx';
 import { formatDMY, parseDMY } from '../../utils/dateFormat.js';
+import { log } from '../../utils/logger.js';
 
 const REPORTS = [
   { tableName: "excel_1manual_fir",                label: "Manual FIR",                        type: "list",    num: 1  },
@@ -128,16 +129,23 @@ export default function CompilationUI() {
   const [reportsDropOpen, setReportsDropOpen] = useState(false);
   const [reportSearch, setReportSearch] = useState('');
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/compilation', userId: user?.id, role: user?.role, userLevel });
+    return () => log.debug('page:unmount', { route: '/compilation' });
+  }, []);
+
   const handleSelectDiary = (diary) => {
     if (diary.status !== 'active') {
       toast('This diary is coming soon.', { icon: '🚧' });
       return;
     }
+    log.debug('action:diary_select', { diaryKey: diary.key });
     setSelectedDiary(diary);
     setSelectedFields(new Set(diary.reports.map(r => r.tableName)));
   };
 
   const handleChangeDiary = () => {
+    log.debug('action:diary_change', { previousDiaryKey: selectedDiary?.key });
     setSelectedDiary(null);
     setSelectedFields(new Set());
   };
@@ -152,6 +160,7 @@ export default function CompilationUI() {
   const { data: psList = [], isLoading: psLoading } = useQuery({
     queryKey: ['hierarchy', 'ps', userLevel, user?.ps_id || user?.psId, user?.district_id || user?.districtId],
     queryFn: async () => {
+      log.debug('data:load_start', { what: 'hierarchy_ps', userLevel });
       try {
         const res = await api.get('/hierarchy/nodes?type=PS');
         const list = (res.data?.data?.nodes || res.data?.data || []).map(n => ({
@@ -159,9 +168,11 @@ export default function CompilationUI() {
           name: n.name_en || n.name || n.ps_name,
           code: n.code || n.ps_code || "",
         }));
+        log.debug('data:load_success', { what: 'hierarchy_ps', count: list.length });
         return list;
       } catch (err) {
         console.warn('Failed to fetch hierarchy nodes:', err.message);
+        log.error('data:load_error', { what: 'hierarchy_ps', err });
         // Never fall back to a cross-jurisdiction mock list for PS-level users.
         return userLevel === 'PS' ? [] : MOCK_PS_LIST;
       }
@@ -192,19 +203,29 @@ export default function CompilationUI() {
   const { data: compilations = [], isLoading, error: fetchError } = useQuery({
     queryKey: ['compilations'],
     queryFn: async () => {
-      const res = await api.get('/compilations');
-      return res.data.data || [];
+      log.debug('data:load_start', { what: 'compilations' });
+      try {
+        const res = await api.get('/compilations');
+        const rows = res.data.data || [];
+        log.debug('data:load_success', { what: 'compilations', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'compilations', err });
+        throw err;
+      }
     },
   });
 
   // Create Compilation Mutation
   const createCompMutation = useMutation({
     mutationFn: async ({ period, fromDate, toDate }) => {
+      log.info('action:compile_start', { period, fromDate, toDate });
       const res = await api.post('/compilations', { period, fromDate, toDate });
       return res.data.data;
     },
     onSuccess: (data) => {
       const total = data?.compiled_summary?.total_records ?? 0;
+      log.info('action:compile_success', { compilationId: data?.id, totalRecords: total });
       if (total > 0) {
         toast.success(`Compilation created — ${total} DISTRICT_REVIEW records bundled.`);
       } else {
@@ -215,26 +236,31 @@ export default function CompilationUI() {
     onError: (err) => {
       // Non-fatal — daily diary export proceeds independently
       console.warn('[Compilation] Create failed (non-fatal):', err.response?.data?.message);
+      log.warn('action:compile_failed_nonfatal', { err });
     },
   });
 
   // Submit Compilation Mutation
   const submitCompMutation = useMutation({
     mutationFn: async (id) => {
+      log.info('action:compile_submit_start', { compilationId: id });
       const res = await api.post(`/compilations/${id}/submit`);
       return res.data.data;
     },
-    onSuccess: () => {
+    onSuccess: (data, id) => {
+      log.info('action:compile_submit_success', { compilationId: id });
       toast.success('Compilation dispatched to HQ successfully');
       queryClient.invalidateQueries({ queryKey: ['compilations'] });
     },
-    onError: (err) => {
+    onError: (err, id) => {
+      log.error('action:compile_submit_failed', { compilationId: id, err });
       toast.error(err.response?.data?.message || 'Failed to submit compilation');
     },
   });
 
   const handleCompileTrigger = async () => {
     if (exporting || !selectedDiary) return;
+    log.info('action:compile_logs_click', { diaryKey: selectedDiary.key, dateFrom, dateTo, psCount: selectedPSIds.size, reportCount: selectedFields.size });
     setExporting(true);
 
     // 1. Persist compilation in DB (non-fatal — continues even if no DISTRICT_REVIEW records)
@@ -268,8 +294,10 @@ export default function CompilationUI() {
       const exportJson = await exportRes.json();
       jobId = exportJson?.data?.job_id;
       if (!jobId) throw new Error('No job ID returned from server');
+      log.info('action:export_queued', { jobId, diaryKey: selectedDiary.key, dateFrom, dateTo });
     } catch (err) {
       console.error('[CompilationUI] Export queue failed:', err);
+      log.error('action:export_queue_failed', { diaryKey: selectedDiary.key, err });
       toast.error('Failed to start Daily Diary export.');
       setExporting(false);
       return;
@@ -286,7 +314,8 @@ export default function CompilationUI() {
             const statusRes = await fetch(`${BASE_URL}/reports/status/${jobId}`, { headers: authHeaders });
             const statusJson = await statusRes.json();
             const status = statusJson?.data?.job?.status || statusJson?.data?.status;
-            if (status === 'READY') { clearInterval(iv); resolve(); }
+            log.debug('action:export_poll_step', { jobId, attempt: attempts, status });
+            if (status === 'READY') { log.info('action:export_poll_ready', { jobId, attempts }); clearInterval(iv); resolve(); }
             else if (status === 'FAILED' || attempts > 120) {
               clearInterval(iv);
               reject(new Error(status === 'FAILED' ? 'Export failed on server' : 'Export timed out'));
@@ -297,6 +326,7 @@ export default function CompilationUI() {
     } catch (err) {
       toast.dismiss(loadingToastId);
       console.error('[CompilationUI] Polling failed:', err);
+      log.error('action:export_poll_failed', { jobId, err });
       toast.error(err.message || 'Failed to generate Daily Diary.');
       setExporting(false);
       return;
@@ -331,9 +361,11 @@ export default function CompilationUI() {
       document.body.appendChild(link);
       link.click();
       setTimeout(() => { document.body.removeChild(link); }, 1000);
+      log.info('action:export_download_success', { jobId, filename });
       toast.success('Daily Diary Excel downloaded! Check your Downloads folder.');
     } catch (err) {
       console.error('[CompilationUI] Download failed:', err);
+      log.error('action:export_download_failed', { jobId, err });
       toast.error('Export ready but download failed. Try again.');
     } finally {
       setExporting(false);
@@ -843,6 +875,7 @@ export default function CompilationUI() {
                   {comp.status !== 'SUBMITTED' && (
                     <button
                       onClick={() => {
+                        log.debug('action:compile_submit_click', { compilationId: comp.id });
                         if (window.confirm(`Send this compilation (${getSummaryVal(comp, 'total_records')} records) to HQ? This action is locked and audited.`)) {
                           submitCompMutation.mutate(comp.id);
                         }

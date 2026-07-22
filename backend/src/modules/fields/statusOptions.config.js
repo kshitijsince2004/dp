@@ -15,6 +15,13 @@
 // CASE's `case_status` and `is_worked_out` are NOT here — those two are genuinely registry-sourced
 // (config/fields/case.json carries real `options` arrays for both), so both consumers read
 // field_registry directly for CASE and never call into this file for it.
+import { getLogger } from '../../utils/logger.js';
+
+// Style anchor: records.service.js (HANDOFF.md §7). This file is mostly static taxonomy data;
+// getStatusOptionsForType is the one real dispatch function — logged once at resolution since
+// "which status options a form/record shows" is a known bug surface, not per-line noise.
+const log = getLogger('fields.statusOptions.config');
+
 export const STATUS_OPTIONS_BY_TYPE = {
   CASE: null, // registry-sourced (case.json `case_status`) — never resolved from here
   ARREST: {
@@ -67,7 +74,12 @@ export const STATUS_OPTIONS_BY_TYPE = {
  */
 export function getStatusOptionsForType(recordType, { isAgainstFir = false } = {}) {
   const entry = STATUS_OPTIONS_BY_TYPE[recordType];
-  if (!entry) return null;
-  if (recordType === 'ARREST') return isAgainstFir ? entry.against_fir : entry.kalandra;
-  return entry;
+  let resolved;
+  if (!entry) resolved = null;
+  else if (recordType === 'ARREST') resolved = isAgainstFir ? entry.against_fir : entry.kalandra;
+  else resolved = entry;
+  log.debug('getStatusOptionsForType: resolved', {
+    recordType, isAgainstFir, resolvedCount: Array.isArray(resolved) ? resolved.length : null,
+  });
+  return resolved;
 }

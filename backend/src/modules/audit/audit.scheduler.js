@@ -14,24 +14,28 @@
 
 import cron from 'node-cron';
 import { runChainVerification } from './audit.service.js';
-import { logger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
+
+const log = getLogger('audit.scheduler');
 
 let cronJob = null;
 let isVerifying = false;
 
 /** Run one verification pass, guarded against overlap. */
 export async function executeScheduledVerification() {
+  log.debug('executeScheduledVerification: enter', { isVerifying });
   if (isVerifying) {
-    logger.warn('[AuditScheduler] A verification run is already in progress. Skipping this schedule.');
+    log.warn('executeScheduledVerification: skipped — a verification run is already in progress');
     return;
   }
   isVerifying = true;
   const freezeOnBreak = process.env.AUDIT_VERIFY_FREEZE !== 'false';
   try {
     // actor:null → the row_hash break freeze is attributed to SYSTEM in audit_logs.
-    await runChainVerification({ freezeOnBreak, actor: null });
+    const result = await runChainVerification({ freezeOnBreak, actor: null });
+    log.info('executeScheduledVerification: exit', { valid: result.valid, breakCount: result.breaks.length, frozenCount: result.frozen.length });
   } catch (err) {
-    logger.error(`[AuditScheduler] Verification run failed: ${err.message}`);
+    log.error('executeScheduledVerification: verification run failed', { err });
   } finally {
     isVerifying = false;
   }
@@ -40,18 +44,19 @@ export async function executeScheduledVerification() {
 export function startAuditVerification() {
   const isEnabled = process.env.AUDIT_VERIFY_ENABLED !== 'false';
   if (!isEnabled) {
-    logger.info('[AuditScheduler] Hash-chain verification is disabled via AUDIT_VERIFY_ENABLED.');
+    log.info('startAuditVerification: disabled via AUDIT_VERIFY_ENABLED');
     return;
   }
 
   const cronExpression = process.env.AUDIT_VERIFY_CRON || '15 3 * * *';
   if (!cron.validate(cronExpression)) {
-    logger.error(`[AuditScheduler] Invalid cron expression: "${cronExpression}". Scheduler not started.`);
+    log.error('startAuditVerification: invalid cron expression, scheduler not started', { cronExpression });
     return;
   }
 
-  logger.info(`[AuditScheduler] Scheduling hash-chain verification with cron: "${cronExpression}"`);
+  log.info('startAuditVerification: scheduling hash-chain verification', { cronExpression });
   cronJob = cron.schedule(cronExpression, async () => {
+    log.debug('startAuditVerification: cron fired');
     await executeScheduledVerification();
   });
 }
@@ -60,6 +65,6 @@ export function stopAuditVerification() {
   if (cronJob) {
     cronJob.stop();
     cronJob = null;
-    logger.info('[AuditScheduler] Hash-chain verification scheduler stopped.');
+    log.info('stopAuditVerification: hash-chain verification scheduler stopped');
   }
 }

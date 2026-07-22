@@ -11,7 +11,17 @@ import {
   normalizeText, normalizeDate, normalizePhone, normalizeFirNo, toBool, normalizeEnumUpper,
   resolveAct, resolveSection, resolveMajorHead, resolveMinorHead,
   resolveLocalHead, resolveBeat,
+  resolvePropertyMajorCategory, resolvePropertyMinorCategory,
+  loadKnownActLabels,
 } from './records.normalize.js';
+import { getLogger } from '../../utils/logger.js';
+
+// STYLE ANCHOR followed (see records.service.js / HANDOFF.md §7). Per-field-in-a-loop lines are
+// deliberately NOT logged (would be pure noise across a 50+ field registry) — logging here targets
+// genuine decisions/effects: a value salvaged/coerced, a deferred FK label resolved, an offence row
+// built, a split/recompose's overall shape. Mirrors records.service.js's upsertPersons/upsertProperties
+// pattern (summary-with-counts + per-item lines only where something real happened).
+const log = getLogger('records.mapper');
 
 // T7.1 — columns whose CHECK constraint vocabulary is UPPERCASE while field_registry's option
 // values are Title Case (see records.normalize.js's normalizeEnumUpper doc comment). Keyed by
@@ -61,7 +71,9 @@ export function enumCoercion(table, column, raw) {
   const allowed = ENUM_ALLOWED[table]?.[column];
   if (!allowed || allowed.has(up)) return null; // valid in-vocabulary value
   const fallback = ENUM_FALLBACK[table]?.[column];
-  return { to: fallback !== undefined ? fallback : null };
+  const to = fallback !== undefined ? fallback : null;
+  log.warn('enumCoercion: out-of-vocabulary value salvaged', { table, column, raw, salvagedTo: to });
+  return { to };
 }
 
 /** SINGLE source of truth for "would this pincode be salvaged to null?" — non-empty but fewer
@@ -72,7 +84,11 @@ export function pincodeCoercion(raw) {
   const s = String(raw).trim();
   if (s === '') return null;
   const digits = s.replace(/\D/g, '');
-  return digits.length < PINCODE_MIN_DIGITS ? { to: null } : null;
+  if (digits.length < PINCODE_MIN_DIGITS) {
+    log.warn('pincodeCoercion: implausibly short pincode salvaged to null', { raw, digitCount: digits.length });
+    return { to: null };
+  }
+  return null;
 }
 
 /** Uppercase-normalize an enum value AND constrain it to its column's CHECK vocabulary. In-set
@@ -118,11 +134,13 @@ export const PERSON_LOCATION_SLOTS = {
   found: { table: 'missing_person_details', column: 'found_location_id' },
 };
 
-// Property FK columns (major_category_id, automobile_id, ...) submit the numeric ref.* code
-// directly (confirmed against fields.service.js's GENERIC property-item dispatch and
-// property_major_category's option list, both `value: <code>` — unlike acts/sections/heads,
-// which submit LABEL text) — plain integer-typed columns, so coerceByType's generic integer
-// branch parses them correctly with no special-casing needed.
+// Most property FK columns (automobile_id, drug_type_id, ...) submit the numeric ref.* code
+// directly from the interactive form (fields.service.js's GENERIC property-item dispatch,
+// `value: <code>`), so coerceByType's integer branch parses them with no special-casing. The
+// TWO category columns (major_category_id / minor_category_id) are the exception: the form still
+// submits their numeric code, but BULK IMPORT submits the human LABEL from the frozen template's
+// dropdown (like acts/sections/heads). Those two are deferred (DEFERRED_PROPERTY_FK_COLUMNS) and
+// resolved async in splitProperties — numeric passes through, a label is looked up against ref.*.
 
 let columnCache = null;
 // Parallel cache of character_maximum_length for varchar/char columns (null for unbounded
@@ -147,6 +165,7 @@ async function loadColumns(trx) {
   }
   columnCache = cols;
   columnMaxLenCache = lens;
+  log.debug('loadColumns: loaded and cached information_schema column types', { tableCount: Object.keys(cols).length });
   return cols;
 }
 
@@ -259,7 +278,7 @@ function parseJson(val, fallback) {
 /** Load every active field_registry row applicable to recordType, with storage/labels parsed. */
 export async function loadRegistry(trx, recordType) {
   const rows = await trx('field_registry').where({ is_active: true });
-  return rows
+  const filtered = rows
     .map((r) => ({
       ...r,
       record_types: parseJson(r.record_types, []),
@@ -270,6 +289,8 @@ export async function loadRegistry(trx, recordType) {
       show_when: parseJson(r.show_when, null),
     }))
     .filter((r) => r.record_types.includes(recordType));
+  log.debug('loadRegistry: loaded active field_registry rows', { recordType, totalActive: rows.length, applicable: filtered.length });
+  return filtered;
 }
 
 /** Resolve a `{per_type:{...}}` wrapper down to the shape for this record type (or null). */
@@ -288,6 +309,7 @@ export function resolveStorage(storage, recordType) {
  * per ruling 22).
  */
 function splitFlatFields(registry, recordType, data) {
+  log.debug('splitFlatFields: enter', { recordType, dataKeys: Object.keys(data).length });
   const spine = {};
   const detail = {};
   const detailExtra = {};
@@ -334,11 +356,18 @@ function splitFlatFields(registry, recordType, data) {
     }
     if (targetTable !== detailTable) continue; // field not applicable to this record's detail table
 
-    if (seenDetailCols.has(shape.column) && caseStatusWinsOver.has(f.field_key)) continue;
+    if (seenDetailCols.has(shape.column) && caseStatusWinsOver.has(f.field_key)) {
+      log.debug('splitFlatFields: skipped — a more specific field already won this detail column', { recordType, fieldKey: f.field_key, column: shape.column });
+      continue;
+    }
     detail[shape.column] = normalizeDetailValue(detailTable, shape.column, raw);
     seenDetailCols.add(shape.column);
   }
 
+  log.debug('splitFlatFields: exit', {
+    recordType, spineKeys: Object.keys(spine).length, detailKeys: Object.keys(detail).length,
+    detailExtraKeys: Object.keys(detailExtra).length, detailLocationSlots: Object.keys(detailLocationFields).length,
+  });
   return { spine, detail, detailExtra, detailLocationFields, warnings };
 }
 
@@ -386,7 +415,10 @@ function normalizeLocationValue(column, raw) {
   // value can ever raise pg 22001 again.
   if (typeof val === 'string') {
     const maxLen = columnMaxLenCache?.locations?.[column];
-    if (maxLen && val.length > maxLen) val = val.slice(0, maxLen);
+    if (maxLen && val.length > maxLen) {
+      log.warn('normalizeLocationValue: value truncated to column width', { column, maxLen, originalLength: val.length });
+      val = val.slice(0, maxLen);
+    }
   }
   return val;
 }
@@ -395,8 +427,16 @@ function normalizeLocationValue(column, raw) {
  * `psId` (T3) scopes resolveBeat's bare-number fallback — only the write-path callers that
  * already know the record's target PS pass it; the resolver itself tolerates its absence. */
 async function resolveDetailFkLabels(trx, recordType, detail, psId = null) {
-  if ('beat_id' in detail) detail.beat_id = (await resolveBeat(trx, detail.beat_id, psId)).id;
-  if ('local_head_id' in detail) detail.local_head_id = (await resolveLocalHead(trx, detail.local_head_id)).id;
+  if ('beat_id' in detail) {
+    const rawLabel = detail.beat_id;
+    detail.beat_id = (await resolveBeat(trx, rawLabel, psId)).id;
+    log.debug('resolveDetailFkLabels: resolved beat_id label', { recordType, rawLabel, resolvedId: detail.beat_id });
+  }
+  if ('local_head_id' in detail) {
+    const rawLabel = detail.local_head_id;
+    detail.local_head_id = (await resolveLocalHead(trx, rawLabel)).id;
+    log.debug('resolveDetailFkLabels: resolved local_head_id label', { recordType, rawLabel, resolvedId: detail.local_head_id });
+  }
   return detail;
 }
 
@@ -427,6 +467,7 @@ const PERSONS_TABLE_COLUMNS = new Set([
  * table — a MISSING person writes both `missing_person_details` AND `person_descriptions`
  * (the shared physical-description subtype) at once, same for DECEASED + person_descriptions. */
 async function splitPersonEntry(trx, personFields, locationFields, source) {
+  log.debug('splitPersonEntry: enter', { personFieldCount: personFields.length, locationFieldCount: locationFields.length, sourceKeys: Object.keys(source).length });
   const columns = {};
   const extra = {};
   const subtypes = {}; // table -> {columns}
@@ -475,8 +516,15 @@ async function splitPersonEntry(trx, personFields, locationFields, source) {
     (locationsBySlot[shape.slot] ??= {})[shape.column] = normalizeLocationValue(shape.column, raw);
   }
   // "same as present" toggle wins — never create a permanent location row when set.
-  if (columns.perm_same_as_present === true) delete locationsBySlot.permanent;
+  if (columns.perm_same_as_present === true) {
+    log.debug('splitPersonEntry: perm_same_as_present set — dropping permanent location block', {});
+    delete locationsBySlot.permanent;
+  }
 
+  log.debug('splitPersonEntry: built entry', {
+    columnCount: Object.keys(columns).length, extraCount: Object.keys(extra).length,
+    subtypeTables: Object.keys(subtypes), locationSlots: Object.keys(locationsBySlot),
+  });
   return { columns, extra, subtypes, locations: locationsBySlot };
 }
 
@@ -509,6 +557,7 @@ function ageFromDob(dobIso) {
 /** Build all person entries for the record: singleton roles from flat `data`, repeater
  * roles from the `persons[]` array (person_type normalized to its DB role). */
 async function splitPersons(trx, registry, recordType, data, personsInput) {
+  log.debug('splitPersons: enter', { recordType, repeaterInputCount: (personsInput || []).length });
   const entries = [];
   const rolesPresent = new Set();
   for (const f of registry) {
@@ -522,27 +571,62 @@ async function splitPersons(trx, registry, recordType, data, personsInput) {
     const { person, location } = fieldsForRole(registry, recordType, role);
     if (!person.length && !location.length) continue;
     const hasAnyValue = [...person, ...location].some(({ field }) => data[field.field_key] !== undefined && data[field.field_key] !== '' && data[field.field_key] !== null);
-    if (!hasAnyValue) continue;
+    if (!hasAnyValue) {
+      log.debug('splitPersons: skipped singleton role — no value present', { recordType, role });
+      continue;
+    }
     const built = await splitPersonEntry(trx, person, location, data);
     entries.push({ role, ...built, sourceKind: 'flat' });
+    log.debug('splitPersons: built singleton entry', { recordType, role });
   }
 
   for (const [i, p] of (personsInput || []).entries()) {
     const role = PERSON_TYPE_TO_ROLE[p.person_type] || p.person_type;
-    if (!PERSON_ROLES.includes(role)) continue;
+    if (!PERSON_ROLES.includes(role)) {
+      log.warn('splitPersons: skipped repeater entry — unrecognized role', { recordType, sourceIndex: i, personType: p.person_type });
+      continue;
+    }
     const { person, location } = fieldsForRole(registry, recordType, role);
     const built = await splitPersonEntry(trx, person, location, p.data || {});
     entries.push({ role, ...built, sourceKind: 'repeater', sourceIndex: i, existingId: p.id || null });
+    log.debug('splitPersons: built repeater entry', { recordType, role, sourceIndex: i, existingId: p.id || null });
   }
 
+  log.debug('splitPersons: exit', { recordType, entryCount: entries.length });
   return entries;
 }
 
 // ── properties ─────────────────────────────────────────────────────────────────────────
 
+// record_properties FK columns that may arrive as a LABEL (bulk import) rather than the numeric
+// ref code the interactive form submits — deferred past coerceByType (which would int-coerce a
+// label to null and drop it) and resolved async against ref.* in splitProperties. Mirrors the
+// detail-table DEFERRED_FK_LABEL_COLUMNS pattern.
+const DEFERRED_PROPERTY_FK_COLUMNS = new Set(['major_category_id', 'minor_category_id']);
+
 function normalizePropertyValue(column, raw) {
+  if (DEFERRED_PROPERTY_FK_COLUMNS.has(column)) return raw;
   if (ENUM_UPPER_COLUMNS.record_properties?.has(column)) return normalizeEnumConstrained('record_properties', column, raw);
   return coerceByType(columnCache?.record_properties?.[column], raw);
+}
+
+/** Resolve the deferred property FK label columns on a built entry's `columns` to their numeric
+ * ref codes (async — needs trx). Numeric codes (form) pass through; labels (import) are looked
+ * up. A value that resolves to null is deleted so the row omits the column entirely rather than
+ * writing a bogus 0/null over the FK. */
+async function resolvePropertyFkColumns(trx, columns) {
+  if ('major_category_id' in columns) {
+    const rawLabel = columns.major_category_id;
+    const id = await resolvePropertyMajorCategory(trx, rawLabel);
+    if (id == null) { delete columns.major_category_id; log.debug('resolvePropertyFkColumns: major_category_id unresolved, column dropped', { rawLabel }); }
+    else { columns.major_category_id = id; log.debug('resolvePropertyFkColumns: resolved major_category_id', { rawLabel, resolvedId: id }); }
+  }
+  if ('minor_category_id' in columns) {
+    const rawLabel = columns.minor_category_id;
+    const id = await resolvePropertyMinorCategory(trx, rawLabel);
+    if (id == null) { delete columns.minor_category_id; log.debug('resolvePropertyFkColumns: minor_category_id unresolved, column dropped', { rawLabel }); }
+    else { columns.minor_category_id = id; log.debug('resolvePropertyFkColumns: resolved minor_category_id', { rawLabel, resolvedId: id }); }
+  }
 }
 
 function splitPropertyEntry(propertyFields, source) {
@@ -561,6 +645,7 @@ function splitPropertyEntry(propertyFields, source) {
     // don't let a later empty overwrite an already-set value (handled by the null-skip above).
     if (columns[shape.column] === undefined) columns[shape.column] = val;
   }
+  log.debug('splitPropertyEntry: built entry', { columnCount: Object.keys(columns).length, extraCount: Object.keys(extra).length });
   return { columns, extra };
 }
 
@@ -576,13 +661,18 @@ function propertyFieldsList(registry, recordType) {
   return { scalar, grouped };
 }
 
-async function splitProperties(registry, recordType, data, propertiesInput) {
+async function splitProperties(trx, registry, recordType, data, propertiesInput) {
+  log.debug('splitProperties: enter', { recordType, propertiesInputCount: (propertiesInput || []).length });
   const { scalar, grouped } = propertyFieldsList(registry, recordType);
   const entries = [];
 
   for (const [i, p] of (propertiesInput || []).entries()) {
     const built = splitPropertyEntry(scalar, p);
-    if (!Object.keys(built.columns).length && !Object.keys(built.extra).length) continue;
+    await resolvePropertyFkColumns(trx, built.columns);
+    if (!Object.keys(built.columns).length && !Object.keys(built.extra).length) {
+      log.debug('splitProperties: skipped repeater entry — no columns/extra built', { recordType, sourceIndex: i });
+      continue;
+    }
     entries.push({ ...built, personIndex: Number.isInteger(p.person_index) ? p.person_index : null, existingId: p.id || null });
   }
 
@@ -590,19 +680,84 @@ async function splitProperties(registry, recordType, data, propertiesInput) {
   // entry each, sourced from the record's top-level `data`.
   for (const [group, fields] of Object.entries(grouped)) {
     const built = splitPropertyEntry(fields, data);
-    if (!Object.keys(built.columns).length) continue; // skip blank starter blocks
+    await resolvePropertyFkColumns(trx, built.columns);
+    if (!Object.keys(built.columns).length) {
+      log.debug('splitProperties: skipped grouped block — blank starter block', { recordType, group });
+      continue; // skip blank starter blocks
+    }
     entries.push({ ...built, personIndex: null, existingId: null, group });
+    log.debug('splitProperties: built grouped entry', { recordType, group });
   }
 
+  log.debug('splitProperties: exit', { recordType, entryCount: entries.length });
   return entries;
 }
 
 // ── offences (record_offences: one row per section citation) ─────────────────────────────
 
 /** Zip parallel comma-joined act/section strings, pairing each with the i-th major/minor
- * head pair (or the last pair, or none) — mirrors ActsSectionsTable.jsx's own row model. */
-function zipOffenceStrings(actNameStr, sectionsStr, majorHeadsStr, minorHeadsStr) {
-  const acts = String(actNameStr || '').split(',').map((s) => s.trim()).filter(Boolean);
+ * head pair — mirrors ActsSectionsTable.jsx's own row model. Acts DO run parallel to sections
+ * (the frontend fills acts 1:1 with sections, each citation has an act), so acts fall back to
+ * acts[0]. Major/minor heads are an INDEPENDENT list in the UI (their own majorMinorRows table,
+ * unrelated to the section count) — they must NOT be last-filled to match the section count, or
+ * a record with 3 sections + 1 head round-trips as `major_heads="X, X, X"`, and the frontend
+ * re-seeds three identical head rows (reported 2026-07-21 as heads "repeated redundantly on
+ * submit"). Rows past the head count get null heads; recompose's joinNonEmpty drops them, so the
+ * head list round-trips at exactly its entered length. Row count stays section-driven (n) — the
+ * heads>sections overflow (majors[i>=n] unstored) is pre-existing and needs schema work, not a
+ * zip tweak. */
+/** Re-merge comma-split act-name fragments back into whole registry labels (B5, 2026-07-21 —
+ * "when i add aadhaar act, benefits and services also gets added"). `act_name` is stored/
+ * transported comma-joined (see zipOffenceStrings above) — an act label that itself CONTAINS a
+ * comma (e.g. 'Aadhaar (Targeted Delivery of Financial and Other Subsidies, Benefits and
+ * Services) Act, 2016') gets shattered into extra fragments by the naive split, each of which
+ * then resolves as its own free-text "act" (a phantom record_offences row) and desyncs the
+ * acts[i]<->sections[i] pairing for every citation after it.
+ *
+ * LONGEST match, not first/shortest match: for every starting fragment, scan every possible
+ * window (fragment[i..j]) and keep the LONGEST one that equals a known act label, then consume
+ * it whole. Shortest-match was tried first and rejected — `ACT_GROUP_CODES`'s alias names
+ * ('Arms Act', 'Delhi Excise Act') are THEMSELVES also in the known-label set (so `resolveAct`
+ * can match a plain alias with no comma), but they also happen to be an exact PREFIX of their
+ * own act_long ('ARMS ACT, 1959', 'DELHI EXCISE ACT, 2009'/'...2010' — verified live against
+ * ref.acts) — a shortest-match would stop at the alias and strand the trailing year as its own
+ * phantom act, the very bug this is fixing, for two real acts. Longest-match keeps extending
+ * past 'Arms Act' to the full 'Arms Act, 1959' once that longer window also matches, so a plain
+ * act with no commas ('IPC') still emits immediately (nothing longer to find) while an
+ * alias-prefixed one is preserved whole. A window that never matches at any width is emitted as
+ * its own single fragment (conservative — doesn't guess-merge two unrelated unknown acts).
+ * Sections/major/minor heads are NOT re-merged — their ref.* label columns are short codes/
+ * names that don't contain commas (verified against ref.sections/ref.major_heads/ref.minor_heads
+ * seed data), so this only ever needs to run on the act axis. Mirrors ActsSectionsTable.jsx's
+ * own re-merge (frontend fix, same bug — frontend additionally needs a year-rejoin pre-pass,
+ * see its own doc comment, because its acts registry collapses grouped acts to the alias only
+ * and never exposes the year-suffixed act_long the way this module's `loadKnownActLabels` does). */
+function reMergeKnownActFragments(fragments, knownLabelsLower) {
+  if (!knownLabelsLower || !knownLabelsLower.size) return fragments;
+  const merged = [];
+  let i = 0;
+  const n = fragments.length;
+  while (i < n) {
+    let bestEnd = -1;
+    let buffer = '';
+    for (let j = i; j < n; j++) {
+      buffer = buffer ? `${buffer}, ${fragments[j]}` : fragments[j];
+      if (knownLabelsLower.has(buffer.trim().toLowerCase())) bestEnd = j + 1;
+    }
+    if (bestEnd === -1) {
+      merged.push(fragments[i]);
+      i += 1;
+    } else {
+      merged.push(fragments.slice(i, bestEnd).join(', '));
+      i = bestEnd;
+    }
+  }
+  return merged;
+}
+
+function zipOffenceStrings(actNameStr, sectionsStr, majorHeadsStr, minorHeadsStr, knownActLabels) {
+  const rawActs = String(actNameStr || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const acts = reMergeKnownActFragments(rawActs, knownActLabels);
   const sections = String(sectionsStr || '').split(',').map((s) => s.trim()).filter(Boolean);
   const majors = String(majorHeadsStr || '').split(',').map((s) => s.trim()).filter(Boolean);
   const minors = String(minorHeadsStr || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -612,8 +767,8 @@ function zipOffenceStrings(actNameStr, sectionsStr, majorHeadsStr, minorHeadsStr
     rows.push({
       act: acts[i] ?? acts[0] ?? null,
       section: sections[i] ?? null,
-      major: majors[i] ?? majors[majors.length - 1] ?? null,
-      minor: minors[i] ?? minors[minors.length - 1] ?? null,
+      major: majors[i] ?? null,
+      minor: minors[i] ?? null,
     });
   }
   return rows;
@@ -634,11 +789,15 @@ function zipOffenceStrings(actNameStr, sectionsStr, majorHeadsStr, minorHeadsStr
  * the schema doesn't prescribe how crime_head relates to the multi-act rows.
  */
 export async function buildOffenceRows(trx, recordType, data, offencesInput) {
+  log.debug('buildOffenceRows: enter', { recordType, offencesInputCount: Array.isArray(offencesInput) ? offencesInput.length : 0 });
   let rows;
   if (Array.isArray(offencesInput) && offencesInput.length) {
     rows = offencesInput.map((o) => ({ act: o.act, section: o.section, major: o.major_head, minor: o.minor_head }));
+    log.debug('buildOffenceRows: sourced rows from explicit offences[] array', { recordType, rowCount: rows.length });
   } else {
-    rows = zipOffenceStrings(data.act_name, data.sections, data.major_heads, data.minor_heads);
+    const knownActLabels = await loadKnownActLabels(trx);
+    rows = zipOffenceStrings(data.act_name, data.sections, data.major_heads, data.minor_heads, knownActLabels);
+    log.debug('buildOffenceRows: sourced rows from zipped act/section/head strings', { recordType, rowCount: rows.length });
   }
 
   const built = [];
@@ -657,7 +816,10 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
     // no section match (or no section at all) still has neither — fall back to storing the
     // as-entered act label itself so the row is legal (honest, not a real ref.acts row).
     if (actId == null && !otherActName) otherActName = r.act || null;
-    if (actId == null && !otherActName) continue; // truly nothing to build a row from
+    if (actId == null && !otherActName) {
+      log.debug('buildOffenceRows: skipped row — no act/section could be resolved', { recordType, act: r.act, section: r.section });
+      continue; // truly nothing to build a row from
+    }
     const majorHeadId = r.major ? (await resolveMajorHead(trx, r.major)).id : null;
     const minorHeadId = r.minor ? (await resolveMinorHead(trx, r.minor, majorHeadId)).id : null;
     built.push({
@@ -665,6 +827,7 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
       major_head_id: majorHeadId, minor_head_id: minorHeadId,
       is_primary: false, sort_order: built.length,
     });
+    log.debug('buildOffenceRows: built offence row', { recordType, act: r.act, section: r.section, actId, otherActName, sectionId, majorHeadId, minorHeadId });
   }
   if (built.length) built[0].is_primary = true;
 
@@ -676,12 +839,17 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
       if (match) {
         built.forEach((row) => { row.is_primary = false; });
         match.is_primary = true;
+        log.debug('buildOffenceRows: crime_head selected an existing row as primary', { recordType, crimeHeadLabel, majorHeadId: crimeHeadMajorId });
       } else if (built.length) {
         built[0].major_head_id = crimeHeadMajorId;
+        log.debug('buildOffenceRows: crime_head overrode first row major_head_id', { recordType, crimeHeadLabel, majorHeadId: crimeHeadMajorId });
       }
+    } else {
+      log.debug('buildOffenceRows: crime_head label did not resolve to a major head', { recordType, crimeHeadLabel });
     }
   }
 
+  log.debug('buildOffenceRows: exit', { recordType, builtCount: built.length });
   return built;
 }
 
@@ -697,14 +865,21 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
  * callers pass the scope they already know (`user.ps_id` / `scope.ps_id` / `record.ps_id`).
  */
 export async function splitPayload(trx, registry, recordType, { data = {}, persons = [], properties = [], offences = [] }, psId = null) {
+  log.debug('splitPayload: enter', {
+    recordType, psId, dataKeys: Object.keys(data).length,
+    personsInputCount: persons.length, propertiesInputCount: properties.length, offencesInputCount: offences.length,
+  });
   await loadColumns(trx); // warms the cache; not otherwise consumed here today
   const { spine, detail, detailExtra, detailLocationFields } = splitFlatFields(registry, recordType, data);
   await resolveDetailFkLabels(trx, recordType, detail, psId);
 
   const personEntries = await splitPersons(trx, registry, recordType, data, persons);
-  const propertyEntries = await splitProperties(registry, recordType, data, properties);
+  const propertyEntries = await splitProperties(trx, registry, recordType, data, properties);
   const offenceRows = await buildOffenceRows(trx, recordType, data, offences);
 
+  log.debug('splitPayload: exit', {
+    recordType, personEntries: personEntries.length, propertyEntries: propertyEntries.length, offenceRows: offenceRows.length,
+  });
   return { spine, detail, detailExtra, detailLocationFields, personEntries, propertyEntries, offenceRows };
 }
 
@@ -736,6 +911,10 @@ function recomposeLocationFields(locationFields, slot, role, locationRow, into) 
 export async function recomposeRecord(trx, registry, recordType, {
   spineRow, detailRow, personRows = [], propertyRows = [], offenceRows = [], locationsById = {},
 }) {
+  log.debug('recomposeRecord: enter', {
+    recordType, recordId: spineRow?.id, personRowCount: personRows.length,
+    propertyRowCount: propertyRows.length, offenceRowCount: offenceRows.length,
+  });
   const cols = await loadColumns(trx);
   const data = {};
   const detailTable = DETAIL_TABLES[recordType];
@@ -818,6 +997,10 @@ export async function recomposeRecord(trx, registry, recordType, {
 
   const properties = propertyRows.map((pr) => recomposePropertyRow(registry, recordType, pr));
 
+  log.debug('recomposeRecord: exit', {
+    recordType, recordId: spineRow?.id, dataKeys: Object.keys(data).length,
+    personCount: persons.length, propertyCount: properties.length,
+  });
   return { data, persons, properties };
 }
 

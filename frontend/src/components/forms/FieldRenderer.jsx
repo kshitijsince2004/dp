@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../utils/api.js';
+import { log } from '../../utils/logger.js';
 
 import DateTimePickerPopup from './DateTimePickerPopup.jsx';
 import TextField     from './TextField.jsx';
@@ -109,6 +110,7 @@ export default function FieldRenderer({
       } else {
         forcePsFreeText = true; // non-Delhi (or state not yet chosen) → free-type any PS
       }
+      log.debug('form:ps_dropdown_mode', { fieldKey: key, mode: forcePsFreeText ? 'free_text' : 'delhi_dropdown', stateVal: stateVal || null });
     }
   }
 
@@ -125,7 +127,7 @@ export default function FieldRenderer({
   }
 
   const handleFieldChange = (k, v) => {
-    console.log('[PHAROS-DEBUG][FieldRenderer] handleFieldChange(', JSON.stringify(k), ',', JSON.stringify(v), ') — routing to', handleChange ? 'handleChange (DynamicForm)' : 'onChange (local prop)');
+    log.debug('form:field_change', { fieldKey: k, fieldType: type, routedTo: handleChange ? 'handleChange' : 'onChange' });
     if (handleChange) {
       handleChange(k, v);
     } else {
@@ -139,13 +141,13 @@ export default function FieldRenderer({
   // plain DATETIME fields, so the whole form has one consistent date+time picker.
   const compositeDateTimeCell = (dateKey, timeKey, widthClass) => {
     const combined = values?.[dateKey] ? `${values[dateKey]} ${values?.[timeKey] || '00:00'}` : '';
-    console.log('[PHAROS-DEBUG][FieldRenderer.compositeDateTimeCell] render', { dateKey, timeKey, rawDateVal: values?.[dateKey], rawTimeVal: values?.[timeKey], combinedPassedToPopup: combined });
+    log.debug('form:composite_datetime_render', { dateKey, timeKey, hasDate: !!values?.[dateKey], hasTime: !!values?.[timeKey] });
     return (
       <div className={`${widthClass} flex items-center min-w-0 px-3.5 py-1`}>
         <DateTimePickerPopup
           value={combined}
           onDone={(_formatted, datePart, timePart) => {
-            console.log('[PHAROS-DEBUG][FieldRenderer.compositeDateTimeCell] onDone fired for', dateKey, '/', timeKey, '→', { datePart, timePart });
+            log.debug('form:composite_datetime_commit', { dateKey, timeKey, datePart, timePart });
             handleFieldChange(dateKey, datePart);
             handleFieldChange(timeKey, timePart);
           }}
@@ -288,6 +290,22 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
   }
 
   if (type === 'TEXT') {
+    // #10 follow-up (2026-07-20): lat/long fields (validation_rules.pattern === 'latlong') must
+    // reject non-numeric input AT KEYSTROKE, not only flag it on submit — testers reported the
+    // field "still accepting text". Filter to a valid numeric-in-progress shape (optional leading
+    // '-', digits, at most one '.'). Mirrors the IO-mobile digit-only constraint.
+    const rawRules = field.validation_rules;
+    const rules = typeof rawRules === 'string' ? (() => { try { return JSON.parse(rawRules); } catch { return {}; } })() : (rawRules || {});
+    if (rules.pattern === 'latlong') {
+      const filterLatLong = (v) => {
+        let s = String(v).replace(/[^\d.-]/g, '');       // drop anything but digit / dot / minus
+        s = s.replace(/(?!^)-/g, '');                      // '-' only allowed at the start
+        const firstDot = s.indexOf('.');
+        if (firstDot !== -1) s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, ''); // one dot max
+        return s;
+      };
+      return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, filterLatLong(v))} status={status} placeholder={placeholder} className={inputClassName} />;
+    }
     return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} className={inputClassName} />;
   }
 

@@ -1,5 +1,79 @@
 import { useState, useEffect } from 'react';
 import SearchableSelect from './SearchableSelect.jsx';
+import { log } from '../../utils/logger.js';
+
+/** Rejoins a bare trailing 4-digit-year fragment (e.g. "1959", "2016") onto the fragment before
+ * it — unconditional, no registry lookup. This is the OLD fix's entire logic, kept as a
+ * pre-pass for `reMergeKnownActFragments` below because it covers a gap that registry (act-list)
+ * membership alone cannot: `/acts-sections` (`fields.service.js`'s `getActsSectionsRegistry`)
+ * COLLAPSES every act sharing a group alias (IPC / Arms Act / Delhi Excise Act / Gambling Act)
+ * into ONE registry entry keyed by the alias — the underlying `ref.acts.act_long` strings those
+ * aliases stand for ('ARMS ACT, 1959', 'DELHI EXCISE ACT, 2009'/'...2010', 'THE PUBLIC GAMBLING
+ * ACT, 1867', 'DELHI PUBLIC GAMBLING ACT, 1955') are never exposed to the frontend as their own
+ * selectable/known label. But records.service.js's recompose hands back the raw act_long (NOT
+ * the alias) as `act_name` when loading an existing record for edit, so a saved Arms/Excise/
+ * Gambling offence round-trips as e.g. "ARMS ACT, 1959" — which no width of the registry-aware
+ * merge below could ever recognise as whole, alias included, since the alias text itself doesn't
+ * even textually match two of the four raw act_longs. Bare-year rejoin fixes it without needing
+ * the frontend to know anything about ref.acts at all. */
+function rejoinBareYearFragments(fragments) {
+  const out = [];
+  for (const item of fragments) {
+    if (/^\d{4}$/.test(item) && out.length > 0) {
+      out[out.length - 1] = `${out[out.length - 1]}, ${item}`;
+    } else {
+      out.push(item);
+    }
+  }
+  return out;
+}
+
+/** Re-merge comma-split act-name fragments back into whole registry labels (B5, 2026-07-21 —
+ * "when i add aadhaar act, benefits and services also gets added"). `act_name` is stored/
+ * transported as a comma-joined string (parallel to `sections`) — an act label that itself
+ * CONTAINS a comma (e.g. 'Aadhaar (Targeted Delivery of Financial and Other Subsidies, Benefits
+ * and Services) Act, 2016') gets shattered into extra fragments by a naive split, each of which
+ * then renders/round-trips as its own phantom act row and desyncs the acts[i]<->sections[i]
+ * pairing for every citation after it.
+ *
+ * Runs `rejoinBareYearFragments` first (see its own doc comment — covers the grouped-act/alias
+ * registry gap), then does a LONGEST-match pass against the acts registry: for every starting
+ * fragment, scan every possible window and keep the LONGEST one that equals a known act label
+ * (case-insensitive), then consume it whole. Longest match — not first/shortest — because a
+ * shorter prefix window CAN also legitimately match (a group alias like 'Arms Act' is itself in
+ * the registry as its own entry), and stopping there would strand a still-attached trailing
+ * fragment as its own phantom act; longest-match keeps extending past a short match to see if a
+ * longer window matches too, and prefers that. A plain act with no commas ('IPC') still emits
+ * immediately — there's nothing longer to find. A window that never matches at any width is
+ * emitted as its own single fragment (conservative — doesn't guess-merge two unrelated unknown
+ * acts together). Mirrors the backend's identical merge in records.mapper.js's
+ * `zipOffenceStrings` (same bug, same fix shape — the backend's version skips the year pre-pass
+ * because its known-label set already includes every full `ref.acts.act_long`, alias-collapse
+ * gap and all). Replaces the old 4-digit-year-only rejoin hack, which caught ", 2016"/", 1959"
+ * but not comma-containing act names in general (Aadhaar's middle fragment). */
+export function reMergeKnownActFragments(fragments, knownLabelsLower) {
+  const yearJoined = rejoinBareYearFragments(fragments);
+  if (!knownLabelsLower || !knownLabelsLower.size) return yearJoined;
+  const merged = [];
+  let i = 0;
+  const n = yearJoined.length;
+  while (i < n) {
+    let bestEnd = -1;
+    let buffer = '';
+    for (let j = i; j < n; j++) {
+      buffer = buffer ? `${buffer}, ${yearJoined[j]}` : yearJoined[j];
+      if (knownLabelsLower.has(buffer.trim().toLowerCase())) bestEnd = j + 1;
+    }
+    if (bestEnd === -1) {
+      merged.push(yearJoined[i]);
+      i += 1;
+    } else {
+      merged.push(yearJoined.slice(i, bestEnd).join(', '));
+      i = bestEnd;
+    }
+  }
+  return merged;
+}
 
 /**
  * Acts & Sections registered-list panel + Major/Minor Head cascading table +
@@ -42,15 +116,10 @@ export default function ActsSectionsTable({
     setActSearchInput(newAct || '');
   }, [newAct]);
 
+  const knownActLabelsLower = new Set(actsSectionsRegistry.map((item) => item.act.trim().toLowerCase()));
   const rawActs = values.act_name ? String(values.act_name).split(',').map((s) => s.trim()).filter(Boolean) : [];
-  const acts = [];
-  for (const item of rawActs) {
-    if (/^\d{4}$/.test(item) && acts.length > 0) {
-      acts[acts.length - 1] = `${acts[acts.length - 1]}, ${item}`;
-    } else {
-      acts.push(item);
-    }
-  }
+  const acts = reMergeKnownActFragments(rawActs, knownActLabelsLower);
+  const mergedActsLen = acts.length; // captured before the fill-loop below mutates `acts`
   const secs = values.sections ? String(values.sections).split(',').map((s) => s.trim()).filter(Boolean) : [];
   let maxLen = Math.max(acts.length, secs.length);
 
@@ -61,9 +130,8 @@ export default function ActsSectionsTable({
 
   useEffect(() => {
     if (readOnly) return;
-    const rawActsLen = values.act_name ? String(values.act_name).split(',').filter(Boolean).length : 0;
     const secsLen = secs.length;
-    if (rawActsLen > 0 && rawActsLen < secsLen) {
+    if (mergedActsLen > 0 && mergedActsLen < secsLen) {
       handleChange('act_name', acts.join(', '));
     }
   }, [values.act_name, secs.length, readOnly]);
@@ -81,6 +149,7 @@ export default function ActsSectionsTable({
   const availableSections = chosenActObj ? chosenActObj.sections : [];
 
   const handleDeleteRow = (i) => {
+    log.debug('form:acts_section_delete', { index: i, act: acts[i], section: secs[i] });
     const nextActs = acts.filter((_, idx) => idx !== i);
     const nextSecs = secs.filter((_, idx) => idx !== i);
     handleChange('act_name', nextActs.join(', '));
@@ -98,15 +167,18 @@ export default function ActsSectionsTable({
       const selectedSecs = newSection
         ? newSection.split(',').map((s) => s.trim()).filter(Boolean)
         : [''];
-      
+
       const newActsList = selectedSecs.map(() => newAct.trim());
       const newSecsList = selectedSecs;
 
       const updatedActs = [...acts, ...newActsList].join(', ');
       const updatedSections = [...secs, ...newSecsList].join(', ');
-      
+
+      log.debug('form:acts_section_add', { act: newAct, sections: newSecsList, rowsAdded: newActsList.length });
       handleChange('act_name', updatedActs);
       handleChange('sections', updatedSections);
+    } else {
+      log.debug('form:acts_section_add_skipped', { reason: 'no act or section entered' });
     }
     closeAddModal();
   };
@@ -330,7 +402,7 @@ export default function ActsSectionsTable({
                 Local Head
               </legend>
               <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-2 text-[11px] items-center">
-                <span className="text-[#0d2a4a] font-bold">Local Head</span>
+                <span className="text-[#0d2a4a] font-bold">Local Head<span className="text-red-500 ml-0.5">*</span></span>
                 {localHeadBlock}
                 
                 <span className="text-[#0d2a4a] font-bold">{lang === 'hi' ? 'जघन्य अपराध' : 'Heinous Offences'}</span>
@@ -346,7 +418,7 @@ export default function ActsSectionsTable({
             <div className="flex flex-col gap-2 text-[11px]">
               {majorMinorBlock}
               <div className="flex flex-col gap-1 mt-1">
-                <label className="text-[#0d2a4a] font-bold">Local Head</label>
+                <label className="text-[#0d2a4a] font-bold">Local Head<span className="text-red-500 ml-0.5">*</span></label>
                 {localHeadBlock}
               </div>
               <div className="flex flex-col gap-1 mt-1">

@@ -28,8 +28,10 @@ build/
 .env.development
 .env.production
 
-# Logs
-logs/
+# Logs — anchored to backend's runtime log output dir only (a bare `logs/` here would match
+# ANY directory named "logs" anywhere in the repo, which silently swallowed the new
+# backend/src/modules/logs/ module — logging-instrumentation-2026-07-22 foundation fix).
+backend/logs/
 *.log
 npm-debug.log*
 yarn-debug.log*

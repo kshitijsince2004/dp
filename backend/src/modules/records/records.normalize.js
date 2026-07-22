@@ -11,6 +11,9 @@
 // Deterministic + idempotent (P2.2): normalizing an already-normalized value is a no-op.
 import { toISO } from '../../utils/dateFormat.js';
 import { ACT_GROUP_CODES } from '../fields/classificationSources.config.js';
+import { getLogger } from '../../utils/logger.js';
+
+const log = getLogger('records.normalize');
 
 const norm = (s) => String(s ?? '').trim().toLowerCase();
 
@@ -94,9 +97,15 @@ export function normalizeFirNo(raw) {
   if (raw === null || raw === undefined) return raw;
   const s = String(raw).trim();
   if (!s) return raw;
-  if (s.split(FIR_LIST_SEPARATORS).filter(Boolean).length > 1) return raw;
+  if (s.split(FIR_LIST_SEPARATORS).filter(Boolean).length > 1) {
+    log.debug('normalizeFirNo: multi-FIR list detected — returned unchanged', { raw });
+    return raw;
+  }
   const nums = s.match(/\d+/g);
-  if (!nums || nums.length === 0) return raw;
+  if (!nums || nums.length === 0) {
+    log.debug('normalizeFirNo: no digits found — returned unchanged', { raw });
+    return raw;
+  }
   if (nums.length === 1) return String(parseInt(nums[0], 10));
   // Prefer an explicit 4-digit year token anywhere in the string; else treat the second
   // number as the year (2-digit -> century-expanded). Mirrors import.parse.js parseFirAndYear.
@@ -115,8 +124,13 @@ export function normalizeFirNo(raw) {
     year = parseInt(nums[1], 10);
     if (nums[1].length === 2) year = expandFirYear(year);
   }
-  if (seqToken === undefined) return raw;
-  return `${parseInt(seqToken, 10)}/${year}`;
+  if (seqToken === undefined) {
+    log.debug('normalizeFirNo: no sequence token resolved — returned unchanged', { raw });
+    return raw;
+  }
+  const normalized = `${parseInt(seqToken, 10)}/${year}`;
+  log.debug('normalizeFirNo: normalized', { raw, normalized, yearInferred: yearIdx < 0 });
+  return normalized;
 }
 
 // ── FK label resolution (ref.* lookups) ──────────────────────────────────────────────
@@ -132,7 +146,23 @@ async function loadActs(trx) {
   if (cache.has('acts')) return cache.get('acts');
   const rows = await trx('ref.acts').select('act_cd', 'act_long');
   cache.set('acts', rows);
+  log.debug('loadActs: loaded and cached ref.acts', { count: rows.length });
   return rows;
+}
+
+/** Lowercased set of every act label the UI's Acts & Sections dropdown can emit — the
+ * `ACT_GROUP_CODES` alias names (e.g. 'IPC') PLUS every raw `ref.acts.act_long` (some of
+ * which, e.g. the Aadhaar Act, contain their own commas). Used by records.mapper.js's
+ * comma-fragment re-merge (B5, 2026-07-21) to know which comma-split fragments of `act_name`
+ * belong back together — same cache lifetime/process-lifetime rule as loadActs/resolveAct. */
+export async function loadKnownActLabels(trx) {
+  if (cache.has('actLabelSet')) return cache.get('actLabelSet');
+  const acts = await loadActs(trx);
+  const set = new Set(Object.keys(ACT_GROUP_CODES).map(norm));
+  for (const a of acts) set.add(norm(a.act_long));
+  cache.set('actLabelSet', set);
+  log.debug('loadKnownActLabels: built and cached known-act-label set', { size: set.size });
+  return set;
 }
 
 /**
@@ -150,12 +180,19 @@ export async function resolveAct(trx, label) {
   const key = norm(label);
 
   const groupKey = Object.keys(ACT_GROUP_CODES).find((k) => norm(k) === key);
-  if (groupKey) return { actId: null, actCds: ACT_GROUP_CODES[groupKey], otherActName: null };
+  if (groupKey) {
+    log.debug('resolveAct: matched group alias', { label, groupKey, actCds: ACT_GROUP_CODES[groupKey] });
+    return { actId: null, actCds: ACT_GROUP_CODES[groupKey], otherActName: null };
+  }
 
   const acts = await loadActs(trx);
   const hit = acts.find((a) => norm(a.act_long) === key);
-  if (hit) return { actId: hit.act_cd, actCds: [hit.act_cd], otherActName: null };
+  if (hit) {
+    log.debug('resolveAct: matched ref.acts exact', { label, actId: hit.act_cd });
+    return { actId: hit.act_cd, actCds: [hit.act_cd], otherActName: null };
+  }
 
+  log.debug('resolveAct: miss — falling back to free-text other_act_name', { label });
   return { actId: null, actCds: [], otherActName: normalizeText(label) };
 }
 
@@ -183,23 +220,38 @@ export async function resolveSection(trx, label, actCds = []) {
   if (actCds.length) q = q.whereIn('act_sec_cd', actCds.map(String));
   const rows = await q;
   const hit = rows.find((r) => norm(r.section) === key);
-  if (hit) return { sectionId: hit.section_code, actCd: parseInt(hit.act_sec_cd, 10) || null, recovered: false };
+  if (hit) {
+    log.debug('resolveSection: matched exact (scoped)', { label, actCds, sectionId: hit.section_code, recovered: false });
+    return { sectionId: hit.section_code, actCd: parseInt(hit.act_sec_cd, 10) || null, recovered: false };
+  }
 
   const keyPad = padNormSection(label);
   const padHit = rows.find((r) => padNormSection(r.section) === keyPad);
-  if (padHit) return { sectionId: padHit.section_code, actCd: parseInt(padHit.act_sec_cd, 10) || null, recovered: true };
+  if (padHit) {
+    log.debug('resolveSection: matched zero-pad/whitespace tolerant (scoped)', { label, actCds, sectionId: padHit.section_code, recovered: true });
+    return { sectionId: padHit.section_code, actCd: parseInt(padHit.act_sec_cd, 10) || null, recovered: true };
+  }
 
   if (actCds.length) {
     // Scoped miss — try unscoped as a last resort (label match alone, then zero-pad match).
     // FIX 6: the exact-match anyRow lookup stays a live indexed query (unchanged); only the
     // unscoped full-table scan feeding the zero-pad fallback match is memoized per trx.
+    log.debug('resolveSection: scoped miss — falling back to unscoped lookup', { label, actCds });
     const anyRow = await trx('ref.sections').whereRaw('LOWER(section) = ?', [key]).first();
-    if (anyRow) return { sectionId: anyRow.section_code, actCd: parseInt(anyRow.act_sec_cd, 10) || null, recovered: false };
+    if (anyRow) {
+      log.debug('resolveSection: matched exact (unscoped fallback)', { label, sectionId: anyRow.section_code, recovered: false });
+      return { sectionId: anyRow.section_code, actCd: parseInt(anyRow.act_sec_cd, 10) || null, recovered: false };
+    }
     const anyRows = await loadAllSectionsCached(trx);
     const anyPadHit = anyRows.find((r) => padNormSection(r.section) === keyPad);
-    if (anyPadHit) return { sectionId: anyPadHit.section_code, actCd: parseInt(anyPadHit.act_sec_cd, 10) || null, recovered: true };
+    if (anyPadHit) {
+      log.debug('resolveSection: matched zero-pad (unscoped fallback)', { label, sectionId: anyPadHit.section_code, recovered: true });
+      return { sectionId: anyPadHit.section_code, actCd: parseInt(anyPadHit.act_sec_cd, 10) || null, recovered: true };
+    }
+    log.debug('resolveSection: total miss (scoped + unscoped)', { label, actCds });
     return { sectionId: null, actCd: null, recovered: false };
   }
+  log.debug('resolveSection: total miss (unscoped)', { label });
   return { sectionId: null, actCd: null, recovered: false };
 }
 
@@ -294,9 +346,13 @@ function looseMatchOne(rows, labelCol, valueCol, input) {
 export async function resolveMajorHead(trx, label) {
   if (!label) return { id: null, recovered: false };
   const row = await trx('ref.major_heads').whereRaw('LOWER(major_head) = ?', [norm(label)]).first();
-  if (row) return { id: row.major_head_code, recovered: false };
+  if (row) {
+    log.debug('resolveMajorHead: matched exact', { label, id: row.major_head_code, recovered: false });
+    return { id: row.major_head_code, recovered: false };
+  }
   const rows = await loadAllMajorHeadsCached(trx);
   const id = looseMatchOne(rows, 'major_head', 'major_head_code', label);
+  log.debug(id != null ? 'resolveMajorHead: matched loose (recovered)' : 'resolveMajorHead: miss', { label, id, recovered: id != null });
   return { id, recovered: id != null };
 }
 
@@ -306,26 +362,37 @@ export async function resolveMinorHead(trx, label, majorHeadCode = null) {
   let q = trx('ref.minor_heads').whereRaw('LOWER(minor_head) = ?', [key]);
   if (majorHeadCode) q = q.andWhere('major_head_code', majorHeadCode);
   const row = await q.first();
-  if (row) return { id: row.minor_head_cd, recovered: false };
+  if (row) {
+    log.debug('resolveMinorHead: matched exact (scoped)', { label, majorHeadCode, id: row.minor_head_cd, recovered: false });
+    return { id: row.minor_head_cd, recovered: false };
+  }
   // FIX 6: both the unscoped exact-match check and the looseMatch candidate rows are served
   // from ONE cached full-table load, filtered in JS by majorHeadCode where the original
   // queries were scoped — same result set as the two separate live queries this replaces.
   const allRows = await loadAllMinorHeadsCached(trx);
   if (majorHeadCode) {
     const anyRow = allRows.find((r) => norm(r.minor_head) === key);
-    if (anyRow) return { id: anyRow.minor_head_cd, recovered: true };
+    if (anyRow) {
+      log.debug('resolveMinorHead: matched exact (major-head-unscoped fallback, recovered)', { label, majorHeadCode, id: anyRow.minor_head_cd });
+      return { id: anyRow.minor_head_cd, recovered: true };
+    }
   }
   const scopedRows = majorHeadCode ? allRows.filter((r) => r.major_head_code === majorHeadCode) : allRows;
   const id = looseMatchOne(scopedRows, 'minor_head', 'minor_head_cd', label);
+  log.debug(id != null ? 'resolveMinorHead: matched loose (recovered)' : 'resolveMinorHead: miss', { label, majorHeadCode, id, recovered: id != null });
   return { id, recovered: id != null };
 }
 
 export async function resolveLocalHead(trx, label) {
   if (!label) return { id: null, recovered: false };
   const row = await trx('ref.local_heads').whereRaw('LOWER(local_head) = ?', [norm(label)]).first();
-  if (row) return { id: row.local_head_cd, recovered: false };
+  if (row) {
+    log.debug('resolveLocalHead: matched exact', { label, id: row.local_head_cd, recovered: false });
+    return { id: row.local_head_cd, recovered: false };
+  }
   const rows = await loadAllLocalHeadsCached(trx);
   const id = looseMatchOne(rows, 'local_head', 'local_head_cd', label);
+  log.debug(id != null ? 'resolveLocalHead: matched loose (recovered)' : 'resolveLocalHead: miss', { label, id, recovered: id != null });
   return { id, recovered: id != null };
 }
 
@@ -340,17 +407,27 @@ export async function resolveLocalHead(trx, label) {
 export async function resolveBeat(trx, label, psId = null) {
   if (!label) return { id: null, recovered: false };
   const row = await trx('ref.beats').whereRaw('LOWER(beat_name) = ?', [norm(label)]).first();
-  if (row) return { id: row.beat_cd, recovered: false };
-  if (!psId) return { id: null, recovered: false };
+  if (row) {
+    log.debug('resolveBeat: matched exact', { label, id: row.beat_cd, recovered: false });
+    return { id: row.beat_cd, recovered: false };
+  }
+  if (!psId) {
+    log.debug('resolveBeat: miss — no psId to scope the bare-number fallback', { label });
+    return { id: null, recovered: false };
+  }
 
   const numMatch = String(label).trim().match(/^0*(\d+)$/);
-  if (!numMatch) return { id: null, recovered: false };
+  if (!numMatch) {
+    log.debug('resolveBeat: miss — label is not a bare number, no fallback applies', { label, psId });
+    return { id: null, recovered: false };
+  }
   const num = numMatch[1];
   const candidates = await loadBeatsForPsCached(trx, psId);
   const hit = candidates.find((r) => {
     const m = String(r.beat_name || '').match(/^0*(\d+)\s*-/);
     return m && m[1] === num;
   });
+  log.debug(hit ? 'resolveBeat: matched bare-number, PS-scoped (recovered)' : 'resolveBeat: miss — no PS-scoped bare-number candidate', { label, psId, num, id: hit ? hit.beat_cd : null });
   return { id: hit ? hit.beat_cd : null, recovered: !!hit };
 }
 
@@ -361,4 +438,47 @@ export function resolvePropertyCategoryCode(val) {
   if (val === null || val === undefined || val === '') return null;
   const n = parseInt(val, 10);
   return Number.isNaN(n) ? null : n;
+}
+
+/** Does this raw property-category value look like an already-resolved numeric ref code
+ * (the interactive form's own option `value`), as opposed to a human label the bulk-import
+ * Excel carries? "12" -> yes; "Vehicle" / "12-inch" -> no. Kept strict (whole-string integer)
+ * so a label that merely starts with a digit still takes the lookup branch. */
+function isNumericCode(val) {
+  const s = String(val).trim();
+  return s !== '' && /^\d+$/.test(s);
+}
+
+/** Resolve a property MAJOR category to `record_properties.major_category_id`
+ * (FK -> ref.property_categories.parent_cd). The interactive form already submits the numeric
+ * code (returned as-is); bulk import submits the category LABEL ("Vehicle", "Mobile Phone", …
+ * the frozen template's dropdown text = ref.property_categories.code_type), which needs a
+ * lookup. Before this, the label was integer-coerced to null and the property's category was
+ * silently dropped on every import (reported 2026-07-21 "property category/type not parsed"). */
+export async function resolvePropertyMajorCategory(trx, val) {
+  if (val === null || val === undefined || val === '') return null;
+  if (isNumericCode(val)) {
+    log.debug('resolvePropertyMajorCategory: already a numeric ref code — passthrough', { val });
+    return parseInt(val, 10);
+  }
+  const row = await trx('ref.property_categories').whereRaw('LOWER(code_type) = ?', [norm(val)]).first();
+  log.debug(row ? 'resolvePropertyMajorCategory: resolved label to ref code' : 'resolvePropertyMajorCategory: miss — label unmatched, category dropped', { val, id: row?.parent_cd ?? null });
+  return row ? row.parent_cd : null;
+}
+
+/** Resolve a property MINOR category ("Type of property") to
+ * `record_properties.minor_category_id` (FK -> ref.other_property_items.property_cd). Numeric
+ * code passes through (form); a label is looked up against ref.other_property_items.property.
+ * Only the DEFAULT other_property_items branch resolves here — arms/drugs/generic subtypes live
+ * in their own ref tables that this single registry field does not map, so those stay null (a
+ * strict improvement over today's blanket drop, not a regression). */
+export async function resolvePropertyMinorCategory(trx, val) {
+  if (val === null || val === undefined || val === '') return null;
+  if (isNumericCode(val)) {
+    log.debug('resolvePropertyMinorCategory: already a numeric ref code — passthrough', { val });
+    return parseInt(val, 10);
+  }
+  const row = await trx('ref.other_property_items').whereRaw('LOWER(property) = ?', [norm(val)]).first();
+  log.debug(row ? 'resolvePropertyMinorCategory: resolved label to ref code' : 'resolvePropertyMinorCategory: miss — label unmatched, category dropped', { val, id: row?.property_cd ?? null });
+  return row ? row.property_cd : null;
 }

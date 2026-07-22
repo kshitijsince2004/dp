@@ -2,6 +2,9 @@ import db from '../../config/db.js';
 import { runChainVerification } from './audit.service.js';
 import { setRecordFrozen } from '../records/records.service.js';
 import { verifyRecordAccess } from '../../middleware/rbac.middleware.js';
+import { getLogger } from '../../utils/logger.js';
+
+const log = getLogger('audit.controller');
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -13,10 +16,12 @@ const parseJsonField = (val) => {
 
 export const getRecordAudit = async (req, res) => {
   const { recordId } = req.params;
+  log.debug('getRecordAudit: enter', { recordId, userId: req.user?.id });
 
   try {
     // Single-record op: verify geographical scope access before querying (P5.2)
     await verifyRecordAccess(recordId, req.user);
+    log.debug('getRecordAudit: verifyRecordAccess passed', { recordId, userId: req.user?.id });
 
     const revisions = await db('record_revisions')
       .select('record_revisions.*', 'u.username', 'u.badge_no', 'u.name')
@@ -29,6 +34,7 @@ export const getRecordAudit = async (req, res) => {
       field_changes: parseJsonField(r.field_changes)
     }));
 
+    log.info('getRecordAudit: 200', { recordId, revisionCount: formatted.length });
     return res.status(200).json({
       status: 'success',
       success: true,
@@ -37,6 +43,7 @@ export const getRecordAudit = async (req, res) => {
   } catch (error) {
     // Mirror records.controller.js's access-denial mapping exactly.
     const status = error.message.includes('Access denied') ? 403 : 500;
+    log.error('getRecordAudit: failed', { recordId, status, err: error });
     return res.status(status).json({
       status: 'error',
       success: false,
@@ -51,6 +58,7 @@ export const getUserAudit = async (req, res) => {
   const page = parseInt(req.query.page || 1, 10);
   const limit = parseInt(req.query.limit || 20, 10);
   const offset = (page - 1) * limit;
+  log.debug('getUserAudit: enter', { targetUserId: userId, callerRole: req.user?.role, from, to, page, limit });
 
   try {
     // DISTRICT_OFFICER may only read the audit trail of users inside their own
@@ -60,15 +68,20 @@ export const getUserAudit = async (req, res) => {
     if (req.user.role === 'DISTRICT_OFFICER') {
       const targetUser = await db('users').where({ id: userId }).first();
       if (!targetUser) {
+        log.warn('getUserAudit: rejected — target user not found', { targetUserId: userId });
         return res.status(404).json({ status: 'error', success: false, message: 'User not found' });
       }
       if (targetUser.district_id !== req.user.district_id) {
+        log.warn('getUserAudit: rejected — target user outside caller district', {
+          targetUserId: userId, targetDistrictId: targetUser.district_id, callerDistrictId: req.user.district_id,
+        });
         return res.status(403).json({
           status: 'error',
           success: false,
           message: 'Access denied: user falls outside your district jurisdiction'
         });
       }
+      log.debug('getUserAudit: district scope check passed', { targetUserId: userId });
     }
 
     let query = db('record_revisions')
@@ -100,6 +113,7 @@ export const getUserAudit = async (req, res) => {
       field_changes: parseJsonField(r.field_changes)
     }));
 
+    log.info('getUserAudit: 200', { targetUserId: userId, resultCount: formatted.length, total });
     return res.status(200).json({
       status: 'success',
       success: true,
@@ -107,6 +121,7 @@ export const getUserAudit = async (req, res) => {
       meta: { page, limit, total }
     });
   } catch (error) {
+    log.error('getUserAudit: failed', { targetUserId: userId, err: error });
     return res.status(500).json({
       status: 'error',
       success: false,
@@ -116,6 +131,7 @@ export const getUserAudit = async (req, res) => {
 };
 
 export const getAuditLogs = async (req, res) => {
+  log.debug('getAuditLogs: enter', { userId: req.user?.id });
   try {
     const list = await db('audit_logs')
       .select('audit_logs.*', 'u.username as operator_name', 'u.badge_no')
@@ -123,12 +139,14 @@ export const getAuditLogs = async (req, res) => {
       .orderBy('audit_logs.changed_at', 'desc')
       .limit(200);
 
+    log.info('getAuditLogs: 200', { resultCount: list.length });
     return res.status(200).json({
       status: 'success',
       success: true,
       data: list
     });
   } catch (error) {
+    log.error('getAuditLogs: failed', { err: error });
     return res.status(500).json({
       status: 'error',
       success: false,
@@ -149,8 +167,13 @@ const actorFromReq = (req) => (req.user ? { id: req.user.userId || req.user.id, 
 export const verifyAuditChainEndpoint = async (req, res) => {
   try {
     const enforce = req.method === 'POST' && req.query.freeze !== 'false';
+    log.debug('verifyAuditChainEndpoint: enter', { method: req.method, enforce, actor: actorFromReq(req) });
     const result = await runChainVerification({ freezeOnBreak: enforce, actor: actorFromReq(req) });
 
+    log.info('verifyAuditChainEndpoint: 200', {
+      valid: result.valid, breakCount: result.breaks.length, frozenCount: result.frozen.length,
+      freezeSkipped: result.freezeSkipped ?? false, enforced: enforce,
+    });
     return res.status(200).json({
       status: 'success',
       success: true,
@@ -168,6 +191,7 @@ export const verifyAuditChainEndpoint = async (req, res) => {
       },
     });
   } catch (error) {
+    log.error('verifyAuditChainEndpoint: failed', { err: error });
     return res.status(500).json({
       status: 'error',
       success: false,
@@ -184,10 +208,13 @@ export const verifyAuditChainEndpoint = async (req, res) => {
 export const freezeRecordEndpoint = async (req, res) => {
   const { recordId } = req.params;
   const { reason } = req.body || {};
+  log.debug('freezeRecordEndpoint: enter', { recordId, actor: actorFromReq(req), reasonLen: (reason || '').length });
   try {
     const result = await setRecordFrozen(recordId, true, { user: actorFromReq(req), reason });
+    log.info('freezeRecordEndpoint: 200', { recordId, changed: result.changed });
     return res.status(200).json({ status: 'success', success: true, data: result });
   } catch (error) {
+    log.error('freezeRecordEndpoint: failed', { recordId, err: error });
     return res.status(error.status || 500).json({ status: 'error', success: false, message: error.message });
   }
 };
@@ -195,13 +222,17 @@ export const freezeRecordEndpoint = async (req, res) => {
 export const unfreezeRecordEndpoint = async (req, res) => {
   const { recordId } = req.params;
   const { reason } = req.body || {};
+  log.debug('unfreezeRecordEndpoint: enter', { recordId, actor: actorFromReq(req), reasonLen: (reason || '').length });
   if (!reason || reason.trim().length < 10) {
+    log.warn('unfreezeRecordEndpoint: rejected — reason too short', { recordId, reasonLen: (reason || '').length });
     return res.status(422).json({ status: 'error', success: false, message: 'An unfreeze reason of at least 10 characters is required.' });
   }
   try {
     const result = await setRecordFrozen(recordId, false, { user: actorFromReq(req), reason });
+    log.info('unfreezeRecordEndpoint: 200', { recordId, changed: result.changed });
     return res.status(200).json({ status: 'success', success: true, data: result });
   } catch (error) {
+    log.error('unfreezeRecordEndpoint: failed', { recordId, err: error });
     return res.status(error.status || 500).json({ status: 'error', success: false, message: error.message });
   }
 };
@@ -211,6 +242,7 @@ export const getAdminAuditLogs = async (req, res) => {
   const page = parseInt(req.query.page || 1, 10);
   const limit = parseInt(req.query.limit || 20, 10);
   const offset = (page - 1) * limit;
+  log.debug('getAdminAuditLogs: enter', { user_id, action, module, from, to, page, limit });
 
   try {
     let query = db('audit_logs')
@@ -248,6 +280,7 @@ export const getAdminAuditLogs = async (req, res) => {
       .limit(limit)
       .offset(offset);
 
+    log.info('getAdminAuditLogs: 200', { resultCount: list.length, total });
     return res.status(200).json({
       status: 'success',
       success: true,
@@ -255,6 +288,7 @@ export const getAdminAuditLogs = async (req, res) => {
       meta: { page, limit, total }
     });
   } catch (error) {
+    log.error('getAdminAuditLogs: failed', { err: error });
     return res.status(500).json({
       status: 'error',
       success: false,

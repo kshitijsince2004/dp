@@ -107,10 +107,14 @@ export const caseGeneralFields = [
   { field_key: 'fir_date', label_en: 'FIR Date', label_hi: 'प्राथमिकी (FIR) तिथि', required: true, hint: 'dd-mm-yyyy' },
   { field_key: 'district', label_en: 'District', label_hi: 'जिला', required: true, hint: 'e.g. New Delhi District (NDD)' },
   { field_key: 'police_station', label_en: 'Police Station', label_hi: 'थाना', required: true, hint: 'e.g. Parliament Street' },
-  { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: true, hint: 'e.g. Theft / Larceny' },
+  // #E (2026-07-20): only CCTNS + Zero FIR registrations carry crime heads (act/section/local_head);
+  // other registration types are RELAXED. local_head is required ONLY when case_type is one of those
+  // two — show_when gates BOTH visibility and the required check (import.validate.js honors show_when
+  // before requiredness). case_type lives on this same (parent) sheet, so no cross-sheet plumbing.
+  { field_key: 'local_head', label_en: 'Local Head', label_hi: 'स्थानीय शीर्ष', required: true, hint: 'e.g. Theft / Larceny', show_when: { field: 'case_type', value: ['cctns(manual FIR)', 'zero FIR'] } },
   { field_key: 'heinous_offence', label_en: 'Heinous Offence', label_hi: 'जघन्य अपराध', required: false, options: ['Yes', 'No'] },
   { field_key: 'under_section', label_en: 'Under Section', label_hi: 'धारा के अंतर्गत', required: false, hint: 'e.g. Section 379 IPC' },
-  { field_key: 'case_type', label_en: 'Case Type', label_hi: 'मामले का प्रकार', required: false, hint: 'e.g. Property Theft' },
+  { field_key: 'case_type', label_en: 'Case Type', label_hi: 'मामले का प्रकार', required: true, hint: 'cctns(manual FIR) / eTheft / eMVT / NCRP / zero FIR' },
   //{ field_key: 'sid_number', label_en: 'SID Number', label_hi: 'एसआईडी संख्या', required: false, hint: 'e.g. SID-889021' },
   { field_key: 'cctns_number', label_en: 'CCTNS Number', label_hi: 'सीसीटीएनएस संख्या', required: false, hint: 'e.g. CCTNS-202699104' },
   { field_key: 'beat_number', label_en: 'Beat Number', label_hi: 'बीट संख्या', required: false, hint: 'e.g. Beat No. 4' },
@@ -141,9 +145,13 @@ export const caseGeneralFields = [
 
 export const caseActSectionFields = [
   { field_key: 'fir_no', label_en: 'FIR Number', label_hi: 'प्राथमिकी (FIR) संख्या', required: true, hint: 'Must match General Information FIR Number' },
-  { field_key: 'act', label_en: 'Act', label_hi: 'अधिनियम', required: true, hint: 'e.g. IPC / BNS' },
-  { field_key: 'sections', label_en: 'Sections', label_hi: 'धाराएं', required: true, hint: 'e.g. Sec 379/411' },
-  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: true, hint: 'e.g. Burglary / Snatching' },
+  // #E (2026-07-20): act/sections/crime_head relaxed to required:false at row-level — crime heads
+  // are only mandatory for CCTNS + Zero FIR registrations. This sheet has no case_type column (it's
+  // a child sheet keyed by fir_no), so the case_type-conditional enforcement lives at the
+  // composed-row level in import.validate.js (gated on the parent's case_type there).
+  { field_key: 'act', label_en: 'Act', label_hi: 'अधिनियम', required: false, hint: 'e.g. IPC / BNS (required for CCTNS / Zero FIR)' },
+  { field_key: 'sections', label_en: 'Sections', label_hi: 'धाराएं', required: false, hint: 'e.g. Sec 379/411 (required for CCTNS / Zero FIR)' },
+  { field_key: 'crime_head', label_en: 'Crime Head', label_hi: 'अपराध शीर्ष', required: false, hint: 'e.g. Burglary / Snatching (required for CCTNS / Zero FIR)' },
   { field_key: 'minor_head', label_en: 'Minor Head', label_hi: 'लघु शीर्ष', required: false, hint: 'e.g. Cycle Theft / Dowry Death' }
 ];
 
@@ -231,7 +239,7 @@ export const arrestPersonFields = [
   { field_key: 'linked_fir_dd_no', label_en: 'Linked FIR / DD No.', label_hi: 'संबंधित एफआईआर / डीडी संख्या', required: true, hint: 'Must match General Info sheet' },
   { field_key: 'date_of_arrest', label_en: 'Date Of Arrest', label_hi: 'गिरफ्तारी की तिथि', required: true, hint: 'dd-mm-yyyy' },
   { field_key: 'time_of_arrest', label_en: 'Time Of Arrest', label_hi: 'गिरफ्तारी का समय', required: false, hint: 'HH:MM' },
-  { field_key: 'arrest_place', label_en: 'House No. of Arrest', label_hi: 'गिरफ्तारी का मकान संख्या', required: false },
+  { field_key: 'arrest_place', label_en: 'Place of Arrest', label_hi: 'गिरफ्तारी का स्थान', required: false },
   { field_key: 'arrest_street', label_en: 'Street of Arrest', label_hi: 'गिरफ्तारी का गली / सड़क', required: false },
   { field_key: 'arrest_colony', label_en: 'Colony of Arrest', label_hi: 'गिरफ्तारी का कॉलोनी', required: false },
   { field_key: 'arrest_district', label_en: 'District of Arrest', label_hi: 'गिरफ्तारी का जिला', required: false },
@@ -525,9 +533,14 @@ export const TEMPLATE_EXCLUDE_KEYS = {
   ]),
   ARREST: new Set([
     // general info variants not used by the arrest template
-    'case_type', 'fir_no', 'gd_no', 'arrest_date', 'arrest_place', 'complainant_name',
-    'other_status_reason', 'recovery', 'nafis_dossier', 'case_status', 'listed_criminal',
+    'case_type', 'fir_no', 'gd_no', 'arrest_date', 'complainant_name',
+    'other_status_reason', 'recovery', 'nafis_dossier', 'case_status',
     'arresting_officer', 'arresting_officer_mobile',
+    // NOTE (2026-07-20): 'arrest_place' and 'listed_criminal' (BC) REMOVED from this exclude set.
+    // arrest_place is a real curated column in arrestPersonFields (was double-listed here, harmless
+    // but confusing). listed_criminal (storage arrestee.is_bc) parallels proclaimed_offender
+    // (is_po, already in the template) — it was reported "not coming after import" because it was
+    // excluded and thus never collected; now it's a template column like its is_po sibling.
     // 2026-07-16 Integration 3 WP0 review — same rationale as CASE above.
     'major_heads', 'minor_heads', 'io_id',
     // 2026-07-16 WP10: IO detail columns removed — same rationale as CASE above.
@@ -562,6 +575,14 @@ export const TEMPLATE_EXCLUDE_KEYS = {
     'arrested_npr', 'nick_name', 'arrested_dob', 'arrested_birth_year',
     'arrested_present_address', 'arrested_perm_address',
     'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path',
+    // 2026-07-20 (#C): the 6 LEGACY per-scheme boolean fields (section special_scheme) were
+    // superseded by the single scheme_of_arrest dropdown. They're is_active:false in config but
+    // drifted to is_active:true in the DB, so autoIncludedRegistryFields was appending all 6 as
+    // extra ARREST template columns beside scheme_of_arrest (reported: "scheme_of_arrest present
+    // as columns instead of dropdown"). Excluded here permanently — independent of the is_active
+    // drift — so a re-activation can never re-leak them into the template.
+    'integrated_pi', 'group_patrolling', 'cycle_patrolling', 'by_antisnatching_team',
+    'by_prahari', 'by_eyes_ears_scheme_members',
   ]),
   UIDB: new Set([
     'deceased_address', 'deceased_perm_address', 'local_head', 'heinous_offence', 'case_status', 'missing_relation_type',

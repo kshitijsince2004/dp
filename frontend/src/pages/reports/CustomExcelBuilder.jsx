@@ -9,6 +9,7 @@ import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import DateInput from '../../components/ui/DateInput.jsx';
 import { formatDMY, parseDMY } from '../../utils/dateFormat.js';
+import { log } from '../../utils/logger.js';
 
 const JOIN_OPTIONS = {
   CASE: [
@@ -163,7 +164,13 @@ export default function CustomExcelBuilder() {
 
   const { data: metaRes, isLoading: metaLoading, error: metaError } = useQuery({
     queryKey: ['report-builder-metadata'],
-    queryFn: () => api.get('/reports/builder/metadata').then(r => r.data.data),
+    queryFn: () => {
+      log.debug('data:load_start', { what: 'report_builder_metadata' });
+      return api.get('/reports/builder/metadata').then(r => {
+        log.debug('data:load_success', { what: 'report_builder_metadata' });
+        return r.data.data;
+      }).catch(err => { log.error('data:load_error', { what: 'report_builder_metadata', err }); throw err; });
+    },
     staleTime: 300000,
   });
 
@@ -253,11 +260,13 @@ export default function CustomExcelBuilder() {
     };
 
     setJobState({ status: 'pending', jobId: null });
+    log.info('action:generate_report_start', { table, join, fieldCount: fields.length, dateFrom, dateTo, psId });
 
     try {
       const res = await api.post('/reports/builder/export', payload);
       const jobId = res.data?.data?.job_id;
       if (!jobId) throw new Error('No job ID returned');
+      log.info('action:generate_report_queued', { jobId, table, join });
       setJobState({ status: 'pending', jobId });
 
       const loadingToastId = toast.loading('Building Excel report…');
@@ -268,25 +277,30 @@ export default function CustomExcelBuilder() {
         try {
           const sr = await api.get(`/reports/status/${jobId}`);
           const status = sr.data?.data?.job?.status || sr.data?.data?.status;
+          log.debug('action:generate_report_poll_step', { jobId, attempt: attempts, status });
           if (status === 'READY') {
             clearInterval(iv);
+            log.info('action:generate_report_ready', { jobId, attempts });
             toast.dismiss(loadingToastId);
             toast.success('Report ready — click Download to save.');
             setJobState({ status: 'ready', jobId });
           } else if (status === 'FAILED' || attempts > 40) {
             clearInterval(iv);
+            log.error('action:generate_report_failed', { jobId, status, attempts });
             toast.dismiss(loadingToastId);
             toast.error('Report generation failed.');
             setJobState({ status: 'failed', jobId });
           }
-        } catch {
+        } catch (err) {
           clearInterval(iv);
+          log.error('action:generate_report_poll_error', { jobId, err });
           toast.dismiss(loadingToastId);
           toast.error('Lost connection while polling report status.');
           setJobState({ status: 'failed', jobId });
         }
       }, 1500);
     } catch (err) {
+      log.error('action:generate_report_start_failed', { table, join, err });
       toast.error(err.response?.data?.message || 'Failed to start report generation.');
       setJobState({ status: 'idle', jobId: null });
     }
@@ -300,6 +314,7 @@ export default function CustomExcelBuilder() {
   const handleDownload = async () => {
     const { jobId } = jobState;
     if (!jobId) return;
+    log.debug('action:report_download_start', { jobId });
     try {
       const res = await api.get(`/reports/download/${jobId}`, { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([res.data], {
@@ -311,9 +326,11 @@ export default function CustomExcelBuilder() {
       document.body.appendChild(link);
       link.click();
       setTimeout(() => { link.remove(); URL.revokeObjectURL(url); }, 500);
+      log.info('action:report_download_success', { jobId });
       toast.success('Excel downloaded!');
       setJobState({ status: 'idle', jobId: null });
     } catch (err) {
+      log.error('action:report_download_failed', { jobId, err });
       toast.error('Download failed: ' + (err.response?.data?.message || err.message));
     }
   };

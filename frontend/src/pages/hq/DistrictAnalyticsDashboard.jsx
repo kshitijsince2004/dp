@@ -12,6 +12,7 @@ import {
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import { Spinner } from '../../components/ui/Spinner.jsx';
+import { log } from '../../utils/logger.js';
 
 export default function DistrictAnalyticsDashboard() {
   const navigate = useNavigate();
@@ -21,20 +22,41 @@ export default function DistrictAnalyticsDashboard() {
   const [selectedDistrictId, setSelectedDistrictId] = useState(null);
   const trendSectionRef = useRef(null);
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/hq/district-analytics', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/hq/district-analytics' });
+  }, []);
+
   // Fetch nodes and raw records to support dynamic client-side timeframe aggregations
   const { data: rawNodes = [], isLoading: loadingNodes } = useQuery({
     queryKey: ['hierarchy', 'nodes'],
     queryFn: async () => {
-      const res = await api.get('/hierarchy/nodes');
-      return res.data?.data || [];
+      log.debug('data:load_start', { what: 'hierarchy_nodes' });
+      try {
+        const res = await api.get('/hierarchy/nodes');
+        const rows = res.data?.data || [];
+        log.debug('data:load_success', { what: 'hierarchy_nodes', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'hierarchy_nodes', err });
+        throw err;
+      }
     }
   });
 
   const { data: rawRecords = [], isLoading: loadingRecords } = useQuery({
     queryKey: ['records', 'all'],
     queryFn: async () => {
-      const res = await api.get('/records');
-      return res.data?.data?.cases || res.data?.data || [];
+      log.debug('data:load_start', { what: 'records_all' });
+      try {
+        const res = await api.get('/records');
+        const rows = res.data?.data?.cases || res.data?.data || [];
+        log.debug('data:load_success', { what: 'records_all', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'records_all', err });
+        throw err;
+      }
     }
   });
 
@@ -141,6 +163,7 @@ export default function DistrictAnalyticsDashboard() {
   }, [sortedDistricts, activeMetric]);
 
   const handleDrillDown = (districtId) => {
+    log.debug('action:district_drilldown', { districtId });
     navigate('/hq/stations', { state: { districtId } });
   };
 
@@ -206,6 +229,7 @@ export default function DistrictAnalyticsDashboard() {
   }, [rawRecords, selectedDistrictId, timeframe]);
 
   const handleSelectDistrict = (districtId) => {
+    log.debug('action:district_select', { districtId });
     setSelectedDistrictId(districtId);
     setTimeout(() => {
       trendSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -304,7 +328,7 @@ export default function DistrictAnalyticsDashboard() {
               {['Daily', 'Weekly', 'Monthly'].map((item) => (
                 <button
                   key={item}
-                  onClick={() => setTimeframe(item)}
+                  onClick={() => { log.debug('action:timeframe_change', { timeframe: item }); setTimeframe(item); }}
                   className={`rounded-lg px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-200 ${
                     timeframe === item
                       ? 'bg-white text-purple-950 shadow-md font-bold'
@@ -401,7 +425,7 @@ export default function DistrictAnalyticsDashboard() {
             return (
               <button
                 key={tab.key}
-                onClick={() => setActiveMetric(tab.key)}
+                onClick={() => { log.debug('action:metric_tab_change', { metric: tab.key }); setActiveMetric(tab.key); }}
                 className={`flex items-center gap-2 rounded-xl border px-5 py-2.5 text-xs font-bold tracking-wide transition-all duration-200 shadow-sm ${
                   isActive
                     ? tab.activeClass

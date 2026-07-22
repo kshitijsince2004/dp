@@ -134,8 +134,8 @@
   ],
   "field_type": "TEXT",
   "labels": {
-   "en": "House No. of Arrest",
-   "hi": "गिरफ्तारी का मकान संख्या"
+   "en": "Place of Arrest",
+   "hi": "गिरफ्तारी का स्थान"
   },
   "section": "arrest_details",
   "storage": {

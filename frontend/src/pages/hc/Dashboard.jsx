@@ -14,6 +14,7 @@ import {
 import api from "../../utils/api.js";
 import useAuthStore from "../../store/authStore.js";
 import { FileText, Shield, UserX } from "lucide-react";
+import { log } from "../../utils/logger.js";
 
 const PERIODS = ["Day", "Week", "Month"];
 
@@ -42,12 +43,19 @@ export default function PSDashboard() {
   const [arrestTrend, setArrestTrend] = useState([]);
 
   useEffect(() => {
+    log.debug('page:mount', { route: '/hc-dashboard', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/hc-dashboard' });
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
+    log.debug('data:load_start', { what: 'ps_dashboard_summary', period: activePeriod });
     api
       .get("/analytics/ps-dashboard", { params: { period: activePeriod.toLowerCase() } })
       .then((res) => {
         if (cancelled) return;
         const data = res.data?.data;
+        log.debug('data:load_success', { what: 'ps_dashboard_summary', period: activePeriod });
         setSummary(data || null);
         setLeftOutAccused(
           (data?.left_out_list || []).map((a) => ({
@@ -56,8 +64,9 @@ export default function PSDashboard() {
           }))
         );
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        log.error('data:load_error', { what: 'ps_dashboard_summary', period: activePeriod, err });
         setSummary(null);
         setLeftOutAccused([]);
       })
@@ -72,11 +81,13 @@ export default function PSDashboard() {
 
   useEffect(() => {
     let cancelled = false;
+    log.debug('data:load_start', { what: 'case_type_breakdown', period: activePeriod });
     api
       .get("/analytics/case-type-breakdown", { params: { period: activePeriod.toLowerCase() } })
       .then((res) => {
         if (cancelled) return;
         const rows = res.data?.data?.rows || [];
+        log.debug('data:load_success', { what: 'case_type_breakdown', count: rows.length });
         setCaseTypeRows(
           rows.map((r) => ({
             name: r.name,
@@ -86,8 +97,9 @@ export default function PSDashboard() {
           }))
         );
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        log.error('data:load_error', { what: 'case_type_breakdown', err });
         setCaseTypeRows([]);
       });
     return () => {
@@ -98,25 +110,31 @@ export default function PSDashboard() {
   useEffect(() => {
     let cancelled = false;
     const periodParam = activePeriod.toLowerCase();
+    log.debug('data:load_start', { what: 'cases_by_month', period: periodParam });
     api
       .get("/analytics/cases-by-month", { params: { period: periodParam } })
       .then((res) => {
         if (cancelled) return;
+        log.debug('data:load_success', { what: 'cases_by_month' });
         setCasesByMonth(res.data?.data || []);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        log.error('data:load_error', { what: 'cases_by_month', err });
         setCasesByMonth([]);
       });
 
+    log.debug('data:load_start', { what: 'arrests_trend', period: periodParam });
     api
       .get("/analytics/arrests-trend", { params: { period: periodParam } })
       .then((res) => {
         if (cancelled) return;
+        log.debug('data:load_success', { what: 'arrests_trend' });
         setArrestTrend(res.data?.data || []);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        log.error('data:load_error', { what: 'arrests_trend', err });
         setArrestTrend([]);
       });
 
@@ -200,7 +218,7 @@ export default function PSDashboard() {
               <button
                 key={period}
                 type="button"
-                onClick={() => setActivePeriod(period)}
+                onClick={() => { log.debug('action:period_change', { period }); setActivePeriod(period); }}
                 className={`rounded-lg px-3.5 py-1 text-xs font-semibold transition-colors ${
                   activePeriod === period
                     ? "bg-white text-[#0A1628] shadow-sm"

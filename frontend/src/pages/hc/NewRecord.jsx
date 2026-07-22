@@ -9,6 +9,7 @@ import DynamicForm from '../../components/forms/DynamicForm.jsx';
 import api from '../../utils/api.js';
 import { useCreateRecord } from '../../hooks/useCreateRecord.js';
 import { useUpdateRecord } from '../../hooks/useUpdateRecord.js';
+import { log } from '../../utils/logger.js';
 
 const pageVariants = {
   hidden: { opacity: 0 },
@@ -34,13 +35,30 @@ export default function NewRecord() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  React.useEffect(() => {
+    log.debug('page:mount', { route: '/records/new/:type', type, editId });
+    return () => log.debug('page:unmount', { route: '/records/new/:type', type, editId });
+  }, [type, editId]);
+
+  // refetchOnMount:'always' + staleTime:0 — always load fresh data when opening a record to edit,
+  // so a previously-saved edit is never masked by the 60s-stale React Query cache (#R2-2,
+  // 2026-07-20 — see the matching comment in sho/RecordDetail.jsx).
   const { data: recordPayload, isLoading } = useQuery({
     queryKey: ['records', editId],
     queryFn: async () => {
-      const res = await api.get(`/records/${editId}`);
-      return res.data.data;
+      log.debug('data:load_start', { what: 'record_for_edit', recordId: editId });
+      try {
+        const res = await api.get(`/records/${editId}`);
+        log.debug('data:load_success', { what: 'record_for_edit', recordId: editId });
+        return res.data.data;
+      } catch (err) {
+        log.error('data:load_error', { what: 'record_for_edit', recordId: editId, err });
+        throw err;
+      }
     },
     enabled: !!editId,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const record = recordPayload?.record;
@@ -51,20 +69,24 @@ export default function NewRecord() {
 
   const submitMutation = useMutation({
     mutationFn: async (id) => {
+      log.debug('action:submit_start', { recordId: id });
       const res = await api.post(`/records/${id}/submit`);
       return res.data.data;
     },
-    onSuccess: () => {
+    onSuccess: (data, id) => {
+      log.info('action:submit_success', { recordId: id });
       toast.success(t('actions.submitSuccess', 'Record submitted to SHO successfully'));
       queryClient.invalidateQueries({ queryKey: ['records'] });
       navigate('/records');
     },
-    onError: (err) => {
+    onError: (err, id) => {
+      log.error('action:submit_failed', { recordId: id, err });
       toast.error(err.response?.data?.message || 'Failed to submit record');
     },
   });
 
   const handleFormSubmit = async (formData, persons, properties, activeId) => {
+    log.info('action:record_create_submit_start', { type, editId, activeId, isEdit: !!(activeId || editId) });
     try {
       let savedRecord;
       if (activeId || editId) {
@@ -74,9 +96,12 @@ export default function NewRecord() {
       }
       const finalId = activeId || editId || savedRecord?.id;
       if (!finalId) throw new Error('No valid record ID found for submission.');
+      log.debug('action:record_saved', { recordId: finalId });
       await submitMutation.mutateAsync(finalId);
+      log.info('action:record_create_submit_success', { recordId: finalId });
     } catch (e) {
       console.error('Failed to submit form', e);
+      log.error('action:record_create_submit_failed', { type, editId, err: e });
       toast.error(e?.response?.data?.message || 'Failed to save or submit record.');
     }
   };
@@ -86,7 +111,10 @@ export default function NewRecord() {
     // checked alongside it only for compatibility with older mock-data paths that still use
     // that name, matching the OR pattern already used elsewhere (Queue.jsx, MyRecords.jsx).
     if (!record || (record.current_status !== 'SENT_BACK' && record.current_status !== 'SENT_BACK_HC')) return null;
-    return transitions.find((tr) => tr.action === 'SEND_BACK') || null;
+    // transitions are ordered performed_at ASC — the LATEST send-back is the last match, not the
+    // first. `.find()` returned the oldest, so a second send-back with a new message kept showing
+    // the first message (reported 2026-07-21). Take the most recent SEND_BACK instead.
+    return transitions.filter((tr) => tr.action === 'SEND_BACK').at(-1) || null;
   };
 
   const sbDetails = getSendBackDetails();
@@ -155,8 +183,8 @@ export default function NewRecord() {
             className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto pt-4"
           >
             {/* Against FIR Card */}
-            <div 
-              onClick={() => setCaseType('against_fir')}
+            <div
+              onClick={() => { log.debug('action:arrest_case_type_select', { caseType: 'against_fir' }); setCaseType('against_fir'); }}
               className="group cursor-pointer bg-white border border-slate-200 hover:border-[var(--accent-color)] rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1.5 flex flex-col justify-between h-72"
             >
               <div className="space-y-4">
@@ -179,8 +207,8 @@ export default function NewRecord() {
             </div>
 
             {/* Kalandra Card */}
-            <div 
-              onClick={() => setCaseType('kalandra')}
+            <div
+              onClick={() => { log.debug('action:arrest_case_type_select', { caseType: 'kalandra' }); setCaseType('kalandra'); }}
               className="group cursor-pointer bg-white border border-slate-200 hover:border-[var(--accent-color)] rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1.5 flex flex-col justify-between h-72"
             >
               <div className="space-y-4">

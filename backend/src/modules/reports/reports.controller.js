@@ -5,8 +5,14 @@ import fs from 'fs';
 import puppeteer from 'puppeteer';
 import ExcelJS from 'exceljs';
 import { publish } from '../../events/eventBus.js';
-import { logger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import { toISO, toDMY } from '../../utils/dateFormat.js';
+
+// Logging-instrumentation-2026-07-22 (B5): matches records.service.js style. Replaces the
+// pre-existing unbound `logger.error('[RunScheduleNow] ...', err.message)` string-concat calls
+// with the bound `getLogger('reports.controller')` + structured `log.<level>(event, data)`
+// convention (additive — same information, no behavior change).
+const log = getLogger('reports.controller');
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -54,6 +60,7 @@ const templates = [
 export const getTemplates = async (req, res) => {
   const userId = req.user ? (req.user.userId || req.user.id) : null;
   const { record_type, template_type } = req.query;
+  log.debug('getTemplates: enter', { userId, record_type, template_type });
 
   try {
     let query = db('report_templates')
@@ -68,6 +75,7 @@ export const getTemplates = async (req, res) => {
 
     const dbTemplates = await query;
     const dbIds = new Set(dbTemplates.map(t => t.id));
+    log.debug('getTemplates: fetched DB-synced report_templates', { userId, template_type, count: dbTemplates.length });
 
     let formatted = dbTemplates.map(t => {
       let formats = [];
@@ -109,20 +117,24 @@ export const getTemplates = async (req, res) => {
       }));
 
     formatted = [...formatted, ...memFormatted];
+    log.debug('getTemplates: merged DB + in-memory fallback templates', { userId, dbCount: dbTemplates.length, memCount: memFormatted.length });
 
     if (record_type) {
       const filterTypes = record_type.split(',').map(s => s.trim().toUpperCase());
       formatted = formatted.filter(t =>
         t.applicable_record_types.some(rt => filterTypes.includes(rt.toUpperCase()))
       );
+      log.debug('getTemplates: filtered by record_type', { filterTypes, remaining: formatted.length });
     }
 
+    log.info('getTemplates: exit', { userId, count: formatted.length });
     return res.status(200).json({
       status: 'success',
       success: true,
       data: { templates: formatted }
     });
   } catch (err) {
+    log.error('getTemplates: failed', { userId, err });
     return res.status(500).json({
       status: 'error',
       success: false,
@@ -132,6 +144,7 @@ export const getTemplates = async (req, res) => {
 };
 
 const getRecordsForReport = async (templateId, filters) => {
+  log.debug('getRecordsForReport: enter', { templateId, filters: Object.keys(filters || {}) });
   let recordType = null;
   if (templateId === 'arrest-summary') recordType = 'ARREST';
   else if (templateId === 'pcr-call-log') recordType = 'PCR_CALL';
@@ -171,11 +184,19 @@ const getRecordsForReport = async (templateId, filters) => {
     if (coreColumns.includes(key)) {
       query = query.where(`records.${key}`, val);
     } else {
+      // [PHAROS-DEBUG] pre-existing bug, NOT fixed here (out of scope for a logging-only pass):
+      // `records.data` jsonb no longer exists post-DB-restructure (docs/db-audit/DB_SCHEMA.md —
+      // domain data now lives in typed detail/persons/properties tables). This whereRaw will
+      // throw "column records.data does not exist" for any dynamic filter key reaching this
+      // branch. Logged at warn so a report-generation failure here is traceable to this exact
+      // known-stale query rather than looking like a fresh regression.
+      log.warn('getRecordsForReport: dynamic filter hits stale records.data jsonb column (pre-existing, not adapted to typed schema)', { templateId, key });
       query = query.whereRaw("records.data @> ?::jsonb", [JSON.stringify({ [key]: val })]);
     }
   }
 
   const results = await query.orderBy('records.record_date', 'desc');
+  log.info('getRecordsForReport: exit', { templateId, recordType, count: results.length });
   return results.map(r => ({
     ...r,
     data: parseJsonField(r.data)
@@ -183,6 +204,7 @@ const getRecordsForReport = async (templateId, filters) => {
 };
 
 const getCompilationsForReport = async (filters) => {
+  log.debug('getCompilationsForReport: enter', { filters: Object.keys(filters || {}) });
   let query = db('compilations')
     .select('compilations.*', 'dist.name_en as district_name')
     .leftJoin('hierarchy_nodes as dist', 'compilations.source_entity_id', 'dist.id');
@@ -191,6 +213,7 @@ const getCompilationsForReport = async (filters) => {
   if (districtId) query = query.where('compilations.source_entity_id', districtId);
 
   const results = await query.orderBy('compilations.period', 'desc');
+  log.info('getCompilationsForReport: exit', { districtId: districtId || null, count: results.length });
   return results.map(c => ({
     ...c,
     compiled_summary: parseJsonField(c.compiled_summary)
@@ -198,18 +221,23 @@ const getCompilationsForReport = async (filters) => {
 };
 
 async function generatePDF(htmlContent) {
+  log.debug('generatePDF: enter', { htmlLength: htmlContent.length });
   const browser = await puppeteer.launch({
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
+  log.debug('generatePDF: puppeteer browser launched');
   const page = await browser.newPage();
   await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+  log.debug('generatePDF: page content set, rendering PDF');
   const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
   await browser.close();
+  log.info('generatePDF: exit', { pdfBytes: pdfBuffer.length });
   return pdfBuffer;
 }
 
 async function generateExcelFile(template_id, records, parsedFilters, psName, filePath) {
+  log.debug('generateExcelFile: enter', { template_id, recordCount: records.length, filePath });
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Report');
 
@@ -237,6 +265,7 @@ async function generateExcelFile(template_id, records, parsedFilters, psName, fi
     headers = ['ID', 'Record Type', 'Record Date', 'Status', 'Level'];
     rowKeys = ['id', 'record_type', 'record_date', 'current_status', 'current_level'];
   }
+  log.debug('generateExcelFile: resolved header layout for template', { template_id, headers });
 
   const headerRow = worksheet.addRow(headers);
   headerRow.font = { bold: true };
@@ -276,41 +305,54 @@ async function generateExcelFile(template_id, records, parsedFilters, psName, fi
   });
 
   await workbook.xlsx.writeFile(filePath);
+  log.info('generateExcelFile: exit — workbook written', { template_id, filePath, rowCount: records.length });
 }
 
 const validateCustomDefinition = async (custom_definition) => {
+  log.debug('validateCustomDefinition: enter', { sheetCount: custom_definition?.sheets?.length ?? null });
   if (!custom_definition || !Array.isArray(custom_definition.sheets)) {
+    log.warn('validateCustomDefinition: rejected — sheets not an array');
     throw new Error('Invalid custom report definition: sheets must be an array');
   }
   for (const sheet of custom_definition.sheets) {
     const { record_type, field_keys } = sheet;
     if (!record_type || !Array.isArray(field_keys)) {
+      log.warn('validateCustomDefinition: rejected — sheet missing record_type/field_keys', { record_type });
       throw new Error('Invalid sheet definition: record_type and field_keys (array) are required');
     }
-    
+
     // Validate record_type enum
     const validTypes = ['ARREST', 'PCR_CALL', 'CASE'];
     if (!validTypes.includes(record_type)) {
+      log.warn('validateCustomDefinition: rejected — invalid record_type', { record_type, validTypes });
       throw new Error(`Invalid record type '${record_type}'. Allowed types: ${validTypes.join(', ')}`);
     }
 
     const registered = await db('field_registry')
       .whereIn('field_key', field_keys)
       .andWhere('is_active', true);
-    
+
     const registeredKeys = registered.map(r => r.field_key);
     for (const key of field_keys) {
       if (!registeredKeys.includes(key)) {
+        log.warn('validateCustomDefinition: rejected — field key not in registry or inactive', { record_type, key });
         throw new Error(`Field key '${key}' does not exist or is inactive in the field registry`);
       }
     }
+    log.debug('validateCustomDefinition: sheet passed', { record_type, fieldKeyCount: field_keys.length });
   }
+  log.debug('validateCustomDefinition: exit — all sheets valid');
 };
 
 export const generateReport = async (req, res) => {
   const { template_id, custom_definition, filters, format, selected_sub_templates } = req.body;
+  const userId = req.user ? (req.user.userId || req.user.id) : null;
+  log.debug('generateReport: enter', {
+    userId, role: req.user?.role, template_id, hasCustomDefinition: !!custom_definition, format,
+  });
 
   if (!template_id && !custom_definition) {
+    log.warn('generateReport: rejected — neither template_id nor custom_definition provided', { userId });
     return res.status(400).json({
       status: 'error',
       success: false,
@@ -320,6 +362,7 @@ export const generateReport = async (req, res) => {
   }
 
   if (!format) {
+    log.warn('generateReport: rejected — format missing', { userId, template_id });
     return res.status(400).json({
       status: 'error',
       success: false,
@@ -332,8 +375,10 @@ export const generateReport = async (req, res) => {
   if (template_id) {
     selectedTemplate = await db('report_templates').where({ id: template_id, is_active: true }).first();
     if (!selectedTemplate) {
+      log.debug('generateReport: template not in DB report_templates, checking in-memory fallback', { template_id });
       const memTemplate = templates.find(t => t.id === template_id);
       if (!memTemplate) {
+        log.warn('generateReport: rejected — template not found', { userId, template_id });
         return res.status(404).json({
           status: 'error',
           success: false,
@@ -356,7 +401,9 @@ export const generateReport = async (req, res) => {
   if (!template_id && custom_definition) {
     try {
       await validateCustomDefinition(custom_definition);
+      log.debug('generateReport: custom_definition validated', { userId });
     } catch (err) {
+      log.warn('generateReport: rejected — custom_definition invalid', { userId, err });
       return res.status(400).json({
         status: 'error',
         success: false,
@@ -372,6 +419,7 @@ export const generateReport = async (req, res) => {
     : ['PDF', 'CSV', 'EXCEL', 'XLSX'];
   
   if (!allowedFormats.includes(fmt) && !(fmt === 'XLSX' && allowedFormats.includes('EXCEL'))) {
+    log.warn('generateReport: rejected — unsupported output format', { userId, template_id, format, allowedFormats });
     return res.status(400).json({
       status: 'error',
       success: false,
@@ -389,6 +437,7 @@ export const generateReport = async (req, res) => {
   const filterDistrictId = filters?.district_id || filters?.districtId;
 
   if (req.user?.role === 'HC' && filterPsId && filterPsId !== userPsId) {
+    log.warn('generateReport: rejected — HC requested a PS outside own scope', { userId, userPsId, filterPsId });
     return res.status(403).json({
       status: 'error',
       success: false,
@@ -398,6 +447,7 @@ export const generateReport = async (req, res) => {
   }
 
   if (req.user?.role === 'DISTRICT_OFFICER' && filterDistrictId && filterDistrictId !== userDistrictId) {
+    log.warn('generateReport: rejected — DISTRICT_OFFICER requested a district outside own scope', { userId, userDistrictId, filterDistrictId });
     return res.status(403).json({
       status: 'error',
       success: false,
@@ -411,10 +461,10 @@ export const generateReport = async (req, res) => {
     const reportsDir = process.env.REPORTS_DIR || './generated-reports';
     if (!fs.existsSync(reportsDir)) {
       fs.mkdirSync(reportsDir, { recursive: true });
+      log.debug('generateReport: created reports directory', { reportsDir });
     }
 
     const filePath = path.join(reportsDir, `${jobId}.${ext}`);
-    const userId = req.user ? (req.user.userId || req.user.id) : null;
 
     await db('report_jobs').insert({
       id: jobId,
@@ -428,6 +478,7 @@ export const generateReport = async (req, res) => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
+    log.info('generateReport: wrote report_jobs row (PENDING)', { jobId, userId, template_id, format: fmt, filePath });
 
     // Hand off to Python worker via RabbitMQ
     await publish('report.requested', {
@@ -439,7 +490,9 @@ export const generateReport = async (req, res) => {
       selected_sub_templates: selected_sub_templates || null,
       user_id: userId
     });
+    log.debug('generateReport: published report.requested', { jobId, userId });
 
+    log.info('generateReport: exit', { jobId, userId, template_id, format: fmt });
     return res.status(201).json({
       status: 'success',
       success: true,
@@ -451,6 +504,7 @@ export const generateReport = async (req, res) => {
     });
 
   } catch (error) {
+    log.error('generateReport: failed', { userId, template_id, err: error });
     return res.status(500).json({
       status: 'error',
       success: false,
@@ -460,6 +514,7 @@ export const generateReport = async (req, res) => {
 };
 
 export const generateReportInternal = async (jobId, template_id, parsedFilters, format, filePath, userId) => {
+  log.debug('generateReportInternal: enter', { jobId, template_id, format, userId });
   let records = [];
   let psName = 'All jurisdictions';
 
@@ -470,15 +525,20 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
     const distNode = await db('hierarchy_nodes').where({ id: parsedFilters.districtId || parsedFilters.district_id }).first();
     if (distNode) psName = distNode.name_en;
   }
+  log.debug('generateReportInternal: resolved jurisdiction label', { jobId, psName });
 
   const fmt = format.toUpperCase();
+  log.debug('generateReportInternal: dispatching by format', { jobId, fmt });
 
   if (fmt === 'PDF') {
+    log.debug('generateReportInternal: PDF branch', { jobId, template_id });
     const templatePath = path.resolve('src/modules/reports/templates', `${template_id}.html`);
     let html;
     if (fs.existsSync(templatePath)) {
       html = fs.readFileSync(templatePath, 'utf8');
+      log.debug('generateReportInternal: loaded HTML template file', { jobId, template_id, templatePath });
     } else {
+      log.debug('generateReportInternal: no template file on disk, using generic inline fallback HTML', { jobId, template_id, templatePath });
       html = `
       <!DOCTYPE html>
       <html>
@@ -510,6 +570,7 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
 
     let tableHtml = '';
     if (template_id === 'district-compilation' || template_id === 'ops-compilation') {
+      log.debug('generateReportInternal: PDF compilation-table branch', { jobId, template_id });
       const comps = await getCompilationsForReport(parsedFilters);
       records = comps;
       tableHtml = `<table style="width:100%; border-collapse: collapse;">
@@ -533,6 +594,7 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
       tableHtml += '</tbody></table>';
     } else {
       records = await getRecordsForReport(template_id, parsedFilters);
+      log.debug('generateReportInternal: PDF records-table branch', { jobId, template_id, recordCount: records.length });
 
       if (template_id === 'arrest-summary') {
         tableHtml = `<table style="width:100%; border-collapse: collapse;">
@@ -649,8 +711,10 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
 
     const pdfBuffer = await generatePDF(html);
     fs.writeFileSync(filePath, pdfBuffer);
+    log.info('generateReportInternal: PDF written to disk', { jobId, template_id, filePath, recordCount: records.length });
 
   } else if (fmt === 'CSV') {
+    log.debug('generateReportInternal: CSV branch', { jobId, template_id });
     records = await getRecordsForReport(template_id, parsedFilters);
     let csvString = '';
 
@@ -680,9 +744,12 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
     }
 
     fs.writeFileSync(filePath, csvString);
+    log.info('generateReportInternal: CSV written to disk', { jobId, template_id, filePath, recordCount: records.length });
 
   } else if (fmt === 'EXCEL' || fmt === 'XLSX') {
+    log.debug('generateReportInternal: EXCEL branch', { jobId, template_id });
     if (template_id === 'daily-status') {
+      log.debug('generateReportInternal: daily-status delegates to external Python export script', { jobId, template_id });
       const date = toISO(parsedFilters.from || parsedFilters.dateFrom) || new Date().toISOString().split('T')[0];
       const templatePath = path.resolve(__dirname, '../../../../Master/Daily_Diary_ProperHeaders.xlsx');
       const scriptPath = path.resolve(__dirname, '../../../../Master/files/export_daily_report.py');
@@ -707,10 +774,17 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
       }
 
       const cmd = `python "${scriptPath}" --date "${date}" --template "${templatePath}" --out "${filePath}" --host "${dbHost}" --port "${dbPort}" --dbname "${dbName}" --user "${dbUser}" --password "${dbPass}"`;
-      
-      console.log(`[generateReportInternal] Executing custom daily report script: ${cmd}`);
+
+      // REDACTION (mandatory, HANDOFF §3): never log a credential. The previous console.log
+      // here printed the full shell command, which embeds `--password "${dbPass}"` in plaintext
+      // — a real secret leak into stdout/whatever captures it. Log the non-secret invocation
+      // shape instead (never `cmd`, never `dbPass`).
+      log.debug('generateReportInternal: executing daily-status export script', {
+        jobId, template_id, scriptPath, templatePath, date, outPath: filePath, dbHost, dbPort, dbName, dbUser, hasDbPass: !!dbPass,
+      });
       const { execSync } = await import('child_process');
       execSync(cmd);
+      log.info('generateReportInternal: daily-status export script completed', { jobId, filePath });
     } else {
       if (template_id === 'district-compilation' || template_id === 'ops-compilation') {
         records = await getCompilationsForReport(parsedFilters);
@@ -725,24 +799,29 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
     status: 'READY',
     updated_at: new Date().toISOString()
   });
+  log.info('generateReportInternal: report_jobs status -> READY', { jobId, template_id, filePath });
 
   const { publish } = await import('../../events/eventBus.js');
+  const fileSizeBytes = fs.statSync(filePath).size;
   await publish('report.generated', {
     job_id: jobId,
     template_id,
     requested_by: userId,
     file_path: filePath,
     format,
-    file_size_bytes: fs.statSync(filePath).size
+    file_size_bytes: fileSizeBytes
   });
+  log.info('generateReportInternal: exit — published report.generated', { jobId, template_id, format, fileSizeBytes });
 };
 
 export const getJobStatus = async (req, res) => {
   const { id } = req.params;
+  log.debug('getJobStatus: enter', { jobId: id });
 
   try {
     const job = await db('report_jobs').where({ id }).first();
     if (!job) {
+      log.debug('getJobStatus: not found', { jobId: id });
       return res.status(404).json({
         status: 'error',
         success: false,
@@ -751,6 +830,7 @@ export const getJobStatus = async (req, res) => {
       });
     }
 
+    log.debug('getJobStatus: exit', { jobId: id, status: job.status });
     return res.status(200).json({
       status: 'success',
       success: true,
@@ -770,6 +850,7 @@ export const getJobStatus = async (req, res) => {
       }
     });
   } catch (error) {
+    log.error('getJobStatus: failed', { jobId: id, err: error });
     return res.status(500).json({
       status: 'error',
       success: false,
@@ -780,10 +861,12 @@ export const getJobStatus = async (req, res) => {
 
 export const downloadReport = async (req, res) => {
   const { id } = req.params;
+  log.debug('downloadReport: enter', { jobId: id });
 
   try {
     const job = await db('report_jobs').where({ id }).first();
     if (!job) {
+      log.warn('downloadReport: rejected — job not found', { jobId: id });
       return res.status(404).json({
         status: 'error',
         success: false,
@@ -793,6 +876,7 @@ export const downloadReport = async (req, res) => {
     }
 
     if (job.status.toUpperCase() !== 'READY') {
+      log.warn('downloadReport: rejected — job not READY', { jobId: id, status: job.status });
       return res.status(400).json({
         status: 'error',
         success: false,
@@ -802,6 +886,7 @@ export const downloadReport = async (req, res) => {
     }
 
     if (!fs.existsSync(job.file_path)) {
+      log.error('downloadReport: rejected — READY job has no file on disk', { jobId: id, filePath: job.file_path });
       return res.status(404).json({
         status: 'error',
         success: false,
@@ -848,8 +933,10 @@ export const downloadReport = async (req, res) => {
     }
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+    log.info('downloadReport: exit — streaming file', { jobId: id, filePath: job.file_path, downloadFilename, contentType });
     return res.download(job.file_path, downloadFilename);
   } catch (error) {
+    log.error('downloadReport: failed', { jobId: id, err: error });
     return res.status(500).json({
       status: 'error',
       success: false,
@@ -862,9 +949,10 @@ export const getReportsHistory = async (req, res) => {
   const page = parseInt(req.query.page || 1, 10);
   const limit = parseInt(req.query.limit || 20, 10);
   const offset = (page - 1) * limit;
+  const userId = req.user ? (req.user.userId || req.user.id) : null;
+  log.debug('getReportsHistory: enter', { userId, page, limit });
 
   try {
-    const userId = req.user ? (req.user.userId || req.user.id) : null;
     const countQuery = db('report_jobs').where({ created_by: userId });
     const totalRes = await countQuery.count('* as count').first();
     const total = parseInt(totalRes.count || 0, 10);
@@ -886,6 +974,7 @@ export const getReportsHistory = async (req, res) => {
       filters: parseJsonField(j.filters)
     }));
 
+    log.info('getReportsHistory: exit', { userId, page, limit, total, returned: formatted.length });
     return res.status(200).json({
       status: 'success',
       success: true,
@@ -893,6 +982,7 @@ export const getReportsHistory = async (req, res) => {
       meta: { page, limit, total }
     });
   } catch (error) {
+    log.error('getReportsHistory: failed', { userId, err: error });
     return res.status(500).json({
       status: 'error',
       success: false,
@@ -902,8 +992,10 @@ export const getReportsHistory = async (req, res) => {
 };
 
 export const listSchedules = async (req, res) => {
+  log.debug('listSchedules: enter');
   try {
     const list = await db('scheduled_reports').orderBy('created_at', 'desc');
+    log.info('listSchedules: exit', { count: list.length });
     return res.status(200).json({
       status: 'success',
       data: list.map(item => ({
@@ -913,14 +1005,17 @@ export const listSchedules = async (req, res) => {
       }))
     });
   } catch (error) {
+    log.error('listSchedules: failed', { err: error });
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
 export const createSchedule = async (req, res) => {
   const { template_id, cron_expr, filter_spec, format, scope_ps_id, scope_district_id, recipients, is_active } = req.body;
+  log.debug('createSchedule: enter', { template_id, cron_expr, format, scope_ps_id, scope_district_id });
 
   if (!template_id || !cron_expr) {
+    log.warn('createSchedule: rejected — template_id or cron_expr missing');
     return res.status(400).json({ status: 'error', message: 'template_id and cron_expr are required' });
   }
 
@@ -941,10 +1036,12 @@ export const createSchedule = async (req, res) => {
     };
 
     await db('scheduled_reports').insert(row);
+    log.info('createSchedule: wrote scheduled_reports row', { scheduleId: id, template_id, cron_expr });
 
     // Reload job in scheduler
     const { reloadScheduledJob } = await import('./scheduler.js');
     await reloadScheduledJob(id);
+    log.info('createSchedule: exit — reloaded scheduler job', { scheduleId: id, template_id });
 
     return res.status(201).json({
       status: 'success',
@@ -955,12 +1052,14 @@ export const createSchedule = async (req, res) => {
       }
     });
   } catch (error) {
+    log.error('createSchedule: failed', { template_id, err: error });
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
 export const updateSchedule = async (req, res) => {
   const { id } = req.params;
+  log.debug('updateSchedule: enter', { scheduleId: id });
 
   try {
     const updateData = {};
@@ -983,15 +1082,18 @@ export const updateSchedule = async (req, res) => {
     }
 
     await db('scheduled_reports').where({ id }).update(updateData);
+    log.info('updateSchedule: wrote scheduled_reports row', { scheduleId: id, updatedFields: Object.keys(updateData) });
 
     const updated = await db('scheduled_reports').where({ id }).first();
     if (!updated) {
+      log.warn('updateSchedule: rejected — schedule not found after update', { scheduleId: id });
       return res.status(404).json({ status: 'error', message: 'Scheduled report not found' });
     }
 
     // Reload job in scheduler
     const { reloadScheduledJob } = await import('./scheduler.js');
     await reloadScheduledJob(id);
+    log.info('updateSchedule: exit — reloaded scheduler job', { scheduleId: id });
 
     return res.status(200).json({
       status: 'success',
@@ -1002,37 +1104,45 @@ export const updateSchedule = async (req, res) => {
       }
     });
   } catch (error) {
+    log.error('updateSchedule: failed', { scheduleId: id, err: error });
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
 export const deleteSchedule = async (req, res) => {
   const { id } = req.params;
+  log.debug('deleteSchedule: enter', { scheduleId: id });
 
   try {
     const existing = await db('scheduled_reports').where({ id }).first();
     if (!existing) {
+      log.warn('deleteSchedule: rejected — schedule not found', { scheduleId: id });
       return res.status(404).json({ status: 'error', message: 'Scheduled report not found' });
     }
 
     await db('scheduled_reports').where({ id }).del();
+    log.info('deleteSchedule: deleted scheduled_reports row', { scheduleId: id });
 
     // Stop job in scheduler
     const { stopScheduledJob } = await import('./scheduler.js');
     stopScheduledJob(id);
+    log.info('deleteSchedule: exit — stopped scheduler job', { scheduleId: id });
 
     return res.status(200).json({ status: 'success', message: 'Scheduled report deleted successfully' });
   } catch (error) {
+    log.error('deleteSchedule: failed', { scheduleId: id, err: error });
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
 export const runScheduleNow = async (req, res) => {
   const { id } = req.params;
+  log.debug('runScheduleNow: enter', { scheduleId: id });
 
   try {
     const schedule = await db('scheduled_reports').where({ id }).first();
     if (!schedule) {
+      log.warn('runScheduleNow: rejected — schedule not found', { scheduleId: id });
       return res.status(404).json({ status: 'error', message: 'Scheduled report not found' });
     }
 
@@ -1052,6 +1162,7 @@ export const runScheduleNow = async (req, res) => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
+    log.info('runScheduleNow: wrote report_jobs row (pending), triggering immediate run', { scheduleId: id, jobId });
 
     const parsedFilters = typeof schedule.filter_spec === 'string' ? JSON.parse(schedule.filter_spec) : schedule.filter_spec || {};
     if (schedule.scope_ps_id) parsedFilters.psId = schedule.scope_ps_id;
@@ -1064,8 +1175,9 @@ export const runScheduleNow = async (req, res) => {
           last_run_at: new Date().toISOString(),
           last_run_status: 'SUCCESS'
         });
+        log.info('runScheduleNow: immediate execution succeeded', { scheduleId: id, jobId });
       } catch (err) {
-        logger.error('[RunScheduleNow] Immediate execution failed:', err.message);
+        log.error('runScheduleNow: immediate execution failed', { scheduleId: id, jobId, err });
         await db('scheduled_reports').where({ id }).update({
           last_run_at: new Date().toISOString(),
           last_run_status: 'FAILED'
@@ -1073,13 +1185,16 @@ export const runScheduleNow = async (req, res) => {
       }
     });
 
+    log.debug('runScheduleNow: exit — triggered async', { scheduleId: id, jobId });
     return res.status(200).json({ status: 'success', data: { job_id: jobId, message: 'Scheduled report triggered successfully' } });
   } catch (error) {
+    log.error('runScheduleNow: failed', { scheduleId: id, err: error });
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
 export const getAdminStats = async (req, res) => {
+  log.debug('getAdminStats: enter');
   try {
     const todayStr = new Date().toISOString().split('T')[0] + 'T00:00:00.000Z';
 
@@ -1096,12 +1211,14 @@ export const getAdminStats = async (req, res) => {
       system_status: "ok"
     };
 
+    log.info('getAdminStats: exit', { stats });
     return res.status(200).json({
       status: 'success',
       success: true,
       data: stats
     });
   } catch (error) {
+    log.error('getAdminStats: failed', { err: error });
     return res.status(500).json({
       status: 'error',
       success: false,
@@ -1112,8 +1229,10 @@ export const getAdminStats = async (req, res) => {
 
 export const getFields = async (req, res) => {
   const { record_type } = req.query;
+  log.debug('getFields: enter', { record_type });
 
   if (!record_type) {
+    log.warn('getFields: rejected — record_type query param missing');
     return res.status(400).json({
       status: 'error',
       success: false,
@@ -1132,8 +1251,8 @@ export const getFields = async (req, res) => {
     const filtered = allFields.filter(f => {
       let types = [];
       try {
-        types = typeof f.applicable_record_types === 'string' 
-          ? JSON.parse(f.applicable_record_types) 
+        types = typeof f.applicable_record_types === 'string'
+          ? JSON.parse(f.applicable_record_types)
           : f.applicable_record_types;
       } catch (e) {
         types = [f.applicable_record_types];
@@ -1159,6 +1278,7 @@ export const getFields = async (req, res) => {
       };
     });
 
+    log.info('getFields: exit', { record_type, count: filtered.length });
     return res.status(200).json({
       status: 'success',
       success: true,
@@ -1167,6 +1287,7 @@ export const getFields = async (req, res) => {
       }
     });
   } catch (error) {
+    log.error('getFields: failed', { record_type, err: error });
     return res.status(500).json({
       status: 'error',
       success: false,

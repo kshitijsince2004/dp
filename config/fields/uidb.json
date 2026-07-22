@@ -1062,7 +1062,7 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "UIDB"
+  "scope_level": "global"
  },
  {
   "field_key": "deceased_relative_name",
@@ -1096,7 +1096,7 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "UIDB"
+  "scope_level": "global"
  },
  {
   "field_key": "deceased_relation_type",
@@ -1187,7 +1187,7 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "UIDB"
+  "scope_level": "global"
  },
  {
   "field_key": "filed_by_acp_sdm",

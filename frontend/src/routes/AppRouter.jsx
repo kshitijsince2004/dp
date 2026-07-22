@@ -1,12 +1,28 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import { ProtectedRoute } from './ProtectedRoute.jsx';
+import { ErrorBoundary } from './ErrorBoundary.jsx';
 import PublicLayout from '../components/layout/PublicLayout.jsx';
 import DashboardLayout from '../components/layout/DashboardLayout.jsx';
 import { Spinner } from '../components/ui/Spinner.jsx';
 import { ROUTES } from '../utils/constants.js';
 import useAuthStore from '../store/authStore.js';
 import DebugBar from '../components/common/DebugBar.jsx';
+import { log } from '../utils/logger.js';
+
+// Logs every route change (from -> to). Mounted once inside <BrowserRouter> so it sees every
+// navigation, including the ones triggered by <Navigate replace> redirects below.
+function RouteLogger() {
+  const location = useLocation();
+  const prevPath = useRef(null);
+
+  useEffect(() => {
+    log.debug('route:change', { from: prevPath.current, to: location.pathname + location.search });
+    prevPath.current = location.pathname + location.search;
+  }, [location.pathname, location.search]);
+
+  return null;
+}
 
 // ── Lazy-loaded pages ──────────────────────────────────────────────────────────
 const HomePage     = lazy(() => import('../features/home/HomePage.jsx'));
@@ -49,8 +65,11 @@ const PageLoader = () => (
 // Dynamic Role Redirect helper based on active user role in the station hierarchy
 function RoleRedirect() {
   const { user } = useAuthStore();
-  
-  if (!user) return <Navigate to="/login" replace />;
+
+  if (!user) {
+    log.debug('route:redirect', { reason: 'no_user', to: '/login' });
+    return <Navigate to="/login" replace />;
+  }
 
   const routes = {
     PS: '/records',          // Head Constable (HC)
@@ -66,11 +85,14 @@ function RoleRedirect() {
   };
 
   const redirectPath = routes[user.role] || '/records';
+  log.debug('route:role_redirect', { role: user.role, to: redirectPath });
   return <Navigate to={redirectPath} replace />;
 }
 
 export const AppRouter = () => (
   <BrowserRouter>
+    <RouteLogger />
+    <ErrorBoundary>
     <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public Routes layout wrapper */}
@@ -140,8 +162,10 @@ export const AppRouter = () => (
         <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
       </Routes>
     </Suspense>
-    
-    {/* Global visual testing console bar */}
+    </ErrorBoundary>
+
+    {/* Global visual testing console bar — kept outside the ErrorBoundary so it survives a
+        render crash below it. */}
     <DebugBar />
   </BrowserRouter>
 );

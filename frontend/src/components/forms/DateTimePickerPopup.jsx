@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { log } from '../../utils/logger.js';
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -46,7 +47,7 @@ export default function DateTimePickerPopup({
     const hh = String(hour).padStart(2, '0');
     const mi = String(minute).padStart(2, '0');
     const formatted = `${dd}/${mm}/${year} ${hh}:${mi}`;
-    console.log('[PHAROS-DEBUG][DateTimePickerPopup] commitAndClose() firing onDone with:', formatted, '(placeholder was:', placeholder, ')');
+    log.debug('form:datetime_commit', { formatted, placeholder });
     onDone(formatted, `${dd}/${mm}/${year}`, `${hh}:${mi}`);
     setOpen(false);
   };
@@ -58,7 +59,7 @@ export default function DateTimePickerPopup({
         popupRef.current && !popupRef.current.contains(e.target) &&
         triggerRef.current && !triggerRef.current.contains(e.target)
       ) {
-        console.log('[PHAROS-DEBUG][DateTimePickerPopup] outside-click detected, committing via commitAndClose()');
+        log.debug('form:datetime_outside_click_commit', {});
         commitAndClose();
       }
     };
@@ -100,7 +101,7 @@ export default function DateTimePickerPopup({
   // selection, never silently discard it the way a plain open/false toggle would.
   const togglePicker = () => {
     if (disabled) return;
-    console.log('[PHAROS-DEBUG][DateTimePickerPopup] togglePicker() called. open=', open, 'incoming value prop=', JSON.stringify(value), 'placeholder=', placeholder);
+    log.debug('form:datetime_toggle', { open, hasValue: !!value, placeholder });
     if (open) {
       commitAndClose();
       return;

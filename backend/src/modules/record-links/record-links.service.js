@@ -1,12 +1,21 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../../config/db.js';
 import * as eventBus from '../../events/eventBus.js';
+import { getLogger } from '../../utils/logger.js';
+
+// Logging-instrumentation-2026-07-22 (B5): matches records.service.js style. HANDOFF §5 calls
+// out record-links specifically: "log person-search + link op access checks."
+const log = getLogger('record-links.service');
 
 export const getLinkTypes = async () => {
-  return db('link_type_registry').where({ is_active: true }).orderBy('code');
+  log.debug('getLinkTypes: enter');
+  const rows = await db('link_type_registry').where({ is_active: true }).orderBy('code');
+  log.debug('getLinkTypes: exit', { count: rows.length });
+  return rows;
 };
 
 export const getLinksForRecord = async (recordId) => {
+  log.debug('getLinksForRecord: enter', { recordId });
   const result = await db.raw(`
     SELECT
       rl.id,
@@ -37,24 +46,30 @@ export const getLinksForRecord = async (recordId) => {
     ORDER BY rl.created_at DESC
   `, { recordId });
 
+  log.debug('getLinksForRecord: exit', { recordId, count: (result.rows || []).length });
   return result.rows || [];
 };
 
 // Fetch a single link row (with its link-type code) — used by the controller to resolve
 // the owning/source record before an access check on delete (P5.6 / RECORD-LINKAGE.md).
 export const getLinkById = async (linkId) => {
-  return db('record_links as rl')
+  log.debug('getLinkById: enter', { linkId });
+  const row = await db('record_links as rl')
     .select('rl.*', 'ltr.code as link_type_code')
     .join('link_type_registry as ltr', 'rl.link_type_id', 'ltr.id')
     .where('rl.id', linkId)
     .first();
+  log.debug('getLinkById: exit', { linkId, found: !!row });
+  return row;
 };
 
 export const createLink = async ({ sourceRecordId, targetRecordId, linkTypeCode, userId, metadata = {} }) => {
+  log.debug('createLink: enter', { sourceRecordId, targetRecordId, linkTypeCode, userId });
   const linkType = await db('link_type_registry')
     .where({ code: linkTypeCode, is_active: true })
     .first();
   if (!linkType) {
+    log.warn('createLink: rejected — unknown or inactive link type', { linkTypeCode });
     const err = new Error(`Unknown or inactive link type: ${linkTypeCode}`);
     err.status = 404;
     throw err;
@@ -62,6 +77,7 @@ export const createLink = async ({ sourceRecordId, targetRecordId, linkTypeCode,
 
   const sourceRecord = await db('records').where({ id: sourceRecordId }).first();
   if (!sourceRecord) {
+    log.warn('createLink: rejected — source record not found', { sourceRecordId });
     const err = new Error('Source record not found');
     err.status = 404;
     throw err;
@@ -69,22 +85,30 @@ export const createLink = async ({ sourceRecordId, targetRecordId, linkTypeCode,
 
   const targetRecord = await db('records').where({ id: targetRecordId }).first();
   if (!targetRecord) {
+    log.warn('createLink: rejected — target record not found', { targetRecordId });
     const err = new Error('Target record not found');
     err.status = 404;
     throw err;
   }
 
   if (sourceRecord.record_type !== linkType.source_record_type) {
+    log.warn('createLink: rejected — source record type mismatch', {
+      sourceRecordId, expected: linkType.source_record_type, actual: sourceRecord.record_type,
+    });
     const err = new Error(`Source record type mismatch: expected ${linkType.source_record_type}, got ${sourceRecord.record_type}`);
     err.status = 422;
     throw err;
   }
 
   if (targetRecord.record_type !== linkType.target_record_type) {
+    log.warn('createLink: rejected — target record type mismatch', {
+      targetRecordId, expected: linkType.target_record_type, actual: targetRecord.record_type,
+    });
     const err = new Error(`Target record type mismatch: expected ${linkType.target_record_type}, got ${targetRecord.record_type}`);
     err.status = 422;
     throw err;
   }
+  log.debug('createLink: type checks passed', { sourceRecordId, targetRecordId, linkTypeCode });
 
   const id = uuidv4();
   try {
@@ -97,12 +121,15 @@ export const createLink = async ({ sourceRecordId, targetRecordId, linkTypeCode,
       created_by: userId,
       created_at: new Date().toISOString()
     });
+    log.info('createLink: wrote record_links row', { linkId: id, linkTypeCode, sourceRecordId, targetRecordId });
   } catch (err) {
     if (err.code === '23505' || (err.message && err.message.includes('unique'))) {
+      log.warn('createLink: rejected — duplicate link (unique constraint)', { sourceRecordId, targetRecordId, linkTypeCode });
       const conflict = new Error('Link already exists between these two records');
       conflict.status = 409;
       throw conflict;
     }
+    log.error('createLink: insert failed', { sourceRecordId, targetRecordId, linkTypeCode, err });
     throw err;
   }
 
@@ -116,20 +143,25 @@ export const createLink = async ({ sourceRecordId, targetRecordId, linkTypeCode,
     created_by: userId,
     action: 'LINK_CREATED'
   });
+  log.debug('createLink: published link.created', { linkId: id });
 
+  log.info('createLink: exit', { linkId: id, linkTypeCode, sourceRecordId, targetRecordId });
   return link;
 };
 
 export const deleteLink = async (linkId, userId) => {
+  log.debug('deleteLink: enter', { linkId, userId });
   const link = await getLinkById(linkId);
 
   if (!link) {
+    log.warn('deleteLink: rejected — link not found', { linkId });
     const err = new Error('Link not found');
     err.status = 404;
     throw err;
   }
 
   await db('record_links').where({ id: linkId }).delete();
+  log.info('deleteLink: deleted record_links row', { linkId, linkTypeCode: link.link_type_code });
 
   await eventBus.publish('link.deleted', {
     link_id: linkId,
@@ -139,6 +171,8 @@ export const deleteLink = async (linkId, userId) => {
     deleted_by: userId,
     action: 'LINK_DELETED'
   });
+  log.debug('deleteLink: published link.deleted', { linkId });
+  log.info('deleteLink: exit', { linkId, userId });
 };
 
 // Person search across ARREST records (RECORD-LINKAGE.md §8, rebuilt for the typed schema —
@@ -155,6 +189,7 @@ export const searchPersonAcrossArrests = async ({
   districtId,
   limit = 50
 }) => {
+  log.debug('searchPersonAcrossArrests: enter', { searchTerm, fatherName, jurisdictionQuery, psId, districtId, limit });
   let query = db('persons as p')
     .join('records', 'p.record_id', 'records.id')
     .join('hierarchy_nodes as ps', 'records.ps_id', 'ps.id')
@@ -182,24 +217,28 @@ export const searchPersonAcrossArrests = async ({
     );
 
   // Enforced jurisdiction scope (P5) — from enforceScope, never optional.
-  if (jurisdictionQuery.ps_id) query = query.where('records.ps_id', jurisdictionQuery.ps_id);
-  if (jurisdictionQuery.sub_div_id) query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id);
-  if (jurisdictionQuery.district_id) query = query.where('records.district_id', jurisdictionQuery.district_id);
+  if (jurisdictionQuery.ps_id) { query = query.where('records.ps_id', jurisdictionQuery.ps_id); log.debug('searchPersonAcrossArrests: scoped by ps_id', { psId: jurisdictionQuery.ps_id }); }
+  if (jurisdictionQuery.sub_div_id) { query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id); log.debug('searchPersonAcrossArrests: scoped by sub_div_id', { subDivId: jurisdictionQuery.sub_div_id }); }
+  if (jurisdictionQuery.district_id) { query = query.where('records.district_id', jurisdictionQuery.district_id); log.debug('searchPersonAcrossArrests: scoped by district_id', { districtId: jurisdictionQuery.district_id }); }
 
   // Optional narrowing within the enforced scope (meaningful for globally-scoped roles only —
   // ANDed with the predicates above, so a scoped user's psId/districtId param can never widen).
-  if (psId) query = query.where('records.ps_id', psId);
-  if (districtId) query = query.where('records.district_id', districtId);
+  if (psId) { query = query.where('records.ps_id', psId); log.debug('searchPersonAcrossArrests: narrowed by psId param', { psId }); }
+  if (districtId) { query = query.where('records.district_id', districtId); log.debug('searchPersonAcrossArrests: narrowed by districtId param', { districtId }); }
 
   if (searchTerm) {
     query = query.where((b) => {
       b.where('p.name', 'ILIKE', `%${searchTerm}%`)
         .orWhereRaw('p.nick_names::text ILIKE ?', [`%${searchTerm}%`]);
     });
+    log.debug('searchPersonAcrossArrests: filtered by searchTerm (name/nick_names)', { searchTerm });
   }
   if (fatherName) {
     query = query.where('p.relative_name', 'ILIKE', `%${fatherName}%`);
+    log.debug('searchPersonAcrossArrests: filtered by fatherName', { fatherName });
   }
 
-  return query.limit(limit).orderBy('records.record_date', 'desc');
+  const results = await query.limit(limit).orderBy('records.record_date', 'desc');
+  log.info('searchPersonAcrossArrests: exit', { resultCount: results.length, searchTerm, fatherName });
+  return results;
 };

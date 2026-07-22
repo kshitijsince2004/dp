@@ -10,6 +10,7 @@ import UnifiedFilterStrip from '../../components/common/UnifiedFilterStrip.jsx';
 import FilterPresetsPanel from '../../components/common/FilterPresetsPanel.jsx';
 import useAuthStore from '../../store/authStore.js';
 import StatusUpdateModal from '../../components/records/StatusUpdateModal.jsx';
+import { log } from '../../utils/logger.js';
 
 
 const pageVariants = {
@@ -45,6 +46,11 @@ export default function MyRecords() {
   // navigating into the full detail view. Vocabulary/fields come entirely from the modal's
   // own GET /records/:id/status-options call — nothing hardcoded here.
   const [statusModalRecordId, setStatusModalRecordId] = useState(null);
+
+  useEffect(() => {
+    log.debug('page:mount', { route: '/records', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/records' });
+  }, []);
 
   useEffect(() => {
     if (location.search.includes('scrollTo=table') || location.hash === '#records-table') {
@@ -104,12 +110,17 @@ export default function MyRecords() {
       if (filters.search) params.search = filters.search;
       if (filters.localHead) params.localHead = filters.localHead;
 
-      const res = await api.get('/records', { params });
-      const payload = res.data.data;
-      if (payload?.cases) return payload.cases;
-      if (payload?.queue) return payload.queue;
-      if (Array.isArray(payload)) return payload;
-      return [];
+      log.debug('data:load_start', { what: 'records_list', params });
+      try {
+        const res = await api.get('/records', { params });
+        const payload = res.data.data;
+        const rows = payload?.cases || payload?.queue || (Array.isArray(payload) ? payload : []);
+        log.debug('data:load_success', { what: 'records_list', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'records_list', err });
+        throw err;
+      }
     },
   });
 

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, User } from 'lucide-react';
 import api from '../utils/api.js';
 import toast from 'react-hot-toast';
 import { formatDate } from '../utils/formatters.js';
+import { log } from '../utils/logger.js';
 
 export default function PersonSearchPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -10,6 +11,11 @@ export default function PersonSearchPage() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+
+  useEffect(() => {
+    log.debug('page:mount', { route: '/person-search' });
+    return () => log.debug('page:unmount', { route: '/person-search' });
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -19,13 +25,17 @@ export default function PersonSearchPage() {
     }
     setLoading(true);
     setSearched(true);
+    log.info('action:person_search_start', { hasSearchTerm: !!searchTerm, hasFatherName: !!fatherName });
     try {
       const params = {};
       if (searchTerm) params.searchTerm = searchTerm;
       if (fatherName) params.fatherName = fatherName;
       const res = await api.get('/v1/record-links/person-search', { params });
-      setResults(res.data?.data || []);
+      const rows = res.data?.data || [];
+      log.info('action:person_search_success', { count: rows.length });
+      setResults(rows);
     } catch (err) {
+      log.error('action:person_search_failed', { err });
       toast.error(err.response?.data?.message || 'Search failed.');
       setResults([]);
     } finally {

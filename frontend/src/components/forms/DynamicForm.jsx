@@ -19,8 +19,9 @@ import FieldRenderer from './FieldRenderer.jsx';
 import SearchableSelect from './SearchableSelect.jsx';
 import DateInput from '../ui/DateInput.jsx';
 import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
-import ActsSectionsTable from './ActsSectionsTable.jsx';
+import ActsSectionsTable, { reMergeKnownActFragments } from './ActsSectionsTable.jsx';
 import { validateFieldPattern } from '../../utils/fieldPatterns.js';
+import { log } from '../../utils/logger.js';
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 function parseRules(rawRules) {
   if (!rawRules) return {};
@@ -40,6 +41,38 @@ function getFieldOptions(fieldsArr, key) {
 }
 
 const PERM_ADDRESS_FIELDS = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'country', 'state', 'district', 'police_station', 'pincode'];
+
+// All 5 category-specific property-value field_keys map to record_properties.estimated_value, so
+// recompose fills whichever are present with the same value. The property table's "Value in INR"
+// column reads the first populated one (see #R2-3). Includes the legacy `property_value_inr` last
+// as a back-compat fallback for any in-progress row that still carries it.
+const PROP_VALUE_KEYS = ['prop_cash_amount', 'prop_other_value', 'prop_gold_value', 'prop_drug_value', 'prop_elec_value', 'property_value_inr'];
+const effectivePropValue = (row) => {
+  for (const k of PROP_VALUE_KEYS) {
+    if (row?.[k] !== undefined && row[k] !== null && row[k] !== '') return row[k];
+  }
+  return '';
+};
+
+// B4 (2026-07-21): buildRepeaterPayload used to only keep a property row if it had an `id`,
+// a `property_major_category`, or `property_details` — dropping any row where the officer
+// filled in something else (value in INR, a subtype-specific field like a phone IMEI or
+// vehicle registration number reached via a category the user picked but then changed, etc.)
+// without also touching those two fields. `property_stolen_recovered` is EXCLUDED from this
+// check on purpose: every row — including the never-touched blank starter row CASE
+// auto-populates and the ARRESTED-modal's own starter row — carries a `'Stolen'` default for
+// it (see the seed effect and the record-level starter-row effect below), so it can never be
+// used to distinguish "user entered something" from "still blank".
+function hasMeaningfulPropertyData(entry) {
+  if (!entry) return false;
+  for (const [key, val] of Object.entries(entry)) {
+    if (key === 'id' || key === 'property_stolen_recovered' || key === 'person_index') continue;
+    if (val === undefined || val === null || val === '') continue;
+    if (Array.isArray(val) && val.length === 0) continue;
+    return true;
+  }
+  return false;
+}
 
 /**
  * Shared by Victim/Accused/Complainant/Arrested's "Permanent address same as Present"
@@ -203,6 +236,19 @@ export default function DynamicForm({
   const { schema, isLoading, isError, schemaError } = useFormSchema(recordType, caseType);
   const activeRecordIdRef = useRef(initialValues?.id || null);
 
+  // Schema-load lifecycle (useFormSchema itself is already instrumented — this logs the
+  // hot-path form's OWN view of that state as it settles, so a tester's log shows exactly
+  // what DynamicForm saw when it rendered its loading/error/ready branches below).
+  useEffect(() => {
+    if (isLoading) {
+      log.debug('form:schema_loading', { recordType, caseType });
+    } else if (isError) {
+      log.error('form:schema_load_error', { recordType, caseType, status: schemaError?.response?.status, message: schemaError?.message });
+    } else if (schema) {
+      log.info('form:schema_loaded', { recordType, caseType, sectionCount: schema.length, sections: schema.map(s => s.section) });
+    }
+  }, [isLoading, isError, schema, schemaError, recordType, caseType]);
+
   // FIR Search State
   const [searchDate, setSearchDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -232,6 +278,7 @@ export default function DynamicForm({
   });
 
   const handleFirSearch = () => {
+    log.debug('form:fir_search_attempt', { hasSearchDate: !!searchDate, hasQuery: !!searchQuery });
     if (!searchDate) {
       setSearchError(lang === 'hi' ? 'एफआईआर दिनांक चुनना अनिवार्य है।' : 'FIR Date is required.');
       return;
@@ -268,6 +315,7 @@ export default function DynamicForm({
       return true;
     });
 
+    log.info('form:fir_search_result', { resultCount: filtered.length, source: backendCases.length > 0 ? 'backend' : 'mock' });
     setSearchResults(filtered);
     setHasSearched(true);
   };
@@ -1730,12 +1778,18 @@ export default function DynamicForm({
                           className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
                         />
                       </td>
-                      {/* Value in INR */}
+                      {/* Value in INR. Reads/writes the REAL value keys (all 5 category value
+                          fields map to record_properties.estimated_value; recompose fills them all
+                          identically). The column previously bound to `property_value_inr`, which
+                          is NOT a field_key — so it never displayed an imported/saved value and
+                          never persisted a typed one (#R2-3, 2026-07-20). effectivePropValue reads
+                          the first populated value key; writes go to prop_other_value (a real key →
+                          estimated_value) so main-column entry actually saves. */}
                       <td className="px-3 py-2">
                         <input
                           type="number"
-                          value={row.property_value_inr || ''}
-                          onChange={(e) => handlePropertyRowChange(idx, 'property_value_inr', e.target.value)}
+                          value={effectivePropValue(row)}
+                          onChange={(e) => handlePropertyRowChange(idx, 'prop_other_value', e.target.value)}
                           disabled={readOnly}
                           placeholder={lang === 'hi' ? 'मूल्य दर्ज करें (INR में)' : 'Enter value in INR'}
                           className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
@@ -2091,7 +2145,15 @@ export default function DynamicForm({
         person_type: sec.person_type,
       }));
 
-    return [...orderedSections, ...extraSections];
+    const built = [...orderedSections, ...extraSections];
+    log.debug('form:final_schema_built', {
+      recordType,
+      caseType,
+      sectionCount: built.length,
+      sections: built.map(s => ({ section: s.section, isRepeater: !!s.is_repeater, fieldCount: s.fields?.length ?? 0 })),
+      extraSectionCount: extraSections.length,
+    });
+    return built;
   }, [schema, recordType, caseType, finalFirOptions, initialProperties]);
 
   const { triggerAutosave, saveImmediately, saveStatus, savedRecord } = useAutosave(
@@ -2309,6 +2371,7 @@ export default function DynamicForm({
   );
 
   const openVictimAddModal = () => {
+    log.debug('form:person_modal_open', { personType: 'VICTIM', mode: 'add' });
     setVictimTempValues({});
     setActiveVictimIndex(null);
     setVictimSubTab('personal');
@@ -2318,6 +2381,7 @@ export default function DynamicForm({
   };
 
   const openVictimEditModal = (idx) => {
+    log.debug('form:person_modal_open', { personType: 'VICTIM', mode: 'edit', index: idx });
     const list = repeaterState.victim_info || [];
     const item = list[idx];
     if (item && item._is_complainant) {
@@ -2333,6 +2397,7 @@ export default function DynamicForm({
   };
 
   const deleteVictimEntry = (idx) => {
+    log.debug('form:person_modal_delete', { personType: 'VICTIM', index: idx });
     const list = repeaterState.victim_info || [];
     const itemToDelete = list[idx];
     if (itemToDelete && itemToDelete._is_complainant) {
@@ -2389,6 +2454,7 @@ export default function DynamicForm({
   };
 
   const openAccusedAddModal = () => {
+    log.debug('form:person_modal_open', { personType: 'ACCUSED', mode: 'add' });
     setAccusedTempValues({});
     setActiveAccusedIndex(null);
     setAccusedSubTab('personal');
@@ -2398,6 +2464,7 @@ export default function DynamicForm({
   };
 
   const openAccusedEditModal = (idx) => {
+    log.debug('form:person_modal_open', { personType: 'ACCUSED', mode: 'edit', index: idx });
     const list = repeaterState.accused_info || [];
     setAccusedTempValues({ ...(list[idx] || {}) });
     setActiveAccusedIndex(idx);
@@ -2408,6 +2475,7 @@ export default function DynamicForm({
   };
 
   const deleteAccusedEntry = (idx) => {
+    log.debug('form:person_modal_delete', { personType: 'ACCUSED', index: idx });
     const list = repeaterState.accused_info || [];
     const nextList = list.filter((_, i) => i !== idx);
     setRepeaterState(prev => ({ ...prev, accused_info: nextList }));
@@ -2493,6 +2561,7 @@ export default function DynamicForm({
     }
 
     if (Object.keys(errs).length > 0) {
+      log.warn('form:person_modal_validation_fail', { personType: 'ACCUSED', errorKeys: Object.keys(errs) });
       setAccusedModalErrors(errs);
       accusedFields.forEach(f => { touchedFields[f.field_key] = true; });
       setAccusedModalTouched(touchedFields);
@@ -2507,11 +2576,13 @@ export default function DynamicForm({
       list.push(accusedTempValues);
     }
 
+    log.debug('form:person_modal_save', { personType: 'ACCUSED', mode: activeAccusedIndex !== null ? 'edit' : 'add', countAfter: list.length });
     setRepeaterState(prev => ({ ...prev, accused_info: list }));
     setIsAccusedModalOpen(false);
   };
 
   const openArrestedAddModal = () => {
+    log.debug('form:person_modal_open', { personType: 'ARRESTED', mode: 'add' });
     setArrestedTempValues({
       property_details: [{
         property_major_category: '',
@@ -2529,6 +2600,7 @@ export default function DynamicForm({
   };
 
   const openArrestedEditModal = (idx) => {
+    log.debug('form:person_modal_open', { personType: 'ARRESTED', mode: 'edit', index: idx });
     const list = repeaterState.arrested_info || [];
     const entry = { ...(list[idx] || {}) };
     if (!entry.property_details || entry.property_details.length === 0) {
@@ -2549,6 +2621,7 @@ export default function DynamicForm({
   };
 
   const deleteArrestedEntry = (idx) => {
+    log.debug('form:person_modal_delete', { personType: 'ARRESTED', index: idx });
     const list = repeaterState.arrested_info || [];
     const nextList = list.filter((_, i) => i !== idx);
     setRepeaterState(prev => ({ ...prev, arrested_info: nextList }));
@@ -2644,6 +2717,7 @@ export default function DynamicForm({
     }
 
     if (Object.keys(errs).length > 0) {
+      log.warn('form:person_modal_validation_fail', { personType: 'ARRESTED', errorKeys: Object.keys(errs) });
       setArrestedModalErrors(errs);
       arrestedFields.forEach(f => { touchedFields[f.field_key] = true; });
       setArrestedModalTouched(touchedFields);
@@ -2658,6 +2732,7 @@ export default function DynamicForm({
       list.push(arrestedTempValues);
     }
 
+    log.debug('form:person_modal_save', { personType: 'ARRESTED', mode: activeArrestedIndex !== null ? 'edit' : 'add', countAfter: list.length });
     setRepeaterState(prev => ({ ...prev, arrested_info: list }));
     setIsArrestedModalOpen(false);
   };
@@ -2696,6 +2771,7 @@ export default function DynamicForm({
     }
 
     if (Object.keys(errs).length > 0) {
+      log.warn('form:person_modal_validation_fail', { personType: 'VICTIM', errorKeys: Object.keys(errs) });
       setVictimModalErrors(errs);
       victimFields.forEach(f => { touchedFields[f.field_key] = true; });
       setVictimModalTouched(touchedFields);
@@ -2710,6 +2786,7 @@ export default function DynamicForm({
       list.push(victimTempValues);
     }
 
+    log.debug('form:person_modal_save', { personType: 'VICTIM', mode: activeVictimIndex !== null ? 'edit' : 'add', countAfter: list.length });
     setRepeaterState(prev => ({ ...prev, victim_info: list }));
     setIsVictimModalOpen(false);
   };
@@ -2718,19 +2795,15 @@ export default function DynamicForm({
   const getMajorHeadOptions = useCallback(() => {
     const actNameRaw = values.act_name || '';
     if (!actNameRaw) return [];
-  // Split comma-separated acts and normalise to schema keys
+  // Split comma-separated acts and normalise to schema keys. Re-merge fragments of an act
+  // label that itself contains a comma (e.g. the Aadhaar Act) back into one entry before
+  // treating each entry as a distinct act (B5, 2026-07-21 — same bug/fix as ActsSectionsTable).
   const rawActKeys = actNameRaw
     .split(',')
     .map(a => a.trim())
     .filter(Boolean);
-  const actKeys = [];
-  for (const item of rawActKeys) {
-    if (/^\d{4}$/.test(item) && actKeys.length > 0) {
-      actKeys[actKeys.length - 1] = `${actKeys[actKeys.length - 1]}, ${item}`;
-    } else {
-      actKeys.push(item);
-    }
-  }
+  const knownActLabelsLower = new Set(actsSectionsRegistry.map((item) => item.act.trim().toLowerCase()));
+  const actKeys = reMergeKnownActFragments(rawActKeys, knownActLabelsLower);
   const normalizedActKeys = actKeys.map(a => ACT_NAME_ALIAS[a] || a);
 
   const seen = new Set();
@@ -2753,7 +2826,7 @@ export default function DynamicForm({
     }
   }
   return allOptions;
-}, [allSchemaFields, values.act_name]);
+}, [allSchemaFields, values.act_name, actsSectionsRegistry]);
 
 const getMinorHeadOptions = useCallback(() => {
   if (!selectedMajorHead) return [];
@@ -2810,14 +2883,8 @@ useEffect(() => {
   }
 
   const rawActs = values.act_name.split(',').map((s) => s.trim()).filter(Boolean);
-  const acts = [];
-  for (const item of rawActs) {
-    if (/^\d{4}$/.test(item) && acts.length > 0) {
-      acts[acts.length - 1] = `${acts[acts.length - 1]}, ${item}`;
-    } else {
-      acts.push(item);
-    }
-  }
+  const knownActLabelsLowerForHeads = new Set(actsSectionsRegistry.map((item) => item.act.trim().toLowerCase()));
+  const acts = reMergeKnownActFragments(rawActs, knownActLabelsLowerForHeads);
   const secs = values.sections ? values.sections.split(',').map((s) => s.trim()).filter(Boolean) : [];
 
   const sectionCodes = [];
@@ -2877,6 +2944,29 @@ const prevRecordTypeRef = useRef(recordType);
 const prevCaseTypeRef = useRef(caseType);
 const prevInitialIdRef = useRef(initialValues?.id);
 
+// B8 (2026-07-21): set true by a REAL user edit (handleChange for flat fields, a genuine
+// repeater mutation for persons/properties — never by the seed effects themselves) and
+// cleared whenever the seed effects below actually reseed. Guards against the seed effects
+// clobbering in-progress edits when `initialValues`/`initialPersons`/`initialProperties`
+// change for the SAME already-loaded record — e.g. a background refetch resolving after an
+// explicit save/submit invalidated the query while the user kept editing. `isSameRecordAlreadyLoaded`
+// (activeRecordIdRef already equals the incoming id) distinguishes that from a genuine
+// fresh-mount / different-record load, which must still reseed unconditionally (#R2-2).
+const formDirtyRef = useRef(false);
+
+// B8 fix v2 (2026-07-21): the dirty-guard alone was UNSAFE — `formDirtyRef` can be set true by
+// unrelated programmatic repeater churn (e.g. the CASE property starter-row) before
+// `initialPersons` finishes loading, which then BLOCKED the very first person/property seed of a
+// record. The victims/accused never entered `repeaterState`, so the next autosave sent an empty
+// persons[] and the id-preserving upsert DELETED them from the DB — reported as "after sending
+// back, accused and victim get removed like they were never there." Track which record id each
+// seed effect has actually seeded once; the FIRST seed of a record always runs (dirty or not),
+// and the dirty-guard only ever blocks RE-seeding a record we've already seeded (the real clobber
+// case: a background refetch resolving mid-edit). Separate refs because the two seed effects fire
+// and complete independently.
+const repeaterSeededIdRef = useRef(undefined);
+const flatSeededIdRef = useRef(undefined);
+
 /* ── Sync saved record ID ─────────────────────────────────────────────── */
 useEffect(() => {
   if (savedRecord?.id) {
@@ -2890,6 +2980,28 @@ useEffect(() => {
     setCurrentStep(finalSchema.length - 1);
   }
 }, [finalSchema.length, currentStep]);
+
+// Section render decision: which step/section is about to render, and whether it's a
+// record-type-specific custom layout or the generic schema-driven FormSection (the custom-vs-
+// generic key list mirrors SECTION_RENDERERS below — kept as a plain effect dependency on
+// [currentStep, finalSchema] rather than reading a ref during render, which React's compiler
+// flags as unsafe).
+useEffect(() => {
+  const section = finalSchema[currentStep] || finalSchema[0];
+  if (!section) return;
+  const CUSTOM_SECTION_KEYS = new Set([
+    'select_fir', 'general_info', 'acts_and_sections', 'occurrence_info',
+    'complainant_info', 'victim_info', 'accused_info', 'arrested_info',
+    'property_details', 'action_taken',
+  ]);
+  log.debug('form:section_render_decision', {
+    recordType,
+    step: currentStep,
+    section: section.section,
+    rendererType: CUSTOM_SECTION_KEYS.has(section.section) ? 'custom' : 'FormSection',
+    isRepeater: !!section.is_repeater,
+  });
+}, [currentStep, finalSchema, recordType]);
 
 
 const initialValuesStr = JSON.stringify(initialValues || {});
@@ -2930,6 +3042,21 @@ useEffect(() => {
 // any existing person/property row the client doesn't echo back with its id.
 useEffect(() => {
   if (!finalSchema.length) return;
+  // B8 (2026-07-21): if this is the SAME record we already have loaded (not a fresh mount /
+  // different-record load) and the user has made real edits since it was last seeded, a new
+  // `initialPersons`/`initialProperties` reference here means a background refetch resolved
+  // mid-edit (e.g. the explicit save/submit path's query invalidation) — reseeding now would
+  // silently drop whatever the user added/changed since (new victim/accused entries, edited
+  // property rows). Skip; the next genuine load (different record, or after the user's own
+  // edits are saved and this effect fires again with formDirtyRef reset) will seed correctly.
+  // Only BLOCK re-seeding a record we've ALREADY seeded once and the user has since edited (the
+  // real clobber case). The first seed of a record must always run — otherwise a spuriously-set
+  // formDirtyRef (from unrelated programmatic repeater churn before initialPersons loaded) drops
+  // the person/property seed and the next autosave deletes the persons (B8 fix v2).
+  const rid = initialValues?.id ?? null;
+  if (repeaterSeededIdRef.current === rid && formDirtyRef.current) return;
+  repeaterSeededIdRef.current = rid;
+  formDirtyRef.current = false; // genuine (re)seed accepted — re-arm for the next real edit
   const initial = {};
   // Build section-key → entries map for person sections
   for (const section of finalSchema) {
@@ -3006,15 +3133,36 @@ useEffect(() => {
   if (!repeaterAutosaveReadyRef.current) { repeaterAutosaveReadyRef.current = true; return; }
   if (readOnly) return;
   if (repeaterSeedSkipRef.current) { repeaterSeedSkipRef.current = false; return; }
+  formDirtyRef.current = true; // real user-driven repeater mutation — see formDirtyRef declaration (B8)
   const { persons, properties } = buildRepeaterPayload();
   // Never CREATE a record off repeater churn alone (e.g. deleting the blank starter row).
   if (!activeRecordIdRef.current && persons.length === 0 && properties.length === 0) return;
   const data = { ...values };
   if (data.time_of_occurrence !== undefined) data.occurrence_time = data.time_of_occurrence;
+  // [PHAROS-DEBUG] what the repeater autosave is about to PUT — correlate with the backend's
+  // [upsertPersons] log. If this fires with persons: [] right after opening a record that HAS
+  // victims/accused, the seed was skipped and the persons are about to be deleted server-side.
+  console.log('[PHAROS-DEBUG][repeater-autosave] PUT', {
+    recordId: activeRecordIdRef.current,
+    persons: persons.map((p) => p.person_type),
+    properties: properties.length,
+  });
   triggerAutosave(data, activeRecordIdRef.current, persons, properties);
 }, [repeaterState]);
 
 useEffect(() => {
+  // B8 (2026-07-21): same guard as the persons/properties seed effect above — don't reseed
+  // `values` from a background refetch of the SAME already-loaded record while the user has
+  // unsaved-since-load edits (e.g. a complainant name/address edit right after an explicit
+  // save triggered a query invalidation that resolved before/without the user navigating
+  // away). A genuinely different record (or a fresh mount of this one) always reseeds.
+  // Same guard shape as the persons/properties seed above (B8 fix v2): first seed of a record
+  // always runs; only RE-seeding an already-seeded record is blocked while the user has edits.
+  const flatRid = initialValues?.id ?? null;
+  if (flatSeededIdRef.current === flatRid && formDirtyRef.current) return;
+  flatSeededIdRef.current = flatRid;
+  formDirtyRef.current = false; // genuine (re)seed accepted — re-arm for the next real edit
+
   const seed = { ...(initialValues?.data || initialValues || {}) };
 
   console.log('[PHAROS-DEBUG][seed-effect] RUNNING — this rebuilds `values` from initialValues and calls setValues() at the end, which will CLOBBER any in-progress user edits if this effect fires again mid-edit.', {
@@ -3181,6 +3329,7 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
     dupeFieldKeysInThisSection: [...new Set(dupeKeys)],
     fieldCount: section.fields.length,
   });
+  log.debug('form:validate_section', { step: stepIdx, section: section.section, requiredCount: requiredKeys.length, fieldCount: section.fields.length });
   section.fields.forEach((field) => {
     // Skip validating if field is hidden by condition — MUST use the same
     // evaluator as the render path (FormSection), or we block on invisible fields.
@@ -3195,6 +3344,7 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
       })();
       if (!isShown) {
         console.log('[PHAROS-DEBUG][validateSection] field hidden by show_when, skipping:', field.field_key, field.show_when);
+        log.debug('form:show_when_toggle', { field: field.field_key, section: section.section, visible: false });
         return;
       }
     }
@@ -3263,22 +3413,36 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
         : `${label} is required`;
     }
   });
+  if (Object.keys(errs).length > 0) {
+    log.warn('form:validation_fail', { step: stepIdx, section: section.section, errorKeys: Object.keys(errs) });
+  } else {
+    log.debug('form:validate_section_result', { step: stepIdx, section: section.section, errorCount: 0 });
+  }
   return errs;
 }, [finalSchema, values, lang]);
 
 /* ── Validate ALL sections ─────────────────────────────────────────────── */
 const validateAll = useCallback((currentValues = values) => {
+  log.debug('form:validate_all_start', { recordType, sectionCount: finalSchema.length });
   const allErrs = {};
   finalSchema.forEach((section, idx) => {
     const errs = validateSection(idx, currentValues);
     Object.assign(allErrs, errs);
   });
+  const errorCount = Object.keys(allErrs).length;
+  if (errorCount > 0) {
+    log.warn('form:validate_all_result', { recordType, errorCount, errorKeys: Object.keys(allErrs) });
+  } else {
+    log.info('form:validate_all_result', { recordType, errorCount: 0 });
+  }
   return allErrs;
-}, [finalSchema, values, validateSection]);
+}, [finalSchema, values, validateSection, recordType]);
 
 /* ── Handle field change ──────────────────────────────────────────────── */
 const handleChange = useCallback((key, val) => {
   if (readOnly) return;
+  formDirtyRef.current = true; // real user edit — see formDirtyRef declaration (B8)
+  log.debug('form:field_change', { fieldKey: key, recordType });
 
   const COMPOSITE_KEYS = ['gd_no', 'gd_date', 'gd_time', 'fir_no', 'fir_date', 'fir_time'];
   if (COMPOSITE_KEYS.includes(key)) {
@@ -3555,9 +3719,11 @@ const handleNext = () => {
     gd_no: values.gd_no, gd_date: values.gd_date, gd_time: values.gd_time,
     fir_no: values.fir_no, fir_date: values.fir_date, fir_time: values.fir_time,
   });
+  log.debug('form:step_next_attempt', { currentStep, section: finalSchema[currentStep]?.section });
   const stepErrs = validateSection(currentStep);
   if (Object.keys(stepErrs).length > 0) {
     console.log('Block handleNext on step:', currentStep, 'Errors:', stepErrs);
+    log.warn('form:step_next_blocked', { currentStep, section: finalSchema[currentStep]?.section, errorKeys: Object.keys(stepErrs) });
     setErrors((prev) => ({ ...prev, ...stepErrs }));
     // Mark all fields in this step as touched
     const section = finalSchema[currentStep];
@@ -3614,6 +3780,7 @@ const handleNext = () => {
     }
   }
 
+  log.info('form:step_advance', { from: currentStep, to: Math.min(currentStep + 1, finalSchema.length - 1) });
   setCompletedSteps((prev) => new Set([...prev, currentStep]));
   setCurrentStep((s) => Math.min(s + 1, finalSchema.length - 1));
   // Scroll to top of form
@@ -3622,6 +3789,7 @@ const handleNext = () => {
 
 /* ── Navigate backward ────────────────────────────────────────────────── */
 const handleBack = () => {
+  log.debug('form:step_back', { from: currentStep, to: Math.max(currentStep - 1, 0) });
   setCurrentStep((s) => Math.max(s - 1, 0));
   setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 };
@@ -3629,6 +3797,7 @@ const handleBack = () => {
 /* ── Jump to a specific step (click step dot / tab) ───────────────────── */
 const handleStepClick = (targetIdx) => {
   if (targetIdx === currentStep) return;
+  log.debug('form:step_jump', { from: currentStep, to: targetIdx });
 
   // Validate the step we are leaving (currentStep) and store errors
   const stepErrs = validateSection(currentStep);
@@ -3729,7 +3898,9 @@ const buildRepeaterPayload = useCallback(() => {
         persons.push({ id: personId ?? undefined, person_type: section.person_type, data: personData });
         if (section.person_type === 'ARRESTED' && Array.isArray(personProperties)) {
           for (const prop of personProperties) {
-            if (!prop.id && !prop.property_major_category && !prop.property_details) continue; // skip blank starter rows
+            // Keep any row with an id (existing DB row) or ANY real user-entered value —
+            // not just category/details (B4, see hasMeaningfulPropertyData above).
+            if (!prop.id && !hasMeaningfulPropertyData(prop)) continue; // skip blank starter rows
             properties.push({ ...prop, person_index: personIndex });
           }
         }
@@ -3737,12 +3908,14 @@ const buildRepeaterPayload = useCallback(() => {
     } else if (section.entity_type === 'property') {
       for (const entry of entries) {
         // Skip never-saved blank starter rows (CASE auto-populates one) — but an entry
-        // with an id is an existing DB row and must always be echoed back.
-        if (!entry.id && !entry.property_major_category && !entry.property_details) continue;
+        // with an id is an existing DB row and must always be echoed back, and any entry
+        // with a real user-entered value (not just category/details — B4) must be kept too.
+        if (!entry.id && !hasMeaningfulPropertyData(entry)) continue;
         properties.push(entry);
       }
     }
   }
+  log.debug('form:build_repeater_payload', { recordType, personsCount: persons.length, propertiesCount: properties.length });
   return { persons, properties };
 }, []);
 
@@ -3750,9 +3923,11 @@ const buildRepeaterPayload = useCallback(() => {
 const handleFormSubmit = (e) => {
   e.preventDefault();
   if (readOnly) return;
+  log.info('form:submit_start', { recordType, recordId: activeRecordIdRef.current });
 
   const allErrs = validateAll();
   if (Object.keys(allErrs).length > 0) {
+    log.warn('form:submit_validation_fail', { recordType, errorCount: Object.keys(allErrs).length, errorKeys: Object.keys(allErrs) });
     setErrors(allErrs);
     const allTouched = {};
     finalSchema.forEach((sec) => sec.fields.forEach((f) => { allTouched[f.field_key] = true; }));
@@ -3785,11 +3960,18 @@ const handleFormSubmit = (e) => {
 
   const { persons, properties } = buildRepeaterPayload();
 
-  onSubmit?.(finalValues, persons, properties, activeRecordIdRef.current);
+  try {
+    onSubmit?.(finalValues, persons, properties, activeRecordIdRef.current);
+    log.info('form:submit_success', { recordType, recordId: activeRecordIdRef.current, personsCount: persons.length, propertiesCount: properties.length });
+  } catch (err) {
+    log.error('form:submit_error', { recordType, recordId: activeRecordIdRef.current, message: err?.message });
+    throw err;
+  }
 };
 
 /* ── Manual save draft (button click) ────────────────────────────────────*/
 const handleManualSave = () => {
+  log.debug('form:save_draft_start', { recordType, recordId: activeRecordIdRef.current });
   const finalValues = { ...values };
   if (finalValues.time_of_occurrence !== undefined) {
     finalValues.occurrence_time = finalValues.time_of_occurrence;
@@ -3799,6 +3981,7 @@ const handleManualSave = () => {
   // to [] server-side, so the repeater data was never written at all).
   const { persons, properties } = buildRepeaterPayload();
   saveImmediately(finalValues, activeRecordIdRef.current, persons, properties);
+  log.info('form:save_draft_success', { recordType, recordId: activeRecordIdRef.current, personsCount: persons.length, propertiesCount: properties.length });
   toast.success(lang === 'hi' ? 'ड्राफ्ट सहेज लिया गया है।' : 'Draft saved successfully.');
 };
 

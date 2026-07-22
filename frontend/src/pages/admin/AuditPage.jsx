@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ShieldAlert, Filter, Clock, User, Database, FileEdit, LogIn, Send, AlertTriangle } from 'lucide-react';
 import api from '../../utils/api.js';
+import { log as clientLog } from '../../utils/logger.js';
 
 const ACTION_STYLES = {
   CREATE:   { label: 'CREATE',   cls: 'bg-emerald-550/10 text-emerald-700 border-emerald-250/30 bg-emerald-50 text-emerald-700 border-emerald-200', icon: FileEdit },
@@ -20,12 +21,24 @@ export default function AuditPage() {
   const [page, setPage] = useState(1);
   const [actionFilter, setActionFilter] = useState('ALL');
 
+  useEffect(() => {
+    clientLog.debug('page:mount', { route: '/admin/audit' });
+    return () => clientLog.debug('page:unmount', { route: '/admin/audit' });
+  }, []);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admin', 'audit', page, actionFilter],
     queryFn: async () => {
-      const res = await api.get('/audit');
-      const logs = res.data?.data?.logs || res.data?.data || [];
-      return { logs, total: logs.length };
+      clientLog.debug('data:load_start', { what: 'audit_logs', page, actionFilter });
+      try {
+        const res = await api.get('/audit');
+        const logs = res.data?.data?.logs || res.data?.data || [];
+        clientLog.debug('data:load_success', { what: 'audit_logs', count: logs.length });
+        return { logs, total: logs.length };
+      } catch (err) {
+        clientLog.error('data:load_error', { what: 'audit_logs', err });
+        throw err;
+      }
     },
     staleTime: 30 * 1000,
     retry: 1,
@@ -41,6 +54,7 @@ export default function AuditPage() {
   const pagedLogs = filteredLogs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleFilterChange = (f) => {
+    clientLog.debug('action:audit_filter_change', { actionFilter: f });
     setActionFilter(f);
     setPage(1);
   };

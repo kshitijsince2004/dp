@@ -3,8 +3,23 @@ dotenv.config();
 
 const getEnv = (key, fallback = '') => process.env[key] ?? fallback;
 
+const NODE_ENV = getEnv('NODE_ENV', 'development');
+const isDev = NODE_ENV === 'development';
+
+// Dev/prod gate for the debug-logging pipe (logging-instrumentation-2026-07-22, foundation,
+// HANDOFF.md §3b). Defaults to `isDev` (on in development, off in prod) but is explicitly
+// overridable either way via process.env.DEBUG_LOGGING — e.g. set DEBUG_LOGGING=true against a
+// prod-like build to hand a tester a working client-log pipe deliberately, or DEBUG_LOGGING=false
+// in dev to quiet it. When off: `POST /api/logs/client` responds 204 and writes nothing; verbose
+// `debug`-level module logging is separately gated by the logger's own level (env.isDev), so it
+// is dropped regardless of this flag.
+const debugLoggingRaw = process.env.DEBUG_LOGGING;
+const DEBUG_LOGGING = debugLoggingRaw === undefined ? isDev : debugLoggingRaw === 'true';
+
 export const env = {
-  NODE_ENV: getEnv('NODE_ENV', 'development'),
+  NODE_ENV,
+  isDev,
+  DEBUG_LOGGING,
   PORT: parseInt(getEnv('PORT', '5000'), 10),
   DATABASE_URL: getEnv('DATABASE_URL', 'postgresql://pharos:pharos@localhost:5432/pharos_db'),
   DB_CLIENT: getEnv('DB_CLIENT', 'pg'),

@@ -13,6 +13,13 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getLogger } from '../../utils/logger.js';
+
+// STYLE ANCHOR match (logging-instrumentation-2026-07-22, HANDOFF.md §7) — getKnownLayouts is
+// called once per readWorkbook() (via import.parse.js's classifyLayout), so this file's "real
+// logic" (baseline manifest load/cache, current-layout derivation) is worth a debug trace even
+// though the raw V0_SIMPLE_PROPERTY/BASELINE_SHEET_ROLE maps above are pure static data.
+const log = getLogger('layout-manifests');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -45,9 +52,10 @@ const BASELINE_SHEET_ROLE = {
 
 let _baselineCache = null;
 function loadBaselineManifest() {
-  if (_baselineCache) return _baselineCache;
+  if (_baselineCache) { log.debug('loadBaselineManifest: cache hit'); return _baselineCache; }
   const p = path.join(__dirname, '..', '..', '..', 'scripts', 'template-baseline.manifest.json');
   _baselineCache = JSON.parse(fs.readFileSync(p, 'utf8'));
+  log.debug('loadBaselineManifest: loaded from disk and cached', { path: p, recordTypes: Object.keys(_baselineCache) });
   return _baselineCache;
 }
 
@@ -61,13 +69,14 @@ function currentLayoutFromBaseline(recordType) {
   const baseline = loadBaselineManifest();
   const sheets = baseline[recordType];
   const roleMap = BASELINE_SHEET_ROLE[recordType];
-  if (!sheets || !roleMap) return null;
+  if (!sheets || !roleMap) { log.debug('currentLayoutFromBaseline: no baseline/role coverage for this type', { recordType, hasSheets: !!sheets, hasRoleMap: !!roleMap }); return null; }
   const byRole = {};
   for (const [sheetName, role] of Object.entries(roleMap)) {
     const sheet = sheets[sheetName];
     if (!sheet) continue;
     byRole[role] = new Set(sheet.columns.map((c) => c.key).filter(Boolean));
   }
+  log.debug('currentLayoutFromBaseline: exit', { recordType, roles: Object.keys(byRole) });
   return byRole;
 }
 
@@ -114,8 +123,9 @@ const V0_SIMPLE_PROPERTY = {
  * coverage at all (PCR_CALL) — callers (import.parse.js's classifyLayout) treat an empty list
  * as "don't fingerprint this type", never as "everything about it is unknown". */
 export function getKnownLayouts(recordType) {
+  log.debug('getKnownLayouts: enter', { recordType });
   const current = currentLayoutFromBaseline(recordType);
-  if (!current) return [];
+  if (!current) { log.debug('getKnownLayouts: no layout coverage at all for this type — caller will skip fingerprinting', { recordType }); return []; }
   const layouts = [{ id: 'current', label: 'the current template', sheets: current }];
   const v0 = V0_SIMPLE_PROPERTY[recordType];
   if (v0) {
@@ -123,5 +133,6 @@ export function getKnownLayouts(recordType) {
     for (const [role, keys] of Object.entries(v0)) sheets[role] = new Set(keys);
     layouts.push({ id: 'v0-simple-property', label: 'an older template version', sheets });
   }
+  log.debug('getKnownLayouts: exit', { recordType, layoutIds: layouts.map((l) => l.id) });
   return layouts;
 }
