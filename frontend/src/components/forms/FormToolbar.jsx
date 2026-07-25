@@ -70,7 +70,7 @@ export default function FormToolbar({
           !readOnly && (
             <button
               type="button"
-              onClick={() => { log.debug('form:toolbar_click', { action: 'submit', currentStep }); onSubmit(); }}
+              onClick={(e) => { log.debug('form:toolbar_click', { action: 'submit', currentStep }); onSubmit(e); }}
               className="flex items-center gap-2.5 px-10 py-3 bg-gradient-to-r from-[var(--accent-color)] to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white
                 font-extrabold rounded-xl text-base shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all cursor-pointer hover:-translate-y-0.5
                 focus:outline-none focus:ring-4 focus:ring-emerald-500/30"

@@ -2320,6 +2320,11 @@
    "role": "ARRESTEE",
    "column": "age"
   },
+  "validation_rules": {
+   "required": false,
+   "min": 0,
+   "max": 120
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -2718,6 +2723,10 @@
    "slot": "present",
    "column": "pincode",
    "role": "ARRESTEE"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
   },
   "visible_to_levels": [
    "PS",
@@ -3119,6 +3128,10 @@
    "slot": "permanent",
    "column": "pincode",
    "role": "ARRESTEE"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
   },
   "visible_to_levels": [
    "PS",

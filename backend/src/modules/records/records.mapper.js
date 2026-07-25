@@ -115,8 +115,22 @@ export const REPEATER_ROLES = new Set(['ARRESTEE', 'VICTIM', 'ACCUSED', 'WITNESS
 // unchanged (already matches a role name, e.g. 'VICTIM', 'ACCUSED').
 const PERSON_TYPE_TO_ROLE = { ARRESTED: 'ARRESTEE' };
 const ROLE_TO_PERSON_TYPE = { ARRESTEE: 'ARRESTED' };
+
+/**
+ * Normalize a raw `person_type` token (as sent by the frontend's `persons[]` payload) to the
+ * DB `persons.role` value. Defense-in-depth (2026-07-23 bugfix batch, B1's second root cause):
+ * `config/fields/*.json`'s `repeater_entity` values are `PERSON_ARRESTED`/`PERSON_VICTIM`/
+ * `PERSON_ACCUSED` — PERSON_-prefixed — not the bare role name. The frontend is being fixed to
+ * send the bare token at the source, but `splitPersons`'s `PERSON_ROLES.includes(role)` guard
+ * silently dropped every PERSON_-prefixed entry it ever saw (93 real occurrences in tester
+ * logs: 53x PERSON_VICTIM + 40x PERSON_ACCUSED on CASE) — victims/accused typed into the form
+ * vanished with zero error and zero revision. Stripping a leading `PERSON_` before applying the
+ * existing ARRESTED->ARRESTEE alias means a PERSON_-prefixed role can never again be silently
+ * dropped, from either the interactive form or any other future caller.
+ */
 export function roleForPersonType(personType) {
-  return PERSON_TYPE_TO_ROLE[personType] || personType;
+  const stripped = typeof personType === 'string' ? personType.replace(/^PERSON_/, '') : personType;
+  return PERSON_TYPE_TO_ROLE[stripped] || stripped;
 }
 
 // slot -> {table: detailTableName, column} for record/detail-level (no person role) locations.
@@ -581,9 +595,16 @@ async function splitPersons(trx, registry, recordType, data, personsInput) {
   }
 
   for (const [i, p] of (personsInput || []).entries()) {
-    const role = PERSON_TYPE_TO_ROLE[p.person_type] || p.person_type;
+    // Single source of truth for person_type -> role (was duplicated inline here, out of sync
+    // with roleForPersonType — the PERSON_-prefix strip lives in exactly one place now).
+    const role = roleForPersonType(p.person_type);
     if (!PERSON_ROLES.includes(role)) {
-      log.warn('splitPersons: skipped repeater entry — unrecognized role', { recordType, sourceIndex: i, personType: p.person_type });
+      // log.error, not .warn: this is a silent-data-loss path — the whole entry (a victim/
+      // accused/etc a real officer typed in) is discarded, no revision, no error surfaced to the
+      // caller. It was a .warn before and 93 real drops (B1's second root cause) went unnoticed
+      // in normal log review. Still doesn't throw — an unrecognized role must not fail the whole
+      // record write, just be loud enough that it can't hide in routine debug/info volume again.
+      log.error('splitPersons: DROPPED repeater entry — unrecognized role (person data lost)', { recordType, sourceIndex: i, personType: p.person_type, resolvedRole: role });
       continue;
     }
     const { person, location } = fieldsForRole(registry, recordType, role);

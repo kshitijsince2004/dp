@@ -409,7 +409,11 @@ export default function RecordDetail() {
                           {new Date(tran.performed_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="text-[var(--text-main-theme)] opacity-80 font-medium">By: {tran.performed_by}</p>
+                      {/* B2 (2026-07-23): `performed_by` is the raw users.id UUID FK — the
+                          backend now also joins/returns `performed_by_name` (falls back to
+                          `username` on rows from before that join existed); only fall back to
+                          the bare UUID if neither is present. */}
+                      <p className="text-[var(--text-main-theme)] opacity-80 font-medium">By: {tran.performed_by_name || tran.username || tran.performed_by}</p>
                       {tran.comment && (
                         <p className="bg-[var(--bg-page-main)]/45 text-[var(--text-main-theme)] p-2 rounded border border-[var(--border-card-theme)]/50 mt-1 italic text-[11px] font-semibold">
                           "{tran.comment}"

@@ -33,6 +33,7 @@
 // keep their existing per-rule leniency, documented at each site below.
 import {
   resolveAct, resolveSection, resolveMajorHead, resolveMinorHead, resolveLocalHead, resolveBeat,
+  resolvePropertyMajorCategory, resolvePropertyMinorCategory,
   normalizeDate,
 } from '../records/records.normalize.js';
 import { validateRequiredFields } from '../records/records.service.js';
@@ -292,6 +293,50 @@ async function validateRefLabels(trx, recordType, payload, isLegacy, batchScope)
       } else if (minorRecovered) {
         errors.push({ row, field_key: 'minor_head', code: 'MINOR_HEAD_RECOVERED', severity: 'WARNING', message: `Minor head "${o.minor_head}" matched after normalizing punctuation/spacing — verify this is correct.` });
         log.warn('validateRefLabels: minor_head recovered via normalization', { row, minorHead: o.minor_head });
+      }
+    }
+  }
+
+  // B12b (2026-07-23): property_major_category/property_minor_category were the only two
+  // ref-lookup fields on the whole composed payload with NO dry-run check here — unlike every
+  // other ref field above, an unresolved category silently DROPS at write time
+  // (records.mapper.js's resolvePropertyFkColumns just `delete`s the column, logged at debug
+  // only) with zero signal to the importer. Root cause: the frozen template's Property Details
+  // sheet dropdown is sourced from `ref.property_categories.code_type` ("COIN AND CURRENCY",
+  // ALL CAPS compound names — see template-builder.service.js's live lookups), which does NOT
+  // match this field's own field_registry `options` metadata used everywhere else in the app
+  // ("Cash", "Vehicle", "Documents", …) — resolvePropertyMajorCategory/resolvePropertyMinorCategory
+  // (records.normalize.js) do an exact case-insensitive match with no fuzzy/normalize fallback,
+  // so 7 of the 9 major-category labels an officer would naturally type never resolve. This
+  // does not fix that mismatch (a ref-data/label decision outside this module's ownership —
+  // see the import module HANDOFF) but turns the silent data loss into a visible, per-row
+  // finding, exactly like every other ref field on this sheet.
+  //
+  // Severity is WARNING in BOTH modes (never the ERROR-in-non-legacy `severity` var used above
+  // for act/section/major_head/minor_head/local_head): those fields are registry-required in
+  // at least some case_type/mode combination, so an unresolved value there means the record
+  // itself is incomplete for its mandatory classification. property_major_category/minor are
+  // registry `required:false` in every mode — rejecting the WHOLE row (victim/accused/
+  // complainant/offences included) over an optional field a genuinely-filled-in property row
+  // otherwise has no problem with would be strictly worse than today's silent-null (verified:
+  // making this ERROR caused a real confirm to drop the row to imported_rows:0 — a regression,
+  // not a fix). WARNING preserves P2 ("reject only the impossible") while still surfacing it.
+  for (const p of payload.properties) {
+    // resolvePropertyMajorCategory/resolvePropertyMinorCategory already pass a numeric code
+    // straight through (the interactive form's own submission shape) — only a genuine label
+    // miss returns null, so no gating on "is this already numeric" is needed here.
+    if (p.property_major_category) {
+      const majorId = await resolvePropertyMajorCategory(trx, p.property_major_category);
+      if (majorId == null) {
+        errors.push({ row, field_key: 'property_major_category', code: 'REF_UNRESOLVED_PROPERTY_MAJOR_CATEGORY', severity: 'WARNING', message: `Property Major Category "${p.property_major_category}" could not be matched — the property will import WITHOUT a category unless corrected.` });
+        log.warn('validateRefLabels: property_major_category unresolved — category will be dropped at write time', { row, propertyMajorCategory: p.property_major_category });
+      }
+    }
+    if (p.property_minor_category) {
+      const minorId = await resolvePropertyMinorCategory(trx, p.property_minor_category);
+      if (minorId == null) {
+        errors.push({ row, field_key: 'property_minor_category', code: 'REF_UNRESOLVED_PROPERTY_MINOR_CATEGORY', severity: 'WARNING', message: `Type of property "${p.property_minor_category}" could not be matched — the property will import WITHOUT this sub-type unless corrected (arms/drugs/vehicle/etc. subtypes are not covered by this check).` });
+        log.warn('validateRefLabels: property_minor_category unresolved — subtype will be dropped at write time', { row, propertyMinorCategory: p.property_minor_category });
       }
     }
   }

@@ -112,12 +112,39 @@ const SECTION_KEY_ORDER = {
 
 // Repeater sections need is_repeater/entity_type/person_type so the person/property
 // add-edit-delete modals and the final-submit persons/properties builder can find them.
+// This is the FE's OWN canonical contract for these tokens and is deliberately used as an
+// override over whatever `/fields/form/:type` sends for entity_type/person_type (see
+// finalSchema below) — `fields.controller.js` sends `person_type: 'PERSON_VICTIM'` /
+// `'PERSON_ACCUSED'` (the `repeater_entity` convention) for CASE while ARRESTED already comes
+// bare, and the recomposed `persons[]` the backend hands back on load always uses the bare
+// role token (VICTIM/ACCUSED/ARRESTED — see records.mapper.js ROLE_TO_PERSON_TYPE). Before this
+// map was wired in, sourcing person_type straight from the schema response meant: (a) the
+// initialPersons seed-match (`p.person_type === section.person_type`) silently failed for CASE
+// victims/accused (bare token vs PERSON_-prefixed), so an edit's repeaterState never got seeded
+// for those sections; and (b) buildRepeaterPayload's submit sent `person_type: 'PERSON_VICTIM'`/
+// `'PERSON_ACCUSED'`, which the backend's PERSON_ROLES allowlist doesn't recognize and silently
+// drops (confirmed in tester logs: 53x PERSON_VICTIM + 40x PERSON_ACCUSED dropped on CASE) — the
+// second, independent root cause behind "can't add new victim/accused" (B1, 2026-07-23).
 const REPEATER_SECTION_META = {
   property_details: { is_repeater: true, entity_type: 'property' },
   arrested_info: { is_repeater: true, entity_type: 'person', person_type: 'ARRESTED' },
   victim_info: { is_repeater: true, entity_type: 'person', person_type: 'VICTIM' },
   accused_info: { is_repeater: true, entity_type: 'person', person_type: 'ACCUSED' },
 };
+
+/** Merge a schema section's own is_repeater/entity_type/person_type with the FE's canonical
+ * REPEATER_SECTION_META override (by section key) when one exists, and always strip a stray
+ * leading `PERSON_` prefix as a last-resort safety net for any section not in the map (mirrors
+ * the backend's own `roleForPersonType`/fields.controller.js:856 stripping convention). */
+function resolveRepeaterMeta(section) {
+  const meta = REPEATER_SECTION_META[section.section];
+  const rawPersonType = meta?.person_type ?? section.person_type;
+  return {
+    is_repeater: meta?.is_repeater ?? section.is_repeater,
+    entity_type: meta?.entity_type ?? section.entity_type,
+    person_type: typeof rawPersonType === 'string' ? rawPersonType.replace(/^PERSON_/, '') : rawPersonType,
+  };
+}
 
 /** Sections with sub_tabs (Complainant/Victim/Accused/Arrested) don't carry
  * a flat `fields` array — concatenate every sub-tab's fields for validation purposes. */
@@ -137,7 +164,31 @@ function flattenSectionFields(section) {
  */
 function deepFlattenSchema(schema) {
   if (!schema) return [];
-  return schema.reduce((acc, sec) => [...acc, ...flattenSectionFields(sec)], []);
+  const all = schema.reduce((acc, sec) => [...acc, ...flattenSectionFields(sec)], []);
+  // Dedupe by field_key (B5, 2026-07-23 — "Property of Interest" fields rendering twice).
+  // Confirmed via GET /fields/form/ARREST: `arrested_info`'s `property` sub_tab and the
+  // separate top-level `property_details` section (`view_only_when_populated: true` — the
+  // ARREST "Property (Imported)" section, #8) both source the exact same 44 PROPERTY-tagged
+  // field_registry rows from `filteredFields.filter(f => f.repeater_entity === 'PROPERTY' ||
+  // f.section === 'property_details')` in fields.controller.js. `finalSchema` conditionally
+  // drops the top-level section when the record has no record-level properties, but `schema`
+  // here is the RAW backend response, unfiltered, and always carries both — so every call site
+  // that scans `deepFlattenSchema(schema)` for a field/section by field_key (in particular
+  // `renderPropertyEditor`'s per-category "extra fields" computation) matched the same
+  // field_key twice and rendered every dynamic property field twice. A field_key is a single
+  // field_registry row / one storage slot — it must never appear more than once in a flat field
+  // list regardless of how many schema sections reference it. Keep the first occurrence.
+  const seen = new Set();
+  const deduped = [];
+  for (const f of all) {
+    const key = f.field_key;
+    if (key) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+    }
+    deduped.push(f);
+  }
+  return deduped;
 }
 
 /* ─── StepDot ─────────────────────────────────────────────────────────────── */
@@ -2111,15 +2162,16 @@ export default function DynamicForm({
           const hasRecordLevelProps = (initialProperties || []).some(p => !p.person_id);
           if (!hasRecordLevelProps) return null;
         }
+        const repeaterMeta = resolveRepeaterMeta(section);
         return {
           section: key,
           title_en: section.title_en,
           title_hi: section.title_hi,
           fields: flattenSectionFields(section),
           sub_tabs: section.sub_tabs,
-          is_repeater: section.is_repeater,
-          entity_type: section.entity_type,
-          person_type: section.person_type,
+          is_repeater: repeaterMeta.is_repeater,
+          entity_type: repeaterMeta.entity_type,
+          person_type: repeaterMeta.person_type,
           view_only_when_populated: section.view_only_when_populated,
         };
       })
@@ -2134,16 +2186,19 @@ export default function DynamicForm({
         const hasCustomField = fields.some(f => f.created_by !== null && f.created_by !== undefined);
         return hasCustomField;
       })
-      .map((sec) => ({
-        section: sec.section,
-        title_en: sec.title_en,
-        title_hi: sec.title_hi,
-        fields: flattenSectionFields(sec),
-        sub_tabs: sec.sub_tabs,
-        is_repeater: sec.is_repeater,
-        entity_type: sec.entity_type,
-        person_type: sec.person_type,
-      }));
+      .map((sec) => {
+        const repeaterMeta = resolveRepeaterMeta(sec);
+        return {
+          section: sec.section,
+          title_en: sec.title_en,
+          title_hi: sec.title_hi,
+          fields: flattenSectionFields(sec),
+          sub_tabs: sec.sub_tabs,
+          is_repeater: repeaterMeta.is_repeater,
+          entity_type: repeaterMeta.entity_type,
+          person_type: repeaterMeta.person_type,
+        };
+      });
 
     const built = [...orderedSections, ...extraSections];
     log.debug('form:final_schema_built', {
@@ -3127,10 +3182,35 @@ useEffect(() => {
 // Seed/starter-row writes raise repeaterSeedSkipRef (a flag, not a counter — multiple
 // programmatic writes can batch into a single commit and therefore a single run of this
 // effect) so reopening a draft doesn't immediately PUT its own data back.
+//
+// B1 (2026-07-23, root cause #1 — the "even on simple edit" silent-delete): this effect used
+// to gate on a plain `repeaterAutosaveReadyRef` boolean meaning "skip only the very first
+// invocation, on the assumption it's always the pristine mount". That assumption breaks under
+// React 18 StrictMode (frontend/src/main.jsx wraps the app in <StrictMode>, dev-only but that's
+// exactly where this was reproduced/logged): StrictMode double-invokes effects on mount, and
+// the ready-flag flips true on the FIRST (legitimate, skipped) invocation and stays true across
+// the simulated remount — so the SECOND invocation (repeaterState still `{}`, the real seed
+// below hasn't run yet) was treated as a genuine user edit and scheduled a real autosave PUT
+// with persons:[]/properties:[] via `triggerAutosave` (`useAutosave.js`), which captures those
+// arrays in a `setTimeout` closure fired 2s later. Because the REAL seed (once initialPersons/
+// finalSchema are ready) sets `repeaterSeedSkipRef` and therefore never calls `triggerAutosave`
+// again, nothing ever cancels or reschedules that stale timer — it fires with the empty arrays
+// regardless of what repeaterState becomes in the meantime, and the backend's id-preserving
+// upsert deletes every person/property row not echoed back. Root-caused via tester logs (record
+// 1c71a6f7…, requestId 661b33ed): a `form:build_repeater_payload personsCount:0` fired 5ms after
+// mount (schema/persons not yet loaded), a real seed with personsCount:1 never re-logged
+// (correctly self-suppressed by repeaterSeedSkipRef) — yet 2s later the STALE first timer PUT
+// persons:[] and the arrestee was gone.
+//
+// Fix: gate on the SAME per-record bookkeeping the seed effect above uses (`repeaterSeededIdRef`)
+// instead of "is this the first commit". This is deterministic and immune to extra effect
+// invocations from any source (StrictMode or otherwise) — no autosave can ever be scheduled off
+// a repeaterState change until the seed effect has actually completed for the CURRENTLY loaded
+// record id, so a not-yet-seeded empty repeaterState can never reach `triggerAutosave`.
 const repeaterSeedSkipRef = useRef(false);
-const repeaterAutosaveReadyRef = useRef(false);
 useEffect(() => {
-  if (!repeaterAutosaveReadyRef.current) { repeaterAutosaveReadyRef.current = true; return; }
+  const rid = initialValues?.id ?? null;
+  if (repeaterSeededIdRef.current !== rid) return; // seed hasn't run for this record yet — never autosave a possibly-empty repeaterState
   if (readOnly) return;
   if (repeaterSeedSkipRef.current) { repeaterSeedSkipRef.current = false; return; }
   formDirtyRef.current = true; // real user-driven repeater mutation — see formDirtyRef declaration (B8)
@@ -3920,8 +4000,17 @@ const buildRepeaterPayload = useCallback(() => {
 }, []);
 
 /* ── Final form submission ─────────────────────────────────────────────── */
+// B3 (2026-07-23 — "Submit button not working in each form"): FormToolbar's Submit button
+// used to call `onSubmit()` with NO argument (the same zero-arg calling convention as
+// onPrevious/onSaveDraft/onNext, none of which need an event). This function unconditionally
+// called `e.preventDefault()` as its first statement, so every real click threw
+// `TypeError: Cannot read properties of undefined (reading 'preventDefault')` before
+// `validateAll()` ever ran — the button visibly did nothing (no toast, no request, just a
+// console exception), on every record type. Fixed in FormToolbar.jsx (now forwards the real
+// click event); `e?.preventDefault?.()` here is defense-in-depth against any other zero-arg
+// caller.
 const handleFormSubmit = (e) => {
-  e.preventDefault();
+  e?.preventDefault?.();
   if (readOnly) return;
   log.info('form:submit_start', { recordType, recordId: activeRecordIdRef.current });
 

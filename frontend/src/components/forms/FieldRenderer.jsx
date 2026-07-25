@@ -72,6 +72,19 @@ export default function FieldRenderer({
 
   if (!field) return null;
   const key     = field.field_key;
+  // Composite Number+Date(+Time) widgets (gd_no/fir_no/arrest_date, below) render their own
+  // date/time cell inline via DateTimePickerPopup. gd_date/gd_time/fir_date/fir_time/arrest_time
+  // are ALSO separate field_registry rows in the same section, so FormSection's per-field loop
+  // renders them a SECOND time as standalone DateField/TimeField inputs next to the composite —
+  // a visible duplicate widget (bug batch 2026-07-23, #B8, reported on Missing Person's GD
+  // Number). Suppressing them here (their value is still collected/submitted normally by
+  // DynamicForm — only the extra standalone INPUT is removed) fixes the duplicate without
+  // touching FormSection.jsx's section.fields list (owned by another agent). NOTE for FE-core:
+  // a fully clean fix additionally removes the now-empty label row by adding these keys to
+  // FormSection.jsx's `keysToSkip` array.
+  if (key === 'gd_date' || key === 'gd_time' || key === 'fir_date' || key === 'fir_time' || key === 'arrest_time') {
+    return null;
+  }
   const type    = (field.field_type || 'TEXT').toUpperCase();
   const status  = hasError ? 'error' : '';
   const placeholder = lang === 'hi' ? field.placeholder_hi : field.placeholder_en;
@@ -166,10 +179,11 @@ export default function FieldRenderer({
             type="text"
             disabled={readOnly}
             value={values?.gd_no || ''}
-            onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, ''); // type sirf numeric rkhna
-              handleFieldChange('gd_no', val);
-            }}
+            onChange={(e) => handleFieldChange('gd_no', e.target.value)}
+            // GD numbers are alphanumeric (e.g. "22A") — bug batch 2026-07-23, #B7. The prior
+            // digit-only filter (`replace(/\D/g, '')`) silently stripped any letters as the
+            // officer typed, e.g. "22A" -> "22". Pass the raw value through, same as fir_no
+            // below (also free-text, no keystroke filter).
             placeholder={lang === 'hi' ? 'जीडी नंबर' : 'GD Number'}
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
           />
@@ -306,11 +320,25 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
       };
       return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, filterLatLong(v))} status={status} placeholder={placeholder} className={inputClassName} />;
     }
+    // Pincode fields (bug batch 2026-07-23, #B4): constrain to digits only, max 6 chars, at
+    // keystroke — was a plain TEXT input that accepted anything. Applies to every *_pincode
+    // field (occurrence/complainant/victim/accused/arrested present+perm, mp, deceased) via
+    // validation_rules.pattern:"pincode" in config/fields/*.json (submit-time 6-digit check
+    // lives in fieldPatterns.js, read by DynamicForm's validateSection).
+    if (rules.pattern === 'pincode') {
+      const filterPincode = (v) => String(v).replace(/\D/g, '').slice(0, 6);
+      return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, filterPincode(v))} status={status} placeholder={placeholder} className={inputClassName} maxLength={6} inputMode="numeric" />;
+    }
     return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} className={inputClassName} />;
   }
 
   if (type === 'NUMBER') {
-    return <NumberField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
+    // Sane range bounds (bug batch 2026-07-23, #B9 — UIDB age was found to have no bound
+    // checking anywhere on any age field; applied consistently to every NUMBER field that
+    // opts in via validation_rules.min/max, e.g. the *_age_year fields (0-120), not just UIDB).
+    const rawRules = field.validation_rules;
+    const rules = typeof rawRules === 'string' ? (() => { try { return JSON.parse(rawRules); } catch { return {}; } })() : (rawRules || {});
+    return <NumberField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} min={rules.min} max={rules.max} />;
   }
 
   if (type === 'DATE') {

@@ -94,6 +94,45 @@ async function insertPersonEntry(trx, recordId, entry) {
  */
 async function upsertPersons(trx, recordId, personEntries, oldPersonRows) {
   log.debug('upsertPersons: enter', { recordId, incomingCount: personEntries.length, existingCount: oldPersonRows.length });
+
+  // ── B1 SAFETY NET (2026-07-23 bugfix batch) — narrow guard against delete-to-zero ──────────
+  // PROVEN data loss (docs/bugfix-batch-2026-07-23/HANDOFF.md, record 1c71a6f7…, requestId
+  // 661b33ed…): `updateRecord` treats `persons: undefined` as "don't touch" and `persons: []`
+  // (provided-but-empty) as "clear all". A fragile frontend repeater-hydration race sometimes
+  // fails to seed persons on an edit (e.g. after SHO send-back), so submit sent `persons: []`
+  // and this function hard-deleted every victim/accused/arrestee (cascading subtype rows +
+  // locations) with no recovery path. The frontend fix (deterministic repeater seeding) is the
+  // real fix; this is the backend's defense-in-depth net for when a future FE regression
+  // reintroduces the same shape of bug.
+  //
+  // Invariant: an empty-but-provided persons[] against a record that currently HAS AT LEAST ONE
+  // person is never a legitimate state for any record type (CASE/ARREST/MISSING/PCR_CALL/UIDB
+  // each always retain a complainant/arrestee/missing-person/caller/etc once created — there is
+  // no real workflow action that intentionally reduces a record to zero persons via an edit).
+  //
+  // NEW BEHAVIOR (D1, flagged for orchestrator sign-off): when this exact shape is detected
+  // (personEntries.length === 0 AND oldPersonRows.length > 0), the delete-to-zero is REFUSED —
+  // this call degrades to `persons: undefined` semantics (existing persons are left completely
+  // untouched, not one row is inserted/updated/deleted) instead of wiping the record. A `log.warn`
+  // is emitted so the guard tripping is visible in normal log review, not just when it prevents a
+  // reported incident.
+  //
+  // This is deliberately NARROW — it does NOT change behavior for:
+  //   - `persons: []` against a record that already has zero persons (no-op either way).
+  //   - `persons: undefined` (already means "don't touch", unaffected by this function at all —
+  //     records.service.js's updateRecord only calls upsertPersons when persons !== undefined).
+  //   - A non-empty incoming array that legitimately drops ONE of several existing persons (e.g.
+  //     removing one of two accused) — that person is still deleted below exactly as before; only
+  //     the ALL-existing-rows-to-zero case is guarded.
+  if (personEntries.length === 0 && oldPersonRows.length > 0) {
+    log.warn('upsertPersons: GUARD TRIPPED (B1 safety net) — refusing to delete all existing persons, left untouched', {
+      recordId,
+      existingCount: oldPersonRows.length,
+      existingRoles: oldPersonRows.map((p) => ({ id: p.id, role: p.role })),
+    });
+    return {};
+  }
+
   const oldById = new Map(oldPersonRows.map((p) => [p.id, p]));
   const oldByRole = new Map();
   for (const p of oldPersonRows) if (!mapper.REPEATER_ROLES.has(p.role)) oldByRole.set(p.role, p);
@@ -190,9 +229,28 @@ async function upsertPersons(trx, recordId, personEntries, oldPersonRows) {
 
 /** Id-preserving upsert for properties on UPDATE — REQUIRED, not a style choice:
  * `record_status_events.property_id` is `ON DELETE CASCADE`, so delete-and-reinsert would
- * silently destroy a property's status-change history on every unrelated edit. */
-async function upsertProperties(trx, recordId, propertyEntries, oldPropertyRows, personIdBySourceIndex) {
+ * silently destroy a property's status-change history on every unrelated edit.
+ *
+ * B1 safety net note (2026-07-23): unlike persons, a record legitimately having zero property
+ * is a real state (a CASE may recover/seize nothing), so this function deliberately does NOT
+ * hard-block a full property wipe the way upsertPersons blocks a full person wipe — that would
+ * make "I removed the only property entry" impossible to save. It DOES guard the one "clearly
+ * invalid" case: a full wipe arriving in the SAME update where the persons guard above just
+ * fired (`personsGuardTripped`) — that specific correlation means the same fragile repeater-
+ * hydration bug that failed to seed persons almost certainly also failed to seed properties, so
+ * refusing that one is the same defense-in-depth call, not a guess. Every other full-wipe case
+ * is allowed through, just logged at `warn` (elevated from the pre-existing `info`) for
+ * visibility. */
+async function upsertProperties(trx, recordId, propertyEntries, oldPropertyRows, personIdBySourceIndex, { personsGuardTripped = false } = {}) {
   log.debug('upsertProperties: enter', { recordId, incomingCount: propertyEntries.length, existingCount: oldPropertyRows.length });
+
+  if (propertyEntries.length === 0 && oldPropertyRows.length > 0 && personsGuardTripped) {
+    log.warn('upsertProperties: GUARD TRIPPED (B1 safety net, correlated with persons guard) — refusing to delete all existing properties, left untouched', {
+      recordId, existingCount: oldPropertyRows.length,
+    });
+    return { personIdBySourceIndex, statusChanges: [] };
+  }
+
   const oldById = new Map(oldPropertyRows.map((p) => [p.id, p]));
   const keptIds = new Set();
   const statusChanges = []; // {propertyId, oldValue, newValue} for record_status_events
@@ -220,14 +278,26 @@ async function upsertProperties(trx, recordId, propertyEntries, oldPropertyRows,
   }
 
   const toDelete = oldPropertyRows.filter((p) => !keptIds.has(p.id)).map((p) => p.id);
+  const isFullWipe = oldPropertyRows.length > 0 && toDelete.length === oldPropertyRows.length;
   // [PHAROS-DEBUG] property write lifecycle — same shape/intent as upsertPersons above.
-  log.info('upsertProperties: lifecycle summary', {
+  // Full wipes (existing>0, everything being deleted) are elevated to `warn` — allowed to
+  // proceed (a record may legitimately end up with zero property), but visible in normal log
+  // review rather than buried at `info`, per the B1 safety-net review (2026-07-23). (Calling
+  // log.warn/log.info directly in each branch, not via a detached function reference — winston's
+  // child-logger defaultMeta (the `module` tag) only merges correctly when the method is invoked
+  // as `log.warn(...)`, not through a variable that lost its `this` binding.)
+  const lifecycleFields = {
     recordId,
     incoming: propertyEntries.length,
     existing: oldPropertyRows.length,
     kept: keptIds.size,
     deleting: toDelete.length,
-  });
+  };
+  if (isFullWipe) {
+    log.warn('upsertProperties: lifecycle summary — FULL WIPE (allowed, properties may legitimately reach zero)', lifecycleFields);
+  } else {
+    log.info('upsertProperties: lifecycle summary', lifecycleFields);
+  }
   if (toDelete.length) {
     await trx('record_properties').whereIn('id', toDelete).delete();
     log.debug('upsertProperties: deleted removed record_properties rows', { recordId, deletedIds: toDelete });
@@ -703,22 +773,28 @@ export const getRecordDetails = async (id) => {
     });
     record.data = data;
 
+    // B2 (2026-07-23 bugfix batch): transitions/status_events returned only `performed_by`/
+    // `changed_by` UUIDs — the FE had no way to render a name (DCP + SHO views showed raw
+    // UUIDs). Joined `users` for a readable name (+ role, trivially available on the same row)
+    // on every history collection below, matching the pattern `revisions` already used
+    // (`user_fullname`). The raw id column stays untouched (`performed_by`/`changed_by`) so
+    // nothing already consuming it breaks — these are additive fields only.
     const revisions = await trx('record_revisions')
-      .select('record_revisions.*', 'u.username', 'u.name as user_fullname')
+      .select('record_revisions.*', 'u.username', 'u.name as user_fullname', 'u.role as changed_by_role')
       .join('users as u', 'record_revisions.changed_by', 'u.id')
       .where('record_revisions.record_id', id)
       .orderBy('record_revisions.revision_number', 'asc');
     revisions.forEach((rev) => { rev.field_changes = typeof rev.field_changes === 'string' ? JSON.parse(rev.field_changes) : rev.field_changes; });
 
     const transitions = await trx('workflow_transitions')
-      .select('workflow_transitions.*', 'u.username')
+      .select('workflow_transitions.*', 'u.username', 'u.name as performed_by_name', 'u.role as performed_by_role')
       .join('users as u', 'workflow_transitions.performed_by', 'u.id')
       .where('workflow_transitions.record_id', id)
       .orderBy('workflow_transitions.performed_at', 'asc');
     transitions.forEach((tr) => { tr.target_fields = typeof tr.target_fields === 'string' ? JSON.parse(tr.target_fields) : tr.target_fields; });
 
     const statusEvents = await trx('record_status_events')
-      .select('record_status_events.*', 'u.username')
+      .select('record_status_events.*', 'u.username', 'u.name as changed_by_name', 'u.role as changed_by_role')
       .join('users as u', 'record_status_events.changed_by', 'u.id')
       .where('record_status_events.record_id', id)
       .orderBy('record_status_events.effective_date', 'desc');
@@ -980,14 +1056,48 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
       log.debug('updateRecord: inserted detail row (was missing)', { recordId: id, detailTable });
     }
 
+    // B3 fix (2026-07-23 bugfix batch): `split.personEntries` mixes TWO different kinds of
+    // person rows — REPEATER roles (ARRESTEE/VICTIM/ACCUSED/WITNESS, sourced from the top-level
+    // `persons[]` array param) and SINGLETON roles (COMPLAINANT/MISSING/DECEASED/INFORMANT/
+    // CALLER, sourced from flat `data`, exactly like every other flat field). The `persons`
+    // param existing as a gate ("only touch persons if the caller sent persons[]") is correct
+    // for repeater roles — a caller that legitimately doesn't manage repeaters this round
+    // shouldn't have them touched. It was WRONG applied to singleton roles: UIDB/MISSING (and
+    // any record type's singleton-only roles) have NO repeater UI at all, so their edit
+    // requests NEVER send a `persons` key — meaning `upsertPersons` never ran, so a
+    // freshly-filled `deceased_name`/`mp_known`/etc never reached the DB, EVER, on any edit
+    // after creation. `validateRequiredFields` then correctly saw the still-empty saved value
+    // and rejected submit — a real, reproducible bug (verified live: creating a UIDB DRAFT with
+    // `identified:false`, then calling `updateRecord` with `identified:true` + `deceased_name`
+    // + `deceased_perm_same` set and NO `persons` key at all — matching what the UIDB edit form
+    // actually sends — left `persons` in the DB empty and submit failed with "Missing required
+    // fields before submit: Name of Deceased, Is Permanent Address same as Present Address?",
+    // reproducing the exact tester-reported error). Fix: singleton-role entries are reconciled
+    // UNCONDITIONALLY every update (same as createRecord's insertRecordCore always does) —
+    // the `persons` gate now applies ONLY to the repeater subset, its original intent.
+    const singletonEntries = split.personEntries.filter((e) => e.sourceKind !== 'repeater');
+    const repeaterEntries = split.personEntries.filter((e) => e.sourceKind === 'repeater');
+    const oldSingletonRows = oldPersonRows.filter((p) => !mapper.REPEATER_ROLES.has(p.role));
+    const oldRepeaterRows = oldPersonRows.filter((p) => mapper.REPEATER_ROLES.has(p.role));
+
+    // B1 safety net (2026-07-23): computed against the REPEATER subset specifically (properties
+    // typically link to a repeater person, e.g. an arrestee) — see upsertProperties' doc comment
+    // for why properties don't get the unconditional hard guard persons does.
+    const personsGuardWillTrip = persons !== undefined && repeaterEntries.length === 0 && oldRepeaterRows.length > 0;
+
+    await upsertPersons(trx, id, singletonEntries, oldSingletonRows);
+    log.debug('updateRecord: reconciled singleton-role persons (always, regardless of persons[] param)', {
+      recordId: id, singletonEntryCount: singletonEntries.length, oldSingletonCount: oldSingletonRows.length,
+    });
+
     const personIdBySourceIndex = persons !== undefined
-      ? await upsertPersons(trx, id, split.personEntries, oldPersonRows)
+      ? await upsertPersons(trx, id, repeaterEntries, oldRepeaterRows)
       : {};
-    if (persons === undefined) log.debug('updateRecord: persons not provided — left untouched', { recordId: id });
+    if (persons === undefined) log.debug('updateRecord: persons[] not provided — repeater-role persons (ARRESTEE/VICTIM/ACCUSED/WITNESS) left untouched', { recordId: id });
 
     let propertyStatusChanges = [];
     if (properties !== undefined) {
-      const result = await upsertProperties(trx, id, split.propertyEntries, oldPropertyRows, personIdBySourceIndex);
+      const result = await upsertProperties(trx, id, split.propertyEntries, oldPropertyRows, personIdBySourceIndex, { personsGuardTripped: personsGuardWillTrip });
       propertyStatusChanges = result.statusChanges;
     } else {
       log.debug('updateRecord: properties not provided — left untouched', { recordId: id });
