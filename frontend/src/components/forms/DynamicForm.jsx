@@ -1898,7 +1898,19 @@ export default function DynamicForm({
         } catch { /* ignore */ }
         return true;
       };
-      const visibleFields = fields.filter(f => evalCond(f.show_when, arrestedTempValues));
+      // C2 (2026-07-26, same family as B8/2026-07-23): the "arrest_details" sub-tab renders
+      // EVERY field in its section generically, unlike FormSection.jsx which has a keysToSkip
+      // guard. `arrest_time` is rendered INLINE by FieldRenderer's dedicated `arrest_date`
+      // composite branch (compositeDateTimeCell('arrest_date','arrest_time', ...) — the "Date &
+      // Time of Arrest" widget) and FieldRenderer already returns null for the standalone
+      // `arrest_time` input (see FieldRenderer.jsx's suppression list) — but this loop still
+      // rendered arrest_time's LABEL row above that now-empty null input, producing a visible
+      // second "Time Of Arrest" field with no way to fill it. Mirrors FormSection.jsx's
+      // keysToSkip exactly (only 'arrest_time' is reachable through this particular sub-tab
+      // loop; the other 4 keys — gd_date/gd_time/fir_date/fir_time — belong to sections that
+      // never flow through this generic grid, but are included for consistency/future-proofing).
+      const keysToSkip = ['gd_date', 'gd_time', 'fir_date', 'fir_time', 'arrest_time'];
+      const visibleFields = fields.filter(f => !keysToSkip.includes(f.field_key) && evalCond(f.show_when, arrestedTempValues));
       return (
         <fieldset className="bg-white">
           <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">

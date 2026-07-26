@@ -27,11 +27,24 @@ export function toBool(val) {
   return null;
 }
 
-/** Digits-only phone/mobile, +91 and separators stripped. Empty -> null. */
+/** Digits-only phone/mobile, +91 and separators stripped. Empty -> null.
+ *
+ * C4 fix (2026-07-26 bugfix batch): the old unconditional `s.replace(/^\+?91/, '')` stripped a
+ * leading "91" from ANY input, including a bare 10-digit Indian mobile number that simply
+ * STARTS with 91 (a perfectly ordinary subscriber range, e.g. "9123456780") — corrupting it to
+ * 8 digits. Proven live while round-tripping `arresting_officer_mobile`: POST/PUT with
+ * `"9123456780"` persisted as `23456780` in `arrest_details.arresting_officer_mobile`. A "91"
+ * prefix is now only treated as the country code when it's unambiguous: either an explicit `+`
+ * marker, or the digit-only length is 12 (91 + a 10-digit number pasted without `+`) — a bare
+ * 10-digit number is left completely untouched regardless of what it starts with. */
 export function normalizePhone(val) {
   if (val === null || val === undefined || val === '') return null;
   let s = String(val).trim().replace(/[\s\-().]/g, '');
-  s = s.replace(/^\+?91/, '');
+  const hasPlusPrefix = /^\+91/.test(s);
+  const digitsOnly = s.replace(/\D/g, '');
+  if (hasPlusPrefix || (digitsOnly.length === 12 && digitsOnly.startsWith('91'))) {
+    s = s.replace(/^\+?91/, '');
+  }
   const digits = s.replace(/\D/g, '');
   return digits || null;
 }
@@ -133,6 +146,39 @@ export function normalizeFirNo(raw) {
   return normalized;
 }
 
+/** C8 (2026-07-26 bugfix batch, user ruling: "Populate fir_year on write + warn in the form") —
+ * derive `fir_details.fir_year` so the schema's own `UNIQUE(ps_id, fir_year, fir_no)` constraint
+ * becomes live. It was verified dead in production: `fir_year` was NULL on all 28 existing rows,
+ * and Postgres treats NULL as always-distinct, so two rows with the identical `ps_id`+`fir_no`
+ * coexisted with no error — the instant `fir_year` is set on both, the constraint correctly
+ * rejects the second insert (verified live against an isolated pair of rows).
+ * Preference order, most to least authoritative:
+ *   1. The year already embedded in the canonical `fir_no` ("<seq>/<4-digit-year>", produced by
+ *      normalizeFirNo above) — this is literally what the constraint keys on, so it is by
+ *      definition the most correct source when present.
+ *   2. `fir_date`'s year — a real, officer-entered FIR-registration date.
+ *   3. `record_date` — LAST resort only. A legacy-imported or backdated FIR's `record_date` (when
+ *      the row was entered into PHAROS) can be a different year than the FIR itself belongs to,
+ *      and `fir_year` is now load-bearing for both this uniqueness check AND cross-format
+ *      auto-linking (linkResolver.js) — a wrong year here is worse than an absent one.
+ * Returns null (never guesses / never invents a year) when none of the three yields a parseable
+ * 4-digit year — callers must not write null over an already-correct fir_year in that case. */
+export function deriveFirYear(firNo, firDate, recordDate) {
+  if (firNo) {
+    const m = String(firNo).match(/\/(\d{4})$/);
+    if (m) return parseInt(m[1], 10);
+  }
+  if (firDate) {
+    const m = String(firDate).match(/^(\d{4})-/);
+    if (m) return parseInt(m[1], 10);
+  }
+  if (recordDate) {
+    const m = String(recordDate).match(/^(\d{4})-/);
+    if (m) return parseInt(m[1], 10);
+  }
+  return null;
+}
+
 // ── FK label resolution (ref.* lookups) ──────────────────────────────────────────────
 // Every resolver is case-insensitive-exact-match against the label the frontend actually
 // renders as the option value (see fields.controller.js's toValueLabel dispatch — the
@@ -162,6 +208,23 @@ export async function loadKnownActLabels(trx) {
   for (const a of acts) set.add(norm(a.act_long));
   cache.set('actLabelSet', set);
   log.debug('loadKnownActLabels: built and cached known-act-label set', { size: set.size });
+  return set;
+}
+
+/** C18 (2026-07-26 bugfix batch) — set of every real `ref.acts.act_cd`. `ref.sections` has
+ * ~4,625 rows whose `act_sec_cd` points at NO row in `ref.acts` (verified live,
+ * `docs/bugfix-batch-2026-07-26/HANDOFF.md`) — a pre-existing ref-data integrity gap, not
+ * something this module can repair (CLAUDE.md: never invent `ref.*` rows). An UNSCOPED section
+ * lookup (`resolveSection` with no `actCds` to filter by) can land on one of those dangling rows
+ * and hand back a garbage `act_cd`; using it as `record_offences.act_id` crashes the whole write
+ * with a raw FK-violation 500. This cache lets `buildOffenceRows` verify a resolved act_cd is
+ * real before trusting it, same process-lifetime cache rule as `loadActs`/`loadKnownActLabels`. */
+export async function loadValidActCds(trx) {
+  if (cache.has('actCdSet')) return cache.get('actCdSet');
+  const acts = await loadActs(trx);
+  const set = new Set(acts.map((a) => a.act_cd));
+  cache.set('actCdSet', set);
+  log.debug('loadValidActCds: built and cached valid act_cd set', { size: set.size });
   return set;
 }
 
@@ -469,9 +532,12 @@ export async function resolvePropertyMajorCategory(trx, val) {
 /** Resolve a property MINOR category ("Type of property") to
  * `record_properties.minor_category_id` (FK -> ref.other_property_items.property_cd). Numeric
  * code passes through (form); a label is looked up against ref.other_property_items.property.
- * Only the DEFAULT other_property_items branch resolves here — arms/drugs/generic subtypes live
- * in their own ref tables that this single registry field does not map, so those stay null (a
- * strict improvement over today's blanket drop, not a regression). */
+ * Only the DEFAULT other_property_items branch resolves here — arms/drugs/jewelry/currency/
+ * document/electric/vehicle subtypes have their OWN dedicated `record_properties` columns
+ * (fire_arm_id, arms_subtype_id, drug_type_id, ...) and are resolved by
+ * `resolvePropertyTypeColumn` below against their OWN ref tables — never written into
+ * `minor_category_id` itself (that FKs only to `ref.other_property_items`; a drug/arms ref code
+ * written there would be a dangling FK, the exact class of bug C18 fixed for `record_offences`). */
 export async function resolvePropertyMinorCategory(trx, val) {
   if (val === null || val === undefined || val === '') return null;
   if (isNumericCode(val)) {
@@ -481,4 +547,54 @@ export async function resolvePropertyMinorCategory(trx, val) {
   const row = await trx('ref.other_property_items').whereRaw('LOWER(property) = ?', [norm(val)]).first();
   log.debug(row ? 'resolvePropertyMinorCategory: resolved label to ref code' : 'resolvePropertyMinorCategory: miss — label unmatched, category dropped', { val, id: row?.property_cd ?? null });
   return row ? row.property_cd : null;
+}
+
+/** C9 (2026-07-26 bugfix batch) — the type-specific property columns
+ * (`fire_arm_id`/`arms_subtype_id`/`drug_type_id`/`jewelry_type_id`/`currency_type_id`/
+ * `document_type_id`/`electric_good_id`/`automobile_id`) each FK to their OWN dedicated ref
+ * table, separate from `minor_category_id`/`ref.other_property_items`. The interactive form
+ * submits the numeric ref code directly for these (no resolution needed — passthrough); bulk
+ * import submits the frozen template's dropdown LABEL text, which had NO resolution path at all
+ * before this — `coerceByType`'s integer branch just `parseInt`'d the label to NaN -> null,
+ * silently dropping the type on every arms/drugs/jewelry/... import row (most of what the
+ * tester's "PROPERTY Category nhi aaya" meant — proven against a real ARREST sample sheet where
+ * 11/15 filled property rows were DRUGS/ARMS). Each ref table here is a flat `{code, label}`
+ * pair with no cross-table ambiguity (a fire_arms label and a drug_types label don't collide,
+ * and each `record_properties` column already implies exactly one ref table via its own
+ * field_registry mapping — see config/fields/common.json's prop_fire_arms_type/prop_drug_type/
+ * etc), so no major-category scoping is needed to disambiguate which table to search, unlike
+ * `resolveSection`'s act-scoping. `explosive_type_id`/`cultural_property_id`/`arms_made_id` are
+ * deliberately NOT in this map — no field_registry row maps to them today (verified across every
+ * config/fields/*.json), so they are unreachable dead columns; adding untested resolution for
+ * columns nothing ever populates would be unjustified scope creep. */
+const PROPERTY_TYPE_REF_TABLES = {
+  fire_arm_id: { table: 'ref.fire_arms', idCol: 'fire_arms_cd', labelCol: 'fire_arms' },
+  arms_subtype_id: { table: 'ref.fire_arms_subtypes', idCol: 'arms_subtype_cd', labelCol: 'arms_subtype' },
+  drug_type_id: { table: 'ref.drug_types', idCol: 'drug_type_cd', labelCol: 'drug_type' },
+  jewelry_type_id: { table: 'ref.jewelry_types', idCol: 'jewelry_type_cd', labelCol: 'jewelry_type' },
+  currency_type_id: { table: 'ref.currency_types', idCol: 'currency_type_cd', labelCol: 'currency_type' },
+  document_type_id: { table: 'ref.document_types', idCol: 'document_type_cd', labelCol: 'document_type' },
+  electric_good_id: { table: 'ref.electric_goods', idCol: 'electric_goods_cd', labelCol: 'electric_goods' },
+  automobile_id: { table: 'ref.automobiles', idCol: 'automobile_cd', labelCol: 'automobile' },
+};
+
+export function isDeferredPropertyTypeColumn(column) {
+  return Object.prototype.hasOwnProperty.call(PROPERTY_TYPE_REF_TABLES, column);
+}
+
+/** Resolve one of the type-specific property columns above (numeric passthrough, or a label
+ * lookup against that column's own dedicated ref table). Returns null — never a dangling id —
+ * on a miss; the caller drops the column entirely, same "omit rather than write a bogus FK"
+ * contract as resolvePropertyMajorCategory/resolvePropertyMinorCategory. */
+export async function resolvePropertyTypeColumn(trx, column, val) {
+  if (val === null || val === undefined || val === '') return null;
+  if (isNumericCode(val)) {
+    log.debug('resolvePropertyTypeColumn: already a numeric ref code — passthrough', { column, val });
+    return parseInt(val, 10);
+  }
+  const spec = PROPERTY_TYPE_REF_TABLES[column];
+  if (!spec) return null;
+  const row = await trx(spec.table).whereRaw(`LOWER(${spec.labelCol}) = ?`, [norm(val)]).first();
+  log.debug(row ? 'resolvePropertyTypeColumn: resolved label to ref code' : 'resolvePropertyTypeColumn: miss — label unmatched, dropped', { column, val, id: row?.[spec.idCol] ?? null });
+  return row ? row[spec.idCol] : null;
 }

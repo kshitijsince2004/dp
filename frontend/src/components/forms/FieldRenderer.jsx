@@ -329,6 +329,30 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
       const filterPincode = (v) => String(v).replace(/\D/g, '').slice(0, 6);
       return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, filterPincode(v))} status={status} placeholder={placeholder} className={inputClassName} maxLength={6} inputMode="numeric" />;
     }
+    // Mobile-number fields (C3, 2026-07-26): same convention as pincode (#B4) — digits only at
+    // keystroke, capped at 10 (Indian mobile), via validation_rules.pattern:"mobile". Submit-time
+    // check (exact 10 digits) lives in fieldPatterns.js/validateFieldPattern, already wired
+    // generically through DynamicForm's validateSection. Empty stays valid (field is optional —
+    // was and remains not `required`).
+    if (rules.pattern === 'mobile') {
+      const filterMobile = (v) => String(v).replace(/\D/g, '').slice(0, 10);
+      return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, filterMobile(v))} status={status} placeholder={placeholder} className={inputClassName} maxLength={10} inputMode="numeric" />;
+    }
+    // UIDB "Approximate Age" (C5, 2026-07-26; re-report of #B9 — the B9 pass added the
+    // age_range submit-time pattern check but no keystroke filter, so this field — the ONLY age
+    // field UIDB actually has (config/fields/uidb.json `approx_age`) — still let an officer type
+    // anything and only flagged it after the field lost focus). `approx_age` is deliberately
+    // free-ISH (fieldPatterns.js AGE_RANGE_SHAPE): a bare number ("30"), a range ("25-30"), "60+",
+    // or "unknown"/"Unknown" are all legitimate — do NOT reduce this to digits-only, that would
+    // break the range/unknown use case the field exists for. Filter to the superset of characters
+    // that shape can ever use (digits, hyphen, plus, whitespace, and only the letters that spell
+    // "unknown") so stray/garbage characters are genuinely unenterable, while every legitimate
+    // value stays fully typeable letter-by-keystroke. Final exact-shape enforcement (e.g. rejecting
+    // "unknown" or an out-of-range number) still happens on blur/submit via validateFieldPattern.
+    if (rules.pattern === 'age_range') {
+      const filterAgeRange = (v) => String(v).replace(/[^0-9uUnNkKoOwW+\-\s]/g, '').slice(0, 20);
+      return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, filterAgeRange(v))} status={status} placeholder={placeholder} className={inputClassName} maxLength={20} />;
+    }
     return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} className={inputClassName} />;
   }
 

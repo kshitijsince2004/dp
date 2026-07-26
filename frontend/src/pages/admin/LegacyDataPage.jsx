@@ -401,7 +401,13 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
     if (polledBatch && TERMINAL_STATUSES.has(polledBatch.status) && step !== 3) {
       log.info('action:import_poll_terminal', { batchId: confirmedBatchId, status: polledBatch.status, importedRows: polledBatch.imported_rows, linked: polledBatch.linked, unmatched: polledBatch.unmatched });
       setStep(3);
-      if (polledBatch.status === 'IMPORTED' && !isHC) {
+      if (polledBatch.status === 'IMPORTED') {
+        // C10 fix (2026-07-26): this used to be gated `&& !isHC`, so an HC's own "Import
+        // Batches" tab never refetched after their own import finished — the tab kept
+        // showing whatever it last loaded (often empty, if this was the operator's first
+        // import of the session), reading as "history isn't showing up" until a manual
+        // page reload or the header's Refresh button. DISTRICT_OFFICER already refreshed
+        // correctly; there's no reason HC should behave differently here.
         onImported?.();
       }
     }

@@ -116,6 +116,17 @@ const LEVEL_FALLBACK = { JCP: 'HQ', SCP: 'HQ' };
 //     applied (fail open exactly as before — an admin who forgets to author a contract
 //     for a new level doesn't accidentally lock everyone out).
 //
+// ⚠ SCOPE UPDATE (2026-07-26, bugfix C1) — READ BEFORE ACTING ON THE NOTES BELOW.
+// Masking with a curated key list now applies to **HQ only**. DISTRICT / JCP / SCP each carry a
+// `["*"]` wildcard contract (config/contracts/ops_chain.json) because they are *approval* steps —
+// they cannot approve a record they cannot read. Before this change, DISTRICT's contract listed
+// 23 keys and a DCP reviewing an approved record saw act/section, major/minor head, the whole
+// occurrence block, and every complainant/victim/accused/property as EMPTY — reported as a bug,
+// root-caused to exactly this contract (the tester's own logs show `visibleKeyCount:23`). The
+// contracts were authored as stubs back when masking was a silent no-op, and Integration 5 turned
+// masking on without revisiting them. ACP/SUB_DIV still has no contract at all (fail-open).
+// Consequence: the three notes below now describe HQ_ANALYST/HQ_ADMIN behaviour only.
+//
 // KNOWN CONFIG MISMATCH (reported, not patched here per architect ruling — verified
 // against config/fields/common.json + config/fields/case.json, not just guessed at):
 //  - CASE has NO "status" field_key at all: common.json's "status" field_key's
@@ -222,6 +233,15 @@ async function resolveMasking(recordType, user) {
     return null; // no contract authored for this level => no masking (default)
   }
   const visibleKeys = parseArray(contract.visible_field_keys);
+  // `["*"]` = "this level sees the whole record" (bugfix 2026-07-26 / C1). Authored as a
+  // contract row rather than by deleting the row so the row's `aggregate_definitions` (and
+  // the workflow engine's DIRECT_HQ route lookup, which reads these same rows) survive.
+  // Review levels (DISTRICT/JCP/SCP) approve records — they cannot approve what they can't
+  // read — so they carry a wildcard contract; HQ keeps a curated summary list (user ruling).
+  if (visibleKeys.includes('*')) {
+    log.debug('resolveMasking: exit — wildcard contract, full record visible', { recordType, userLevel, contractCode: contract.code });
+    return null;
+  }
   log.debug('resolveMasking: exit — masking active', { recordType, userLevel, contractCode: contract.code, visibleKeyCount: visibleKeys.length });
   return visibleKeys;
 }

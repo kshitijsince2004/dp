@@ -45,6 +45,8 @@
   "recordTypes": {
     "CASE": "Cases (FIR) Master",
     "ARREST": "Arrest Person Master",
+    "KALANDRA": "Kalandra (Non-FIR Arrest)",
+    "ARREST_AGAINST_FIR": "Arrest (Against FIR)",
     "PCR_CALL": "PCR",
     "UIDB": "UIDB Unidentified Bodies",
     "MISSING": "Missing Persons Register"

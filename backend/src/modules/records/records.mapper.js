@@ -12,7 +12,8 @@ import {
   resolveAct, resolveSection, resolveMajorHead, resolveMinorHead,
   resolveLocalHead, resolveBeat,
   resolvePropertyMajorCategory, resolvePropertyMinorCategory,
-  loadKnownActLabels,
+  resolvePropertyTypeColumn, isDeferredPropertyTypeColumn,
+  loadKnownActLabels, loadValidActCds,
 } from './records.normalize.js';
 import { getLogger } from '../../utils/logger.js';
 
@@ -205,14 +206,34 @@ function coerceByType(dataType, raw) {
   }
 }
 
-/** 'DD/MM/YYYY HH:mm' | 'DD/MM/YYYY' | ISO -> ISO timestamp for a timestamptz column. */
+/** 'DD/MM/YYYY HH:mm' | 'DD/MM/YYYY' | ISO ('YYYY-MM-DDTHH:mm[:ss]') -> ISO timestamp for a
+ * timestamptz column.
+ *
+ * C15 fix (2026-07-26 bugfix batch): the date/time split only recognized a SPACE separator
+ * ('DD/MM/YYYY HH:mm'), matching the frontend's DateTimePickerPopup output — but this function
+ * is also reachable with a 'T'-separated ISO datetime string (e.g. from a direct API caller, or
+ * any future producer that emits `Date.prototype.toISOString()`-shaped input). Splitting only on
+ * whitespace left the whole string as `datePart` in that case (`normalizeDate`'s ISO-prefix match
+ * still resolved the date correctly) and `timePart` undefined, so the entered TIME was silently
+ * discarded and replaced with `T00:00:00` — proven live: POST with
+ * `info_received_at_ps_date_time: "2026-07-26T10:00:00"` persisted as
+ * `2026-07-26 00:00:00+00` in `fir_details.info_received_at_ps`. Splitting on `T` OR whitespace
+ * fixes both input shapes; `normalizeDate` already tolerates either date form. (This was found
+ * while root-causing the tester's "Missing required fields: Information received at P.S." reports
+ * — those specific failures are a DIFFERENT bug: the field arrived explicitly `null`, not
+ * malformed, i.e. the frontend never populated it — see the C15 investigation note in
+ * `docs/bugfix-batch-2026-07-26/HANDOFF.md`. This normalizer bug is fixed regardless because it
+ * is real and independently provable, and would silently corrupt any DATETIME field ever fed an
+ * ISO 'T' string, interactive or otherwise.) */
 function normalizeDateTime(raw) {
   const s = String(raw ?? '').trim();
   if (!s) return null;
-  const [datePart, timePart] = s.split(/\s+/);
+  const [datePart, timePart] = s.split(/[T\s]+/);
   const iso = normalizeDate(datePart);
   if (!iso) return null;
-  if (timePart && /^\d{1,2}:\d{2}(:\d{2})?$/.test(timePart)) return `${iso}T${timePart.length === 5 ? timePart + ':00' : timePart}`;
+  if (timePart && /^\d{1,2}:\d{2}(:\d{2})?/.test(timePart)) {
+    return `${iso}T${timePart.length === 5 ? timePart + ':00' : timePart.slice(0, 8)}`;
+  }
   return `${iso}T00:00:00`;
 }
 
@@ -275,6 +296,27 @@ function decorateEnumUpper(table, column, val) {
   if (typeof val !== 'string' || !val) return val;
   if (!ENUM_UPPER_COLUMNS[table]?.has(column)) return val;
   return val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
+}
+
+/** C4 fix (2026-07-26 bugfix batch) — read-side inverse of `toBool`'s "Yes"/"No" acceptance,
+ * for RADIO fields that are backed by a genuine boolean column but AUTHORED with STRING
+ * "Yes"/"No" options (as opposed to `mp_known`/`identified`, whose options are the literal
+ * booleans `[true, false]` and whose frontend widget already compares real booleans — those are
+ * untouched by this check and must stay untouched). Without this, GET returned the raw pg
+ * boolean (`true`/`false`); the frontend RADIO widget matches `value === option.value`, and
+ * `true !== "Yes"`, so the field rendered as UNANSWERED on every reopen even though the DB value
+ * was correct — proven live for `nafis_prepared`/`dossier_prepared`/`proclaimed_offender`
+ * (tester-reported as ARREST edits "not persisting"; the write path round-trips these three
+ * correctly on its own — verified via a direct create/update/GET test — so an unanswered-looking
+ * field on reopen, silently resubmitted as unset, is the mechanism that best fits the report).
+ * Scoped narrowly by checking the field's OWN first option's type, not a hardcoded field-key
+ * list, so it never needs updating as fields are added/removed in config/fields/*.json (not
+ * this module's file). */
+function decorateYesNoRadio(field, val) {
+  if (typeof val !== 'boolean') return val;
+  if (field?.field_type !== 'RADIO') return val;
+  if (typeof field.options?.[0]?.value !== 'string') return val;
+  return val ? 'Yes' : 'No';
 }
 
 /** pg already auto-deserializes jsonb columns (arrays/objects arrive as real JS values, not
@@ -622,8 +664,15 @@ async function splitPersons(trx, registry, recordType, data, personsInput) {
 // record_properties FK columns that may arrive as a LABEL (bulk import) rather than the numeric
 // ref code the interactive form submits — deferred past coerceByType (which would int-coerce a
 // label to null and drop it) and resolved async against ref.* in splitProperties. Mirrors the
-// detail-table DEFERRED_FK_LABEL_COLUMNS pattern.
-const DEFERRED_PROPERTY_FK_COLUMNS = new Set(['major_category_id', 'minor_category_id']);
+// detail-table DEFERRED_FK_LABEL_COLUMNS pattern. C9 (2026-07-26): extended past the two category
+// columns to every type-specific column resolvePropertyTypeColumn covers (fire_arm_id,
+// arms_subtype_id, drug_type_id, jewelry_type_id, currency_type_id, document_type_id,
+// electric_good_id, automobile_id) — see that function's doc comment in records.normalize.js.
+const DEFERRED_PROPERTY_FK_COLUMNS = new Set([
+  'major_category_id', 'minor_category_id',
+  'fire_arm_id', 'arms_subtype_id', 'drug_type_id', 'jewelry_type_id',
+  'currency_type_id', 'document_type_id', 'electric_good_id', 'automobile_id',
+]);
 
 function normalizePropertyValue(column, raw) {
   if (DEFERRED_PROPERTY_FK_COLUMNS.has(column)) return raw;
@@ -647,6 +696,17 @@ async function resolvePropertyFkColumns(trx, columns) {
     const id = await resolvePropertyMinorCategory(trx, rawLabel);
     if (id == null) { delete columns.minor_category_id; log.debug('resolvePropertyFkColumns: minor_category_id unresolved, column dropped', { rawLabel }); }
     else { columns.minor_category_id = id; log.debug('resolvePropertyFkColumns: resolved minor_category_id', { rawLabel, resolvedId: id }); }
+  }
+  // C9 (2026-07-26): the type-specific columns (fire_arm_id/arms_subtype_id/drug_type_id/...)
+  // each resolve against their OWN dedicated ref table via resolvePropertyTypeColumn — never
+  // through resolvePropertyMinorCategory (that FKs only to ref.other_property_items; writing a
+  // drug/arms ref code there would be a dangling FK).
+  for (const column of Object.keys(columns)) {
+    if (!isDeferredPropertyTypeColumn(column)) continue;
+    const rawLabel = columns[column];
+    const id = await resolvePropertyTypeColumn(trx, column, rawLabel);
+    if (id == null) { delete columns[column]; log.debug('resolvePropertyFkColumns: type column unresolved, column dropped', { column, rawLabel }); }
+    else { columns[column] = id; log.debug('resolvePropertyFkColumns: resolved type column', { column, rawLabel, resolvedId: id }); }
   }
 }
 
@@ -821,6 +881,7 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
     log.debug('buildOffenceRows: sourced rows from zipped act/section/head strings', { recordType, rowCount: rows.length });
   }
 
+  const validActCds = await loadValidActCds(trx);
   const built = [];
   for (const r of rows) {
     if (!r.act && !r.section) continue;
@@ -829,9 +890,31 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
     if (r.section) {
       const resolved = await resolveSection(trx, r.section, actCds);
       sectionId = resolved.sectionId;
-      // A group alias (e.g. 'IPC' -> several act_cds) has no single actId of its own —
-      // the matched section's own act_sec_cd is the definitive act for THIS citation.
-      if (actId == null && resolved.actCd != null) actId = resolved.actCd;
+      // A group alias (e.g. 'IPC' -> several act_cds) has no single actId of its own — the
+      // matched section's own act_sec_cd is the definitive act for THIS citation. C18
+      // (2026-07-26): this borrow is only trustworthy when `actCds` was non-empty, i.e.
+      // `resolveSection` was SCOPED to a real, already-resolved act. When `actCds` is empty
+      // (the act itself never resolved), `resolveSection` runs UNSCOPED against the whole
+      // `ref.sections` table and can match a section row belonging to a completely different,
+      // unrelated act — reproduced live: act "AIRCRAFT RULES,1937" failed to resolve (a comma-
+      // merge formatting mismatch, reported separately), section "24B" then matched unscoped
+      // and returned an unrelated act_sec_cd. Gating on `actCds.length` restores this borrow to
+      // the group-alias case it was actually designed for.
+      if (actId == null && actCds.length > 0 && resolved.actCd != null) actId = resolved.actCd;
+    }
+    // C18 (2026-07-26): defense-in-depth — `ref.sections` has ~4,625 rows whose `act_sec_cd`
+    // references NO row in `ref.acts` at all (a pre-existing ref-data integrity gap; never
+    // "fixed" by inventing a `ref.acts` row per CLAUDE.md). Any act_id this function is about to
+    // use — however it was derived — is verified against the real, cached `ref.acts` id set
+    // before being trusted; an unresolvable one degrades to free text exactly like a genuine
+    // resolveAct miss, never reaching the INSERT as a dangling FK (the raw
+    // `record_offences_act_id_fkey` 500 this closes).
+    if (actId != null && !validActCds.has(actId)) {
+      log.warn('buildOffenceRows: resolved act_id does not exist in ref.acts — falling back to free text', {
+        recordType, act: r.act, section: r.section, danglingActId: actId,
+      });
+      otherActName = otherActName || r.act || null;
+      actId = null;
     }
     // record_offences CHECK: act_id NOT NULL OR other_act_name NOT NULL. A group alias with
     // no section match (or no section at all) still has neither — fall back to storing the
@@ -960,7 +1043,7 @@ export async function recomposeRecord(trx, registry, recordType, {
     const source = targetTable === 'records' ? spineRow : (targetTable === detailTable ? detailRow : null);
     if (!source) continue;
     if (shape.column in source && source[shape.column] !== undefined) {
-      data[f.field_key] = decorateByType(cols[targetTable]?.[shape.column], source[shape.column]);
+      data[f.field_key] = decorateYesNoRadio(f, decorateByType(cols[targetTable]?.[shape.column], source[shape.column]));
     }
   }
 
@@ -1062,7 +1145,7 @@ function recomposePersonFields(personFields, personRow, into, cols) {
     const sourceTableName = subtypeTable && personRow.subtypes?.[subtypeTable] ? subtypeTable : 'persons';
     if (source && shape.column in source && source[shape.column] !== undefined && source[shape.column] !== null) {
       const typed = decorateByType(cols?.[sourceTableName]?.[shape.column], source[shape.column]);
-      into[f.field_key] = decorateEnumUpper(sourceTableName, shape.column, typed);
+      into[f.field_key] = decorateYesNoRadio(f, decorateEnumUpper(sourceTableName, shape.column, typed));
     }
   }
 }

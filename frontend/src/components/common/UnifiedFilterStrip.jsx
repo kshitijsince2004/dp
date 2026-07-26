@@ -38,9 +38,34 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
     return () => clearTimeout(timer);
   }, [localSearch, filters, onFilterChange]);
 
+  // "Kalandra" and "Arrest (Against FIR)" are NOT record types — they are derived
+  // sub-filters of ARREST, decided by the backend (record.record_type CHECK only allows
+  // CASE/ARREST/PCR_CALL/MISSING/UIDB). The dropdown just offers two convenience entries
+  // that resolve to { type: 'ARREST', arrestKind: 'KALANDRA' | 'AGAINST_FIR' } — the actual
+  // OR-of-signals classification (is_dd_based / no CASE_ARREST link / no fir_no) happens
+  // server-side via GET /records?record_type=ARREST&arrest_kind=... (P4 — never classify here).
+  const ARREST_KALANDRA = 'ARREST_KALANDRA';
+  const ARREST_AGAINST_FIR = 'ARREST_AGAINST_FIR';
+
   const handleTypeChange = (value) => {
-    onFilterChange({ ...filters, type: value });
+    if (value === ARREST_KALANDRA) {
+      onFilterChange({ ...filters, type: 'ARREST', arrestKind: 'KALANDRA' });
+    } else if (value === ARREST_AGAINST_FIR) {
+      onFilterChange({ ...filters, type: 'ARREST', arrestKind: 'AGAINST_FIR' });
+    } else {
+      onFilterChange({ ...filters, type: value, arrestKind: undefined });
+    }
   };
+
+  // Derive the option key the Select should show as selected: plain filters.type for
+  // everything except the two ARREST sub-filters, which fold type+arrestKind back into
+  // their single dropdown entry.
+  const selectedTypeValue =
+    filters.type === 'ARREST' && filters.arrestKind === 'KALANDRA'
+      ? ARREST_KALANDRA
+      : filters.type === 'ARREST' && filters.arrestKind === 'AGAINST_FIR'
+      ? ARREST_AGAINST_FIR
+      : (filters.type || 'ALL');
 
   const handleStatusChange = (value) => {
     onFilterChange({ ...filters, status: value });
@@ -66,6 +91,8 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
     { value: 'ALL', label: t('common.allCategories', 'All Categories') },
     { value: 'CASE', label: t('recordTypes.CASE', 'Cases (FIR)') },
     { value: 'ARREST', label: t('recordTypes.ARREST', 'Arrests') },
+    { value: ARREST_KALANDRA, label: t('recordTypes.KALANDRA', 'Kalandra (Non-FIR Arrest)') },
+    { value: ARREST_AGAINST_FIR, label: t('recordTypes.ARREST_AGAINST_FIR', 'Arrest (Against FIR)') },
     { value: 'PCR_CALL', label: t('recordTypes.PCR_CALL', 'PCR Calls') },
     { value: 'MISSING', label: t('recordTypes.MISSING', 'Missing Persons') },
     { value: 'UIDB', label: t('recordTypes.UIDB', 'UIDB') }
@@ -76,10 +103,10 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
       {/* Category Filter */}
       <div className="flex items-center gap-2">
         <ListFilter size={16} className="text-[var(--accent-color)]" />
-        <Select 
-          value={filters.type || 'ALL'} 
+        <Select
+          value={selectedTypeValue}
           onChange={handleTypeChange}
-          style={{ width: 160 }}
+          style={{ width: 200 }}
           variant="borderless"
           className="bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors font-semibold text-slate-700"
           popupMatchSelectWidth={false}

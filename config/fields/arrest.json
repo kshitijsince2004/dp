@@ -1437,6 +1437,10 @@
    "table": "arrest_details",
    "column": "arresting_officer_mobile"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "mobile"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",

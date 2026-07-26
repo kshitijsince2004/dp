@@ -34,7 +34,7 @@
 import {
   resolveAct, resolveSection, resolveMajorHead, resolveMinorHead, resolveLocalHead, resolveBeat,
   resolvePropertyMajorCategory, resolvePropertyMinorCategory,
-  normalizeDate,
+  normalizeDate, toBool,
 } from '../records/records.normalize.js';
 import { validateRequiredFields } from '../records/records.service.js';
 import { enumCoercion, pincodeCoercion, resolveStorage } from '../records/records.mapper.js';
@@ -523,6 +523,16 @@ function detectCoercionWarnings(recordType, payload, registryMap) {
         if (c) push(fk, label, val, c.to, 'status');
       } else if (col === 'pincode') {
         if (pincodeCoercion(val)) push(fk, label, val, null, 'pincode');
+      } else if (registryMap[fk]?.field_type === 'BOOLEAN') {
+        // C11 (2026-07-26): BOOLEAN-typed registry fields (e.g. UIDB's filed_by_acp_sdm,
+        // D2-ruled to stay a real boolean column) write through records.mapper.js's
+        // coerceByType -> toBool(raw), which only recognizes yes/true/1/y and no/false/0/n —
+        // anything else (a still-circulating pre-D2 template's "SDM"/"ACP"/"None" cell, or a
+        // legacy "Nil"/"N/A") silently returns null with zero signal anywhere. Reuses the
+        // EXACT toBool the write path calls (records.normalize.js), same "reuse the real
+        // detector" discipline as the branches above — never claims a drop the write path
+        // won't actually make.
+        if (toBool(val) === null) push(fk, label, val, null, 'yes/no value');
       }
     }
   };

@@ -6,7 +6,7 @@ import { getLinksForRecord } from '../record-links/record-links.service.js';
 import { toISO } from '../../utils/dateFormat.js';
 import * as workflowEngine from '../workflow/workflow.engine.js';
 import * as mapper from './records.mapper.js';
-import { resolveMajorHead, resolveLocalHead, normalizeDate } from './records.normalize.js';
+import { resolveMajorHead, resolveLocalHead, normalizeDate, deriveFirYear } from './records.normalize.js';
 import { getStatusOptionsForType } from '../fields/statusOptions.config.js';
 import { getLogger } from '../../utils/logger.js';
 import { redact } from '../../utils/redact.js';
@@ -231,22 +231,39 @@ async function upsertPersons(trx, recordId, personEntries, oldPersonRows) {
  * `record_status_events.property_id` is `ON DELETE CASCADE`, so delete-and-reinsert would
  * silently destroy a property's status-change history on every unrelated edit.
  *
- * B1 safety net note (2026-07-23): unlike persons, a record legitimately having zero property
- * is a real state (a CASE may recover/seize nothing), so this function deliberately does NOT
- * hard-block a full property wipe the way upsertPersons blocks a full person wipe — that would
- * make "I removed the only property entry" impossible to save. It DOES guard the one "clearly
- * invalid" case: a full wipe arriving in the SAME update where the persons guard above just
- * fired (`personsGuardTripped`) — that specific correlation means the same fragile repeater-
- * hydration bug that failed to seed persons almost certainly also failed to seed properties, so
- * refusing that one is the same defense-in-depth call, not a guess. Every other full-wipe case
- * is allowed through, just logged at `warn` (elevated from the pre-existing `info`) for
- * visibility. */
-async function upsertProperties(trx, recordId, propertyEntries, oldPropertyRows, personIdBySourceIndex, { personsGuardTripped = false } = {}) {
+ * C16 (2026-07-26 bugfix batch) — upgraded from the 2026-07-23 correlated-only guard to the
+ * SAME unconditional delete-to-zero guard `upsertPersons` has always had. Log-evidence
+ * quantification (`temp delete later/logs(1)/logs/backend.log`, 32 "FULL WIPE" events across 6
+ * records during the 2026-07-25 20:40-23:11 tester session): 29/32 were incoming===existing
+ * ID-churn (every property re-submitted with no `id`, so each was treated as new — net count
+ * unchanged, but it silently discards `record_status_events` history, a real but SEPARATE bug in
+ * the frontend autosave payload, out of this module's scope, reported not fixed). The other 3/32
+ * were genuine `properties: []` against a record that had 1-2 rows, with `persons[]` sent
+ * correctly alongside (so the OLD correlated condition — requiring the persons guard to have
+ * ALSO tripped — never engaged and did not protect them). One of those three (record
+ * `b2918fd9-…`) is proven transient-then-recovered by a later autosave in the same session; the
+ * other two are proven to have stayed at zero for the rest of the logged session — i.e. real,
+ * observed data loss reaching the tester's "property section becomes empty" report.
+ *
+ * D1 (carried over from the 2026-07-23 persons ruling, applied identically here): a record
+ * legitimately having zero properties IS a real state (a CASE may recover/seize nothing), but
+ * this write path can no longer distinguish "officer intentionally cleared the only property"
+ * from "frontend repeater-hydration race sent an empty array by accident" — exactly the
+ * ambiguity that made the persons guard unconditional. Until the frontend gets an explicit
+ * "clear all properties" affordance, this guard makes intentional full-clearing impossible via
+ * a normal edit; that trade-off is accepted the same way it was for persons. Does NOT change
+ * behavior for: `properties: []` against a record already at zero (no-op either way);
+ * `properties` omitted entirely (already means "don't touch", never reaches this function);
+ * or a non-empty incoming array that legitimately drops one of several existing properties
+ * (still deleted below exactly as before — only the ALL-existing-rows-to-zero case is guarded). */
+async function upsertProperties(trx, recordId, propertyEntries, oldPropertyRows, personIdBySourceIndex) {
   log.debug('upsertProperties: enter', { recordId, incomingCount: propertyEntries.length, existingCount: oldPropertyRows.length });
 
-  if (propertyEntries.length === 0 && oldPropertyRows.length > 0 && personsGuardTripped) {
-    log.warn('upsertProperties: GUARD TRIPPED (B1 safety net, correlated with persons guard) — refusing to delete all existing properties, left untouched', {
-      recordId, existingCount: oldPropertyRows.length,
+  if (propertyEntries.length === 0 && oldPropertyRows.length > 0) {
+    log.warn('upsertProperties: GUARD TRIPPED (C16 delete-to-zero guard, matches B1 persons guard) — refusing to delete all existing properties, left untouched', {
+      recordId,
+      existingCount: oldPropertyRows.length,
+      existingIds: oldPropertyRows.map((p) => p.id),
     });
     return { personIdBySourceIndex, statusChanges: [] };
   }
@@ -278,11 +295,16 @@ async function upsertProperties(trx, recordId, propertyEntries, oldPropertyRows,
   }
 
   const toDelete = oldPropertyRows.filter((p) => !keptIds.has(p.id)).map((p) => p.id);
-  const isFullWipe = oldPropertyRows.length > 0 && toDelete.length === oldPropertyRows.length;
-  // [PHAROS-DEBUG] property write lifecycle — same shape/intent as upsertPersons above.
-  // Full wipes (existing>0, everything being deleted) are elevated to `warn` — allowed to
-  // proceed (a record may legitimately end up with zero property), but visible in normal log
-  // review rather than buried at `info`, per the B1 safety-net review (2026-07-23). (Calling
+  // NOTE (C16, 2026-07-26): the guard above already caught propertyEntries.length===0, so this
+  // can no longer be a true "reach zero" wipe — it means every OLD row's id went unmatched while
+  // `propertyEntries` was non-empty (the "ID-churn" pattern found while quantifying C16: the
+  // frontend autosave omits `properties[].id`, so an existing property is deleted and
+  // re-inserted under a brand-new id even though the net count is unchanged). That still silently
+  // destroys `record_status_events` history per this function's doc comment, so it stays
+  // elevated to `warn` for visibility — but it is a frontend defect (property id not echoed
+  // back), out of this module's scope; reported to the Director rather than fixed here.
+  const isFullReplace = oldPropertyRows.length > 0 && toDelete.length === oldPropertyRows.length;
+  // [PHAROS-DEBUG] property write lifecycle — same shape/intent as upsertPersons above. (Calling
   // log.warn/log.info directly in each branch, not via a detached function reference — winston's
   // child-logger defaultMeta (the `module` tag) only merges correctly when the method is invoked
   // as `log.warn(...)`, not through a variable that lost its `this` binding.)
@@ -293,8 +315,8 @@ async function upsertProperties(trx, recordId, propertyEntries, oldPropertyRows,
     kept: keptIds.size,
     deleting: toDelete.length,
   };
-  if (isFullWipe) {
-    log.warn('upsertProperties: lifecycle summary — FULL WIPE (allowed, properties may legitimately reach zero)', lifecycleFields);
+  if (isFullReplace) {
+    log.warn('upsertProperties: lifecycle summary — FULL ID-CHURN (all existing rows unmatched and replaced; net count unchanged but status-event history lost — see C16 note)', lifecycleFields);
   } else {
     log.info('upsertProperties: lifecycle summary', lifecycleFields);
   }
@@ -745,6 +767,49 @@ export const listRecords = async (recordType, filters, jurisdictionQuery) => {
     });
   }
 
+  // C12 (2026-07-26): derived Kalandra / Arrest-against-FIR filter — GET /api/records?
+  // record_type=ARREST&arrest_kind=KALANDRA|AGAINST_FIR. Omitted or any other value behaves
+  // exactly as before this change (no-op). Definition is the user's verbatim ruling (R3,
+  // docs/bugfix-batch-2026-07-26/HANDOFF.md): Kalandra = `is_dd_based IS TRUE` OR no
+  // `CASE_ARREST` link OR FIR number null/empty — deliberately OR'd, not AND'd, "coz there are
+  // many dumb users" who fill the discriminator inconsistently. AGAINST_FIR is the exact
+  // complement. This mirrors the LINK-EXISTENCE shape of analytics.controller.js's
+  // `countStandaloneArrests` (~line 536) but is NOT a call into that module (P1.4 — no
+  // cross-module service imports) and is NOT the same definition: that function only checks
+  // "no CASE_ARREST link", one of the three OR legs the user's ruling actually asked for: it is
+  // reproduced/extended here, not reused. `arr` (`arrest_details`) is already left-joined by
+  // `withListJoins`, so no new join is needed. Always additionally constrains to
+  // `record_type = 'ARREST'`, independent of the `type` param — a caller that sent `arrest_kind`
+  // without `record_type=ARREST` could otherwise pull in non-ARREST rows: those have no
+  // `arrest_details` row at all, so `arr.is_dd_based`/`arr.fir_no` are NULL and would
+  // false-positive-match the Kalandra "no link + no FIR" legs.
+  const VALID_ARREST_KINDS = new Set(['KALANDRA', 'AGAINST_FIR']);
+  if (filters.arrestKind && VALID_ARREST_KINDS.has(filters.arrestKind)) {
+    const hasCaseArrestLink = function () {
+      this.select('*')
+        .from('record_links as rl')
+        .join('link_type_registry as ltr', 'rl.link_type_id', 'ltr.id')
+        .where('ltr.code', 'CASE_ARREST')
+        .whereRaw('rl.target_record_id = records.id');
+    };
+    query = query.where('records.record_type', 'ARREST');
+    if (filters.arrestKind === 'KALANDRA') {
+      query = query.where((b) => {
+        b.where('arr.is_dd_based', true)
+          .orWhereNotExists(hasCaseArrestLink)
+          .orWhereNull('arr.fir_no')
+          .orWhere('arr.fir_no', '');
+      });
+    } else {
+      query = query
+        .where((b) => b.whereNot('arr.is_dd_based', true).orWhereNull('arr.is_dd_based'))
+        .whereExists(hasCaseArrestLink)
+        .whereNotNull('arr.fir_no')
+        .whereNot('arr.fir_no', '');
+    }
+    log.debug('listRecords: filtered by arrest_kind', { arrestKind: filters.arrestKind });
+  }
+
   const rawRecords = await query.orderBy('records.created_at', 'desc');
   log.info('listRecords: exit', { recordType, resultCount: rawRecords.length });
   return rawRecords.map((r) => ({ ...r, data: buildListSummary(r) }));
@@ -875,6 +940,18 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
     } : {}),
   });
   log.info('insertRecordCore: wrote records row (spine)', { recordId: id, recordType, psId: scope.ps_id, districtId: scope.district_id, status });
+
+  // C8 (2026-07-26, user ruling): stamp fir_details.fir_year on every CASE write, through this
+  // one write path (both interactive create and import go through insertRecordCore) — see
+  // deriveFirYear's doc comment for the year-source preference order. This is what makes the
+  // schema's existing UNIQUE(ps_id, fir_year, fir_no) constraint actually fire; before this it
+  // was always NULL and Postgres treats NULL as always-distinct, so the constraint never caught
+  // a same-PS duplicate FIR.
+  if (detailTable === 'fir_details') {
+    const firYear = deriveFirYear(split.detail.fir_no, split.detail.fir_date, normalizedRecordDate);
+    if (firYear != null) split.detail.fir_year = firYear;
+    log.debug('insertRecordCore: derived fir_year', { recordId: id, firNo: split.detail.fir_no, firDate: split.detail.fir_date, firYear });
+  }
 
   await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, scope.ps_id), ...split.detail, extra: JSON.stringify(split.detailExtra) });
   log.info('insertRecordCore: wrote detail row', { recordId: id, detailTable });
@@ -1048,6 +1125,19 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
       if (col) split.detail[col] = locId;
     }
 
+    // C8 (2026-07-26, user ruling): recompute fir_year on every CASE update, not just create —
+    // an edit can change fir_no or fir_date after the record already exists. Uses the MERGED
+    // final values (this update's split.detail if it touched the field, else the existing
+    // oldDetail row) so an edit to an unrelated field doesn't wrongly null out an already-correct
+    // fir_year. Idempotent/deterministic (P2.2) — safe to recompute unconditionally every update.
+    if (detailTable === 'fir_details') {
+      const mergedFirNo = 'fir_no' in split.detail ? split.detail.fir_no : oldDetail?.fir_no;
+      const mergedFirDate = 'fir_date' in split.detail ? split.detail.fir_date : oldDetail?.fir_date;
+      const firYear = deriveFirYear(mergedFirNo, mergedFirDate, record.record_date);
+      if (firYear != null) split.detail.fir_year = firYear;
+      log.debug('updateRecord: derived fir_year', { recordId: id, firNo: mergedFirNo, firDate: mergedFirDate, firYear });
+    }
+
     if (oldDetail) {
       await trx(detailTable).where({ record_id: id }).update({ ...split.detail, extra: JSON.stringify(split.detailExtra), updated_at: trx.fn.now() });
       log.debug('updateRecord: updated detail row', { recordId: id, detailTable });
@@ -1080,11 +1170,6 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
     const oldSingletonRows = oldPersonRows.filter((p) => !mapper.REPEATER_ROLES.has(p.role));
     const oldRepeaterRows = oldPersonRows.filter((p) => mapper.REPEATER_ROLES.has(p.role));
 
-    // B1 safety net (2026-07-23): computed against the REPEATER subset specifically (properties
-    // typically link to a repeater person, e.g. an arrestee) — see upsertProperties' doc comment
-    // for why properties don't get the unconditional hard guard persons does.
-    const personsGuardWillTrip = persons !== undefined && repeaterEntries.length === 0 && oldRepeaterRows.length > 0;
-
     await upsertPersons(trx, id, singletonEntries, oldSingletonRows);
     log.debug('updateRecord: reconciled singleton-role persons (always, regardless of persons[] param)', {
       recordId: id, singletonEntryCount: singletonEntries.length, oldSingletonCount: oldSingletonRows.length,
@@ -1097,7 +1182,7 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
 
     let propertyStatusChanges = [];
     if (properties !== undefined) {
-      const result = await upsertProperties(trx, id, split.propertyEntries, oldPropertyRows, personIdBySourceIndex, { personsGuardTripped: personsGuardWillTrip });
+      const result = await upsertProperties(trx, id, split.propertyEntries, oldPropertyRows, personIdBySourceIndex);
       propertyStatusChanges = result.statusChanges;
     } else {
       log.debug('updateRecord: properties not provided — left untouched', { recordId: id });
