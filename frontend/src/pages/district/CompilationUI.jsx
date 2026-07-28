@@ -81,7 +81,7 @@ const DIARIES = [
   {
     key: 'COMBINED_DAILY_DIARY',
     label: 'Combine Daily Diary',
-    description: 'Consolidated logs compiled over a date range — 24 report sheets',
+    description: 'Consolidated logs compiled over a date range — 25 report sheets',
     icon: Layers,
     status: 'active',
     levels: ['PS', 'DISTRICT', 'HQ'],
