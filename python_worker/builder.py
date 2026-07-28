@@ -1,3 +1,4 @@
+import os
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
@@ -15,6 +16,30 @@ _THIN_BORDER  = Border(
 )
 _TITLE_FONT   = Font(name='Arial', size=11, bold=True, color='1F3864')
 _META_FONT    = Font(name='Arial', size=9, italic=True, color='595959')
+
+
+TABLE_NAME_TO_TEMPLATE_TITLE = {
+    'excel_1manual_fir': '1. Manual FIR',
+    'excel_2eburglary_cases': '2. E-Burglary Cases',
+    'excel_3ehouse_theft_cases': '3. E-House Theft Cases',
+    'excel_4eother_theft_cases': '4. E-Other Theft Cases',
+    'excel_5mvt_cases': '5. MVT Cases',
+    'excel_8arrested_kalandara': '6. Arrested - Kalandara  Preven',
+    'excel_9arrested_efir_theft': '7. Arrested - E-FIR Theft',
+    'excel_7arrested_east_district': 'Arrested - District',
+    'excel_10arrested_efir_mv_theft': '8. Arrested - E-FIR MV Theft',
+    'excel_13arrested_24_hrs_list': '11. Arrested - Last 24 Hrs',
+    'excel_14pi_disposal_manual': '12. PI Disposal - Manual',
+    'excel_15pi_disposal_eproperty': '13. PI Disposal - E-Theft',
+    'excel_16pi_disposal_emvt': '14. PI Disposal - E-MVT',
+    'excel_18missing_persons': '15. Missing Persons',
+    'excel_19uidb': '16. UIDB (Unidentified Bodies)',
+    'excel_20abandoned_persons': '17. Abandoned Persons',
+    'excel_21traced_persons': '18. Traced Persons',
+    'excel_25inquest_registered': '19. Inquest Registered',
+    'excel_26inquest_acpsdm_disposal': '20. Inquest ACPSDM Disposal',
+    'excel_28fir_goswara_summary': '21. FIR Goswara Summary',
+}
 
 
 def _resolve_header(col_key, sheet_column_labels, shared_labels):
@@ -70,13 +95,70 @@ SHARED_COLUMN_LABELS = {
 
 def build_workbook(sheets_data, sheets, file_path, date=''):
     """
-    Build a daily-diary Excel workbook and write it to file_path.
+    Build/populate daily-diary Excel workbook based directly on reference template Daily_Diary_16Jul2026_AllStations.xlsx.
 
     sheets_data: { table_name: [row_dict, ...] }
     sheets:      list of sheet descriptor dicts from registry.SHEETS
     file_path:   absolute path for the output .xlsx file
     date:        optional date string shown in sheet headers
     """
+    template_file = os.path.join(os.path.dirname(__file__), 'templates', 'Daily_Diary_16Jul2026_AllStations.xlsx')
+    if not os.path.exists(template_file):
+        template_file = os.path.abspath('./Daily_Diary_16Jul2026_AllStations (1).xlsx')
+
+    if os.path.exists(template_file):
+        wb = openpyxl.load_workbook(template_file)
+        kept_sheet_titles = set()
+
+        for sheet_def in sheets:
+            table_name = sheet_def['table_name']
+            col_keys = sheet_def['columns']
+            rows = sheets_data.get(table_name, [])
+
+            target_title = TABLE_NAME_TO_TEMPLATE_TITLE.get(table_name)
+            if not target_title or target_title not in wb.sheetnames:
+                continue
+
+            kept_sheet_titles.add(target_title)
+            ws = wb[target_title]
+
+            # Update date in metadata row if present
+            if date and ws.cell(row=2, column=1).value:
+                cur_val = str(ws.cell(row=2, column=1).value)
+                if 'Date:' in cur_val or 'Period:' in cur_val:
+                    ws.cell(row=2, column=1).value = f"Date: {date}"
+
+            # Clear template sample data rows (row 5 downwards)
+            if ws.max_row > 4:
+                ws.delete_rows(5, ws.max_row - 4)
+
+            header_row_idx = 4
+
+            if rows:
+                for row_offset, row_dict in enumerate(rows, start=1):
+                    row_values = [row_dict.get(k, '') for k in col_keys]
+                    ws.append(row_values)
+                    actual_row = header_row_idx + row_offset
+                    ws.row_dimensions[actual_row].height = 18
+                    use_zebra = (row_offset % 2 == 0)
+                    for ci, val in enumerate(row_values, start=1):
+                        cell = ws.cell(row=actual_row, column=ci)
+                        cell.font = _DATA_FONT
+                        cell.alignment = _DATA_ALIGN
+                        cell.border = _THIN_BORDER
+                        if use_zebra:
+                            cell.fill = _ZEBRA_FILL
+
+        # Remove any template sheets that were not in active_tables/sheets
+        for sheet_title in list(wb.sheetnames):
+            if sheet_title not in kept_sheet_titles:
+                wb.remove(wb[sheet_title])
+
+        wb.save(file_path)
+        print(f'[Builder] Template-populated workbook saved: {file_path} ({len(wb.worksheets)} sheets)')
+        return
+
+    # Fallback to scratch builder if template file is unavailable
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
 
@@ -99,14 +181,12 @@ def build_workbook(sheets_data, sheets, file_path, date=''):
 
         ws = wb.create_sheet(title=sheet_title)
 
-        # Title and date rows
         ws.append([f'PHAROS Daily Diary — {label}'])
         ws.cell(row=ws.max_row, column=1).font = _TITLE_FONT
         ws.append([f'Date: {date}'] if date else [''])
         ws.cell(row=ws.max_row, column=1).font = _META_FONT
-        ws.append([])  # spacer
+        ws.append([])
 
-        # Header row
         col_headers = [_resolve_header(k, col_labels, SHARED_COLUMN_LABELS) for k in col_keys]
         ws.append(col_headers if col_headers else ['No Data'])
         header_row_idx = ws.max_row
@@ -118,7 +198,6 @@ def build_workbook(sheets_data, sheets, file_path, date=''):
             cell.alignment = _HEADER_ALIGN
             cell.border = _THIN_BORDER
 
-        # Data rows
         if not rows:
             ws.append(['No records for this date.'])
         else:
@@ -136,7 +215,6 @@ def build_workbook(sheets_data, sheets, file_path, date=''):
                     if use_zebra:
                         cell.fill = _ZEBRA_FILL
 
-        # Auto-fit column widths (cap at 45)
         for col_cells in ws.columns:
             max_len = 10
             for cell in col_cells:
@@ -153,4 +231,5 @@ def build_workbook(sheets_data, sheets, file_path, date=''):
         ws.append(['No records found for the selected date and filters.'])
 
     wb.save(file_path)
-    print(f'[Builder] Workbook saved: {file_path} ({len(wb.worksheets)} sheets)')
+    print(f'[Builder] Fallback workbook saved: {file_path} ({len(wb.worksheets)} sheets)')
+

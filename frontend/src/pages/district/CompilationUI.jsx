@@ -471,7 +471,7 @@ export default function CompilationUI() {
         params.set('date', dateFrom);
         if (dateTo && dateTo !== dateFrom) params.set('dateTo', dateTo);
         if (selectedPSIds.size > 0) params.set('psId', Array.from(selectedPSIds).join(','));
-        if (selectedFields.size < diaryReports.length) params.set('tableNames', Array.from(selectedFields).join(','));
+        if (selectedFields.size > 0) params.set('tableNames', Array.from(selectedFields).join(','));
 
         const res = await api.get(`/daily-diary/export?${params}`, { timeout: 60000 });
         jobId = res.data?.data?.job_id || res.data?.data?.id;
