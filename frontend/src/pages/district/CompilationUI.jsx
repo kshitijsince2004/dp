@@ -34,6 +34,7 @@ const REPORTS = [
   { tableName: "excel_25inquest_registered",       label: "Inquest Registered",                type: "list",    num: 25 },
   { tableName: "excel_26inquest_acpsdm_disposal",  label: "Inquest ACP/SDM Disposal",          type: "list",    num: 26 },
   { tableName: "excel_28fir_goswara_summary",      label: "FIR Goswara Summary",               type: "summary", num: 28 },
+  { tableName: "excel_29arrest_count_summary",      label: "Arrest Count Summary (PS x Head Matrix)", type: "summary", num: 29 },
 ];
 
 // Diary catalogue: each diary bundles its own set of selectable reports, and is
