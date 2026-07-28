@@ -1,3 +1,4 @@
+import { exec } from 'child_process';
 import db from '../../config/db.js';
 import { generateMetadataReport } from './engine/templateRuntime.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,11 +10,19 @@ import { publish } from '../../events/eventBus.js';
 import { getLogger } from '../../utils/logger.js';
 import { toISO, toDMY } from '../../utils/dateFormat.js';
 
-// Logging-instrumentation-2026-07-22 (B5): matches records.service.js style. Replaces the
-// pre-existing unbound `logger.error('[RunScheduleNow] ...', err.message)` string-concat calls
-// with the bound `getLogger('reports.controller')` + structured `log.<level>(event, data)`
-// convention (additive — same information, no behavior change).
 const log = getLogger('reports.controller');
+
+const runPythonFallback = (jobId) => {
+  const pythonPath = process.env.PYTHON_PATH || 'python';
+  const cmd = `"${pythonPath}" -c "import sys; sys.path.insert(0, './python_worker'); from generator import generate_report; generate_report('${jobId}')"`;
+  exec(cmd, { cwd: path.resolve('.') }, (err, stdout, stderr) => {
+    if (err) {
+      log.error('PythonFallback: Error generating report', { jobId, err: err.message });
+    } else {
+      log.info('PythonFallback: Direct Python execution completed', { jobId });
+    }
+  });
+};
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -523,6 +532,7 @@ export const generateReport = async (req, res) => {
         user_id: userId
       });
       log.debug('generateReport: published report.requested', { jobId, userId });
+      setTimeout(() => runPythonFallback(jobId), 100);
     }
 
     log.info('generateReport: exit', { jobId, userId, template_id, format: fmt });

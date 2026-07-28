@@ -30,34 +30,35 @@ SHARED_COLUMN_LABELS = {
     'sn': 'S.N.', 'sno': 'S.No.', 's_no': 'S. No.', 'sr_no': 'Sr. No.', 'sr': 'Sr.',
     'ps': 'Police Station',
     'fir_no': 'FIR No.', 'efir_no': 'E-FIR No.',
-    'dd_nofir_no': 'DD No./FIR No.', 'firdd_no': 'FIR/DD No.',
+    'dd_nofir_no': 'DD No./FIR No.', 'firdd_no': 'FIR / DD No.',
     'dd_no': 'DD No.', 'dd_date': 'DD Date',
-    'us': 'U/S',
-    'io': 'Name of IO', 'name_of_io': 'Name of IO', 'io_name': 'IO Name',
+    'us': 'U/S (Act + Section)',
+    'io': 'Name of IO (Rank / Name / PIS No.)', 'name_of_io': 'Name of IO (Rank / Name / PIS No.)', 'io_name': 'IO Name',
     'io_mobile_no': 'IO Mobile No.',
     'rank_of_io': 'Rank of IO', 'mobile_no_of_io': 'Mobile No. of IO',
-    'complainant_details': 'Complainant (Name / S/O / Address)',
-    'arrested_details': 'Arrested Person (Name / Age / S/O / Address)',
-    'accused_details': 'Accused (Name / Age / S/O / Address)',
-    'po_details': 'PO Details (Name / S/O / Address)',
-    'deceased_details': 'Deceased (Name / Age / S/O / Address)',
-    'traced_person_details': 'Traced Person (Name / S/O / Address)',
-    'place_of_occurrence': 'Place of Occurrence',
+    'complainant_details': 'Complainant (Name / S/O / R/O Address)',
+    'arrested_details': 'Arrested Person (Name / Age / S/O / R/O Address)',
+    'accused_details': 'Accused (Name / Age / S/O / R/O Address)',
+    'po_details': 'PO Details (Name / S/O / R/O Address)',
+    'deceased_details': 'Deceased (Name / Age / S/O / R/O Address)',
+    'traced_person_details': 'Traced Person (Name / S/O / R/O Address)',
+    'place_of_occurrence': 'Place of Occurrence (House No. / Street / Colony / Village / City / Tehsil / Landmark / District)',
     'place_of_occurrence_1': 'Place of Occurrence (2)',
-    'time_of_occurrence': 'Time of Occurrence',
-    'date_of_occurrence': 'Date of Occurrence',
-    'pcjcbail': 'PC/JC/Bail',
-    'recovery': 'Recovery',
+    'time_of_occurrence': 'Date & Time of Occurrence (DD/MM/YYYY HH:MM)',
+    'date_of_occurrence': 'Date & Time of Occurrence (DD/MM/YYYY HH:MM)',
+    'pcjcbail': 'Custody Status (PC / JC / Bail)',
+    'recovery': 'Recovery(Details of property recovered)',
     'beat_no': 'Beat No.',
-    'stolen_items': 'Stolen Items',
+    'stolen_items': 'Stolen Property (Details of the stolen property in the case)',
     'cause_of_death': 'Cause of Death',
-    'challan_untrace_cancel': 'Challan / Untrace / Cancel',
+    'challan_untrace_cancel': 'Disposal (Challan / Untrace / Cancel)',
     'name_of_operator_to_whom_mps': 'Name of Operator (MPS)',
-    'found_place': 'Found Place', 'found_date': 'Found Date',
+    'found_place': 'Found Place (House No. / Street / Colony / Village / City / Tehsil / Landmark / District)',
+    'found_date': 'Found Date',
     'upper_dress_color': 'Upper Dress Color',
     'lower_dress_color': 'Lower Dress Color',
-    'prev_involvement_no_of_cases': 'Prev. Involvement (No. of Cases)',
-    'whether_accused_is_bc_or_not': 'Accused BC?',
+    'prev_involvement_no_of_cases': 'Prev. Involvement (Y/N)',
+    'whether_accused_is_bc_or_not': 'Accused BC(Y/N)',
     'group_patrolling': 'Group Patrolling',
     'cycle_patrolling': 'Cycle Patrolling',
     'by_antisnatching_team': 'By Anti-Snatching Team',
@@ -88,7 +89,10 @@ def build_workbook(sheets_data, sheets, file_path, date=''):
 
         rows = sheets_data.get(table_name, [])
 
-        sheet_title = f'{num}. {label}'
+        if label == 'Arrested - District' or table_name == 'excel_7arrested_east_district':
+            sheet_title = 'Arrested - District'
+        else:
+            sheet_title = f'{num}. {label}'
         for bad_char in ':\\/?*[]':
             sheet_title = sheet_title.replace(bad_char, '')
         sheet_title = sheet_title[:31]
