@@ -1,4 +1,4 @@
-﻿import db from '../../../config/db.js';
+import db from '../../../config/db.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -35,7 +35,7 @@ export async function fetchAccidentCases({ psIds, cutoffDate }) {
     .select(
       'r.ps_id',
       'hn.name as ps_name',
-      'r.legacy_ref as fir_no',
+      db.raw("COALESCE(fd.fir_no, r.legacy_ref, 'N/A') as fir_no"),
       'r.registration_date',
       'fd.brief_facts',
       'fd.local_head_id'
@@ -56,7 +56,7 @@ export async function fetchHeinousBriefFacts({ psIds, cutoffDate }) {
     .select(
       'r.ps_id',
       'hn.name as ps_name',
-      'r.legacy_ref as fir_no',
+      db.raw("COALESCE(fd.fir_no, r.legacy_ref, 'N/A') as fir_no"),
       'r.registration_date',
       'fd.brief_facts'
     )
@@ -78,7 +78,7 @@ export async function fetchFullFirListing({ psIds, cutoffDate }) {
       'r.ps_id',
       'hn.name as ps_name',
       'sd.name as sub_div_name',
-      'r.legacy_ref as fir_no',
+      db.raw("COALESCE(fd.fir_no, r.legacy_ref, 'N/A') as fir_no"),
       'r.registration_date',
       'fd.brief_facts',
       'fd.fir_date'
@@ -92,8 +92,10 @@ export async function fetchArrestsByCaseType({ psIds, cutoffDate, caseType = 'FI
 
   return await db('records as r')
     .join('arrest_details as ad', 'ad.record_id', 'r.id')
-    .leftJoin('arrestee_details as ard', 'ard.person_id', 'r.created_by')
-    .leftJoin('persons as p', 'p.id', 'ard.person_id')
+    .leftJoin('persons as p', function() {
+      this.on('p.record_id', '=', 'r.id').andOnVal('p.role', '=', 'ACCUSED');
+    })
+    .leftJoin('arrestee_details as ard', 'ard.person_id', 'p.id')
     .join('hierarchy_nodes as hn', 'hn.id', 'r.ps_id')
     .leftJoin('hierarchy_nodes as sd', 'sd.id', 'hn.parent_id')
     .where('r.record_type', 'ARREST')
@@ -107,7 +109,7 @@ export async function fetchArrestsByCaseType({ psIds, cutoffDate, caseType = 'FI
       'p.name as person_name',
       'p.age',
       'p.mobile',
-      'r.legacy_ref as fir_no',
+      db.raw("COALESCE(ad.fir_no, r.legacy_ref, 'N/A') as fir_no"),
       'r.registration_date',
       'ad.custody_status'
     )
