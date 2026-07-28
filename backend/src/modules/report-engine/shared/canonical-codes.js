@@ -1,4 +1,4 @@
-﻿// E-FIR Split — used by A5, A6, B1, B3
+// E-FIR Split — used by A5, A6, B1, B3
 export const EFIR_SPLIT = {
   BURGLARY:    { ps_source: 'MANUAL', efir_source: ['E_THEFT'],        heads: [12,13,209,210] },
   MV_THEFT:    { ps_source: 'MANUAL', efir_source: ['E_MVT','E_THEFT'], heads: [16] },
@@ -10,7 +10,7 @@ export const EFIR_SPLIT = {
 
 // Cheating breakdown — used by A5 only
 export const CHEATING = {
-  TOTAL:   { heads: [38,39,40], source: null },
+  TOTAL:   { heads: [38,39],   source: null },
   FORGERY: { heads: [39],      source: null },
   STREET:  { heads: [38],      source: ['MANUAL'] },
   CYBER:   { heads: null,      source: ['NCRP'] },

@@ -401,3 +401,53 @@ export async function resolveChildrenNodes(childIds, trx = db) {
   }
   return { codeToId, idToCode, idToName };
 }
+
+/**
+ * Correction 2: RAPE & POCSO merged query for Monday_Morning sheet.
+ * Counts cases where local_head_id = 7 (RAPE) AND POCSO act (3039, 9993) is present in record_offences.
+ */
+export async function fetchRapePocsoCounts(entityIds, entityField, windows, trx = db) {
+  if (!entityIds || entityIds.length === 0) return [];
+  const field = entityField === 'ps_id' ? 'ps_id' : 'district_id';
+  const { d, week_curr, week_prev } = windows;
+
+  const rows = await trx.raw(`
+    SELECT
+      r.${field} AS entity_id,
+      COUNT(*) FILTER (WHERE COALESCE(r.registration_date, r.record_date) BETWEEN :week_curr_f AND :week_curr_t) AS week_curr,
+      COUNT(*) FILTER (WHERE COALESCE(r.registration_date, r.record_date) BETWEEN :week_prev_f AND :week_prev_t) AS week_prev,
+      COUNT(*) FILTER (
+        WHERE COALESCE(r.registration_date, r.record_date) BETWEEN :week_curr_f AND :week_curr_t AND fd.is_worked_out = true
+      ) AS det_curr,
+      COUNT(*) FILTER (
+        WHERE COALESCE(r.registration_date, r.record_date) BETWEEN :week_prev_f AND :week_prev_t AND fd.is_worked_out = true
+      ) AS det_prev
+    FROM records r
+    JOIN fir_details fd ON fd.record_id = r.id
+    WHERE r.record_type = 'CASE'
+      AND r.current_status <> 'DELETED'
+      AND fd.local_head_id = 7
+      AND EXISTS (
+        SELECT 1 FROM record_offences ro
+        WHERE ro.record_id = r.id
+          AND ro.act_id IN (3039, 9993)
+      )
+      AND r.${field} = ANY(:entity_ids)
+      AND COALESCE(r.registration_date, r.record_date) BETWEEN :min_date AND :max_date
+    GROUP BY r.${field}
+  `, {
+    entity_ids: entityIds,
+    min_date: week_prev.from,
+    max_date: d,
+    week_curr_f: week_curr.from, week_curr_t: week_curr.to,
+    week_prev_f: week_prev.from, week_prev_t: week_prev.to,
+  });
+
+  return rows.rows.map(r => ({
+    entity_id: r.entity_id,
+    week_curr: parseInt(r.week_curr) || 0,
+    week_prev: parseInt(r.week_prev) || 0,
+    det_curr: parseInt(r.det_curr) || 0,
+    det_prev: parseInt(r.det_prev) || 0,
+  }));
+}
