@@ -7,6 +7,7 @@ const router = Router();
 
 // Read operations: Any auth
 router.get('/tree', authMiddleware, hierarchyController.getTree);
+router.get('/scope', authMiddleware, hierarchyController.getScope);
 router.get('/nodes', authMiddleware, hierarchyController.getNodes);
 router.get('/', authMiddleware, hierarchyController.getNodes);
 

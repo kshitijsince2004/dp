@@ -17,9 +17,10 @@
           "label": "FIR Date and time",
           "hint": "dd-mm-yyyy",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -80,7 +81,7 @@
           "key": "case_type",
           "section": "General Information",
           "label": "Case Registration Type",
-          "hint": "e.g. Property Theft",
+          "hint": "cctns(manual FIR) / eTheft / eMVT / NCRP / zero FIR",
           "validation": {
             "type": "list",
             "formulae": [
@@ -102,7 +103,13 @@
           "section": "General Information",
           "label": "Date of Occurrence",
           "hint": "e.g. SID-889021",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6,
+              10
+            ]
+          }
         },
         {
           "col": 10,
@@ -316,7 +323,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AD5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(IF($AC5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
@@ -434,7 +441,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AO5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(IF($AN5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
@@ -600,9 +607,10 @@
           "label": "WorkOut Date",
           "hint": "[Required] date (dd-mm-yyyy)",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -898,7 +906,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($S5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(IF($R5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
@@ -1016,7 +1024,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AD5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(IF($AC5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
@@ -1095,7 +1103,7 @@
           "key": "act",
           "section": "Act and Sections",
           "label": "Act",
-          "hint": "e.g. IPC / BNS",
+          "hint": "e.g. IPC / BNS (required for CCTNS / Zero FIR)",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1108,7 +1116,7 @@
           "key": "sections",
           "section": "Act and Sections",
           "label": "Sections",
-          "hint": "e.g. Sec 379/411",
+          "hint": "e.g. Sec 379/411 (required for CCTNS / Zero FIR)",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1121,7 +1129,7 @@
           "key": "crime_head",
           "section": "Major / Minor Head",
           "label": "Major Head",
-          "hint": "e.g. Burglary / Snatching",
+          "hint": "e.g. Burglary / Snatching (required for CCTNS / Zero FIR)",
           "validation": {
             "type": "list",
             "formulae": [
@@ -1354,7 +1362,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($T5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(IF($S5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
@@ -1472,7 +1480,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AE5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(IF($AD5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
@@ -1925,9 +1933,10 @@
           "label": "FIR Date",
           "hint": "dd-mm-yyyy",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -1990,9 +1999,10 @@
           "label": "Date Of Arrest",
           "hint": "YYYY-MM-DD",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -2136,9 +2146,10 @@
           "label": "Date Of Arrest",
           "hint": "dd-mm-yyyy",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -2154,7 +2165,7 @@
           "col": 4,
           "key": "arrest_place",
           "section": "Arrest Detail",
-          "label": "House No. of Arrest",
+          "label": "Place of Arrest",
           "hint": "text",
           "validation": null
         },
@@ -2391,7 +2402,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AA5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(IF($Z5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
@@ -2509,7 +2520,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AL5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(IF($AK5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
@@ -2635,9 +2646,9 @@
         },
         {
           "col": 50,
-          "key": "integrated_pi",
+          "key": "listed_criminal",
           "section": "Particular Details",
-          "label": "Arrested via Integrated PI",
+          "label": "Listed Criminal / Bad Character (BC)",
           "hint": "select: Yes, No",
           "validation": {
             "type": "list",
@@ -2648,111 +2659,46 @@
         },
         {
           "col": 51,
-          "key": "group_patrolling",
+          "key": null,
           "section": "Particular Details",
-          "label": "Arrested via Group Patrolling",
-          "hint": "select: Yes, No",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Yes,No\""
-            ]
-          }
+          "label": null,
+          "hint": null,
+          "validation": null
         },
         {
           "col": 52,
-          "key": "cycle_patrolling",
+          "key": null,
           "section": "Particular Details",
-          "label": "Arrested via Cycle Patrolling",
-          "hint": "select: Yes, No",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Yes,No\""
-            ]
-          }
+          "label": null,
+          "hint": null,
+          "validation": null
         },
         {
           "col": 53,
-          "key": "by_antisnatching_team",
+          "key": null,
           "section": "Particular Details",
-          "label": "Arrested via Anti-Snatching Team",
-          "hint": "select: Yes, No",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Yes,No\""
-            ]
-          }
+          "label": null,
+          "hint": null,
+          "validation": null
         },
         {
           "col": 54,
-          "key": "by_prahari",
+          "key": null,
           "section": "Particular Details",
-          "label": "Arrested via PRAHARI Scheme",
-          "hint": "select: Yes, No",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Yes,No\""
-            ]
-          }
+          "label": null,
+          "hint": null,
+          "validation": null
         },
         {
           "col": 55,
-          "key": "by_eyes_ears_scheme_members",
+          "key": null,
           "section": "Particular Details",
-          "label": "Arrested via Eyes & Ears Scheme",
-          "hint": "select: Yes, No",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Yes,No\""
-            ]
-          }
+          "label": null,
+          "hint": null,
+          "validation": null
         },
         {
           "col": 56,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 57,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 58,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 59,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 60,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 61,
           "key": null,
           "section": "Particular Details",
           "label": null,
@@ -2762,7 +2708,7 @@
       ],
       "row2Merges": [
         "AE2:AN2",
-        "AO2:BI2",
+        "AO2:BD2",
         "B2:H2",
         "I2:S2",
         "T2:AD2"
@@ -3165,9 +3111,10 @@
           "label": "GD Date",
           "hint": "dd-mm-yyyy",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -3375,9 +3322,10 @@
           "label": "Date Body Found",
           "hint": "date (dd-mm-yyyy)",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -3618,9 +3566,10 @@
           "label": "Date of Filed by ACP/SDM",
           "hint": "date (dd-mm-yyyy)",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -3630,14 +3579,6 @@
           "section": "IO Details",
           "label": "PIS No. of IO",
           "hint": "PIS number of a registered IO, e.g. 28080214",
-          "validation": null
-        },
-        {
-          "col": 50,
-          "key": "uidb_no",
-          "section": "General Information",
-          "label": "UIDB Gazette Number",
-          "hint": "[Required] text",
           "validation": null
         }
       ],
@@ -3748,9 +3689,10 @@
           "label": "GD Date",
           "hint": "dd-mm-yyyy",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -4011,9 +3953,10 @@
           "label": "Date Missing Since",
           "hint": "date (dd-mm-yyyy)",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -4183,9 +4126,10 @@
           "label": "FIR Date",
           "hint": "date (dd-mm-yyyy)",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         }
@@ -4217,9 +4161,10 @@
           "label": "GD Date",
           "hint": "dd-mm-yyyy",
           "validation": {
-            "type": "date",
+            "type": "textLength",
             "formulae": [
-              "1900-01-01T00:00:00.000Z"
+              6,
+              10
             ]
           }
         },
@@ -4249,7 +4194,7 @@
           "key": "heinous_offence",
           "section": "General Information",
           "label": "Heinous Offence",
-          "hint": "select: ",
+          "hint": "select: Yes, No",
           "validation": {
             "type": "list",
             "formulae": [
@@ -4293,9 +4238,9 @@
         },
         {
           "col": 9,
-          "key": "integrated_pi",
+          "key": "listed_criminal",
           "section": "General Information",
-          "label": "Arrested via Integrated PI",
+          "label": "Listed Criminal / Bad Character (BC)",
           "hint": "select: Yes, No",
           "validation": {
             "type": "list",
@@ -4306,71 +4251,6 @@
         },
         {
           "col": 10,
-          "key": "group_patrolling",
-          "section": "General Information",
-          "label": "Arrested via Group Patrolling",
-          "hint": "select: Yes, No",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Yes,No\""
-            ]
-          }
-        },
-        {
-          "col": 11,
-          "key": "cycle_patrolling",
-          "section": "General Information",
-          "label": "Arrested via Cycle Patrolling",
-          "hint": "select: Yes, No",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Yes,No\""
-            ]
-          }
-        },
-        {
-          "col": 12,
-          "key": "by_antisnatching_team",
-          "section": "General Information",
-          "label": "Arrested via Anti-Snatching Team",
-          "hint": "select: Yes, No",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Yes,No\""
-            ]
-          }
-        },
-        {
-          "col": 13,
-          "key": "by_prahari",
-          "section": "General Information",
-          "label": "Arrested via PRAHARI Scheme",
-          "hint": "select: Yes, No",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Yes,No\""
-            ]
-          }
-        },
-        {
-          "col": 14,
-          "key": "by_eyes_ears_scheme_members",
-          "section": "General Information",
-          "label": "Arrested via Eyes & Ears Scheme",
-          "hint": "select: Yes, No",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Yes,No\""
-            ]
-          }
-        },
-        {
-          "col": 15,
           "key": "prop_vehicle_no",
           "section": "General Information",
           "label": "Vehicle Registration No.",
@@ -4378,7 +4258,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 11,
           "key": "prop_vehicle_type",
           "section": "General Information",
           "label": "Vehicle Type",
@@ -4391,7 +4271,7 @@
           }
         },
         {
-          "col": 17,
+          "col": 12,
           "key": "prop_cd_24h",
           "section": "General Information",
           "label": "1st CD Uploaded Within 24 Hours",
@@ -4404,7 +4284,7 @@
           }
         },
         {
-          "col": 18,
+          "col": 13,
           "key": "prop_cctv",
           "section": "General Information",
           "label": "CCTV Footage Collected",
@@ -4417,7 +4297,7 @@
           }
         },
         {
-          "col": 19,
+          "col": 14,
           "key": "prop_arms_type",
           "section": "General Information",
           "label": "Weapon Type",
@@ -4430,7 +4310,7 @@
           }
         },
         {
-          "col": 20,
+          "col": 15,
           "key": "prop_cash_amount",
           "section": "General Information",
           "label": "Amount (₹)",
@@ -4438,7 +4318,7 @@
           "validation": null
         },
         {
-          "col": 21,
+          "col": 16,
           "key": "prop_doc_type",
           "section": "General Information",
           "label": "Document Type",
@@ -4451,7 +4331,7 @@
           }
         },
         {
-          "col": 22,
+          "col": 17,
           "key": "prop_drug_type",
           "section": "General Information",
           "label": "Drug / Substance Type",
@@ -4464,7 +4344,7 @@
           }
         },
         {
-          "col": 23,
+          "col": 18,
           "key": "prop_elec_device_type",
           "section": "General Information",
           "label": "Device Type",
@@ -4477,7 +4357,7 @@
           }
         },
         {
-          "col": 24,
+          "col": 19,
           "key": "prop_gold_item_type",
           "section": "General Information",
           "label": "Item Type",
@@ -4490,7 +4370,7 @@
           }
         },
         {
-          "col": 25,
+          "col": 20,
           "key": "prop_other_desc",
           "section": "General Information",
           "label": "Item Description",
@@ -4498,7 +4378,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 21,
           "key": "prop_arms_make",
           "section": "General Information",
           "label": "Make / Manufacturer",
@@ -4506,7 +4386,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 22,
           "key": "prop_cash_currency",
           "section": "General Information",
           "label": "Currency Type",
@@ -4519,7 +4399,7 @@
           }
         },
         {
-          "col": 28,
+          "col": 23,
           "key": "prop_doc_number",
           "section": "General Information",
           "label": "Document Number",
@@ -4527,7 +4407,7 @@
           "validation": null
         },
         {
-          "col": 29,
+          "col": 24,
           "key": "prop_drug_quantity",
           "section": "General Information",
           "label": "Quantity",
@@ -4535,7 +4415,7 @@
           "validation": null
         },
         {
-          "col": 30,
+          "col": 25,
           "key": "prop_elec_brand",
           "section": "General Information",
           "label": "Make / Brand",
@@ -4543,7 +4423,7 @@
           "validation": null
         },
         {
-          "col": 31,
+          "col": 26,
           "key": "prop_gold_material",
           "section": "General Information",
           "label": "Material",
@@ -4556,7 +4436,7 @@
           }
         },
         {
-          "col": 32,
+          "col": 27,
           "key": "prop_other_value",
           "section": "General Information",
           "label": "Estimated Value (₹)",
@@ -4569,7 +4449,7 @@
           }
         },
         {
-          "col": 33,
+          "col": 28,
           "key": "prop_arms_serial",
           "section": "General Information",
           "label": "Serial Number",
@@ -4577,7 +4457,7 @@
           "validation": null
         },
         {
-          "col": 34,
+          "col": 29,
           "key": "prop_cash_denomination",
           "section": "General Information",
           "label": "Denomination Details",
@@ -4585,7 +4465,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 30,
           "key": "prop_doc_holder",
           "section": "General Information",
           "label": "Document Holder Name",
@@ -4593,7 +4473,7 @@
           "validation": null
         },
         {
-          "col": 36,
+          "col": 31,
           "key": "prop_drug_unit",
           "section": "General Information",
           "label": "Unit",
@@ -4606,7 +4486,7 @@
           }
         },
         {
-          "col": 37,
+          "col": 32,
           "key": "prop_elec_model",
           "section": "General Information",
           "label": "Model",
@@ -4614,7 +4494,7 @@
           "validation": null
         },
         {
-          "col": 38,
+          "col": 33,
           "key": "prop_gold_weight",
           "section": "General Information",
           "label": "Weight (grams)",
@@ -4622,7 +4502,7 @@
           "validation": null
         },
         {
-          "col": 39,
+          "col": 34,
           "key": "prop_arms_ammo_count",
           "section": "General Information",
           "label": "Ammunition Count",
@@ -4630,7 +4510,7 @@
           "validation": null
         },
         {
-          "col": 40,
+          "col": 35,
           "key": "prop_doc_issuing_auth",
           "section": "General Information",
           "label": "Issuing Authority",
@@ -4638,7 +4518,7 @@
           "validation": null
         },
         {
-          "col": 41,
+          "col": 36,
           "key": "prop_drug_value",
           "section": "General Information",
           "label": "Estimated Street Value (₹)",
@@ -4646,7 +4526,7 @@
           "validation": null
         },
         {
-          "col": 42,
+          "col": 37,
           "key": "prop_elec_serial",
           "section": "General Information",
           "label": "Serial Number",
@@ -4654,7 +4534,7 @@
           "validation": null
         },
         {
-          "col": 43,
+          "col": 38,
           "key": "prop_gold_value",
           "section": "General Information",
           "label": "Estimated Value (₹)",
@@ -4662,7 +4542,7 @@
           "validation": null
         },
         {
-          "col": 44,
+          "col": 39,
           "key": "prop_arms_license",
           "section": "General Information",
           "label": "License Number",
@@ -4670,7 +4550,7 @@
           "validation": null
         },
         {
-          "col": 45,
+          "col": 40,
           "key": "prop_elec_value",
           "section": "General Information",
           "label": "Estimated Value (₹)",
@@ -4678,7 +4558,7 @@
           "validation": null
         },
         {
-          "col": 46,
+          "col": 41,
           "key": "arrested_qualification",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Qualification",
@@ -4693,7 +4573,7 @@
       ],
       "row2Merges": [
         "A2:G2",
-        "I2:AS2"
+        "I2:AN2"
       ]
     },
     "Act and Sections": {
@@ -4779,7 +4659,13 @@
           "section": "Arrest Detail",
           "label": "Date Of Arrest",
           "hint": "dd-mm-yyyy",
-          "validation": null
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6,
+              10
+            ]
+          }
         },
         {
           "col": 3,
@@ -4793,7 +4679,7 @@
           "col": 4,
           "key": "arrest_place",
           "section": "Arrest Detail",
-          "label": "House No. of Arrest",
+          "label": "Place of Arrest",
           "hint": "text",
           "validation": null
         },

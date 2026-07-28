@@ -127,9 +127,11 @@ export default function ReportBuilder() {
     if (!templateId) { toast.error('Select a template first'); return; }
     log.debug('action:generate_report_click', { templateId, fromDate, toDate, format });
     setReportResult(null);
+    const selected = templates.find(t => t.id === templateId || t.code === templateId);
     generateMutation.mutate({
       template_id: templateId,
-      filters: { dateFrom: fromDate, dateTo: toDate },
+      template_code: selected?.code || templateId,
+      filters: { dateFrom: fromDate, dateTo: toDate, from_date: fromDate, to_date: toDate },
       format,
     });
   };

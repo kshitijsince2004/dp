@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import pandas as pd
 import openpyxl
 from datetime import datetime, date
@@ -20,8 +21,8 @@ def load_local_template(template_id):
 def load_template(template_id, engine):
     with engine.connect() as conn:
         row = conn.execute(
-            text("SELECT id, name_en, template_type, template_definition, applicable_record_types FROM report_templates WHERE id = :id"),
-            {'id': template_id}
+            text("SELECT id, name, template_type, template_definition, record_types FROM report_templates WHERE id::text = :id OR code = :id"),
+            {'id': str(template_id)}
         ).fetchone()
 
     if not row:
@@ -84,85 +85,98 @@ def load_field_registry(field_keys, engine):
     if not field_keys:
         return {}
     with engine.connect() as conn:
-        res = conn.execute(
-            text("SELECT field_key, label_en, label_hi, field_type FROM field_registry WHERE field_key IN :keys"),
-            {'keys': tuple(field_keys)}
-        ).fetchall()
-        
-    meta = {}
-    for r in res:
-        meta[r[0]] = {
-            'label_en': r[1],
-            'label_hi': r[2],
-            'field_type': r[3]
-        }
-    return meta
+        try:
+            res = conn.execute(
+                text("SELECT field_key, labels, field_type FROM field_registry WHERE field_key IN :keys"),
+                {'keys': tuple(field_keys)}
+            ).fetchall()
+            meta = {}
+            for r in res:
+                lbls = r[1]
+                if isinstance(lbls, str):
+                    try: lbls = json.loads(lbls)
+                    except: lbls = {}
+                elif not isinstance(lbls, dict):
+                    lbls = {}
+                meta[r[0]] = {
+                    'label_en': lbls.get('en') or r[0].replace('_', ' ').title(),
+                    'label_hi': lbls.get('hi') or '',
+                    'field_type': r[2]
+                }
+            return meta
+        except Exception:
+            return {k: {'label_en': k.replace('_', ' ').title(), 'label_hi': '', 'field_type': 'STRING'} for k in field_keys}
 
 def query_records(definition, user_filters, engine):
-    record_type = definition['filter_spec']['record_type']
-    data_filter = definition['filter_spec'].get('data_filter', {})
-
+    filter_spec = definition.get('filter_spec', {})
+    record_type = filter_spec.get('record_type')
+    data_filter = filter_spec.get('data_filter', {})
     field_keys = definition.get('fixed_fields', [])
-    selects = []
 
-    for k in field_keys:
-        selects.append(f"(records.data::jsonb)->>'{k}' as {k}")
-            
-    # Include record date and ps name in raw queries
-    select_expr = ", ".join(selects) if selects else "records.id"
-    sql = f"""
-        SELECT {select_expr}, hn.name_en as ps_name, records.record_date
-        FROM records
-        LEFT JOIN hierarchy_nodes hn ON records.ps_id = hn.id
-        WHERE records.record_type = :record_type
-    """
-    
-    # date_from/date_to arrive as dd/mm/yyyy from the frontend; record_date is
-    # a native DATE column, so parse into real date objects before binding.
-    params = {
-        'record_type': record_type,
-        'date_from': parse_date(user_filters.get('date_from') or user_filters.get('from_date')) or date(2020, 1, 1),
-        'date_to': parse_date(user_filters.get('date_to') or user_filters.get('to_date')) or date(2030, 1, 1)
-    }
-    
-    # Date filters
-    sql += " AND records.record_date BETWEEN :date_from AND :date_to"
-    
-    # PS filter
-    if user_filters.get('ps_id'):
-        sql += " AND records.ps_id = :ps_id"
-        params['ps_id'] = user_filters['ps_id']
-    elif user_filters.get('psId'):
-        sql += " AND records.ps_id = :psId"
-        params['psId'] = user_filters['psId']
-        
-    # Apply data filters
+    date_from = parse_date(user_filters.get('date_from') or user_filters.get('from_date')) or date(2020, 1, 1)
+    date_to = parse_date(user_filters.get('date_to') or user_filters.get('to_date')) or date(2030, 1, 1)
+    ps_id = user_filters.get('ps_id') or user_filters.get('psId')
+    district_id = user_filters.get('district_id') or user_filters.get('districtId')
+
+    # Fetch records using existing robust helper
+    all_records = _fetch_records({
+        'date': date_from,
+        'date_to': date_to,
+        'ps_id': ps_id,
+        'district_id': district_id
+    })
+
+    # Filter by record_type if specified
+    if record_type:
+        all_records = [r for r in all_records if r.get('record_type') == record_type]
+
+    # Filter by data_filter
     if data_filter:
-        for k, v in data_filter.items():
-            sql += f" AND records.data::jsonb @> :{k}_val::jsonb"
-            params[f"{k}_val"] = json.dumps({k: v})
+        filtered = []
+        for r in all_records:
+            d = r.get('data') or {}
+            match = True
+            for k, v in data_filter.items():
+                if d.get(k) != v:
+                    match = False
+                    break
+            if match:
+                filtered.append(r)
+        all_records = filtered
 
-    # Apply dynamic user filters
+    # Filter by dynamic user filters
     system_keys = {'date_from', 'from_date', 'date_to', 'to_date', 'ps_id', 'psId', 'district_id', 'districtId', 'selected_sub_templates', 'page', 'limit'}
     core_columns = {'id', 'current_status', 'current_level'}
 
     for k, v in user_filters.items():
         if k in system_keys or v is None or v == '':
             continue
+        filtered = []
+        for r in all_records:
+            if k in core_columns:
+                val = r.get(k)
+            else:
+                d = r.get('data') or {}
+                val = d.get(k)
+            if str(val) == str(v):
+                filtered.append(r)
+        all_records = filtered
 
-        if k in core_columns:
-            sql += f" AND records.{k} = :{k}_user_val"
-            params[f"{k}_user_val"] = v
-        else:
-            sql += f" AND records.data::jsonb @> :{k}_user_val::jsonb"
-            params[f"{k}_user_val"] = json.dumps({k: v})
+    # Construct rows dictionary array matching field_keys
+    rows = []
+    for r in all_records:
+        d = r.get('data') or {}
+        row = {
+            'ps_name': r.get('ps_name', ''),
+            'record_date': fmt_date(r.get('record_date'))
+        }
+        for k in field_keys:
+            row[k] = d.get(k) or r.get(k) or ''
+        rows.append(row)
 
-    with engine.connect() as conn:
-        df = pd.read_sql(text(sql), conn, params=params)
-
-    # record_date is a native DATE column (comes back as Timestamp/date, not text)
-    if 'record_date' in df.columns:
-        df['record_date'] = df['record_date'].apply(fmt_date)
+    df = pd.DataFrame(rows)
+    if df.empty:
+        df = pd.DataFrame(columns=['ps_name', 'record_date'] + field_keys)
 
     # Load field registry metadata for header renames
     fields_meta = load_field_registry(field_keys, engine)
@@ -196,7 +210,7 @@ def write_header_rows(ws, header_def, user_filters, engine):
     jurisdiction = "All jurisdictions"
     if ps_id:
         with engine.connect() as conn:
-            r = conn.execute(text("SELECT name_en FROM hierarchy_nodes WHERE id = :id"), {'id': ps_id}).fetchone()
+            r = conn.execute(text("SELECT name FROM hierarchy_nodes WHERE id::text = :id OR code = :id"), {'id': str(ps_id)}).fetchone()
         if r:
             jurisdiction = r[0]
                 
@@ -392,7 +406,7 @@ def query_linked_records(definition, user_filters, engine):
               {coalesce}                          AS fir_dd_no,
               {jf('a.data', 'arrest_date')}      AS arrest_date,
               {jf('a.data', 'sections')}         AS sections,
-              hn.name_en                          AS ps_name,
+              hn.name                             AS ps_name,
               {jf('a.data', 'io_name')}          AS io_name,
               {jf('a.data', 'io_rank')}          AS io_rank,
               {jf('a.data', 'io_mobile')}        AS io_mobile,
@@ -419,7 +433,7 @@ def query_linked_records(definition, user_filters, engine):
         # CASE primary, LEFT JOIN to linked ARRESTed persons
         sql = f"""
             SELECT
-              hn.name_en                                   AS ps_name,
+              hn.name                                      AS ps_name,
               {jf('c.data', 'fir_no')}                    AS fir_no,
               {jf('c.data', 'sections')}                  AS sections,
               {jf('c.data', 'complainant_name')}          AS complainant_name,
@@ -666,11 +680,19 @@ def _fetch_records(filters):
             for i, p in enumerate(ps_list):
                 params[f'ps_{i}'] = p
         else:
-            conditions.append('r.ps_id = :ps_id')
-            params['ps_id'] = str(ps_id)
+            ps_str = str(ps_id)
+            if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', ps_str, re.I):
+                conditions.append('r.ps_id = :ps_id')
+            else:
+                conditions.append('ps.code = :ps_id')
+            params['ps_id'] = ps_str
     elif district_id:
-        conditions.append('r.district_id = :district_id')
-        params['district_id'] = str(district_id)
+        dist_str = str(district_id)
+        if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', dist_str, re.I):
+            conditions.append('r.district_id = :district_id')
+        else:
+            conditions.append('dist.code = :district_id')
+        params['district_id'] = dist_str
     elif sub_div_id:
         conditions.append('r.sub_div_id = :sub_div_id')
         params['sub_div_id'] = str(sub_div_id)
@@ -678,9 +700,9 @@ def _fetch_records(filters):
     where = ' AND '.join(conditions)
     sql = f"""
         SELECT r.*,
-               ps.name_en   AS ps_name,
-               ps.code      AS ps_code,
-               dist.name_en AS district_name,
+               ps.name   AS ps_name,
+               ps.code   AS ps_code,
+               dist.name AS district_name,
                dist.code    AS district_code
         FROM records r
         LEFT JOIN hierarchy_nodes ps   ON r.ps_id       = ps.id
@@ -711,12 +733,10 @@ def _fetch_records(filters):
     if case_ids:
         placeholders = ", ".join(f":id_{i}" for i in range(len(case_ids)))
         sql_links = f"""
-            SELECT rl.source_record_id, r.data
-            FROM record_links rl
-            JOIN records r ON rl.target_record_id = r.id
-            JOIN link_type_registry ltr ON rl.link_type_id = ltr.id
-            WHERE ltr.code = 'CASE_ARREST'
-              AND rl.source_record_id IN ({placeholders})
+            SELECT p.record_id AS source_record_id, p.name AS arrested_name, p.age, p.relative_name AS father_name
+            FROM persons p
+            WHERE p.role = 'ARRESTED'
+              AND p.record_id IN ({placeholders})
         """
         params_links = {f"id_{i}": cid for i, cid in enumerate(case_ids)}
         try:
@@ -726,31 +746,18 @@ def _fetch_records(filters):
             links_map = {}
             for row in rows_links:
                 source_id = row['source_record_id']
-                raw_data = row['data']
-                if isinstance(raw_data, str):
-                    try:
-                        arr_data = json.loads(raw_data)
-                    except Exception:
-                        arr_data = {}
-                else:
-                    arr_data = raw_data or {}
-                
-                name = arr_data.get('arrested_name') or arr_data.get('accused_name')
+                name = row.get('arrested_name')
                 if name:
-                    age = arr_data.get('age')
-                    father = arr_data.get('arrested_father_husband_name') or arr_data.get('father_husband_name')
-                    address = arr_data.get('arrested_address')
-                    
+                    age = row.get('age')
+                    father = row.get('father_name')
                     from formatters import format_person
-                    details = format_person(name, age, father, address, arr_data)
-                    
+                    details = format_person(name, age, father, None, {})
                     if source_id not in links_map:
                         links_map[source_id] = []
                     links_map[source_id].append(details)
             
             for r in records:
                 if r.get('record_type') in ('CASE', 'CASES') and r['id'] in links_map:
-                    # Update the record's data directly in memory so sheet_01_manual_fir uses it
                     r['data']['arrested_person'] = ", ".join(links_map[r['id']])
         except Exception as e:
             print(f"[Worker] Failed to resolve linked arrested persons: {e}")
@@ -830,6 +837,10 @@ def generate_report(job_id):
         
     template_type = definition.get('template_type', 'PROFORMA') if definition else 'PROFORMA'
 
+    if template and (template.get('template_definition') or template_type in ('PROFORMA_MATRIX', 'STATEMENT', 'MATRIX')):
+        print(f"[Worker] Metadata-driven template '{template_id}' is handled by Node.js engine. Skipping Python generator.")
+        return
+
     if format_type == 'CSV':
         if template_type in ('COMPOSITE', 'LINKED'):
             raise Exception(f"CSV format not supported for {template_type} templates")
@@ -898,10 +909,10 @@ def generate_report(job_id):
         try:
             from events import publish_event
             publish_event('report.generated', {
-                'job_id': job_id,
-                'template_id': template_id,
-                'requested_by': user_id,
-                'file_path': file_path,
+                'job_id': str(job_id),
+                'template_id': str(template_id) if template_id else None,
+                'requested_by': str(user_id) if user_id else None,
+                'file_path': str(file_path),
                 'format': format_type,
                 'file_size_bytes': file_size
             })

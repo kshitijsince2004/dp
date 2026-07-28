@@ -11,6 +11,7 @@ import * as notifyHandler from './src/events/handlers/notifyHandler.js';
 import * as linkAuditHandler from './src/events/handlers/linkAuditHandler.js';
 import * as linkResolver from './src/events/handlers/linkResolver.js';
 import * as importConfirmHandler from './src/events/handlers/importConfirmHandler.js';
+import * as reportJobHandler from './src/events/handlers/reportJobHandler.js';
 
 const httpServer = createServer(app);
 
@@ -45,6 +46,7 @@ const start = async () => {
     await linkAuditHandler.init();
     await linkResolver.init();
     await importConfirmHandler.init();
+    await reportJobHandler.init();
 
     // 3. Start Express server
     httpServer.on('error', (e) => { logger.error(`[Server] HTTP server error: ${e.message}`); process.exit(1); });

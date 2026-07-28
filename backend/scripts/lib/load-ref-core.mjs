@@ -362,6 +362,33 @@ export async function loadRef(db, log = console.log) {
   }
   for (const r of localHeads) {
     r.data.crime_category = overlayAssign[String(r.data.local_head_cd)] || 'OTHER';
+    const cd = r.data.local_head_cd;
+    const name = r.data.local_head || '';
+    if (cd === 1) r.data.canonical_code = 'DACOITY';
+    else if (cd === 2) r.data.canonical_code = 'MURDER';
+    else if (cd === 3) r.data.canonical_code = 'ATT_TO_MURDER';
+    else if (cd === 4) r.data.canonical_code = 'ROBBERY';
+    else if (cd === 5) r.data.canonical_code = 'RIOT';
+    else if (cd === 6) r.data.canonical_code = 'KID_FOR_RANSOM';
+    else if (cd === 7) r.data.canonical_code = 'RAPE';
+    else if (/extortion/i.test(name)) r.data.canonical_code = 'EXTORTION';
+    else if (/snatching/i.test(name)) r.data.canonical_code = 'SNATCHING';
+    else if (/\bhurt\b/i.test(name)) r.data.canonical_code = 'HURT';
+    else if (/burglary/i.test(name)) r.data.canonical_code = 'BURGLARY';
+    else if (/house\s*theft/i.test(name)) r.data.canonical_code = 'HOUSE_THEFT';
+    else if (/(motor\s*vehicle\s*theft|m\.?v\.?\s*theft|vehicle theft)/i.test(name)) r.data.canonical_code = 'MV_THEFT';
+    else if (/theft/i.test(name)) r.data.canonical_code = 'OTHER_THEFT';
+    else if (/(molestation|outraging|m\.?o\.?\s*women|eve\s*teas)/i.test(name)) r.data.canonical_code = 'MO_WOMEN';
+    else if (/kidnapping/i.test(name)) r.data.canonical_code = 'KIDNAPPING';
+    else if (/abduction/i.test(name)) r.data.canonical_code = 'ABDUCTION';
+    else if (/fatal\s*accident/i.test(name)) r.data.canonical_code = 'FATAL_ACCIDENT';
+    else if (/(simple\s*accident|non.?fatal)/i.test(name)) r.data.canonical_code = 'SIMPLE_ACCIDENT';
+    else if (/arms\s*act/i.test(name)) r.data.canonical_code = 'ARMS_ACT';
+    else if (/excise/i.test(name)) r.data.canonical_code = 'EXCISE_ACT';
+    else if (/(ndps|narcotic)/i.test(name)) r.data.canonical_code = 'NDPS_ACT';
+    else if (/gambling/i.test(name)) r.data.canonical_code = 'GAMBLING_ACT';
+    else if (/(pocso|protection\s*of\s*children)/i.test(name)) r.data.canonical_code = 'POCSO';
+    else r.data.canonical_code = name.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
   }
 
   // ═════════════════════════ 3. load (one transaction) ═══════════════════════

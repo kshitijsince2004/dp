@@ -40,7 +40,7 @@ def setup_mock_data():
     with engine.begin() as conn:
         conn.execute(text("""
             INSERT INTO report_jobs (id, template_id, custom_definition, filters, format, status, file_path, created_by, created_at, updated_at)
-            VALUES (:id, NULL, :def, :filters, 'EXCEL', 'PENDING', :file_path, 'U_HC001', :now, :now)
+            VALUES (:id, NULL, :def, :filters, 'EXCEL', 'PENDING', :file_path, 'bf5af8de-2e04-40ed-928e-6a0b02916fc2', :now, :now)
         """), {
             'id': job_id_custom,
             'def': json.dumps(custom_definition),
@@ -51,7 +51,7 @@ def setup_mock_data():
 
         conn.execute(text("""
             INSERT INTO report_jobs (id, template_id, custom_definition, filters, format, status, file_path, created_by, created_at, updated_at)
-            VALUES (:id, 'arrest-summary', NULL, :filters, 'EXCEL', 'PENDING', :file_path, 'U_HC001', :now, :now)
+            VALUES (:id, '7b26c164-5379-416a-8605-9a1656caf0ae', NULL, :filters, 'EXCEL', 'PENDING', :file_path, 'bf5af8de-2e04-40ed-928e-6a0b02916fc2', :now, :now)
         """), {
             'id': job_id_predefined,
             'filters': json.dumps(filters),

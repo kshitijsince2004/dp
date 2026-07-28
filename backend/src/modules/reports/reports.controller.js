@@ -1,4 +1,5 @@
 import db from '../../config/db.js';
+import { generateMetadataReport } from './engine/templateRuntime.js';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs';
@@ -54,7 +55,9 @@ const templates = [
   { id: "dd-important-cases",             name_en: "Daily Diary: Important Cases",           name_hi: "महत्वपूर्ण मामले",                       format: ["excel"], applicable_record_types: ["CASE"],                               template_type: "DAILY_DIARY_PARALLEL" },
   { id: "dd-fir-goswara-summary",         name_en: "Daily Diary: FIR Goswara Summary",      name_hi: "एफआईआर गोस्वारा सारांश",                format: ["excel"], applicable_record_types: ["CASE"],                               template_type: "DAILY_DIARY_PARALLEL" },
   { id: "dd-financial-fraud-arrest",      name_en: "Daily Diary: Financial Fraud Arrest",    name_hi: "वित्तीय धोखाधड़ी गिरफ्तार",             format: ["excel"], applicable_record_types: ["ARREST","CASE"],                    template_type: "DAILY_DIARY_PARALLEL" },
-  { id: "dd-ndps-action",                 name_en: "Daily Diary: NDPS Action",               name_hi: "एनडीपीएस कार्रवाई",                     format: ["excel"], applicable_record_types: ["CASE","ARREST"],                    template_type: "DAILY_DIARY_PARALLEL" }
+  { id: "dd-ndps-action",                 name_en: "Daily Diary: NDPS Action",               name_hi: "एनडीपीएस कार्रवाई",                     format: ["excel"], applicable_record_types: ["CASE","ARREST"],                    template_type: "DAILY_DIARY_PARALLEL" },
+  { id: "PHQ_DIARY",                      name_en: "PHQ Daily Crime Diary",                   name_hi: "मुख्यालय दैनिक अपराध डायरी",              format: ["excel"], applicable_record_types: ["CASE","ARREST"],                     template_type: "PHQ_DIARY" },
+  { id: "DISTRICT_DIARY",                 name_en: "District Crime Diary (18 Sheets)",        name_hi: "जिला अपराध डायरी",                       format: ["excel"], applicable_record_types: ["CASE","ARREST","PCR_CALL"],          template_type: "DISTRICT_DIARY" }
 ];
 
 export const getTemplates = async (req, res) => {
@@ -371,9 +374,16 @@ export const generateReport = async (req, res) => {
     });
   }
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   let selectedTemplate = null;
   if (template_id) {
-    selectedTemplate = await db('report_templates').where({ id: template_id, is_active: true }).first();
+    selectedTemplate = await db('report_templates')
+      .where({ is_active: true })
+      .where(builder => {
+        if (UUID_RE.test(template_id)) builder.where({ id: template_id });
+        builder.orWhere({ code: template_id });
+      })
+      .first();
     if (!selectedTemplate) {
       log.debug('generateReport: template not in DB report_templates, checking in-memory fallback', { template_id });
       const memTemplate = templates.find(t => t.id === template_id);
@@ -392,7 +402,8 @@ export const generateReport = async (req, res) => {
         name_hi: memTemplate.name_hi,
         applicable_record_types: JSON.stringify(memTemplate.applicable_record_types),
         output_formats: JSON.stringify(memTemplate.format.map(f => f.toUpperCase())),
-        template_definition: JSON.stringify({})
+        template_definition: JSON.stringify({}),
+        template_type: memTemplate.template_type
       };
     }
   }
@@ -466,31 +477,53 @@ export const generateReport = async (req, res) => {
 
     const filePath = path.join(reportsDir, `${jobId}.${ext}`);
 
+    const dbTemplateId = (selectedTemplate && UUID_RE.test(selectedTemplate.id))
+      ? selectedTemplate.id
+      : (UUID_RE.test(template_id) ? template_id : null);
+
+    const effectiveUserId = userId || req.user?.id || 'bf5af8de-2e04-40ed-928e-6a0b02916fc2';
+
     await db('report_jobs').insert({
       id: jobId,
-      template_id: template_id || null,
+      template_id: dbTemplateId,
       custom_definition: custom_definition ? JSON.stringify(custom_definition) : null,
       filters: JSON.stringify(filters || {}),
       format: fmt,
       status: 'PENDING',
       file_path: filePath,
-      created_by: userId,
+      created_by: effectiveUserId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
     log.info('generateReport: wrote report_jobs row (PENDING)', { jobId, userId, template_id, format: fmt, filePath });
 
-    // Hand off to Python worker via RabbitMQ
-    await publish('report.requested', {
-      job_id: jobId,
-      template_id: template_id || null,
-      custom_definition: custom_definition || null,
-      filters: filters || {},
-      format: fmt,
-      selected_sub_templates: selected_sub_templates || null,
-      user_id: userId
-    });
-    log.debug('generateReport: published report.requested', { jobId, userId });
+    // Check if this is a PHQ / District template or metadata-driven template (Node.js engine)
+    const tCode = (selectedTemplate?.code || (typeof template_id === 'string' && !UUID_RE.test(template_id) ? template_id : '')).toUpperCase();
+    const isReportEngineTemplate = tCode.startsWith('PHQ') || tCode === 'PHQ_DIARY' || tCode.startsWith('DISTRICT') || tCode === 'DISTRICT_DIARY' || selectedTemplate?.template_type === 'PHQ_DIARY' || selectedTemplate?.template_type === 'DISTRICT_DIARY';
+    const isMetadataTemplate = isReportEngineTemplate || (selectedTemplate && selectedTemplate.template_definition && parseJsonField(selectedTemplate.template_definition) && Object.keys(parseJsonField(selectedTemplate.template_definition)).length > 0);
+
+    if (isMetadataTemplate) {
+      setImmediate(async () => {
+        try {
+          await generateReportInternal(jobId, selectedTemplate?.id || selectedTemplate?.code || template_id, filters || {}, fmt, filePath, userId);
+        } catch (err) {
+          log.error('generateReport: Metadata report generation failed', { jobId, err: err.message, stack: err.stack });
+          await db('report_jobs').where({ id: jobId }).update({ status: 'FAILED', updated_at: new Date().toISOString() });
+        }
+      });
+    } else {
+      // Hand off to Python worker via RabbitMQ for single-sheet reports
+      await publish('report.requested', {
+        job_id: jobId,
+        template_id: template_id || null,
+        custom_definition: custom_definition || null,
+        filters: filters || {},
+        format: fmt,
+        selected_sub_templates: selected_sub_templates || null,
+        user_id: userId
+      });
+      log.debug('generateReport: published report.requested', { jobId, userId });
+    }
 
     log.info('generateReport: exit', { jobId, userId, template_id, format: fmt });
     return res.status(201).json({
@@ -515,15 +548,71 @@ export const generateReport = async (req, res) => {
 
 export const generateReportInternal = async (jobId, template_id, parsedFilters, format, filePath, userId) => {
   log.debug('generateReportInternal: enter', { jobId, template_id, format, userId });
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  let template = null;
+  if (template_id) {
+    if (UUID_RE.test(template_id)) {
+      template = await db('report_templates').where({ id: template_id }).first();
+    }
+    if (!template) {
+      template = await db('report_templates').where({ code: template_id }).first();
+    }
+  }
+
+  const templateCode = (template?.code || (typeof template_id === 'string' && !UUID_RE.test(template_id) ? template_id : '')).toUpperCase();
+  const isPHQ = templateCode.startsWith('PHQ') || templateCode === 'PHQ_DIARY' || template?.template_type === 'PHQ_DIARY';
+  const isDistrict = templateCode.startsWith('DISTRICT') || templateCode === 'DISTRICT_DIARY' || template?.template_type === 'DISTRICT_DIARY';
+
+  if (isPHQ || isDistrict) {
+    const { generateReport } = await import('../report-engine/report-engine.service.js');
+    const rawDateStr = parsedFilters.date || parsedFilters.from_date || parsedFilters.from || new Date().toISOString().split('T')[0];
+    let runDateStr = String(rawDateStr).trim();
+    if (/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(runDateStr)) {
+      const parts = runDateStr.split(/[\/-]/);
+      runDateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(runDateStr)) {
+      throw new Error(`Invalid date format '${rawDateStr}'. Expected YYYY-MM-DD.`);
+    }
+    const scope = parsedFilters.scope_node_id || parsedFilters.scope || 'ALL_DELHI_TOTAL';
+    const selectedSheets = parsedFilters.selected_sheets || [];
+    const reportFamily = isDistrict ? 'DISTRICT_DIARY' : 'PHQ_DIARY';
+
+    const buffer = await generateReport({
+      reportFamily,
+      scopeNodeId: scope,
+      cutoffDate: runDateStr,
+      selectedSheets
+    });
+    fs.writeFileSync(filePath, buffer);
+    await db('report_jobs').where({ id: jobId }).update({
+      status: 'READY',
+      file_path: filePath,
+      updated_at: new Date().toISOString()
+    });
+    return;
+  }
+
+  if (template && template.template_definition) {
+    await generateMetadataReport(jobId, template, parsedFilters, format, filePath, userId);
+    await db('report_jobs').where({ id: jobId }).update({
+      status: 'READY',
+      file_path: filePath,
+      updated_at: new Date().toISOString()
+    });
+    return;
+  }
+
+
   let records = [];
   let psName = 'All jurisdictions';
 
   if (parsedFilters.psId || parsedFilters.station_id) {
     const psNode = await db('hierarchy_nodes').where({ id: parsedFilters.psId || parsedFilters.station_id }).first();
-    if (psNode) psName = psNode.name_en;
+    if (psNode) psName = psNode.name;
   } else if (parsedFilters.districtId || parsedFilters.district_id) {
     const distNode = await db('hierarchy_nodes').where({ id: parsedFilters.districtId || parsedFilters.district_id }).first();
-    if (distNode) psName = distNode.name_en;
+    if (distNode) psName = distNode.name;
   }
   log.debug('generateReportInternal: resolved jurisdiction label', { jobId, psName });
 
@@ -875,7 +964,8 @@ export const downloadReport = async (req, res) => {
       });
     }
 
-    if (job.status.toUpperCase() !== 'READY') {
+    const statusUpper = (job.status || '').toUpperCase();
+    if (statusUpper !== 'READY' && statusUpper !== 'COMPLETED') {
       log.warn('downloadReport: rejected — job not READY', { jobId: id, status: job.status });
       return res.status(400).json({
         status: 'error',

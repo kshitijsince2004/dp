@@ -92,3 +92,8 @@ CLAUDE.local.md
 daily-diary-excel-backend.md
 presentation_deliverables.md
 
+
+# IDE / Runtime caches
+.serena/
+backend/var/
+

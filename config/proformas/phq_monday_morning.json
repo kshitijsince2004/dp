@@ -1,0 +1,72 @@
+{
+  "code": "PHQ_MONDAY_MORNING",
+  "name": "PHQ Monday Morning Weekly Crime & Detection Statement",
+  "record_types": ["CASE"],
+  "levels": ["HQ"],
+  "template_type": "PROFORMA",
+  "is_active": true,
+  "output_formats": ["PDF", "EXCEL"],
+  "template_definition": {
+    "layout_mode": "MATRIX",
+    "header": {
+      "title_en": "DELHI POLICE HQ: MONDAY MORNING COMPARATIVE CRIME STATEMENT",
+      "short_name_en": "Monday_Morning"
+    },
+    "sections": [
+      {
+        "title_en": "Whole Delhi Weekly Reported & Solved Crime Summary",
+        "layout_mode": "MATRIX",
+        "rows": [
+          { "code": "MURDER", "label_en": "Murder", "classification": { "major_head_ids": [104] } },
+          { "code": "ATTEMPT_TO_MURDER", "label_en": "Attempt to Murder", "classification": { "major_head_ids": [105] } },
+          { "code": "ROBBERY", "label_en": "Robbery", "classification": { "major_head_ids": [106] } },
+          { "code": "BURGLARY", "label_en": "Burglary", "classification": { "major_head_ids": [101] } },
+          { "code": "MOTOR_VEHICLE_THEFT", "label_en": "Motor Vehicle Theft", "classification": { "major_head_ids": [107] } },
+          { "code": "RAPE", "label_en": "Rape", "classification": { "major_head_ids": [102] } }
+        ],
+        "columns": [
+          {
+            "code": "REP_CURR",
+            "label_en": "Reported Current Year",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "WEEK_TO_DATE",
+            "measure_type": "REGISTERED",
+            "year_offset": 0
+          },
+          {
+            "code": "REP_PREV",
+            "label_en": "Reported Previous Year",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "WEEK_TO_DATE",
+            "measure_type": "REGISTERED",
+            "year_offset": -1
+          },
+          {
+            "code": "REP_VAR",
+            "label_en": "Variation %",
+            "type": "DERIVED",
+            "formula": "VARIATION_PERCENT",
+            "curr_col": { "scope_group": "ALL_DELHI_TOTAL", "period": "WEEK_TO_DATE", "measure_type": "REGISTERED", "year_offset": 0 },
+            "prev_col": { "scope_group": "ALL_DELHI_TOTAL", "period": "WEEK_TO_DATE", "measure_type": "REGISTERED", "year_offset": -1 }
+          },
+          {
+            "code": "SOLVED_CURR",
+            "label_en": "Solved Current Year",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "WEEK_TO_DATE",
+            "measure_type": "WORKED_OUT",
+            "year_offset": 0
+          },
+          {
+            "code": "DETECTION_PCT",
+            "label_en": "Detection %",
+            "type": "DERIVED",
+            "formula": "DETECTION_PERCENT",
+            "num_col": { "scope_group": "ALL_DELHI_TOTAL", "period": "WEEK_TO_DATE", "measure_type": "WORKED_OUT", "year_offset": 0 },
+            "den_col": { "scope_group": "ALL_DELHI_TOTAL", "period": "WEEK_TO_DATE", "measure_type": "REGISTERED", "year_offset": 0 }
+          }
+        ]
+      }
+    ]
+  }
+}

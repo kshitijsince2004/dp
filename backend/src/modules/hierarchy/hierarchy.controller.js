@@ -1,6 +1,7 @@
 import db from '../../config/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { getLogger } from '../../utils/logger.js';
+import { resolveScope } from '../reports/engine/scopeResolver.js';
 
 // Matches modules/records/records.service.js style (logging-instrumentation-2026-07-22
 // HANDOFF.md §7).
@@ -266,6 +267,86 @@ export const deleteNode = async (req, res) => {
     });
   } catch (error) {
     log.error('deleteNode: failed', { nodeId: id, err: error });
+    return res.status(500).json({
+      status: 'error',
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+function isDescendant(nodes, childId, parentId) {
+  if (childId === parentId) return true;
+  let curr = nodes.find(n => n.id === childId);
+  while (curr && curr.parent_id) {
+    if (curr.parent_id === parentId) return true;
+    curr = nodes.find(n => n.id === curr.parent_id);
+  }
+  return false;
+}
+
+export const getScope = async (req, res) => {
+  const { node_id } = req.query;
+  const user = req.user;
+  log.debug('getScope: enter', { requestedNodeId: node_id, userId: user?.id, role: user?.role });
+
+  try {
+    // 1. Resolve default node based on user role if node_id not specified
+    let targetNodeId = node_id;
+    if (!targetNodeId) {
+      const hqRoles = ['HQ', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'];
+      if (hqRoles.includes(user?.role)) {
+        targetNodeId = 'ALL_DELHI_TOTAL';
+      } else if (user?.district_id) {
+        targetNodeId = user.district_id;
+      } else if (user?.sub_div_id) {
+        targetNodeId = user.sub_div_id;
+      } else if (user?.ps_id) {
+        targetNodeId = user.ps_id;
+      } else {
+        targetNodeId = 'ALL_DELHI_TOTAL';
+      }
+    }
+
+    // 2. Perform access control check
+    const hqRoles = ['HQ', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'];
+    let allowed = false;
+    if (hqRoles.includes(user?.role)) {
+      allowed = true;
+    } else {
+      const userNodeId = user?.district_id || user?.sub_div_id || user?.ps_id;
+      if (userNodeId) {
+        const allNodes = await db('hierarchy_nodes').where({ is_active: true }).select('id', 'parent_id', 'code');
+        // Find the node corresponding to targetNodeId
+        const targetNode = allNodes.find(n => n.id === targetNodeId || n.code === targetNodeId);
+        if (targetNode && isDescendant(allNodes, targetNode.id, userNodeId)) {
+          allowed = true;
+          // Normalize targetNodeId to the UUID
+          targetNodeId = targetNode.id;
+        }
+      }
+    }
+
+    if (!allowed) {
+      log.warn('getScope: unauthorized access attempt', { userId: user?.id, requestedNodeId: targetNodeId });
+      return res.status(403).json({
+        status: 'error',
+        success: false,
+        message: 'You do not have permission to access the requested scope.'
+      });
+    }
+
+    // 3. Resolve scope
+    const scopeData = await resolveScope(targetNodeId);
+    log.info('getScope: scope resolved successfully', { level: scopeData.level, self_name: scopeData.self_name });
+    
+    return res.status(200).json({
+      status: 'success',
+      success: true,
+      data: scopeData
+    });
+  } catch (error) {
+    log.error('getScope: failed', { err: error });
     return res.status(500).json({
       status: 'error',
       success: false,

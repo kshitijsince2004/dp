@@ -36,6 +36,7 @@ import levelContractsRouter from './modules/level-contracts/levelContracts.route
 import filtersRouter from './modules/filters/filters.router.js';
 import notificationsRouter from './modules/notifications/notifications.routes.js';
 import dailyDiaryRouter from './modules/daily-diary/daily-diary.router.js';
+import phqDiaryRouter from './modules/phq-diary/phq-diary.router.js';
 import warehouseRouter from './modules/warehouse/warehouse.router.js';
 import recordLinksRouter from './modules/record-links/record-links.router.js';
 import ioRouter from './modules/io/io.router.js';
@@ -165,6 +166,8 @@ app.use('/api/notifications', notificationsRouter);
 
 app.use('/api/v1/daily-diary', dailyDiaryRouter);
 app.use('/api/daily-diary', dailyDiaryRouter);
+app.use('/api/v1/phq-diary', phqDiaryRouter);
+app.use('/api/phq-diary', phqDiaryRouter);
 
 app.use('/api/v1/warehouse', warehouseRouter);
 app.use('/api/warehouse', warehouseRouter);
