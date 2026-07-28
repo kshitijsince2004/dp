@@ -628,7 +628,14 @@ DAILY_DIARY_PARALLEL_TEMPLATE_IDS = {
 
 # Maps each template ID to the subset of table_names it covers (None = all sheets)
 TEMPLATE_TO_TABLE_NAMES = {
-    'daily-diary': None,
+    'daily-diary': [
+        'excel_1manual_fir', 'excel_2eburglary_cases', 'excel_3ehouse_theft_cases', 'excel_4eother_theft_cases',
+        'excel_5mvt_cases', 'excel_8arrested_kalandara', 'excel_9arrested_efir_theft', 'excel_7arrested_east_district',
+        'excel_10arrested_efir_mv_theft', 'excel_13arrested_24_hrs_list', 'excel_14pi_disposal_manual',
+        'excel_15pi_disposal_eproperty', 'excel_16pi_disposal_emvt', 'excel_18missing_persons', 'excel_19uidb',
+        'excel_20abandoned_persons', 'excel_21traced_persons', 'excel_25inquest_registered',
+        'excel_26inquest_acpsdm_disposal', 'excel_28fir_goswara_summary'
+    ],
     'dd-manual-fir': ['excel_1manual_fir'],
     'dd-eburglary-ehouse-theft-mvt': ['excel_2eburglary_cases', 'excel_3ehouse_theft_cases', 'excel_4eother_theft_cases', 'excel_5mvt_cases'],
     'dd-arrested-all-heads': ['excel_6arrested_all_heads'],
@@ -864,9 +871,11 @@ def generate_report(job_id):
                     active_tables = [t.strip() for t in raw_tnames.split(',') if t.strip()]
                 elif isinstance(raw_tnames, list):
                     active_tables = raw_tnames
-            # Empty list from TEMPLATE_TO_TABLE_NAMES means no sheets defined yet → use all
-            if active_tables is not None and len(active_tables) == 0:
-                active_tables = None
+            # Default to the reference template's 20 sheets if no specific table subset passed
+            if active_tables is None:
+                active_tables = TEMPLATE_TO_TABLE_NAMES.get('daily-diary')
+            elif len(active_tables) == 0:
+                active_tables = TEMPLATE_TO_TABLE_NAMES.get('daily-diary')
             _dd_date = (filters or {}).get('date', '')
             _dd_date_to = (filters or {}).get('date_to') or (filters or {}).get('dateTo')
             if _dd_date_to and _dd_date_to != _dd_date:
