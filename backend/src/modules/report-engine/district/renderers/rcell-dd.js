@@ -1,14 +1,17 @@
-﻿import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
 
-function formatDistrictTitle(name) {
-  let s = (name || 'DISTRICT').trim();
-  s = s.replace(/\s+DISTRICT$/i, '');
+function formatJurisdictionTitle(scope) {
+  const name = (scope.self_name || 'JURISDICTION').trim();
+  if (scope.level === 'PS') {
+    return name.toUpperCase();
+  }
+  let s = name.replace(/\s+DISTRICT$/i, '');
   return `${s.toUpperCase()} DISTRICT`;
 }
 
 export function renderRcellDD(workbook, scope, calcData) {
-  const distTitle = formatDistrictTitle(scope.self_name);
-  const sheet = workbook.addWorksheet(`Rcell DD ${distTitle.replace(' DISTRICT', '')}`);
+  const jurTitle = formatJurisdictionTitle(scope);
+  const sheet = workbook.addWorksheet(`Rcell DD ${jurTitle.replace(' DISTRICT', '')}`);
   const children = scope.children_ids || [];
   const displayNames = scope.display_names || {};
   const yearNum = calcData.yearNum || 2026;
@@ -22,7 +25,7 @@ export function renderRcellDD(workbook, scope, calcData) {
 
   // Headers Row 2
   const headers = [
-    distTitle.replace(' DISTRICT', ''), 'DACOITY', 'MURDER', 'ATT TO MUR.', 'ROBBERY', 'RIOT', 'KID FOR RAN.',
+    scope.level === 'PS' ? 'Police Station' : jurTitle.replace(' DISTRICT', ''), 'DACOITY', 'MURDER', 'ATT TO MUR.', 'ROBBERY', 'RIOT', 'KID FOR RAN.',
     'RAPE', 'EXTORTION', 'SNATCHING', 'HURT', 'BURGLARY', 'HOUSE THEFT', 'M V THEFT',
     'SERVANT THEFT', 'OTHER THEFT', 'M O WOMEN', 'EVE TEASING', 'KIDNAPPING', 'ABDUCTION',
     'FATAL ACC.', 'SIMPLE ACC.', 'OTHER IPC', 'TOTAL IPC', 'ARMS ACT', 'EXCISE ACT',

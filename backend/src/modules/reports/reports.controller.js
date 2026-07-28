@@ -574,7 +574,7 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(runDateStr)) {
       throw new Error(`Invalid date format '${rawDateStr}'. Expected YYYY-MM-DD.`);
     }
-    const scope = parsedFilters.scope_node_id || parsedFilters.scope || 'ALL_DELHI_TOTAL';
+    const scope = parsedFilters.scope_node_id || parsedFilters.ps_id || parsedFilters.station_id || parsedFilters.district_id || parsedFilters.scope || 'ALL_DELHI_TOTAL';
     const selectedSheets = parsedFilters.selected_sheets || [];
     const reportFamily = isDistrict ? 'DISTRICT_DIARY' : 'PHQ_DIARY';
 

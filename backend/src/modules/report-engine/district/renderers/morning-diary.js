@@ -1,4 +1,4 @@
-﻿import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
 
 export function renderMorningDiary(workbook, scope, calcData) {
   const sheet = workbook.addWorksheet('Morning-Daily Diary');
@@ -108,22 +108,40 @@ export function renderMorningDiary(workbook, scope, calcData) {
     });
 
     // Add Section Total Row
+    let sumB = 0, sumC = 0, sumD = 0, sumE = 0, sumF = 0, sumG = 0, sumH = 0, sumI = 0, sumN = 0;
+    children.forEach((psId) => {
+      const headData = (calcData.morningData && calcData.morningData[sec.code] && calcData.morningData[sec.code][psId]) || {};
+      sumB += Number(headData.dayY1 || 0);
+      sumC += Number(headData.dayY1Wo || 0);
+      sumD += Number(headData.dayY || 0);
+      sumE += Number(headData.dayYWo || 0);
+      sumF += Number(headData.uptoY1 || 0);
+      sumG += Number(headData.uptoY1Wo || 0);
+      sumH += Number(headData.uptoY || 0);
+      sumI += Number(headData.uptoYWo || 0);
+      sumN += Number(headData.uptoLastDayY1 || 0);
+    });
+
+    const sumJ = Math.max(0, sumH - sumI);
+    const solK = sumF > 0 ? (sumG / sumF) : 0;
+    const solL = sumH > 0 ? (sumI / sumH) : 0;
+
     const totRowIdx = sheet.rowCount + 1;
     const totRow = sheet.addRow([
       'Total',
-      { formula: `SUM(B${firstPsRow}:B${lastPsRow})`, result: 0 },
-      { formula: `SUM(C${firstPsRow}:C${lastPsRow})`, result: 0 },
-      { formula: `SUM(D${firstPsRow}:D${lastPsRow})`, result: 0 },
-      { formula: `SUM(E${firstPsRow}:E${lastPsRow})`, result: 0 },
-      { formula: `SUM(F${firstPsRow}:F${lastPsRow})`, result: 0 },
-      { formula: `SUM(G${firstPsRow}:G${lastPsRow})`, result: 0 },
-      { formula: `SUM(H${firstPsRow}:H${lastPsRow})`, result: 0 },
-      { formula: `SUM(I${firstPsRow}:I${lastPsRow})`, result: 0 },
-      { formula: `H${totRowIdx}-I${totRowIdx}`, result: 0 },
-      { formula: `IF(F${totRowIdx}=0," - ",G${totRowIdx}/F${totRowIdx})`, result: 0 },
-      { formula: `IF(H${totRowIdx}=0," - ",I${totRowIdx}/H${totRowIdx})`, result: 0 },
+      { formula: `SUM(B${firstPsRow}:B${lastPsRow})`, result: sumB },
+      { formula: `SUM(C${firstPsRow}:C${lastPsRow})`, result: sumC },
+      { formula: `SUM(D${firstPsRow}:D${lastPsRow})`, result: sumD },
+      { formula: `SUM(E${firstPsRow}:E${lastPsRow})`, result: sumE },
+      { formula: `SUM(F${firstPsRow}:F${lastPsRow})`, result: sumF },
+      { formula: `SUM(G${firstPsRow}:G${lastPsRow})`, result: sumG },
+      { formula: `SUM(H${firstPsRow}:H${lastPsRow})`, result: sumH },
+      { formula: `SUM(I${firstPsRow}:I${lastPsRow})`, result: sumI },
+      { formula: `H${totRowIdx}-I${totRowIdx}`, result: sumJ },
+      { formula: `IF(F${totRowIdx}=0," - ",G${totRowIdx}/F${totRowIdx})`, result: solK },
+      { formula: `IF(H${totRowIdx}=0," - ",I${totRowIdx}/H${totRowIdx})`, result: solL },
       '',
-      { formula: `SUM(N${firstPsRow}:N${lastPsRow})`, result: 0 }
+      { formula: `SUM(N${firstPsRow}:N${lastPsRow})`, result: sumN }
     ]);
 
     totRow.height = 22;

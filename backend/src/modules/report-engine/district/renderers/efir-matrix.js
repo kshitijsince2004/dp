@@ -1,14 +1,15 @@
-﻿import { PALETTE, FONTS, EFIR_SHEET_ROWS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, EFIR_SHEET_ROWS } from '../../shared/canonical-codes.js';
 
 export function renderEfirMatrix(workbook, scope, calcData) {
-  const districtName = (scope.self_name || 'DISTRICT').toUpperCase();
-  const sheet = workbook.addWorksheet(`E-FIR ${districtName}`);
+  let jurName = (scope.self_name || 'DISTRICT').toUpperCase().replace(/\s+DISTRICT$/i, '');
+  if (scope.level === 'DISTRICT') jurName = `${jurName} DISTRICT`;
+  const sheet = workbook.addWorksheet(`E-FIR ${jurName.slice(0, 20)}`);
   const children = scope.children_ids || [];
   const displayNames = scope.display_names || {};
 
   sheet.mergeCells('A1:J1');
   const t1 = sheet.getCell('A1');
-  t1.value = `E-FIR OF ${districtName} DISTRICT`;
+  t1.value = `E-FIR OF ${jurName}`;
   t1.font = FONTS.TITLE;
 
   const psHeaders = [];

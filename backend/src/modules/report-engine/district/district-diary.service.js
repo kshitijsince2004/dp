@@ -1,4 +1,4 @@
-﻿import ExcelJS from 'exceljs';
+import ExcelJS from 'exceljs';
 import { resolveScope } from '../shared/scope.js';
 import { buildDateWindows } from '../shared/date-windows.js';
 import { fetchDistrictCaseCounts, fetchDistrictArrestCounts, fetchDistrictPcrCallCounts } from '../shared/count-fetcher.js';
@@ -45,7 +45,8 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
   const firArrestsList = await fetchArrestsByCaseType({ psIds, cutoffDate: dates.cutoff, caseType: 'FIR' });
   const kalArrestsList = await fetchArrestsByCaseType({ psIds, cutoffDate: dates.cutoff, caseType: 'KALANDAR' });
 
-  // Map case counts by PS and head
+  const morningData = await fetchMorningData(psIds, dates);
+
   const psDayCounts = {};
   dayCaseCounts.forEach(r => {
     if (!psDayCounts[r.ps_id]) psDayCounts[r.ps_id] = {};
@@ -62,7 +63,8 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
     heinousList,
     fullFirList,
     firArrestsList,
-    kalArrestsList
+    kalArrestsList,
+    morningData
   };
 
   const workbook = new ExcelJS.Workbook();
@@ -103,4 +105,47 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
 
   const buffer = await workbook.xlsx.writeBuffer();
   return buffer;
+}
+
+async function fetchMorningData(psIds, dates) {
+  const headMap = {
+    MV_THEFT: 16,
+    SNATCHING: 9,
+    BURGLARY: 12,
+    HOUSE_THEFT: 18,
+    OTHER_THEFT: 19
+  };
+
+  const morningData = {};
+  for (const [secCode, headId] of Object.entries(headMap)) {
+    morningData[secCode] = {};
+
+    const [dayY1, dayY1Wo, dayY, dayYWo, uptoY1, uptoY1Wo, uptoY, uptoYWo, uptoLastDayY1] = await Promise.all([
+      fetchDistrictCaseCounts({ psIds, fromDate: dates.yesterdayLY || dates.cutoffLY, toDate: dates.yesterdayLY || dates.cutoffLY }),
+      fetchDistrictCaseCounts({ psIds, fromDate: dates.yesterdayLY || dates.cutoffLY, toDate: dates.yesterdayLY || dates.cutoffLY, isWorkedOut: true }),
+      fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoff, toDate: dates.cutoff }),
+      fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoff, toDate: dates.cutoff, isWorkedOut: true }),
+      fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.cutoffLY }),
+      fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.cutoffLY, isWorkedOut: true }),
+      fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff }),
+      fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff, isWorkedOut: true }),
+      fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.yesterdayLY || dates.cutoffLY })
+    ]);
+
+    psIds.forEach(psId => {
+      morningData[secCode][psId] = {
+        dayY1: Number(dayY1.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
+        dayY1Wo: Number(dayY1Wo.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
+        dayY: Number(dayY.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
+        dayYWo: Number(dayYWo.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
+        uptoY1: Number(uptoY1.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
+        uptoY1Wo: Number(uptoY1Wo.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
+        uptoY: Number(uptoY.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
+        uptoYWo: Number(uptoYWo.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
+        uptoLastDayY1: Number(uptoLastDayY1.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0)
+      };
+    });
+  }
+
+  return morningData;
 }
