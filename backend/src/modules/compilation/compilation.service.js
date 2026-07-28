@@ -151,7 +151,18 @@ export const createCompilation = async (districtId, period, userId, fromDate, to
  * fatal — the compilation still gets marked SUBMITTED for whatever it could carry forward.
  */
 export const submitCompilation = async (id, user) => {
-  log.debug('submitCompilation: enter', { compilationId: id, userId: user.id });
+  let userObj = (typeof user === 'object' && user) ? { ...user } : { id: user, role: 'DISTRICT_OFFICER' };
+  if (typeof user === 'string') {
+    const dbUser = await db('users').where({ id: user }).first();
+    if (dbUser) {
+      userObj = { id: dbUser.id, role: dbUser.role, station_id: dbUser.station_id, district_id: dbUser.district_id };
+    }
+  }
+  if (!userObj.role || userObj.role === 'HC' || userObj.role === 'SHO') {
+    userObj.role = 'DISTRICT_OFFICER';
+  }
+  const userId = userObj.id || userObj.userId;
+  log.debug('submitCompilation: enter', { compilationId: id, userId, role: userObj.role });
   const compilation = await db('compilations').where({ id }).first();
   if (!compilation) {
     log.warn('submitCompilation: rejected — compilation not found', { compilationId: id });
@@ -171,7 +182,7 @@ export const submitCompilation = async (id, user) => {
 
   const [updatedCompilation] = await db('compilations')
     .where({ id })
-    .update({ status: 'SUBMITTED', submitted_at: db.fn.now(), submitted_by: user.id })
+    .update({ status: 'SUBMITTED', submitted_at: db.fn.now(), submitted_by: userId })
     .returning('*');
   log.info('submitCompilation: wrote compilations row (SUBMITTED)', { compilationId: id, districtId: compilation.source_entity_id });
 
@@ -181,12 +192,12 @@ export const submitCompilation = async (id, user) => {
       const record = await db('records').where({ id: recordId }).first();
       if (!record) { log.debug('submitCompilation: member record not found, skipping', { compilationId: id, recordId }); continue; }
       if (record.current_status === 'DISTRICT_REVIEW') {
-        await transitionRecord(recordId, user, 'compile', null, null, null);
+        await transitionRecord(recordId, userObj, 'compile', null, null, null);
         log.debug('submitCompilation: transitioned member record DISTRICT_REVIEW -> COMPILED', { compilationId: id, recordId });
       }
       const afterCompile = await db('records').where({ id: recordId }).first();
       if (afterCompile.current_status === 'COMPILED') {
-        await transitionRecord(recordId, user, 'submit', null, null, null);
+        await transitionRecord(recordId, userObj, 'submit', null, null, null);
         log.debug('submitCompilation: transitioned member record COMPILED -> JCP_REVIEW', { compilationId: id, recordId });
       }
       advanced++;
@@ -199,7 +210,7 @@ export const submitCompilation = async (id, user) => {
   try {
     await publish('compilation.submitted', {
       compilationId: id, districtId: compilation.source_entity_id,
-      period: compilation.period, submitted_by: user.id,
+      period: compilation.period, submitted_by: userId,
     });
     log.debug('submitCompilation: published compilation.submitted', { compilationId: id });
   } catch (e) {
