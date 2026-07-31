@@ -97,6 +97,9 @@ export default function MyRecords() {
     queryFn: async () => {
       const params = {};
       if (filters.type) params.type = filters.type;
+      // Derived ARREST sub-filter (Kalandra / against-FIR) — the backend decides which
+      // arrests qualify (see UnifiedFilterStrip.jsx); we only forward the enum.
+      if (filters.arrestKind) params.arrest_kind = filters.arrestKind;
       if (filters.status) {
         if (filters.status === 'SENT_BACK_HC') {
           // Both SENT_BACK_HC and SENT_BACK statuses are used to represent returned records in different components

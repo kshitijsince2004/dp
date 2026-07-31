@@ -259,6 +259,39 @@ unilaterally because it amends a recorded architect ruling. **Complexity:** Low 
   the source (deactivate, never delete, once anything references them).
 - **Complexity:** Medium. **Dependencies:** none; do before any real deployment.
 
+## G. Property-import ref-label resolution hardening (from bugfix batch 2026-07-23)
+
+Found during B12 (import) — `docs/bugfix-batch-2026-07-23/HANDOFF.md`. The narrow live bug
+(no dry-run check on `property_major_category`/`minor_category` → silent NULL) is FIXED
+(WARNING added). These related weaknesses were reported, not fixed (records-module scope):
+
+- **G1 — Preserve the raw typed property-category value.** On a label miss the original text is
+  lost (major/minor stays NULL). `local_head`/`beat_no` preserve it via a `_raw` `storage:"extra"`
+  sibling in legacy mode. **Suggested:** add the same `_raw` sibling for property categories.
+  **Complexity:** Low-Med (mapper/schema). **Dependencies:** none.
+- **G2 — Fuzzy/punctuation-normalize fallback for property-category resolution.**
+  `resolvePropertyMajorCategory/MinorCategory` (`records.normalize.js`) do exact case-insensitive
+  match only; `resolveLocalHead`/`resolveBeat` have a "recovered via normalization" fallback that
+  rescues near-misses. **Suggested:** give property resolvers the same normalization fallback.
+  **Complexity:** Low. **Dependencies:** ref-data review.
+- **G3 — Scope minor-category resolution by the resolved major category.**
+  `resolvePropertyMinorCategory` matches a minor label against ALL items, so it can resolve
+  against a different major's item list. Pre-existing. **Suggested:** pass the resolved
+  major_category_id to constrain the minor lookup. **Complexity:** Low.
+
+## H. Explicit "clear all persons" affordance (from bugfix batch 2026-07-23, D1 follow-up)
+
+- **Problem:** the B1 backend safety net refuses to delete ALL repeater persons (victim/accused/
+  arrestee) when an edit sends an empty list — this stops the silent data-loss race, but also
+  blocks the rare legitimate case of intentionally removing the last accused/victim from a CASE.
+- **Why it matters:** user chose (2026-07-23) to keep the guard AND later add an intentional way
+  to clear persons, so the safety net doesn't become a functional dead-end.
+- **Suggested implementation:** an explicit per-person "remove" control + a confirm, sending a
+  distinct signal (e.g. an explicit `clearPersons:true` flag or per-row deletes) that the backend
+  honors — distinguishable from the accidental empty-array race the guard is protecting against.
+  Never widen the plain `persons:[]` path back into "delete all".
+- **Complexity:** Low-Med (FE affordance + a narrow BE opt-in). **Dependencies:** B1 fix (done).
+
 ## F. Explicitly out of scope here (tracked elsewhere)
 
 Reporting stack — unified report engine on `report_templates`, `report-builder`,

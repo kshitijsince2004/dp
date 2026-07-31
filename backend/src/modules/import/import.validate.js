@@ -33,7 +33,8 @@
 // keep their existing per-rule leniency, documented at each site below.
 import {
   resolveAct, resolveSection, resolveMajorHead, resolveMinorHead, resolveLocalHead, resolveBeat,
-  normalizeDate,
+  resolvePropertyMajorCategory, resolvePropertyMinorCategory,
+  normalizeDate, toBool,
 } from '../records/records.normalize.js';
 import { validateRequiredFields } from '../records/records.service.js';
 import { enumCoercion, pincodeCoercion, resolveStorage } from '../records/records.mapper.js';
@@ -296,6 +297,50 @@ async function validateRefLabels(trx, recordType, payload, isLegacy, batchScope)
     }
   }
 
+  // B12b (2026-07-23): property_major_category/property_minor_category were the only two
+  // ref-lookup fields on the whole composed payload with NO dry-run check here — unlike every
+  // other ref field above, an unresolved category silently DROPS at write time
+  // (records.mapper.js's resolvePropertyFkColumns just `delete`s the column, logged at debug
+  // only) with zero signal to the importer. Root cause: the frozen template's Property Details
+  // sheet dropdown is sourced from `ref.property_categories.code_type` ("COIN AND CURRENCY",
+  // ALL CAPS compound names — see template-builder.service.js's live lookups), which does NOT
+  // match this field's own field_registry `options` metadata used everywhere else in the app
+  // ("Cash", "Vehicle", "Documents", …) — resolvePropertyMajorCategory/resolvePropertyMinorCategory
+  // (records.normalize.js) do an exact case-insensitive match with no fuzzy/normalize fallback,
+  // so 7 of the 9 major-category labels an officer would naturally type never resolve. This
+  // does not fix that mismatch (a ref-data/label decision outside this module's ownership —
+  // see the import module HANDOFF) but turns the silent data loss into a visible, per-row
+  // finding, exactly like every other ref field on this sheet.
+  //
+  // Severity is WARNING in BOTH modes (never the ERROR-in-non-legacy `severity` var used above
+  // for act/section/major_head/minor_head/local_head): those fields are registry-required in
+  // at least some case_type/mode combination, so an unresolved value there means the record
+  // itself is incomplete for its mandatory classification. property_major_category/minor are
+  // registry `required:false` in every mode — rejecting the WHOLE row (victim/accused/
+  // complainant/offences included) over an optional field a genuinely-filled-in property row
+  // otherwise has no problem with would be strictly worse than today's silent-null (verified:
+  // making this ERROR caused a real confirm to drop the row to imported_rows:0 — a regression,
+  // not a fix). WARNING preserves P2 ("reject only the impossible") while still surfacing it.
+  for (const p of payload.properties) {
+    // resolvePropertyMajorCategory/resolvePropertyMinorCategory already pass a numeric code
+    // straight through (the interactive form's own submission shape) — only a genuine label
+    // miss returns null, so no gating on "is this already numeric" is needed here.
+    if (p.property_major_category) {
+      const majorId = await resolvePropertyMajorCategory(trx, p.property_major_category);
+      if (majorId == null) {
+        errors.push({ row, field_key: 'property_major_category', code: 'REF_UNRESOLVED_PROPERTY_MAJOR_CATEGORY', severity: 'WARNING', message: `Property Major Category "${p.property_major_category}" could not be matched — the property will import WITHOUT a category unless corrected.` });
+        log.warn('validateRefLabels: property_major_category unresolved — category will be dropped at write time', { row, propertyMajorCategory: p.property_major_category });
+      }
+    }
+    if (p.property_minor_category) {
+      const minorId = await resolvePropertyMinorCategory(trx, p.property_minor_category);
+      if (minorId == null) {
+        errors.push({ row, field_key: 'property_minor_category', code: 'REF_UNRESOLVED_PROPERTY_MINOR_CATEGORY', severity: 'WARNING', message: `Type of property "${p.property_minor_category}" could not be matched — the property will import WITHOUT this sub-type unless corrected (arms/drugs/vehicle/etc. subtypes are not covered by this check).` });
+        log.warn('validateRefLabels: property_minor_category unresolved — subtype will be dropped at write time', { row, propertyMinorCategory: p.property_minor_category });
+      }
+    }
+  }
+
   if (payload.data.local_head) {
     const { id, recovered } = await resolveLocalHead(trx, payload.data.local_head);
     if (!id) {
@@ -478,6 +523,16 @@ function detectCoercionWarnings(recordType, payload, registryMap) {
         if (c) push(fk, label, val, c.to, 'status');
       } else if (col === 'pincode') {
         if (pincodeCoercion(val)) push(fk, label, val, null, 'pincode');
+      } else if (registryMap[fk]?.field_type === 'BOOLEAN') {
+        // C11 (2026-07-26): BOOLEAN-typed registry fields (e.g. UIDB's filed_by_acp_sdm,
+        // D2-ruled to stay a real boolean column) write through records.mapper.js's
+        // coerceByType -> toBool(raw), which only recognizes yes/true/1/y and no/false/0/n —
+        // anything else (a still-circulating pre-D2 template's "SDM"/"ACP"/"None" cell, or a
+        // legacy "Nil"/"N/A") silently returns null with zero signal anywhere. Reuses the
+        // EXACT toBool the write path calls (records.normalize.js), same "reuse the real
+        // detector" discipline as the branches above — never claims a drop the write path
+        // won't actually make.
+        if (toBool(val) === null) push(fk, label, val, null, 'yes/no value');
       }
     }
   };

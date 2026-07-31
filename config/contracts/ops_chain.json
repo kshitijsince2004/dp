@@ -3,7 +3,7 @@
   "code": "LDC_DIST_HQ_ALL",
   "from_level": "DISTRICT",
   "to_level": "HQ",
-  "route": "OPS_CHAIN",
+  "route": "DIRECT_HQ",
   "record_type": "*",
   "visible_field_keys": [
    "case_type",
@@ -44,29 +44,31 @@
   "route": "OPS_CHAIN",
   "record_type": "*",
   "visible_field_keys": [
-   "case_type",
-   "fir_no",
-   "fir_date",
-   "local_head",
-   "occurrence_place",
-   "io_name",
-   "status",
-   "case_status",
-   "final_call_status",
-   "missing_status",
-   "uidb_status",
-   "brief_facts",
-   "arrested_first_name",
-   "arrested_middle_name",
-   "arrested_last_name",
-   "arrest_date",
-   "crime_head",
-   "pcr_no",
-   "call_head",
-   "missing_name",
-   "missing_date",
-   "found_date",
-   "found_place"
+   "*"
+  ],
+  "aggregate_definitions": [],
+  "is_active": true
+ },
+ {
+  "code": "LDC_DIST_JCP_ALL",
+  "from_level": "DISTRICT",
+  "to_level": "JCP",
+  "route": "OPS_CHAIN",
+  "record_type": "*",
+  "visible_field_keys": [
+   "*"
+  ],
+  "aggregate_definitions": [],
+  "is_active": true
+ },
+ {
+  "code": "LDC_JCP_SCP_ALL",
+  "from_level": "JCP",
+  "to_level": "SCP",
+  "route": "OPS_CHAIN",
+  "record_type": "*",
+  "visible_field_keys": [
+   "*"
   ],
   "aggregate_definitions": [],
   "is_active": true

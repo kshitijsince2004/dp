@@ -13,7 +13,11 @@ const log = getLogger('records.controller');
 
 export const getRecords = async (req, res) => {
   const type = req.query.type || req.query.record_type;
-  const { status, dateFrom, dateTo, search, linked_case_id, linked_fir_no, localHead, local_head } = req.query;
+  // C12 (2026-07-26 bugfix batch): derived Kalandra / Arrest-against-FIR filter (frontend
+  // contract fixed in advance — UnifiedFilterStrip.jsx / MyRecords.jsx send `arrest_kind`,
+  // never classify locally, per P4). Unrecognized/omitted values are intentionally passed
+  // through unfiltered — listRecords only acts on the two known enum values.
+  const { status, dateFrom, dateTo, search, linked_case_id, linked_fir_no, localHead, local_head, arrest_kind } = req.query;
   log.debug('getRecords: enter', { type, query: redact(req.query), userId: req.user?.id });
 
   try {
@@ -26,7 +30,8 @@ export const getRecords = async (req, res) => {
         search,
         linked_case_id,
         linked_fir_no,
-        localHead: localHead || local_head
+        localHead: localHead || local_head,
+        arrestKind: arrest_kind
       },
       req.jurisdictionQuery
     );

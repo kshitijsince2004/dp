@@ -97,3 +97,32 @@ presentation_deliverables.md
 .serena/
 backend/var/
 
+# ── Local development-only artifacts (2026-07-26) ───────────────────────────────────────
+# Useful to keep on THIS machine while debugging; never meant for other developers or CI.
+
+# Tester bug-report drops: log bundles a tester zips up and sends over (backend.log,
+# error.log, frontend/<sessionId>.log). Can be tens of MB and contains real session data —
+# keep locally while diagnosing, never commit. The folder name is literally what it says.
+temp delete later/
+temp-delete-later/
+
+# Ad-hoc debugging/verification scripts. Convention: anything suffixed *_tmp or *.scratch.
+# Agents and manual debugging sessions generate these (one-off import probes, row inspectors,
+# API round-trip checks). If a script earns permanence, rename it into backend/scripts/.
+*_tmp.mjs
+*_tmp.js
+*_tmp.cjs
+*.scratch.mjs
+*.scratch.js
+scratch/
+
+# Playwright/browser test harness run locally (the MCP server is pinned to a system-Chrome
+# channel that isn't installed here, so browser testing runs from a local harness instead).
+# Screenshots/traces/videos are debugging output, not deliverables.
+playwright-report/
+test-results/
+*.har
+screenshots/
+*-screenshot.png
+page-*.png
+

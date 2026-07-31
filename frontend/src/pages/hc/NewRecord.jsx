@@ -292,7 +292,10 @@ export default function NewRecord() {
               <h4 className="font-extrabold text-rose-700 uppercase tracking-wide">
                 {t('actions.correctionRequired', 'Reviewer Correction Requested')}
               </h4>
-              <p className="font-semibold text-slate-600"><strong>Reviewer Officer:</strong> {sbDetails.performed_by}</p>
+              {/* B2 (2026-07-23): `performed_by` is the raw users.id UUID FK — prefer the
+                  backend's `performed_by_name` (falls back to `username`), UUID only as a last
+                  resort if neither is present (see matching fix in sho/RecordDetail.jsx). */}
+              <p className="font-semibold text-slate-600"><strong>Reviewer Officer:</strong> {sbDetails.performed_by_name || sbDetails.username || sbDetails.performed_by}</p>
               <p className="bg-white p-3 rounded-xl border border-rose-200 text-rose-700 italic mt-1.5 font-medium shadow-sm">
                 "{sbDetails.comment}"
               </p>

@@ -531,6 +531,10 @@
    "slot": "occurrence",
    "column": "pincode"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -1998,6 +2002,11 @@
    "role": "COMPLAINANT",
    "column": "age"
   },
+  "validation_rules": {
+   "required": false,
+   "min": 0,
+   "max": 120
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -2385,6 +2394,10 @@
    "column": "pincode",
    "role": "COMPLAINANT"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -2739,6 +2752,10 @@
    "slot": "permanent",
    "column": "pincode",
    "role": "COMPLAINANT"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
   },
   "visible_to_levels": [
    "PS",
@@ -3264,6 +3281,11 @@
    "role": "ACCUSED",
    "column": "age"
   },
+  "validation_rules": {
+   "required": false,
+   "min": 0,
+   "max": 120
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -3663,6 +3685,10 @@
    "column": "pincode",
    "role": "ACCUSED"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -4028,6 +4054,10 @@
    "slot": "permanent",
    "column": "pincode",
    "role": "ACCUSED"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
   },
   "visible_to_levels": [
    "PS",
@@ -4554,6 +4584,11 @@
    "role": "VICTIM",
    "column": "age"
   },
+  "validation_rules": {
+   "required": false,
+   "min": 0,
+   "max": 120
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -4953,6 +4988,10 @@
    "column": "pincode",
    "role": "VICTIM"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -5318,6 +5357,10 @@
    "slot": "permanent",
    "column": "pincode",
    "role": "VICTIM"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
   },
   "visible_to_levels": [
    "PS",

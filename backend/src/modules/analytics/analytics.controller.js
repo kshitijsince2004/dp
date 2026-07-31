@@ -460,10 +460,13 @@ export const getStatusBreakdown = async (req, res) => {
 
 // ── PS Dashboard summary (Cases / Arrest / Left Out Accused) ─────────────────
 
-const applyJurisdictionScope = (query, jq) => {
-  if (jq.ps_id) query = query.where('ps_id', jq.ps_id);
-  if (jq.district_id) query = query.where('district_id', jq.district_id);
-  if (jq.sub_div_id) query = query.where('sub_div_id', jq.sub_div_id);
+// `prefix` qualifies the scope columns (e.g. 'records.') for queries that JOIN another table
+// which also carries ps_id/district_id/sub_div_id (e.g. detail tables) — an unqualified column
+// there is ambiguous (Postgres 42702). Defaults to '' to preserve single-table callers.
+const applyJurisdictionScope = (query, jq, prefix = '') => {
+  if (jq.ps_id) query = query.where(`${prefix}ps_id`, jq.ps_id);
+  if (jq.district_id) query = query.where(`${prefix}district_id`, jq.district_id);
+  if (jq.sub_div_id) query = query.where(`${prefix}sub_div_id`, jq.sub_div_id);
   return query;
 };
 
@@ -560,9 +563,10 @@ const computeLeftOutAccused = async (jq, startDate, endDate) => {
     let caseQuery = db('records')
       .select('records.id', 'fir.fir_no as fir_no')
       .leftJoin('fir_details as fir', 'records.id', 'fir.record_id')
-      .where('record_type', 'CASE')
-      .whereBetween('record_date', [startDate, endDate]);
-    caseQuery = applyJurisdictionScope(caseQuery, jq);
+      .where('records.record_type', 'CASE')
+      .whereBetween('records.record_date', [startDate, endDate]);
+    // qualify scope columns — fir_details also has ps_id/district_id, so unqualified is ambiguous (42702)
+    caseQuery = applyJurisdictionScope(caseQuery, jq, 'records.');
     const cases = await caseQuery;
     if (cases.length === 0) {
       log.debug('computeLeftOutAccused: no CASE records in range, exit early', { startDate, endDate });

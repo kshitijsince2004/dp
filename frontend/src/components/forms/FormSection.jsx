@@ -565,7 +565,18 @@ export default function FormSection({
                 'ipc_sections', 'excise_sections', 'arms_sections', 'gambling_sections', 'other_sections',
                 'ipc_major_head', 'excise_major_head', 'arms_major_head', 'gambling_major_head', 'other_major_head',
                 'theft_minor_head', 'murder_minor_head', 'hurt_minor_head', 'cheating_minor_head', 'robbery_minor_head',
-                'excise_minor_head', 'arms_minor_head', 'gambling_minor_head', 'other_minor_head'
+                'excise_minor_head', 'arms_minor_head', 'gambling_minor_head', 'other_minor_head',
+                // B8 (2026-07-23): gd_date/gd_time/fir_date/fir_time/arrest_time are rendered
+                // INLINE by FieldRenderer's gd_no/fir_no/arrest_date composite Number+Date+Time
+                // widgets (FieldRenderer.jsx `compositeDateTimeCell`). record types whose
+                // general_info is hand-rendered (CASE/ARREST, see DynamicForm.jsx
+                // renderArrestGeneralInfoStep) never put these in a field list at all, but
+                // MISSING/UIDB fall through to this generic FormSection, whose field list from
+                // `/fields/form/:type` still carries them as their own standalone rows — doubling
+                // the date/time picker beside "GD Number". FieldRenderer now returns null for
+                // these keys (removing the duplicate INPUT); skip them here too so the whole row
+                // (label + now-empty input cell) doesn't render at all.
+                'gd_date', 'gd_time', 'fir_date', 'fir_time', 'arrest_time'
               ];
 
               const visibleFields = section.fields.filter(f => {

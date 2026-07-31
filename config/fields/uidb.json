@@ -349,6 +349,10 @@
    "column": "pincode",
    "role": "DECEASED"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "show_when": {
    "field": "identified",
    "value": true
@@ -689,6 +693,10 @@
    "column": "pincode",
    "role": "DECEASED"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "show_when": {
    "field": "deceased_perm_same",
    "value": "No"
@@ -924,6 +932,10 @@
    "entity": "person",
    "role": "DECEASED",
    "column": "age_range"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "age_range"
   },
   "visible_to_levels": [
    "PS",
@@ -1194,33 +1206,19 @@
   "record_types": [
    "UIDB"
   ],
-  "field_type": "SELECT",
+  "field_type": "BOOLEAN",
   "labels": {
-   "en": "Inquest Filed by ACP / SDM",
-   "hi": "जांच एसीपी / एसडीएम द्वारा दायर"
+   "en": "Inquest Filed by ACP / SDM?",
+   "hi": "क्या जांच एसीपी / एसडीएम द्वारा दायर की गई?"
   },
   "section": "inquest_details",
   "storage": {
    "table": "uidb_details",
    "column": "filed_by_acp_sdm"
   },
-  "options": [
-   {
-    "value": "SDM",
-    "label_en": "SDM",
-    "label_hi": "एसडीएम"
-   },
-   {
-    "value": "ACP",
-    "label_en": "ACP",
-    "label_hi": "एसीपी"
-   },
-   {
-    "value": "None",
-    "label_en": "None",
-    "label_hi": "कोई नहीं"
-   }
-  ],
+  "validation_rules": {
+   "required": false
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -1253,10 +1251,7 @@
   },
   "show_when": {
    "field": "filed_by_acp_sdm",
-   "value": [
-    "SDM",
-    "ACP"
-   ]
+   "value": true
   },
   "visible_to_levels": [
    "PS",
