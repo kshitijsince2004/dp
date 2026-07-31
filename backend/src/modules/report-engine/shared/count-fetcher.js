@@ -6,18 +6,16 @@ function filterValidUuids(arr) {
   return (arr || []).filter(id => typeof id === 'string' && UUID_RE.test(id));
 }
 
-/**
- * Fetch case counts for a district (grouped by PS & local_head_id)
- */
 export async function fetchDistrictCaseCounts({ psIds, fromDate, toDate, sourceSystems = null, isWorkedOut = null }) {
   const validPsIds = filterValidUuids(psIds);
   if (validPsIds.length === 0) return [];
 
   let query = db('records as r')
     .join('fir_details as fd', 'fd.record_id', 'r.id')
+    .leftJoin('ref.local_heads as lh', 'lh.local_head_cd', 'fd.local_head_id')
     .where('r.record_type', 'CASE')
     .whereIn('r.ps_id', validPsIds)
-    .whereBetween('r.registration_date', [fromDate, toDate]);
+    .whereRaw('COALESCE(r.registration_date, r.record_date) BETWEEN ? AND ?', [fromDate, toDate]);
 
   if (sourceSystems && sourceSystems.length > 0) {
     query = query.whereIn('r.source_system', sourceSystems);
@@ -28,13 +26,15 @@ export async function fetchDistrictCaseCounts({ psIds, fromDate, toDate, sourceS
   }
 
   return await query
-    .select('r.ps_id', 'fd.local_head_id', db.raw('COUNT(*)::int as cnt'))
-    .groupBy('r.ps_id', 'fd.local_head_id');
+    .select(
+      'r.ps_id',
+      'fd.local_head_id',
+      'lh.canonical_code',
+      db.raw('COUNT(*)::int as cnt')
+    )
+    .groupBy('r.ps_id', 'fd.local_head_id', 'lh.canonical_code');
 }
 
-/**
- * Fetch arrest counts for a district (grouped by PS & local_head_id / case_type)
- */
 export async function fetchDistrictArrestCounts({ psIds, fromDate, toDate, caseType = null }) {
   const validPsIds = filterValidUuids(psIds);
   if (validPsIds.length === 0) return [];
@@ -43,7 +43,7 @@ export async function fetchDistrictArrestCounts({ psIds, fromDate, toDate, caseT
     .join('arrest_details as ad', 'ad.record_id', 'r.id')
     .where('r.record_type', 'ARREST')
     .whereIn('r.ps_id', validPsIds)
-    .whereBetween('r.registration_date', [fromDate, toDate]);
+    .whereRaw('COALESCE(r.registration_date, r.record_date) BETWEEN ? AND ?', [fromDate, toDate]);
 
   if (caseType) {
     query = query.where('ad.case_type', caseType);
@@ -54,9 +54,6 @@ export async function fetchDistrictArrestCounts({ psIds, fromDate, toDate, caseT
     .groupBy('r.ps_id');
 }
 
-/**
- * Fetch PCR call counts for a district (grouped by PS)
- */
 export async function fetchDistrictPcrCallCounts({ psIds, fromDate, toDate }) {
   const validPsIds = filterValidUuids(psIds);
   if (validPsIds.length === 0) return [];
@@ -64,7 +61,7 @@ export async function fetchDistrictPcrCallCounts({ psIds, fromDate, toDate }) {
   return await db('records as r')
     .where('r.record_type', 'PCR_CALL')
     .whereIn('r.ps_id', validPsIds)
-    .whereBetween('r.registration_date', [fromDate, toDate])
+    .whereRaw('COALESCE(r.registration_date, r.record_date) BETWEEN ? AND ?', [fromDate, toDate])
     .select('r.ps_id', db.raw('COUNT(*)::int as cnt'))
     .groupBy('r.ps_id');
 }

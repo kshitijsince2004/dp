@@ -6,6 +6,7 @@ export function renderEfirMatrix(workbook, scope, calcData) {
   const sheet = workbook.addWorksheet(`E-FIR ${jurName.slice(0, 20)}`);
   const children = scope.children_ids || [];
   const displayNames = scope.display_names || {};
+  const psEfirById = calcData.psEfirById || {};
 
   sheet.mergeCells('A1:J1');
   const t1 = sheet.getCell('A1');
@@ -30,8 +31,9 @@ export function renderEfirMatrix(workbook, scope, calcData) {
 
   EFIR_SHEET_ROWS.forEach(h => {
     const rowVals = [h.label];
-    children.forEach(() => {
-      rowVals.push('-', '-');
+    children.forEach(psId => {
+      const cnt = Number(psEfirById[psId]?.[h.head] || 0);
+      rowVals.push(cnt || '-', '-'); // W/O not separately tracked for eFIR; show '-'
     });
 
     const dRow = sheet.addRow(rowVals);
@@ -50,7 +52,5 @@ export function renderEfirMatrix(workbook, scope, calcData) {
     });
   });
 
-  sheet.columns.forEach((col, idx) => {
-    col.width = idx === 0 ? 25 : 10;
-  });
+  sheet.columns.forEach((col, idx) => { col.width = idx === 0 ? 25 : 10; });
 }

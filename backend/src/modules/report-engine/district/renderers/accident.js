@@ -1,4 +1,4 @@
-﻿import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
 
 function formatDistrictTitle(name) {
   let s = (name || 'DISTRICT').trim();
@@ -11,25 +11,32 @@ export function renderAccident(workbook, scope, calcData) {
   const distTitle = formatDistrictTitle(scope.self_name);
   const yearNum = calcData.yearNum || 2026;
   const yearPrev = yearNum - 1;
+  const dbc = calcData.distByCode || {};
+  const fmt = v => (v > 0 ? v : '-');
 
-  // Title Row 1
+  const simpleDay  = dbc['SIMPLE_ACCIDENT']?.dayY  || 0;
+  const simpleUptoY = dbc['SIMPLE_ACCIDENT']?.repY  || 0;
+  const simpleUptoY1= dbc['SIMPLE_ACCIDENT']?.repY1 || 0;
+  const fatalDay   = dbc['FATAL_ACCIDENT']?.dayY   || 0;
+  const fatalUptoY = dbc['FATAL_ACCIDENT']?.repY   || 0;
+  const fatalUptoY1= dbc['FATAL_ACCIDENT']?.repY1  || 0;
+
+  // Title
   sheet.mergeCells('A1:G1');
   const t1 = sheet.getCell('A1');
   t1.value = `ACCIDENT CASES STATEMENT — ${distTitle}`;
   t1.font = FONTS.TITLE;
   t1.alignment = { horizontal: 'center', vertical: 'middle' };
 
-  // Multi-row Header Rows 2 & 3
+  // Multi-row headers
   const r2 = sheet.addRow(['District', 'Simple / Grievous Accident', '', '', 'Fatal Accident', '', '']);
   r2.height = 24;
-
   const r3 = sheet.addRow(['', 'Today', `Upto Date ${yearNum}`, `Upto Date ${yearPrev}`, 'Today', `Upto Date ${yearNum}`, `Upto Date ${yearPrev}`]);
   r3.height = 22;
 
-  // Perform Merges
-  sheet.mergeCells('A2:A3'); // District
-  sheet.mergeCells('B2:D2'); // Simple / Grievous Accident
-  sheet.mergeCells('E2:G2'); // Fatal Accident
+  sheet.mergeCells('A2:A3');
+  sheet.mergeCells('B2:D2');
+  sheet.mergeCells('E2:G2');
 
   [r2, r3].forEach(row => {
     row.eachCell(c => {
@@ -40,7 +47,12 @@ export function renderAccident(workbook, scope, calcData) {
     });
   });
 
-  const d1 = sheet.addRow([distTitle, '-', '-', '-', '-', '-', '-']);
+  // Data row — real counts from distByCode
+  const d1 = sheet.addRow([
+    distTitle,
+    fmt(simpleDay), fmt(simpleUptoY), fmt(simpleUptoY1),
+    fmt(fatalDay),  fmt(fatalUptoY),  fmt(fatalUptoY1),
+  ]);
   d1.font = FONTS.DATA;
   d1.eachCell((cell, colIdx) => {
     cell.alignment = colIdx === 1 ? { horizontal: 'left', vertical: 'middle' } : { horizontal: 'center', vertical: 'middle' };
@@ -50,11 +62,10 @@ export function renderAccident(workbook, scope, calcData) {
   sheet.addRow([]);
   sheet.addRow([]);
 
-  // Brief Facts narrative header
-  const bfStart = sheet.rowCount + 1;
-  sheet.addRow([]);
-  sheet.mergeCells(`A${bfStart}:G${bfStart}`);
-  const bfHead = sheet.getCell(`A${bfStart}`);
+  // Brief Facts section
+  const bfRow = sheet.rowCount + 1;
+  sheet.mergeCells(`A${bfRow}:G${bfRow}`);
+  const bfHead = sheet.getCell(`A${bfRow}`);
   bfHead.value = `Brief facts of all fatal cases in ${distTitle}:`;
   bfHead.font = FONTS.SUBTITLE;
   bfHead.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.YELLOW } };
@@ -67,13 +78,13 @@ export function renderAccident(workbook, scope, calcData) {
     list.forEach((item, idx) => {
       const nr = sheet.addRow([
         idx + 1,
-        `${item.ps_name} - FIR No. ${item.fir_no || 'N/A'}: ${item.brief_facts || 'No brief facts provided'}`
+        `${item.ps_name} - FIR No. ${item.fir_no || 'N/A'}: ${item.brief_facts || 'No brief facts provided'}`,
       ]);
       nr.getCell(2).font = FONTS.DATA;
     });
   }
 
   sheet.columns.forEach((col, idx) => {
-    col.width = idx === 0 ? 32 : (idx === 1 ? 40 : 16);
+    col.width = idx === 0 ? 32 : idx === 1 ? 40 : 16;
   });
 }

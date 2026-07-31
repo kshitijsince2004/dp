@@ -15,24 +15,21 @@ COLUMN_LABELS = {
     'case_registered_female': 'Case Registered (Female)',
 }
 
-_REG_STATUS = {'case registered', 'case_registered'}
-
-
 def summarize(classified):
     children = [r for r in classified['missing'] if _is_child(r['data'].get('age'))]
-    m = [r for r in children if (r['data'].get('gender') or '').lower() == 'male']
-    f = [r for r in children if (r['data'].get('gender') or '').lower() == 'female']
+    m = [r for r in children if (r['data'].get('gender') or '').upper() == 'MALE']
+    f = [r for r in children if (r['data'].get('gender') or '').upper() == 'FEMALE']
     return [{
-        'pcr_call_male':            sum(1 for r in m if r['data'].get('source') == 'PCR'),
-        'pcr_call_female':          sum(1 for r in f if r['data'].get('source') == 'PCR'),
-        'dd_entrycomplaint_male':   sum(1 for r in m if r['data'].get('source') != 'PCR'),
-        'dd_entrycomplaint_female': sum(1 for r in f if r['data'].get('source') != 'PCR'),
+        'pcr_call_male':            sum(1 for r in m if (r['data'].get('source') or '').upper() == 'PCR'),
+        'pcr_call_female':          sum(1 for r in f if (r['data'].get('source') or '').upper() == 'PCR'),
+        'dd_entrycomplaint_male':   sum(1 for r in m if (r['data'].get('source') or '').upper() != 'PCR'),
+        'dd_entrycomplaint_female': sum(1 for r in f if (r['data'].get('source') or '').upper() != 'PCR'),
         'total_male':               len(m),
         'total_female':             len(f),
-        'traced_male':              sum(1 for r in m if (r['data'].get('status') or '').lower() == 'traced'),
-        'traced_female':            sum(1 for r in f if (r['data'].get('status') or '').lower() == 'traced'),
-        'case_registered_male':     sum(1 for r in m if (r['data'].get('status') or '').lower() in _REG_STATUS),
-        'case_registered_female':   sum(1 for r in f if (r['data'].get('status') or '').lower() in _REG_STATUS),
+        'traced_male':              sum(1 for r in m if (r['data'].get('status') or '').upper() == 'TRACED'),
+        'traced_female':            sum(1 for r in f if (r['data'].get('status') or '').upper() == 'TRACED'),
+        'case_registered_male':     sum(1 for r in m if r['data'].get('case_registered') is True),
+        'case_registered_female':   sum(1 for r in f if r['data'].get('case_registered') is True),
     }]
 
 

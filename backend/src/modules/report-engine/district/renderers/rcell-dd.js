@@ -2,12 +2,48 @@ import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
 
 function formatJurisdictionTitle(scope) {
   const name = (scope.self_name || 'JURISDICTION').trim();
-  if (scope.level === 'PS') {
-    return name.toUpperCase();
-  }
-  let s = name.replace(/\s+DISTRICT$/i, '');
-  return `${s.toUpperCase()} DISTRICT`;
+  if (scope.level === 'PS') return name.toUpperCase();
+  return name.replace(/\s+DISTRICT$/i, '').toUpperCase() + ' DISTRICT';
 }
+
+// IPC / BNS crime heads (in column order)
+const IPC_HEADS = [
+  { label: 'DACOITY',       code: 'DACOITY' },
+  { label: 'MURDER',        code: 'MURDER' },
+  { label: 'ATT TO MUR.',   code: 'ATT_TO_MURDER' },
+  { label: 'ROBBERY',       code: 'ROBBERY' },
+  { label: 'RIOT',          code: 'RIOT' },
+  { label: 'KID FOR RAN.',  code: 'KID_FOR_RANSOM' },
+  { label: 'RAPE',          code: 'RAPE' },
+  { label: 'EXTORTION',     code: 'EXTORTION' },
+  { label: 'SNATCHING',     code: 'SNATCHING' },
+  { label: 'HURT',          code: 'HURT' },
+  { label: 'BURGLARY',      code: 'BURGLARY' },
+  { label: 'HOUSE THEFT',   code: 'HOUSE_THEFT' },
+  { label: 'M V THEFT',     code: 'MV_THEFT' },
+  { label: 'SERVANT THEFT', code: 'SERVANT_THEFT' },
+  { label: 'OTHER THEFT',   code: 'OTHER_THEFT' },
+  { label: 'M O WOMEN',     code: 'MO_WOMEN' },
+  { label: 'EVE TEASING',   code: 'EVE_TEASING' },
+  { label: 'KIDNAPPING',    code: 'KIDNAPPING' },
+  { label: 'ABDUCTION',     code: 'ABDUCTION' },
+  { label: 'FATAL ACC.',    code: 'FATAL_ACCIDENT' },
+  { label: 'SIMPLE ACC.',   code: 'SIMPLE_ACCIDENT' },
+  { label: 'OTHER IPC',     code: 'OTHER_IPC' },
+];
+
+const ACT_HEADS = [
+  { label: 'ARMS ACT',    code: 'ARMS_ACT' },
+  { label: 'EXCISE ACT',  code: 'EXCISE_ACT' },
+  { label: 'GAMBLING ACT',code: 'GAMBLING_ACT' },
+  { label: 'I.T. ACT',    code: 'IT_ACT' },
+  { label: 'I T (P) ACT', code: 'ITPA_ACT' },
+  { label: 'N D P S ACT', code: 'NDPS_ACT' },
+  { label: 'POCSO ACT',   code: 'POCSO' },
+  { label: 'OTHER ACT',   code: 'OTHER_ACT' },
+];
+
+const ALL_HEADS = [...IPC_HEADS, ...ACT_HEADS];
 
 export function renderRcellDD(workbook, scope, calcData) {
   const jurTitle = formatJurisdictionTitle(scope);
@@ -15,61 +51,49 @@ export function renderRcellDD(workbook, scope, calcData) {
   const children = scope.children_ids || [];
   const displayNames = scope.display_names || {};
   const yearNum = calcData.yearNum || 2026;
+  const psDayByCode = calcData.psDayByCode || {};
 
-  // Title Row 1
+  // Title
   sheet.mergeCells('A1:B1');
   const titleCell = sheet.getCell('A1');
   titleCell.value = `Rcell Crime Diary ${yearNum}`;
   titleCell.font = FONTS.TITLE;
   titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-  // Headers Row 2
+  // Header row
   const headers = [
-    scope.level === 'PS' ? 'Police Station' : jurTitle.replace(' DISTRICT', ''), 'DACOITY', 'MURDER', 'ATT TO MUR.', 'ROBBERY', 'RIOT', 'KID FOR RAN.',
-    'RAPE', 'EXTORTION', 'SNATCHING', 'HURT', 'BURGLARY', 'HOUSE THEFT', 'M V THEFT',
-    'SERVANT THEFT', 'OTHER THEFT', 'M O WOMEN', 'EVE TEASING', 'KIDNAPPING', 'ABDUCTION',
-    'FATAL ACC.', 'SIMPLE ACC.', 'OTHER IPC', 'TOTAL IPC', 'ARMS ACT', 'EXCISE ACT',
-    'GAMBLING ACT', 'I.T. ACT', 'I T (P) ACT', 'N D P S ACT', 'POCSO ACT', 'OTHER ACT',
-    'TOTAL ACT', 'GRAND TOTAL'
+    scope.level === 'PS' ? 'Police Station' : jurTitle.replace(' DISTRICT', ''),
+    ...ALL_HEADS.map(h => h.label),
+    'TOTAL IPC', 'TOTAL ACT', 'GRAND TOTAL',
   ];
-
   const headerRow = sheet.addRow(headers);
   headerRow.height = 28;
-  headerRow.eachCell((cell) => {
+  headerRow.eachCell(cell => {
     cell.font = FONTS.HEADER;
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.YELLOW } };
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    cell.border = {
-      top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }
-    };
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
   });
 
-  const heads = [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 18, 16, 17, 19, 28, 54, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42
-  ];
+  const distTotals = new Array(ALL_HEADS.length).fill(0);
+  let distIpcTotal = 0, distActTotal = 0;
 
-  let totalRowValues = new Array(headers.length - 2).fill(0);
-  let grandTotalSum = 0;
-
-  children.forEach((psId) => {
+  children.forEach(psId => {
     const psName = displayNames[psId] || psId;
-    const psCounts = calcData.psDayCounts[psId] || {};
-    
-    let psIpcSum = 0;
-    let psActSum = 0;
+    const codes = psDayByCode[psId] || {};
+    const get = code => Number(codes[code] || 0);
 
-    const rowVals = heads.map((hCode, hIdx) => {
-      const val = Number(psCounts[hCode] || 0);
-      totalRowValues[hIdx] += val;
-      if (hIdx < 23) psIpcSum += val;
-      else psActSum += val;
-      return val > 0 ? val : '-';
-    });
+    const vals = ALL_HEADS.map(h => get(h.code));
+    const ipcSum = vals.slice(0, IPC_HEADS.length).reduce((a, b) => a + b, 0);
+    const actSum = vals.slice(IPC_HEADS.length).reduce((a, b) => a + b, 0);
+    const grandTotal = ipcSum + actSum;
 
-    const psGrandTotal = psIpcSum + psActSum;
-    grandTotalSum += psGrandTotal;
+    vals.forEach((v, i) => { distTotals[i] += v; });
+    distIpcTotal += ipcSum;
+    distActTotal += actSum;
 
-    const dRow = sheet.addRow([psName, ...rowVals, psIpcSum > 0 ? psIpcSum : '-', psGrandTotal > 0 ? psGrandTotal : '-']);
+    const fmt = v => v > 0 ? v : '-';
+    const dRow = sheet.addRow([psName, ...vals.map(fmt), fmt(ipcSum), fmt(actSum), fmt(grandTotal)]);
     dRow.height = 22;
     dRow.eachCell((cell, colNum) => {
       cell.font = FONTS.DATA;
@@ -78,17 +102,19 @@ export function renderRcellDD(workbook, scope, calcData) {
     });
   });
 
-  // Total Row
-  const totRow = sheet.addRow(['TOTAL', ...totalRowValues.map(v => v > 0 ? v : '-'), grandTotalSum > 0 ? grandTotalSum : '-']);
+  const fmt = v => v > 0 ? v : '-';
+  const totRow = sheet.addRow([
+    'TOTAL',
+    ...distTotals.map(fmt),
+    fmt(distIpcTotal), fmt(distActTotal), fmt(distIpcTotal + distActTotal),
+  ]);
   totRow.height = 24;
-  totRow.eachCell((cell) => {
+  totRow.eachCell(cell => {
     cell.font = FONTS.HEADER;
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.YELLOW } };
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
     cell.border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
   });
 
-  sheet.columns.forEach((col, idx) => {
-    col.width = idx === 0 ? 32 : 14;
-  });
+  sheet.columns.forEach((col, idx) => { col.width = idx === 0 ? 32 : 14; });
 }

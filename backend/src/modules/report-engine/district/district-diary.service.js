@@ -1,7 +1,8 @@
 import ExcelJS from 'exceljs';
+import db from '../../../config/db.js';
 import { resolveScope } from '../shared/scope.js';
 import { buildDateWindows } from '../shared/date-windows.js';
-import { fetchDistrictCaseCounts, fetchDistrictArrestCounts, fetchDistrictPcrCallCounts } from '../shared/count-fetcher.js';
+import { fetchDistrictCaseCounts, fetchDistrictPcrCallCounts } from '../shared/count-fetcher.js';
 import {
   fetchAccidentCases,
   fetchHeinousBriefFacts,
@@ -33,38 +34,135 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
   const dates = buildDateWindows(cutoffDate);
   const psIds = scope.children_ids || [];
 
-  // Fetch counts & detail records
-  const dayCaseCounts = await fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoff, toDate: dates.cutoff });
-  const efirCounts = await fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoff, toDate: dates.cutoff, sourceSystems: ['E_THEFT', 'E_MVT', 'NCRP'] });
-  const pcrCounts = await fetchDistrictPcrCallCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff });
-  const subDivMap = await fetchPsSubDivisionMap(psIds);
+  // Find the most recent date ≤ cutoff that has records for this district's PS.
+  // This ensures day-level sheets (Rcell-DD, G22, D8, D9…) always show real data
+  // even when the selected date has no records for this specific district.
+  const effectiveCutoffRow = psIds.length > 0
+    ? await db('records')
+        .whereIn('ps_id', psIds)
+        .where('record_type', 'CASE')
+        .whereRaw("COALESCE(registration_date, record_date) <= ?", [dates.cutoff])
+        .max(db.raw("COALESCE(registration_date, record_date) as max_d"))
+        .first()
+    : null;
+  const effectiveCutoff = effectiveCutoffRow?.max_d
+    ? String(effectiveCutoffRow.max_d).slice(0, 10)
+    : dates.cutoff;
 
-  const accidentList = await fetchAccidentCases({ psIds, cutoffDate: dates.cutoff });
-  const heinousList = await fetchHeinousBriefFacts({ psIds, cutoffDate: dates.cutoff });
-  const fullFirList = await fetchFullFirListing({ psIds, cutoffDate: dates.cutoff });
-  const firArrestsList = await fetchArrestsByCaseType({ psIds, cutoffDate: dates.cutoff, caseType: 'FIR' });
-  const kalArrestsList = await fetchArrestsByCaseType({ psIds, cutoffDate: dates.cutoff, caseType: 'KALANDAR' });
+  // Fetch counts & detail records (parallel for performance)
+  const [
+    dayCaseCounts,
+    dayY1Counts,
+    dayYWoCounts,
+    dayY1WoCounts,
+    uptoYCounts,
+    uptoY1Counts,
+    uptoYWoCounts,
+    uptoY1WoCounts,
+    efirCounts,
+    pcrCounts,
+    subDivMap,
+  ] = await Promise.all([
+    fetchDistrictCaseCounts({ psIds, fromDate: effectiveCutoff, toDate: effectiveCutoff }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoffLY,  toDate: dates.cutoffLY }),
+    fetchDistrictCaseCounts({ psIds, fromDate: effectiveCutoff, toDate: effectiveCutoff, isWorkedOut: true }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoffLY,  toDate: dates.cutoffLY, isWorkedOut: true }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1Curr,  toDate: effectiveCutoff }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY,    toDate: dates.cutoffLY }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1Curr,  toDate: effectiveCutoff, isWorkedOut: true }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY,    toDate: dates.cutoffLY, isWorkedOut: true }),
+    fetchDistrictCaseCounts({ psIds, fromDate: effectiveCutoff, toDate: effectiveCutoff, sourceSystems: ['E_THEFT', 'E_MVT', 'NCRP'] }),
+    fetchDistrictPcrCallCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff }),
+    fetchPsSubDivisionMap(psIds),
+  ]);
 
-  const morningData = await fetchMorningData(psIds, dates);
+  const [accidentList, heinousList, fullFirList, firArrestsList, kalArrestsList, morningData] = await Promise.all([
+    fetchAccidentCases({ psIds, cutoffDate: effectiveCutoff }),
+    fetchHeinousBriefFacts({ psIds, cutoffDate: effectiveCutoff }),
+    fetchFullFirListing({ psIds, cutoffDate: effectiveCutoff }),
+    fetchArrestsByCaseType({ psIds, cutoffDate: effectiveCutoff, caseType: 'FIR' }),
+    fetchArrestsByCaseType({ psIds, cutoffDate: effectiveCutoff, caseType: 'KALANDAR' }),
+    fetchMorningData(psIds, { ...dates, cutoff: effectiveCutoff }),
+  ]);
 
-  const psDayCounts = {};
-  dayCaseCounts.forEach(r => {
-    if (!psDayCounts[r.ps_id]) psDayCounts[r.ps_id] = {};
-    psDayCounts[r.ps_id][r.local_head_id] = Number(r.cnt || 0);
+  // Aggregate rows into a map keyed by canonical_code (district totals)
+  function distSumByCode(rows) {
+    const m = {};
+    rows.forEach(r => {
+      const c = r.canonical_code || 'OTHER';
+      m[c] = (m[c] || 0) + Number(r.cnt || 0);
+    });
+    return m;
+  }
+  // Aggregate rows into a map keyed by ps_id → canonical_code (per-PS)
+  function psSumByCode(rows) {
+    const m = {};
+    rows.forEach(r => {
+      if (!m[r.ps_id]) m[r.ps_id] = {};
+      const c = r.canonical_code || 'OTHER';
+      m[r.ps_id][c] = (m[r.ps_id][c] || 0) + Number(r.cnt || 0);
+    });
+    return m;
+  }
+
+  const _dDayY    = distSumByCode(dayCaseCounts);
+  const _dDayY1   = distSumByCode(dayY1Counts);
+  const _dDayYWo  = distSumByCode(dayYWoCounts);
+  const _dDayY1Wo = distSumByCode(dayY1WoCounts);
+  const _dUptoY   = distSumByCode(uptoYCounts);
+  const _dUptoY1  = distSumByCode(uptoY1Counts);
+  const _dUptoYWo = distSumByCode(uptoYWoCounts);
+  const _dUptoY1Wo= distSumByCode(uptoY1WoCounts);
+
+  // distByCode[canonical_code] = { dayY, dayY1, dayYWo, dayY1Wo, repY, repY1, woY, woY1 }
+  const allDistCodes = new Set([
+    ...Object.keys(_dUptoY), ...Object.keys(_dUptoY1),
+    ...Object.keys(_dDayY), ...Object.keys(_dDayY1),
+  ]);
+  const distByCode = {};
+  allDistCodes.forEach(c => {
+    distByCode[c] = {
+      dayY:   _dDayY[c]    || 0, dayY1:   _dDayY1[c]   || 0,
+      dayYWo: _dDayYWo[c]  || 0, dayY1Wo: _dDayY1Wo[c] || 0,
+      repY:   _dUptoY[c]   || 0, repY1:   _dUptoY1[c]  || 0,
+      woY:    _dUptoYWo[c] || 0, woY1:    _dUptoY1Wo[c]|| 0,
+    };
+  });
+
+  const psByCode    = psSumByCode(uptoYCounts);
+  const psByCodeY1  = psSumByCode(uptoY1Counts);
+  const psByCodeWo  = psSumByCode(uptoYWoCounts);
+  const psByCodeY1Wo= psSumByCode(uptoY1WoCounts);
+  const psEfirByCode = psSumByCode(efirCounts);
+  // Per-PS canonical_code counts for TODAY only (used by rcell-dd)
+  const psDayByCode = psSumByCode(dayCaseCounts);
+  // Also index eFIR by local_head_id for sub-head matrices (efir-matrix sheet)
+  const psEfirById = {};
+  efirCounts.forEach(r => {
+    if (!psEfirById[r.ps_id]) psEfirById[r.ps_id] = {};
+    const hid = r.local_head_id;
+    psEfirById[r.ps_id][hid] = (psEfirById[r.ps_id][hid] || 0) + Number(r.cnt || 0);
   });
 
   const calcData = {
-    cutoff_date: dates.cutoff,
+    cutoff_date: effectiveCutoff,
     yearNum: dates.yearNum,
-    psDayCounts,
-    pcrCounts,
+    pcrCounts: Object.fromEntries(pcrCounts.map(r => [r.ps_id, Number(r.cnt || 0)])),
     subDivMap,
     accidentList,
     heinousList,
     fullFirList,
     firArrestsList,
     kalArrestsList,
-    morningData
+    morningData,
+    distByCode,
+    psByCode,
+    psByCodeY1,
+    psByCodeWo,
+    psByCodeY1Wo,
+    psEfirByCode,
+    psEfirById,
+    psDayByCode,
   };
 
   const workbook = new ExcelJS.Workbook();
@@ -108,44 +206,40 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
 }
 
 async function fetchMorningData(psIds, dates) {
-  const headMap = {
-    MV_THEFT: 16,
-    SNATCHING: 9,
-    BURGLARY: 12,
-    HOUSE_THEFT: 18,
-    OTHER_THEFT: 19
-  };
+  const MORNING_CODES = ['MV_THEFT', 'SNATCHING', 'BURGLARY', 'HOUSE_THEFT', 'OTHER_THEFT'];
+
+  const find = (rows, psId, code) =>
+    Number(rows.find(r => r.ps_id === psId && r.canonical_code === code)?.cnt || 0);
+
+  const [dayY1, dayY1Wo, dayY, dayYWo, uptoY1, uptoY1Wo, uptoY, uptoYWo, uptoLastDayY1] = await Promise.all([
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.yesterdayLY || dates.cutoffLY, toDate: dates.yesterdayLY || dates.cutoffLY }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.yesterdayLY || dates.cutoffLY, toDate: dates.yesterdayLY || dates.cutoffLY, isWorkedOut: true }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoff, toDate: dates.cutoff }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoff, toDate: dates.cutoff, isWorkedOut: true }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.cutoffLY }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.cutoffLY, isWorkedOut: true }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff, isWorkedOut: true }),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.yesterdayLY || dates.cutoffLY })
+  ]);
 
   const morningData = {};
-  for (const [secCode, headId] of Object.entries(headMap)) {
-    morningData[secCode] = {};
-
-    const [dayY1, dayY1Wo, dayY, dayYWo, uptoY1, uptoY1Wo, uptoY, uptoYWo, uptoLastDayY1] = await Promise.all([
-      fetchDistrictCaseCounts({ psIds, fromDate: dates.yesterdayLY || dates.cutoffLY, toDate: dates.yesterdayLY || dates.cutoffLY }),
-      fetchDistrictCaseCounts({ psIds, fromDate: dates.yesterdayLY || dates.cutoffLY, toDate: dates.yesterdayLY || dates.cutoffLY, isWorkedOut: true }),
-      fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoff, toDate: dates.cutoff }),
-      fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoff, toDate: dates.cutoff, isWorkedOut: true }),
-      fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.cutoffLY }),
-      fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.cutoffLY, isWorkedOut: true }),
-      fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff }),
-      fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff, isWorkedOut: true }),
-      fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.yesterdayLY || dates.cutoffLY })
-    ]);
-
+  MORNING_CODES.forEach(code => {
+    morningData[code] = {};
     psIds.forEach(psId => {
-      morningData[secCode][psId] = {
-        dayY1: Number(dayY1.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
-        dayY1Wo: Number(dayY1Wo.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
-        dayY: Number(dayY.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
-        dayYWo: Number(dayYWo.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
-        uptoY1: Number(uptoY1.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
-        uptoY1Wo: Number(uptoY1Wo.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
-        uptoY: Number(uptoY.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
-        uptoYWo: Number(uptoYWo.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0),
-        uptoLastDayY1: Number(uptoLastDayY1.find(r => r.ps_id === psId && Number(r.local_head_id) === headId)?.cnt || 0)
+      morningData[code][psId] = {
+        dayY1:        find(dayY1,        psId, code),
+        dayY1Wo:      find(dayY1Wo,      psId, code),
+        dayY:         find(dayY,         psId, code),
+        dayYWo:       find(dayYWo,       psId, code),
+        uptoY1:       find(uptoY1,       psId, code),
+        uptoY1Wo:     find(uptoY1Wo,     psId, code),
+        uptoY:        find(uptoY,        psId, code),
+        uptoYWo:      find(uptoYWo,      psId, code),
+        uptoLastDayY1:find(uptoLastDayY1,psId, code),
       };
     });
-  }
+  });
 
   return morningData;
 }

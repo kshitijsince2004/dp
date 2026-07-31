@@ -1,4 +1,4 @@
-﻿import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
 import { computeVariation, computeDetection } from '../../shared/calc.js';
 
 function formatDistrictTitle(name) {
@@ -7,11 +7,71 @@ function formatDistrictTitle(name) {
   return `${s.toUpperCase()} DISTRICT`;
 }
 
+const CRIME_ROWS = [
+  { label: 'Dacoity',         code: 'DACOITY' },
+  { label: 'Murder',          code: 'MURDER' },
+  { label: 'Att. Murder',     code: 'ATT_TO_MURDER' },
+  { label: 'Robbery',         code: 'ROBBERY' },
+  { label: 'Riots',           code: 'RIOT' },
+  { label: 'Kid.For Ransom',  code: 'KID_FOR_RANSOM' },
+  { label: 'Rape',            code: 'RAPE' },
+  { label: 'TOTAL HEINOUS',   isTotal: true, group: 'heinous' },
+  { label: 'Extortion',       code: 'EXTORTION' },
+  { label: 'Snatching',       code: 'SNATCHING' },
+  { label: 'Hurt',            code: 'HURT' },
+  { label: 'Burglary',        code: 'BURGLARY' },
+  { label: 'House Theft',     code: 'HOUSE_THEFT' },
+  { label: 'M V Theft',       code: 'MV_THEFT' },
+  { label: 'Servant Theft',   code: 'SERVANT_THEFT' },
+  { label: 'Other Theft',     code: 'OTHER_THEFT' },
+  { label: 'M O Women',       code: 'MO_WOMEN' },
+  { label: 'Eve Teasing',     code: 'EVE_TEASING' },
+  { label: 'Kidnapping',      code: 'KIDNAPPING' },
+  { label: 'Abduction',       code: 'ABDUCTION' },
+  { label: 'Fatal Accident',  code: 'FATAL_ACCIDENT' },
+  { label: 'Simple Accident', code: 'SIMPLE_ACCIDENT' },
+  { label: 'Other IPC',       code: 'OTHER_IPC' },
+  { label: 'Cheating',        code: 'CHEATING' },
+  { label: 'TOTAL NON HEINOUS', isTotal: true, group: 'non_heinous' },
+  { label: 'TOTAL IPC',       isTotal: true, group: 'ipc' },
+  { label: 'TOTAL CRIME',     isTotal: true, group: 'crime' },
+  { label: 'Arms Act',        code: 'ARMS_ACT' },
+  { label: 'Excise Act',      code: 'EXCISE_ACT' },
+  { label: 'Gambling Act',    code: 'GAMBLING_ACT' },
+  { label: 'NDPS Act',        code: 'NDPS_ACT' },
+  { label: 'POCSO Act',       code: 'POCSO' },
+  { label: 'Other Act',       code: 'OTHER_ACT' },
+  { label: 'TOTAL ACT',       isTotal: true, group: 'act' },
+  { label: 'GRAND TOTAL',     isTotal: true, group: 'grand' },
+];
+
+const HEINOUS_CODES  = new Set(['DACOITY','MURDER','ATT_TO_MURDER','ROBBERY','RIOT','KID_FOR_RANSOM','RAPE']);
+const ACT_CODES      = new Set(['ARMS_ACT','EXCISE_ACT','GAMBLING_ACT','NDPS_ACT','POCSO','OTHER_ACT']);
+
 export function renderRcellComp(workbook, scope, calcData) {
   const sheet = workbook.addWorksheet('R Cell- Distt Crime');
   const distTitle = formatDistrictTitle(scope.self_name);
   const yearNum = calcData.yearNum || 2026;
   const yearPrev = yearNum - 1;
+  const dbc = calcData.distByCode || {};
+  const get = (code, field) => Number(dbc[code]?.[field] || 0);
+
+  // Precompute group totals
+  const sums = { heinous: {}, non_heinous: {}, ipc: {}, crime: {}, act: {}, grand: {} };
+  const fields = ['repY', 'woY', 'repY1', 'woY1'];
+  Object.values(sums).forEach(g => fields.forEach(f => (g[f] = 0)));
+
+  CRIME_ROWS.forEach(r => {
+    if (!r.code) return;
+    const isHeinous = HEINOUS_CODES.has(r.code);
+    const isAct     = ACT_CODES.has(r.code);
+    fields.forEach(f => {
+      const v = get(r.code, f);
+      if (isHeinous) { sums.heinous[f]     += v; sums.ipc[f]   += v; sums.crime[f] += v; sums.grand[f] += v; }
+      else if (isAct){ sums.act[f]         += v; sums.grand[f] += v; }
+      else           { sums.non_heinous[f] += v; sums.ipc[f]   += v; sums.crime[f] += v; sums.grand[f] += v; }
+    });
+  });
 
   // Title Row 1
   sheet.mergeCells('A1:D1');
@@ -30,22 +90,18 @@ export function renderRcellComp(workbook, scope, calcData) {
   t2.value = 'COMPARATIVE CRIME STATEMENT';
   t2.font = FONTS.SUBTITLE;
 
-  // Multi-row Header Rows 3 & 4
-  // Row 3
+  // Header Rows 3 & 4
   const r3 = sheet.addRow(['HEAD', `Upto Date ${yearPrev}`, '', `W/out % age of ${yearPrev}`, `Upto Date ${yearNum}`, '', `W/out %age of ${yearNum}`, '% Variation of Cases reported']);
   r3.height = 24;
-  
-  // Row 4
   const r4 = sheet.addRow(['', 'Rep.', 'W/O', '', 'Rep.', 'W/O', '']);
   r4.height = 24;
 
-  // Cell Merges
-  sheet.mergeCells('A3:A4'); // HEAD
-  sheet.mergeCells('B3:C3'); // Upto Date 2025
-  sheet.mergeCells('D3:D4'); // W/out % age of 2025
-  sheet.mergeCells('E3:F3'); // Upto Date 2026
-  sheet.mergeCells('G3:G4'); // W/out %age of 2026
-  sheet.mergeCells('H3:H4'); // % Variation
+  sheet.mergeCells('A3:A4');
+  sheet.mergeCells('B3:C3');
+  sheet.mergeCells('D3:D4');
+  sheet.mergeCells('E3:F3');
+  sheet.mergeCells('G3:G4');
+  sheet.mergeCells('H3:H4');
 
   [r3, r4].forEach(row => {
     row.eachCell(c => {
@@ -56,61 +112,31 @@ export function renderRcellComp(workbook, scope, calcData) {
     });
   });
 
-  const crimeRows = [
-    { label: 'Dacoity', code: 1 },
-    { label: 'Murder', code: 2 },
-    { label: 'Att. Murder', code: 3 },
-    { label: 'Robbery', code: 4 },
-    { label: 'Riots', code: 5 },
-    { label: 'Kid.For Ransom', code: 6 },
-    { label: 'Rape', code: 7 },
-    { label: 'TOTAL HEINOUS', isTotal: true },
-    { label: 'Extortion', code: 8 },
-    { label: 'Snatching', code: 9 },
-    { label: 'Hurt', code: 10 },
-    { label: 'Burglary', code: 12 },
-    { label: 'House Theft', code: 18 },
-    { label: 'M V Theft', code: 16 },
-    { label: 'Servant Theft', code: 17 },
-    { label: 'Other Theft', code: 19 },
-    { label: 'M O Women', code: 28 },
-    { label: 'Eve Teasing', code: 54 },
-    { label: 'Kidnapping', code: 29 },
-    { label: 'Abduction', code: 30 },
-    { label: 'Fatal Accident', code: 31 },
-    { label: 'Simple Accident', code: 32 },
-    { label: 'Other IPC', code: 33 },
-    { label: 'TOTAL NON HEINOUS', isTotal: true },
-    { label: 'TOTAL IPC', isTotal: true },
-    { label: 'Misc. Theft', code: 20 },
-    { label: 'Cyber Crime', code: 38 },
-    { label: 'Cheating', code: 39 },
-    { label: 'TOTAL CRIME', isTotal: true },
-    { label: 'Arms Act', code: 34 },
-    { label: 'Excise Act', code: 35 },
-    { label: 'Gambling Act', code: 36 },
-    { label: 'NDPS Act', code: 37 },
-    { label: 'POCSO Act', code: 41 },
-    { label: 'Other Act', code: 42 },
-    { label: 'TOTAL ACT', isTotal: true },
-    { label: 'GRAND TOTAL', isTotal: true }
-  ];
+  function fmt(v) { return v > 0 ? v : '-'; }
+  function fmtPct(v) { return v !== null ? `${(v * 100).toFixed(1)}%` : '-'; }
 
-  crimeRows.forEach(head => {
-    const data = { repY1: 0, woY1: 0, repY: 0, woY: 0 };
-    const solPctY1 = computeDetection(data.woY1, data.repY1);
-    const solPctY  = computeDetection(data.woY, data.repY);
-    const varPct   = computeVariation(data.repY, data.repY1);
+  CRIME_ROWS.forEach(head => {
+    let repY1, woY1, repY, woY;
+    if (head.isTotal) {
+      ({ repY1, woY1, repY, woY } = sums[head.group]);
+    } else {
+      repY1 = get(head.code, 'repY1');
+      woY1  = get(head.code, 'woY1');
+      repY  = get(head.code, 'repY');
+      woY   = get(head.code, 'woY');
+    }
+
+    const solPctY1 = computeDetection(woY1, repY1);
+    const solPctY  = computeDetection(woY, repY);
+    const varPct   = computeVariation(repY, repY1);
 
     const dRow = sheet.addRow([
       head.label,
-      data.repY1 > 0 ? data.repY1 : '-',
-      data.woY1 > 0 ? data.woY1 : '-',
-      solPctY1 !== null ? `${(solPctY1 * 100).toFixed(1)}%` : '-',
-      data.repY > 0 ? data.repY : '-',
-      data.woY > 0 ? data.woY : '-',
-      solPctY !== null ? `${(solPctY * 100).toFixed(1)}%` : '-',
-      varPct !== null ? `${(varPct * 100).toFixed(1)}%` : '-'
+      fmt(repY1), fmt(woY1),
+      fmtPct(solPctY1),
+      fmt(repY),  fmt(woY),
+      fmtPct(solPctY),
+      fmtPct(varPct),
     ]);
 
     dRow.height = 20;
@@ -124,7 +150,5 @@ export function renderRcellComp(workbook, scope, calcData) {
     });
   });
 
-  sheet.columns.forEach((col, idx) => {
-    col.width = idx === 0 ? 32 : 18;
-  });
+  sheet.columns.forEach((col, idx) => { col.width = idx === 0 ? 32 : 18; });
 }

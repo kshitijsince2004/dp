@@ -48,20 +48,23 @@ export function renderD8FirListing(workbook, scope, calcData) {
     sdCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
     groups[sdName].forEach((item, idx) => {
+      const firRef = item.fir_no
+        ? `${item.fir_no} dt ${item.registration_date || item.fir_date || ''}`
+        : '-';
       const dRow = sheet.addRow([
         idx + 1,
         item.ps_name || '-',
-        item.fir_no ? `${item.fir_no} dt ${item.registration_date}` : '-',
-        'IPC / BNS',
-        'Complainant Name',
-        'Time',
-        'Place of occurrence',
+        firRef,
+        item.sections || '-',
+        item.complainant_name || '-',
+        item.time_of_occurrence || '-',
+        item.occurrence_place || '-',
         item.brief_facts || 'N/A',
-        'Yes',
-        'Stolen / Recovered',
-        'Nil',
-        'Crime Head',
-        'Beat No'
+        item.arrested_person || 'None',
+        '-',
+        '-',
+        item.crime_head || '-',
+        '-'
       ]);
 
       dRow.height = 24;

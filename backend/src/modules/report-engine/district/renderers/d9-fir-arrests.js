@@ -47,19 +47,24 @@ export function renderD9FirArrests(workbook, scope, calcData) {
     sdCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.LIGHT_GREEN } };
 
     groups[sdName].forEach((item, idx) => {
+      const relPrefix = item.relation_type === 'HUSBAND' ? 'W/O' : 'S/O';
+      const parentage = item.relative_name ? `${relPrefix} ${item.relative_name}` : '-';
+      const firRef = item.fir_no
+        ? `${item.fir_no} dt ${item.registration_date || ''}`
+        : '-';
       const dRow = sheet.addRow([
         idx + 1,
         item.ps_name || '-',
-        item.person_name || 'Arrested Person',
+        item.person_name || '-',
         item.age || '-',
-        'S/o Parentage',
-        'Delhi Address',
-        item.fir_no ? `${item.fir_no} dt ${item.registration_date}` : '-',
-        'IPC / BNS',
-        'Arresting Officer',
-        '0',
-        'No',
-        'Place of Arrest',
+        parentage,
+        item.person_address || '-',
+        firRef,
+        item.sections || '-',
+        item.io_name || '-',
+        item.prev_involvement ?? 0,
+        item.is_po || 'No',
+        item.arrest_address || '-',
         item.custody_status || 'J/C'
       ]);
 

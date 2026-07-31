@@ -10,17 +10,14 @@ COLUMN_LABELS = {
     'traced': 'Traced',
 }
 
-_REG_STATUS = {'case registered', 'case_registered'}
-
-
 def summarize(classified):
-    female = [r for r in classified['missing'] if (r['data'].get('gender') or '').lower() == 'female']
-    traced = sum(1 for r in female if (r['data'].get('status') or '').lower() == 'traced')
+    female = [r for r in classified['missing'] if (r['data'].get('gender') or '').upper() == 'FEMALE']
+    traced = sum(1 for r in female if (r['data'].get('status') or '').upper() == 'TRACED')
     return [{
-        'pcr_call': sum(1 for r in female if r['data'].get('source') == 'PCR'),
-        'dd_entry_complaint': sum(1 for r in female if r['data'].get('source') != 'PCR'),
-        'total': len(female),
-        'traced': traced,
-        'case_registered': sum(1 for r in female if (r['data'].get('status') or '').lower() in _REG_STATUS),
-        'pending': sum(1 for r in female if (r['data'].get('status') or '').lower() == 'missing'),
+        'pcr_call':           sum(1 for r in female if (r['data'].get('source') or '').upper() == 'PCR'),
+        'dd_entry_complaint': sum(1 for r in female if (r['data'].get('source') or '').upper() != 'PCR'),
+        'total':              len(female),
+        'traced':             traced,
+        'case_registered':    sum(1 for r in female if r['data'].get('case_registered') is True),
+        'pending':            sum(1 for r in female if (r['data'].get('status') or '').upper() in ('PENDING', 'MISSING', 'MPS')),
     }]
