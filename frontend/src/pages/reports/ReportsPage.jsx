@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import useAuthStore from '../../store/authStore.js';
 import CustomExcelBuilder from './CustomExcelBuilder';
+import { log } from '../../utils/logger.js';
 
 const getThemeClass = (role) => {
   switch (role) {
@@ -20,6 +21,11 @@ const getThemeClass = (role) => {
 export const ReportsPage = () => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
+
+  useEffect(() => {
+    log.debug('page:mount', { route: '/reports', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/reports' });
+  }, []);
 
   return (
     <div className={`fade-in-up ${getThemeClass(user?.role)} page-bg p-6 min-h-screen font-sans`}>

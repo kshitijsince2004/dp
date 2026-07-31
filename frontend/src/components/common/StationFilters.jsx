@@ -180,7 +180,7 @@ export default function StationFilters({
   const presetOptions = useMemo(() => {
     const list = [{ value: "", label_en: "All Durations", label_hi: "सभी अवधियां" }];
     datePresets.forEach(p => {
-      list.push({ value: p.id, label_en: p.name_en, label_hi: p.name_hi });
+      list.push({ value: p.id, label_en: p.name, label_hi: p.name });
     });
     return list;
   }, [datePresets]);

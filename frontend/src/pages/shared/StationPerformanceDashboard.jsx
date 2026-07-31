@@ -7,6 +7,7 @@ import StationSummaryCards from "../../components/common/StationSummaryCards.jsx
 import StationPerformanceTable from "../../components/common/StationPerformanceTable.jsx";
 import { Spinner } from "../../components/ui/Spinner.jsx";
 import { Shield, MapPin, Activity, Users, AlertCircle, CheckCircle2, Clock3, Radio } from "lucide-react";
+import { log } from "../../utils/logger.js";
 
 export default function StationPerformanceDashboard() {
   const navigate = useNavigate();
@@ -32,20 +33,23 @@ export default function StationPerformanceDashboard() {
     dateTo: "",
   });
 
-  // Initialize district/PS filters from routing state (drill-down from District Analytics page)
   useEffect(() => {
-    if (location.state?.districtId || location.state?.psId) {
-      setFilters((prev) => ({
-        ...prev,
-        districtId: location.state.districtId || prev.districtId,
-        psId: location.state.psId || prev.psId,
-      }));
+    log.debug('page:mount', { route: isHq ? '/hq/stations' : '/district/stations', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: isHq ? '/hq/stations' : '/district/stations' });
+  }, []);
+
+  // Initialize district ID filter from routing state (drill-down from District Analytics page)
+  useEffect(() => {
+    if (location.state?.districtId) {
+      log.debug('action:district_filter_from_state', { districtId: location.state.districtId });
+      setFilters((prev) => ({ ...prev, districtId: location.state.districtId }));
     }
   }, [location.state]);
 
   // Fetch nodes, records, and pre-aggregated station metrics
   useEffect(() => {
     const fetchData = async () => {
+      log.debug('data:load_start', { what: 'station_performance_data' });
       try {
         setLoading(true);
         // Load hierarchy nodes, raw records and pre-aggregated PS stats in parallel
@@ -59,9 +63,11 @@ export default function StationPerformanceDashboard() {
         setRecords(recordsRes.data.data?.cases || recordsRes.data.data || []);
         // Store station-level stats from the analytics endpoint
         setPsStats(psStatsRes.data?.data || []);
+        log.debug('data:load_success', { what: 'station_performance_data' });
         setError(null);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
+        log.error('data:load_error', { what: 'station_performance_data', err });
         setError("Failed to load dashboard metrics. Please try again.");
       } finally {
         setLoading(false);

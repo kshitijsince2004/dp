@@ -12,13 +12,20 @@ const config = knexConfig[environment];
 
 export const db = knex(config);
 
-export const connectDB = async () => {
-  try {
-    await db.raw('SELECT 1');
-    logger.info('✅ PostgreSQL connected');
-  } catch (err) {
-    logger.error(`PostgreSQL connection error: ${err.message}`);
-    process.exit(1);
+export const connectDB = async ({ retries = 8, delayMs = 3000 } = {}) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await db.raw('SELECT 1');
+      logger.info('✅ PostgreSQL connected');
+      return;
+    } catch (err) {
+      logger.warn(`PostgreSQL not ready (attempt ${attempt}/${retries}): ${err.message}`);
+      if (attempt === retries) {
+        logger.error('❌ Could not connect to PostgreSQL after all retries. Is Docker running?');
+        process.exit(1);
+      }
+      await new Promise(r => setTimeout(r, delayMs));
+    }
   }
 };
 

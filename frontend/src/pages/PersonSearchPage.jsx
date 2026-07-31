@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, User } from 'lucide-react';
 import api from '../utils/api.js';
 import toast from 'react-hot-toast';
+import { formatDate } from '../utils/formatters.js';
+import { log } from '../utils/logger.js';
 
 export default function PersonSearchPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -9,6 +11,11 @@ export default function PersonSearchPage() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+
+  useEffect(() => {
+    log.debug('page:mount', { route: '/person-search' });
+    return () => log.debug('page:unmount', { route: '/person-search' });
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -18,13 +25,17 @@ export default function PersonSearchPage() {
     }
     setLoading(true);
     setSearched(true);
+    log.info('action:person_search_start', { hasSearchTerm: !!searchTerm, hasFatherName: !!fatherName });
     try {
       const params = {};
       if (searchTerm) params.searchTerm = searchTerm;
       if (fatherName) params.fatherName = fatherName;
       const res = await api.get('/v1/record-links/person-search', { params });
-      setResults(res.data?.data || []);
+      const rows = res.data?.data || [];
+      log.info('action:person_search_success', { count: rows.length });
+      setResults(rows);
     } catch (err) {
+      log.error('action:person_search_failed', { err });
       toast.error(err.response?.data?.message || 'Search failed.');
       setResults([]);
     } finally {
@@ -94,23 +105,30 @@ export default function PersonSearchPage() {
                   <thead>
                     <tr className="border-b border-slate-700 text-xs text-slate-400 uppercase tracking-wider">
                       <th className="text-left py-2 pr-4">Name</th>
-                      <th className="text-left py-2 pr-4">Father Name</th>
-                      <th className="text-left py-2 pr-4">Crime Head</th>
+                      <th className="text-left py-2 pr-4">Relative Name</th>
+                      <th className="text-left py-2 pr-4">Gender / Age</th>
+                      <th className="text-left py-2 pr-4">Address</th>
+                      <th className="text-left py-2 pr-4">FIR No.</th>
                       <th className="text-left py-2 pr-4">Arrest Date</th>
                       <th className="text-left py-2 pr-4">PS</th>
-                      <th className="text-left py-2 pr-4">UID</th>
                       <th className="text-left py-2">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {results.map(r => (
-                      <tr key={r.id} className="border-b border-slate-800 hover:bg-slate-800/40">
-                        <td className="py-2 pr-4 font-medium">{r.arrested_name || r.full_name || '—'}</td>
-                        <td className="py-2 pr-4 text-slate-400">{r.father_name || r.father_name_alt || r.parents_name || '—'}</td>
-                        <td className="py-2 pr-4 text-slate-400">{r.crime_head || r.crime_head_alt || '—'}</td>
-                        <td className="py-2 pr-4 text-slate-400">{r.arrest_date || r.arrest_date_alt || r.record_date || '—'}</td>
+                      <tr key={r.person_id || r.record_id} className="border-b border-slate-800 hover:bg-slate-800/40">
+                        <td className="py-2 pr-4 font-medium">{r.name || '—'}</td>
+                        <td className="py-2 pr-4 text-slate-400">
+                          {r.relative_name || '—'}
+                          {r.relative_name && r.relation_type ? ` (${r.relation_type})` : ''}
+                        </td>
+                        <td className="py-2 pr-4 text-slate-400">{[r.gender, r.age].filter(Boolean).join(' / ') || '—'}</td>
+                        <td className="py-2 pr-4 text-slate-400">{r.address || '—'}</td>
+                        <td className="py-2 pr-4 text-slate-400">{r.fir_no || '—'}</td>
+                        <td className="py-2 pr-4 text-slate-400">
+                          {r.arrest_date ? formatDate(r.arrest_date) : (r.record_date ? formatDate(r.record_date) : '—')}
+                        </td>
                         <td className="py-2 pr-4 text-slate-400">{r.ps_name}</td>
-                        <td className="py-2 pr-4 font-mono text-xs text-slate-300">{r.uid || '—'}</td>
                         <td className="py-2">
                           <span className={`text-xs px-2 py-0.5 rounded border ${r.current_status === 'DRAFT' ? 'bg-slate-500/10 text-slate-400 border-slate-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'}`}>
                             {r.current_status}

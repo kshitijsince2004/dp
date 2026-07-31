@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import SearchableSelect from './SearchableSelect.jsx';
+import { log } from '../../utils/logger.js';
 
 export default function SelectField({
   id,
@@ -14,6 +16,15 @@ export default function SelectField({
   multiple = false,
 }) {
   const isError = status === 'error';
+
+  useEffect(() => {
+    log.debug('form:field_mount', { fieldId: id, fieldType: 'SELECT', optionCount: options.length, multiple });
+  }, [id, options.length, multiple]);
+
+  const handleChange = (val) => {
+    log.debug('form:field_value_change', { fieldId: id, fieldType: 'SELECT' });
+    onChange(val);
+  };
 
   let inputClassName = className;
   if (!inputClassName) {
@@ -40,7 +51,7 @@ export default function SelectField({
   return (
     <SearchableSelect
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       options={options}
       disabled={disabled}
       lang={lang}

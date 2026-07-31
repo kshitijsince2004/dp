@@ -11,10 +11,7 @@ COLUMN_LABELS = {
 
 
 def filter_records(classified):
-    return [
-        r for r in classified['arrests']
-        if r['data'].get('crime_head') == 'PO' or r['data'].get('proclaimed_offender') is True
-    ]
+    return [r for r in classified['arrests'] if r['data'].get('is_po') == 'Yes']
 
 
 def map_row(r, idx):

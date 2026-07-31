@@ -1,68 +1,32 @@
 import * as levelContractsService from './levelContracts.service.js';
-import { publish } from '../../events/eventBus.js';
+import { getLogger } from '../../utils/logger.js';
+
+// Logging-instrumentation-2026-07-22 (B5): matches records.service.js style.
+const log = getLogger('levelContracts.controller');
+
+const CONFIG_AS_DATA_MESSAGE =
+  'Level data contracts are config-as-data: edit config/contracts/*.json and run `npm run sync-config` to change them. This API no longer accepts writes.';
 
 export const listContracts = async (req, res) => {
+  log.debug('listContracts: enter', { userId: req.user?.id, role: req.user?.role });
   try {
     const contracts = await levelContractsService.getContracts();
+    log.info('listContracts: exit', { count: contracts.length });
     return res.status(200).json({ status: 'success', data: contracts });
   } catch (error) {
+    log.error('listContracts: failed', { err: error });
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
-export const create = async (req, res) => {
-  const { from_level, to_level, record_type, visible_field_keys, aggregate_definitions, route, is_active } = req.body;
-
-  if (!from_level || !to_level) {
-    return res.status(400).json({ status: 'error', message: 'from_level and to_level are required' });
-  }
-
-  try {
-    const contract = await levelContractsService.createContract({
-      from_level,
-      to_level,
-      record_type,
-      visible_field_keys,
-      aggregate_definitions,
-      route,
-      is_active
-    });
-
-    // publish admin config changed event
-    await publish('admin.config_changed', {
-      entity_type: 'LEVEL_DATA_CONTRACT',
-      entity_id: contract.id,
-      action: 'CREATE',
-      changed_by: req.user ? (req.user.userId || req.user.id) : null,
-      changes: contract
-    });
-
-    return res.status(201).json({ status: 'success', data: contract });
-  } catch (error) {
-    return res.status(500).json({ status: 'error', message: error.message });
-  }
-};
-
-export const update = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const contract = await levelContractsService.updateContract(id, req.body);
-    if (!contract) {
-      return res.status(404).json({ status: 'error', message: 'Contract not found' });
-    }
-
-    // publish admin config changed event
-    await publish('admin.config_changed', {
-      entity_type: 'LEVEL_DATA_CONTRACT',
-      entity_id: id,
-      action: 'UPDATE',
-      changed_by: req.user ? (req.user.userId || req.user.id) : null,
-      changes: req.body
-    });
-
-    return res.status(200).json({ status: 'success', data: contract });
-  } catch (error) {
-    return res.status(500).json({ status: 'error', message: error.message });
-  }
+// Mutation endpoints stay registered for backward compatibility (existing clients still
+// get a defined, non-crashing response) but no longer write anything — contracts are
+// synced from config/contracts/*.json (see config/README.md) and any row written directly
+// via this API would (a) violate the NOT NULL `code` sync key with no value ever supplied
+// by the old payload shape, and (b) be overwritten/deactivated by the next sync-config run
+// regardless. 405 Method Not Allowed is the correct status for "this route exists but this
+// verb is permanently unsupported here".
+export const mutationNotAllowed = async (_req, res) => {
+  log.warn('mutationNotAllowed: rejected — contracts are config-as-data, API is read-only', { method: _req.method, path: _req.path });
+  return res.status(405).json({ status: 'error', message: CONFIG_AS_DATA_MESSAGE });
 };

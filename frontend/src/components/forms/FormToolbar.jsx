@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Save, ArrowRight, ChevronRight, SendHorizonal } from 'lucide-react';
+import { log } from '../../utils/logger.js';
 
 export default function FormToolbar({
   currentStep,
@@ -18,7 +19,7 @@ export default function FormToolbar({
       {/* Left: Back to desk */}
       <button
         type="button"
-        onClick={onBack}
+        onClick={() => { log.debug('form:toolbar_click', { action: 'back_to_desk' }); onBack(); }}
         className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-slate-200 hover:border-slate-400
           text-slate-600 hover:text-slate-800 rounded-xl text-base font-bold transition-all shadow-sm cursor-pointer hover:shadow-md"
       >
@@ -32,7 +33,7 @@ export default function FormToolbar({
         {currentStep > 0 && (
           <button
             type="button"
-            onClick={onPrevious}
+            onClick={() => { log.debug('form:toolbar_click', { action: 'previous_step', currentStep }); onPrevious(); }}
             className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-slate-200 hover:border-slate-400
               text-slate-600 hover:text-slate-800 rounded-xl text-base font-bold transition-all shadow-sm cursor-pointer hover:shadow-md"
           >
@@ -45,7 +46,7 @@ export default function FormToolbar({
         {!readOnly && onSaveDraft && (
           <button
             type="button"
-            onClick={onSaveDraft}
+            onClick={() => { log.debug('form:toolbar_click', { action: 'save_draft', currentStep }); onSaveDraft(); }}
             className="flex items-center gap-2 px-6 py-3 bg-amber-50 border-2 border-[#cca43b] hover:bg-[#cca43b] hover:text-white
               text-[#cca43b] rounded-xl text-base font-extrabold transition-all shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-0.5"
           >
@@ -58,7 +59,7 @@ export default function FormToolbar({
         {!isLastStep ? (
           <button
             type="button"
-            onClick={onNext}
+            onClick={() => { log.debug('form:toolbar_click', { action: 'next_step', currentStep }); onNext(); }}
             className="flex items-center gap-2.5 px-8 py-3 bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)]
               text-white rounded-xl text-base font-extrabold transition-all shadow-md shadow-[var(--accent-glow)] hover:-translate-y-0.5 cursor-pointer"
           >
@@ -69,7 +70,7 @@ export default function FormToolbar({
           !readOnly && (
             <button
               type="button"
-              onClick={onSubmit}
+              onClick={(e) => { log.debug('form:toolbar_click', { action: 'submit', currentStep }); onSubmit(e); }}
               className="flex items-center gap-2.5 px-10 py-3 bg-[var(--accent-color)] hover:bg-emerald-600 text-white
                 font-extrabold rounded-control text-base transition-colors cursor-pointer
                 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"

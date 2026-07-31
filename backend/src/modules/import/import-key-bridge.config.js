@@ -26,6 +26,9 @@
 //                                                            at validate time (P5.6), then dropped
 //   { drop: true }                                        — redundant with another column /
 //                                                            killed by an earlier ruling; discarded
+import { getLogger } from '../../utils/logger.js';
+
+const log = getLogger('import.key-bridge');
 
 // ── CASE ──────────────────────────────────────────────────────────────────────────────────
 const CASE = {
@@ -103,9 +106,11 @@ export function getDropOnlyKeys(recordType) {
   const composedFromKeys = new Set(
     Object.values(bridge).flatMap((entry) => (entry.compose ? entry.compose.from : []))
   );
-  return Object.entries(bridge)
+  const dropOnly = Object.entries(bridge)
     .filter(([key, entry]) => entry.drop && !composedFromKeys.has(key))
     .map(([key]) => key);
+  log.debug('getDropOnlyKeys: resolved genuinely-discarded template keys', { recordType, dropOnly });
+  return dropOnly;
 }
 
 // ARREST/KALANDRA person-sheet fields that are semantically RECORD-level (arrest_details),

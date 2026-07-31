@@ -1566,7 +1566,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "caller_mobile",
@@ -1628,7 +1631,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "latlong"
+  }
  },
  {
   "field_key": "longitude",
@@ -1659,7 +1665,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "latlong"
+  }
  },
  {
   "field_key": "arrival_time",

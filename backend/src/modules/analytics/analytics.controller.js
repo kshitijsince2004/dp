@@ -1,6 +1,16 @@
 import db from '../../config/db.js';
 import ExcelJS from 'exceljs';
 import { toDMY } from '../../utils/dateFormat.js';
+import { getLogger } from '../../utils/logger.js';
+
+// Logging-instrumentation-2026-07-22 (B5): matches records.service.js style. Standard
+// granularity (not a hot path) — each handler logs entry (jurisdictionQuery + query params),
+// one debug when the query executes, exit with result shape/count, catch with err. The
+// near-identical `if (jq.ps_id)/if (jq.district_id)/if (jq.sub_div_id)` scoping block repeats
+// across ~15 handlers here; per-branch logging (as records.service.js listRecords does for
+// its ONE hot-path query) would be pure boilerplate at this multiplier, so it is logged once
+// as the whole `jq` object at entry instead.
+const log = getLogger('analytics.controller');
 
 // 'YYYY-MM' bucket key -> 'MM/YYYY' display label
 const formatMonthLabel = (ym) => {
@@ -11,6 +21,7 @@ const formatMonthLabel = (ym) => {
 
 export const getSummary = async (req, res) => {
   const jq = req.jurisdictionQuery;
+  log.debug('getSummary: enter', { jq });
 
   try {
     let query = db('records')
@@ -23,13 +34,14 @@ export const getSummary = async (req, res) => {
     if (jq.sub_div_id) query = query.where('sub_div_id', jq.sub_div_id);
 
     const counts = await query.groupBy('record_type');
-    
+
     const data = { CASE: 0, ARREST: 0, PCR_CALL: 0, MISSING: 0, UIDB: 0 };
     counts.forEach(c => {
       const key = (c.record_type || '').toUpperCase();
       if (key in data) data[key] = parseInt(c.count, 10) || 0;
     });
 
+    log.info('getSummary: exit', { jq, summary: data });
     return res.status(200).json({
       success: true,
       data: {
@@ -37,6 +49,7 @@ export const getSummary = async (req, res) => {
       }
     });
   } catch (error) {
+    log.error('getSummary: failed', { jq, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -44,8 +57,10 @@ export const getSummary = async (req, res) => {
 export const getTrends = async (req, res) => {
   const { recordType } = req.query; // cases, arrest, pcr
   const jq = req.jurisdictionQuery;
+  log.debug('getTrends: enter', { recordType, jq });
 
   if (!recordType) {
+    log.warn('getTrends: rejected — recordType query param missing', { jq });
     return res.status(400).json({ success: false, message: 'recordType query parameter is required' });
   }
 
@@ -88,6 +103,7 @@ export const getTrends = async (req, res) => {
       .groupBy(['classification', db.raw(monthExpr)])
       .orderBy('month', 'asc');
 
+    log.info('getTrends: exit', { recordType: typeUpper, jq, rowCount: trends.length });
     return res.status(200).json({
       success: true,
       data: {
@@ -99,6 +115,7 @@ export const getTrends = async (req, res) => {
       }
     });
   } catch (error) {
+    log.error('getTrends: failed', { recordType: typeUpper, jq, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -107,8 +124,10 @@ export const getCompare = async (req, res) => {
   const { recordType } = req.query;
   const jq = req.jurisdictionQuery;
   const { role } = req.user;
+  log.debug('getCompare: enter', { recordType, jq, role });
 
   if (!recordType) {
+    log.warn('getCompare: rejected — recordType query param missing', { jq, role });
     return res.status(400).json({ success: false, message: 'recordType query parameter is required' });
   }
 
@@ -127,6 +146,7 @@ export const getCompare = async (req, res) => {
       selectCol = 'sub.name';
       groupCol = 'records.sub_div_id';
     }
+    log.debug('getCompare: resolved grouping column for role', { role, groupCol });
 
     let query = db('records')
       .select(`${selectCol} as label`)
@@ -145,6 +165,7 @@ export const getCompare = async (req, res) => {
       .groupBy(groupCol, selectCol)
       .orderBy('count', 'desc');
 
+    log.info('getCompare: exit', { recordType: typeUpper, jq, role, rowCount: compareList.length });
     return res.status(200).json({
       success: true,
       data: {
@@ -155,12 +176,14 @@ export const getCompare = async (req, res) => {
       }
     });
   } catch (error) {
+    log.error('getCompare: failed', { recordType: typeUpper, jq, role, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const getOverview = async (req, res) => {
   const jq = req.jurisdictionQuery;
+  log.debug('getOverview: enter', { jq });
   try {
     let query = db('records')
       .select('record_type')
@@ -181,14 +204,17 @@ export const getOverview = async (req, res) => {
       else if (type === 'MISSING') data.missing_today = count;
       else if (type === 'UIDB') data.uidb_today = count;
     });
+    log.info('getOverview: exit', { jq, data });
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    log.error('getOverview: failed', { jq, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const getByPs = async (req, res) => {
   const jq = req.jurisdictionQuery;
+  log.debug('getByPs: enter', { jq });
   try {
     // 1. Fetch active PS nodes for the current scope
     let stationsQuery = db('hierarchy_nodes').where({ node_type: 'PS', is_active: true });
@@ -207,6 +233,7 @@ export const getByPs = async (req, res) => {
     }
 
     const stations = await stationsQuery.select('id', 'name');
+    log.debug('getByPs: resolved station scope', { jq, stationCount: stations.length });
 
     // 2. Fetch record counts grouped by ps_id and record_type
     let recordsQuery = db('records')
@@ -250,14 +277,17 @@ export const getByPs = async (req, res) => {
     // Sort alphabetically by station name
     data.sort((a, b) => a.station.localeCompare(b.station));
 
+    log.info('getByPs: exit', { jq, stationCount: data.length });
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    log.error('getByPs: failed', { jq, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const getByCrimeHead = async (req, res) => {
   const jq = req.jurisdictionQuery;
+  log.debug('getByCrimeHead: enter', { jq });
   try {
     let query = db('records')
       .select('lh.local_head as crime_head')
@@ -276,14 +306,17 @@ export const getByCrimeHead = async (req, res) => {
       name: r.crime_head,
       count: parseInt(r.count, 10) || 0
     }));
+    log.info('getByCrimeHead: exit', { jq, rowCount: data.length });
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    log.error('getByCrimeHead: failed', { jq, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const getCombinedTrends = async (req, res) => {
   const jq = req.jurisdictionQuery;
+  log.debug('getCombinedTrends: enter', { jq });
   try {
     const dateExpr = `to_char(record_date, 'YYYY-MM-DD')`;
 
@@ -314,8 +347,10 @@ export const getCombinedTrends = async (req, res) => {
     const data = Object.values(dayMap)
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(d => ({ ...d, name: d.name === 'Unknown' ? d.name : (toDMY(d.name) || d.name) }));
+    log.info('getCombinedTrends: exit', { jq, dayCount: data.length });
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    log.error('getCombinedTrends: failed', { jq, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -323,8 +358,10 @@ export const getCombinedTrends = async (req, res) => {
 export const exportSpreadsheet = async (req, res) => {
   const { recordType } = req.query;
   const jq = req.jurisdictionQuery;
+  log.debug('exportSpreadsheet: enter', { recordType, jq });
 
   if (!recordType) {
+    log.warn('exportSpreadsheet: rejected — recordType query param missing', { jq });
     return res.status(400).json({ success: false, message: 'recordType query parameter is required' });
   }
 
@@ -335,6 +372,7 @@ export const exportSpreadsheet = async (req, res) => {
   const DETAIL_TABLES = { CASE: 'fir_details', ARREST: 'arrest_details', PCR_CALL: 'pcr_call_details', MISSING: 'missing_details', UIDB: 'uidb_details' };
   const detailTable = DETAIL_TABLES[typeUpper];
   if (!detailTable) {
+    log.warn('exportSpreadsheet: rejected — unknown recordType', { recordType, typeUpper, jq });
     return res.status(400).json({ success: false, message: `Unknown recordType "${recordType}"` });
   }
   // The old jsonb "Details (JSON Block)" dump has no equivalent under the typed schema —
@@ -359,6 +397,7 @@ export const exportSpreadsheet = async (req, res) => {
     if (jq.sub_div_id) query = query.where('records.sub_div_id', jq.sub_div_id);
 
     const rows = await query.orderBy('records.record_date', 'desc');
+    log.debug('exportSpreadsheet: fetched rows for export', { typeUpper, jq, rowCount: rows.length });
 
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet(`${typeUpper} Records`);
@@ -389,14 +428,17 @@ export const exportSpreadsheet = async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename=Pharos_${typeUpper}_Export.xlsx`);
 
     await workbook.xlsx.write(res);
+    log.info('exportSpreadsheet: exit — workbook streamed', { typeUpper, jq, rowCount: rows.length });
     return res.end();
   } catch (error) {
+    log.error('exportSpreadsheet: failed', { recordType, jq, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const getStatusBreakdown = async (req, res) => {
   const jq = req.jurisdictionQuery;
+  log.debug('getStatusBreakdown: enter', { jq });
   try {
     let query = db('records')
       .select('current_status')
@@ -411,18 +453,23 @@ export const getStatusBreakdown = async (req, res) => {
       status: r.current_status,
       count: parseInt(r.count, 10) || 0
     }));
+    log.info('getStatusBreakdown: exit', { jq, rowCount: data.length });
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    log.error('getStatusBreakdown: failed', { jq, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // ── PS Dashboard summary (Cases / Arrest / Left Out Accused) ─────────────────
 
-const applyJurisdictionScope = (query, jq) => {
-  if (jq.ps_id) query = query.where('ps_id', jq.ps_id);
-  if (jq.district_id) query = query.where('district_id', jq.district_id);
-  if (jq.sub_div_id) query = query.where('sub_div_id', jq.sub_div_id);
+// `prefix` qualifies the scope columns (e.g. 'records.') for queries that JOIN another table
+// which also carries ps_id/district_id/sub_div_id (e.g. detail tables) — an unqualified column
+// there is ambiguous (Postgres 42702). Defaults to '' to preserve single-table callers.
+const applyJurisdictionScope = (query, jq, prefix = '') => {
+  if (jq.ps_id) query = query.where(`${prefix}ps_id`, jq.ps_id);
+  if (jq.district_id) query = query.where(`${prefix}district_id`, jq.district_id);
+  if (jq.sub_div_id) query = query.where(`${prefix}sub_div_id`, jq.sub_div_id);
   return query;
 };
 
@@ -499,12 +546,15 @@ const pctChange = (current, previous) => {
 const CASE_LIKE_TYPES = ['CASE', 'UIDB', 'MISSING'];
 
 const countRecordsByTypes = async (jq, recordTypes, startDate, endDate) => {
+  log.debug('countRecordsByTypes: enter', { jq, recordTypes, startDate, endDate });
   let query = db('records')
     .whereIn('record_type', recordTypes)
     .whereBetween('record_date', [startDate, endDate]);
   query = applyJurisdictionScope(query, jq);
   const row = await query.count('* as count').first();
-  return parseInt(row.count, 10) || 0;
+  const count = parseInt(row.count, 10) || 0;
+  log.debug('countRecordsByTypes: exit', { recordTypes, startDate, endDate, count });
+  return count;
 };
 
 // Shared subquery: "this ARREST record has a CASE_ARREST link pointing at it" (i.e. linked to a FIR/CASE).
@@ -518,6 +568,7 @@ const caseArrestLinkSubquery = function () {
 
 // "Kalandra" = an ARREST record with no CASE_ARREST link pointing at it (standalone arrest, no FIR).
 const countStandaloneArrests = async (jq, startDate, endDate) => {
+  log.debug('countStandaloneArrests: enter', { jq, startDate, endDate });
   let query = db('records')
     .where('record_type', 'ARREST')
     .whereBetween('record_date', [startDate, endDate])
@@ -548,7 +599,9 @@ const countLinkedArrests = async (jq, startDate, endDate) => {
     .whereExists(caseArrestLinkSubquery);
   query = applyJurisdictionScope(query, jq);
   const row = await query.count('* as count').first();
-  return parseInt(row.count, 10) || 0;
+  const count = parseInt(row.count, 10) || 0;
+  log.debug('countStandaloneArrests: exit', { startDate, endDate, count });
+  return count;
 };
 
 const normalizeName = (name) => (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -574,7 +627,10 @@ const computeLeftOutAccused = async (jq, startDate, endDate, { heinousOnly = fal
     // to "records." here or Postgres rejects it as an ambiguous column reference.
     caseQuery = scopeRecords(caseQuery, jq);
     const cases = await caseQuery;
-    if (cases.length === 0) return { count: 0, list: [] };
+    if (cases.length === 0) {
+      log.debug('computeLeftOutAccused: no CASE records in range, exit early', { startDate, endDate });
+      return { count: 0, list: [] };
+    }
 
     const caseIds = cases.map(c => c.id);
     const caseFirById = new Map(cases.map(c => [c.id, c.fir_no]));
@@ -583,7 +639,10 @@ const computeLeftOutAccused = async (jq, startDate, endDate, { heinousOnly = fal
       .whereIn('record_id', caseIds)
       .andWhere('role', 'ACCUSED')
       .select('record_id', 'name');
-    if (accusedRows.length === 0) return { count: 0, list: [] };
+    if (accusedRows.length === 0) {
+      log.debug('computeLeftOutAccused: no ACCUSED persons on in-range cases, exit early', { caseCount: cases.length });
+      return { count: 0, list: [] };
+    }
 
     const links = await db('record_links as rl')
       .join('link_type_registry as ltr', 'rl.link_type_id', 'ltr.id')
@@ -625,8 +684,13 @@ const computeLeftOutAccused = async (jq, startDate, endDate, { heinousOnly = fal
       }
     });
 
+    log.debug('computeLeftOutAccused: exit', { startDate, endDate, caseCount: cases.length, accusedCount: accusedRows.length, leftOutCount: leftOutList.length });
     return { count: leftOutList.length, list: leftOutList };
   } catch (error) {
+    // Swallowed intentionally (pre-existing behavior, not changed here) — a left-out-accused
+    // computation failure degrades the PS dashboard to "0 left out", it must never break the
+    // whole ps-dashboard-summary response.
+    log.error('computeLeftOutAccused: failed, degrading to zero result', { jq, startDate, endDate, err: error });
     return { count: 0, list: [] };
   }
 };
@@ -673,6 +737,7 @@ const countGenderInPersonIds = async (recordIds, gender) => {
 export const getPsDashboardSummary = async (req, res) => {
   const jq = req.jurisdictionQuery;
   const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'day';
+  log.debug('getPsDashboardSummary: enter', { jq, period });
 
   try {
     const { currentStart, currentEnd, previousStart, previousEnd } = getDateRangeForPeriod(period);
@@ -690,6 +755,9 @@ export const getPsDashboardSummary = async (req, res) => {
       computeLeftOutAccused(jq, previousStart, previousEnd)
     ]);
 
+    log.info('getPsDashboardSummary: exit', {
+      jq, period, cases: casesCurrent, arrests: arrestsCurrent, leftOut: leftOutCurrent.count,
+    });
     return res.status(200).json({
       success: true,
       data: {
@@ -701,6 +769,7 @@ export const getPsDashboardSummary = async (req, res) => {
       }
     });
   } catch (error) {
+    log.error('getPsDashboardSummary: failed', { jq, period, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -768,6 +837,7 @@ export const getPsDashboardStatsV2 = async (req, res) => {
 export const getCaseTypeBreakdown = async (req, res) => {
   const jq = req.jurisdictionQuery;
   const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'day';
+  log.debug('getCaseTypeBreakdown: enter', { jq, period });
 
   try {
     const { currentStart, currentEnd, previousStart, previousEnd } = getDateRangeForPeriod(period);
@@ -793,8 +863,10 @@ export const getCaseTypeBreakdown = async (req, res) => {
     ]);
     rows.splice(1, 0, { name: 'Kalandra', count: kalandraCurrent, change_pct: pctChange(kalandraCurrent, kalandraPrevious) });
 
+    log.info('getCaseTypeBreakdown: exit', { jq, period, rowCount: rows.length });
     return res.status(200).json({ success: true, data: { period, rows } });
   } catch (error) {
+    log.error('getCaseTypeBreakdown: failed', { jq, period, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -891,10 +963,13 @@ export const getTrendForRecordType = async (jq, recordTypes, period) => {
 export const getCasesByMonthTrend = async (req, res) => {
   const jq = req.jurisdictionQuery;
   const period = req.query.period;
+  log.debug('getCasesByMonthTrend: enter', { jq, period });
 
   try {
     if (period && ['day', 'week', 'month', 'year'].includes(period)) {
+      log.debug('getCasesByMonthTrend: delegating to getTrendForRecordType (fine-grained period)', { jq, period });
       const trendData = await getTrendForRecordType(jq, CASE_LIKE_TYPES, period);
+      log.info('getCasesByMonthTrend: exit (fine-grained)', { jq, period, rowCount: trendData.length });
       return res.status(200).json({ success: true, data: trendData });
     }
 
@@ -919,20 +994,23 @@ export const getCasesByMonthTrend = async (req, res) => {
     const countByYm = new Map(rows.map(r => [r.ym, parseInt(r.count, 10) || 0]));
     const data = months.map(({ year, month }) => {
       const ym = `${year}-${String(month + 1).padStart(2, '0')}`;
-      return { 
-        month: TREND_MONTH_NAMES[month], 
+      return {
+        month: TREND_MONTH_NAMES[month],
         label: TREND_MONTH_NAMES[month],
-        value: countByYm.get(ym) || 0 
+        value: countByYm.get(ym) || 0
       };
     });
 
+    log.info('getCasesByMonthTrend: exit (12-month)', { jq, monthCount: data.length });
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    log.error('getCasesByMonthTrend: failed', { jq, period, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const getByDistrict = async (req, res) => {
+  log.debug('getByDistrict: enter');
   try {
     const districts = await db('hierarchy_nodes')
       .where({ node_type: 'DISTRICT', is_active: true })
@@ -973,8 +1051,10 @@ export const getByDistrict = async (req, res) => {
       };
     });
 
+    log.info('getByDistrict: exit', { districtCount: data.length });
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    log.error('getByDistrict: failed', { err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -982,11 +1062,14 @@ export const getByDistrict = async (req, res) => {
 export const getArrestsTrend = async (req, res) => {
   const jq = req.jurisdictionQuery;
   const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'week';
+  log.debug('getArrestsTrend: enter', { jq, period });
   try {
     const trendData = await getTrendForRecordType(jq, ['ARREST'], period);
     const data = trendData.map(item => ({ day: item.label, value: item.value }));
+    log.info('getArrestsTrend: exit', { jq, period, rowCount: data.length });
     return res.status(200).json({ success: true, data });
   } catch (error) {
+    log.error('getArrestsTrend: failed', { jq, period, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };

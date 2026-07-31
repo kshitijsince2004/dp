@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from "recharts";
 import api from "../../utils/api.js";
+import { log } from "../../utils/logger.js";
 import useAuthStore from "../../store/authStore.js";
 import StatCard from "../../components/ui/StatCard.jsx";
 import CrimeHeadMatrixTable from "../../components/common/CrimeHeadMatrixTable.jsx";
@@ -132,12 +133,19 @@ export default function PSDashboard() {
   const arrestChartWrapRef = useRef(null);
 
   useEffect(() => {
+    log.debug('page:mount', { route: '/hc-dashboard', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/hc-dashboard' });
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
+    log.debug('data:load_start', { what: 'ps_dashboard_summary', period: activePeriod });
     api
       .get("/analytics/ps-dashboard-v2", { params: { period: activePeriod.toLowerCase() } })
       .then((res) => {
         if (cancelled) return;
         const data = res.data?.data;
+        log.debug('data:load_success', { what: 'ps_dashboard_summary', period: activePeriod });
         setSummary(data || null);
         setLeftOutAccused(
           (data?.leftout_heinous_list || []).map((a) => ({
@@ -146,8 +154,9 @@ export default function PSDashboard() {
           }))
         );
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        log.error('data:load_error', { what: 'ps_dashboard_summary', period: activePeriod, err });
         setSummary(null);
         setLeftOutAccused([]);
       })
@@ -164,25 +173,31 @@ export default function PSDashboard() {
     let cancelled = false;
     const periodParam = activePeriod.toLowerCase();
 
+    log.debug('data:load_start', { what: 'arrest_trend_breakdown', period: periodParam });
     api
       .get("/analytics/arrest-trend-breakdown", { params: { period: periodParam } })
       .then((res) => {
         if (cancelled) return;
+        log.debug('data:load_success', { what: 'arrest_trend_breakdown' });
         setArrestTrendData(res.data?.data?.points || []);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        log.error('data:load_error', { what: 'arrest_trend_breakdown', err });
         setArrestTrendData([]);
       });
 
+    log.debug('data:load_start', { what: 'crime_head_matrix', period: periodParam });
     api
       .get("/analytics/crime-head-matrix", { params: { period: periodParam } })
       .then((res) => {
         if (cancelled) return;
+        log.debug('data:load_success', { what: 'crime_head_matrix' });
         setCrimeHeadMatrix(res.data?.data || { columns: [], rows: [] });
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        log.error('data:load_error', { what: 'crime_head_matrix', err });
         setCrimeHeadMatrix({ columns: [], rows: [] });
       });
 
@@ -299,7 +314,7 @@ export default function PSDashboard() {
                 <button
                   key={period}
                   type="button"
-                  onClick={() => setActivePeriod(period)}
+                  onClick={() => { log.debug('action:period_change', { period }); setActivePeriod(period); }}
                   className={`rounded-lg px-3.5 py-1 text-xs font-semibold transition-colors ${
                     activePeriod === period
                       ? "bg-white text-[#0A1628] shadow-sm"

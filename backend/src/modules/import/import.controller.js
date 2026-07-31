@@ -8,7 +8,8 @@ import path from 'path';
 import fs from 'fs';
 import ExcelJS from 'exceljs';
 import { publish } from '../../events/eventBus.js';
-import { logger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
+import { redact } from '../../utils/redact.js';
 import { TemplateBuilderService } from './template-builder.service.js';
 import {
   COUNTRY_OPTS,
@@ -32,6 +33,16 @@ import {
   createBatch, claimBatch, cancelBatch, districtForPs,
   listBatches as listBatchesService, getBatchDetail as getBatchDetailService,
 } from './import.service.js';
+
+// STYLE ANCHOR match (logging-instrumentation-2026-07-22, HANDOFF.md §7): matches
+// records.service.js exactly — getLogger('import.controller') bound once. This is the HTTP
+// layer: every endpoint logs entry (request shape, redacted), which branch/role path was taken,
+// and exit/catch — the actual per-row work is logged one level down in import.service.js/
+// import.validate.js/import.parse.js. Template generation (addSheetToWorkbook etc, below) logs
+// at the sheet level, not per-cell (hundreds of formatting-loop iterations would be noise, not
+// signal — same "verbose but not indiscriminate" judgment call the anchor makes for its own
+// tight loops).
+const log = getLogger('import.controller');
 
 // ── template generation (unchanged this integration — WP7 hardens dataValidation/numFmt
 // without touching this structure) ──────────────────────────────────────────────────────
@@ -65,6 +76,7 @@ const SECTION_SUBHEADING_MAP = {
 };
 
 const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, recordType) => {
+  log.debug('addSheetToWorkbook: enter', { sheetName, recordType, lang, fieldCount: fieldsList.length });
   const worksheet = workbook.addWorksheet(sheetName);
 
   const row1 = fieldsList.map(f => f.field_key);
@@ -267,6 +279,7 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
           };
         }
       } else {
+        log.debug('addSheetToWorkbook: inline option list too long, routing through _Lookups sheet', { sheetName, fieldKey: f.field_key, optionCount: validValues.length });
         let lookupsSheet = workbook.getWorksheet('_Lookups');
         if (!lookupsSheet) {
           lookupsSheet = workbook.addWorksheet('_Lookups');
@@ -316,6 +329,7 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
     });
     column.width = Math.min(maxLen + 4, 45);
   });
+  log.debug('addSheetToWorkbook: exit', { sheetName, recordType, columnCount: fieldsList.length });
 };
 
 export const downloadImportTemplate = async (req, res) => {
@@ -324,18 +338,22 @@ export const downloadImportTemplate = async (req, res) => {
     recordType = 'MISSING';
   }
   const lang = req.query.lang || 'en';
+  log.debug('downloadImportTemplate: enter', { recordType, lang, userId: req.user?.id });
 
   const validTypes = ['ARREST', 'PCR_CALL', 'CASE', 'MISSING', 'UIDB', 'KALANDRA'];
   if (!validTypes.includes(recordType)) {
+    log.warn('downloadImportTemplate: rejected — invalid record type', { recordType });
     return res.status(400).json({ success: false, message: `Invalid record type '${recordType}'` });
   }
 
   try {
     if (recordType === 'CASE' || recordType === 'ARREST') {
+      log.debug('downloadImportTemplate: building via TemplateBuilderService (frozen base template)', { recordType, lang });
       const workbook = await TemplateBuilderService.buildTemplate(recordType, lang);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="${recordType}_Import_Template.xlsx"`);
       await workbook.xlsx.write(res);
+      log.info('downloadImportTemplate: exit — CASE/ARREST base template streamed', { recordType, lang });
       return res.end();
     }
 
@@ -353,7 +371,10 @@ export const downloadImportTemplate = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     let fieldsUsedForHardening = [];
 
+    log.debug('downloadImportTemplate: generic branch — resolved active field_registry rows', { recordType, activeFieldCount: allFields.length, psOptionCount: psOptions.length });
+
     if (recordType === 'UIDB') {
+      log.debug('downloadImportTemplate: building UIDB template (General Info + Act and Sections)', { recordType, lang });
       // Registry-driven auto-inclusion: any active UIDB field the curated lists don't
       // mention (and that isn't excluded in import-fields.config.js) is appended at the
       // end of the General Info sheet, so new form fields flow into the template
@@ -375,6 +396,7 @@ export const downloadImportTemplate = async (req, res) => {
       await TemplateBuilderService.wireStateDistrictCascade(workbook);
       fieldsUsedForHardening = [...uidbGeneralFields, ...uidbAutoFields, ...uidbActSectionFields];
     } else if (recordType === 'MISSING') {
+      log.debug('downloadImportTemplate: building MISSING template (single sheet)', { recordType, lang });
       const missingConfigKeys = new Set(missingGeneralFields.map(f => f.field_key));
       const missingAutoFields = autoIncludedRegistryFields('MISSING', allFields, missingConfigKeys);
       addSheetToWorkbook(workbook, 'Import Template', [...missingGeneralFields, ...missingAutoFields], allFields, lang, recordType);
@@ -382,6 +404,7 @@ export const downloadImportTemplate = async (req, res) => {
       await TemplateBuilderService.wireStateDistrictCascade(workbook);
       fieldsUsedForHardening = [...missingGeneralFields, ...missingAutoFields];
     } else if (recordType === 'KALANDRA') {
+      log.debug('downloadImportTemplate: building KALANDRA template (General Info + Act and Sections + Arrested Person, ARREST-backed registry)', { recordType, lang });
       // Kalandra = standalone (non-FIR) arrest. Three sheets, same structures as the
       // ARREST template's act-section and person sheets, keyed by DD No. Registry
       // auto-inclusion runs against ARREST (the type its fields belong to); the full
@@ -407,6 +430,7 @@ export const downloadImportTemplate = async (req, res) => {
       await TemplateBuilderService.wireStateDistrictCascade(workbook);
       fieldsUsedForHardening = [...kalandraGeneralFields, ...kalandraAutoFields, ...kalandraActSectionFields, ...kalandraPersonFields];
     } else {
+      log.debug('downloadImportTemplate: building generic single-sheet template (fully registry-driven)', { recordType, lang });
       let fields = allFields.filter(f => {
         try {
           const types = typeof f.applicable_record_types === 'string'
@@ -434,6 +458,7 @@ export const downloadImportTemplate = async (req, res) => {
 
       addSheetToWorkbook(workbook, 'Import Template', fields, allFields, lang, recordType);
       fieldsUsedForHardening = fields;
+      log.debug('downloadImportTemplate: generic branch field selection', { recordType, matchedFieldCount: fields.length });
     }
 
     // WP7 hardening — same post-processing pass as the CASE/ARREST base-workbook path
@@ -441,14 +466,16 @@ export const downloadImportTemplate = async (req, res) => {
     // the full design rationale.
     const fieldMetaByKey = buildFieldMetaMap(fieldsUsedForHardening, allFields);
     applyFieldLevelHardening(workbook, fieldMetaByKey);
+    log.debug('downloadImportTemplate: applied field-level Excel hardening (dataValidation/numFmt)', { recordType, hardenedFieldCount: fieldsUsedForHardening.length });
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${recordType}_Import_Template.xlsx"`);
 
     await workbook.xlsx.write(res);
+    log.info('downloadImportTemplate: exit — generic-branch template streamed', { recordType, lang });
     res.end();
   } catch (error) {
-    logger.error('[TemplateExport] Error generating template: ' + error.message);
+    log.error('downloadImportTemplate: failed', { recordType, lang, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -462,13 +489,19 @@ const VALID_RECORD_TYPES = ['ARREST', 'PCR_CALL', 'CASE', 'UIDB', 'MISSING', 'KA
 export const validateImportBatch = async (req, res) => {
   const { record_type, is_legacy, ps_id } = req.body;
   const isLegacy = is_legacy === 'true' || is_legacy === true;
+  log.debug('validateImportBatch: enter', {
+    userId: req.user?.id, role: req.user?.role, recordType: record_type, isLegacy, psId: ps_id,
+    hasFile: !!req.file, originalName: req.file?.originalname,
+  });
 
   if (!req.file) {
+    log.warn('validateImportBatch: rejected — no file uploaded', { userId: req.user?.id });
     return res.status(400).json({ success: false, message: 'No file uploaded' });
   }
 
   const ext = path.extname(req.file.originalname).toLowerCase();
   if (ext !== '.xlsx') {
+    log.warn('validateImportBatch: rejected — non-.xlsx file', { userId: req.user?.id, originalName: req.file.originalname, ext });
     try { fs.unlinkSync(req.file.path); } catch (_) {}
     return res.status(400).json({
       success: false,
@@ -478,6 +511,7 @@ export const validateImportBatch = async (req, res) => {
 
   const recordType = record_type ? record_type.toUpperCase() : null;
   if (!recordType || !VALID_RECORD_TYPES.includes(recordType)) {
+    log.warn('validateImportBatch: rejected — invalid or missing record_type', { userId: req.user?.id, recordType: record_type });
     try { fs.unlinkSync(req.file.path); } catch (_) {}
     return res.status(400).json({ success: false, message: 'Invalid or missing record_type. Must be CASE, ARREST, KALANDRA, PCR_CALL, UIDB or MISSING.' });
   }
@@ -490,38 +524,50 @@ export const validateImportBatch = async (req, res) => {
   let targetPsId;
   if (req.user.role === 'HC') {
     if (isLegacy) {
+      log.warn('validateImportBatch: rejected — HC cannot import legacy data', { userId: req.user.id });
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       return res.status(403).json({ success: false, message: 'Operators (HC) cannot import legacy data' });
     }
     if (ps_id && ps_id !== req.user.ps_id) {
+      log.warn('validateImportBatch: rejected — HC targeting a different PS than their own', { userId: req.user.id, ownPsId: req.user.ps_id, requestedPsId: ps_id });
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       return res.status(403).json({ success: false, message: 'Operators are restricted to importing for their assigned Station only' });
     }
     targetPsId = req.user.ps_id;
+    log.debug('validateImportBatch: role branch — HC, own PS', { userId: req.user.id, targetPsId });
   } else if (req.user.role === 'DISTRICT_OFFICER') {
     if (!isLegacy) {
+      log.warn('validateImportBatch: rejected — DISTRICT_OFFICER may only import legacy data', { userId: req.user.id });
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       return res.status(403).json({ success: false, message: 'District officers may only import legacy (historical) data' });
     }
     if (!ps_id) {
+      log.warn('validateImportBatch: rejected — DISTRICT_OFFICER legacy import missing ps_id', { userId: req.user.id });
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       return res.status(400).json({ success: false, message: 'ps_id (the target police station) is required for a legacy import' });
     }
     const psDistrict = await districtForPs(ps_id);
     if (!psDistrict || psDistrict.id !== req.user.district_id) {
+      log.warn('validateImportBatch: rejected — target PS not in DISTRICT_OFFICER\'s own district', { userId: req.user.id, ownDistrictId: req.user.district_id, targetPsId: ps_id, resolvedDistrictId: psDistrict?.id || null });
       try { fs.unlinkSync(req.file.path); } catch (_) {}
       return res.status(403).json({ success: false, message: 'You can only import legacy data for a police station within your own district' });
     }
     targetPsId = ps_id;
+    log.debug('validateImportBatch: role branch — DISTRICT_OFFICER, legacy, own-district PS verified', { userId: req.user.id, targetPsId });
   } else {
     // Router's allow() should already have rejected any other role — default-deny here too
     // (P5.5), never fall through to treating an unrecognized role as authorized.
+    log.error('validateImportBatch: rejected — role not permitted (should have been blocked by router allow())', { userId: req.user.id, role: req.user.role });
     try { fs.unlinkSync(req.file.path); } catch (_) {}
     return res.status(403).json({ success: false, message: 'Your role is not permitted to import data' });
   }
 
   try {
     const result = await createBatch({ user: req.user, recordType, isLegacy, targetPsId, filePath: req.file.path });
+    log.info('validateImportBatch: exit', {
+      userId: req.user.id, batchId: result.batch.id, status: result.batch.status, ...result.counts,
+      visibleErrorCount: result.errors.length, errorsTruncated: result.errorsTruncated,
+    });
     return res.status(200).json({
       success: true,
       data: {
@@ -536,58 +582,71 @@ export const validateImportBatch = async (req, res) => {
     });
   } catch (error) {
     try { fs.unlinkSync(req.file.path); } catch (_) {}
-    logger.error(`[ImportValidate] ${error.message}`);
+    log.error('validateImportBatch: failed', { userId: req.user.id, recordType, isLegacy, targetPsId, err: error });
     return res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 };
 
 export const confirmImportBatch = async (req, res) => {
   const { batchId } = req.params;
+  const userId = req.user.id || req.user.userId;
+  log.debug('confirmImportBatch: enter', { batchId, userId });
   try {
-    const userId = req.user.id || req.user.userId;
     const batch = await claimBatch(batchId, userId);
     // Hand off to the async worker (WP5's importConfirmHandler) — this endpoint's job ends
     // at the claim; it never writes a record itself.
     await publish('import.confirm.requested', { batch_id: batchId });
+    log.info('confirmImportBatch: exit — claimed and handed off to async worker', { batchId, userId, status: batch.status });
     return res.status(202).json({ success: true, data: { batch_id: batchId, status: batch.status } });
   } catch (error) {
+    log.error('confirmImportBatch: failed', { batchId, userId, err: error });
     return res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 };
 
 export const cancelImportBatch = async (req, res) => {
   const { batchId } = req.params;
+  const userId = req.user.id || req.user.userId;
+  log.debug('cancelImportBatch: enter', { batchId, userId });
   try {
-    const userId = req.user.id || req.user.userId;
     const result = await cancelBatch(batchId, userId);
+    log.info('cancelImportBatch: exit', { batchId, userId, status: result.status });
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
+    log.error('cancelImportBatch: failed', { batchId, userId, err: error });
     return res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 };
 
 export const listBatches = async (req, res) => {
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 20;
+  log.debug('listBatches: enter', { userId: req.user?.id, jurisdictionQuery: redact(req.jurisdictionQuery || {}), page, limit });
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 20;
     const result = await listBatchesService(req.jurisdictionQuery || {}, { page, limit });
+    log.debug('listBatches: exit', { userId: req.user?.id, resultCount: result.rows.length, total: result.total });
     return res.status(200).json({
       success: true, data: result.rows,
       meta: { page: result.page, limit: result.limit, total: result.total },
     });
   } catch (error) {
+    log.error('listBatches: failed', { userId: req.user?.id, err: error });
     return res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 };
 
 export const getBatchDetail = async (req, res) => {
+  log.debug('getBatchDetail: enter', { userId: req.user?.id, batchId: req.params.batchId });
   try {
     const detail = await getBatchDetailService(req.params.batchId, req.jurisdictionQuery || {});
     if (!detail) {
+      log.info('getBatchDetail: not found', { batchId: req.params.batchId });
       return res.status(404).json({ success: false, message: 'Batch not found' });
     }
+    log.debug('getBatchDetail: exit', { batchId: req.params.batchId, status: detail.status, errorCount: detail.errors?.length || 0 });
     return res.status(200).json({ success: true, data: detail });
   } catch (error) {
+    log.error('getBatchDetail: failed', { batchId: req.params.batchId, err: error });
     return res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 };

@@ -1,5 +1,19 @@
 // Fresh schema (DB restructure 2026-07) — 4/6: persons + role subtypes + descriptions + record_properties.
 // Spec: docs/db-audit/DB_SCHEMA.md §3.1–§3.4.
+//
+// T7.1 (WS5, folded 2026-07-20, pre-launch fold rule — never a standalone amendment migration
+// while dev data is disposable): persons.gender and record_properties.status CHECKs widened to
+// include TRANSGENDER / INVOLVED, matching field_registry's option vocabulary
+// ('Male'/'Female'/'Transgender'/'Unknown', 'Involved') once case-normalized by
+// records.normalize.js's normalizeEnumUpper. Originally landed as a separate migration
+// (20260711000007_gender_property_status_check_expansion.js, deleted in the same change that
+// added this comment) — folded here per the standing rule.
+//
+// Second bug found while folding (live-tested, not caught by review): `gender` was still
+// `varchar(10)` — the CHECK-widening migration added 'TRANSGENDER' (11 chars) to the legal
+// value set but never widened the column itself, so a CHECK-legal value could never actually
+// be inserted (`value too long for type character varying(10)`, confirmed live). Widened to
+// varchar(20), matching `relation_type`'s width on the same table.
 
 export async function up(knex) {
   await knex.raw(`
@@ -14,7 +28,7 @@ export async function up(knex) {
       relative_name        varchar(100),
       relation_type        varchar(20) CHECK (relation_type IN
                              ('FATHER','MOTHER','HUSBAND','WIFE','GUARDIAN','OTHER')),
-      gender               varchar(10) CHECK (gender IN ('MALE','FEMALE','OTHER','UNKNOWN')),
+      gender               varchar(20) CHECK (gender IN ('MALE','FEMALE','TRANSGENDER','OTHER','UNKNOWN')),
       age                  smallint,
       dob                  date,
       is_minor             boolean GENERATED ALWAYS AS (age < 18) STORED,
@@ -90,7 +104,7 @@ export async function up(knex) {
       major_category_id    int REFERENCES ref.property_categories(parent_cd),
       minor_category_id    int REFERENCES ref.other_property_items(property_cd),
       status               varchar(20) NOT NULL DEFAULT 'STOLEN' CHECK (status IN
-                             ('STOLEN','RECOVERED','SEIZED','INTACT','UNCLAIMED')),
+                             ('STOLEN','RECOVERED','SEIZED','INTACT','UNCLAIMED','INVOLVED')),
       details              text,
       uid                  varchar(100),
       estimated_value      numeric(14,2),

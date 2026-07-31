@@ -43,6 +43,10 @@ start "PHAROS Python Worker" cmd /k "cd /d %~dp0python_worker && python main.py"
 cd /d %~dp0
 echo.
 
+echo [5.8/6] Freeing port 3000 if occupied...
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING 2^>nul') do taskkill /f /pid %%a >nul 2>&1
+echo.
+
 echo [6/6] Starting backend server in a new terminal...
 start "PHAROS Backend" cmd /k "cd /d %~dp0backend && npm run dev"
 echo.

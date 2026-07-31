@@ -11,8 +11,11 @@ generated-reports/
 reports/output/
 coverage/
 *.log
-# Logs
-logs/
+# Logs — anchored (leading slash) to backend/logs/ specifically. A bare `logs/` matches ANY
+# directory named "logs" at any depth, which was silently swallowing the new
+# src/modules/logs/ module (logging-instrumentation-2026-07-22 foundation fix) — it never showed
+# up in `git status` at all.
+/logs/
 *.log
 npm-debug.log*
 yarn-debug.log*

@@ -14,9 +14,8 @@ import { formatDMY } from '../../utils/dateFormat.js';
  *   onLoadPreset    - callback(filters) called when user clicks a preset to apply it
  */
 export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }) {
-  const { t, i18n } = useTranslation();
-  const currentLng = i18n.language || 'en';
-  
+  const { t } = useTranslation();
+
   const { presets, isLoading, savePreset, deletePreset, isSaving, isDeleting } = useFilterPresets();
   const [expanded, setExpanded] = useState(false);
   const [presetName, setPresetName] = useState('');
@@ -36,7 +35,8 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
       status: 'ALL',
       dateFrom: null,
       dateTo: null,
-      search: ''
+      search: '',
+      arrestKind: undefined
     };
 
     if (preset.id === 'sys_preset_today') {
@@ -78,6 +78,11 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
           }
         } else if (field === '_search' || field === 'data.local_head' || field === 'brief_facts') {
           mapped.search = val;
+        } else if (field === 'arrestKind') {
+          // Round-trips the Kalandra / Arrest (Against FIR) derived filter (see
+          // UnifiedFilterStrip.jsx) — saved generically by useFilterPresets.js's
+          // "any other filter property" loop, so it needs an explicit read-back here too.
+          mapped.arrestKind = val;
         }
       });
     }
@@ -147,9 +152,10 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
           ) : (
             <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
               {presets.map((preset) => {
-                const displayName = currentLng === 'hi' 
-                  ? (preset.name_hi || preset.name_en) 
-                  : (preset.name_en || preset.name_hi);
+                // Bilingual name_hi is gone (single English `name` column,
+                // ADR 2026-07 — Hindi in ref./config data is additive later,
+                // never a redesign). name_en kept only as a compat alias.
+                const displayName = preset.name || preset.name_en;
                 return (
                   <div
                     key={preset.id}

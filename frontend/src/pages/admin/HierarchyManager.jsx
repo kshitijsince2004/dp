@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Network, Folder, ChevronRight, ChevronDown, Search,
@@ -8,6 +8,7 @@ import {
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
+import { log } from '../../utils/logger.js';
 
 // ── Node type badge colours ───────────────────────────────────────────────────
 const NODE_TYPE_STYLE = {
@@ -178,44 +179,60 @@ export default function HierarchyManager() {
   const [showForm, setShowForm] = useState(false);
   const [editNode, setEditNode] = useState(null);
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/admin/hierarchy' });
+    return () => log.debug('page:unmount', { route: '/admin/hierarchy' });
+  }, []);
+
   // ── Data fetch ──────────────────────────────────────────────────────────────
   const { data: nodes = [], isLoading, isError } = useQuery({
     queryKey: ['admin', 'hierarchy', 'nodes'],
     queryFn: async () => {
-      const res = await api.get('/hierarchy/nodes');
-      const raw = res.data?.data;
-      return Array.isArray(raw) ? raw : [];
+      log.debug('data:load_start', { what: 'hierarchy_nodes' });
+      try {
+        const res = await api.get('/hierarchy/nodes');
+        const raw = res.data?.data;
+        const rows = Array.isArray(raw) ? raw : [];
+        log.debug('data:load_success', { what: 'hierarchy_nodes', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'hierarchy_nodes', err });
+        throw err;
+      }
     },
   });
 
   // ── Mutations ───────────────────────────────────────────────────────────────
   const createMutation = useMutation({
-    mutationFn: (body) => api.post('/hierarchy/nodes', body),
-    onSuccess: () => {
+    mutationFn: (body) => { log.info('action:hierarchy_node_create_start', { nodeType: body.node_type, name: body.name_en }); return api.post('/hierarchy/nodes', body); },
+    onSuccess: (res, body) => {
+      log.info('action:hierarchy_node_create_success', { nodeType: body.node_type, name: body.name_en });
       toast.success('Node created');
       queryClient.invalidateQueries({ queryKey: ['admin', 'hierarchy'] });
       setShowForm(false);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Create failed'),
+    onError: (err, body) => { log.error('action:hierarchy_node_create_failed', { name: body?.name_en, err }); toast.error(err.response?.data?.message || 'Create failed'); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...body }) => api.put(`/hierarchy/nodes/${id}`, body),
-    onSuccess: () => {
+    mutationFn: ({ id, ...body }) => { log.info('action:hierarchy_node_update_start', { nodeId: id }); return api.put(`/hierarchy/nodes/${id}`, body); },
+    onSuccess: (res, { id }) => {
+      log.info('action:hierarchy_node_update_success', { nodeId: id });
       toast.success('Node updated');
       queryClient.invalidateQueries({ queryKey: ['admin', 'hierarchy'] });
       setEditNode(null);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Update failed'),
+    onError: (err, { id }) => { log.error('action:hierarchy_node_update_failed', { nodeId: id, err }); toast.error(err.response?.data?.message || 'Update failed'); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => api.delete(`/hierarchy/nodes/${id}`),
-    onSuccess: () => {
+    mutationFn: (id) => { log.info('action:hierarchy_node_delete_start', { nodeId: id }); return api.delete(`/hierarchy/nodes/${id}`); },
+    onSuccess: (res, id) => {
+      log.info('action:hierarchy_node_delete_success', { nodeId: id });
       toast.success('Node deleted');
       queryClient.invalidateQueries({ queryKey: ['admin', 'hierarchy'] });
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Delete failed'),
+    onError: (err, id) => { log.error('action:hierarchy_node_delete_failed', { nodeId: id, err }); toast.error(err.response?.data?.message || 'Delete failed'); },
   });
 
   // ── Derived data ────────────────────────────────────────────────────────────
@@ -250,6 +267,7 @@ export default function HierarchyManager() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const handleSave = (data) => {
+    log.debug('action:hierarchy_node_form_submit', { nodeId: data?.id, isEdit: !!data?.id });
     if (data?.id) {
       updateMutation.mutate({ id: data.id, ...data });
     } else {
@@ -258,6 +276,7 @@ export default function HierarchyManager() {
   };
 
   const handleDelete = (node) => {
+    log.debug('action:hierarchy_node_delete_click', { nodeId: node.id });
     if (!window.confirm(`Delete node "${node.name_en || node.id}"? This cannot be undone.`)) return;
     deleteMutation.mutate(node.id);
   };

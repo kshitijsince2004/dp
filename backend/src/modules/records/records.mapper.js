@@ -11,7 +11,18 @@ import {
   normalizeText, normalizeDate, normalizePhone, normalizeFirNo, toBool, normalizeEnumUpper,
   resolveAct, resolveSection, resolveMajorHead, resolveMinorHead,
   resolveLocalHead, resolveBeat,
+  resolvePropertyMajorCategory, resolvePropertyMinorCategory,
+  resolvePropertyTypeColumn, isDeferredPropertyTypeColumn,
+  loadKnownActLabels, loadValidActCds,
 } from './records.normalize.js';
+import { getLogger } from '../../utils/logger.js';
+
+// STYLE ANCHOR followed (see records.service.js / HANDOFF.md §7). Per-field-in-a-loop lines are
+// deliberately NOT logged (would be pure noise across a 50+ field registry) — logging here targets
+// genuine decisions/effects: a value salvaged/coerced, a deferred FK label resolved, an offence row
+// built, a split/recompose's overall shape. Mirrors records.service.js's upsertPersons/upsertProperties
+// pattern (summary-with-counts + per-item lines only where something real happened).
+const log = getLogger('records.mapper');
 
 // T7.1 — columns whose CHECK constraint vocabulary is UPPERCASE while field_registry's option
 // values are Title Case (see records.normalize.js's normalizeEnumUpper doc comment). Keyed by
@@ -22,6 +33,73 @@ const ENUM_UPPER_COLUMNS = {
   persons: new Set(['gender', 'relation_type']),
   record_properties: new Set(['status']),
 };
+
+// The exact CHECK-constraint vocabulary for each enum-upper column (must mirror the migration
+// CHECKs — 20260711000004_persons_properties.js). A value OUTSIDE its set crashes the whole
+// import row with pg 23514 + an opaque "system error": real 2026-07-20 examples were an accused
+// gender of "Yadav" (a surname mis-entered into the gender column) and a property status of
+// "Mobile" (the item name mis-entered into the status column). The frontend constrains
+// interactive entry to these via dropdowns, so out-of-vocabulary values only arrive through
+// messy bulk import — we coerce them (see normalizeEnumConstrained) instead of crashing.
+const ENUM_ALLOWED = {
+  persons: {
+    gender: new Set(['MALE', 'FEMALE', 'TRANSGENDER', 'OTHER', 'UNKNOWN']),
+    relation_type: new Set(['FATHER', 'MOTHER', 'HUSBAND', 'WIFE', 'GUARDIAN', 'OTHER']),
+  },
+  record_properties: {
+    status: new Set(['STOLEN', 'RECOVERED', 'SEIZED', 'INTACT', 'UNCLAIMED', 'INVOLVED']),
+  },
+};
+// Fallback for an out-of-vocabulary / empty value. gender & relation_type are nullable → null
+// (drop the bad value, keep the rest of the person). record_properties.status is
+// NOT NULL DEFAULT 'STOLEN' → coerce to 'STOLEN' (an explicit null would just trade a 23514 for
+// a 23502 not-null crash); this matches the column's own default, so a property with a
+// mis-entered/blank status still imports as a STOLEN property rather than sinking the record.
+const ENUM_FALLBACK = {
+  record_properties: { status: 'STOLEN' },
+};
+
+export const PINCODE_MIN_DIGITS = 5; // shortest plausible pincode; below this = not a pincode
+
+/** The SINGLE source of truth for "would this enum value be salvaged?". Returns null when `raw`
+ * is a valid in-vocabulary value OR is empty (empty isn't a "cleaned bad value" — it's just
+ * absent). Otherwise returns { to } = the coerced value the write path will store instead. Used
+ * by normalizeEnumConstrained (to actually coerce) AND by import.validate.js (to WARN the
+ * operator that a cell was salvaged — user decision 2026-07-20), so the two can never drift. */
+export function enumCoercion(table, column, raw) {
+  const up = normalizeEnumUpper(raw);
+  if (up === null) return null; // empty → absent, not salvaged
+  const allowed = ENUM_ALLOWED[table]?.[column];
+  if (!allowed || allowed.has(up)) return null; // valid in-vocabulary value
+  const fallback = ENUM_FALLBACK[table]?.[column];
+  const to = fallback !== undefined ? fallback : null;
+  log.warn('enumCoercion: out-of-vocabulary value salvaged', { table, column, raw, salvagedTo: to });
+  return { to };
+}
+
+/** SINGLE source of truth for "would this pincode be salvaged to null?" — non-empty but fewer
+ * than PINCODE_MIN_DIGITS digits (e.g. the "6-digit PIN code" placeholder). null = kept as-is
+ * (after digit-strip). Mirrors normalizeLocationValue's pincode branch; shared with validate. */
+export function pincodeCoercion(raw) {
+  if (raw === null || raw === undefined) return null;
+  const s = String(raw).trim();
+  if (s === '') return null;
+  const digits = s.replace(/\D/g, '');
+  if (digits.length < PINCODE_MIN_DIGITS) {
+    log.warn('pincodeCoercion: implausibly short pincode salvaged to null', { raw, digitCount: digits.length });
+    return { to: null };
+  }
+  return null;
+}
+
+/** Uppercase-normalize an enum value AND constrain it to its column's CHECK vocabulary. In-set
+ * values pass through; out-of-set/empty values become the column's fallback (null unless
+ * ENUM_FALLBACK says otherwise). Prevents pg 23514/23502 from crashing an import row. */
+function normalizeEnumConstrained(table, column, raw) {
+  const coercion = enumCoercion(table, column, raw);
+  if (coercion) return coercion.to;
+  return normalizeEnumUpper(raw); // in-vocabulary (or empty → null)
+}
 
 export const DETAIL_TABLES = {
   CASE: 'fir_details', ARREST: 'arrest_details', PCR_CALL: 'pcr_call_details',
@@ -39,6 +117,23 @@ export const REPEATER_ROLES = new Set(['ARRESTEE', 'VICTIM', 'ACCUSED', 'WITNESS
 const PERSON_TYPE_TO_ROLE = { ARRESTED: 'ARRESTEE' };
 const ROLE_TO_PERSON_TYPE = { ARRESTEE: 'ARRESTED' };
 
+/**
+ * Normalize a raw `person_type` token (as sent by the frontend's `persons[]` payload) to the
+ * DB `persons.role` value. Defense-in-depth (2026-07-23 bugfix batch, B1's second root cause):
+ * `config/fields/*.json`'s `repeater_entity` values are `PERSON_ARRESTED`/`PERSON_VICTIM`/
+ * `PERSON_ACCUSED` — PERSON_-prefixed — not the bare role name. The frontend is being fixed to
+ * send the bare token at the source, but `splitPersons`'s `PERSON_ROLES.includes(role)` guard
+ * silently dropped every PERSON_-prefixed entry it ever saw (93 real occurrences in tester
+ * logs: 53x PERSON_VICTIM + 40x PERSON_ACCUSED on CASE) — victims/accused typed into the form
+ * vanished with zero error and zero revision. Stripping a leading `PERSON_` before applying the
+ * existing ARRESTED->ARRESTEE alias means a PERSON_-prefixed role can never again be silently
+ * dropped, from either the interactive form or any other future caller.
+ */
+export function roleForPersonType(personType) {
+  const stripped = typeof personType === 'string' ? personType.replace(/^PERSON_/, '') : personType;
+  return PERSON_TYPE_TO_ROLE[stripped] || stripped;
+}
+
 // slot -> {table: detailTableName, column} for record/detail-level (no person role) locations.
 export const DETAIL_LOCATION_SLOTS = {
   occurrence: { CASE: 'occurrence_location_id', PCR_CALL: 'occurrence_location_id' },
@@ -54,24 +149,38 @@ export const PERSON_LOCATION_SLOTS = {
   found: { table: 'missing_person_details', column: 'found_location_id' },
 };
 
-// Property FK columns (major_category_id, automobile_id, ...) submit the numeric ref.* code
-// directly (confirmed against fields.service.js's GENERIC property-item dispatch and
-// property_major_category's option list, both `value: <code>` — unlike acts/sections/heads,
-// which submit LABEL text) — plain integer-typed columns, so coerceByType's generic integer
-// branch parses them correctly with no special-casing needed.
+// Most property FK columns (automobile_id, drug_type_id, ...) submit the numeric ref.* code
+// directly from the interactive form (fields.service.js's GENERIC property-item dispatch,
+// `value: <code>`), so coerceByType's integer branch parses them with no special-casing. The
+// TWO category columns (major_category_id / minor_category_id) are the exception: the form still
+// submits their numeric code, but BULK IMPORT submits the human LABEL from the frozen template's
+// dropdown (like acts/sections/heads). Those two are deferred (DEFERRED_PROPERTY_FK_COLUMNS) and
+// resolved async in splitProperties — numeric passes through, a label is looked up against ref.*.
 
 let columnCache = null;
+// Parallel cache of character_maximum_length for varchar/char columns (null for unbounded
+// types). Loaded from the SAME information_schema query as columnCache so there's no extra
+// round-trip; kept separate so columnCache stays a plain column→data_type string map (what
+// coerceByType/decorateByType consume) rather than changing its shape everywhere.
+let columnMaxLenCache = null;
 /** information_schema introspection, cached for the process lifetime (mirrors
  * scripts/lib/sync-config-core.mjs's loadColumns — schema only changes via a migration +
  * restart, so a request-scoped or one-shot query would be wasted work). */
 async function loadColumns(trx) {
   if (columnCache) return columnCache;
   const rows = await trx.raw(
-    `SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_schema = 'public'`
+    `SELECT table_name, column_name, data_type, character_maximum_length
+       FROM information_schema.columns WHERE table_schema = 'public'`
   );
   const cols = {};
-  for (const r of rows.rows) (cols[r.table_name] ??= {})[r.column_name] = r.data_type;
+  const lens = {};
+  for (const r of rows.rows) {
+    (cols[r.table_name] ??= {})[r.column_name] = r.data_type;
+    (lens[r.table_name] ??= {})[r.column_name] = r.character_maximum_length ?? null;
+  }
   columnCache = cols;
+  columnMaxLenCache = lens;
+  log.debug('loadColumns: loaded and cached information_schema column types', { tableCount: Object.keys(cols).length });
   return cols;
 }
 
@@ -97,14 +206,34 @@ function coerceByType(dataType, raw) {
   }
 }
 
-/** 'DD/MM/YYYY HH:mm' | 'DD/MM/YYYY' | ISO -> ISO timestamp for a timestamptz column. */
+/** 'DD/MM/YYYY HH:mm' | 'DD/MM/YYYY' | ISO ('YYYY-MM-DDTHH:mm[:ss]') -> ISO timestamp for a
+ * timestamptz column.
+ *
+ * C15 fix (2026-07-26 bugfix batch): the date/time split only recognized a SPACE separator
+ * ('DD/MM/YYYY HH:mm'), matching the frontend's DateTimePickerPopup output — but this function
+ * is also reachable with a 'T'-separated ISO datetime string (e.g. from a direct API caller, or
+ * any future producer that emits `Date.prototype.toISOString()`-shaped input). Splitting only on
+ * whitespace left the whole string as `datePart` in that case (`normalizeDate`'s ISO-prefix match
+ * still resolved the date correctly) and `timePart` undefined, so the entered TIME was silently
+ * discarded and replaced with `T00:00:00` — proven live: POST with
+ * `info_received_at_ps_date_time: "2026-07-26T10:00:00"` persisted as
+ * `2026-07-26 00:00:00+00` in `fir_details.info_received_at_ps`. Splitting on `T` OR whitespace
+ * fixes both input shapes; `normalizeDate` already tolerates either date form. (This was found
+ * while root-causing the tester's "Missing required fields: Information received at P.S." reports
+ * — those specific failures are a DIFFERENT bug: the field arrived explicitly `null`, not
+ * malformed, i.e. the frontend never populated it — see the C15 investigation note in
+ * `docs/bugfix-batch-2026-07-26/HANDOFF.md`. This normalizer bug is fixed regardless because it
+ * is real and independently provable, and would silently corrupt any DATETIME field ever fed an
+ * ISO 'T' string, interactive or otherwise.) */
 function normalizeDateTime(raw) {
   const s = String(raw ?? '').trim();
   if (!s) return null;
-  const [datePart, timePart] = s.split(/\s+/);
+  const [datePart, timePart] = s.split(/[T\s]+/);
   const iso = normalizeDate(datePart);
   if (!iso) return null;
-  if (timePart && /^\d{1,2}:\d{2}(:\d{2})?$/.test(timePart)) return `${iso}T${timePart.length === 5 ? timePart + ':00' : timePart}`;
+  if (timePart && /^\d{1,2}:\d{2}(:\d{2})?/.test(timePart)) {
+    return `${iso}T${timePart.length === 5 ? timePart + ':00' : timePart.slice(0, 8)}`;
+  }
   return `${iso}T00:00:00`;
 }
 
@@ -152,6 +281,44 @@ function decorateByType(dataType, val) {
   }
 }
 
+/** Read-side inverse of records.normalize.js's `normalizeEnumUpper` (the write side), keyed by
+ * table+column exactly like ENUM_UPPER_COLUMNS. The write path stores these enums in their
+ * CHECK-constraint vocabulary — UPPERCASE ('MALE','FATHER','STOLEN') — but field_registry's
+ * option `value`s (what the frontend's SearchableSelect matches, case-SENSITIVELY, and what
+ * list/detail/export views render) are Title Case ('Male','Father','Stolen'). Without this
+ * inverse, recomposeRecord handed back raw 'MALE'; SearchableSelect found no matching option and
+ * displayed blank — the reported symptom for complainant/victim gender + relation_type + missing
+ * gender + property status, on BOTH interactive and imported records. Every enum-upper option in
+ * the vocabulary today is a single word, so Title Case is an exact inverse (the same single-word
+ * assumption the write-side uppercasing already relies on). If a multi-word enum value is ever
+ * added, promote this to an options-aware lookup rather than extending the string transform. */
+function decorateEnumUpper(table, column, val) {
+  if (typeof val !== 'string' || !val) return val;
+  if (!ENUM_UPPER_COLUMNS[table]?.has(column)) return val;
+  return val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
+}
+
+/** C4 fix (2026-07-26 bugfix batch) — read-side inverse of `toBool`'s "Yes"/"No" acceptance,
+ * for RADIO fields that are backed by a genuine boolean column but AUTHORED with STRING
+ * "Yes"/"No" options (as opposed to `mp_known`/`identified`, whose options are the literal
+ * booleans `[true, false]` and whose frontend widget already compares real booleans — those are
+ * untouched by this check and must stay untouched). Without this, GET returned the raw pg
+ * boolean (`true`/`false`); the frontend RADIO widget matches `value === option.value`, and
+ * `true !== "Yes"`, so the field rendered as UNANSWERED on every reopen even though the DB value
+ * was correct — proven live for `nafis_prepared`/`dossier_prepared`/`proclaimed_offender`
+ * (tester-reported as ARREST edits "not persisting"; the write path round-trips these three
+ * correctly on its own — verified via a direct create/update/GET test — so an unanswered-looking
+ * field on reopen, silently resubmitted as unset, is the mechanism that best fits the report).
+ * Scoped narrowly by checking the field's OWN first option's type, not a hardcoded field-key
+ * list, so it never needs updating as fields are added/removed in config/fields/*.json (not
+ * this module's file). */
+function decorateYesNoRadio(field, val) {
+  if (typeof val !== 'boolean') return val;
+  if (field?.field_type !== 'RADIO') return val;
+  if (typeof field.options?.[0]?.value !== 'string') return val;
+  return val ? 'Yes' : 'No';
+}
+
 /** pg already auto-deserializes jsonb columns (arrays/objects arrive as real JS values, not
  * JSON-encoded strings) — this only needs to handle the one column that legitimately stores
  * a bare JSON string scalar (`field_registry.storage`, e.g. `"ui_only"`/`"extra"`), where
@@ -167,7 +334,7 @@ function parseJson(val, fallback) {
 /** Load every active field_registry row applicable to recordType, with storage/labels parsed. */
 export async function loadRegistry(trx, recordType) {
   const rows = await trx('field_registry').where({ is_active: true });
-  return rows
+  const filtered = rows
     .map((r) => ({
       ...r,
       record_types: parseJson(r.record_types, []),
@@ -178,10 +345,12 @@ export async function loadRegistry(trx, recordType) {
       show_when: parseJson(r.show_when, null),
     }))
     .filter((r) => r.record_types.includes(recordType));
+  log.debug('loadRegistry: loaded active field_registry rows', { recordType, totalActive: rows.length, applicable: filtered.length });
+  return filtered;
 }
 
 /** Resolve a `{per_type:{...}}` wrapper down to the shape for this record type (or null). */
-function resolveStorage(storage, recordType) {
+export function resolveStorage(storage, recordType) {
   if (storage && storage.per_type) return storage.per_type[recordType] ?? null;
   return storage;
 }
@@ -196,6 +365,7 @@ function resolveStorage(storage, recordType) {
  * per ruling 22).
  */
 function splitFlatFields(registry, recordType, data) {
+  log.debug('splitFlatFields: enter', { recordType, dataKeys: Object.keys(data).length });
   const spine = {};
   const detail = {};
   const detailExtra = {};
@@ -242,11 +412,18 @@ function splitFlatFields(registry, recordType, data) {
     }
     if (targetTable !== detailTable) continue; // field not applicable to this record's detail table
 
-    if (seenDetailCols.has(shape.column) && caseStatusWinsOver.has(f.field_key)) continue;
+    if (seenDetailCols.has(shape.column) && caseStatusWinsOver.has(f.field_key)) {
+      log.debug('splitFlatFields: skipped — a more specific field already won this detail column', { recordType, fieldKey: f.field_key, column: shape.column });
+      continue;
+    }
     detail[shape.column] = normalizeDetailValue(detailTable, shape.column, raw);
     seenDetailCols.add(shape.column);
   }
 
+  log.debug('splitFlatFields: exit', {
+    recordType, spineKeys: Object.keys(spine).length, detailKeys: Object.keys(detail).length,
+    detailExtraKeys: Object.keys(detailExtra).length, detailLocationSlots: Object.keys(detailLocationFields).length,
+  });
   return { spine, detail, detailExtra, detailLocationFields, warnings };
 }
 
@@ -267,16 +444,55 @@ function normalizeDetailValue(table, column, raw) {
   return coerceByType(columnCache?.[table]?.[column], raw);
 }
 
+// Longest varchar location column is 500 (full_address); pincode is the narrowest at 10. Free
+// text entered by officers (or a template placeholder/hint left un-replaced, e.g. the literal
+// string "6-digit PIN code") routinely overshoots the narrow columns. Before the guard below, an
+// over-length value threw `value too long for type character varying(N)` (pg 22001) mid-insert,
+// failing the ENTIRE row with an opaque "system error" and no indication which field — the actual
+// root cause of the reported "ARREST bulk import not working" (#1, 2026-07-20). P2 "reject only
+// the impossible" + the import-reliability framework favour salvaging the row over crashing it.
 function normalizeLocationValue(column, raw) {
-  return coerceByType(columnCache?.locations?.[column], raw);
+  let val = coerceByType(columnCache?.locations?.[column], raw);
+  if (val === null || val === undefined) return val;
+
+  // pincode is digits-only by definition. Strip non-digits, then drop implausibly short results
+  // (< PINCODE_MIN_DIGITS — no real pincode is that short; a stray digit from placeholder prose
+  // like "6-digit PIN code" is not a pincode) to null rather than storing garbage. Genuine
+  // pincodes (6-digit IN, longer foreign) are preserved. The salvage-to-null decision is shared
+  // with import.validate.js via pincodeCoercion so the operator WARNING can't drift from this.
+  if (column === 'pincode' && typeof val === 'string') {
+    if (pincodeCoercion(val)) return null;
+    val = val.replace(/\D/g, '');
+  }
+
+  // Last-line width guard: never let a location varchar overflow its column and take down the
+  // whole row. Truncate to the column's real width (from information_schema) instead. Applies to
+  // EVERY location varchar (pincode included, after the digit-normalize above), so no location
+  // value can ever raise pg 22001 again.
+  if (typeof val === 'string') {
+    const maxLen = columnMaxLenCache?.locations?.[column];
+    if (maxLen && val.length > maxLen) {
+      log.warn('normalizeLocationValue: value truncated to column width', { column, maxLen, originalLength: val.length });
+      val = val.slice(0, maxLen);
+    }
+  }
+  return val;
 }
 
 /** Detail-table columns that hold a LABEL needing async ref.* resolution before insert.
  * `psId` (T3) scopes resolveBeat's bare-number fallback — only the write-path callers that
  * already know the record's target PS pass it; the resolver itself tolerates its absence. */
 async function resolveDetailFkLabels(trx, recordType, detail, psId = null) {
-  if ('beat_id' in detail) detail.beat_id = (await resolveBeat(trx, detail.beat_id, psId)).id;
-  if ('local_head_id' in detail) detail.local_head_id = (await resolveLocalHead(trx, detail.local_head_id)).id;
+  if ('beat_id' in detail) {
+    const rawLabel = detail.beat_id;
+    detail.beat_id = (await resolveBeat(trx, rawLabel, psId)).id;
+    log.debug('resolveDetailFkLabels: resolved beat_id label', { recordType, rawLabel, resolvedId: detail.beat_id });
+  }
+  if ('local_head_id' in detail) {
+    const rawLabel = detail.local_head_id;
+    detail.local_head_id = (await resolveLocalHead(trx, rawLabel)).id;
+    log.debug('resolveDetailFkLabels: resolved local_head_id label', { recordType, rawLabel, resolvedId: detail.local_head_id });
+  }
   return detail;
 }
 
@@ -307,6 +523,7 @@ const PERSONS_TABLE_COLUMNS = new Set([
  * table — a MISSING person writes both `missing_person_details` AND `person_descriptions`
  * (the shared physical-description subtype) at once, same for DECEASED + person_descriptions. */
 async function splitPersonEntry(trx, personFields, locationFields, source) {
+  log.debug('splitPersonEntry: enter', { personFieldCount: personFields.length, locationFieldCount: locationFields.length, sourceKeys: Object.keys(source).length });
   const columns = {};
   const extra = {};
   const subtypes = {}; // table -> {columns}
@@ -355,8 +572,15 @@ async function splitPersonEntry(trx, personFields, locationFields, source) {
     (locationsBySlot[shape.slot] ??= {})[shape.column] = normalizeLocationValue(shape.column, raw);
   }
   // "same as present" toggle wins — never create a permanent location row when set.
-  if (columns.perm_same_as_present === true) delete locationsBySlot.permanent;
+  if (columns.perm_same_as_present === true) {
+    log.debug('splitPersonEntry: perm_same_as_present set — dropping permanent location block', {});
+    delete locationsBySlot.permanent;
+  }
 
+  log.debug('splitPersonEntry: built entry', {
+    columnCount: Object.keys(columns).length, extraCount: Object.keys(extra).length,
+    subtypeTables: Object.keys(subtypes), locationSlots: Object.keys(locationsBySlot),
+  });
   return { columns, extra, subtypes, locations: locationsBySlot };
 }
 
@@ -372,7 +596,7 @@ function subtypeTableForColumn(column) {
 
 function normalizePersonValue(table, column, raw) {
   if (column === 'mobile') return normalizePhone(raw);
-  if (ENUM_UPPER_COLUMNS.persons?.has(column)) return normalizeEnumUpper(raw);
+  if (ENUM_UPPER_COLUMNS.persons?.has(column)) return normalizeEnumConstrained('persons', column, raw);
   return coerceByType(columnCache?.[table]?.[column], raw);
 }
 
@@ -389,6 +613,7 @@ function ageFromDob(dobIso) {
 /** Build all person entries for the record: singleton roles from flat `data`, repeater
  * roles from the `persons[]` array (person_type normalized to its DB role). */
 async function splitPersons(trx, registry, recordType, data, personsInput) {
+  log.debug('splitPersons: enter', { recordType, repeaterInputCount: (personsInput || []).length });
   const entries = [];
   const rolesPresent = new Set();
   for (const f of registry) {
@@ -402,27 +627,87 @@ async function splitPersons(trx, registry, recordType, data, personsInput) {
     const { person, location } = fieldsForRole(registry, recordType, role);
     if (!person.length && !location.length) continue;
     const hasAnyValue = [...person, ...location].some(({ field }) => data[field.field_key] !== undefined && data[field.field_key] !== '' && data[field.field_key] !== null);
-    if (!hasAnyValue) continue;
+    if (!hasAnyValue) {
+      log.debug('splitPersons: skipped singleton role — no value present', { recordType, role });
+      continue;
+    }
     const built = await splitPersonEntry(trx, person, location, data);
     entries.push({ role, ...built, sourceKind: 'flat' });
+    log.debug('splitPersons: built singleton entry', { recordType, role });
   }
 
   for (const [i, p] of (personsInput || []).entries()) {
-    const role = PERSON_TYPE_TO_ROLE[p.person_type] || p.person_type;
-    if (!PERSON_ROLES.includes(role)) continue;
+    // Single source of truth for person_type -> role (was duplicated inline here, out of sync
+    // with roleForPersonType — the PERSON_-prefix strip lives in exactly one place now).
+    const role = roleForPersonType(p.person_type);
+    if (!PERSON_ROLES.includes(role)) {
+      // log.error, not .warn: this is a silent-data-loss path — the whole entry (a victim/
+      // accused/etc a real officer typed in) is discarded, no revision, no error surfaced to the
+      // caller. It was a .warn before and 93 real drops (B1's second root cause) went unnoticed
+      // in normal log review. Still doesn't throw — an unrecognized role must not fail the whole
+      // record write, just be loud enough that it can't hide in routine debug/info volume again.
+      log.error('splitPersons: DROPPED repeater entry — unrecognized role (person data lost)', { recordType, sourceIndex: i, personType: p.person_type, resolvedRole: role });
+      continue;
+    }
     const { person, location } = fieldsForRole(registry, recordType, role);
     const built = await splitPersonEntry(trx, person, location, p.data || {});
     entries.push({ role, ...built, sourceKind: 'repeater', sourceIndex: i, existingId: p.id || null });
+    log.debug('splitPersons: built repeater entry', { recordType, role, sourceIndex: i, existingId: p.id || null });
   }
 
+  log.debug('splitPersons: exit', { recordType, entryCount: entries.length });
   return entries;
 }
 
 // ── properties ─────────────────────────────────────────────────────────────────────────
 
+// record_properties FK columns that may arrive as a LABEL (bulk import) rather than the numeric
+// ref code the interactive form submits — deferred past coerceByType (which would int-coerce a
+// label to null and drop it) and resolved async against ref.* in splitProperties. Mirrors the
+// detail-table DEFERRED_FK_LABEL_COLUMNS pattern. C9 (2026-07-26): extended past the two category
+// columns to every type-specific column resolvePropertyTypeColumn covers (fire_arm_id,
+// arms_subtype_id, drug_type_id, jewelry_type_id, currency_type_id, document_type_id,
+// electric_good_id, automobile_id) — see that function's doc comment in records.normalize.js.
+const DEFERRED_PROPERTY_FK_COLUMNS = new Set([
+  'major_category_id', 'minor_category_id',
+  'fire_arm_id', 'arms_subtype_id', 'drug_type_id', 'jewelry_type_id',
+  'currency_type_id', 'document_type_id', 'electric_good_id', 'automobile_id',
+]);
+
 function normalizePropertyValue(column, raw) {
-  if (ENUM_UPPER_COLUMNS.record_properties?.has(column)) return normalizeEnumUpper(raw);
+  if (DEFERRED_PROPERTY_FK_COLUMNS.has(column)) return raw;
+  if (ENUM_UPPER_COLUMNS.record_properties?.has(column)) return normalizeEnumConstrained('record_properties', column, raw);
   return coerceByType(columnCache?.record_properties?.[column], raw);
+}
+
+/** Resolve the deferred property FK label columns on a built entry's `columns` to their numeric
+ * ref codes (async — needs trx). Numeric codes (form) pass through; labels (import) are looked
+ * up. A value that resolves to null is deleted so the row omits the column entirely rather than
+ * writing a bogus 0/null over the FK. */
+async function resolvePropertyFkColumns(trx, columns) {
+  if ('major_category_id' in columns) {
+    const rawLabel = columns.major_category_id;
+    const id = await resolvePropertyMajorCategory(trx, rawLabel);
+    if (id == null) { delete columns.major_category_id; log.debug('resolvePropertyFkColumns: major_category_id unresolved, column dropped', { rawLabel }); }
+    else { columns.major_category_id = id; log.debug('resolvePropertyFkColumns: resolved major_category_id', { rawLabel, resolvedId: id }); }
+  }
+  if ('minor_category_id' in columns) {
+    const rawLabel = columns.minor_category_id;
+    const id = await resolvePropertyMinorCategory(trx, rawLabel);
+    if (id == null) { delete columns.minor_category_id; log.debug('resolvePropertyFkColumns: minor_category_id unresolved, column dropped', { rawLabel }); }
+    else { columns.minor_category_id = id; log.debug('resolvePropertyFkColumns: resolved minor_category_id', { rawLabel, resolvedId: id }); }
+  }
+  // C9 (2026-07-26): the type-specific columns (fire_arm_id/arms_subtype_id/drug_type_id/...)
+  // each resolve against their OWN dedicated ref table via resolvePropertyTypeColumn — never
+  // through resolvePropertyMinorCategory (that FKs only to ref.other_property_items; writing a
+  // drug/arms ref code there would be a dangling FK).
+  for (const column of Object.keys(columns)) {
+    if (!isDeferredPropertyTypeColumn(column)) continue;
+    const rawLabel = columns[column];
+    const id = await resolvePropertyTypeColumn(trx, column, rawLabel);
+    if (id == null) { delete columns[column]; log.debug('resolvePropertyFkColumns: type column unresolved, column dropped', { column, rawLabel }); }
+    else { columns[column] = id; log.debug('resolvePropertyFkColumns: resolved type column', { column, rawLabel, resolvedId: id }); }
+  }
 }
 
 function splitPropertyEntry(propertyFields, source) {
@@ -441,6 +726,7 @@ function splitPropertyEntry(propertyFields, source) {
     // don't let a later empty overwrite an already-set value (handled by the null-skip above).
     if (columns[shape.column] === undefined) columns[shape.column] = val;
   }
+  log.debug('splitPropertyEntry: built entry', { columnCount: Object.keys(columns).length, extraCount: Object.keys(extra).length });
   return { columns, extra };
 }
 
@@ -456,13 +742,18 @@ function propertyFieldsList(registry, recordType) {
   return { scalar, grouped };
 }
 
-async function splitProperties(registry, recordType, data, propertiesInput) {
+async function splitProperties(trx, registry, recordType, data, propertiesInput) {
+  log.debug('splitProperties: enter', { recordType, propertiesInputCount: (propertiesInput || []).length });
   const { scalar, grouped } = propertyFieldsList(registry, recordType);
   const entries = [];
 
   for (const [i, p] of (propertiesInput || []).entries()) {
     const built = splitPropertyEntry(scalar, p);
-    if (!Object.keys(built.columns).length && !Object.keys(built.extra).length) continue;
+    await resolvePropertyFkColumns(trx, built.columns);
+    if (!Object.keys(built.columns).length && !Object.keys(built.extra).length) {
+      log.debug('splitProperties: skipped repeater entry — no columns/extra built', { recordType, sourceIndex: i });
+      continue;
+    }
     entries.push({ ...built, personIndex: Number.isInteger(p.person_index) ? p.person_index : null, existingId: p.id || null });
   }
 
@@ -470,19 +761,84 @@ async function splitProperties(registry, recordType, data, propertiesInput) {
   // entry each, sourced from the record's top-level `data`.
   for (const [group, fields] of Object.entries(grouped)) {
     const built = splitPropertyEntry(fields, data);
-    if (!Object.keys(built.columns).length) continue; // skip blank starter blocks
+    await resolvePropertyFkColumns(trx, built.columns);
+    if (!Object.keys(built.columns).length) {
+      log.debug('splitProperties: skipped grouped block — blank starter block', { recordType, group });
+      continue; // skip blank starter blocks
+    }
     entries.push({ ...built, personIndex: null, existingId: null, group });
+    log.debug('splitProperties: built grouped entry', { recordType, group });
   }
 
+  log.debug('splitProperties: exit', { recordType, entryCount: entries.length });
   return entries;
 }
 
 // ── offences (record_offences: one row per section citation) ─────────────────────────────
 
 /** Zip parallel comma-joined act/section strings, pairing each with the i-th major/minor
- * head pair (or the last pair, or none) — mirrors ActsSectionsTable.jsx's own row model. */
-function zipOffenceStrings(actNameStr, sectionsStr, majorHeadsStr, minorHeadsStr) {
-  const acts = String(actNameStr || '').split(',').map((s) => s.trim()).filter(Boolean);
+ * head pair — mirrors ActsSectionsTable.jsx's own row model. Acts DO run parallel to sections
+ * (the frontend fills acts 1:1 with sections, each citation has an act), so acts fall back to
+ * acts[0]. Major/minor heads are an INDEPENDENT list in the UI (their own majorMinorRows table,
+ * unrelated to the section count) — they must NOT be last-filled to match the section count, or
+ * a record with 3 sections + 1 head round-trips as `major_heads="X, X, X"`, and the frontend
+ * re-seeds three identical head rows (reported 2026-07-21 as heads "repeated redundantly on
+ * submit"). Rows past the head count get null heads; recompose's joinNonEmpty drops them, so the
+ * head list round-trips at exactly its entered length. Row count stays section-driven (n) — the
+ * heads>sections overflow (majors[i>=n] unstored) is pre-existing and needs schema work, not a
+ * zip tweak. */
+/** Re-merge comma-split act-name fragments back into whole registry labels (B5, 2026-07-21 —
+ * "when i add aadhaar act, benefits and services also gets added"). `act_name` is stored/
+ * transported comma-joined (see zipOffenceStrings above) — an act label that itself CONTAINS a
+ * comma (e.g. 'Aadhaar (Targeted Delivery of Financial and Other Subsidies, Benefits and
+ * Services) Act, 2016') gets shattered into extra fragments by the naive split, each of which
+ * then resolves as its own free-text "act" (a phantom record_offences row) and desyncs the
+ * acts[i]<->sections[i] pairing for every citation after it.
+ *
+ * LONGEST match, not first/shortest match: for every starting fragment, scan every possible
+ * window (fragment[i..j]) and keep the LONGEST one that equals a known act label, then consume
+ * it whole. Shortest-match was tried first and rejected — `ACT_GROUP_CODES`'s alias names
+ * ('Arms Act', 'Delhi Excise Act') are THEMSELVES also in the known-label set (so `resolveAct`
+ * can match a plain alias with no comma), but they also happen to be an exact PREFIX of their
+ * own act_long ('ARMS ACT, 1959', 'DELHI EXCISE ACT, 2009'/'...2010' — verified live against
+ * ref.acts) — a shortest-match would stop at the alias and strand the trailing year as its own
+ * phantom act, the very bug this is fixing, for two real acts. Longest-match keeps extending
+ * past 'Arms Act' to the full 'Arms Act, 1959' once that longer window also matches, so a plain
+ * act with no commas ('IPC') still emits immediately (nothing longer to find) while an
+ * alias-prefixed one is preserved whole. A window that never matches at any width is emitted as
+ * its own single fragment (conservative — doesn't guess-merge two unrelated unknown acts).
+ * Sections/major/minor heads are NOT re-merged — their ref.* label columns are short codes/
+ * names that don't contain commas (verified against ref.sections/ref.major_heads/ref.minor_heads
+ * seed data), so this only ever needs to run on the act axis. Mirrors ActsSectionsTable.jsx's
+ * own re-merge (frontend fix, same bug — frontend additionally needs a year-rejoin pre-pass,
+ * see its own doc comment, because its acts registry collapses grouped acts to the alias only
+ * and never exposes the year-suffixed act_long the way this module's `loadKnownActLabels` does). */
+function reMergeKnownActFragments(fragments, knownLabelsLower) {
+  if (!knownLabelsLower || !knownLabelsLower.size) return fragments;
+  const merged = [];
+  let i = 0;
+  const n = fragments.length;
+  while (i < n) {
+    let bestEnd = -1;
+    let buffer = '';
+    for (let j = i; j < n; j++) {
+      buffer = buffer ? `${buffer}, ${fragments[j]}` : fragments[j];
+      if (knownLabelsLower.has(buffer.trim().toLowerCase())) bestEnd = j + 1;
+    }
+    if (bestEnd === -1) {
+      merged.push(fragments[i]);
+      i += 1;
+    } else {
+      merged.push(fragments.slice(i, bestEnd).join(', '));
+      i = bestEnd;
+    }
+  }
+  return merged;
+}
+
+function zipOffenceStrings(actNameStr, sectionsStr, majorHeadsStr, minorHeadsStr, knownActLabels) {
+  const rawActs = String(actNameStr || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const acts = reMergeKnownActFragments(rawActs, knownActLabels);
   const sections = String(sectionsStr || '').split(',').map((s) => s.trim()).filter(Boolean);
   const majors = String(majorHeadsStr || '').split(',').map((s) => s.trim()).filter(Boolean);
   const minors = String(minorHeadsStr || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -492,8 +848,8 @@ function zipOffenceStrings(actNameStr, sectionsStr, majorHeadsStr, minorHeadsStr
     rows.push({
       act: acts[i] ?? acts[0] ?? null,
       section: sections[i] ?? null,
-      major: majors[i] ?? majors[majors.length - 1] ?? null,
-      minor: minors[i] ?? minors[minors.length - 1] ?? null,
+      major: majors[i] ?? null,
+      minor: minors[i] ?? null,
     });
   }
   return rows;
@@ -514,13 +870,18 @@ function zipOffenceStrings(actNameStr, sectionsStr, majorHeadsStr, minorHeadsStr
  * the schema doesn't prescribe how crime_head relates to the multi-act rows.
  */
 export async function buildOffenceRows(trx, recordType, data, offencesInput) {
+  log.debug('buildOffenceRows: enter', { recordType, offencesInputCount: Array.isArray(offencesInput) ? offencesInput.length : 0 });
   let rows;
   if (Array.isArray(offencesInput) && offencesInput.length) {
     rows = offencesInput.map((o) => ({ act: o.act, section: o.section, major: o.major_head, minor: o.minor_head }));
+    log.debug('buildOffenceRows: sourced rows from explicit offences[] array', { recordType, rowCount: rows.length });
   } else {
-    rows = zipOffenceStrings(data.act_name, data.sections, data.major_heads, data.minor_heads);
+    const knownActLabels = await loadKnownActLabels(trx);
+    rows = zipOffenceStrings(data.act_name, data.sections, data.major_heads, data.minor_heads, knownActLabels);
+    log.debug('buildOffenceRows: sourced rows from zipped act/section/head strings', { recordType, rowCount: rows.length });
   }
 
+  const validActCds = await loadValidActCds(trx);
   const built = [];
   for (const r of rows) {
     if (!r.act && !r.section) continue;
@@ -529,15 +890,40 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
     if (r.section) {
       const resolved = await resolveSection(trx, r.section, actCds);
       sectionId = resolved.sectionId;
-      // A group alias (e.g. 'IPC' -> several act_cds) has no single actId of its own —
-      // the matched section's own act_sec_cd is the definitive act for THIS citation.
-      if (actId == null && resolved.actCd != null) actId = resolved.actCd;
+      // A group alias (e.g. 'IPC' -> several act_cds) has no single actId of its own — the
+      // matched section's own act_sec_cd is the definitive act for THIS citation. C18
+      // (2026-07-26): this borrow is only trustworthy when `actCds` was non-empty, i.e.
+      // `resolveSection` was SCOPED to a real, already-resolved act. When `actCds` is empty
+      // (the act itself never resolved), `resolveSection` runs UNSCOPED against the whole
+      // `ref.sections` table and can match a section row belonging to a completely different,
+      // unrelated act — reproduced live: act "AIRCRAFT RULES,1937" failed to resolve (a comma-
+      // merge formatting mismatch, reported separately), section "24B" then matched unscoped
+      // and returned an unrelated act_sec_cd. Gating on `actCds.length` restores this borrow to
+      // the group-alias case it was actually designed for.
+      if (actId == null && actCds.length > 0 && resolved.actCd != null) actId = resolved.actCd;
+    }
+    // C18 (2026-07-26): defense-in-depth — `ref.sections` has ~4,625 rows whose `act_sec_cd`
+    // references NO row in `ref.acts` at all (a pre-existing ref-data integrity gap; never
+    // "fixed" by inventing a `ref.acts` row per CLAUDE.md). Any act_id this function is about to
+    // use — however it was derived — is verified against the real, cached `ref.acts` id set
+    // before being trusted; an unresolvable one degrades to free text exactly like a genuine
+    // resolveAct miss, never reaching the INSERT as a dangling FK (the raw
+    // `record_offences_act_id_fkey` 500 this closes).
+    if (actId != null && !validActCds.has(actId)) {
+      log.warn('buildOffenceRows: resolved act_id does not exist in ref.acts — falling back to free text', {
+        recordType, act: r.act, section: r.section, danglingActId: actId,
+      });
+      otherActName = otherActName || r.act || null;
+      actId = null;
     }
     // record_offences CHECK: act_id NOT NULL OR other_act_name NOT NULL. A group alias with
     // no section match (or no section at all) still has neither — fall back to storing the
     // as-entered act label itself so the row is legal (honest, not a real ref.acts row).
     if (actId == null && !otherActName) otherActName = r.act || null;
-    if (actId == null && !otherActName) continue; // truly nothing to build a row from
+    if (actId == null && !otherActName) {
+      log.debug('buildOffenceRows: skipped row — no act/section could be resolved', { recordType, act: r.act, section: r.section });
+      continue; // truly nothing to build a row from
+    }
     const majorHeadId = r.major ? (await resolveMajorHead(trx, r.major)).id : null;
     const minorHeadId = r.minor ? (await resolveMinorHead(trx, r.minor, majorHeadId)).id : null;
     built.push({
@@ -545,6 +931,7 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
       major_head_id: majorHeadId, minor_head_id: minorHeadId,
       is_primary: false, sort_order: built.length,
     });
+    log.debug('buildOffenceRows: built offence row', { recordType, act: r.act, section: r.section, actId, otherActName, sectionId, majorHeadId, minorHeadId });
   }
   if (built.length) built[0].is_primary = true;
 
@@ -556,12 +943,17 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
       if (match) {
         built.forEach((row) => { row.is_primary = false; });
         match.is_primary = true;
+        log.debug('buildOffenceRows: crime_head selected an existing row as primary', { recordType, crimeHeadLabel, majorHeadId: crimeHeadMajorId });
       } else if (built.length) {
         built[0].major_head_id = crimeHeadMajorId;
+        log.debug('buildOffenceRows: crime_head overrode first row major_head_id', { recordType, crimeHeadLabel, majorHeadId: crimeHeadMajorId });
       }
+    } else {
+      log.debug('buildOffenceRows: crime_head label did not resolve to a major head', { recordType, crimeHeadLabel });
     }
   }
 
+  log.debug('buildOffenceRows: exit', { recordType, builtCount: built.length });
   return built;
 }
 
@@ -577,14 +969,21 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
  * callers pass the scope they already know (`user.ps_id` / `scope.ps_id` / `record.ps_id`).
  */
 export async function splitPayload(trx, registry, recordType, { data = {}, persons = [], properties = [], offences = [] }, psId = null) {
+  log.debug('splitPayload: enter', {
+    recordType, psId, dataKeys: Object.keys(data).length,
+    personsInputCount: persons.length, propertiesInputCount: properties.length, offencesInputCount: offences.length,
+  });
   await loadColumns(trx); // warms the cache; not otherwise consumed here today
   const { spine, detail, detailExtra, detailLocationFields } = splitFlatFields(registry, recordType, data);
   await resolveDetailFkLabels(trx, recordType, detail, psId);
 
   const personEntries = await splitPersons(trx, registry, recordType, data, persons);
-  const propertyEntries = await splitProperties(registry, recordType, data, properties);
+  const propertyEntries = await splitProperties(trx, registry, recordType, data, properties);
   const offenceRows = await buildOffenceRows(trx, recordType, data, offences);
 
+  log.debug('splitPayload: exit', {
+    recordType, personEntries: personEntries.length, propertyEntries: propertyEntries.length, offenceRows: offenceRows.length,
+  });
   return { spine, detail, detailExtra, detailLocationFields, personEntries, propertyEntries, offenceRows };
 }
 
@@ -616,6 +1015,10 @@ function recomposeLocationFields(locationFields, slot, role, locationRow, into) 
 export async function recomposeRecord(trx, registry, recordType, {
   spineRow, detailRow, personRows = [], propertyRows = [], offenceRows = [], locationsById = {},
 }) {
+  log.debug('recomposeRecord: enter', {
+    recordType, recordId: spineRow?.id, personRowCount: personRows.length,
+    propertyRowCount: propertyRows.length, offenceRowCount: offenceRows.length,
+  });
   const cols = await loadColumns(trx);
   const data = {};
   const detailTable = DETAIL_TABLES[recordType];
@@ -640,7 +1043,7 @@ export async function recomposeRecord(trx, registry, recordType, {
     const source = targetTable === 'records' ? spineRow : (targetTable === detailTable ? detailRow : null);
     if (!source) continue;
     if (shape.column in source && source[shape.column] !== undefined) {
-      data[f.field_key] = decorateByType(cols[targetTable]?.[shape.column], source[shape.column]);
+      data[f.field_key] = decorateYesNoRadio(f, decorateByType(cols[targetTable]?.[shape.column], source[shape.column]));
     }
   }
 
@@ -668,6 +1071,16 @@ export async function recomposeRecord(trx, registry, recordType, {
   if (detailRow?.local_head_id_label) data.local_head = detailRow.local_head_id_label;
   if (detailRow?.beat_id_label) data.beat_no = detailRow.beat_id_label;
 
+  // #7a (2026-07-20): Heinous Offence is DERIVED read-only from the record's local-head
+  // classification (ref.local_heads.crime_category = 'HEINOUS' | 'OTHER'), attached onto
+  // detailRow by the caller (enrichDetailLabels). The `heinous_offence` field is storage:ui_only
+  // (never written), so this recompose is its only source. Left BLANK when no classification is
+  // set (local_head_id null) rather than asserting 'No' — absence ≠ non-heinous. Applies wherever
+  // a local_head exists (CASE/ARREST today; UIDB while its local_head_id is populated).
+  if (detailRow?.local_head_crime_category) {
+    data.heinous_offence = detailRow.local_head_crime_category === 'HEINOUS' ? 'Yes' : 'No';
+  }
+
   // persons: singleton roles flatten into `data`; repeater roles build the `persons[]` array
   const persons = [];
   for (const p of personRows) {
@@ -688,6 +1101,10 @@ export async function recomposeRecord(trx, registry, recordType, {
 
   const properties = propertyRows.map((pr) => recomposePropertyRow(registry, recordType, pr));
 
+  log.debug('recomposeRecord: exit', {
+    recordType, recordId: spineRow?.id, dataKeys: Object.keys(data).length,
+    personCount: persons.length, propertyCount: properties.length,
+  });
   return { data, persons, properties };
 }
 
@@ -727,14 +1144,19 @@ function recomposePersonFields(personFields, personRow, into, cols) {
     const source = subtypeTable && personRow.subtypes?.[subtypeTable] ? personRow.subtypes[subtypeTable] : personRow;
     const sourceTableName = subtypeTable && personRow.subtypes?.[subtypeTable] ? subtypeTable : 'persons';
     if (source && shape.column in source && source[shape.column] !== undefined && source[shape.column] !== null) {
-      into[f.field_key] = decorateByType(cols?.[sourceTableName]?.[shape.column], source[shape.column]);
+      const typed = decorateByType(cols?.[sourceTableName]?.[shape.column], source[shape.column]);
+      into[f.field_key] = decorateYesNoRadio(f, decorateEnumUpper(sourceTableName, shape.column, typed));
     }
   }
 }
 
 function recomposePropertyRow(registry, recordType, propertyRow) {
   const { scalar, grouped } = propertyFieldsList(registry, recordType);
-  const flat = { id: propertyRow.id, person_index: propertyRow.person_index ?? null };
+  // `person_id` is how the frontend re-links an arrested person's per-person property list
+  // when a draft is reopened (persons[] entries carry their `id`); without it every reopened
+  // ARREST draft showed the arrestee's properties as record-level orphans and re-saving
+  // delete-and-reinserted them, destroying `record_status_events.property_id` history.
+  const flat = { id: propertyRow.id, person_id: propertyRow.person_id ?? null, person_index: propertyRow.person_index ?? null };
   for (const { field: f, shape } of scalar) {
     if (shape.extra) {
       const bag = propertyRow.extra || {};
@@ -742,7 +1164,7 @@ function recomposePropertyRow(registry, recordType, propertyRow) {
       continue;
     }
     if (shape.column in propertyRow && propertyRow[shape.column] !== null && propertyRow[shape.column] !== undefined) {
-      flat[f.field_key] = propertyRow[shape.column];
+      flat[f.field_key] = decorateEnumUpper('record_properties', shape.column, propertyRow[shape.column]);
     }
   }
   for (const fields of Object.values(grouped)) {

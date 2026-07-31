@@ -8,6 +8,7 @@ import api from "../../utils/api.js";
 import { Spinner } from "../../components/ui/Spinner.jsx";
 import StatCard from "../../components/ui/StatCard.jsx";
 import { parseDMY } from "../../utils/dateFormat.js";
+import { log } from "../../utils/logger.js";
 
 export default function StationDetailView() {
   const { t } = useTranslation();
@@ -47,27 +48,35 @@ export default function StationDetailView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/stations/:id', stationId: id, userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/stations/:id', stationId: id });
+  }, [id]);
+
   // Fetch nodes and records
   useEffect(() => {
     const fetchData = async () => {
+      log.debug('data:load_start', { what: 'station_detail', stationId: id });
       try {
         setLoading(true);
         const [nodesRes, recordsRes] = await Promise.all([
           api.get("/hierarchy/nodes"),
           api.get("/records"),
         ]);
-        
+
         setNodes(nodesRes.data.data || []);
         setRecords(recordsRes.data.data || []);
+        log.debug('data:load_success', { what: 'station_detail', stationId: id });
         setError(null);
       } catch (err) {
         console.error("Error fetching station details:", err);
+        log.error('data:load_error', { what: 'station_detail', stationId: id, err });
         setError("Failed to load station profile. Please try again.");
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [id]);
 

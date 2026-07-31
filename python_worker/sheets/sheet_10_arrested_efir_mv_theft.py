@@ -1,3 +1,4 @@
+from classifiers import is_mvt
 from formatters import format_person, _arrested_parent
 
 NUM = 10
@@ -8,10 +9,7 @@ COLUMN_LABELS = {'integrated_rate_picked': 'Integrated Rate Picked'}
 
 
 def filter_records(classified):
-    return [
-        r for r in classified['arrests']
-        if any(k in (r['data'].get('crime_head') or '').lower() for k in ('mvt', 'mvct', 'motor vehicle'))
-    ]
+    return [r for r in classified['arrests'] if is_mvt(r['data'])]
 
 
 def map_row(r, idx):

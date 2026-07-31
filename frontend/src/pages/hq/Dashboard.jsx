@@ -12,6 +12,7 @@ import useAuthStore from '../../store/authStore.js';
 import SearchableSelect from '../../components/forms/SearchableSelect.jsx';
 import StatCard from '../../components/ui/StatCard.jsx';
 import { getCrimeHeadGroup } from '../../utils/crimeHeadGroups.js';
+import { log } from '../../utils/logger.js';
 
 const FILTER_SELECT_CLASS = 'w-full rounded-control border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-[#1A202C] min-h-[38px]';
 
@@ -95,16 +96,24 @@ export default function HQDashboard() {
   const [durationPresets, setDurationPresets] = useState([]);
 
   useEffect(() => {
+    log.debug('page:mount', { route: '/hq', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/hq' });
+  }, []);
+
+  useEffect(() => {
+    log.debug('data:load_start', { what: 'duration_presets' });
     api.get('/filters/duration-presets')
       .then((res) => {
         const raw = res.data?.data;
         if (Array.isArray(raw) && raw.length) {
+          log.debug('data:load_success', { what: 'duration_presets', count: raw.length });
           setDurationPresets(raw);
           setDurationPresetId((prev) => (prev && raw.some((p) => p.id === prev)) ? prev : raw[0].id);
         }
       })
       .catch((err) => {
         console.error('Failed to fetch duration presets:', err);
+        log.error('data:load_error', { what: 'duration_presets', err });
       });
   }, []);
 
@@ -125,8 +134,15 @@ export default function HQDashboard() {
   const { data: stats = {} } = useQuery({
     queryKey: ['analytics', 'overview', 'global'],
     queryFn: async () => {
-      const res = await api.get('/analytics/overview');
-      return res.data.data;
+      log.debug('data:load_start', { what: 'analytics_overview_global' });
+      try {
+        const res = await api.get('/analytics/overview');
+        log.debug('data:load_success', { what: 'analytics_overview_global' });
+        return res.data.data;
+      } catch (err) {
+        log.error('data:load_error', { what: 'analytics_overview_global', err });
+        throw err;
+      }
     },
   });
 
@@ -134,12 +150,19 @@ export default function HQDashboard() {
   const { data: chartResp } = useQuery({
     queryKey: ['analytics', 'crime-head-year-trend', durationPresetId, dateFrom, dateTo],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (durationPresetId) params.set('durationPresetId', durationPresetId);
-      if (dateFrom) params.set('dateFrom', dateFrom);
-      if (dateTo) params.set('dateTo', dateTo);
-      const res = await api.get(`/analytics/crime-head-year-trend?${params.toString()}`);
-      return res.data.data;
+      log.debug('data:load_start', { what: 'crime_head_year_trend', durationPresetId, dateFrom, dateTo });
+      try {
+        const params = new URLSearchParams();
+        if (durationPresetId) params.set('durationPresetId', durationPresetId);
+        if (dateFrom) params.set('dateFrom', dateFrom);
+        if (dateTo) params.set('dateTo', dateTo);
+        const res = await api.get(`/analytics/crime-head-year-trend?${params.toString()}`);
+        log.debug('data:load_success', { what: 'crime_head_year_trend' });
+        return res.data.data;
+      } catch (err) {
+        log.error('data:load_error', { what: 'crime_head_year_trend', err });
+        throw err;
+      }
     },
     enabled: !!durationPresetId,
     keepPreviousData: true,
@@ -292,6 +315,7 @@ export default function HQDashboard() {
             {activeFilterCount > 0 && (
               <button
                 onClick={() => {
+                  log.debug('action:filters_clear', {});
                   if (defaultPresetId) setDurationPresetId(defaultPresetId);
                   setDateFrom('');
                   setDateTo('');

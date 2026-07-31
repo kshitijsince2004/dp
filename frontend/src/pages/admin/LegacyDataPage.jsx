@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
@@ -9,6 +9,7 @@ import {
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
+import { log } from '../../utils/logger.js';
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
 const STATUS_CLS = {
@@ -282,6 +283,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
   });
 
   const downloadTemplate = async () => {
+    log.debug('action:template_download_start', { recordType, lang: currentLng });
     try {
       const res = await api.get(`/import/template/${recordType}`, {
         params: { lang: currentLng },
@@ -292,6 +294,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
       link.href = window.URL.createObjectURL(blob);
       link.download = `${recordType}_Import_Template.xlsx`;
       link.click();
+      log.info('action:template_download_success', { recordType });
       toast.success(t('import.templateDownloaded', 'Template downloaded successfully'));
     } catch (err) {
       console.error('[downloadTemplate] failed:', err);
@@ -303,6 +306,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
         } catch { /* body wasn't JSON */ }
       }
       console.error('[downloadTemplate] status:', status, 'message:', serverMessage);
+      log.error('action:template_download_failed', { recordType, status, err });
       toast.error(
         `${t('import.templateDownloadFailed', 'Failed to download template')}${status ? ` (${status})` : ''}${serverMessage ? `: ${serverMessage}` : ''}`
       );
@@ -316,6 +320,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
       formData.append('record_type', recordType);
       formData.append('is_legacy', String(isLegacy));
       formData.append('ps_id', isHC ? (user?.ps_id || user?.station_id || '') : psId);
+      log.info('action:import_upload_start', { recordType, isLegacy, psId: isHC ? (user?.ps_id || user?.station_id) : psId, fileName: file?.name, fileSize: file?.size });
       const res = await api.post('/import/validate', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         // Bulk validation parses the whole sheet (30k+ rows) — override the global
@@ -325,11 +330,13 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
       return res.data?.data;
     },
     onSuccess: (data) => {
+      log.info('action:import_validate_success', { batchId: data?.batch_id, totalRows: data?.total_rows, validRows: data?.valid_rows, invalidRows: data?.invalid_rows });
       toast.success(t('import.validationSuccess', 'Validation completed'));
       setValidationResult(data);
       setStep(2);
     },
     onError: (err) => {
+      log.error('action:import_validate_failed', { recordType, err });
       toast.error(err.response?.data?.message || t('import.validationFailed', 'Validation failed'));
     }
   });
@@ -340,28 +347,34 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
   // confirmedBatchId is set) is what actually tracks the import to completion.
   const confirmMutation = useMutation({
     mutationFn: async () => {
+      log.info('action:import_confirm_start', { batchId: validationResult?.batch_id });
       const res = await api.post(`/import/confirm/${validationResult?.batch_id}`, {}, { timeout: 0 });
       return res.data?.data;
     },
     onSuccess: (data) => {
-      toast.success(t('import.importQueued', 'Import queued, processing in the background'));
+      log.info('action:import_confirm_queued', { batchId: data.batch_id });
+      toast.success(t('import.importQueued', 'Import queued — processing in the background'));
       setConfirmedBatchId(data.batch_id);
     },
     onError: (err) => {
+      log.error('action:import_confirm_failed', { batchId: validationResult?.batch_id, err });
       toast.error(err.response?.data?.message || t('import.confirmFailed', 'Import confirmation failed'));
     }
   });
 
   const cancelMutation = useMutation({
     mutationFn: async () => {
+      log.debug('action:import_cancel_start', { batchId: validationResult?.batch_id });
       const res = await api.post(`/import/batches/${validationResult?.batch_id}/cancel`);
       return res.data?.data;
     },
     onSuccess: () => {
+      log.info('action:import_cancel_success', { batchId: validationResult?.batch_id });
       toast.success(t('import.importCancelled', 'Import cancelled'));
       resetWizard();
     },
     onError: (err) => {
+      log.error('action:import_cancel_failed', { batchId: validationResult?.batch_id, err });
       toast.error(err.response?.data?.message || t('import.cancelFailed', 'Cancel failed'));
     }
   });
@@ -371,8 +384,11 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
   const { data: polledBatch } = useQuery({
     queryKey: ['import', 'batch', confirmedBatchId],
     queryFn: async () => {
+      log.debug('action:import_poll_step', { batchId: confirmedBatchId });
       const res = await api.get(`/import/batches/${confirmedBatchId}`);
-      return res.data?.data;
+      const b = res.data?.data;
+      log.debug('action:import_poll_result', { batchId: confirmedBatchId, status: b?.status, processedRows: b?.processed_rows, totalRows: b?.total_rows });
+      return b;
     },
     enabled: !!confirmedBatchId,
     refetchInterval: (query) => {
@@ -383,12 +399,19 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
 
   React.useEffect(() => {
     if (polledBatch && TERMINAL_STATUSES.has(polledBatch.status) && step !== 3) {
+      log.info('action:import_poll_terminal', { batchId: confirmedBatchId, status: polledBatch.status, importedRows: polledBatch.imported_rows, linked: polledBatch.linked, unmatched: polledBatch.unmatched });
       setStep(3);
-      if (polledBatch.status === 'IMPORTED' && !isHC) {
+      if (polledBatch.status === 'IMPORTED') {
+        // C10 fix (2026-07-26): this used to be gated `&& !isHC`, so an HC's own "Import
+        // Batches" tab never refetched after their own import finished — the tab kept
+        // showing whatever it last loaded (often empty, if this was the operator's first
+        // import of the session), reading as "history isn't showing up" until a manual
+        // page reload or the header's Refresh button. DISTRICT_OFFICER already refreshed
+        // correctly; there's no reason HC should behave differently here.
         onImported?.();
       }
     }
-  }, [polledBatch, step, isHC, onImported]);
+  }, [polledBatch, step, isHC, onImported, confirmedBatchId]);
 
   const resetWizard = () => {
     setStep(1);
@@ -754,6 +777,11 @@ export default function LegacyDataPage() {
   const [activeTab, setActiveTab] = useState(canImport ? 'bulk_import' : 'batches');
   const [selectedBatch, setSelectedBatch] = useState(null);
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/legacy-data', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/legacy-data' });
+  }, []);
+
   const getThemeClass = () => {
     const role = user?.role;
     switch (role) {
@@ -782,9 +810,17 @@ export default function LegacyDataPage() {
   const { data: batches = [], isLoading: batchLoading, refetch: refetchBatches } = useQuery({
     queryKey: ['import', 'batches'],
     queryFn: async () => {
-      const res = await api.get('/import/batches');
-      const raw = res.data?.data;
-      return Array.isArray(raw) ? raw : [];
+      log.debug('data:load_start', { what: 'import_batches' });
+      try {
+        const res = await api.get('/import/batches');
+        const raw = res.data?.data;
+        const rows = Array.isArray(raw) ? raw : [];
+        log.debug('data:load_success', { what: 'import_batches', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'import_batches', err });
+        throw err;
+      }
     },
     enabled: canImport,
   });
@@ -793,8 +829,15 @@ export default function LegacyDataPage() {
   const { data: batchDetail } = useQuery({
     queryKey: ['import', 'batch', selectedBatch?.id],
     queryFn: async () => {
-      const res = await api.get(`/import/batches/${selectedBatch.id}`);
-      return res.data?.data;
+      log.debug('data:load_start', { what: 'import_batch_detail', batchId: selectedBatch.id });
+      try {
+        const res = await api.get(`/import/batches/${selectedBatch.id}`);
+        log.debug('data:load_success', { what: 'import_batch_detail', batchId: selectedBatch.id, status: res.data?.data?.status });
+        return res.data?.data;
+      } catch (err) {
+        log.error('data:load_error', { what: 'import_batch_detail', batchId: selectedBatch.id, err });
+        throw err;
+      }
     },
     enabled: !!selectedBatch?.id,
   });
@@ -853,7 +896,7 @@ export default function LegacyDataPage() {
         {TABS.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => { setActiveTab(tab.id); setSelectedBatch(null); }}
+            onClick={() => { log.debug('action:tab_change', { tab: tab.id }); setActiveTab(tab.id); setSelectedBatch(null); }}
             className={`relative px-5 py-2 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer border-none ${
               activeTab === tab.id
                 ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-glow)]'
@@ -872,7 +915,7 @@ export default function LegacyDataPage() {
           <BatchTable
             batches={batches}
             isLoading={batchLoading}
-            onViewBatch={(b) => setSelectedBatch(b)}
+            onViewBatch={(b) => { log.debug('action:view_batch_click', { batchId: b.id }); setSelectedBatch(b); }}
           />
         )}
 

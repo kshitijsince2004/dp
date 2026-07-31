@@ -1,5 +1,8 @@
 import { ApiError } from '../utils/ApiError.js';
-import { logger } from '../utils/logger.js';
+import { getLogger } from '../utils/logger.js';
+import { redact } from '../utils/redact.js';
+
+const log = getLogger('error.middleware');
 
 /**
  * Global Express error handler.
@@ -7,10 +10,26 @@ import { logger } from '../utils/logger.js';
  */
 // eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, next) => {
-  logger.error(`${err.statusCode || 500} — ${err.message}`, {
+  // Enriched, structured (HANDOFF.md §3): `err` as the meta key lets the logger's
+  // `expandErrorMeta` format expand name/message/stack/code automatically (same convention as
+  // records.service.js) — no need to hand-pluck `err.stack` separately. Body/query redacted
+  // since a request that errored may carry the exact secret-bearing payload the redaction rule
+  // exists for (e.g. a login failure). This does not duplicate requestLogger.middleware.js's
+  // request:start/finish lines — those log the request lifecycle; this logs the failure detail.
+  log.error('errorHandler: unhandled error reached global handler', {
+    statusCode: err.statusCode || 500,
     method: req.method,
-    url: req.originalUrl,
-    stack: err.stack,
+    // `req.path` only, NEVER req.originalUrl — the SSE auth route carries the raw JWT as
+    // `?token=...` (EventSource can't set headers), and req.originalUrl includes the query
+    // string verbatim. requestLogger.middleware.js's safeUrlParts() exists for this exact leak;
+    // this handler isn't allowed to touch that foundation-owned file, so it just avoids the
+    // query string entirely rather than reimplementing redaction on the URL.
+    path: req.path,
+    userId: req.user?.id || null,
+    role: req.user?.role || null,
+    body: req.body && Object.keys(req.body).length ? redact(req.body) : undefined,
+    query: req.query && Object.keys(req.query).length ? redact(req.query) : undefined,
+    err,
   });
 
   // Known operational error
@@ -79,6 +98,8 @@ export const errorHandler = (err, req, res, next) => {
  * 404 Not Found handler — register AFTER all routes.
  */
 export const notFound = (req, res) => {
+  // path only, not originalUrl — same query-string/JWT-leak reasoning as errorHandler above.
+  log.warn('notFound: route not found', { method: req.method, path: req.path });
   res.status(404).json({
     success: false,
     statusCode: 404,

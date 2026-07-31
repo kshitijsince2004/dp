@@ -13,8 +13,15 @@ import { useAuth } from '../../hooks/useAuth.js';
 import delhiPoliceLogo from '../../assets/delhi_police_logo.png';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore.js';
+import { log } from '../../utils/logger.js';
 
 const QUICK_PROFILES = [
+  // badge MUST match a seeded users.badge_no (backend/seeds/01_users.js) — the login POST
+  // sends this string straight through. HQ Analyst was "HQ001" (no such badge; the dev alias
+  // /neha|hqa001|analyst/ doesn't match "hq001" either) → 401 → bounce-to-login. Fixed to the
+  // real seed HQA001, and the two remaining HQ-tier roles added (HQD001 / SA001).
+  { badge: "SA001",  abbr: "SYS", role: "System Admin",           name: "System Administrator",  theme: "hq"  },
+  { badge: "HQD001", abbr: "ADM", role: "HQ Admin",               name: "Rajiv Ranjan",          theme: "hq"  },
   { badge: "HQA001", abbr: "HQ",  role: "Research Cell",          name: "HQ Analyst",          theme: "hq"  },
   { badge: "DO001",  abbr: "DCP", role: "SO Branch/DCP",       name: "New Delhi District",    theme: "dcp" },
   { badge: "ACP001", abbr: "ACP", role: "ACP Sub Division",     name: "Parliament St Subdiv",  theme: "acp" },
@@ -29,10 +36,29 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    log.debug('page:mount', { route: '/login' });
+    return () => log.debug('page:unmount', { route: '/login' });
+  }, []);
+
+  useEffect(() => {
     if (isAuthenticated) {
+      log.debug('auth:already_authenticated_redirect', { route: '/login', to: '/dashboard' });
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  // REDACT: never log passwords — only mutation lifecycle + badge id.
+  useEffect(() => {
+    if (loginMutation.isSuccess) {
+      log.info('auth:login_mutation_success');
+    }
+  }, [loginMutation.isSuccess]);
+
+  useEffect(() => {
+    if (loginMutation.isError) {
+      log.error('auth:login_mutation_failed', { err: loginMutation.error });
+    }
+  }, [loginMutation.isError, loginMutation.error]);
 
   const {
     register,
@@ -48,6 +74,7 @@ export default function LoginPage() {
   });
 
   const onSubmit = (data) => {
+    log.debug('action:login_submit', { badge: data.email });
     loginMutation.mutate({
       email: data.email,
       password: data.password,
@@ -55,6 +82,7 @@ export default function LoginPage() {
   };
 
   const handleQuickLogin = (badgeNo) => {
+    log.debug('action:quick_login_click', { badge: badgeNo });
     setValue('email', badgeNo);
     setValue('password', 'Test@1234');
     setTimeout(() => {

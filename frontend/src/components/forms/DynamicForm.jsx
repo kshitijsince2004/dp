@@ -12,15 +12,16 @@ import { findNodeById } from '../../utils/hierarchyData.js';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../utils/api.js';
 
-import FormSection from './FormSection.jsx';
+import FormSection, { evaluateShowWhen } from './FormSection.jsx';
 import FormToolbar from './FormToolbar.jsx';
 import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
 import SearchableSelect from './SearchableSelect.jsx';
 import DateInput from '../ui/DateInput.jsx';
 import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
-import ActsSectionsTable from './ActsSectionsTable.jsx';
-import { parseRules, getFieldError, checkFieldFormat } from '../../utils/fieldValidation.js';
+import ActsSectionsTable, { reMergeKnownActFragments } from './ActsSectionsTable.jsx';
+import { parseRules, getFieldError, checkFieldFormat, validateFieldPattern } from '../../utils/fieldValidation.js';
+import { log } from '../../utils/logger.js';
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 function getFieldOptions(fieldsArr, key) {
   const field = fieldsArr.find((f) => f.field_key === key);
@@ -35,6 +36,47 @@ function getFieldOptions(fieldsArr, key) {
 }
 
 const PERM_ADDRESS_FIELDS = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'country', 'state', 'district', 'police_station', 'pincode'];
+
+// All 5 category-specific property-value field_keys map to record_properties.estimated_value, so
+// recompose fills whichever are present with the same value. The property table's "Value in INR"
+// column reads the first populated one (see #R2-3). Includes the legacy `property_value_inr` last
+// as a back-compat fallback for any in-progress row that still carries it.
+const PROP_VALUE_KEYS = ['prop_cash_amount', 'prop_other_value', 'prop_gold_value', 'prop_drug_value', 'prop_elec_value', 'property_value_inr'];
+const effectivePropValue = (row) => {
+  for (const k of PROP_VALUE_KEYS) {
+    if (row?.[k] !== undefined && row[k] !== null && row[k] !== '') return row[k];
+  }
+  return '';
+};
+
+// B4 (2026-07-21): buildRepeaterPayload used to only keep a property row if it had an `id`,
+// a `property_major_category`, or `property_details` — dropping any row where the officer
+// filled in something else (value in INR, a subtype-specific field like a phone IMEI or
+// vehicle registration number reached via a category the user picked but then changed, etc.)
+// without also touching those two fields. `property_stolen_recovered` is EXCLUDED from this
+// check on purpose: every row — including the never-touched blank starter row CASE
+// auto-populates and the ARRESTED-modal's own starter row — carries a `'Stolen'` default for
+// it (see the seed effect and the record-level starter-row effect below), so it can never be
+// used to distinguish "user entered something" from "still blank".
+function hasMeaningfulPropertyData(entry) {
+  if (!entry) return false;
+  for (const [key, val] of Object.entries(entry)) {
+    if (key === 'id' || key === 'property_stolen_recovered' || key === 'person_index') continue;
+    if (val === undefined || val === null || val === '') continue;
+    if (Array.isArray(val) && val.length === 0) continue;
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Shared by Victim/Accused/Complainant/Arrested's "Permanent address same as Present"
+ * toggle: one-time bulk copy the moment the toggle flips on, then live-mirror any further
+ * present-address edits into their permanent-address twin while it stays on. Mutates `next`
+ * in place (matches how every call site already builds up `next` before returning it).
+ * `extraFields` lets a prefix add pairs beyond the standard 10 (Arrested also has
+ * present_address -> perm_address).
+ */
 function syncPermAddress(next, prefix, key, val, extraFields = []) {
   const sameKey = `${prefix}_perm_same`;
   const fields = [...PERM_ADDRESS_FIELDS.map(f => ({ from: f, to: f })), ...extraFields];
@@ -58,19 +100,46 @@ function syncPermAddress(next, prefix, key, val, extraFields = []) {
  */
 const SECTION_KEY_ORDER = {
   CASE: ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'investigation_officer'],
+  ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
   UIDB: ['general_info', 'corpse_desc', 'corpse_physical', 'inquest_details', 'investigation_officer'],
   MISSING: ['general_info', 'person_details', 'missing_address', 'missing_physical', 'contacts_assigned', 'investigation_officer'],
 };
 
 // Repeater sections need is_repeater/entity_type/person_type so the person/property
 // add-edit-delete modals and the final-submit persons/properties builder can find them.
+// This is the FE's OWN canonical contract for these tokens and is deliberately used as an
+// override over whatever `/fields/form/:type` sends for entity_type/person_type (see
+// finalSchema below) — `fields.controller.js` sends `person_type: 'PERSON_VICTIM'` /
+// `'PERSON_ACCUSED'` (the `repeater_entity` convention) for CASE while ARRESTED already comes
+// bare, and the recomposed `persons[]` the backend hands back on load always uses the bare
+// role token (VICTIM/ACCUSED/ARRESTED — see records.mapper.js ROLE_TO_PERSON_TYPE). Before this
+// map was wired in, sourcing person_type straight from the schema response meant: (a) the
+// initialPersons seed-match (`p.person_type === section.person_type`) silently failed for CASE
+// victims/accused (bare token vs PERSON_-prefixed), so an edit's repeaterState never got seeded
+// for those sections; and (b) buildRepeaterPayload's submit sent `person_type: 'PERSON_VICTIM'`/
+// `'PERSON_ACCUSED'`, which the backend's PERSON_ROLES allowlist doesn't recognize and silently
+// drops (confirmed in tester logs: 53x PERSON_VICTIM + 40x PERSON_ACCUSED dropped on CASE) — the
+// second, independent root cause behind "can't add new victim/accused" (B1, 2026-07-23).
 const REPEATER_SECTION_META = {
   property_details: { is_repeater: true, entity_type: 'property' },
   arrested_info: { is_repeater: true, entity_type: 'person', person_type: 'ARRESTED' },
   victim_info: { is_repeater: true, entity_type: 'person', person_type: 'VICTIM' },
   accused_info: { is_repeater: true, entity_type: 'person', person_type: 'ACCUSED' },
 };
+
+/** Merge a schema section's own is_repeater/entity_type/person_type with the FE's canonical
+ * REPEATER_SECTION_META override (by section key) when one exists, and always strip a stray
+ * leading `PERSON_` prefix as a last-resort safety net for any section not in the map (mirrors
+ * the backend's own `roleForPersonType`/fields.controller.js:856 stripping convention). */
+function resolveRepeaterMeta(section) {
+  const meta = REPEATER_SECTION_META[section.section];
+  const rawPersonType = meta?.person_type ?? section.person_type;
+  return {
+    is_repeater: meta?.is_repeater ?? section.is_repeater,
+    entity_type: meta?.entity_type ?? section.entity_type,
+    person_type: typeof rawPersonType === 'string' ? rawPersonType.replace(/^PERSON_/, '') : rawPersonType,
+  };
+}
 
 /** Sections with sub_tabs (Complainant/Victim/Accused/Arrested) don't carry
  * a flat `fields` array — concatenate every sub-tab's fields for validation purposes. */
@@ -90,7 +159,31 @@ function flattenSectionFields(section) {
  */
 function deepFlattenSchema(schema) {
   if (!schema) return [];
-  return schema.reduce((acc, sec) => [...acc, ...flattenSectionFields(sec)], []);
+  const all = schema.reduce((acc, sec) => [...acc, ...flattenSectionFields(sec)], []);
+  // Dedupe by field_key (B5, 2026-07-23 — "Property of Interest" fields rendering twice).
+  // Confirmed via GET /fields/form/ARREST: `arrested_info`'s `property` sub_tab and the
+  // separate top-level `property_details` section (`view_only_when_populated: true` — the
+  // ARREST "Property (Imported)" section, #8) both source the exact same 44 PROPERTY-tagged
+  // field_registry rows from `filteredFields.filter(f => f.repeater_entity === 'PROPERTY' ||
+  // f.section === 'property_details')` in fields.controller.js. `finalSchema` conditionally
+  // drops the top-level section when the record has no record-level properties, but `schema`
+  // here is the RAW backend response, unfiltered, and always carries both — so every call site
+  // that scans `deepFlattenSchema(schema)` for a field/section by field_key (in particular
+  // `renderPropertyEditor`'s per-category "extra fields" computation) matched the same
+  // field_key twice and rendered every dynamic property field twice. A field_key is a single
+  // field_registry row / one storage slot — it must never appear more than once in a flat field
+  // list regardless of how many schema sections reference it. Keep the first occurrence.
+  const seen = new Set();
+  const deduped = [];
+  for (const f of all) {
+    const key = f.field_key;
+    if (key) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+    }
+    deduped.push(f);
+  }
+  return deduped;
 }
 
 /* ─── StepDot ─────────────────────────────────────────────────────────────── */
@@ -189,6 +282,19 @@ export default function DynamicForm({
   const { schema, isLoading, isError, schemaError } = useFormSchema(recordType, caseType);
   const activeRecordIdRef = useRef(initialValues?.id || null);
 
+  // Schema-load lifecycle (useFormSchema itself is already instrumented — this logs the
+  // hot-path form's OWN view of that state as it settles, so a tester's log shows exactly
+  // what DynamicForm saw when it rendered its loading/error/ready branches below).
+  useEffect(() => {
+    if (isLoading) {
+      log.debug('form:schema_loading', { recordType, caseType });
+    } else if (isError) {
+      log.error('form:schema_load_error', { recordType, caseType, status: schemaError?.response?.status, message: schemaError?.message });
+    } else if (schema) {
+      log.info('form:schema_loaded', { recordType, caseType, sectionCount: schema.length, sections: schema.map(s => s.section) });
+    }
+  }, [isLoading, isError, schema, schemaError, recordType, caseType]);
+
   // FIR Search State
   const [searchDate, setSearchDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -218,6 +324,7 @@ export default function DynamicForm({
   });
 
   const handleFirSearch = () => {
+    log.debug('form:fir_search_attempt', { hasSearchDate: !!searchDate, hasQuery: !!searchQuery });
     if (!searchDate) {
       setSearchError(lang === 'hi' ? 'एफआईआर दिनांक चुनना अनिवार्य है।' : 'FIR Date is required.');
       return;
@@ -253,6 +360,7 @@ export default function DynamicForm({
       return true;
     });
 
+    log.info('form:fir_search_result', { resultCount: filtered.length, source: backendCases.length > 0 ? 'backend' : 'mock' });
     setSearchResults(filtered);
     setHasSearched(true);
   };
@@ -783,7 +891,11 @@ export default function DynamicForm({
   const renderOccurrenceStep = () => {
     const sectionFields = activeSection?.fields || [];
     const occInfoFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type !== 'RADIO');
-    const occPlaceFields = sectionFields.filter(f => f.sort_order >= 3 && f.sort_order < 4);
+    // Place-of-occurrence = every address field with sort_order >= 3 (house_no 3 … police_station
+    // 3.9, then pincode 4, latitude 4.1, longitude 4.2). The old `< 4` upper cap silently dropped
+    // occurrence_pincode / occurrence_latitude / occurrence_longitude from the form entirely
+    // (they exist in config + DB but never rendered). No occurrence field has sort_order >= 5.
+    const occPlaceFields = sectionFields.filter(f => f.sort_order >= 3);
 
     const occRadioFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type === 'RADIO');
 
@@ -821,10 +933,11 @@ export default function DynamicForm({
           </fieldset>
 
           {occRadioFields.map((radioField) => (
-            <fieldset key={radioField.field_key} className="border border-[#7a9cc5] rounded px-2 py-3">
+            <fieldset key={radioField.field_key} className={`border rounded px-2 py-3 ${touched[radioField.field_key] && errors[radioField.field_key] ? 'border-red-400 bg-red-50' : 'border-[#7a9cc5]'}`}>
               <div className="flex items-center gap-6 text-[12px]">
                 <span className="font-medium">
                   {lang === 'hi' ? (radioField.label_hi || radioField.label_en) : radioField.label_en}
+                  {!!parseRules(radioField.validation_rules).required && <span className="text-red-500 font-bold ml-0.5">*</span>}
                 </span>
                 {getFieldOptions(sectionFields, radioField.field_key).map((opt) => (
                   <label key={opt.value} className="flex items-center gap-1">
@@ -837,7 +950,7 @@ export default function DynamicForm({
           ))}
         </div>
 
-        {/* RIGHT COLUMN — Place of Occurrence driven by backend address fields (sort_order 3.x) */}
+        {/* RIGHT COLUMN — Place of Occurrence driven by backend address fields (sort_order >= 3: address 3.x + pincode/lat/long 4.x) */}
         <div>
           <fieldset className="border border-[#7a9cc5] rounded px-2 py-2 h-full">
             <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
@@ -1707,12 +1820,18 @@ export default function DynamicForm({
                           className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
                         />
                       </td>
-                      {/* Value in INR */}
+                      {/* Value in INR. Reads/writes the REAL value keys (all 5 category value
+                          fields map to record_properties.estimated_value; recompose fills them all
+                          identically). The column previously bound to `property_value_inr`, which
+                          is NOT a field_key — so it never displayed an imported/saved value and
+                          never persisted a typed one (#R2-3, 2026-07-20). effectivePropValue reads
+                          the first populated value key; writes go to prop_other_value (a real key →
+                          estimated_value) so main-column entry actually saves. */}
                       <td className="px-3 py-2">
                         <input
                           type="number"
-                          value={row.property_value_inr || ''}
-                          onChange={(e) => handlePropertyRowChange(idx, 'property_value_inr', e.target.value)}
+                          value={effectivePropValue(row)}
+                          onChange={(e) => handlePropertyRowChange(idx, 'prop_other_value', e.target.value)}
                           disabled={readOnly}
                           placeholder={lang === 'hi' ? 'मूल्य दर्ज करें (INR में)' : 'Enter value in INR'}
                           className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
@@ -1770,7 +1889,19 @@ export default function DynamicForm({
         } catch { /* ignore */ }
         return true;
       };
-      const visibleFields = fields.filter(f => evalCond(f.show_when, arrestedTempValues));
+      // C2 (2026-07-26, same family as B8/2026-07-23): the "arrest_details" sub-tab renders
+      // EVERY field in its section generically, unlike FormSection.jsx which has a keysToSkip
+      // guard. `arrest_time` is rendered INLINE by FieldRenderer's dedicated `arrest_date`
+      // composite branch (compositeDateTimeCell('arrest_date','arrest_time', ...) — the "Date &
+      // Time of Arrest" widget) and FieldRenderer already returns null for the standalone
+      // `arrest_time` input (see FieldRenderer.jsx's suppression list) — but this loop still
+      // rendered arrest_time's LABEL row above that now-empty null input, producing a visible
+      // second "Time Of Arrest" field with no way to fill it. Mirrors FormSection.jsx's
+      // keysToSkip exactly (only 'arrest_time' is reachable through this particular sub-tab
+      // loop; the other 4 keys — gd_date/gd_time/fir_date/fir_time — belong to sections that
+      // never flow through this generic grid, but are included for consistency/future-proofing).
+      const keysToSkip = ['gd_date', 'gd_time', 'fir_date', 'fir_time', 'arrest_time'];
+      const visibleFields = fields.filter(f => !keysToSkip.includes(f.field_key) && evalCond(f.show_when, arrestedTempValues));
       return (
         <fieldset className="bg-white">
           <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
@@ -2026,15 +2157,25 @@ export default function DynamicForm({
 
         const section = bySection.get(key);
         if (!section) return null;
+        // view_only_when_populated (ARREST record-level "Property (Imported)" section, #8):
+        // render ONLY when the record actually has record-level properties (person_id == null —
+        // only bulk import produces these). This keeps interactive ARREST entry unchanged (no
+        // empty second property section) while making imported ARREST properties visible.
+        if (section.view_only_when_populated) {
+          const hasRecordLevelProps = (initialProperties || []).some(p => !p.person_id);
+          if (!hasRecordLevelProps) return null;
+        }
+        const repeaterMeta = resolveRepeaterMeta(section);
         return {
           section: key,
           title_en: section.title_en,
           title_hi: section.title_hi,
           fields: flattenSectionFields(section),
           sub_tabs: section.sub_tabs,
-          is_repeater: section.is_repeater,
-          entity_type: section.entity_type,
-          person_type: section.person_type,
+          is_repeater: repeaterMeta.is_repeater,
+          entity_type: repeaterMeta.entity_type,
+          person_type: repeaterMeta.person_type,
+          view_only_when_populated: section.view_only_when_populated,
         };
       })
       .filter(Boolean);
@@ -2048,19 +2189,30 @@ export default function DynamicForm({
         const hasCustomField = fields.some(f => f.created_by !== null && f.created_by !== undefined);
         return hasCustomField;
       })
-      .map((sec) => ({
-        section: sec.section,
-        title_en: sec.title_en,
-        title_hi: sec.title_hi,
-        fields: flattenSectionFields(sec),
-        sub_tabs: sec.sub_tabs,
-        is_repeater: sec.is_repeater,
-        entity_type: sec.entity_type,
-        person_type: sec.person_type,
-      }));
+      .map((sec) => {
+        const repeaterMeta = resolveRepeaterMeta(sec);
+        return {
+          section: sec.section,
+          title_en: sec.title_en,
+          title_hi: sec.title_hi,
+          fields: flattenSectionFields(sec),
+          sub_tabs: sec.sub_tabs,
+          is_repeater: repeaterMeta.is_repeater,
+          entity_type: repeaterMeta.entity_type,
+          person_type: repeaterMeta.person_type,
+        };
+      });
 
-    return [...orderedSections, ...extraSections];
-  }, [schema, recordType, caseType, finalFirOptions]);
+    const built = [...orderedSections, ...extraSections];
+    log.debug('form:final_schema_built', {
+      recordType,
+      caseType,
+      sectionCount: built.length,
+      sections: built.map(s => ({ section: s.section, isRepeater: !!s.is_repeater, fieldCount: s.fields?.length ?? 0 })),
+      extraSectionCount: extraSections.length,
+    });
+    return built;
+  }, [schema, recordType, caseType, finalFirOptions, initialProperties]);
 
   const { triggerAutosave, saveImmediately, saveStatus, savedRecord } = useAutosave(
     recordType,
@@ -2298,6 +2450,7 @@ export default function DynamicForm({
   );
 
   const openVictimAddModal = () => {
+    log.debug('form:person_modal_open', { personType: 'VICTIM', mode: 'add' });
     setVictimTempValues({});
     setActiveVictimIndex(null);
     setVictimSubTab('personal');
@@ -2307,6 +2460,7 @@ export default function DynamicForm({
   };
 
   const openVictimEditModal = (idx) => {
+    log.debug('form:person_modal_open', { personType: 'VICTIM', mode: 'edit', index: idx });
     const list = repeaterState.victim_info || [];
     const item = list[idx];
     if (item && item._is_complainant) {
@@ -2322,6 +2476,7 @@ export default function DynamicForm({
   };
 
   const deleteVictimEntry = (idx) => {
+    log.debug('form:person_modal_delete', { personType: 'VICTIM', index: idx });
     const list = repeaterState.victim_info || [];
     const itemToDelete = list[idx];
     if (itemToDelete && itemToDelete._is_complainant) {
@@ -2375,6 +2530,7 @@ export default function DynamicForm({
   };
 
   const openAccusedAddModal = () => {
+    log.debug('form:person_modal_open', { personType: 'ACCUSED', mode: 'add' });
     setAccusedTempValues({});
     setActiveAccusedIndex(null);
     setAccusedSubTab('personal');
@@ -2384,6 +2540,7 @@ export default function DynamicForm({
   };
 
   const openAccusedEditModal = (idx) => {
+    log.debug('form:person_modal_open', { personType: 'ACCUSED', mode: 'edit', index: idx });
     const list = repeaterState.accused_info || [];
     setAccusedTempValues({ ...(list[idx] || {}) });
     setActiveAccusedIndex(idx);
@@ -2394,6 +2551,7 @@ export default function DynamicForm({
   };
 
   const deleteAccusedEntry = (idx) => {
+    log.debug('form:person_modal_delete', { personType: 'ACCUSED', index: idx });
     const list = repeaterState.accused_info || [];
     const nextList = list.filter((_, i) => i !== idx);
     setRepeaterState(prev => ({ ...prev, accused_info: nextList }));
@@ -2469,6 +2627,7 @@ export default function DynamicForm({
     }
 
     if (Object.keys(errs).length > 0) {
+      log.warn('form:person_modal_validation_fail', { personType: 'ACCUSED', errorKeys: Object.keys(errs) });
       setAccusedModalErrors(errs);
       accusedFields.forEach(f => { touchedFields[f.field_key] = true; });
       setAccusedModalTouched(touchedFields);
@@ -2483,11 +2642,13 @@ export default function DynamicForm({
       list.push(accusedTempValues);
     }
 
+    log.debug('form:person_modal_save', { personType: 'ACCUSED', mode: activeAccusedIndex !== null ? 'edit' : 'add', countAfter: list.length });
     setRepeaterState(prev => ({ ...prev, accused_info: list }));
     setIsAccusedModalOpen(false);
   };
 
   const openArrestedAddModal = () => {
+    log.debug('form:person_modal_open', { personType: 'ARRESTED', mode: 'add' });
     setArrestedTempValues({
       property_details: [{
         property_major_category: '',
@@ -2505,6 +2666,7 @@ export default function DynamicForm({
   };
 
   const openArrestedEditModal = (idx) => {
+    log.debug('form:person_modal_open', { personType: 'ARRESTED', mode: 'edit', index: idx });
     const list = repeaterState.arrested_info || [];
     const entry = { ...(list[idx] || {}) };
     if (!entry.property_details || entry.property_details.length === 0) {
@@ -2525,6 +2687,7 @@ export default function DynamicForm({
   };
 
   const deleteArrestedEntry = (idx) => {
+    log.debug('form:person_modal_delete', { personType: 'ARRESTED', index: idx });
     const list = repeaterState.arrested_info || [];
     const nextList = list.filter((_, i) => i !== idx);
     setRepeaterState(prev => ({ ...prev, arrested_info: nextList }));
@@ -2611,6 +2774,7 @@ export default function DynamicForm({
     }
 
     if (Object.keys(errs).length > 0) {
+      log.warn('form:person_modal_validation_fail', { personType: 'ARRESTED', errorKeys: Object.keys(errs) });
       setArrestedModalErrors(errs);
       arrestedFields.forEach(f => { touchedFields[f.field_key] = true; });
       setArrestedModalTouched(touchedFields);
@@ -2625,6 +2789,7 @@ export default function DynamicForm({
       list.push(arrestedTempValues);
     }
 
+    log.debug('form:person_modal_save', { personType: 'ARRESTED', mode: activeArrestedIndex !== null ? 'edit' : 'add', countAfter: list.length });
     setRepeaterState(prev => ({ ...prev, arrested_info: list }));
     setIsArrestedModalOpen(false);
   };
@@ -2656,6 +2821,7 @@ export default function DynamicForm({
     }
 
     if (Object.keys(errs).length > 0) {
+      log.warn('form:person_modal_validation_fail', { personType: 'VICTIM', errorKeys: Object.keys(errs) });
       setVictimModalErrors(errs);
       victimFields.forEach(f => { touchedFields[f.field_key] = true; });
       setVictimModalTouched(touchedFields);
@@ -2670,6 +2836,7 @@ export default function DynamicForm({
       list.push(victimTempValues);
     }
 
+    log.debug('form:person_modal_save', { personType: 'VICTIM', mode: activeVictimIndex !== null ? 'edit' : 'add', countAfter: list.length });
     setRepeaterState(prev => ({ ...prev, victim_info: list }));
     setIsVictimModalOpen(false);
   };
@@ -2678,19 +2845,15 @@ export default function DynamicForm({
   const getMajorHeadOptions = useCallback(() => {
     const actNameRaw = values.act_name || '';
     if (!actNameRaw) return [];
-  // Split comma-separated acts and normalise to schema keys
+  // Split comma-separated acts and normalise to schema keys. Re-merge fragments of an act
+  // label that itself contains a comma (e.g. the Aadhaar Act) back into one entry before
+  // treating each entry as a distinct act (B5, 2026-07-21 — same bug/fix as ActsSectionsTable).
   const rawActKeys = actNameRaw
     .split(',')
     .map(a => a.trim())
     .filter(Boolean);
-  const actKeys = [];
-  for (const item of rawActKeys) {
-    if (/^\d{4}$/.test(item) && actKeys.length > 0) {
-      actKeys[actKeys.length - 1] = `${actKeys[actKeys.length - 1]}, ${item}`;
-    } else {
-      actKeys.push(item);
-    }
-  }
+  const knownActLabelsLower = new Set(actsSectionsRegistry.map((item) => item.act.trim().toLowerCase()));
+  const actKeys = reMergeKnownActFragments(rawActKeys, knownActLabelsLower);
   const normalizedActKeys = actKeys.map(a => ACT_NAME_ALIAS[a] || a);
 
   const seen = new Set();
@@ -2713,7 +2876,7 @@ export default function DynamicForm({
     }
   }
   return allOptions;
-}, [allSchemaFields, values.act_name]);
+}, [allSchemaFields, values.act_name, actsSectionsRegistry]);
 
 const getMinorHeadOptions = useCallback(() => {
   if (!selectedMajorHead) return [];
@@ -2770,14 +2933,8 @@ useEffect(() => {
   }
 
   const rawActs = values.act_name.split(',').map((s) => s.trim()).filter(Boolean);
-  const acts = [];
-  for (const item of rawActs) {
-    if (/^\d{4}$/.test(item) && acts.length > 0) {
-      acts[acts.length - 1] = `${acts[acts.length - 1]}, ${item}`;
-    } else {
-      acts.push(item);
-    }
-  }
+  const knownActLabelsLowerForHeads = new Set(actsSectionsRegistry.map((item) => item.act.trim().toLowerCase()));
+  const acts = reMergeKnownActFragments(rawActs, knownActLabelsLowerForHeads);
   const secs = values.sections ? values.sections.split(',').map((s) => s.trim()).filter(Boolean) : [];
 
   const sectionCodes = [];
@@ -2837,6 +2994,29 @@ const prevRecordTypeRef = useRef(recordType);
 const prevCaseTypeRef = useRef(caseType);
 const prevInitialIdRef = useRef(initialValues?.id);
 
+// B8 (2026-07-21): set true by a REAL user edit (handleChange for flat fields, a genuine
+// repeater mutation for persons/properties — never by the seed effects themselves) and
+// cleared whenever the seed effects below actually reseed. Guards against the seed effects
+// clobbering in-progress edits when `initialValues`/`initialPersons`/`initialProperties`
+// change for the SAME already-loaded record — e.g. a background refetch resolving after an
+// explicit save/submit invalidated the query while the user kept editing. `isSameRecordAlreadyLoaded`
+// (activeRecordIdRef already equals the incoming id) distinguishes that from a genuine
+// fresh-mount / different-record load, which must still reseed unconditionally (#R2-2).
+const formDirtyRef = useRef(false);
+
+// B8 fix v2 (2026-07-21): the dirty-guard alone was UNSAFE — `formDirtyRef` can be set true by
+// unrelated programmatic repeater churn (e.g. the CASE property starter-row) before
+// `initialPersons` finishes loading, which then BLOCKED the very first person/property seed of a
+// record. The victims/accused never entered `repeaterState`, so the next autosave sent an empty
+// persons[] and the id-preserving upsert DELETED them from the DB — reported as "after sending
+// back, accused and victim get removed like they were never there." Track which record id each
+// seed effect has actually seeded once; the FIRST seed of a record always runs (dirty or not),
+// and the dirty-guard only ever blocks RE-seeding a record we've already seeded (the real clobber
+// case: a background refetch resolving mid-edit). Separate refs because the two seed effects fire
+// and complete independently.
+const repeaterSeededIdRef = useRef(undefined);
+const flatSeededIdRef = useRef(undefined);
+
 /* ── Sync saved record ID ─────────────────────────────────────────────── */
 useEffect(() => {
   if (savedRecord?.id) {
@@ -2850,6 +3030,28 @@ useEffect(() => {
     setCurrentStep(finalSchema.length - 1);
   }
 }, [finalSchema.length, currentStep]);
+
+// Section render decision: which step/section is about to render, and whether it's a
+// record-type-specific custom layout or the generic schema-driven FormSection (the custom-vs-
+// generic key list mirrors SECTION_RENDERERS below — kept as a plain effect dependency on
+// [currentStep, finalSchema] rather than reading a ref during render, which React's compiler
+// flags as unsafe).
+useEffect(() => {
+  const section = finalSchema[currentStep] || finalSchema[0];
+  if (!section) return;
+  const CUSTOM_SECTION_KEYS = new Set([
+    'select_fir', 'general_info', 'acts_and_sections', 'occurrence_info',
+    'complainant_info', 'victim_info', 'accused_info', 'arrested_info',
+    'property_details', 'action_taken',
+  ]);
+  log.debug('form:section_render_decision', {
+    recordType,
+    step: currentStep,
+    section: section.section,
+    rendererType: CUSTOM_SECTION_KEYS.has(section.section) ? 'custom' : 'FormSection',
+    isRepeater: !!section.is_repeater,
+  });
+}, [currentStep, finalSchema, recordType]);
 
 
 const initialValuesStr = JSON.stringify(initialValues || {});
@@ -2883,8 +3085,28 @@ useEffect(() => {
   prevInitialIdRef.current = initialValues?.id;
 }, [recordType, caseType, initialValues?.id]);
 /* ── Seed repeater entries from initialPersons / initialProperties ─────── */
+// Shapes here are the backend recompose contract (records.mapper.js recomposeRecord):
+// persons[] = { id, person_type, data: {<field_key>: value} }; properties[] are FLAT
+// objects already keyed by field_key (property_major_category, …) plus { id, person_id }.
+// `id` MUST round-trip on every entry — the backend upsert is id-preserving and DELETES
+// any existing person/property row the client doesn't echo back with its id.
 useEffect(() => {
   if (!finalSchema.length) return;
+  // B8 (2026-07-21): if this is the SAME record we already have loaded (not a fresh mount /
+  // different-record load) and the user has made real edits since it was last seeded, a new
+  // `initialPersons`/`initialProperties` reference here means a background refetch resolved
+  // mid-edit (e.g. the explicit save/submit path's query invalidation) — reseeding now would
+  // silently drop whatever the user added/changed since (new victim/accused entries, edited
+  // property rows). Skip; the next genuine load (different record, or after the user's own
+  // edits are saved and this effect fires again with formDirtyRef reset) will seed correctly.
+  // Only BLOCK re-seeding a record we've ALREADY seeded once and the user has since edited (the
+  // real clobber case). The first seed of a record must always run — otherwise a spuriously-set
+  // formDirtyRef (from unrelated programmatic repeater churn before initialPersons loaded) drops
+  // the person/property seed and the next autosave deletes the persons (B8 fix v2).
+  const rid = initialValues?.id ?? null;
+  if (repeaterSeededIdRef.current === rid && formDirtyRef.current) return;
+  repeaterSeededIdRef.current = rid;
+  formDirtyRef.current = false; // genuine (re)seed accepted — re-arm for the next real edit
   const initial = {};
   // Build section-key → entries map for person sections
   for (const section of finalSchema) {
@@ -2895,33 +3117,32 @@ useEffect(() => {
       );
       if (matching.length > 0) {
         initial[section.section] = matching.map(p => {
-          const personData = { ...(p.data || {}) };
+          const personData = { id: p.id, ...(p.data || {}) };
           // ARRESTED persons carry their own property list (per-person, not record-level)
           if (section.person_type === 'ARRESTED') {
             personData.property_details = initialProperties
               .filter(prop => prop.person_id === p.id)
               .map(prop => ({
-                property_major_category: prop.major_category || '',
-                property_minor_category: prop.minor_category || '',
-                property_stolen_recovered: prop.status || 'Stolen',
-                property_details: prop.details || '',
+                ...prop,
+                property_stolen_recovered: prop.property_stolen_recovered || 'Stolen',
               }));
           }
           return personData;
         });
       }
     } else if (section.entity_type === 'property') {
-      if (initialProperties.length > 0) {
-        initial[section.section] = initialProperties.map(prop => ({
-          property_major_category: prop.major_category || '',
-          property_minor_category: prop.minor_category || '',
-          property_stolen_recovered: prop.status || 'Stolen',
-          property_details: prop.details || '',
+      // Only record-level properties — per-person ones are nested under their arrestee above.
+      const recordLevel = initialProperties.filter(prop => !prop.person_id);
+      if (recordLevel.length > 0) {
+        initial[section.section] = recordLevel.map(prop => ({
+          ...prop,
+          property_stolen_recovered: prop.property_stolen_recovered || 'Stolen',
         }));
       }
     }
   }
   if (Object.keys(initial).length > 0) {
+    repeaterSeedSkipRef.current = true; // seeding is not a user edit — don't autosave it back
     setRepeaterState(prev => ({ ...prev, ...initial }));
   }
 }, [initialPersons, initialProperties, finalSchema.length]);
@@ -2933,6 +3154,7 @@ useEffect(() => {
   if (!readOnly && recordType === 'CASE') {
     const propertyList = repeaterState?.property_details || [];
     if (propertyList.length === 0) {
+      repeaterSeedSkipRef.current = true; // starter row is not a user edit — don't autosave it
       setRepeaterState(prev => ({
         ...prev,
         property_details: [{
@@ -2947,7 +3169,43 @@ useEffect(() => {
   }
 }, [repeaterState?.property_details?.length, readOnly, recordType]);
 
+/* ── Autosave repeater (persons/properties) changes ─────────────────────── */
+const repeaterSeedSkipRef = useRef(false);
 useEffect(() => {
+  const rid = initialValues?.id ?? null;
+  if (repeaterSeededIdRef.current !== rid) return; // seed hasn't run for this record yet — never autosave a possibly-empty repeaterState
+  if (readOnly) return;
+  if (repeaterSeedSkipRef.current) { repeaterSeedSkipRef.current = false; return; }
+  formDirtyRef.current = true; // real user-driven repeater mutation — see formDirtyRef declaration (B8)
+  const { persons, properties } = buildRepeaterPayload();
+  // Never CREATE a record off repeater churn alone (e.g. deleting the blank starter row).
+  if (!activeRecordIdRef.current && persons.length === 0 && properties.length === 0) return;
+  const data = { ...values };
+  if (data.time_of_occurrence !== undefined) data.occurrence_time = data.time_of_occurrence;
+  // [PHAROS-DEBUG] what the repeater autosave is about to PUT — correlate with the backend's
+  // [upsertPersons] log. If this fires with persons: [] right after opening a record that HAS
+  // victims/accused, the seed was skipped and the persons are about to be deleted server-side.
+  console.log('[PHAROS-DEBUG][repeater-autosave] PUT', {
+    recordId: activeRecordIdRef.current,
+    persons: persons.map((p) => p.person_type),
+    properties: properties.length,
+  });
+  triggerAutosave(data, activeRecordIdRef.current, persons, properties);
+}, [repeaterState]);
+
+useEffect(() => {
+  // B8 (2026-07-21): same guard as the persons/properties seed effect above — don't reseed
+  // `values` from a background refetch of the SAME already-loaded record while the user has
+  // unsaved-since-load edits (e.g. a complainant name/address edit right after an explicit
+  // save triggered a query invalidation that resolved before/without the user navigating
+  // away). A genuinely different record (or a fresh mount of this one) always reseeds.
+  // Same guard shape as the persons/properties seed above (B8 fix v2): first seed of a record
+  // always runs; only RE-seeding an already-seeded record is blocked while the user has edits.
+  const flatRid = initialValues?.id ?? null;
+  if (flatSeededIdRef.current === flatRid && formDirtyRef.current) return;
+  flatSeededIdRef.current = flatRid;
+  formDirtyRef.current = false; // genuine (re)seed accepted — re-arm for the next real edit
+
   const seed = { ...(initialValues?.data || initialValues || {}) };
 
   console.log('[PHAROS-DEBUG][seed-effect] RUNNING — this rebuilds `values` from initialValues and calls setValues() at the end, which will CLOBBER any in-progress user edits if this effect fires again mid-edit.', {
@@ -3059,6 +3317,15 @@ useEffect(() => {
     updatedSeed.gd_date_time = `${updatedSeed.gd_date} ${timePart.substring(0, 5)}`;
   }
 
+  // Backfill crime_head (primary offence head) for drafts saved before the
+  // add/delete-row handlers started writing it — it's derived from the first
+  // Major Head row, and without it ARREST's required-field check can't pass.
+  if (!updatedSeed.crime_head) {
+    const firstMajor = String(updatedSeed.major_heads || updatedSeed.major_head || '')
+      .split(',').map(s => s.trim()).filter(Boolean)[0];
+    if (firstMajor) updatedSeed.crime_head = firstMajor;
+  }
+
   console.log('[PHAROS-DEBUG][seed-effect] setValues() about to run — final composite snapshot being written into form state:', {
     gd_no: updatedSeed.gd_no, gd_date: updatedSeed.gd_date, gd_time: updatedSeed.gd_time,
     fir_no: updatedSeed.fir_no, fir_date: updatedSeed.fir_date, fir_time: updatedSeed.fir_time,
@@ -3103,103 +3370,115 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
     dupeFieldKeysInThisSection: [...new Set(dupeKeys)],
     fieldCount: section.fields.length,
   });
+  log.debug('form:validate_section', { step: stepIdx, section: section.section, requiredCount: requiredKeys.length, fieldCount: section.fields.length });
   section.fields.forEach((field) => {
-    // Skip validating if field is hidden by condition
+    // Skip validating if field is hidden by condition — MUST use the same
+    // evaluator as the render path (FormSection), or we block on invisible fields.
     if (field.show_when) {
       const isShown = (() => {
         try {
           const cond = typeof field.show_when === 'string' ? JSON.parse(field.show_when) : field.show_when;
-          if (!cond || !cond.field) return true;
-          const val = currentValues[cond.field];
-          const checkVals = Array.isArray(cond.value) ? cond.value : [cond.value];
-          return checkVals.some(v => String(v || '').toLowerCase() === String(val || '').toLowerCase());
+          return evaluateShowWhen(cond, currentValues);
         } catch (e) {
           return true;
         }
       })();
       if (!isShown) {
         console.log('[PHAROS-DEBUG][validateSection] field hidden by show_when, skipping:', field.field_key, field.show_when);
+        log.debug('form:show_when_toggle', { field: field.field_key, section: section.section, visible: false });
         return;
       }
     }
 
     const rules = parseRules(field.validation_rules);
 
-    if (field.field_key === 'gd_no') {
-      const num = currentValues.gd_no;
-      const dt = currentValues.gd_date;
-      const tm = currentValues.gd_time;
-      const isAllFilled = !!(num && dt && tm);
-      // Anchored on the NUMBER, not "any of the three": a stray gd_date/gd_time with no
-      // gd_no must never block Next. That case is real, not hypothetical — this exact
-      // draft had fir_date pre-poisoned (autosaved by the old, now-removed, seed
-      // auto-population code) with no fir_no ever entered, and the previous
-      // "isAnyFilled && !isAllFilled" check blocked on it regardless of `required`. Only
-      // once the officer actually types the number do date+time become mandatory.
-      console.log('[PHAROS-DEBUG][validateSection] gd_no composite check:', {
-        num: JSON.stringify(num), dt: JSON.stringify(dt), tm: JSON.stringify(tm),
-        isAllFilled, required: !!rules.required,
-        currentValuesIsLiveValues: currentValues === values,
-      });
-
-      if (rules.required && !isAllFilled) {
-        errs.gd_no = lang === 'hi'
-          ? 'जीडी नंबर, दिनांक और समय तीनों भरना आवश्यक है।'
-          : 'GD Number, Date and Time are all required.';
-      } else if (num && !isAllFilled) {
-        errs.gd_no = lang === 'hi'
-          ? 'जीडी नंबर, दिनांक और समय तीनों भरें।'
-          : 'Please fill all three: GD Number, Date and Time.';
-      }
+    // Format validation (#10, 2026-07-20) — runs for ANY non-empty value, required or not, so a
+    // name with digits / a non-numeric lat-long is rejected even on an optional field. Empty is
+    // left to the requiredness check below. Single source of rules: utils/fieldPatterns.js.
+    const patternErr = validateFieldPattern(rules, currentValues[field.field_key], lang);
+    if (patternErr) {
+      errs[field.field_key] = patternErr;
       return;
     }
 
-    if (field.field_key === 'fir_no') {
-      const num = currentValues.fir_no;
-      const dt = currentValues.fir_date;
-      const tm = currentValues.fir_time;
-      const isAllFilled = !!(num && dt && tm);
-      console.log('[PHAROS-DEBUG][validateSection] fir_no composite check:', {
-        num: JSON.stringify(num), dt: JSON.stringify(dt), tm: JSON.stringify(tm),
-        isAllFilled, required: !!rules.required,
-        currentValuesIsLiveValues: currentValues === values,
+    // Composite Number+Date(+Time) widgets. Anchored on the NUMBER — a stray date with
+    // no number must never block Next. Time is deliberately NOT validated: fir_time has
+    // no storage anywhere (fir_details.fir_date is a DATE column), and *_time values
+    // that aren't registry fields for this record type vanish on draft reload while the
+    // picker still displays a default "00:00" — demanding them made every reopened
+    // draft fail with "fill all three" on data the officer had genuinely entered.
+    if (field.field_key === 'gd_no' || field.field_key === 'fir_no') {
+      const prefix = field.field_key === 'gd_no' ? 'gd' : 'fir';
+      const num = currentValues[`${prefix}_no`];
+      const dt = currentValues[`${prefix}_date`];
+      const labels = prefix === 'gd'
+        ? { en: 'GD', hi: 'जीडी' }
+        : { en: 'FIR', hi: 'प्राथमिकी' };
+      console.log('[PHAROS-DEBUG][validateSection]', field.field_key, 'composite check:', {
+        num: JSON.stringify(num), dt: JSON.stringify(dt), required: !!rules.required,
       });
 
-      if (rules.required && !isAllFilled) {
-        errs.fir_no = lang === 'hi'
-          ? 'प्राथमिकी संख्या, दिनांक और समय तीनों भरना आवश्यक है।'
-          : 'FIR Number, Date and Time are all required.';
-      } else if (num && !isAllFilled) {
-        errs.fir_no = lang === 'hi'
-          ? 'प्राथमिकी संख्या, दिनांक और समय तीनों भरें।'
-          : 'Please fill all three: FIR Number, Date and Time.';
+      if (rules.required && !(num && dt)) {
+        errs[field.field_key] = lang === 'hi'
+          ? `${labels.hi} नंबर और दिनांक भरना आवश्यक है।`
+          : `${labels.en} Number and Date are required.`;
+      } else if (num && !dt) {
+        errs[field.field_key] = lang === 'hi'
+          ? `${labels.hi} दिनांक भी भरें।`
+          : `Please also fill the ${labels.en} Date.`;
       } else if (num) {
         const fmtErr = checkFieldFormat(field, num, lang);
-        if (fmtErr) errs.fir_no = fmtErr;
+        if (fmtErr) errs[field.field_key] = fmtErr;
       }
       return;
     }
 
     const val = currentValues[field.field_key];
+    if (field.field_key === 'sections') {
+      // `sections` has no direct input — it is only written by the Acts & Sections table's
+      // "+ Add Acts & Section" modal. Point the officer at that button instead of naming a
+      // field they cannot find on the form.
+      const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
+      if (isEmpty && rules.required) {
+        errs.sections = lang === 'hi'
+          ? 'कम से कम एक अधिनियम और धारा जोड़ें ("+ Add Acts & Section" बटन से)।'
+          : 'Add at least one Act & Section (use the "+ Add Acts & Section" button).';
+        return;
+      }
+    }
     const err = getFieldError(field, val, lang);
     if (err) errs[field.field_key] = err;
   });
+  if (Object.keys(errs).length > 0) {
+    log.warn('form:validation_fail', { step: stepIdx, section: section.section, errorKeys: Object.keys(errs) });
+  } else {
+    log.debug('form:validate_section_result', { step: stepIdx, section: section.section, errorCount: 0 });
+  }
   return errs;
 }, [finalSchema, values, lang]);
 
 /* ── Validate ALL sections ─────────────────────────────────────────────── */
 const validateAll = useCallback((currentValues = values) => {
+  log.debug('form:validate_all_start', { recordType, sectionCount: finalSchema.length });
   const allErrs = {};
   finalSchema.forEach((section, idx) => {
     const errs = validateSection(idx, currentValues);
     Object.assign(allErrs, errs);
   });
+  const errorCount = Object.keys(allErrs).length;
+  if (errorCount > 0) {
+    log.warn('form:validate_all_result', { recordType, errorCount, errorKeys: Object.keys(allErrs) });
+  } else {
+    log.info('form:validate_all_result', { recordType, errorCount: 0 });
+  }
   return allErrs;
-}, [finalSchema, values, validateSection]);
+}, [finalSchema, values, validateSection, recordType]);
 
 /* ── Handle field change ──────────────────────────────────────────────── */
 const handleChange = useCallback((key, val) => {
   if (readOnly) return;
+  formDirtyRef.current = true; // real user edit — see formDirtyRef declaration (B8)
+  log.debug('form:field_change', { fieldKey: key, recordType });
 
   const COMPOSITE_KEYS = ['gd_no', 'gd_date', 'gd_time', 'fir_no', 'fir_date', 'fir_time'];
   if (COMPOSITE_KEYS.includes(key)) {
@@ -3428,6 +3707,11 @@ const handleAddMajorMinorRow = useCallback(() => {
   const updatedMinors = [...majorMinorRows.map(r => r.minorHead), selectedMinorHead].join(', ');
   handleChange('major_heads', updatedMajors);
   handleChange('minor_heads', updatedMinors);
+  // crime_head = primary offence head (registry storage: offence.major_head_id, primary).
+  // The first Major Head row IS that value — without this write, ARREST's required
+  // crime_head is never satisfiable and step validation blocks Next forever.
+  const firstMajor = majorMinorRows[0]?.majorHead || selectedMajorHead;
+  handleChange('crime_head', firstMajor);
   setSelectedMajorHead('');
   setSelectedMinorHead('');
 }, [selectedMajorHead, selectedMinorHead, majorMinorRows, handleChange]);
@@ -3437,6 +3721,7 @@ const handleDeleteMajorMinorRow = useCallback((index) => {
   setMajorMinorRows(updated);
   handleChange('major_heads', updated.map(r => r.majorHead).join(', '));
   handleChange('minor_heads', updated.map(r => r.minorHead).join(', '));
+  handleChange('crime_head', updated[0]?.majorHead || '');
 }, [majorMinorRows, handleChange]);
 
 // Single bundle of everything <ActsSectionsTable> needs, so every call site (ARREST/UIDB
@@ -3472,9 +3757,11 @@ const handleNext = () => {
     gd_no: values.gd_no, gd_date: values.gd_date, gd_time: values.gd_time,
     fir_no: values.fir_no, fir_date: values.fir_date, fir_time: values.fir_time,
   });
+  log.debug('form:step_next_attempt', { currentStep, section: finalSchema[currentStep]?.section });
   const stepErrs = validateSection(currentStep);
   if (Object.keys(stepErrs).length > 0) {
     console.log('Block handleNext on step:', currentStep, 'Errors:', stepErrs);
+    log.warn('form:step_next_blocked', { currentStep, section: finalSchema[currentStep]?.section, errorKeys: Object.keys(stepErrs) });
     setErrors((prev) => ({ ...prev, ...stepErrs }));
     // Mark all fields in this step as touched
     const section = finalSchema[currentStep];
@@ -3531,6 +3818,7 @@ const handleNext = () => {
     }
   }
 
+  log.info('form:step_advance', { from: currentStep, to: Math.min(currentStep + 1, finalSchema.length - 1) });
   setCompletedSteps((prev) => new Set([...prev, currentStep]));
   setCurrentStep((s) => Math.min(s + 1, finalSchema.length - 1));
   // Scroll to top of form
@@ -3539,6 +3827,7 @@ const handleNext = () => {
 
 /* ── Navigate backward ────────────────────────────────────────────────── */
 const handleBack = () => {
+  log.debug('form:step_back', { from: currentStep, to: Math.max(currentStep - 1, 0) });
   setCurrentStep((s) => Math.max(s - 1, 0));
   setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 };
@@ -3546,6 +3835,7 @@ const handleBack = () => {
 /* ── Jump to a specific step (click step dot / tab) ───────────────────── */
 const handleStepClick = (targetIdx) => {
   if (targetIdx === currentStep) return;
+  log.debug('form:step_jump', { from: currentStep, to: targetIdx });
 
   // Validate the step we are leaving (currentStep) and store errors
   const stepErrs = validateSection(currentStep);
@@ -3613,13 +3903,78 @@ const handleStepClick = (targetIdx) => {
   setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 };
 
+/* ── Build persons/properties from repeater sections ───────────────────── */
+// The ONE builder for every path that persists the record — final Submit, the "Save
+// Draft" button, field-level autosave, and the repeaterState watcher. Repeater data
+// must ride along on ALL of them: the backend's update path treats an absent `persons`
+// key as "don't touch" but create defaults it to [], and any list that IS sent must
+// echo existing entries (with their ids) or the id-preserving upsert deletes them.
+// Latest-ref pattern: handleChange is memoized on [readOnly, errors, triggerAutosave,
+// values] and does NOT recreate when repeaterState changes — a closure over repeaterState
+// here would let a keystroke autosave a persons list from BEFORE the last modal save,
+// and the backend's echo-or-delete upsert would then destroy the just-added entry.
+const repeaterPayloadSourceRef = useRef({ finalSchema, repeaterState });
+repeaterPayloadSourceRef.current = { finalSchema, repeaterState };
+const buildRepeaterPayload = useCallback(() => {
+  const { finalSchema: schema, repeaterState: state } = repeaterPayloadSourceRef.current;
+  const persons = [];
+  const properties = [];
+  for (const section of schema) {
+    if (!section.is_repeater) continue;
+    const entries = state[section.section] || [];
+    if (section.entity_type === 'person' && section.person_type) {
+      for (const entry of entries) {
+        // ARRESTED persons carry their own property list (per-person, not record-level) —
+        // pull it out of the person's data blob and flatten into the top-level properties
+        // array, tagged with this person's index so the backend can link each item back
+        // to the right person after it generates real person IDs. `id` (present on entries
+        // loaded from an existing record's recomposed persons[]) is likewise pulled to the
+        // top level — the backend's id-preserving upsert matches edits by `persons[].id`,
+        // not by a nested `data.id`.
+        const { property_details: personProperties, id: personId, ...personData } = entry;
+        const personIndex = persons.length;
+        persons.push({ id: personId ?? undefined, person_type: section.person_type, data: personData });
+        if (section.person_type === 'ARRESTED' && Array.isArray(personProperties)) {
+          for (const prop of personProperties) {
+            // Keep any row with an id (existing DB row) or ANY real user-entered value —
+            // not just category/details (B4, see hasMeaningfulPropertyData above).
+            if (!prop.id && !hasMeaningfulPropertyData(prop)) continue; // skip blank starter rows
+            properties.push({ ...prop, person_index: personIndex });
+          }
+        }
+      }
+    } else if (section.entity_type === 'property') {
+      for (const entry of entries) {
+        // Skip never-saved blank starter rows (CASE auto-populates one) — but an entry
+        // with an id is an existing DB row and must always be echoed back, and any entry
+        // with a real user-entered value (not just category/details — B4) must be kept too.
+        if (!entry.id && !hasMeaningfulPropertyData(entry)) continue;
+        properties.push(entry);
+      }
+    }
+  }
+  log.debug('form:build_repeater_payload', { recordType, personsCount: persons.length, propertiesCount: properties.length });
+  return { persons, properties };
+}, []);
+
 /* ── Final form submission ─────────────────────────────────────────────── */
+// B3 (2026-07-23 — "Submit button not working in each form"): FormToolbar's Submit button
+// used to call `onSubmit()` with NO argument (the same zero-arg calling convention as
+// onPrevious/onSaveDraft/onNext, none of which need an event). This function unconditionally
+// called `e.preventDefault()` as its first statement, so every real click threw
+// `TypeError: Cannot read properties of undefined (reading 'preventDefault')` before
+// `validateAll()` ever ran — the button visibly did nothing (no toast, no request, just a
+// console exception), on every record type. Fixed in FormToolbar.jsx (now forwards the real
+// click event); `e?.preventDefault?.()` here is defense-in-depth against any other zero-arg
+// caller.
 const handleFormSubmit = (e) => {
-  e.preventDefault();
+  e?.preventDefault?.();
   if (readOnly) return;
+  log.info('form:submit_start', { recordType, recordId: activeRecordIdRef.current });
 
   const allErrs = validateAll();
   if (Object.keys(allErrs).length > 0) {
+    log.warn('form:submit_validation_fail', { recordType, errorCount: Object.keys(allErrs).length, errorKeys: Object.keys(allErrs) });
     setErrors(allErrs);
     const allTouched = {};
     finalSchema.forEach((sec) => sec.fields.forEach((f) => { allTouched[f.field_key] = true; }));
@@ -3650,42 +4005,30 @@ const handleFormSubmit = (e) => {
     finalValues.occurrence_time = finalValues.time_of_occurrence;
   }
 
-  // Build persons and properties from repeater sections
-  const persons = [];
-  const properties = [];
-  for (const section of finalSchema) {
-    if (!section.is_repeater) continue;
-    const entries = repeaterState[section.section] || [];
-    if (section.entity_type === 'person' && section.person_type) {
-      for (const entry of entries) {
-        // ARRESTED persons carry their own property list (per-person, not record-level) 
-        const { property_details: personProperties, id: personId, ...personData } = entry;
-        const personIndex = persons.length;
-        persons.push({ id: personId ?? undefined, person_type: section.person_type, data: personData });
-        if (section.person_type === 'ARRESTED' && Array.isArray(personProperties)) {
-          for (const prop of personProperties) {
-            if (!prop.property_major_category && !prop.property_details) continue; // skip blank starter rows
-            properties.push({ ...prop, person_index: personIndex });
-          }
-        }
-      }
-    } else if (section.entity_type === 'property') {
-      for (const entry of entries) {
-        properties.push(entry);
-      }
-    }
-  }
+  const { persons, properties } = buildRepeaterPayload();
 
-  onSubmit?.(finalValues, persons, properties, activeRecordIdRef.current);
+  try {
+    onSubmit?.(finalValues, persons, properties, activeRecordIdRef.current);
+    log.info('form:submit_success', { recordType, recordId: activeRecordIdRef.current, personsCount: persons.length, propertiesCount: properties.length });
+  } catch (err) {
+    log.error('form:submit_error', { recordType, recordId: activeRecordIdRef.current, message: err?.message });
+    throw err;
+  }
 };
 
 /* ── Manual save draft (button click) ────────────────────────────────────*/
 const handleManualSave = () => {
+  log.debug('form:save_draft_start', { recordType, recordId: activeRecordIdRef.current });
   const finalValues = { ...values };
   if (finalValues.time_of_occurrence !== undefined) {
     finalValues.occurrence_time = finalValues.time_of_occurrence;
   }
-  saveImmediately(finalValues, activeRecordIdRef.current);
+  // persons/properties MUST ride along — omitting them dropped every victim/accused/
+  // arrested entry and property row from manually-saved drafts (create defaulted them
+  // to [] server-side, so the repeater data was never written at all).
+  const { persons, properties } = buildRepeaterPayload();
+  saveImmediately(finalValues, activeRecordIdRef.current, persons, properties);
+  log.info('form:save_draft_success', { recordType, recordId: activeRecordIdRef.current, personsCount: persons.length, propertiesCount: properties.length });
   toast.success(lang === 'hi' ? 'ड्राफ्ट सहेज लिया गया है।' : 'Draft saved successfully.');
 };
 

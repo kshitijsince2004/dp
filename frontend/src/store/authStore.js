@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
+import { log } from '../utils/logger.js';
 
 const RANK_BY_ROLE = {
   HC: 'Head Constable',
@@ -45,8 +46,13 @@ const useAuthStore = create(
         setLoading: (isLoading) => set({ isLoading }),
 
         login: (userData, jurisdictionData) => {
-          if (!userData) return;
+          if (!userData) {
+            log.warn('authStore:login skipped — no userData');
+            return;
+          }
 
+          // REDACT: log identifiers only, never the raw userData/jurisdiction payload.
+          log.info('authStore:login', { userId: userData.id ?? userData.sub, role: userData.role });
           set({
             user: normalizeUser(userData),
             jurisdiction: jurisdictionData || null,
@@ -55,15 +61,18 @@ const useAuthStore = create(
         },
 
         logout: () => {
+          log.info('authStore:logout', { userId: get().user?.id, role: get().user?.role });
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           set({ user: null, jurisdiction: null, isAuthenticated: false });
         },
 
-        updateUser: (updates) =>
+        updateUser: (updates) => {
+          log.debug('authStore:updateUser', { userId: get().user?.id, keys: Object.keys(updates || {}) });
           set((state) => ({
             user: state.user ? { ...state.user, ...updates } : null,
-          })),
+          }));
+        },
 
         hasRole: (...roles) => roles.includes(get().user?.role),
       }),

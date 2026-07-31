@@ -19,6 +19,14 @@ import {
 import { autoIncludedRegistryFields } from './registry-sync.util.js';
 import { getKnownLayouts } from './layout-manifests.js';
 import { CASE_SECTION_MAP, ARREST_SECTION_MAP } from './template-builder.service.js';
+import { getLogger } from '../../utils/logger.js';
+
+// STYLE ANCHOR match (logging-instrumentation-2026-07-22): matches records.service.js exactly —
+// getLogger('import.parse') bound once, log.debug/info/warn/error(event, data) from then on.
+// This is the workbook->rows layer: every sheet resolution, every layout-fingerprint decision,
+// every row parsed/ghost-skipped gets a debug line so a tester's uploaded file's exact parse
+// path is reconstructable from the logs alone.
+const log = getLogger('import.parse');
 
 // Sentinel error_code used to persist invalid parent keys (FIR / linked_fir_dd_no) from
 // validation to confirm. Never shown to users — filtered from all error-display paths.
@@ -314,22 +322,29 @@ const getConditionalSectionKey = (actName) => {
 };
 
 export const getRecordDate = (recordType, rowData) => {
+  let source = null;
+  let value = null;
   if (recordType === 'CASE') {
-    return rowData.fir_date || rowData.occurrence_date;
+    source = rowData.fir_date ? 'fir_date' : (rowData.occurrence_date ? 'occurrence_date' : null);
+    value = rowData.fir_date || rowData.occurrence_date;
+  } else if (recordType === 'ARREST' || recordType === 'KALANDRA') {
+    source = rowData.date_of_arrest ? 'date_of_arrest' : (rowData.arrest_date ? 'arrest_date' : null);
+    value = rowData.date_of_arrest || rowData.arrest_date;
+  } else if (recordType === 'PCR_CALL') {
+    source = rowData.gd_date ? 'gd_date' : null;
+    value = rowData.gd_date;
+  } else if (recordType === 'UIDB') {
+    source = rowData.found_date ? 'found_date' : null;
+    value = rowData.found_date;
+  } else if (recordType === 'MISSING') {
+    source = rowData.missing_date ? 'missing_date' : null;
+    value = rowData.missing_date;
   }
-  if (recordType === 'ARREST' || recordType === 'KALANDRA') {
-    return rowData.date_of_arrest || rowData.arrest_date;
-  }
-  if (recordType === 'PCR_CALL') {
-    return rowData.gd_date;
-  }
-  if (recordType === 'UIDB') {
-    return rowData.found_date;
-  }
-  if (recordType === 'MISSING') {
-    return rowData.missing_date;
-  }
-  return null;
+  // Historically the #1 bug class for ARREST/KALANDRA (C3 in 03-import.md): this resolves
+  // nothing when the date only lives on the arrestee's person-sheet row — composeRecordPayload
+  // has its own fallback for that, logged separately there.
+  log.debug('getRecordDate: resolved from flat row', { recordType, source, value: value || null });
+  return value || null;
 };
 
 const normLabel = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -399,6 +414,7 @@ const looksLikeHintRow = (values) => {
 // full official layout (Row1 hidden keys / Row2 sections / Row3 labels / Row4 hints /
 // data @ Row5) OR a flattened export (Row1 sections / Row2 labels / data @ Row3).
 export const buildColumnMap = (worksheet, recordType, registryFields) => {
+  log.debug('buildColumnMap: enter', { sheet: worksheet.name, recordType, registryFieldCount: registryFields.length });
   const readRow = (n) => {
     const vals = [];
     worksheet.getRow(n).eachCell({ includeEmpty: true }, (cell) => {
@@ -449,6 +465,7 @@ export const buildColumnMap = (worksheet, recordType, registryFields) => {
   if (labelRowHits < 2) labelRow = null;
   // Guard: the label row can equal the key row only if nothing else matched labels
   if (keyRow && labelRow === keyRow) labelRow = null;
+  log.debug('buildColumnMap: header row detection', { sheet: worksheet.name, keyRow, keyRowHits, labelRow, labelRowHits });
 
   const keyVals = keyRow ? rowsVals[keyRow] : [];
   const labelVals = labelRow ? rowsVals[labelRow] : [];
@@ -477,6 +494,9 @@ export const buildColumnMap = (worksheet, recordType, registryFields) => {
   let dataStartRow = headerBottom + 1;
   if (looksLikeHintRow(rowsVals[dataStartRow] || readRow(dataStartRow))) dataStartRow++;
 
+  log.debug('buildColumnMap: exit', {
+    sheet: worksheet.name, recordType, mappedColumns: Object.keys(colMap).length, dataStartRow, hasHiddenKeys: !!keyRow,
+  });
   return { colMap, dataStartRow, hasHiddenKeys: !!keyRow };
 };
 
@@ -572,13 +592,17 @@ export const buildParentKeyIndex = (parentVals) => {
     const p = canonKeyParts(val);
     if (!p) return null;
     const canon = p.seq ? (p.year ? `${p.seq}|${p.year}` : p.seq) : p.raw;
-    if (byCanon.has(canon)) return canon;
+    if (byCanon.has(canon)) { log.debug('buildParentKeyIndex.resolve: exact canonical match', { val, canon }); return canon; }
     if (p.seq) {
       const compatible = (bySeq.get(p.seq) || []).filter(
         (e) => !p.year || !e.year || e.year === p.year
       );
-      if (compatible.length === 1) return compatible[0].canon;
+      if (compatible.length === 1) {
+        log.debug('buildParentKeyIndex.resolve: resolved by sequence-only (single compatible parent)', { val, canon: compatible[0].canon });
+        return compatible[0].canon;
+      }
     }
+    log.debug('buildParentKeyIndex.resolve: no unambiguous parent found', { val });
     return null;
   };
   return { resolve };
@@ -895,6 +919,7 @@ const extractRowData = (row, colMap, registryFieldsMap, recordType, coercionFiel
 // rows are overwhelmingly a parent-sheet phenomenon (a stray copy-pasted FIR row); child sheets
 // don't get the same benefit of the doubt.
 export const parseWorksheet = (worksheet, recordType, fieldsList, coercionFieldsByKey = null, isParentSheet = true) => {
+  log.debug('parseWorksheet: enter', { sheet: worksheet.name, recordType, isParentSheet, fieldCount: fieldsList.length });
   const { colMap, dataStartRow } = buildColumnMap(worksheet, recordType, fieldsList);
   const registryFieldsMap = {};
   for (const f of fieldsList) {
@@ -917,14 +942,22 @@ export const parseWorksheet = (worksheet, recordType, fieldsList, coercionFields
     if (nonEmptyCount === 0) return; // fully blank rows were always silently skipped
 
     if (isParentSheet && nonEmptyCount <= 2 && !hasKeystoneValue) {
+      log.warn('parseWorksheet: skipped ghost/trailing row', { sheet: worksheet.name, recordType, rowIdx, nonEmptyCount });
       skippedGhostRows.push(rowIdx);
       return;
     }
 
     const rowData = extractRowData(row, colMap, registryFieldsMap, recordType, coercionFieldsByKey);
+    // Per-row trace (HANDOFF §3 "every Excel row parsed") — key business fields + a populated
+    // count, never the full rowData (may carry PII: names/addresses/mobiles).
+    log.debug('parseWorksheet: row parsed', {
+      sheet: worksheet.name, recordType, rowIdx,
+      populatedFields: Object.values(rowData).filter((v) => v !== null && v !== undefined && v !== '').length,
+    });
     rows.push({ rowData, rowIdx });
   });
 
+  log.debug('parseWorksheet: exit', { sheet: worksheet.name, recordType, rowsParsed: rows.length, ghostRowsSkipped: skippedGhostRows.length });
   return { rows, skippedGhostRows };
 };
 
@@ -997,7 +1030,10 @@ function classifyLayout(roleWorksheets, recordType, fieldLists) {
   // No manifest coverage at all for this type (PCR_CALL) — never fingerprinted, never
   // rejected/warned; readWorkbook's generic branch doesn't even call this function, but a type
   // present in SHEET_FIELD_LISTS with zero layout-manifests.js coverage degrades the same way.
-  if (!knownLayouts.length) return { unknown: false, layoutId: 'current' };
+  if (!knownLayouts.length) {
+    log.debug('classifyLayout: no layout manifest coverage for this type — skipping fingerprint', { recordType });
+    return { unknown: false, layoutId: 'current' };
+  }
 
   const detectedByRole = {};
   for (const [role, ws] of Object.entries(roleWorksheets)) {
@@ -1007,6 +1043,7 @@ function classifyLayout(roleWorksheets, recordType, fieldLists) {
   }
 
   let best = null;
+  const scores = [];
   for (const layout of knownLayouts) {
     let sum = 0;
     let count = 0;
@@ -1017,10 +1054,16 @@ function classifyLayout(roleWorksheets, recordType, fieldLists) {
       count++;
     }
     const score = count ? sum / count : 0;
+    scores.push({ layoutId: layout.id, score });
     if (!best || score > best.score) best = { layoutId: layout.id, score };
   }
+  log.debug('classifyLayout: candidate scores', { recordType, scores, threshold: LAYOUT_REJECT_THRESHOLD });
 
-  if (!best || best.score < LAYOUT_REJECT_THRESHOLD) return { unknown: true };
+  if (!best || best.score < LAYOUT_REJECT_THRESHOLD) {
+    log.warn('classifyLayout: no known layout scored above threshold — rejecting as unknown', { recordType, best });
+    return { unknown: true };
+  }
+  log.info('classifyLayout: matched layout', { recordType, layoutId: best.layoutId, score: best.score });
   return { unknown: false, layoutId: best.layoutId };
 }
 
@@ -1110,6 +1153,9 @@ function withAutoIncludedFields(recordType, curatedFieldLists, registryFieldsLis
     if (!augmented[role]) augmented[role] = [];
     augmented[role].push(f);
   }
+  log.debug('withAutoIncludedFields: augmented required-check field lists', {
+    recordType, autoFieldCount: autoFields.length, autoFieldKeys: autoFields.map((f) => f.field_key),
+  });
   return augmented;
 }
 
@@ -1125,8 +1171,10 @@ function withAutoIncludedFields(recordType, curatedFieldLists, registryFieldsLis
  *     parentIndex: buildParentKeyIndex(...) | null, parentKeyField: string | null }
  */
 export const readWorkbook = async (recordType, filePath, registryMap) => {
+  log.debug('readWorkbook: enter', { recordType, filePath });
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(filePath);
+  log.debug('readWorkbook: workbook loaded', { recordType, sheetCount: workbook.worksheets.length, sheetNames: workbook.worksheets.map((w) => w.name) });
 
   const fieldLists = SHEET_FIELD_LISTS[recordType];
   const registryFieldsList = Object.values(registryMap || {});
@@ -1136,9 +1184,11 @@ export const readWorkbook = async (recordType, filePath, registryMap) => {
     // matches the old confirm/validate 'else' branch exactly (findWorksheet is skipped
     // entirely there too; worksheets[0] is authoritative). Already 100% registry-driven
     // (sheetFieldLists.parent IS registryFieldsList), so T1's gap #2 never applied here.
+    log.debug('readWorkbook: generic (no curated sheetFieldLists) branch', { recordType });
     const ws = workbook.worksheets[0] || workbook.getWorksheet(1);
-    if (!ws) return null;
+    if (!ws) { log.warn('readWorkbook: no worksheet found at all', { recordType, filePath }); return null; }
     const { rows, skippedGhostRows } = parseWorksheet(ws, recordType, registryFieldsList, registryMap);
+    log.info('readWorkbook: exit (generic)', { recordType, parentRows: rows.length, ghostRowsSkipped: skippedGhostRows.length });
     return {
       parentRows: rows, childSheets: {}, parentIndex: null, parentKeyField: null,
       sheetFieldLists: { parent: registryFieldsList },
@@ -1149,7 +1199,8 @@ export const readWorkbook = async (recordType, filePath, registryMap) => {
 
   const aliases = SHEET_ALIASES[recordType] || {};
   const parentWorksheet = findWorksheet(workbook, aliases.parent || []) || workbook.worksheets[0];
-  if (!parentWorksheet) return null;
+  if (!parentWorksheet) { log.warn('readWorkbook: no parent worksheet resolved', { recordType, filePath, candidates: aliases.parent }); return null; }
+  log.debug('readWorkbook: resolved parent worksheet', { recordType, sheetName: parentWorksheet.name });
 
   // Resolve every child sheet ONCE — reused for both T9's fingerprint check (immediately below)
   // and the real per-role parse loop further down, instead of two separate findWorksheet passes.
@@ -1157,6 +1208,7 @@ export const readWorkbook = async (recordType, filePath, registryMap) => {
   for (const role of Object.keys(fieldLists)) {
     if (role === 'parent') continue;
     roleWorksheets[role] = findWorksheet(workbook, aliases[role] || []);
+    log.debug('readWorkbook: resolved child worksheet', { recordType, role, sheetName: roleWorksheets[role]?.name || null, found: !!roleWorksheets[role] });
   }
 
   // T9 (03-TRIAGE-MATRIX.md) — must run before any real per-row parsing: an unrecognized
@@ -1164,6 +1216,7 @@ export const readWorkbook = async (recordType, filePath, registryMap) => {
   // columns that were never really there (see classifyLayout's doc comment).
   const layout = classifyLayout(roleWorksheets, recordType, fieldLists);
   if (layout.unknown) {
+    log.warn('readWorkbook: rejecting file — layout did not fingerprint-match any known template', { recordType, filePath });
     return { unknownLayout: true };
   }
 
@@ -1172,18 +1225,20 @@ export const readWorkbook = async (recordType, filePath, registryMap) => {
   const { rows: parentRows, skippedGhostRows: parentGhosts } = parseWorksheet(parentWorksheet, recordType, fieldLists.parent, registryMap);
   if (parentGhosts.length) ghostRowsSkipped.push({ sheet: 'parent', rows: parentGhosts });
   const parentIndex = parentKeyField ? buildParentKeyIndex(parentRows.map((r) => r.rowData[parentKeyField])) : null;
+  log.debug('readWorkbook: parent sheet parsed', { recordType, parentKeyField, parentRowCount: parentRows.length, ghostRowsSkipped: parentGhosts.length });
 
   const childSheets = {};
   for (const role of Object.keys(fieldLists)) {
     if (role === 'parent') continue;
     const ws = roleWorksheets[role];
-    if (!ws) { childSheets[role] = []; continue; }
+    if (!ws) { childSheets[role] = []; log.debug('readWorkbook: child sheet absent, treating as empty', { recordType, role }); continue; }
     // FIX 2b — child/role sheets are never parent sheets: only the zero-non-empty-cell skip
     // applies (isParentSheet=false), so a sparse-but-real child row reaches validation instead
     // of being silently dropped by the <=2-cell ghost-row heuristic.
     const { rows, skippedGhostRows } = parseWorksheet(ws, recordType, fieldLists[role], registryMap, false);
     if (skippedGhostRows.length) ghostRowsSkipped.push({ sheet: role, rows: skippedGhostRows });
     childSheets[role] = rows;
+    log.debug('readWorkbook: child sheet parsed', { recordType, role, rowCount: rows.length, ghostRowsSkipped: skippedGhostRows.length });
   }
 
   // sheetFieldLists is exposed so import.validate.js's row-level required-field checks reuse
@@ -1193,5 +1248,10 @@ export const readWorkbook = async (recordType, filePath, registryMap) => {
   // withAutoIncludedFields) — parsing itself (above) is untouched, only what gets
   // required-checked changes.
   const sheetFieldLists = withAutoIncludedFields(recordType, fieldLists, registryFieldsList);
+  log.info('readWorkbook: exit', {
+    recordType, layoutVersion: layout.layoutId, parentRows: parentRows.length,
+    childSheetCounts: Object.fromEntries(Object.entries(childSheets).map(([role, rows]) => [role, rows.length])),
+    ghostRowsSkippedTotal: ghostRowsSkipped.reduce((sum, g) => sum + g.rows.length, 0),
+  });
   return { parentRows, childSheets, parentIndex, parentKeyField, sheetFieldLists, ghostRowsSkipped, layoutVersion: layout.layoutId };
 };

@@ -2,6 +2,7 @@
  {
   "field_key": "gd_time",
   "record_types": [
+   "CASE",
    "ARREST"
   ],
   "field_type": "TIME",
@@ -11,7 +12,7 @@
   },
   "section": "general_info",
   "storage": {
-   "table": "arrest_details",
+   "table": "$detail",
    "column": "gd_time"
   },
   "validation_rules": {
@@ -133,8 +134,8 @@
   ],
   "field_type": "TEXT",
   "labels": {
-   "en": "House No. of Arrest",
-   "hi": "गिरफ्तारी का मकान संख्या"
+   "en": "Place of Arrest",
+   "hi": "गिरफ्तारी का स्थान"
   },
   "section": "arrest_details",
   "storage": {
@@ -1436,6 +1437,10 @@
    "table": "arrest_details",
    "column": "arresting_officer_mobile"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "mobile"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -1825,7 +1830,8 @@
    "name_part": 1
   },
   "validation_rules": {
-   "required": false
+   "required": false,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -1874,7 +1880,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "arrested_last_name",
@@ -1907,7 +1916,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "arrested_nickname",
@@ -1939,7 +1951,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "nick_name",
@@ -1971,7 +1986,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "arrested_gender",
@@ -2305,6 +2323,11 @@
    "entity": "person",
    "role": "ARRESTEE",
    "column": "age"
+  },
+  "validation_rules": {
+   "required": false,
+   "min": 0,
+   "max": 120
   },
   "visible_to_levels": [
    "PS",
@@ -2704,6 +2727,10 @@
    "slot": "present",
    "column": "pincode",
    "role": "ARRESTEE"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
   },
   "visible_to_levels": [
    "PS",
@@ -3105,6 +3132,10 @@
    "slot": "permanent",
    "column": "pincode",
    "role": "ARRESTEE"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
   },
   "visible_to_levels": [
    "PS",

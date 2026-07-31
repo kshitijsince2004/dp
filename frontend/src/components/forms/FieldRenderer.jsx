@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle } from 'lucide-react';
 import api from '../../utils/api.js';
+import { log } from '../../utils/logger.js';
 
 import DateTimePickerPopup from './DateTimePickerPopup.jsx';
 import TextField     from './TextField.jsx';
@@ -14,6 +15,16 @@ import CheckboxField from './CheckboxField.jsx';
 import RadioField    from './RadioField.jsx';
 import { DISTRICTS_AND_STATIONS } from '../../utils/policeData.js';
 import { sanitizeFieldValue } from '../../utils/fieldValidation.js';
+
+// #5 dual-mode (2026-07-20): all Delhi PS, flattened+deduped+sorted from the district map. Shown
+// for a PERSON-address PS field only when that person's state = Delhi (mirrors the import
+// template's flat OPT_POLICE_STATION list). Person DISTRICT uses admin names that don't key into
+// the police-district map, so a flat Delhi-wide list is the correct dual-mode dropdown.
+const DELHI_STATE = 'Delhi';
+const ALL_DELHI_PS = Array.from(new Set(Object.values(DISTRICTS_AND_STATIONS).flat())).sort((a, b) => a.localeCompare(b));
+// Delhi-scoped EVENT police-station fields (place of occurrence / arrest / the record's own PS) —
+// these keep the district-filtered Delhi list; everything else *_police_station is a person address.
+const EVENT_PS_KEYS = new Set(['occurrence_police_station', 'arrest_police_station', 'police_station']);
 
 const inputBase = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
 
@@ -63,6 +74,19 @@ function FieldRendererCore({
 
   if (!field) return null;
   const key     = field.field_key;
+  // Composite Number+Date(+Time) widgets (gd_no/fir_no/arrest_date, below) render their own
+  // date/time cell inline via DateTimePickerPopup. gd_date/gd_time/fir_date/fir_time/arrest_time
+  // are ALSO separate field_registry rows in the same section, so FormSection's per-field loop
+  // renders them a SECOND time as standalone DateField/TimeField inputs next to the composite —
+  // a visible duplicate widget (bug batch 2026-07-23, #B8, reported on Missing Person's GD
+  // Number). Suppressing them here (their value is still collected/submitted normally by
+  // DynamicForm — only the extra standalone INPUT is removed) fixes the duplicate without
+  // touching FormSection.jsx's section.fields list (owned by another agent). NOTE for FE-core:
+  // a fully clean fix additionally removes the now-empty label row by adding these keys to
+  // FormSection.jsx's `keysToSkip` array.
+  if (key === 'gd_date' || key === 'gd_time' || key === 'fir_date' || key === 'fir_time' || key === 'arrest_time') {
+    return null;
+  }
   const type    = (field.field_type || 'TEXT').toUpperCase();
   const status  = hasError ? 'error' : '';
   const placeholder = lang === 'hi' ? field.placeholder_hi : field.placeholder_en;
@@ -82,17 +106,26 @@ function FieldRendererCore({
     options = sourceOptions;
   }
 
+  // #5 dual-mode: a person-address PS (complainant/victim/accused/arrested + perm) shows the Delhi
+  // PS dropdown ONLY when that person's state = Delhi, and is free-text otherwise (their address
+  // can be anywhere in India). Delhi-scoped EVENT PS fields (occurrence/arrest/record PS) keep the
+  // district-filtered Delhi list. `forcePsFreeText` flips the SELECT render to a text input below.
+  let forcePsFreeText = false;
   if (key.endsWith('_police_station') && values) {
     const prefix = key.substring(0, key.lastIndexOf('_police_station'));
-    const districtVal = values[`${prefix}_district`] || values.district;
-    if (districtVal && DISTRICTS_AND_STATIONS[districtVal]) {
-      options = DISTRICTS_AND_STATIONS[districtVal].map(ps => ({
-        value: ps,
-        label_en: ps,
-        label_hi: ps
-      }));
+    if (EVENT_PS_KEYS.has(key)) {
+      const districtVal = values[`${prefix}_district`] || values.district;
+      options = (districtVal && DISTRICTS_AND_STATIONS[districtVal])
+        ? DISTRICTS_AND_STATIONS[districtVal].map(ps => ({ value: ps, label_en: ps, label_hi: ps }))
+        : [];
     } else {
-      options = [];
+      const stateVal = values[`${prefix}_state`];
+      if (stateVal === DELHI_STATE) {
+        options = ALL_DELHI_PS.map(ps => ({ value: ps, label_en: ps, label_hi: ps }));
+      } else {
+        forcePsFreeText = true; // non-Delhi (or state not yet chosen) → free-type any PS
+      }
+      log.debug('form:ps_dropdown_mode', { fieldKey: key, mode: forcePsFreeText ? 'free_text' : 'delhi_dropdown', stateVal: stateVal || null });
     }
   }
 
@@ -109,7 +142,7 @@ function FieldRendererCore({
   }
 
   const handleFieldChange = (k, v) => {
-    console.log('[PHAROS-DEBUG][FieldRenderer] handleFieldChange(', JSON.stringify(k), ',', JSON.stringify(v), ') — routing to', handleChange ? 'handleChange (DynamicForm)' : 'onChange (local prop)');
+    log.debug('form:field_change', { fieldKey: k, fieldType: type, routedTo: handleChange ? 'handleChange' : 'onChange' });
     if (handleChange) {
       handleChange(k, v);
     } else {
@@ -127,13 +160,13 @@ function FieldRendererCore({
   // plain DATETIME fields, so the whole form has one consistent date+time picker.
   const compositeDateTimeCell = (dateKey, timeKey, widthClass) => {
     const combined = values?.[dateKey] ? `${values[dateKey]} ${values?.[timeKey] || '00:00'}` : '';
-    console.log('[PHAROS-DEBUG][FieldRenderer.compositeDateTimeCell] render', { dateKey, timeKey, rawDateVal: values?.[dateKey], rawTimeVal: values?.[timeKey], combinedPassedToPopup: combined });
+    log.debug('form:composite_datetime_render', { dateKey, timeKey, hasDate: !!values?.[dateKey], hasTime: !!values?.[timeKey] });
     return (
       <div className={`${widthClass} ${compositeCellBox} px-3.5 py-1`}>
         <DateTimePickerPopup
           value={combined}
           onDone={(_formatted, datePart, timePart) => {
-            console.log('[PHAROS-DEBUG][FieldRenderer.compositeDateTimeCell] onDone fired for', dateKey, '/', timeKey, '→', { datePart, timePart });
+            log.debug('form:composite_datetime_commit', { dateKey, timeKey, datePart, timePart });
             handleFieldChange(dateKey, datePart);
             handleFieldChange(timeKey, timePart);
           }}
@@ -290,6 +323,12 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
 
   if (type === 'TEXTAREA') {
     return <TextAreaField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
+  }
+
+  // #5 dual-mode free-text: a non-Delhi person-address PS renders as a plain text input (their
+  // police station may be any station in India, not in the Delhi list) instead of an empty select.
+  if (forcePsFreeText) {
+    return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} className={inputClassName} />;
   }
 
   if (type === 'SELECT' || type === 'DROPDOWN') {

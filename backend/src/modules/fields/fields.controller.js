@@ -1,11 +1,19 @@
 import db from '../../config/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { publish } from '../../events/eventBus.js';
-import { logger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import * as fieldsService from './fields.service.js';
 import * as ioService from '../io/io.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from './classificationSources.config.js';
+import { getStatusOptionsForType } from './statusOptions.config.js';
 import { INDIA_STATES, DISTRICTS_BY_STATE } from '../../config/geoData.js';
+
+// Style anchor: records.service.js (HANDOFF.md §7). NOTE (2026-07-22 logging pass): this file
+// carries pre-existing, unrelated user edits (section/sort_order layout logic) — only logging was
+// added here, nothing else changed. Existing `logger.error('X failed', {...})` catch lines were
+// converted in place to `log.error('X: failed', { err })` (one log per catch, anchor-consistent —
+// never doubled up with a second error log).
+const log = getLogger('fields.controller');
 
 const parseJsonField = (val) => {
   if (val === null || val === undefined) return null;
@@ -107,6 +115,7 @@ export const getFieldsForForm = async (req, res) => {
   const district_id = req.user.district_id || null;
 
   const normalizedType = normalizeRecordType(record_type);
+  log.debug('getFieldsForForm: enter', { record_type, normalizedType, caseType, district_id, userId: req.user?.id });
 
   try {
     let query = db('field_registry')
@@ -122,6 +131,7 @@ export const getFieldsForForm = async (req, res) => {
     });
 
     const rawFieldsTyped = await query;
+    log.debug('getFieldsForForm: loaded field_registry rows', { normalizedType, count: rawFieldsTyped.length, districtScoped: !!district_id });
     // field_registry's real columns are `record_types` (not `applicable_record_types`),
     // `labels`/`section_labels` jsonb `{en,hi}` (not flat `label_en`/`label_hi`/
     // `section_label_en`/`section_label_hi` columns — those never existed on the rebuilt
@@ -239,6 +249,22 @@ export const getFieldsForForm = async (req, res) => {
       .map(c => ({ value: String(c.parent_cd), label_en: c.code_type, label_hi: c.code_type }))
       .sort((a, b) => a.label_en.localeCompare(b.label_en));
 
+    // Per-call counts already logged inside fieldsService (getActs/getSectionsForActs/etc) —
+    // this is the controller-level roll-up so a single line shows every option-source size for
+    // this request without re-querying or duplicating fieldsService's own entry/exit logs.
+    log.debug('getFieldsForForm: loaded option sources', {
+      normalizedType,
+      actOptions: finalActOptions.length,
+      ipcSections: ipcSectionOptions.length, exciseSections: exciseSectionOptions.length,
+      armsSections: armsSectionOptions.length, gamblingSections: gamblingSectionOptions.length,
+      generalSections: generalSectionOptions.length,
+      ipcMajorHeads: ipcMajorHeadOptions.length, exciseMajorHeads: exciseMajorHeadOptions.length,
+      armsMajorHeads: armsMajorHeadOptions.length, gamblingMajorHeads: gamblingMajorHeadOptions.length,
+      minorHeadFieldKeys: Object.keys(minorHeadOptionsByFieldKey).length,
+      beats: beatOptions.length, localHeads: localHeadOptions.length,
+      propertyCategories: propertyCategoryOptions.length,
+    });
+
     // Filter by applicable_record_types (JS-side, handles both native array and JSON-string storage)
     const filteredFields = rawFields
       .filter((f) => {
@@ -301,6 +327,7 @@ export const getFieldsForForm = async (req, res) => {
         }
 
         if (f.field_key === 'status') {
+          log.debug('getFieldsForForm: resolving status field options', { normalizedType, caseType });
           if (normalizedType === 'CASE') {
             options = [
               { value: 'CHARGE SHEET', label_en: 'Charge Sheet', label_hi: 'आरोप पत्र' },
@@ -314,43 +341,10 @@ export const getFieldsForForm = async (req, res) => {
               { value: 'TRANSFER', label_en: 'Transfer', label_hi: 'स्थानांतरण' }
             ];
           } else if (normalizedType === 'ARREST') {
-            const isAgainstFir = caseType === 'against_fir';
-            options = isAgainstFir ? [
-              { value: 'JC', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
-              { value: 'PC', label_en: 'Police Custody', label_hi: 'पुलिस हिरासत' },
-              { value: 'Bail', label_en: 'Bail', label_hi: 'जमानत' },
-              { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
-              { value: 'Release', label_en: 'Release', label_hi: 'रिहा' },
-              { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
-              { value: '35(3) BNS Notice', label_en: '35(3) BNS Notice', label_hi: '35(3) BNS Notice' }
-            ] : [
-              { value: 'JC', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
-              { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
-              { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
-              { value: 'Fine', label_en: 'Fine', label_hi: 'Fine' }
-            ];
-          } else if (normalizedType === 'PCR_CALL') {
-            options = [
-              { value: 'Action Taken', label_en: 'Action Taken', label_hi: 'कार्रवाई की गई' },
-              { value: 'Pending', label_en: 'Pending', label_hi: 'लंबित' },
-              { value: 'Referred', label_en: 'Referred', label_hi: 'स संदर्भित' },
-              { value: 'Closed', label_en: 'Closed', label_hi: 'बंद' }
-            ];
-          } else if (normalizedType === 'MISSING') {
-            options = [
-              { value: 'Un-traced', label_en: 'Un-traced', label_hi: 'लापता/सुराग नहीं' },
-              { value: 'Traced', label_en: 'Traced', label_hi: 'पता लगाया गया' },
-              { value: 'Referred', label_en: 'Referred', label_hi: 'स संदर्भित' },
-              { value: 'Closed', label_en: 'Closed', label_hi: 'बंद' }
-            ];
-          } else if (normalizedType === 'UIDB') {
-            options = [
-              { value: 'Referred to district hospital', label_en: 'Referred to district hospital', label_hi: 'जिला अस्पताल को संदर्भित' },
-              { value: 'Identified', label_en: 'Identified', label_hi: 'पहचाना गया' },
-              { value: 'body claimed', label_en: 'Body Claimed', label_hi: 'शव पर दावा किया गया' },
-              { value: 'Unidentified', label_en: 'Unidentified', label_hi: 'अज्ञात' },
-              { value: 'held in mortuary', label_en: 'Held in Mortuary', label_hi: 'मुर्दाघर में रखा गया' }
-            ];
+            options = getStatusOptionsForType('ARREST', { isAgainstFir: caseType === 'against_fir' });
+          } else {
+            // PCR_CALL / MISSING / UIDB — single vocabulary per type, no case-type branching.
+            options = getStatusOptionsForType(normalizedType) || options;
           }
         }
 
@@ -475,6 +469,7 @@ export const getFieldsForForm = async (req, res) => {
 
     // Re-sort to respect overridden sort_orders
     filteredFields.sort((a, b) => a.sort_order - b.sort_order);
+    log.debug('getFieldsForForm: filtered + sorted fields for record type', { normalizedType, filteredFieldCount: filteredFields.length });
 
     let sections = [];
 
@@ -698,6 +693,22 @@ export const getFieldsForForm = async (req, res) => {
           fields: filteredFields.filter(f => ['procedure_slips', 'procedural_slips'].includes(f.section) && !f.repeater_entity)
         },
         {
+          // Record-level property section for ARREST — bulk import can't link a property to a
+          // specific arrestee (the frozen template captures no owner column), so imported ARREST
+          // properties land with person_id = NULL and were invisible (they don't attach to any
+          // arrestee's per-person list, and ARREST previously had no record-level property view —
+          // #8, 2026-07-20). This section renders them. `view_only_when_populated` tells the
+          // frontend to SHOW it only when the record actually has record-level properties, so
+          // interactive ARREST entry (properties entered per-arrestee) is completely unchanged.
+          section: 'property_details',
+          title_en: 'Property (Imported)',
+          title_hi: 'संपत्ति (आयातित)',
+          is_repeater: true,
+          entity_type: 'property',
+          view_only_when_populated: true,
+          fields: filteredFields.filter(f => f.repeater_entity === 'PROPERTY' || f.section === 'property_details')
+        },
+        {
           section: 'investigation_officer',
           title_en: 'Investigating Officer',
           title_hi: 'जांच अधिकारी',
@@ -751,13 +762,23 @@ export const getFieldsForForm = async (req, res) => {
         }
       ];
     } else if (normalizedType === 'UIDB') {
+      // #2 (2026-07-20) UIDB classification = CASCADE-ONLY. UIDB inherits the CASE/ARREST
+      // classification fields (record_types include UIDB), which land in incident_details and get
+      // bundled into General Information here. The `act_name` field renders as the interactive
+      // Act→Major-Head→Minor-Head cascade (ActsSectionsTable), so the standalone `local_head`
+      // dropdown + readonly `major_heads`/`minor_heads` summary rows were a DUPLICATE of the same
+      // classification. Exclude those three so UIDB shows the cascade only (user decision).
+      // NOTE: this removes the only interactive writer of uidb_details.local_head_id, so a NEW
+      // interactive UIDB record can't derive the (CASE/ARREST-oriented) Heinous flag — accepted:
+      // heinousness is a CASE/ARREST concern; the local_head_id COLUMN/storage is untouched.
+      const UIDB_CLASSIFICATION_DUPES = new Set(['local_head', 'local_head_raw', 'major_heads', 'minor_heads']);
       sections = [
         {
           section: 'general_info',
           title_en: 'General Information',
           title_hi: 'सामान्य जानकारी',
           is_repeater: false,
-          fields: filteredFields.filter(f => ['general_info', 'incident_details'].includes(f.section) && !f.repeater_entity)
+          fields: filteredFields.filter(f => ['general_info', 'incident_details'].includes(f.section) && !f.repeater_entity && !UIDB_CLASSIFICATION_DUPES.has(f.field_key))
         },
         {
           section: 'corpse_desc',
@@ -840,6 +861,7 @@ export const getFieldsForForm = async (req, res) => {
         }
       });
     }
+    log.debug('getFieldsForForm: assembled per-type sections', { normalizedType, sectionCount: sections.length });
 
     // Gather all assigned field IDs to find any unassigned flat fields
     const assignedIds = new Set();
@@ -858,6 +880,7 @@ export const getFieldsForForm = async (req, res) => {
 
     const unassignedFields = filteredFields.filter(f => !assignedIds.has(f.id) && !f.repeater_entity && f.created_by !== null);
     if (unassignedFields.length > 0) {
+      log.debug('getFieldsForForm: unassigned custom fields fell back to their own section', { normalizedType, unassignedCount: unassignedFields.length });
       const extraSectionsMap = new Map();
       for (const f of unassignedFields) {
         const secKey = f.section || 'district_custom';
@@ -875,9 +898,10 @@ export const getFieldsForForm = async (req, res) => {
       sections.push(...extraSectionsMap.values());
     }
 
+    log.info('getFieldsForForm: exit', { record_type, normalizedType, sectionCount: sections.length, fieldCount: filteredFields.length });
     return res.status(200).json({ success: true, data: sections });
   } catch (error) {
-    logger.error('getFieldsForForm failed', { record_type, error: error.message, stack: error.stack });
+    log.error('getFieldsForForm: failed', { record_type, normalizedType, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -887,6 +911,7 @@ export const listAllFields = async (req, res) => {
   const { role } = req.user;
   const district_id = req.user.district_id || null;
   const { record_type, is_active, scope } = req.query;
+  log.debug('listAllFields: enter', { role, district_id, record_type: record_type || null, is_active: is_active ?? null, scope: scope || null });
 
   try {
     let query = db('field_registry').select('*');
@@ -896,9 +921,11 @@ export const listAllFields = async (req, res) => {
         // Read-only access to global fields for section discovery.
         // Write endpoints enforce ownership separately.
         query = query.where('scope_level', 'global');
+        log.debug('listAllFields: DISTRICT_OFFICER requesting global scope (read-only)', { district_id });
       } else {
         // Default: only their own district-scoped fields
         query = query.where({ scope_level: 'district', scope_id: district_id });
+        log.debug('listAllFields: DISTRICT_OFFICER scoped to own district', { district_id });
       }
     } else if (scope === 'global') {
       query = query.where('scope_level', 'global');
@@ -937,8 +964,10 @@ export const listAllFields = async (req, res) => {
       };
     });
 
+    log.info('listAllFields: exit', { role, district_id, total: formatted.length });
     return res.status(200).json({ success: true, data: { fields: formatted, total: formatted.length } });
   } catch (error) {
+    log.error('listAllFields: failed', { role, district_id, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -954,19 +983,24 @@ export const createRegistryField = async (req, res) => {
     applicable_record_types, options, validation_rules,
     is_required, sort_order,
   } = req.body;
+  log.debug('createRegistryField: enter', { role, district_id, userId, field_key, field_type, applicable_record_types });
 
   if (!field_key || !label_en || !field_type) {
+    log.warn('createRegistryField: rejected — missing required body fields', { field_key: !!field_key, label_en: !!label_en, field_type: !!field_type });
     return res.status(400).json({ success: false, message: 'field_key, label_en, and field_type are required' });
   }
   if (!applicable_record_types?.length) {
+    log.warn('createRegistryField: rejected — no applicable_record_types', { field_key });
     return res.status(400).json({ success: false, message: 'At least one applicable_record_type is required' });
   }
   if (!VALID_FIELD_TYPES.includes(field_type.toUpperCase())) {
+    log.warn('createRegistryField: rejected — invalid field_type', { field_key, field_type });
     return res.status(400).json({ success: false, message: `field_type must be one of: ${VALID_FIELD_TYPES.join(', ')}` });
   }
 
   const normalizedKey = field_key.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
   if (!normalizedKey) {
+    log.warn('createRegistryField: rejected — field_key has no alphanumeric characters', { field_key });
     return res.status(400).json({ success: false, message: 'field_key must contain alphanumeric characters' });
   }
 
@@ -974,6 +1008,7 @@ export const createRegistryField = async (req, res) => {
   const scope_id    = role === 'DISTRICT_OFFICER' ? district_id : null;
 
   if (role === 'DISTRICT_OFFICER' && !district_id) {
+    log.warn('createRegistryField: rejected — DISTRICT_OFFICER has no resolvable district_id', { userId });
     return res.status(400).json({
       success: false,
       message: 'District scope could not be resolved. Please log out and log back in.',
@@ -983,6 +1018,7 @@ export const createRegistryField = async (req, res) => {
   try {
     const existing = await db('field_registry').where('field_key', normalizedKey).first();
     if (existing) {
+      log.warn('createRegistryField: rejected — field_key already exists', { normalizedKey });
       return res.status(409).json({ success: false, message: `Field key "${normalizedKey}" already exists` });
     }
 
@@ -1022,6 +1058,7 @@ export const createRegistryField = async (req, res) => {
     };
 
     const [newFieldRow] = await db('field_registry').insert(payload).returning('*');
+    log.info('createRegistryField: wrote field_registry row', { fieldId: newFieldRow.id, fieldKey: normalizedKey, scopeLevel: scope_level, scopeId: scope_id });
     const newField = {
       ...newFieldRow,
       applicable_record_types: newFieldRow.record_types,
@@ -1038,10 +1075,15 @@ export const createRegistryField = async (req, res) => {
         created_by: userId,
         ts: Date.now(),
       });
-    } catch (_) { /* event bus optional — do not block response */ }
+      log.debug('createRegistryField: published field.created', { fieldId: newField.id });
+    } catch (err) {
+      log.warn('createRegistryField: field.created publish failed (non-blocking)', { fieldId: newField.id, err });
+    }
 
+    log.info('createRegistryField: exit', { fieldId: newField.id, fieldKey: normalizedKey });
     return res.status(201).json({ success: true, message: 'Field created', data: newField });
   } catch (error) {
+    log.error('createRegistryField: failed', { field_key: normalizedKey, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1111,6 +1153,7 @@ export const updateRegistryField = async (req, res) => {
     }
 
     const [updatedRow] = await db('field_registry').where({ id }).update(updates).returning('*');
+    log.info('updateRegistryField: wrote field_registry row', { fieldId: id, updatedKeys: Object.keys(updates) });
     const updatedLabels = parseJsonField(updatedRow.labels) || {};
     const updatedSectionLabels = parseJsonField(updatedRow.section_labels) || {};
     const updated = {
@@ -1120,10 +1163,17 @@ export const updateRegistryField = async (req, res) => {
       section_label_en: updatedSectionLabels.en || null, section_label_hi: updatedSectionLabels.hi || null,
     };
 
-    try { await publish('field.updated', { field_id: id, ts: Date.now() }); } catch (_) {}
+    try {
+      await publish('field.updated', { field_id: id, ts: Date.now() });
+      log.debug('updateRegistryField: published field.updated', { fieldId: id });
+    } catch (err) {
+      log.warn('updateRegistryField: field.updated publish failed (non-blocking)', { fieldId: id, err });
+    }
 
+    log.info('updateRegistryField: exit', { fieldId: id });
     return res.status(200).json({ success: true, message: 'Field updated', data: updated });
   } catch (error) {
+    log.error('updateRegistryField: failed', { fieldId: id, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1133,13 +1183,18 @@ export const toggleRegistryField = async (req, res) => {
   const { id } = req.params;
   const { role } = req.user;
   const district_id = req.user.district_id || null;
+  log.debug('toggleRegistryField: enter', { fieldId: id, role, district_id });
 
   try {
     const existing = await db('field_registry').where({ id }).first();
-    if (!existing) return res.status(404).json({ success: false, message: 'Field not found' });
+    if (!existing) {
+      log.warn('toggleRegistryField: rejected — field not found', { fieldId: id });
+      return res.status(404).json({ success: false, message: 'Field not found' });
+    }
 
     if (role === 'DISTRICT_OFFICER') {
       if (existing.scope_level !== 'district' || existing.scope_id !== district_id) {
+        log.warn('toggleRegistryField: rejected — DISTRICT_OFFICER out-of-scope', { fieldId: id, district_id });
         return res.status(403).json({ success: false, message: 'Cannot modify fields outside your district' });
       }
     }
@@ -1148,6 +1203,7 @@ export const toggleRegistryField = async (req, res) => {
       .where({ id })
       .update({ is_active: !existing.is_active })
       .returning(['id', 'is_active']);
+    log.info('toggleRegistryField: exit', { fieldId: id, isActive: updated.is_active });
 
     return res.status(200).json({
       success: true,
@@ -1155,6 +1211,7 @@ export const toggleRegistryField = async (req, res) => {
       data: updated,
     });
   } catch (error) {
+    log.error('toggleRegistryField: failed', { fieldId: id, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1168,7 +1225,7 @@ export const listActs = async (req, res) => {
     const data = rows.map(r => ({ value: r.act_cd, label: r.act_long }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
-    logger.error('listActs failed', { error: error.message });
+    log.error('listActs: failed', { err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1180,7 +1237,7 @@ export const listSectionsForAct = async (req, res) => {
     const data = rows.map(r => ({ value: r.section_code, label: r.section, desc: r.section_desc, pnsh_gt_7yrs: r.pnsh_gt_7yrs }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
-    logger.error('listSectionsForAct failed', { act_cd, error: error.message });
+    log.error('listSectionsForAct: failed', { act_cd, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1319,7 +1376,7 @@ export const listMajorHeads = async (req, res) => {
 
     return res.status(200).json({ success: true, data: uniqueData });
   } catch (error) {
-    logger.error('listMajorHeads failed', { error: error.message });
+    log.error('listMajorHeads: failed', { err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1342,7 +1399,7 @@ export const listMajorHeadsForSection = async (req, res) => {
 
     return res.status(200).json({ success: true, data: uniqueData });
   } catch (error) {
-    logger.error('listMajorHeadsForSection failed', { section_code, error: error.message });
+    log.error('listMajorHeadsForSection: failed', { section_code, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1380,7 +1437,7 @@ export const listMinorHeadsForMajorHead = async (req, res) => {
 
     return res.status(200).json({ success: true, data: uniqueData });
   } catch (error) {
-    logger.error('listMinorHeadsForMajorHead failed', { major_head_code, error: error.message });
+    log.error('listMinorHeadsForMajorHead: failed', { major_head_code, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1393,7 +1450,7 @@ export const listPropertyCategories = async (req, res) => {
       .sort((a, b) => a.label.localeCompare(b.label));
     return res.status(200).json({ success: true, data });
   } catch (error) {
-    logger.error('listPropertyCategories failed', { error: error.message });
+    log.error('listPropertyCategories: failed', { err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1427,7 +1484,7 @@ export const listPropertyItems = async (req, res) => {
     }
     return res.status(200).json({ success: true, data });
   } catch (error) {
-    logger.error('listPropertyItems failed', { parent_cd, error: error.message });
+    log.error('listPropertyItems: failed', { parent_cd, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1439,7 +1496,7 @@ export const listBeats = async (req, res) => {
     const data = rows.map(r => ({ value: r.beat_cd, label: r.beat_name, ps_cd: r.ps_cd }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
-    logger.error('listBeats failed', { ps_cd, error: error.message });
+    log.error('listBeats: failed', { ps_cd, err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1453,7 +1510,7 @@ export const listLocalHeads = async (req, res) => {
     const data = rows.map(r => ({ value: r.local_head_cd, label: r.local_head, crime_category: r.crime_category }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
-    logger.error('listLocalHeads failed', { error: error.message });
+    log.error('listLocalHeads: failed', { err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1469,7 +1526,7 @@ export const listStateDistricts = async (req, res) => {
       data: { states: INDIA_STATES, districtsByState: DISTRICTS_BY_STATE },
     });
   } catch (error) {
-    logger.error('listStateDistricts failed', { error: error.message });
+    log.error('listStateDistricts: failed', { err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1487,7 +1544,7 @@ export const listInvestigatingOfficersLookup = async (req, res) => {
     }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
-    logger.error('listInvestigatingOfficersLookup failed', { error: error.message });
+    log.error('listInvestigatingOfficersLookup: failed', { err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -1503,7 +1560,7 @@ export const listRecordTypes = async (req, res) => {
     ];
     return res.status(200).json({ success: true, data });
   } catch (error) {
-    logger.error('listRecordTypes failed', { error: error.message });
+    log.error('listRecordTypes: failed', { err: error });
     return res.status(500).json({ success: false, message: error.message });
   }
 };

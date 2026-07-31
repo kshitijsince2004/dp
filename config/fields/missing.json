@@ -154,7 +154,8 @@
    "value": true
   },
   "validation_rules": {
-   "required": true
+   "required": true,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -405,6 +406,10 @@
    "slot": "present",
    "column": "pincode",
    "role": "MISSING"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
   },
   "show_when": {
    "field": "mp_known",
@@ -746,6 +751,10 @@
    "column": "pincode",
    "role": "MISSING"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "show_when": {
    "field": "mp_perm_same",
    "value": "No"
@@ -816,6 +825,11 @@
    "entity": "person",
    "role": "MISSING",
    "column": "age"
+  },
+  "validation_rules": {
+   "required": false,
+   "min": 0,
+   "max": 120
   },
   "visible_to_levels": [
    "PS",
@@ -1042,7 +1056,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "missing_relation_type",

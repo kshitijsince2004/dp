@@ -1,0 +1,64 @@
+{
+  "code": "PHQ_FOR_WEEK",
+  "name": "PHQ Weekly Multi-Year Comparative Statement",
+  "record_types": ["CASE"],
+  "levels": ["HQ"],
+  "template_type": "PROFORMA",
+  "is_active": true,
+  "output_formats": ["PDF", "EXCEL"],
+  "template_definition": {
+    "layout_mode": "MATRIX",
+    "header": {
+      "title_en": "DELHI POLICE HQ: WEEKLY MULTI-YEAR CRIME STATEMENT",
+      "short_name_en": "for week"
+    },
+    "sections": [
+      {
+        "title_en": "Weekly Crime Figures Across 3 Years",
+        "layout_mode": "MATRIX",
+        "rows": [
+          { "code": "MURDER", "label_en": "Murder", "classification": { "major_head_ids": [104] } },
+          { "code": "ATTEMPT_TO_MURDER", "label_en": "Attempt to Murder", "classification": { "major_head_ids": [105] } },
+          { "code": "ROBBERY", "label_en": "Robbery", "classification": { "major_head_ids": [106] } },
+          { "code": "BURGLARY", "label_en": "Burglary", "classification": { "major_head_ids": [101] } },
+          { "code": "MOTOR_VEHICLE_THEFT", "label_en": "Motor Vehicle Theft", "classification": { "major_head_ids": [107] } },
+          { "code": "RAPE", "label_en": "Rape", "classification": { "major_head_ids": [102] } }
+        ],
+        "columns": [
+          {
+            "code": "WEEK_Y0",
+            "label_en": "Week Current Year",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "WEEK_TO_DATE",
+            "measure_type": "REGISTERED",
+            "year_offset": 0
+          },
+          {
+            "code": "WEEK_Y1",
+            "label_en": "Week Previous Year",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "WEEK_TO_DATE",
+            "measure_type": "REGISTERED",
+            "year_offset": -1
+          },
+          {
+            "code": "WEEK_Y2",
+            "label_en": "Week 2 Years Ago",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "WEEK_TO_DATE",
+            "measure_type": "REGISTERED",
+            "year_offset": -2
+          },
+          {
+            "code": "WEEK_VAR",
+            "label_en": "Variation %",
+            "type": "DERIVED",
+            "formula": "VARIATION_PERCENT",
+            "curr_col": { "scope_group": "ALL_DELHI_TOTAL", "period": "WEEK_TO_DATE", "measure_type": "REGISTERED", "year_offset": 0 },
+            "prev_col": { "scope_group": "ALL_DELHI_TOTAL", "period": "WEEK_TO_DATE", "measure_type": "REGISTERED", "year_offset": -1 }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -2,6 +2,9 @@ import express from 'express';
 import * as notificationsController from './notifications.controller.js';
 import { registerClient, removeClient, getConnectedCount } from './sse.js';
 import { authMiddleware, sseAuthMiddleware } from '../../middleware/auth.middleware.js';
+import { getLogger } from '../../utils/logger.js';
+
+const log = getLogger('notifications.routes');
 
 const router = express.Router();
 
@@ -13,6 +16,7 @@ const router = express.Router();
  */
 router.get('/stream', sseAuthMiddleware, (req, res) => {
   const userId = req.user?.id || req.user?.userId;
+  log.debug('GET /stream: enter — SSE connection requested', { userId });
 
   // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
@@ -26,12 +30,14 @@ router.get('/stream', sseAuthMiddleware, (req, res) => {
 
   // Register this response in the SSE registry
   registerClient(userId, res);
+  log.info('GET /stream: SSE connection opened', { userId, connectedUsers: getConnectedCount() });
 
   // Heartbeat every 25 seconds to keep connection alive through proxies/load balancers
   const heartbeat = setInterval(() => {
     try {
       res.write(':heartbeat\n\n');
-    } catch (_) {
+    } catch (err) {
+      log.warn('GET /stream: heartbeat write failed, stopping interval', { userId, err });
       clearInterval(heartbeat);
     }
   }, 25000);
@@ -40,6 +46,7 @@ router.get('/stream', sseAuthMiddleware, (req, res) => {
   req.on('close', () => {
     clearInterval(heartbeat);
     removeClient(userId, res);
+    log.info('GET /stream: SSE connection closed', { userId, connectedUsers: getConnectedCount() });
   });
 });
 

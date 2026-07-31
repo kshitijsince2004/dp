@@ -5,11 +5,13 @@ import { logger } from './src/utils/logger.js';
 import app from './src/app.js';
 import { createServer } from 'http';
 import { startWarehouseSync } from './src/modules/warehouse/warehouse.scheduler.js';
+import { startAuditVerification } from './src/modules/audit/audit.scheduler.js';
 import { runStartupAutoload } from './src/bootstrap/autoload.js';
 import * as notifyHandler from './src/events/handlers/notifyHandler.js';
 import * as linkAuditHandler from './src/events/handlers/linkAuditHandler.js';
 import * as linkResolver from './src/events/handlers/linkResolver.js';
 import * as importConfirmHandler from './src/events/handlers/importConfirmHandler.js';
+import * as reportJobHandler from './src/events/handlers/reportJobHandler.js';
 
 const httpServer = createServer(app);
 
@@ -44,6 +46,7 @@ const start = async () => {
     await linkAuditHandler.init();
     await linkResolver.init();
     await importConfirmHandler.init();
+    await reportJobHandler.init();
 
     // 3. Start Express server
     httpServer.on('error', (e) => { logger.error(`[Server] HTTP server error: ${e.message}`); process.exit(1); });
@@ -56,6 +59,9 @@ const start = async () => {
 
       // Start warehouse sync scheduler
       startWarehouseSync();
+
+      // Start audit hash-chain verification scheduler (freezes records on a detected break)
+      startAuditVerification();
     });
   } catch (error) {
     logger.error(`Startup failed: ${error.message}`);

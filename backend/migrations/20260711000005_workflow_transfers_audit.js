@@ -131,13 +131,23 @@ export async function up(knex) {
 
     -- §4.8 typed domain-status change ledger (rulings 22+23): officer-entered
     -- effective_date (diary pivot, backdating expected) vs system changed_at (audit fact)
+    -- Ruling 26 (2026-07-20, Integration 5 follow-up / WS8): 'custody_status' added — ARREST's
+    -- custody state (arrest_details.case_status) had no entry in this CHECK at all, so it could
+    -- never be changed as a dated event (A2 in FUTURE-IMPROVEMENTS.md). Deliberately a DISTINCT
+    -- value from 'case_status' (not reused) even though both ultimately write a column literally
+    -- named case_status — CASE's own case_status (fir_details) and ARREST's custody status
+    -- (arrest_details) are different domain facts and must stay distinguishable in the ledger;
+    -- reusing 'case_status' for both would have also left a pre-existing leak un-closed (see
+    -- records.service.js's STATUS_FIELD_DEFS comment). Folded into this base migration (pre-launch
+    -- fold rule, DB is disposable — never a standalone amendment migration).
     CREATE TABLE record_status_events (
       id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       record_id      uuid NOT NULL REFERENCES records(id) ON DELETE CASCADE,
       property_id    uuid REFERENCES record_properties(id) ON DELETE CASCADE,
       status_field   varchar(30) NOT NULL CHECK (status_field IN
                        ('case_status','missing_status','uidb_status',
-                        'final_call_status','property_status','is_worked_out')),
+                        'final_call_status','property_status','is_worked_out',
+                        'custody_status')),
       old_value      varchar(50),
       new_value      varchar(50) NOT NULL,
       effective_date date NOT NULL,

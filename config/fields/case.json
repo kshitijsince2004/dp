@@ -24,7 +24,7 @@
    }
   ],
   "validation_rules": {
-   "required": true
+   "required": false
   },
   "visible_to_levels": [
    "PS",
@@ -57,7 +57,7 @@
    "column": "occurrence_from_datetime"
   },
   "validation_rules": {
-   "required": true
+   "required": false
   },
   "visible_to_levels": [
    "PS",
@@ -90,7 +90,7 @@
    "column": "occurrence_to_datetime"
   },
   "validation_rules": {
-   "required": true
+   "required": false
   },
   "visible_to_levels": [
    "PS",
@@ -531,6 +531,10 @@
    "slot": "occurrence",
    "column": "pincode"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -645,7 +649,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "latlong"
+  }
  },
  {
   "field_key": "occurrence_longitude",
@@ -676,7 +683,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "latlong"
+  }
  },
  {
   "field_key": "beat_no",
@@ -1505,7 +1515,8 @@
    "name_part": 1
   },
   "validation_rules": {
-   "required": false
+   "required": false,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -1552,7 +1563,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "complainant_last_name",
@@ -1584,7 +1598,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "complainant_nickname",
@@ -1615,7 +1632,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "complainant_gender",
@@ -1981,6 +2001,11 @@
    "entity": "person",
    "role": "COMPLAINANT",
    "column": "age"
+  },
+  "validation_rules": {
+   "required": false,
+   "min": 0,
+   "max": 120
   },
   "visible_to_levels": [
    "PS",
@@ -2369,6 +2394,10 @@
    "column": "pincode",
    "role": "COMPLAINANT"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -2724,6 +2753,10 @@
    "column": "pincode",
    "role": "COMPLAINANT"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -2789,7 +2822,8 @@
    "name_part": 1
   },
   "validation_rules": {
-   "required": false
+   "required": false,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -2838,7 +2872,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "accused_last_name",
@@ -2871,7 +2908,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "accused_nickname",
@@ -2903,7 +2943,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "accused_gender",
@@ -3237,6 +3280,11 @@
    "entity": "person",
    "role": "ACCUSED",
    "column": "age"
+  },
+  "validation_rules": {
+   "required": false,
+   "min": 0,
+   "max": 120
   },
   "visible_to_levels": [
    "PS",
@@ -3637,6 +3685,10 @@
    "column": "pincode",
    "role": "ACCUSED"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -4003,6 +4055,10 @@
    "column": "pincode",
    "role": "ACCUSED"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -4069,7 +4125,8 @@
    "name_part": 1
   },
   "validation_rules": {
-   "required": true
+   "required": true,
+   "pattern": "name"
   },
   "visible_to_levels": [
    "PS",
@@ -4118,7 +4175,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "victim_last_name",
@@ -4151,7 +4211,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "victim_nickname",
@@ -4183,7 +4246,10 @@
   "full_width": false,
   "readonly": false,
   "is_active": true,
-  "scope_level": "global"
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
  },
  {
   "field_key": "victim_gender",
@@ -4517,6 +4583,11 @@
    "entity": "person",
    "role": "VICTIM",
    "column": "age"
+  },
+  "validation_rules": {
+   "required": false,
+   "min": 0,
+   "max": 120
   },
   "visible_to_levels": [
    "PS",
@@ -4917,6 +4988,10 @@
    "column": "pincode",
    "role": "VICTIM"
   },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
   "visible_to_levels": [
    "PS",
    "DISTRICT",
@@ -5282,6 +5357,10 @@
    "slot": "permanent",
    "column": "pincode",
    "role": "VICTIM"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
   },
   "visible_to_levels": [
    "PS",

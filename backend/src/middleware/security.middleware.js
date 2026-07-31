@@ -1,3 +1,7 @@
+import { getLogger } from '../utils/logger.js';
+
+const log = getLogger('security.middleware');
+
 function isIntranetIp(ip) {
   if (!ip) return false;
   let cleanIp = ip;
@@ -5,7 +9,7 @@ function isIntranetIp(ip) {
     cleanIp = ip.substring(7);
   }
   if (cleanIp === '127.0.0.1' || cleanIp === '::1' || cleanIp === 'localhost') return true;
-  
+
   if (cleanIp.startsWith('10.')) return true;
   if (cleanIp.startsWith('192.168.')) return true;
   if (cleanIp.startsWith('172.')) {
@@ -23,9 +27,10 @@ export const ipAllowlistMiddleware = (req, res, next) => {
   if (process.env.NODE_ENV === 'test' || process.env.PHAROS_TEST === 'true') {
     return next();
   }
-  
+
   const enforceIntranet = process.env.ENFORCE_INTRANET === 'true';
   if (enforceIntranet && !isIntranetIp(clientIp)) {
+    log.warn('ipAllowlistMiddleware: rejected — IP outside allowed intranet range', { clientIp, path: req.path });
     return res.status(403).json({
       status: 'error',
       success: false,
@@ -33,6 +38,7 @@ export const ipAllowlistMiddleware = (req, res, next) => {
       message: `Access denied: IP address ${clientIp} is outside the allowed intranet range.`
     });
   }
+  log.debug('ipAllowlistMiddleware: allowed', { clientIp, enforceIntranet, path: req.path });
   next();
 };
 
@@ -40,7 +46,7 @@ import crypto from 'crypto';
 
 export const csrfDoubleSubmitMiddleware = (req, res, next) => {
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
-  
+
   let csrfTokenCookie = req.cookies ? req.cookies['csrfToken'] : null;
 
   // 1. Always provision a CSRF token if the user doesn't have one
@@ -52,6 +58,7 @@ export const csrfDoubleSubmitMiddleware = (req, res, next) => {
       sameSite: 'lax',
       path: '/'
     });
+    log.debug('csrfDoubleSubmitMiddleware: provisioned new csrfToken cookie', { path: req.path });
   }
 
   // 2. Safe methods are always allowed
@@ -59,10 +66,11 @@ export const csrfDoubleSubmitMiddleware = (req, res, next) => {
     return next();
   }
 
-  // 3. Exempt initial Authentication endpoints because the browser won't 
+  // 3. Exempt initial Authentication endpoints because the browser won't
   // have the token to send in the header yet (it gets provisioned on this response)
   const exemptPaths = ['/api/v1/auth/login', '/api/v1/auth/refresh', '/api/auth/login', '/api/auth/refresh'];
   if (exemptPaths.includes(req.path)) {
+    log.debug('csrfDoubleSubmitMiddleware: exempt path, skipping check', { path: req.path });
     return next();
   }
 
@@ -74,6 +82,9 @@ export const csrfDoubleSubmitMiddleware = (req, res, next) => {
 
   // 4. Validate Double-Submit matching
   if (!csrfTokenCookie || !csrfTokenHeader || csrfTokenCookie !== csrfTokenHeader) {
+    log.warn('csrfDoubleSubmitMiddleware: rejected — CSRF token mismatch or missing', {
+      path: req.path, method: req.method, hasCookie: !!csrfTokenCookie, hasHeader: !!csrfTokenHeader,
+    });
     return res.status(403).json({
       status: 'error',
       success: false,
@@ -81,6 +92,7 @@ export const csrfDoubleSubmitMiddleware = (req, res, next) => {
       message: 'CSRF token mismatch or missing. Double-submit token validation failed.'
     });
   }
+  log.debug('csrfDoubleSubmitMiddleware: token matched, allowed', { path: req.path, method: req.method });
   next();
 };
 
@@ -97,7 +109,7 @@ export const roleRateLimitMiddleware = (req, res, next) => {
 
   const userId = req.user.userId || req.user.id;
   const role = req.user.role;
-  
+
   let limit = 100;
   if (role === 'HC') limit = 200;
   else if (role === 'SHO') limit = 150;
@@ -112,6 +124,7 @@ export const roleRateLimitMiddleware = (req, res, next) => {
   rateLimitStores[userId] = rateLimitStores[userId].filter(timestamp => now - timestamp < 60000);
 
   if (rateLimitStores[userId].length >= limit) {
+    log.warn('roleRateLimitMiddleware: limit hit', { userId, role, limit, path: req.path });
     return res.status(429).json({
       status: 'error',
       success: false,
@@ -121,5 +134,6 @@ export const roleRateLimitMiddleware = (req, res, next) => {
   }
 
   rateLimitStores[userId].push(now);
+  log.debug('roleRateLimitMiddleware: allowed', { userId, role, limit, currentCount: rateLimitStores[userId].length, path: req.path });
   next();
 };

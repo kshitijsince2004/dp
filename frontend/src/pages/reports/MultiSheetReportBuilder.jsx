@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, Button, Input, Select, DatePicker, message, Progress, Spin, Space, Typography, Form, Row, Col, Alert } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
@@ -6,6 +6,7 @@ import { Plus, Trash, Download, Layers, Calendar, Table as TableIcon, CheckCircl
 import dayjs from 'dayjs';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
+import { log } from '../../utils/logger.js';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -22,6 +23,11 @@ export const MultiSheetReportBuilder = () => {
   const [sheets, setSheets] = useState([
     { id: Date.now().toString(), record_type: 'CASE', field_keys: [] }
   ]);
+
+  useEffect(() => {
+    log.debug('page:mount', { route: '/multi-sheet-report-builder', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/multi-sheet-report-builder' });
+  }, []);
 
   // Export Progress State
   const [exporting, setExporting] = useState(false);
@@ -76,6 +82,7 @@ export const MultiSheetReportBuilder = () => {
     setExporting(true);
     setExportProgress(10);
     setExportJobId(null);
+    log.info('action:generate_report_start', { reportTitle, sheetCount: sheets.length, psId: selectedPs });
 
     try {
       const filters = {};
@@ -101,8 +108,9 @@ export const MultiSheetReportBuilder = () => {
 
       const initRes = await axios.post('/api/v1/reports/generate', payload);
       const jobId = initRes.data.data?.job?.id || initRes.data.data?.job_id;
-      
+
       if (!jobId) throw new Error('Job ID missing from server response');
+      log.info('action:generate_report_queued', { jobId });
 
       setExportJobId(jobId);
       setExportProgress(30);
@@ -116,6 +124,7 @@ export const MultiSheetReportBuilder = () => {
         if (attempts > 40) {
           clearInterval(interval);
           setExporting(false);
+          log.error('action:generate_report_timeout', { jobId, attempts });
           message.error('Report compilation timed out.');
           return;
         }
@@ -123,19 +132,22 @@ export const MultiSheetReportBuilder = () => {
         try {
           const checkRes = await axios.get(`/api/v1/reports/status/${jobId}`);
           const job = checkRes.data.data.job;
+          log.debug('action:generate_report_poll_step', { jobId, attempt: attempts, status: job.status });
 
           if (job.status === 'FAILED') {
             clearInterval(interval);
             setExporting(false);
+            log.error('action:generate_report_failed', { jobId, attempts });
             message.error('Report generation failed on server.');
           } else if (job.status === 'READY') {
             clearInterval(interval);
             setExportProgress(100);
-            
+            log.info('action:generate_report_ready', { jobId, attempts });
+
             // Download
             window.open(`/api/v1/reports/download/${jobId}`, '_blank');
             message.success('Excel Workbook compiled successfully!');
-            
+
             setTimeout(() => {
               setExporting(false);
               setExportJobId(null);
@@ -144,12 +156,14 @@ export const MultiSheetReportBuilder = () => {
           }
         } catch (pollErr) {
           console.error(pollErr);
+          log.error('action:generate_report_poll_error', { jobId, err: pollErr });
         }
       }, 2000);
 
     } catch (err) {
       console.error(err);
       setExporting(false);
+      log.error('action:generate_report_start_failed', { err });
       message.error(err.response?.data?.message || 'Failed to trigger report compile');
     }
   };

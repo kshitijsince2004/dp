@@ -1,0 +1,96 @@
+{
+  "code": "PHQ_MANUALY",
+  "name": "PHQ Period Showcase Statement (Day, Fortnight, Upto-Date Multi-Period)",
+  "record_types": ["CASE"],
+  "levels": ["HQ"],
+  "template_type": "PROFORMA",
+  "is_active": true,
+  "output_formats": ["PDF", "EXCEL"],
+  "template_definition": {
+    "layout_mode": "MATRIX",
+    "header": {
+      "title_en": "DELHI POLICE HQ: MANUALY PERIOD SHOWCASE STATEMENT",
+      "short_name_en": "MANUALY"
+    },
+    "sections": [
+      {
+        "title_en": "Whole Delhi Day, Fortnight & Upto-Date Crime Figures",
+        "layout_mode": "MATRIX",
+        "rows": [
+          { "code": "MURDER", "label_en": "Murder", "classification": { "major_head_ids": [104] } },
+          { "code": "ATTEMPT_TO_MURDER", "label_en": "Attempt to Murder", "classification": { "major_head_ids": [105] } },
+          { "code": "ROBBERY", "label_en": "Robbery", "classification": { "major_head_ids": [106] } },
+          { "code": "BURGLARY", "label_en": "Burglary", "classification": { "major_head_ids": [101] } },
+          { "code": "MOTOR_VEHICLE_THEFT", "label_en": "Motor Vehicle Theft", "classification": { "major_head_ids": [107] } },
+          { "code": "RAPE", "label_en": "Rape", "classification": { "major_head_ids": [102] } }
+        ],
+        "columns": [
+          {
+            "code": "DAY_CURR",
+            "label_en": "Day Current",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "DAY",
+            "measure_type": "REGISTERED",
+            "year_offset": 0
+          },
+          {
+            "code": "DAY_PREV",
+            "label_en": "Day Previous",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "DAY_PREVIOUS",
+            "measure_type": "REGISTERED",
+            "year_offset": 0
+          },
+          {
+            "code": "FORTNIGHT_CURR",
+            "label_en": "Fortnight Current",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "FORTNIGHT_CURRENT",
+            "measure_type": "REGISTERED",
+            "year_offset": 0
+          },
+          {
+            "code": "FORTNIGHT_PREV",
+            "label_en": "Fortnight Previous",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "FORTNIGHT_PREVIOUS",
+            "measure_type": "REGISTERED",
+            "year_offset": 0
+          },
+          {
+            "code": "FORTNIGHT_CORR",
+            "label_en": "Fortnight Corresponding Last Year",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "FORTNIGHT_CORRESPONDING_LAST_YEAR",
+            "measure_type": "REGISTERED",
+            "year_offset": 0
+          },
+          {
+            "code": "UPTO_CURR",
+            "label_en": "Upto Date Current Year",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "UPTO_DATE",
+            "measure_type": "REGISTERED",
+            "year_offset": 0
+          },
+          {
+            "code": "UPTO_PREV",
+            "label_en": "Upto Date Previous Year",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "UPTO_DATE",
+            "measure_type": "REGISTERED",
+            "year_offset": -1
+          },
+          {
+            "code": "UPTO_VAR",
+            "label_en": "Upto Date Variation %",
+            "type": "DERIVED",
+            "formula": "VARIATION_PERCENT",
+            "curr_col": { "scope_group": "ALL_DELHI_TOTAL", "period": "UPTO_DATE", "measure_type": "REGISTERED", "year_offset": 0 },
+            "prev_col": { "scope_group": "ALL_DELHI_TOTAL", "period": "UPTO_DATE", "measure_type": "REGISTERED", "year_offset": -1 }
+          }
+        ]
+      }
+    ]
+  }
+}

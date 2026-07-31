@@ -181,3 +181,75 @@ export function getFieldError(field, value, lang = 'en') {
 
   return checkFieldFormat(field, value, lang);
 }
+
+// Config-driven pattern checks — a field's own validation_rules can carry a named
+// `pattern` and/or numeric `min`/`max`, independent of the field_key-based RULES table
+// above. Covers cases the key-based rules don't: DECEASED/UIDB "Approximate Age" (free-ish
+// text like "25-30", "60+", "Unknown") and generic numeric ranges from field config.
+const PATTERN_MESSAGES = {
+  name: { en: 'Name cannot contain numbers', hi: 'नाम में अंक नहीं हो सकते' },
+  latlong: { en: 'Enter a valid number (e.g. 28.6139)', hi: 'मान्य संख्या दर्ज करें (उदा. 28.6139)' },
+  mobile: { en: 'Enter a 10-digit mobile number', hi: '10 अंकों का मोबाइल नंबर दर्ज करें' },
+  pincode: { en: 'Enter a 6-digit pin code', hi: '6 अंकों का पिन कोड दर्ज करें' },
+  age_range: { en: 'Enter an age, a range (e.g. 25-30), "60+", or "Unknown"', hi: 'आयु, एक सीमा (उदा. 25-30), "60+", या "अज्ञात" दर्ज करें' },
+};
+
+const NAME_HAS_DIGIT = /\d/;
+const LATLONG_OK = /^[+-]?\d+(\.\d+)?$/;
+const MOBILE_PATTERN_OK = /^\d{10}$/;
+const PINCODE_PATTERN_OK = /^\d{6}$/;
+// digits[-digits] | digits+ | "unknown" (case-insensitive) — e.g. "30", "25-30", "60+", "Unknown".
+const AGE_RANGE_SHAPE = /^(\d{1,3})(?:\s*-\s*(\d{1,3})|\+)?$/;
+
+function validateNamedPattern(patternName, value, lang = 'en') {
+  if (value === undefined || value === null || value === '') return null;
+  const str = String(value).trim();
+  if (str === '') return null;
+
+  let ok;
+  switch (patternName) {
+    case 'name': ok = !NAME_HAS_DIGIT.test(str); break;
+    case 'latlong': ok = LATLONG_OK.test(str); break;
+    case 'mobile': ok = MOBILE_PATTERN_OK.test(str); break;
+    case 'pincode': ok = PINCODE_PATTERN_OK.test(str); break;
+    case 'age_range': {
+      if (/^unknown$/i.test(str)) { ok = true; break; }
+      const m = AGE_RANGE_SHAPE.exec(str);
+      if (!m) { ok = false; break; }
+      const a = Number(m[1]);
+      const b = m[2] !== undefined ? Number(m[2]) : null;
+      ok = a >= 0 && a <= 120 && (b === null || (b >= 0 && b <= 120 && b >= a));
+      break;
+    }
+    default: return null; // unknown pattern name → don't block
+  }
+  if (ok) return null;
+  const msg = PATTERN_MESSAGES[patternName];
+  return lang === 'hi' ? msg.hi : msg.en;
+}
+
+const RANGE_MESSAGE = (min, max, lang) => {
+  if (min !== undefined && max !== undefined) {
+    return lang === 'hi' ? `${min} और ${max} के बीच मान दर्ज करें` : `Enter a value between ${min} and ${max}`;
+  }
+  if (min !== undefined) return lang === 'hi' ? `${min} या उससे अधिक मान दर्ज करें` : `Enter a value of ${min} or more`;
+  return lang === 'hi' ? `${max} या उससे कम मान दर्ज करें` : `Enter a value of ${max} or less`;
+};
+
+/** Checks a field's own `validation_rules.pattern` (name) and `min`/`max`. Runs for ANY
+ * non-empty value, required or not — empty is left to getFieldError's requiredness check. */
+export function validateFieldPattern(rules, value, lang = 'en') {
+  if (!rules) return null;
+  const patternErr = rules.pattern ? validateNamedPattern(rules.pattern, value, lang) : null;
+  if (patternErr) return patternErr;
+
+  if ((rules.min !== undefined || rules.max !== undefined) && value !== undefined && value !== null && value !== '') {
+    const n = Number(value);
+    if (!Number.isNaN(n)) {
+      if ((rules.min !== undefined && n < rules.min) || (rules.max !== undefined && n > rules.max)) {
+        return RANGE_MESSAGE(rules.min, rules.max, lang);
+      }
+    }
+  }
+  return null;
+}

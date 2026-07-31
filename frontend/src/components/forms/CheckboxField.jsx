@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { log } from '../../utils/logger.js';
 
 export default function CheckboxField({ id, disabled, value, onChange, label }) {
   const isChecked = value === true || value === 'true' || value === 1;
+
+  useEffect(() => {
+    log.debug('form:field_mount', { fieldId: id, fieldType: 'CHECKBOX' });
+  }, [id]);
 
   return (
     <label
@@ -13,7 +18,10 @@ export default function CheckboxField({ id, disabled, value, onChange, label }) 
           type="checkbox"
           disabled={disabled}
           checked={isChecked}
-          onChange={(e) => onChange(e.target.checked)}
+          onChange={(e) => {
+            log.debug('form:field_value_change', { fieldId: id, fieldType: 'CHECKBOX' });
+            onChange(e.target.checked);
+          }}
           className="sr-only peer"
         />
         <div className="w-5 h-5 rounded border-2 border-slate-300 bg-white peer-checked:bg-[var(--primary-accent,#0f52ba)] peer-checked:border-[var(--primary-accent,#0f52ba)] transition-colors flex items-center justify-center">

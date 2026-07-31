@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore.js';
 import { renderNotification } from '../utils/notificationText.js';
+import { log } from '../utils/logger.js';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const SSE_URL = `${BASE_URL}/v1/notifications/stream`;
@@ -49,6 +50,7 @@ export function useNotifications() {
     const token = getToken();
     if (!token) return;
     setIsLoading(true);
+    log.debug('hook:notifications:fetch_start', { hasToken: true });
     try {
       const res = await fetch(`${REST_URL}?limit=30`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -61,8 +63,9 @@ export function useNotifications() {
       if (mountedRef.current) {
         setNotifications(Array.isArray(data) ? data : []);
       }
+      log.info('hook:notifications:fetch_success', { count: Array.isArray(data) ? data.length : 0 });
     } catch (err) {
-      console.warn('[useNotifications] Fetch failed:', err.message);
+      log.warn('hook:notifications:fetch_error', { message: err.message });
     } finally {
       if (mountedRef.current) setIsLoading(false);
     }
@@ -80,12 +83,14 @@ export function useNotifications() {
       esRef.current = null;
     }
 
+    log.debug('hook:notifications:sse_connect_start', { hasToken: true });
     const url = `${SSE_URL}?token=${encodeURIComponent(token)}`;
     const es = new EventSource(url);
     esRef.current = es;
 
     es.addEventListener('connected', () => {
       if (!mountedRef.current) return;
+      log.info('hook:notifications:sse_connected', {});
       setIsConnected(true);
       reconnectDelayRef.current = RECONNECT_DELAY_MS; // Reset backoff on success
       fetchNotifications(); // Load existing notifications on fresh connect
@@ -95,6 +100,7 @@ export function useNotifications() {
       if (!mountedRef.current) return;
       try {
         const newNotif = JSON.parse(e.data);
+        log.debug('hook:notifications:sse_notification_received', { id: newNotif.id, type: newNotif.type });
         setNotifications((prev) => {
           // Avoid duplicates
           if (prev.some((n) => n.id === newNotif.id)) return prev;
@@ -111,7 +117,7 @@ export function useNotifications() {
           },
         });
       } catch (err) {
-        console.warn('[useNotifications] Failed to parse notification event:', err);
+        log.warn('hook:notifications:sse_parse_error', { message: err.message });
       }
     });
 
@@ -123,6 +129,7 @@ export function useNotifications() {
 
       // Exponential backoff reconnect
       const delay = Math.min(reconnectDelayRef.current, MAX_RECONNECT_DELAY_MS);
+      log.warn('hook:notifications:sse_error_reconnecting', { nextDelayMs: delay });
       reconnectDelayRef.current = delay * 2;
       reconnectTimerRef.current = setTimeout(() => {
         if (mountedRef.current) connectSSE();
@@ -157,11 +164,12 @@ export function useNotifications() {
         credentials: 'include',
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      log.debug('hook:notifications:mark_read_success', { id });
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       );
     } catch (err) {
-      console.warn('[useNotifications] markRead failed:', err.message);
+      log.warn('hook:notifications:mark_read_error', { id, message: err.message });
     }
   }, []);
 
@@ -178,9 +186,10 @@ export function useNotifications() {
         credentials: 'include',
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      log.debug('hook:notifications:mark_all_read_success', {});
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch (err) {
-      console.warn('[useNotifications] markAllRead failed:', err.message);
+      log.warn('hook:notifications:mark_all_read_error', { message: err.message });
     }
   }, []);
 

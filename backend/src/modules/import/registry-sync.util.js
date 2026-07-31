@@ -8,6 +8,17 @@ import {
   TEMPLATE_EXCLUDE_KEYS,
   IMPORT_OPTIONAL_REQUIRED_KEYS,
 } from './import-fields.config.js';
+import { getLogger } from '../../utils/logger.js';
+
+// STYLE ANCHOR match (logging-instrumentation-2026-07-22, HANDOFF.md §7). Most functions here
+// (normalizeType/parseApplicableTypes/isTemplateExcluded/normalizeRegistryRow) are tiny pure
+// per-field-row transforms called via .map() over the WHOLE field_registry (hundreds of rows
+// per request) — logging every call would be noise, not signal, the same judgment call the
+// anchor itself makes for enrichOffenceLabels'/calculateDiff's inner loops. Only the genuinely
+// rare RECOVERY branches (a malformed jsonb/PG-array-literal string that needed manual
+// re-parsing) and the one real per-request decision function (autoIncludedRegistryFields) get
+// a log line.
+const log = getLogger('registry-sync.util');
 
 // Record-type aliases the interactive form accepts (fields.controller.js normalizeRecordType).
 const normalizeType = (t) => {
@@ -30,8 +41,10 @@ export const parseApplicableTypes = (value) => {
       const s = value.trim();
       if (s.startsWith('{') && s.endsWith('}')) {
         types = s.slice(1, -1).split(',').map((x) => x.replace(/^"|"$/g, '').trim()).filter(Boolean);
+        log.debug('parseApplicableTypes: recovered non-JSON PG array-literal string', { raw: value });
       } else {
         types = [s];
+        log.debug('parseApplicableTypes: recovered bare non-JSON string as single-element type list', { raw: value });
       }
     }
   }
@@ -51,6 +64,7 @@ const parseJsonField = (val) => {
     try { return JSON.parse(val); } catch (_) {}
     if (val.startsWith('{') && val.endsWith('}')) {
       const inner = val.slice(1, -1);
+      log.debug('parseJsonField: recovered non-JSON PG array-literal string', { raw: val });
       if (!inner.trim()) return [];
       return inner.split(',').map((s) => s.replace(/^"|"$/g, '').trim()).filter(Boolean);
     }
@@ -90,6 +104,7 @@ export const normalizeRegistryRow = (f) => {
 // by sort_order). These fields are always APPENDED after the curated columns so that
 // existing column positions never shift.
 export const autoIncludedRegistryFields = (recordType, registryRows, configKeys) => {
+  log.debug('autoIncludedRegistryFields: enter', { recordType, registryRowCount: registryRows.length, curatedKeyCount: configKeys.size });
   const seen = new Set();
   const out = [];
   for (const row of registryRows) {
@@ -102,5 +117,6 @@ export const autoIncludedRegistryFields = (recordType, registryRows, configKeys)
     seen.add(key);
     out.push(row);
   }
+  log.debug('autoIncludedRegistryFields: exit', { recordType, autoIncludedCount: out.length, autoIncludedKeys: out.map((f) => f.field_key) });
   return out;
 };

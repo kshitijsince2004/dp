@@ -1,0 +1,39 @@
+{
+  "code": "PHQ_LO_SOUTH",
+  "name": "PHQ Law & Order Zone 2 (South) Crime Matrix",
+  "record_types": ["CASE"],
+  "levels": ["HQ"],
+  "template_type": "PROFORMA",
+  "is_active": true,
+  "output_formats": ["PDF", "EXCEL"],
+  "template_definition": {
+    "layout_mode": "MATRIX",
+    "header": {
+      "title_en": "DELHI POLICE HQ: L&O ZONE 2 (SOUTH) COMPARATIVE STATEMENT",
+      "short_name_en": "L&O SOUTH"
+    },
+    "sections": [
+      {
+        "title_en": "Zone 2 (South) Range District Figures",
+        "layout_mode": "MATRIX",
+        "rows": [
+          { "code": "MURDER", "label_en": "Murder", "classification": { "major_head_ids": [104] } },
+          { "code": "ATTEMPT_TO_MURDER", "label_en": "Attempt to Murder", "classification": { "major_head_ids": [105] } },
+          { "code": "ROBBERY", "label_en": "Robbery", "classification": { "major_head_ids": [106] } },
+          { "code": "BURGLARY", "label_en": "Burglary", "classification": { "major_head_ids": [101] } },
+          { "code": "MOTOR_VEHICLE_THEFT", "label_en": "Motor Vehicle Theft", "classification": { "major_head_ids": [107] } },
+          { "code": "RAPE", "label_en": "Rape", "classification": { "major_head_ids": [102] } }
+        ],
+        "columns": [
+          {
+            "code": "LO_SOUTH_TOTAL",
+            "label_en": "L&O South Zone Total",
+            "scope_group": "LO_SOUTH",
+            "period": "UPTO_DATE",
+            "year_offsets": [0, -1]
+          }
+        ]
+      }
+    ]
+  }
+}

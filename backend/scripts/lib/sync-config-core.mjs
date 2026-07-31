@@ -128,13 +128,21 @@ async function syncTable(db, log, label, table, keyCol, items, toRow) {
     if (!prev) {
       await db(table).insert({ ...row, [keyCol]: key });
       inserted++;
-    } else if (prev.checksum === checksum && prev.is_active !== false) {
+    } else if (prev.checksum === checksum && prev.is_active === row.is_active) {
       unchanged++;
     } else if (prev.checksum === checksum) {
-      // Checksum matches but the row is deactivated (e.g. was removed from
-      // config, then restored unchanged) — reactivate it. A checksum match
-      // alone must never leave a row silently dead.
-      await db(table).where(keyCol, key).update({ is_active: true, updated_at: db.fn.now() });
+      // Checksum matches but the DB row's is_active differs from what config now intends
+      // (row.is_active = the config item's is_active, computed by toRow). Sync it to the config
+      // value — NOT hardcoded true. Two cases this must handle correctly:
+      //   • field removed from config then restored unchanged → DB was auto-deactivated (below),
+      //     config default is_active:true → REACTIVATE. (the original intent of this branch)
+      //   • config explicitly sets is_active:false → keep it false. The OLD code hardcoded
+      //     `is_active:true` here, so a config-disabled field (e.g. the gazette uidb_no, #3, or
+      //     the 6 legacy scheme fields) got force-reactivated on the very NEXT sync — a durable
+      //     "disable via config" was impossible. Because sha() hashes the whole item incl.
+      //     is_active, a config:false row settles to prev.is_active===row.is_active(false) →
+      //     'unchanged' on subsequent syncs, so it now stays disabled. (2026-07-20 fix.)
+      await db(table).where(keyCol, key).update({ is_active: row.is_active, updated_at: db.fn.now() });
       reactivated++;
     } else {
       await db(table).where(keyCol, key).update(row);

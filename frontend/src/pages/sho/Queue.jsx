@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { ClipboardList, Filter, Eye, ArrowRight, ShieldCheck } from 'lucide-reac
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
+import { log } from '../../utils/logger.js';
 
 export default function Queue() {
   const { t, i18n } = useTranslation();
@@ -17,7 +18,13 @@ export default function Queue() {
   const [bulkLoading, setBulkLoading] = useState(false);
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/queue', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/queue' });
+  }, []);
+
   const handleTabChange = (tab) => {
+    log.debug('action:queue_tab_change', { tab });
     setActiveTab(tab);
     setSelectedIds([]);
   };
@@ -26,6 +33,7 @@ export default function Queue() {
     if (selectedIds.length === 0) return;
     if (!window.confirm(`Are you sure you want to approve and escalate all ${selectedIds.length} selected records?`)) return;
 
+    log.info('action:bulk_approve_start', { recordIds: selectedIds, count: selectedIds.length });
     setBulkLoading(true);
     let successCount = 0;
     let failCount = 0;
@@ -35,14 +43,17 @@ export default function Queue() {
         selectedIds.map(async (id) => {
           try {
             await api.post(`/records/${id}/approve`);
+            log.debug('action:approve_record_success', { recordId: id });
             successCount++;
           } catch (err) {
             console.error(`Failed to approve record ${id}:`, err);
+            log.error('action:approve_record_failed', { recordId: id, err });
             failCount++;
           }
         })
       );
 
+      log.info('action:bulk_approve_complete', { successCount, failCount });
       if (successCount > 0) {
         toast.success(`Successfully approved ${successCount} records!`);
       }
@@ -53,6 +64,7 @@ export default function Queue() {
       setSelectedIds([]);
       queryClient.invalidateQueries({ queryKey: ['workflow', 'queue'] });
     } catch (err) {
+      log.error('action:bulk_approve_error', { err });
       toast.error("An error occurred during bulk approval.");
     } finally {
       setBulkLoading(false);
@@ -61,7 +73,7 @@ export default function Queue() {
 
   const handleBulkDecline = async () => {
     if (selectedIds.length === 0) return;
-    
+
     const comment = window.prompt("Enter mandatory feedback/comment for returning the selected records for correction:");
     if (comment === null) return;
     if (!comment.trim()) {
@@ -69,6 +81,7 @@ export default function Queue() {
       return;
     }
 
+    log.info('action:bulk_send_back_start', { recordIds: selectedIds, count: selectedIds.length });
     setBulkLoading(true);
     let successCount = 0;
     let failCount = 0;
@@ -81,14 +94,17 @@ export default function Queue() {
               comment: comment.trim(),
               target_fields: []
             });
+            log.debug('action:send_back_record_success', { recordId: id });
             successCount++;
           } catch (err) {
             console.error(`Failed to return record ${id}:`, err);
+            log.error('action:send_back_record_failed', { recordId: id, err });
             failCount++;
           }
         })
       );
 
+      log.info('action:bulk_send_back_complete', { successCount, failCount });
       if (successCount > 0) {
         toast.success(`Successfully returned ${successCount} records for correction!`);
       }
@@ -99,6 +115,7 @@ export default function Queue() {
       setSelectedIds([]);
       queryClient.invalidateQueries({ queryKey: ['workflow', 'queue'] });
     } catch (err) {
+      log.error('action:bulk_send_back_error', { err });
       toast.error("An error occurred during bulk return.");
     } finally {
       setBulkLoading(false);
@@ -109,8 +126,16 @@ export default function Queue() {
   const { data: queue = [], isLoading } = useQuery({
     queryKey: ['workflow', 'queue'],
     queryFn: async () => {
-      const res = await api.get('/workflow/queue');
-      return res.data.data?.queue || res.data.data || [];
+      log.debug('data:load_start', { what: 'workflow_queue' });
+      try {
+        const res = await api.get('/workflow/queue');
+        const rows = res.data.data?.queue || res.data.data || [];
+        log.debug('data:load_success', { what: 'workflow_queue', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'workflow_queue', err });
+        throw err;
+      }
     },
   });
 
@@ -342,7 +367,7 @@ export default function Queue() {
                           </td>
                           <td className="p-4 pr-6 text-right whitespace-nowrap">
                             <button
-                              onClick={() => navigate(`/records/${rec.id}`)}
+                              onClick={() => { log.debug('action:queue_review_click', { recordId: rec.id }); navigate(`/records/${rec.id}`); }}
                               className="inline-flex items-center gap-2 bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-5 py-2.5 rounded-control text-sm font-bold transition-colors duration-200 cursor-pointer border-none"
                             >
                               <span>Review</span>

@@ -1,7 +1,11 @@
 import rateLimit from 'express-rate-limit';
 import { ApiError } from '../utils/ApiError.js';
+import { getLogger } from '../utils/logger.js';
 
-const makeHandler = (message) => (req, res, next) => {
+const log = getLogger('rateLimiter.middleware');
+
+const makeHandler = (message, limiterName) => (req, res, next) => {
+  log.warn('rateLimiter: limit hit', { limiter: limiterName, method: req.method, path: req.path, ip: req.ip, userId: req.user?.id || null });
   next(new ApiError(429, message));
 };
 
@@ -13,7 +17,7 @@ export const globalLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: makeHandler('Too many requests, please try again later.'),
+  handler: makeHandler('Too many requests, please try again later.', 'global'),
 });
 
 /**
@@ -24,5 +28,5 @@ export const authLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: makeHandler('Too many login attempts, please try again after 15 minutes.'),
+  handler: makeHandler('Too many login attempts, please try again after 15 minutes.', 'auth'),
 });

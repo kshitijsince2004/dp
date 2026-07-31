@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis,
@@ -16,6 +16,7 @@ import StatCard from '../../components/ui/StatCard.jsx';
 import CrimeHeadMatrixTable from '../../components/common/CrimeHeadMatrixTable.jsx';
 import CaseStatusBarChart from '../../components/common/CaseStatusBarChart.jsx';
 import CrimeHeadCategoryBarChart from '../../components/common/CrimeHeadCategoryBarChart.jsx';
+import { log } from '../../utils/logger.js';
 
 // ── Shared chart tooltip style ────────────────────────────────────────────────
 const CHART_TOOLTIP = {
@@ -63,6 +64,11 @@ const STATUS_BAR = {
 export default function AnalyticsDashboard() {
   const { user, jurisdiction } = useAuthStore();
   const [period, setPeriod] = useState('weekly');
+
+  useEffect(() => {
+    log.debug('page:mount', { route: '/analytics', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/analytics' });
+  }, []);
 
   const getDistrictName = () => {
     const isHq = user?.role === 'HQ' || user?.role === 'HQ_ANALYST' || user?.role === 'HQ_ADMIN' || user?.role === 'SYSTEM_ADMIN';
@@ -134,8 +140,15 @@ export default function AnalyticsDashboard() {
   const { data: summary = {}, isLoading: summaryLoading } = useQuery({
     queryKey: ['analytics', 'summary'],
     queryFn: async () => {
-      const res = await api.get('/analytics/summary');
-      return res.data?.data?.summary ?? {};
+      log.debug('data:load_start', { what: 'analytics_summary' });
+      try {
+        const res = await api.get('/analytics/summary');
+        log.debug('data:load_success', { what: 'analytics_summary' });
+        return res.data?.data?.summary ?? {};
+      } catch (err) {
+        log.error('data:load_error', { what: 'analytics_summary', err });
+        throw err;
+      }
     },
   });
 
@@ -143,8 +156,16 @@ export default function AnalyticsDashboard() {
   const { data: categoryData = [] } = useQuery({
     queryKey: ['analytics', 'by-crime-head'],
     queryFn: async () => {
-      const res = await api.get('/analytics/by-crime-head');
-      return Array.isArray(res.data?.data) ? res.data.data : [];
+      log.debug('data:load_start', { what: 'analytics_by_crime_head' });
+      try {
+        const res = await api.get('/analytics/by-crime-head');
+        const rows = Array.isArray(res.data?.data) ? res.data.data : [];
+        log.debug('data:load_success', { what: 'analytics_by_crime_head', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'analytics_by_crime_head', err });
+        throw err;
+      }
     },
   });
 
@@ -168,8 +189,16 @@ export default function AnalyticsDashboard() {
   const { data: statusData = [] } = useQuery({
     queryKey: ['analytics', 'status-breakdown'],
     queryFn: async () => {
-      const res = await api.get('/analytics/status-breakdown');
-      return Array.isArray(res.data?.data) ? res.data.data : [];
+      log.debug('data:load_start', { what: 'analytics_status_breakdown' });
+      try {
+        const res = await api.get('/analytics/status-breakdown');
+        const rows = Array.isArray(res.data?.data) ? res.data.data : [];
+        log.debug('data:load_success', { what: 'analytics_status_breakdown', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'analytics_status_breakdown', err });
+        throw err;
+      }
     },
     enabled: !isSho && !isAcp,
   });
@@ -178,8 +207,16 @@ export default function AnalyticsDashboard() {
   const { data: stationData = [] } = useQuery({
     queryKey: ['analytics', 'by-ps'],
     queryFn: async () => {
-      const res = await api.get('/analytics/by-ps');
-      return Array.isArray(res.data?.data) ? res.data.data : [];
+      log.debug('data:load_start', { what: 'analytics_by_ps' });
+      try {
+        const res = await api.get('/analytics/by-ps');
+        const rows = Array.isArray(res.data?.data) ? res.data.data : [];
+        log.debug('data:load_success', { what: 'analytics_by_ps', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'analytics_by_ps', err });
+        throw err;
+      }
     },
     enabled: !isSho && !isDcpOrHq,
   });
@@ -254,7 +291,7 @@ export default function AnalyticsDashboard() {
               {['daily', 'weekly', 'monthly', 'yearly'].map((p) => (
                 <button
                   key={p}
-                  onClick={() => setPeriod(p)}
+                  onClick={() => { log.debug('action:period_change', { period: p }); setPeriod(p); }}
                   className={`rounded-xl px-4 py-1.5 text-xs font-semibold capitalize cursor-pointer transition-all duration-150 ${
                     period === p
                       ? 'bg-white text-[var(--text-accent)] shadow-sm'

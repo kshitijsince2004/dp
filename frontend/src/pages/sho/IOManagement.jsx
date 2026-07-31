@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserCog, Plus, X, Trash2, UserCheck, UserX } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
+import { validatePattern } from '../../utils/fieldPatterns.js';
+import { log } from '../../utils/logger.js';
 
 const RANK_OPTIONS = [
   'Constable', 'Head Constable', 'Assistant Sub Inspector', 'Sub Inspector',
@@ -22,49 +24,68 @@ export default function IOManagement() {
 
   const resetForm = () => setForm({ name: '', rank: '', pis_no: '', mobile: '' });
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/sho/io-management' });
+    return () => log.debug('page:unmount', { route: '/sho/io-management' });
+  }, []);
+
   const { data: ios = [], isLoading } = useQuery({
     queryKey: ['io', 'list', includeInactive],
     queryFn: async () => {
-      const res = await api.get('/investigating-officers', { params: { include_inactive: includeInactive } });
-      return res.data.data || [];
+      log.debug('data:load_start', { what: 'io_list', includeInactive });
+      try {
+        const res = await api.get('/investigating-officers', { params: { include_inactive: includeInactive } });
+        const rows = res.data.data || [];
+        log.debug('data:load_success', { what: 'io_list', count: rows.length });
+        return rows;
+      } catch (err) {
+        log.error('data:load_error', { what: 'io_list', err });
+        throw err;
+      }
     },
   });
 
   const createMutation = useMutation({
     mutationFn: async (payload) => {
+      log.info('action:io_create_start', { name: payload.name, rank: payload.rank });
       const res = await api.post('/investigating-officers', payload);
       return res.data.data;
     },
-    onSuccess: () => {
+    onSuccess: (data, payload) => {
+      log.info('action:io_create_success', { name: payload.name });
       toast.success('Investigating officer added');
       setModalOpen(false);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ['io', 'list'] });
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to add officer'),
+    onError: (err, payload) => { log.error('action:io_create_failed', { name: payload?.name, err }); toast.error(err.response?.data?.message || 'Failed to add officer'); },
   });
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, is_active }) => {
+      log.debug('action:io_toggle_active_start', { ioId: id, newActive: !is_active });
       const res = await api.patch(`/investigating-officers/${id}`, { is_active: !is_active });
       return res.data.data;
     },
-    onSuccess: () => {
+    onSuccess: (data, { id, is_active }) => {
+      log.info('action:io_toggle_active_success', { ioId: id, newActive: !is_active });
       toast.success('Status updated');
       queryClient.invalidateQueries({ queryKey: ['io', 'list'] });
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to update officer'),
+    onError: (err, { id }) => { log.error('action:io_toggle_active_failed', { ioId: id, err }); toast.error(err.response?.data?.message || 'Failed to update officer'); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
+      log.info('action:io_delete_start', { ioId: id });
       await api.delete(`/investigating-officers/${id}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
+      log.info('action:io_delete_success', { ioId: id });
       toast.success('Officer deactivated');
       queryClient.invalidateQueries({ queryKey: ['io', 'list'] });
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to remove officer'),
+    onError: (err, id) => { log.error('action:io_delete_failed', { ioId: id, err }); toast.error(err.response?.data?.message || 'Failed to remove officer'); },
   });
 
   const handleCreate = (e) => {
@@ -73,6 +94,16 @@ export default function IOManagement() {
       toast.error('Officer name is required');
       return;
     }
+    // #10 (2026-07-20): same rules as the registry-driven forms (utils/fieldPatterns.js).
+    const nameErr = validatePattern('name', form.name);
+    if (nameErr) { toast.error(nameErr); return; }
+    // Mobile is optional; when present it must be exactly 10 digits. The input already filters
+    // to digits at keystroke, so the only reachable failure here is a short (1–9 digit) number.
+    if (form.mobile) {
+      const mobileErr = validatePattern('mobile', form.mobile);
+      if (mobileErr) { toast.error(mobileErr); return; }
+    }
+    log.debug('action:io_form_submit', { name: form.name });
     createMutation.mutate(form);
   };
 
@@ -237,8 +268,13 @@ export default function IOManagement() {
                 <label className="text-zinc-400 font-semibold">Mobile</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   value={form.mobile}
-                  onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+                  // Constrain at keystroke: strip non-digits and cap at 10 so "abcd" / overlong
+                  // input can never be entered (was previously accepted, then silently truncated
+                  // to '' by io.service.js). Length is enforced on submit (handleCreate).
+                  onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                  maxLength={10}
                   placeholder="9876543210"
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] transition-all font-mono"
                 />

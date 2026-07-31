@@ -1,5 +1,17 @@
+import { useEffect } from 'react';
+import { log } from '../../utils/logger.js';
+
 export default function RadioField({ id, disabled, value, onChange, options = [], lang = 'en', variant = 'default', wrapperClassName, inputClassName }) {
   const getLabel = (opt) => lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en;
+
+  useEffect(() => {
+    log.debug('form:field_mount', { fieldId: id, fieldType: 'RADIO', optionCount: options.length });
+  }, [id, options.length]);
+
+  const handleSelect = (val) => {
+    log.debug('form:field_value_change', { fieldId: id, fieldType: 'RADIO' });
+    onChange(val);
+  };
 
   // Native mode: plain browser radio inputs with an accent color, laid out inline —
   // used inside dense table-row layouts where the default custom-circle style
@@ -14,7 +26,7 @@ export default function RadioField({ id, disabled, value, onChange, options = []
               name={id}
               disabled={disabled}
               checked={value === opt.value}
-              onChange={() => onChange(opt.value)}
+              onChange={() => handleSelect(opt.value)}
               className={inputClassName || "cursor-pointer"}
               style={{ accentColor: '#0f52ba' }}
             />
@@ -34,7 +46,7 @@ export default function RadioField({ id, disabled, value, onChange, options = []
             key={opt.value}
             type="button"
             disabled={disabled}
-            onClick={() => !disabled && onChange(opt.value)}
+            onClick={() => !disabled && handleSelect(opt.value)}
             className={`inline-flex items-center gap-2 cursor-pointer select-none bg-transparent border-0 p-0 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <div

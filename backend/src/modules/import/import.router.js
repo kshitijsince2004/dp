@@ -5,7 +5,13 @@ import fs from 'fs';
 import * as importController from './import.controller.js';
 import { authMiddleware } from '../../middleware/auth.middleware.js';
 import { allow, enforceScope } from '../../middleware/rbac.middleware.js';
-import { logger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
+
+// STYLE ANCHOR match (logging-instrumentation-2026-07-22, HANDOFF.md §7). Most of this file is
+// a declarative route table (skipped, per HANDOFF precedent for routers) — but the boot-time
+// stale-temp-file sweep and the Multer error-translation middleware below are real logic, so
+// they get instrumented like any other module.
+const log = getLogger('import.router');
 
 const router = Router();
 
@@ -24,12 +30,13 @@ if (!fs.existsSync(tempDir)) {
 // in flight (a batch mid-VALIDATED, waiting to be confirmed) is always younger than 24h in
 // any real workflow, so this never touches a live upload.
 (function sweepStaleTempFiles() {
+  log.debug('sweepStaleTempFiles: enter', { tempDir });
   const STALE_MS = 24 * 60 * 60 * 1000;
   let files;
   try {
     files = fs.readdirSync(tempDir);
   } catch (err) {
-    logger.warn(`[ImportRouter] Could not read temp import dir for startup sweep: ${err.message}`);
+    log.warn('sweepStaleTempFiles: could not read temp import dir for startup sweep', { tempDir, err });
     return;
   }
   const now = Date.now();
@@ -41,12 +48,13 @@ if (!fs.existsSync(tempDir)) {
       if (now - stat.mtimeMs > STALE_MS) {
         fs.unlinkSync(filePath);
         swept++;
+        log.debug('sweepStaleTempFiles: swept a stale temp upload', { fileName: name, ageMs: now - stat.mtimeMs });
       }
     } catch (err) {
-      logger.warn(`[ImportRouter] Failed to sweep stale temp file ${name}: ${err.message}`);
+      log.warn('sweepStaleTempFiles: failed to sweep stale temp file', { fileName: name, err });
     }
   }
-  if (swept > 0) logger.info(`[ImportRouter] Startup sweep removed ${swept} stale import temp file(s)`);
+  log.info('sweepStaleTempFiles: exit', { tempDir, filesScanned: files.length, swept });
 })();
 
 const storage = multer.diskStorage({
@@ -106,7 +114,7 @@ router.get('/batches/:batchId', allow('HC', 'DISTRICT_OFFICER'), importControlle
 // upload.single() calls.
 router.use((err, req, res, next) => {
   if (err && err.name === 'MulterError') {
-    logger.warn(`[ImportRouter] Upload rejected: ${err.code} — ${err.message}`);
+    log.warn('import.router: upload rejected by Multer', { code: err.code, message: err.message, userId: req.user?.id });
     return res.status(400).json({ success: false, message: err.message });
   }
   next(err);

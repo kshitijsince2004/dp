@@ -285,10 +285,13 @@ scope (Integration 4).
 
 - FIR-number allocator still not built (`fir_number_counters` unused, `fir_year` NULL on every
   `fir_details` row) — carried from Integration 2. Linkage matches on `(ps_id, fir_no)` only.
-  Import's `fir_no` canonicalization (`"<seq>/<year>"` via `parseFirAndYear`) is a bulk-import-
+  ~~Import's `fir_no` canonicalization (`"<seq>/<year>"` via `parseFirAndYear`) is a bulk-import-
   side fix only; the interactive form does not canonicalize its own `fir_no` input the same
-  way, so an imported arrest and a form-created case citing the same FIR in different textual
-  formats may still fail to auto-link — noted, not fixed, this integration.
+  way~~ **RESOLVED (T7.1 + verified Integration 5, 2026-07-20):** `normalizeFirNo`/
+  `expandFirYear` now live in `records.normalize.js` (the P2 layer) and are applied by
+  `records.mapper.js` for every `fir_no`-targeted column on BOTH the interactive and import
+  write paths; cross-format CASE↔ARREST auto-link verified live end-to-end. The allocator
+  itself (fir_year population) remains deferred with the transfers module.
 - Amendments rework (`legacy.controller.js`'s `requestAmendment`/`approveAmendment`/
   `rejectAmendment` → `record_amendments`) is **deferred**, not deleted-and-forgotten: no
   frontend page calls `/legacy/amendments` today, and `config/workflow/main.json` already
@@ -319,16 +322,18 @@ scope (Integration 4).
   (frozen); their values are dropped at import for UIDB/MISSING (user-confirmed, WP3) rather
   than schema-folding a column onto two tables for a field that may not be meaningfully used
   there. Revisit if it turns out to matter operationally.
-- **New pre-existing bug found (not fixed, out of scope for Integration 3)**: `field_registry`
+- ~~**New pre-existing bug found (not fixed, out of scope for Integration 3)**: `field_registry`
   option `value`s for enum-like person fields (confirmed on `arrested_gender`) don't match their
-  column's DB CHECK constraint casing/vocabulary (`persons_gender_check` wants
-  `'MALE'/'FEMALE'/'OTHER'/'UNKNOWN'`; the registry advertises `'Male'/'Female'/'Transgender'/
-  'Unknown'` — and `'Transgender'` has no CHECK-legal counterpart at all). Confirmed NOT
-  import-specific — the interactive form appears to hit the identical constraint violation on
-  any arrestee/accused/victim gender submission, since nothing in `records.mapper.js`'s
-  normalization layer transforms the value. Belongs to Integration 2's write-path/normalization
-  territory (or a registry data-correction), not this integration; flagged for whoever picks it
-  up. Full detail under C3 above.
+  column's DB CHECK constraint casing/vocabulary~~ **RESOLVED (T7.1 + Integration 5,
+  2026-07-20):** `records.normalize.js`'s `normalizeEnumUpper` canonicalizes option values to
+  CHECK vocabulary; the `persons.gender` CHECK gained `'TRANSGENDER'` (folded into base
+  migration `20260711000004` per the pre-launch fold rule — the standalone
+  `20260711000007` amendment migration was deleted) **and the column was widened
+  varchar(10)→varchar(20)** (second latent bug: the 11-char CHECK-legal value could never
+  physically insert). Live-verified: 'Male'→MALE, 'Transgender'→TRANSGENDER through the real
+  write path. Residual sibling issue found by the Integration-5 enum audit: UIDB
+  `deceased_relation_type` options have no CHECK-legal counterpart — needs a user ruling
+  (amends ruling 21); see `FUTURE-IMPROVEMENTS.md` E5.
 - **Pre-existing bug found, not fixed here**: the checked-in base workbooks
   (`CASE_Import_Template_Final.xlsx`, `ARREST_Import_Template_Final.xlsx`) and/or
   `TemplateBuilderService`'s column-management logic (`deleteColumnAt` — its own comment
@@ -1446,3 +1451,48 @@ OPT_INDIA_DISTRICTS, fallback + sentinel fixes), `fields/fields.controller.js` +
 `fields/fields.router.js` (state-districts lookup),
 `frontend/src/components/forms/FieldRenderer.jsx` (address cascade),
 `scripts/template-baseline.manifest.json` (re-blessed).
+
+---
+
+## ADDENDUM — Import robustness + bugfix batch (2026-07-20)
+
+Bugfix batch (`docs/bugfix-batch-2026-07-20/HANDOFF.md`). The reported "ARREST bulk import not
+working — system error" turned out to be a **CLASS of per-row write-crashes** from messy real
+Excel data, each surfaced as one opaque `WRITE_FAILED` message. Root fixes are all in the SHARED
+write path (`records.mapper.js` / `records.service.js insertRecordCore`) — no frozen-template
+change — establishing the invariant: **every import row either WRITES or is REJECTED with a
+specific reason; no row ever produces the opaque "system error" again.**
+
+**Coercion contract (records.mapper.js) — the mapper now SALVAGES bad values instead of crashing:**
+- **Location varchar overflow** (was pg 22001): `normalizeLocationValue` truncates any location
+  varchar to its real column width (`columnMaxLenCache` from information_schema). `pincode` is
+  digits-only, and a non-empty value with < `PINCODE_MIN_DIGITS` (5) digits → null (kills the
+  "6-digit PIN code" placeholder).
+- **Enum CHECK violations** (was pg 23514): `ENUM_ALLOWED` holds the exact CHECK vocabulary for
+  `persons.gender` / `persons.relation_type` / `record_properties.status`. Out-of-vocabulary →
+  fallback via `normalizeEnumConstrained` (`ENUM_FALLBACK`): gender/relation → null (nullable),
+  status → `'STOLEN'` (NOT NULL DEFAULT). Single-source detectors `enumCoercion` / `pincodeCoercion`
+  are EXPORTED and reused by validation so warnings can't drift from what the write path does.
+- **record_date** (was pg 22008 datetime-overflow on DD/MM read as MM/DD, and pg 22007 on corrupt
+  Excel-serial dates): `insertRecordCore` normalizes to ISO via `normalizeDate` (idempotent on ISO
+  → interactive path unaffected). A present-but-UNPARSEABLE date is REJECTED at validation with the
+  new `RECORD_DATE_INVALID` ERROR (`import.validate.js`) — record_date is NOT NULL and can't be
+  fabricated.
+- **Read-side enum inverse** (`decorateEnumUpper`): stored UPPERCASE enums → field_registry's
+  Title-Case option values on recompose, so SearchableSelect matches (fixes gender/relation/status
+  showing blank on BOTH imported and interactive records).
+
+**Operator visibility (user decision 2026-07-20 — warn on cleaned cells):** `import.validate.js`
+`detectCoercionWarnings` emits a `VALUE_SALVAGED` **WARNING** per salvaged cell (row still imports)
+— e.g. `gender "Yadav" not recognized → blank`, `status "Mobile" → "Stolen"`. This catches
+column-misalignment before plausible-but-wrong records reach compilations/analytics. Pure
+format-normalization (DD/MM→ISO, casing) stays silent; only value-DISCARDING/FABRICATING coercions
+warn. Error-surfacing also improved: the `WRITE_FAILED` catch now logs pg code/constraint/table.
+
+**Other frozen-template-adjacent changes in the batch:** #3 gazette (`uidb_no`) commented out
+(is_active:false — re-enable = flip + sync-config); #4 gd_no/fir_no LABELS de-clubbed ("GD Number"/
+"FIR Number" — the date/time columns were already separate); #5 person-address PS dropdown is now
+DUAL-MODE (Delhi PS list iff person state=Delhi via `INDIRECT(IF($state="Delhi","OPT_POLICE_STATION",""))`,
+else free-text) while occurrence PS keeps its district cascade — **⚠ the conditional-INDIRECT Excel
+dropdown needs a real-Excel spot-check** (per-row state reference). `import:parity` stays GREEN
+across all changes.

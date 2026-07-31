@@ -2,7 +2,7 @@ import ExcelJS from 'exceljs';
 import path from 'path';
 import fs from 'fs';
 import db from '../../config/db.js';
-import { logger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import {
   CASE_SHEETS_CONFIG,
   ARREST_SHEETS_CONFIG,
@@ -21,11 +21,19 @@ import {
   NR_PREFIX,
 } from './import-fields.config.js';
 import { autoIncludedRegistryFields, normalizeRegistryRow } from './registry-sync.util.js';
-import { DISTRICTS_BY_STATE, ALL_INDIA_DISTRICTS } from '../../config/geoData.js';
+import { DISTRICTS_BY_STATE, ALL_INDIA_DISTRICTS, DELHI_STATE } from '../../config/geoData.js';
 import * as fieldsService from '../fields/fields.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from '../fields/classificationSources.config.js';
 import DataValidationsXform from 'exceljs/lib/xlsx/xform/sheet/data-validations-xform.js';
 import exceljsUtils from 'exceljs/lib/utils/utils.js';
+
+// STYLE ANCHOR match (logging-instrumentation-2026-07-22, HANDOFF.md §7) — getLogger bound
+// once. This file is almost entirely Excel-cell-manipulation loops (hundreds to thousands of
+// cell writes per template build) — per the anchor's own judgment for tight loops
+// (enrichOffenceLabels/calculateDiff), logging happens at the FUNCTION level (entry/exit with
+// counts, real branch decisions, caught errors), never per-cell/per-row-index inside a
+// `for (rIdx = 5; rIdx <= 500/1000; rIdx++)` write loop.
+const log = getLogger('template-builder.service');
 
 // ── ExcelJS data-validation optimiser patch (ExcelJS 3.10.0) ──────────────────────────────
 // ExcelJS writes one <dataValidation> per cell, then merges alike cells into rectangular
@@ -337,6 +345,7 @@ const sectionLabelForKey = (key, recordType, isParentSheet) => {
 // Also returns _propItemsByCategory (categoryLabel → [{value,label}]) and _propCategoryLabels.
 // ────────────────────────────────────────────────────────────────────────────────────────
 async function buildLiveLookups(recordType) {
+  log.debug('buildLiveLookups: enter', { recordType });
   // Mirrors the option-precompute block in fields.controller.js/getFieldsForForm.
   // Using the same fieldsService.* calls ensures the Excel template shows
   // exactly the same options as the interactive form.
@@ -502,7 +511,7 @@ async function buildLiveLookups(recordType) {
       }
       propItemsByCategory[cat.label] = items;
     } catch (err) {
-      logger.error(`buildLiveLookups: failed to fetch items for category ${cat.label}`, { err });
+      log.error('buildLiveLookups: failed to fetch items for category', { recordType, category: cat.label, err });
       propItemsByCategory[cat.label] = [];
     }
   }
@@ -652,6 +661,11 @@ async function buildLiveLookups(recordType) {
   };
   const statusOpts = (statusOptionsByType[recordType] || []).map(v => ({ value: v, label: v }));
 
+  log.debug('buildLiveLookups: exit', {
+    recordType, actCount: allActs.length, sectionCount: dbSections.length,
+    beatCount: beats.length, localHeadCount: localHeads.length, districtCount: districts.length,
+    psCount: psRows.length, propertyCategoryCount: propCategories.length,
+  });
   return {
     ipc_sections:                ipcSections,
     excise_sections:             exciseSections,
@@ -695,6 +709,7 @@ async function buildLiveLookups(recordType) {
 // Returns: { namedRangeMap: {fieldKey → namedRangeName}, slugToNR: {categorySlug → namedRangeName} }
 // ────────────────────────────────────────────────────────────────────────────────────────
 function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } = {}) {
+  log.debug('createLookupsSheet: enter', { preserveExisting });
   // preserveExisting: append after any columns already on _Lookups instead of rebuilding it.
   // Required for the UIDB/MISSING flow, where addSheetToWorkbook has already written long
   // option lists (states, districts…) to _Lookups and referenced them by DIRECT cell range —
@@ -728,7 +743,7 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(rangeRef, nrName);
     } catch (err) {
-      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+      log.error('createLookupsSheet: failed to register named range', { nrName, err });
     }
     namedRangeMap[fieldKey] = nrName;
     col++;
@@ -788,7 +803,7 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(rangeRef, nrName);
     } catch (err) {
-      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+      log.error('createLookupsSheet: failed to register named range', { nrName, err });
     }
     
     propCatToTypeNRRows.push([catLabel, nrName]);
@@ -809,7 +824,7 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(tableRef, 'PROP_CAT_TO_TYPE_NR');
     } catch (err) {
-      logger.error('createLookupsSheet: failed to register PROP_CAT_TO_TYPE_NR', { err });
+      log.error('createLookupsSheet: failed to register PROP_CAT_TO_TYPE_NR', { err });
     }
     col += 2;
   }
@@ -844,7 +859,7 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(tableRef, 'MAJOR_HEAD_TO_MINOR_NR');
     } catch (err) {
-      logger.error('createLookupsSheet: failed to register MAJOR_HEAD_TO_MINOR_NR', { err });
+      log.error('createLookupsSheet: failed to register MAJOR_HEAD_TO_MINOR_NR', { err });
     }
     col += 2;
   }
@@ -876,7 +891,7 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(`'_Lookups'!$${colLetter}$${startRow}:$${colLetter}$${endRow}`, nrName);
     } catch (err) {
-      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+      log.error('createLookupsSheet: failed to register named range', { nrName, err });
       return null;
     }
     headSetSigToNR.set(sig, nrName);
@@ -917,7 +932,7 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(tableRef, 'SECTION_TO_MAJOR_NR');
     } catch (err) {
-      logger.error('createLookupsSheet: failed to register SECTION_TO_MAJOR_NR', { err });
+      log.error('createLookupsSheet: failed to register SECTION_TO_MAJOR_NR', { err });
     }
     col += 2;
   }
@@ -956,7 +971,7 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(tableRef, 'STATE_TO_DISTRICT_NR');
     } catch (err) {
-      logger.error('createLookupsSheet: failed to register STATE_TO_DISTRICT_NR', { err });
+      log.error('createLookupsSheet: failed to register STATE_TO_DISTRICT_NR', { err });
     }
     col += 2;
   }
@@ -989,7 +1004,7 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(rangeRef, nrName);
     } catch (err) {
-      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+      log.error('createLookupsSheet: failed to register named range', { nrName, err });
     }
     
     actToSecNRRows.push([act.act_long, nrName]);
@@ -1009,7 +1024,7 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(tableRef, 'ACT_TO_SECTIONS_NR');
     } catch (err) {
-      logger.error('createLookupsSheet: failed to register ACT_TO_SECTIONS_NR', { err });
+      log.error('createLookupsSheet: failed to register ACT_TO_SECTIONS_NR', { err });
     }
     col += 2;
   }
@@ -1041,7 +1056,7 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(rangeRef, nrName);
     } catch (err) {
-      logger.error(`createLookupsSheet: failed to register named range ${nrName}`, { err });
+      log.error('createLookupsSheet: failed to register named range', { nrName, err });
     }
 
     districtToPSRows.push([distLabel, nrName]);
@@ -1061,11 +1076,16 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
     try {
       workbook.definedNames.add(tableRef, 'DISTRICT_TO_PS_NR');
     } catch (err) {
-      logger.error('createLookupsSheet: failed to register DISTRICT_TO_PS_NR', { err });
+      log.error('createLookupsSheet: failed to register DISTRICT_TO_PS_NR', { err });
     }
     col += 2;
   }
 
+  log.debug('createLookupsSheet: exit', {
+    preserveExisting, namedRangeCount: Object.keys(namedRangeMap).length,
+    hasMinorHeadCascade: majorHeadToNRRows.length > 0, hasSectionMajorCascade: sectionToMHNRRows.length > 0,
+    hasDistrictPSCascade: districtToPSRows.length > 0, hasStateDistrictCascade: stateToDistNRRows.length > 0,
+  });
   return {
     namedRangeMap,
     slugToNR,
@@ -1106,15 +1126,24 @@ function createLookupsSheet(workbook, liveLookups, { preserveExisting = false } 
 // disrupt. Sheet protection (`worksheet.protect()`) is skipped entirely for the same reason —
 // G5's explicit escape hatch.
 export function buildFieldMetaMap(fieldsList, allFields) {
+  log.debug('buildFieldMetaMap: enter', { fieldCount: (fieldsList || []).length });
   const map = new Map();
   for (const f of fieldsList || []) {
     if (!f || !f.field_key || map.has(f.field_key)) continue;
     const registryMatch = f.field_type ? f : (allFields || []).find((af) => af.field_key === f.field_key);
+    // Curated template columns that exist only as bridge keys (occurrence_date, gd_date on
+    // some sheets, …) have NO registry row under that key — but their config entries declare
+    // the format via `hint`. Without this fallback those date/time columns silently skip
+    // hardening entirely (they shipped with numFmt 'General', fully exposed to Excel's
+    // locale parser and its day/year-swapping year-first fallback).
+    const hint = String(f.hint || '').toLowerCase();
+    const hintType = hint === 'dd-mm-yyyy' ? 'DATE' : (hint === 'hh:mm' ? 'TIME' : null);
     map.set(f.field_key, {
-      field_type: registryMatch ? registryMatch.field_type : null,
+      field_type: (registryMatch ? registryMatch.field_type : null) ?? hintType,
       required: f.required === true || (registryMatch && registryMatch.required === true),
     });
   }
+  log.debug('buildFieldMetaMap: exit', { mappedFieldCount: map.size });
   return map;
 }
 
@@ -1125,6 +1154,7 @@ const isAgeKey = (k) => k === 'age' || k.endsWith('_age');
 const VALUE_LIKE_KEYS = new Set(['property_value', 'prop_other_value', 'estimated_value']);
 
 export function applyFieldLevelHardening(workbook, fieldMetaByKey) {
+  log.debug('applyFieldLevelHardening: enter', { sheetCount: workbook.worksheets.length, fieldMetaCount: fieldMetaByKey.size });
   workbook.worksheets.forEach((ws) => {
     if (ws.name === '_Lookups') return;
     const row1 = ws.getRow(1);
@@ -1136,32 +1166,62 @@ export function applyFieldLevelHardening(workbook, fieldMetaByKey) {
     for (const [colStr, key] of Object.entries(colKeys)) {
       const col = Number(colStr);
       const meta = fieldMetaByKey.get(key);
-      if (!meta) continue;
-      const { field_type, required } = meta;
+      // Curated-only bridge keys (occurrence_date, missing_date, date_of_arrest, …) have no
+      // registry row and often no meta entry at all — infer DATE/TIME from the key name so
+      // they aren't silently skipped. Verified against every row-1 key on all five
+      // templates: the date/time vocabularies are disjoint and have no false positives.
+      const lowerKey = key.toLowerCase();
+      let field_type = (meta && meta.field_type) || null;
+      if (!field_type) {
+        if (lowerKey.includes('date') && !lowerKey.includes('time')) field_type = 'DATE';
+        else if (lowerKey.includes('time') && !lowerKey.includes('date')) field_type = 'TIME';
+      }
+      if (!meta && !field_type) continue;
+      const required = meta ? meta.required : false;
 
-      // Column-level numFmt — safe regardless of any per-cell dataValidation state.
+      // numFmt: set at BOTH column and cell level. Column-level alone is NOT enough — the
+      // base workbooks' data cells carry their own style records, and a styled cell ignores
+      // the column format entirely (this is why the original dd-mm-yyyy/'@' column formats
+      // never actually reached most cells).
+      let numFmt = null;
       if (field_type === 'DATE') {
-        ws.getColumn(col).numFmt = 'dd-mm-yyyy';
+        // Text format, NOT 'dd-mm-yyyy': a display format still lets Excel's locale
+        // parser interpret the TYPED text first, and its year-first fallback silently
+        // swaps day/year — "23-3-27" became 2023-03-27 (shown as 27-03-2023) on en-US
+        // Excel. With '@' the cell stores the literal digits the officer typed and the
+        // import pipeline (parseFlexibleDate, day-first, 2-digit year = 20xx) is the
+        // only parser. Date cells from older real-date workbooks still import fine —
+        // import.parse handles Date-object cells explicitly.
+        numFmt = '@';
       } else if (field_type === 'TIME') {
-        ws.getColumn(col).numFmt = 'hh:mm';
+        numFmt = 'hh:mm';
       } else if (FIR_LIKE_KEYS.has(key) || isPincodeKey(key)) {
         // Forces text storage — stops Excel silently mangling "123/2025" into a date serial
         // (the headline bug this hardening pass exists to fix) or eating a pincode's leading
         // zero the moment the cell is typed into.
-        ws.getColumn(col).numFmt = '@';
+        numFmt = '@';
       }
+      if (numFmt) ws.getColumn(col).numFmt = numFmt;
 
       for (let r = 5; r <= 1000; r++) {
         const cell = ws.getCell(r, col);
+        // Clone the style object rather than assigning cell.numFmt directly — cells
+        // copied during column splicing (deleteColumnAt) SHARE style object references
+        // in ExcelJS, so a direct numFmt mutation on one column leaks into its sibling
+        // (observed: date_of_arrest inheriting time_of_arrest's 'hh:mm').
+        if (numFmt) cell.style = { ...cell.style, numFmt };
         const dv = cell.dataValidation;
 
         if (!dv) {
           if (field_type === 'DATE') {
+            // Text-compatible check only (cells are numFmt '@' now — a type:'date'
+            // validation on a text cell would stop-block every entry). Real date
+            // parsing/range checking happens server-side at import validate time.
             cell.dataValidation = {
-              type: 'date', operator: 'greaterThan', allowBlank: !required,
-              formulae: ['1900-01-01'],
+              type: 'textLength', operator: 'between', allowBlank: !required,
+              formulae: [6, 10],
               showErrorMessage: true, errorStyle: 'stop',
-              errorTitle: 'Invalid date', error: 'Enter a valid date (dd-mm-yyyy) after 01-01-1900.',
+              errorTitle: 'Invalid date', error: 'Type the date as DD-MM-YYYY (e.g. 23-03-2027).',
             };
           } else if (isAgeKey(key) && field_type === 'NUMBER') {
             cell.dataValidation = {
@@ -1201,6 +1261,7 @@ export function applyFieldLevelHardening(workbook, fieldMetaByKey) {
       }
     }
   });
+  log.debug('applyFieldLevelHardening: exit', { sheetCount: workbook.worksheets.length });
 }
 
 // WP0 found (deferred to WP7): the checked-in base workbooks leave 1+ fully-empty ghost
@@ -1215,6 +1276,8 @@ export function applyFieldLevelHardening(workbook, fieldMetaByKey) {
 // this — `addSheetToWorkbook`'s from-scratch sheets are built directly from a real fieldsList,
 // so they cannot have a trailing null-key column by construction.
 export function trimTrailingEmptyColumns(workbook) {
+  log.debug('trimTrailingEmptyColumns: enter', { sheetCount: workbook.worksheets.length });
+  let totalTrimmed = 0;
   workbook.worksheets.forEach((worksheet) => {
     if (worksheet.name === '_Lookups') return;
     let lastReal = 0;
@@ -1234,11 +1297,17 @@ export function trimTrailingEmptyColumns(workbook) {
     for (let i = 0; i < trimCount; i++) {
       TemplateBuilderService.deleteColumnAt(worksheet, lastReal + 1);
     }
+    if (trimCount > 0) {
+      totalTrimmed += trimCount;
+      log.debug('trimTrailingEmptyColumns: trimmed trailing ghost columns', { sheet: worksheet.name, trimCount });
+    }
   });
+  log.debug('trimTrailingEmptyColumns: exit', { totalTrimmed });
 }
 
 export class TemplateBuilderService {
   static async buildTemplate(recordType, lang = 'en') {
+    log.debug('buildTemplate: enter', { recordType, lang });
     const filename = recordType === 'CASE'
       ? 'CASE_Import_Template_Final.xlsx'
       : 'ARREST_Import_Template_Final.xlsx';
@@ -1275,8 +1344,9 @@ export class TemplateBuilderService {
     try {
       liveLookups = await buildLiveLookups(recordType);
       ({ namedRangeMap, slugToNR, hasMinorHeadCascade, hasDistrictPSCascade, hasStateDistrictCascade } = createLookupsSheet(workbook, liveLookups));
+      log.debug('buildTemplate: live lookups + lookups sheet built', { recordType, hasMinorHeadCascade, hasDistrictPSCascade, hasStateDistrictCascade });
     } catch (err) {
-      logger.error('buildTemplate: failed to build live lookups (dropdowns will be static)', { err: err.message });
+      log.error('buildTemplate: failed to build live lookups (dropdowns will be static)', { recordType, err });
     }
 
     const allowedKeys = new Set(
@@ -1399,7 +1469,7 @@ export class TemplateBuilderService {
         // .xlsx already). Auto-included fields must never silently vanish: fall back to the
         // parent sheet and log it, so a new form field always surfaces somewhere.
         if (!isAuto) continue;
-        logger.warn(`buildTemplate(${recordType}): field '${field.field_key}' has unmapped section '${field.section}' — placing on ${parentSheetLabel.sheet}`);
+        log.warn('buildTemplate: auto-included field has unmapped section, placing on parent sheet', { recordType, fieldKey: field.field_key, section: field.section, placedOn: parentSheetLabel.sheet });
         mapping = parentSheetLabel;
       }
 
@@ -1748,15 +1818,35 @@ export class TemplateBuilderService {
           if (cell.value) colsByKey[String(cell.value).trim()] = c;
         });
 
+        const flatPsNR = namedRangeMap['police_station']; // all-Delhi-PS list (first pass)
         for (const [key, psCol] of Object.entries(colsByKey)) {
           if (key !== 'police_station' && !key.endsWith('_police_station')) continue;
           const prefix = key === 'police_station' ? '' : key.slice(0, key.length - '_police_station'.length);
           const distKey = prefix ? `${prefix}_district` : 'district';
           const distCol = colsByKey[distKey];
-          if (!distCol) continue; // no paired district column on this sheet — leave flat list
 
-          const distColLetter = numToColLetter(distCol);
-          const formula = `INDIRECT(VLOOKUP($${distColLetter}5,DISTRICT_TO_PS_NR,2,FALSE))`;
+          // #5 DUAL-MODE (2026-07-20): a PS column paired with a *_state sibling is a PERSON
+          // ADDRESS (complainant/victim/accused) — the address can be anywhere in India, so the
+          // Delhi PS list must appear ONLY when that person's state = Delhi, and be free-text
+          // otherwise. (Place-of-occurrence has NO _state sibling — it's Delhi-scoped by decision
+          // D-A — so it keeps the district→PS cascade below.) NOTE: person DISTRICT uses ADMIN
+          // district names ("New Delhi", "Central Delhi") which do NOT key into DISTRICT_TO_PS_NR
+          // (POLICE district names), so a district-filtered person dropdown can't work — we show
+          // the flat all-Delhi-PS list instead. When state≠Delhi, INDIRECT("") errors → no list →
+          // free-type (showErrorMessage:false). ⚠ Excel conditional-INDIRECT validation is finicky
+          // — verify the rendered dropdown in real Excel.
+          const stateKey = prefix ? `${prefix}_state` : null;
+          const stateCol = stateKey ? colsByKey[stateKey] : undefined;
+          let formula;
+          if (stateCol && flatPsNR) {
+            const stateColLetter = numToColLetter(stateCol);
+            formula = `INDIRECT(IF($${stateColLetter}5="${DELHI_STATE}","${flatPsNR}",""))`;
+          } else if (distCol) {
+            const distColLetter = numToColLetter(distCol);
+            formula = `INDIRECT(VLOOKUP($${distColLetter}5,DISTRICT_TO_PS_NR,2,FALSE))`;
+          } else {
+            continue; // no state or district pairing on this sheet — leave flat list
+          }
           for (let rIdx = 5; rIdx <= 500; rIdx++) {
             ws.getCell(rIdx, psCol).dataValidation = {
               type: 'list', allowBlank: true, showErrorMessage: false,
@@ -1941,6 +2031,7 @@ export class TemplateBuilderService {
     applyFieldLevelHardening(workbook, fieldMetaByKey);
     trimTrailingEmptyColumns(workbook);
 
+    log.info('buildTemplate: exit', { recordType, lang, sheetCount: workbook.worksheets.length, autoIncludedFieldCount: autoFields.length });
     return workbook;
 
   }
@@ -1952,16 +2043,17 @@ export class TemplateBuilderService {
   // replaces the "__DIST_INDIRECT_PENDING__" sentinel with the real INDIRECT formula,
   // then also registers the STATE_TO_DISTRICT_NR named range on the _Lookups sheet.
   static async wireStateDistrictCascade(workbook) {
+    log.debug('wireStateDistrictCascade: enter', { sheetCount: workbook.worksheets.length });
     let liveLookups = {};
     let hasStateDistrictCascade = false;
     try {
       liveLookups = await buildLiveLookups('CASE'); // record type doesn't affect state/district data
       ({ hasStateDistrictCascade } = createLookupsSheet(workbook, liveLookups, { preserveExisting: true }));
     } catch (err) {
-      logger.error('wireStateDistrictCascade: failed to build live lookups', { err: err.message });
+      log.error('wireStateDistrictCascade: failed to build live lookups', { err });
       return;
     }
-    if (!hasStateDistrictCascade) return;
+    if (!hasStateDistrictCascade) { log.debug('wireStateDistrictCascade: no state->district cascade data available, skipping wiring', {}); return; }
 
     workbook.worksheets.forEach(ws => {
       if (ws.name === '_Lookups') return;
@@ -1994,6 +2086,7 @@ export class TemplateBuilderService {
         }
       }
     });
+    log.debug('wireStateDistrictCascade: exit', { sheetCount: workbook.worksheets.length });
   }
 
   // Wires the same Act -> Sections/Major-Head -> Minor-Head cascade used by CASE/ARREST's
@@ -2003,7 +2096,8 @@ export class TemplateBuilderService {
   // stay identical to CASE/ARREST's — same DB tables, same named-range scheme.
   // keys: { act, sections, major, minor } — the Row-1 field_key each column is stored under.
   static async wireActSectionCascade(workbook, worksheet, recordType, keys) {
-    if (!worksheet) return;
+    log.debug('wireActSectionCascade: enter', { recordType, sheet: worksheet?.name || null, keys });
+    if (!worksheet) { log.warn('wireActSectionCascade: no worksheet given, skipping', { recordType }); return; }
 
     let liveLookups = {};
     let namedRangeMap = {};
@@ -2012,7 +2106,7 @@ export class TemplateBuilderService {
       liveLookups = await buildLiveLookups(recordType);
       ({ namedRangeMap, hasMinorHeadCascade } = createLookupsSheet(workbook, liveLookups, { preserveExisting: true }));
     } catch (err) {
-      logger.error('wireActSectionCascade: failed to build live lookups (dropdowns will be static)', { err: err.message });
+      log.error('wireActSectionCascade: failed to build live lookups (dropdowns will be static)', { recordType, err });
       return;
     }
     if (!namedRangeMap) return;
@@ -2024,7 +2118,10 @@ export class TemplateBuilderService {
       if (cell.value === keys.major) majCol = c;
       if (cell.value === keys.minor) minCol = c;
     });
-    if (actCol === -1 || secCol === -1 || majCol === -1 || minCol === -1) return;
+    if (actCol === -1 || secCol === -1 || majCol === -1 || minCol === -1) {
+      log.warn('wireActSectionCascade: could not resolve all four act/section/major/minor columns, skipping', { recordType, sheet: worksheet.name, actCol, secCol, majCol, minCol });
+      return;
+    }
 
     const actLetter = numToColLetter(actCol);
     const secLetter = numToColLetter(secCol);
@@ -2056,6 +2153,7 @@ export class TemplateBuilderService {
         };
       }
     }
+    log.debug('wireActSectionCascade: exit — wired act/section/major/minor cascade', { recordType, sheet: worksheet.name, hasMinorHeadCascade });
   }
 
   // Recomputes the merged Row-2 section-header banner from Row-1 keys. Idempotent and

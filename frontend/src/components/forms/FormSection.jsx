@@ -4,6 +4,7 @@ import FieldRenderer from './FieldRenderer.jsx';
 import SelectField from './SelectField.jsx';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
 import { parseRules } from '../../utils/fieldValidation.js';
+import { log } from '../../utils/logger.js';
 
 const ACTS_OPTIONS = [
   { value: 'IPC', label_en: 'IPC', label_hi: 'आईपीसी (IPC)' },
@@ -301,12 +302,16 @@ function isFullWidth(field) {
   return fw.includes((field.field_type || '').toUpperCase()) || field.full_width === true;
 }
 
-function evaluateShowWhen(condition, values) {
+// Exported: the ONE show_when evaluator — used by the render path here AND by
+// DynamicForm's validateSection. Render and validation must always agree on
+// visibility, or validation blocks on fields the user cannot see.
+export function evaluateShowWhen(condition, values) {
   if (!condition) return true;
   if (condition.and) {
     return condition.and.every(c => evaluateShowWhen(c, values));
   }
   const { field: targetField, value: targetValue, operator } = condition;
+  if (!targetField) return true;
   const currentValue = values[targetField];
   if (operator === 'filled') {
     return currentValue !== undefined && currentValue !== null && String(currentValue).trim() !== '';
@@ -326,11 +331,15 @@ function RepeaterSection({
 }) {
   const [collapsed, setCollapsed] = useState({});
 
+  log.debug('form:section_render', { section: section.section, isRepeater: true, entityType: section.entity_type, entryCount: entries.length });
+
   const addEntry = () => {
+    log.debug('form:repeater_add_entry', { section: section.section, entityType: section.entity_type, countAfter: entries.length + 1 });
     onEntriesChange([...entries, {}]);
   };
 
   const removeEntry = (idx) => {
+    log.debug('form:repeater_remove_entry', { section: section.section, entityType: section.entity_type, index: idx, countBefore: entries.length });
     const next = entries.filter((_, i) => i !== idx);
     onEntriesChange(next);
   };
@@ -341,6 +350,7 @@ function RepeaterSection({
   };
 
   const toggleCollapse = (idx) => {
+    log.debug('form:section_toggle_collapse', { section: section.section, index: idx, collapsedAfter: !collapsed[idx] });
     setCollapsed(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
 
@@ -426,19 +436,7 @@ function RepeaterSection({
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                   {section.fields.map((field) => {
                     const key = field.field_key;
-                    if (field.show_when) {
-                      const { field: triggerKey, value: triggerValue, operator } = field.show_when;
-                      const currentValue = entry[triggerKey];
-                      let isMatch = false;
-                      if (operator === 'filled') {
-                        isMatch = currentValue !== undefined && currentValue !== null && String(currentValue).trim() !== '';
-                      } else {
-                        isMatch = Array.isArray(triggerValue)
-                          ? triggerValue.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase())
-                          : String(currentValue || '').toLowerCase() === String(triggerValue || '').toLowerCase();
-                      }
-                      if (!isMatch) return null;
-                    }
+                    if (!evaluateShowWhen(field.show_when, entry)) return null;
 
 
                     const rules = parseRules(field.validation_rules);
@@ -495,6 +493,8 @@ export default function FormSection({
   recordType = null,
 }) {
   if (!section) return null;
+
+  log.debug('form:section_render', { section: section.section, isRepeater: !!section.is_repeater, fieldCount: section.fields?.length ?? 0 });
 
   if (section.is_repeater) {
     return (
@@ -568,7 +568,18 @@ export default function FormSection({
                 // Rendered by ActsSectionsTable as a value derived from the selected Local Head
                 // (see heinousOffenceBlock) — it's readonly/ui_only in the registry, so the generic
                 // fallback here would only ever render an empty, non-functional radio group.
-                'heinous_offence'
+                'heinous_offence',
+                // B8 (2026-07-23): gd_date/gd_time/fir_date/fir_time/arrest_time are rendered
+                // INLINE by FieldRenderer's gd_no/fir_no/arrest_date composite Number+Date+Time
+                // widgets (FieldRenderer.jsx `compositeDateTimeCell`). record types whose
+                // general_info is hand-rendered (CASE/ARREST, see DynamicForm.jsx
+                // renderArrestGeneralInfoStep) never put these in a field list at all, but
+                // MISSING/UIDB fall through to this generic FormSection, whose field list from
+                // `/fields/form/:type` still carries them as their own standalone rows — doubling
+                // the date/time picker beside "GD Number". FieldRenderer now returns null for
+                // these keys (removing the duplicate INPUT); skip them here too so the whole row
+                // (label + now-empty input cell) doesn't render at all.
+                'gd_date', 'gd_time', 'fir_date', 'fir_time', 'arrest_time'
               ];
 
               const visibleFields = section.fields.filter(f => {

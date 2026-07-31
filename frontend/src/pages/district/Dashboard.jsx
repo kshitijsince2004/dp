@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import StatCard from '../../components/ui/StatCard.jsx';
+import { log } from '../../utils/logger.js';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -56,6 +57,11 @@ export default function DistrictDashboard() {
   const { user, jurisdiction } = useAuthStore();
   const [activeMetric, setActiveMetric] = useState('cases'); // 'cases' | 'pcr' | 'arrests'
 
+  useEffect(() => {
+    log.debug('page:mount', { route: '/district', userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/district' });
+  }, []);
+
   const getDistrictName = () => {
     const isHq = user?.role === 'HQ' || user?.role === 'HQ_ANALYST' || user?.role === 'HQ_ADMIN' || user?.role === 'SYSTEM_ADMIN';
     if (isHq) return "DELHI POLICE";
@@ -67,8 +73,15 @@ export default function DistrictDashboard() {
   const { data: stats = {} } = useQuery({
     queryKey: ['analytics', 'overview'],
     queryFn: async () => {
-      const res = await api.get('/analytics/overview');
-      return res.data.data;
+      log.debug('data:load_start', { what: 'analytics_overview' });
+      try {
+        const res = await api.get('/analytics/overview');
+        log.debug('data:load_success', { what: 'analytics_overview' });
+        return res.data.data;
+      } catch (err) {
+        log.error('data:load_error', { what: 'analytics_overview', err });
+        throw err;
+      }
     },
   });
 
@@ -76,8 +89,15 @@ export default function DistrictDashboard() {
   const { data: chartData = [] } = useQuery({
     queryKey: ['analytics', 'by-ps'],
     queryFn: async () => {
-      const res = await api.get('/analytics/by-ps');
-      return res.data.data;
+      log.debug('data:load_start', { what: 'analytics_by_ps' });
+      try {
+        const res = await api.get('/analytics/by-ps');
+        log.debug('data:load_success', { what: 'analytics_by_ps', count: res.data.data?.length });
+        return res.data.data;
+      } catch (err) {
+        log.error('data:load_error', { what: 'analytics_by_ps', err });
+        throw err;
+      }
     },
   });
 
@@ -142,7 +162,7 @@ export default function DistrictDashboard() {
         <motion.div variants={itemVariants} className="mt-8 flex items-center justify-between">
           <h2 className="text-label font-semibold text-[#4A5568]">Operational Overview</h2>
           <button
-            onClick={() => navigate('/compile')}
+            onClick={() => { log.debug('action:compile_daily_logs_click', {}); navigate('/compile');}}
             className="inline-flex items-center gap-2 rounded-control bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] px-5 py-2.5 text-xs font-bold text-white transition-colors duration-200 cursor-pointer"
           >
             <BookOpen size={13} className="text-amber-300" />

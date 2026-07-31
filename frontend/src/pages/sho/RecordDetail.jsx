@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -9,22 +9,8 @@ import { formSchemas } from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
 import LinkedRecordsPanel from '../../components/common/LinkedRecordsPanel.jsx';
-
-// Domain status field + option list per record type (item 9) — mirrors the exact option
-// sets fields.controller.js's getFieldsForForm already offers at creation time (its `status`
-// field dispatch), so an officer sees the same vocabulary post-registration as at intake.
-const STATUS_FIELD_BY_TYPE = {
-  CASE: 'case_status', ARREST: 'case_status', PCR_CALL: 'final_call_status',
-  MISSING: 'missing_status', UIDB: 'uidb_status',
-};
-const STATUS_OPTIONS_BY_TYPE = {
-  CASE: ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'UNTRACED', 'PENDING', 'CANCELLATION', 'QUASHED', 'CLOSURE REPORT', 'RELEASED U/S 189 BNSS', 'TRANSFER'],
-  ARREST: ['JC', 'PC', 'Bail', 'Bound Down', 'Release', 'Lockup', '35(3) BNS Notice'],
-  PCR_CALL: ['Action Taken', 'Pending', 'Referred', 'Closed'],
-  MISSING: ['Un-traced', 'Traced', 'Referred', 'Closed'],
-  UIDB: ['Referred to district hospital', 'Identified', 'body claimed', 'Unidentified', 'held in mortuary'],
-};
-const todayISO = () => new Date().toISOString().split('T')[0];
+import StatusUpdateModal from '../../components/records/StatusUpdateModal.jsx';
+import { log } from '../../utils/logger.js';
 
 export default function RecordDetail() {
   const { t } = useTranslation();
@@ -32,6 +18,11 @@ export default function RecordDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+
+  useEffect(() => {
+    log.debug('page:mount', { route: '/records/:id', recordId: id, userId: user?.id, role: user?.role });
+    return () => log.debug('page:unmount', { route: '/records/:id', recordId: id });
+  }, [id]);
 
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
   const [sendBackComment, setSendBackComment] = useState('');
@@ -42,21 +33,34 @@ export default function RecordDetail() {
   const [overrideVal, setOverrideVal] = useState('');
   const [overrideReason, setOverrideReason] = useState('');
 
-  // Domain status update states (item 9)
+  // Domain status update modal (item 9, WS9) — single reusable StatusUpdateModal serves
+  // every record type correctly (including ARREST's custody_status, which the old inline
+  // maps below wrongly aliased to case_status). statusModalField optionally preselects a
+  // field (used by the CASE "Flip" worked-out shortcut).
   const [statusModalOpen, setStatusModalOpen] = useState(false);
-  const [statusNewValue, setStatusNewValue] = useState('');
-  const [statusEffectiveDate, setStatusEffectiveDate] = useState(todayISO());
-  const [statusComment, setStatusComment] = useState('');
-  const [workedOutOpen, setWorkedOutOpen] = useState(false);
-  const [workedOutDate, setWorkedOutDate] = useState(todayISO());
+  const [statusModalField, setStatusModalField] = useState(undefined);
 
-  // Fetch record details
+  // Fetch record details. refetchOnMount:'always' + staleTime:0 force a fresh fetch every time
+  // this view opens (#R2-2, 2026-07-20): edits ARE persisted by the backend, but useAutosave
+  // deliberately does NOT invalidate ['records', id] (to avoid a background refetch clobbering
+  // in-progress keystrokes), and the global staleTime is 60s — so reopening a just-saved record
+  // within a minute served the STALE pre-edit cache, looking like "my change reverted". Refetching
+  // on mount fixes that safely: a mount has no in-flight edit to clobber.
   const { data: recordPayload, isLoading } = useQuery({
     queryKey: ['records', id],
     queryFn: async () => {
-      const res = await api.get(`/records/${id}`);
-      return res.data.data;
+      log.debug('data:load_start', { what: 'record_detail', recordId: id });
+      try {
+        const res = await api.get(`/records/${id}`);
+        log.debug('data:load_success', { what: 'record_detail', recordId: id, status: res.data?.data?.record?.current_status });
+        return res.data.data;
+      } catch (err) {
+        log.error('data:load_error', { what: 'record_detail', recordId: id, err });
+        throw err;
+      }
     },
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const record = recordPayload?.record;
@@ -66,13 +70,16 @@ export default function RecordDetail() {
 
   const unlinkMutation = useMutation({
     mutationFn: async (linkId) => {
+      log.debug('action:unlink_start', { recordId: id, linkId });
       await api.delete(`/v1/record-links/${linkId}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, linkId) => {
+      log.info('action:unlink_success', { recordId: id, linkId });
       toast.success('Link removed');
       queryClient.invalidateQueries({ queryKey: ['records', id] });
     },
-    onError: (err) => {
+    onError: (err, linkId) => {
+      log.error('action:unlink_failed', { recordId: id, linkId, err });
       toast.error(err.response?.data?.message || 'Failed to remove link');
     }
   });
@@ -80,16 +87,19 @@ export default function RecordDetail() {
   // Approve mutation
   const approveMutation = useMutation({
     mutationFn: async () => {
+      log.debug('action:approve_start', { recordId: id });
       const res = await api.post(`/records/${id}/approve`);
       return res.data.data;
     },
     onSuccess: () => {
+      log.info('action:approve_success', { recordId: id });
       toast.success('Record approved successfully');
       queryClient.invalidateQueries({ queryKey: ['records', id] });
       queryClient.invalidateQueries({ queryKey: ['workflow', 'queue'] });
       navigate('/queue');
     },
     onError: (err) => {
+      log.error('action:approve_failed', { recordId: id, err });
       toast.error(err.response?.data?.message || 'Failed to approve record');
     },
   });
@@ -97,10 +107,12 @@ export default function RecordDetail() {
   // Send back mutation
   const sendBackMutation = useMutation({
     mutationFn: async (payload) => {
+      log.debug('action:send_back_start', { recordId: id, targetFields: payload.target_fields });
       const res = await api.post(`/records/${id}/send-back`, payload);
       return res.data.data;
     },
     onSuccess: () => {
+      log.info('action:send_back_success', { recordId: id });
       toast.success('Record sent back to Head Constable for correction');
       setSendBackModalOpen(false);
       setSendBackComment('');
@@ -110,6 +122,7 @@ export default function RecordDetail() {
       navigate('/queue');
     },
     onError: (err) => {
+      log.error('action:send_back_failed', { recordId: id, err });
       toast.error(err.response?.data?.message || 'Failed to send record back');
     },
   });
@@ -117,6 +130,7 @@ export default function RecordDetail() {
   // DCP Override Mutation
   const overrideMutation = useMutation({
     mutationFn: async (payload) => {
+      log.debug('action:override_start', { recordId: id, newValue: payload.new_value });
       const res = await api.patch(`/records/${id}/override`, {
         caseHeadId: payload.new_value,
         reason: payload.reason
@@ -124,57 +138,17 @@ export default function RecordDetail() {
       return res.data.data;
     },
     onSuccess: () => {
+      log.info('action:override_success', { recordId: id });
       toast.success('Classification overridden successfully');
       setOverrideOpen(false);
       setOverrideReason('');
       queryClient.invalidateQueries({ queryKey: ['records', id] });
     },
     onError: (err) => {
+      log.error('action:override_failed', { recordId: id, err });
       toast.error(err.response?.data?.message || 'Override failed');
     },
   });
-
-  // Domain status update mutation (item 9) — distinct from workflow approve/send-back;
-  // this tracks the record's own progress (case_status/missing_status/etc), each change
-  // dated with an officer-entered effective_date (record_status_events, ruling 22).
-  const statusUpdateMutation = useMutation({
-    mutationFn: async (payload) => {
-      const res = await api.patch(`/records/${id}/status`, payload);
-      return res.data.data;
-    },
-    onSuccess: () => {
-      toast.success('Status updated');
-      setStatusModalOpen(false);
-      setWorkedOutOpen(false);
-      setStatusNewValue('');
-      setStatusComment('');
-      queryClient.invalidateQueries({ queryKey: ['records', id] });
-    },
-    onError: (err) => {
-      toast.error(err.response?.data?.message || 'Failed to update status');
-    },
-  });
-
-  const handleStatusUpdateSubmit = (statusField) => {
-    if (!statusNewValue) {
-      toast.error('Select a status value');
-      return;
-    }
-    statusUpdateMutation.mutate({
-      status_field: statusField,
-      new_value: statusNewValue,
-      effective_date: statusEffectiveDate,
-      comment: statusComment || undefined,
-    });
-  };
-
-  const handleWorkedOutSubmit = (newValue) => {
-    statusUpdateMutation.mutate({
-      status_field: 'is_worked_out',
-      new_value: newValue,
-      effective_date: workedOutDate,
-    });
-  };
 
   // Handles Send Back submission
   const handleSendBackSubmit = () => {
@@ -182,6 +156,7 @@ export default function RecordDetail() {
       toast.error('Feedback comment is required');
       return;
     }
+    log.debug('action:send_back_click', { recordId: id, fieldCount: selectedFields.length });
     sendBackMutation.mutate({
       comment: sendBackComment,
       target_fields: selectedFields
@@ -198,6 +173,7 @@ export default function RecordDetail() {
       toast.error('Mandatory audit reason must be at least 10 characters');
       return;
     }
+    log.debug('action:override_click', { recordId: id, newValue: overrideVal });
     overrideMutation.mutate({
       new_value: overrideVal,
       reason: overrideReason
@@ -240,10 +216,9 @@ export default function RecordDetail() {
 
   // Domain status update is available to any role with record access (PS+), not gated to
   // the workflow-review roles above — it's the record's own progress tracking, not an
-  // escalation action.
+  // escalation action. Field set/vocabulary for the record type comes entirely from
+  // StatusUpdateModal's GET /records/:id/status-options call (P4) — no per-type map here.
   const statusEvents = recordPayload?.status_events || [];
-  const domainStatusField = STATUS_FIELD_BY_TYPE[record.record_type];
-  const domainStatusOptions = STATUS_OPTIONS_BY_TYPE[record.record_type] || [];
   const canUpdateStatus = ['HC', 'SHO', 'DISTRICT_OFFICER', 'DISTRICT'].includes(user?.role);
 
   // Get field keys for multi-select checklist in send-back
@@ -305,13 +280,14 @@ export default function RecordDetail() {
           {isPendingReview && (
             <>
               <button
-                onClick={() => setSendBackModalOpen(true)}
+                onClick={() => { log.debug('action:send_back_modal_open', { recordId: id }); setSendBackModalOpen(true); }}
                 className="bg-red-55/10 hover:bg-red-500 text-red-600 hover:text-white border-2 border-red-200/50 hover:border-red-500 px-5 py-2.5 rounded-control text-sm font-bold transition-colors cursor-pointer"
               >
                 {t('actions.sendBack', 'Send Back')}
               </button>
               <button
                 onClick={() => {
+                  log.debug('action:approve_click', { recordId: id });
                   if (window.confirm('Confirm approval and escalation of this record?')) {
                     approveMutation.mutate();
                   }
@@ -326,7 +302,7 @@ export default function RecordDetail() {
 
           {isDCP && (
             <button
-              onClick={() => setOverrideOpen(true)}
+              onClick={() => { log.debug('action:override_modal_open', { recordId: id }); setOverrideOpen(true); }}
               className="bg-[var(--bg-page-main)] hover:bg-[var(--bg-page-main)]/80 text-[var(--text-main-theme)] border-2 border-[var(--border-card-theme)] hover:border-[var(--accent-color)] px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-2 hover:shadow-md border-none"
             >
               <Edit size={16} className="text-[var(--accent-color)]" />
@@ -367,8 +343,8 @@ export default function RecordDetail() {
             </p>
           </div>
 
-          {/* Domain status update card (item 9) */}
-          {canUpdateStatus && domainStatusField && (
+          {/* Domain status update card (item 9, WS9) */}
+          {canUpdateStatus && (
             <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-3 shadow-sm">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-70 flex items-center gap-1.5">
@@ -376,10 +352,10 @@ export default function RecordDetail() {
                   <span>Case Progress</span>
                 </h3>
                 <button
-                  onClick={() => { setStatusNewValue(''); setStatusEffectiveDate(todayISO()); setStatusComment(''); setStatusModalOpen(true); }}
+                  onClick={() => { log.debug('action:status_update_modal_open', { recordId: id }); setStatusModalField(undefined); setStatusModalOpen(true); }}
                   className="text-[11px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
                 >
-                  Update Status
+                  {t('statusUpdate.updateAction', 'Update Status')}
                 </button>
               </div>
               {record.record_type === 'CASE' && (
@@ -389,7 +365,7 @@ export default function RecordDetail() {
                     {record.data?.work_out_date ? ` (${record.data.work_out_date})` : ''}
                   </span>
                   <button
-                    onClick={() => { setWorkedOutDate(todayISO()); setWorkedOutOpen(true); }}
+                    onClick={() => { log.debug('action:status_update_modal_open', { recordId: id, field: 'is_worked_out' }); setStatusModalField('is_worked_out'); setStatusModalOpen(true); }}
                     className="text-[11px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
                   >
                     Flip
@@ -433,7 +409,11 @@ export default function RecordDetail() {
                           {new Date(tran.performed_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="text-[var(--text-main-theme)] opacity-80 font-medium">By: {tran.performed_by}</p>
+                      {/* B2 (2026-07-23): `performed_by` is the raw users.id UUID FK — the
+                          backend now also joins/returns `performed_by_name` (falls back to
+                          `username` on rows from before that join existed); only fall back to
+                          the bare UUID if neither is present. */}
+                      <p className="text-[var(--text-main-theme)] opacity-80 font-medium">By: {tran.performed_by_name || tran.username || tran.performed_by}</p>
                       {tran.comment && (
                         <p className="bg-[var(--bg-page-main)]/45 text-[var(--text-main-theme)] p-2 rounded border border-[var(--border-card-theme)]/50 mt-1 italic text-[11px] font-semibold">
                           "{tran.comment}"
@@ -629,99 +609,15 @@ export default function RecordDetail() {
         </div>
       )}
 
-      {/* ── DOMAIN STATUS UPDATE MODAL (item 9) ─────────────────────────────────── */}
-      {statusModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[var(--bg-card-theme)] border border-[var(--border-card-theme)] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl text-[var(--text-main-theme)]">
-            <div className="flex justify-between items-center bg-[var(--bg-page-main)] border-b border-[var(--border-card-theme)]/70 px-6 py-4">
-              <h3 className="text-base font-bold text-[var(--text-main-theme)]">Update case progress</h3>
-              <button onClick={() => setStatusModalOpen(false)} className="text-[var(--text-main-theme)] opacity-50 hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-[var(--bg-page-main)]">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">New Status:</label>
-                <select
-                  value={statusNewValue}
-                  onChange={(e) => setStatusNewValue(e.target.value)}
-                  className="w-full bg-[var(--bg-page-main)]/40 border-2 border-[var(--border-card-theme)] text-sm text-[var(--text-main-theme)] px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all font-bold"
-                >
-                  <option value="">-- Choose Status --</option>
-                  {domainStatusOptions.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">Effective Date (when this actually happened):</label>
-                <input
-                  type="date"
-                  value={statusEffectiveDate}
-                  max={todayISO()}
-                  onChange={(e) => setStatusEffectiveDate(e.target.value)}
-                  className="w-full bg-[var(--bg-page-main)]/40 border-2 border-[var(--border-card-theme)] text-sm text-[var(--text-main-theme)] px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">Comment (optional):</label>
-                <textarea
-                  rows={2}
-                  value={statusComment}
-                  onChange={(e) => setStatusComment(e.target.value)}
-                  className="w-full bg-[var(--bg-page-main)]/40 border-2 border-[var(--border-card-theme)] rounded-xl p-3.5 text-sm text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all resize-none"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 bg-[var(--bg-page-main)] border-t border-[var(--border-card-theme)]/70 px-6 py-4">
-              <button onClick={() => setStatusModalOpen(false)} className="bg-[var(--bg-page-main)] border-2 border-[var(--border-card-theme)] hover:border-[var(--accent-color)] text-[var(--text-main-theme)] px-5 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all hover:shadow-sm">
-                {t('actions.cancel', 'Cancel')}
-              </button>
-              <button
-                onClick={() => handleStatusUpdateSubmit(domainStatusField)}
-                disabled={statusUpdateMutation.isPending}
-                className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md cursor-pointer transition-all disabled:opacity-60"
-              >
-                {statusUpdateMutation.isPending ? 'Saving…' : 'Save Status'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── WORKED-OUT FLIP MODAL (item 9, CASE only) ───────────────────────────── */}
-      {workedOutOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[var(--bg-card-theme)] border border-[var(--border-card-theme)] rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl text-[var(--text-main-theme)]">
-            <div className="flex justify-between items-center bg-[var(--bg-page-main)] border-b border-[var(--border-card-theme)]/70 px-6 py-4">
-              <h3 className="text-base font-bold text-[var(--text-main-theme)]">Mark case worked out</h3>
-              <button onClick={() => setWorkedOutOpen(false)} className="text-[var(--text-main-theme)] opacity-50 hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-[var(--bg-page-main)]">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">Work-out Date:</label>
-                <input
-                  type="date"
-                  value={workedOutDate}
-                  max={todayISO()}
-                  onChange={(e) => setWorkedOutDate(e.target.value)}
-                  className="w-full bg-[var(--bg-page-main)]/40 border-2 border-[var(--border-card-theme)] text-sm text-[var(--text-main-theme)] px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 bg-[var(--bg-page-main)] border-t border-[var(--border-card-theme)]/70 px-6 py-4">
-              <button onClick={() => handleWorkedOutSubmit('false')} disabled={statusUpdateMutation.isPending} className="bg-[var(--bg-page-main)] border-2 border-[var(--border-card-theme)] hover:border-red-400 text-[var(--text-main-theme)] px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all">
-                Mark No
-              </button>
-              <button onClick={() => handleWorkedOutSubmit('true')} disabled={statusUpdateMutation.isPending} className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md cursor-pointer transition-all disabled:opacity-60">
-                Mark Yes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── DOMAIN STATUS UPDATE MODAL (item 9, WS9) — single reusable component now
+          serves every record type correctly, including ARREST custody_status ─────── */}
+      <StatusUpdateModal
+        recordId={id}
+        open={statusModalOpen}
+        initialField={statusModalField}
+        onClose={() => setStatusModalOpen(false)}
+        onUpdated={() => queryClient.invalidateQueries({ queryKey: ['workflow', 'queue'] })}
+      />
     </div>
   );
 }

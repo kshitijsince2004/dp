@@ -5,14 +5,23 @@
 // publishes that event right after claimBatch() succeeds — this is the only place the message
 // is consumed.
 import * as eventBus from '../eventBus.js';
-import { logger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import { processBatch, sweepStaleConfirmedBatches } from '../../modules/import/import.service.js';
 
+// STYLE ANCHOR match (logging-instrumentation-2026-07-22, HANDOFF.md §7) — mirrors
+// linkAuditHandler.js/linkResolver.js exactly: getLogger('importConfirmHandler') bound once,
+// log.info on subscription registration, log.debug on every message received, log.error/warn
+// on every ack/nack-relevant decision.
+const log = getLogger('importConfirmHandler');
+
 export async function init() {
+  log.info('init: registering event subscription', { pattern: 'import.confirm.requested' });
+
   await eventBus.subscribe('import.confirm.requested', 'import-confirm-queue', async (payload) => {
     const batchId = payload?.batch_id;
+    log.debug('import.confirm.requested: received', { batchId });
     if (!batchId) {
-      logger.warn('[ImportConfirmHandler] import.confirm.requested with no batch_id — dropping');
+      log.warn('import.confirm.requested: no batch_id on payload — dropping', { payload });
       return;
     }
     // processBatch owns its own top-level try/catch and always resolves normally (marking the
@@ -23,20 +32,24 @@ export async function init() {
     // (e.g. a malformed payload) — not the expected path.
     try {
       await processBatch(batchId);
+      log.debug('import.confirm.requested: processBatch returned (ack)', { batchId });
     } catch (err) {
-      logger.error(`[ImportConfirmHandler] Unexpected error processing batch ${batchId}: ${err.message}`);
+      log.error('import.confirm.requested: unexpected error processing batch (backstop catch — processBatch should never throw)', { batchId, err });
     }
   });
 
   // Startup sweep (§4.6/G4) — catches batches left in CONFIRMED with no live message to
   // process them (e.g. a mock-mode process restart between publish and consume). Runs once at
   // boot, not on a timer; processBatch's own leading status guard makes any redelivery safe.
+  log.debug('init: running startup sweep for stale CONFIRMED batches');
   try {
     const swept = await sweepStaleConfirmedBatches(eventBus.publish);
     if (swept > 0) {
-      logger.info(`[ImportConfirmHandler] Startup sweep re-published ${swept} stale CONFIRMED batch(es)`);
+      log.info('init: startup sweep re-published stale CONFIRMED batch(es)', { swept });
+    } else {
+      log.debug('init: startup sweep found nothing stale', { swept });
     }
   } catch (err) {
-    logger.error(`[ImportConfirmHandler] Startup sweep failed: ${err.message}`);
+    log.error('init: startup sweep failed', { err });
   }
 }
