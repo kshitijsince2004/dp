@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import useAuthStore from "../../store/authStore.js";
 import api from "../../utils/api.js";
 import { Spinner } from "../../components/ui/Spinner.jsx";
+import StatCard from "../../components/ui/StatCard.jsx";
 import { parseDMY } from "../../utils/dateFormat.js";
 
 export default function StationDetailView() {
@@ -163,7 +164,7 @@ export default function StationDetailView() {
   if (error || !stationNode) {
     return (
       <div className={`min-h-screen ${getThemeClass()} page-bg flex items-center justify-center px-6 font-sans`}>
-        <div className="rounded-3xl border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md shadow-xl max-w-md w-full overflow-hidden">
+        <div className="rounded-panel border border-[var(--border-card-theme)] bg-white max-w-md w-full overflow-hidden">
           <div className="h-1.5 w-full bg-red-500" />
           <div className="p-8 text-center text-[var(--text-main-theme)]">
             <p className="font-semibold text-red-700">{error || "Station not found."}</p>
@@ -180,12 +181,12 @@ export default function StationDetailView() {
   }
 
   const statCards = [
-    { title: "FIR CASES", value: calculations.casesTotal, icon: Shield, color: "text-emerald-500 bg-emerald-500/10 border border-emerald-500/20" },
-    { title: "ARRESTS", value: calculations.arrestsTotal, icon: UserX, color: "text-rose-500 bg-rose-500/10 border border-rose-500/20" },
-    { title: "PCR CALLS", value: calculations.pcrTotal, icon: PhoneCall, color: "text-sky-500 bg-sky-500/10 border border-sky-500/20" },
-    { title: "MISSING", value: calculations.missingTotal, icon: HelpCircle, color: "text-purple-500 bg-purple-500/10 border border-purple-200/20" },
-    { title: "PENDING DECI.", value: calculations.pending, icon: Calendar, color: "text-amber-500 bg-amber-500/10 border border-amber-500/20" },
-    { title: "APPROVED", value: calculations.approved, icon: Shield, color: "text-indigo-500 bg-indigo-500/10 border border-indigo-500/20" }
+    { title: "FIR Cases", value: calculations.casesTotal, icon: Shield, color: "text-emerald-500" },
+    { title: "Arrests", value: calculations.arrestsTotal, icon: UserX, color: "text-rose-500" },
+    { title: "PCR Calls", value: calculations.pcrTotal, icon: PhoneCall, color: "text-sky-500" },
+    { title: "Missing", value: calculations.missingTotal, icon: HelpCircle, color: "text-purple-500" },
+    { title: "Pending Deci.", value: calculations.pending, icon: Calendar, color: "text-amber-500" },
+    { title: "Approved", value: calculations.approved, icon: Shield, color: "text-indigo-500" }
   ];
 
   return (
@@ -212,28 +213,20 @@ export default function StationDetailView() {
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        {statCards.map((card, idx) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={idx}
-              className="theme-card p-4 flex items-center justify-between border rounded-2xl shadow-sm bg-[var(--bg-page-main)]/60 border-[var(--border-card-theme)] backdrop-blur-md"
-            >
-              <div>
-                <p className="text-[9px] font-bold text-[var(--text-main-theme)] opacity-60 tracking-wider uppercase mb-1">{card.title}</p>
-                <h4 className="text-xl font-bold text-[var(--text-main-theme)] tabular-numbers">{card.value}</h4>
-              </div>
-              <div className={`p-2 rounded-xl flex items-center justify-center ${card.color}`}>
-                <Icon size={16} />
-              </div>
-            </div>
-          );
-        })}
+        {statCards.map((card, idx) => (
+          <StatCard
+            key={idx}
+            label={card.title}
+            value={card.value}
+            icon={card.icon}
+            iconColor={card.color}
+          />
+        ))}
       </div>
 
       {/* Trend Chart */}
-      <div className="theme-card p-6 border mb-6 rounded-3xl shadow-sm bg-[var(--bg-page-main)]/60 border-[var(--border-card-theme)] backdrop-blur-md">
-        <h3 className="text-xs font-bold tracking-wider text-[var(--text-main-theme)] opacity-60 uppercase mb-4 flex items-center gap-2">
+      <div className="theme-card p-6 border mb-6 rounded-panel bg-white border-[var(--border-card-theme)]">
+        <h3 className="text-label font-semibold text-[var(--text-main-theme)] opacity-60 mb-4 flex items-center gap-2">
           <ChartIcon size={16} className="text-[var(--accent-color)]" />
           Volume Trend Analysis (Last 7 Active Days)
         </h3>
@@ -262,10 +255,10 @@ export default function StationDetailView() {
       {/* Records Tables Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Cases */}
-        <div className="theme-card border overflow-hidden rounded-3xl shadow-sm bg-[var(--bg-page-main)]/60 border-[var(--border-card-theme)] backdrop-blur-md">
+        <div className="theme-card border overflow-hidden rounded-panel bg-white border-[var(--border-card-theme)]">
           <div className="p-4 border-b flex items-center gap-2 bg-[var(--bg-page-main)]/80 border-[var(--border-card-theme)]/70">
             <Shield size={16} className="text-emerald-500" />
-            <h3 className="text-xs font-bold tracking-wider text-[var(--text-main-theme)] uppercase">Recent Cases (FIR)</h3>
+            <h3 className="text-sm font-bold text-[var(--text-main-theme)]">Recent Cases (FIR)</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -308,10 +301,10 @@ export default function StationDetailView() {
         </div>
 
         {/* Arrests */}
-        <div className="theme-card border overflow-hidden rounded-3xl shadow-sm bg-[var(--bg-page-main)]/60 border-[var(--border-card-theme)] backdrop-blur-md">
+        <div className="theme-card border overflow-hidden rounded-panel bg-white border-[var(--border-card-theme)]">
           <div className="p-4 border-b flex items-center gap-2 bg-[var(--bg-page-main)]/80 border-[var(--border-card-theme)]/70">
             <UserX size={16} className="text-red-500" />
-            <h3 className="text-xs font-bold tracking-wider text-[var(--text-main-theme)] uppercase">Recent Arrests</h3>
+            <h3 className="text-sm font-bold text-[var(--text-main-theme)]">Recent Arrests</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -354,10 +347,10 @@ export default function StationDetailView() {
         </div>
 
         {/* PCR Calls */}
-        <div className="theme-card border overflow-hidden rounded-3xl shadow-sm bg-[var(--bg-page-main)]/60 border-[var(--border-card-theme)] backdrop-blur-md">
+        <div className="theme-card border overflow-hidden rounded-panel bg-white border-[var(--border-card-theme)]">
           <div className="p-4 border-b flex items-center gap-2 bg-[var(--bg-page-main)]/80 border-[var(--border-card-theme)]/70">
             <PhoneCall size={16} className="text-blue-500" />
-            <h3 className="text-xs font-bold tracking-wider text-[var(--text-main-theme)] uppercase">Recent PCR Calls</h3>
+            <h3 className="text-sm font-bold text-[var(--text-main-theme)]">Recent PCR Calls</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -400,10 +393,10 @@ export default function StationDetailView() {
         </div>
 
         {/* Missing Persons */}
-        <div className="theme-card border overflow-hidden rounded-3xl shadow-sm bg-[var(--bg-page-main)]/60 border-[var(--border-card-theme)] backdrop-blur-md">
+        <div className="theme-card border overflow-hidden rounded-panel bg-white border-[var(--border-card-theme)]">
           <div className="p-4 border-b flex items-center gap-2 bg-[var(--bg-page-main)]/80 border-[var(--border-card-theme)]/70">
             <HelpCircle size={16} className="text-purple-500" />
-            <h3 className="text-xs font-bold tracking-wider text-[var(--text-main-theme)] uppercase">Recent Missing Person Records</h3>
+            <h3 className="text-sm font-bold text-[var(--text-main-theme)]">Recent Missing Person Records</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">

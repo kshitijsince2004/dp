@@ -148,7 +148,7 @@ export default function Users() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2 font-display">
             <UsersIcon className="text-[var(--accent-color)]" />
-            <span>{isSHO ? 'My Police Station — Officers' : 'Users Register Console'}</span>
+            <span>{isSHO ? 'My Police Station Officers' : 'Users Register Console'}</span>
           </h1>
           <p className="text-slate-500 text-xs mt-1 font-semibold">
             {isSHO

@@ -1,22 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  /* Remap hardcoded dark theme zinc classes to a premium light theme layout */
-  --color-zinc-50: #f8fafc;
-  --color-zinc-100: #0f172a;
-  --color-zinc-200: #1e293b;
-  --color-zinc-300: #334155;
-  --color-zinc-400: #475569;
-  --color-zinc-500: #64748b;
-  --color-zinc-600: #94a3b8;
-  --color-zinc-700: #cbd5e1;
-  --color-zinc-750: #cbd5e1;
-  --color-zinc-800: #cbd5e1;
-  --color-zinc-850: #e2e8f0;
-  --color-zinc-855: #e2e8f0;
-  --color-zinc-900: #ffffff;
-  --color-zinc-950: #f1f5f9;
-
   /* Remap dark background utility statuses to soft status badges */
   --color-amber-950: #fef3c7;
   --color-amber-400: #b45309;
@@ -39,9 +23,9 @@
   --ease-spring-snappy: cubic-bezier(0.19, 1, 0.22, 1);
   --ease-spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Premium display and serif typography mapping */
-  --font-display: 'Cinzel', 'Outfit', serif;
-  --font-serif: 'Playfair Display', serif;
+  /* Uniform typography — one font family everywhere */
+  --font-display: 'Lato', 'Noto Sans Devanagari', sans-serif;
+  --font-serif: 'Lato', 'Noto Sans Devanagari', sans-serif;
 
   /* Unified type scale for stat cards / labels / meta text */
   --text-label: 0.6875rem;
@@ -56,6 +40,51 @@
   /* Unified radius scale */
   --radius-card: 0.75rem;
   --radius-control: 0.5rem;
+  --radius-chip: 0.375rem;
+  --radius-panel: 1rem;
+
+  /* Warm neutral ramp — replaces default Tailwind slate/gray/zinc across the app */
+  --color-slate-50: #faf9f7;
+  --color-slate-100: #f4f2ef;
+  --color-slate-200: #e7e3dd;
+  --color-slate-300: #d3cdc4;
+  --color-slate-400: #a39c8f;
+  --color-slate-500: #7d766a;
+  --color-slate-600: #5c564c;
+  --color-slate-700: #423d35;
+  --color-slate-800: #2a2621;
+  --color-slate-900: #1b1815;
+  --color-slate-950: #100e0c;
+
+  --color-gray-50: var(--color-slate-50);
+  --color-gray-100: var(--color-slate-100);
+  --color-gray-200: var(--color-slate-200);
+  --color-gray-300: var(--color-slate-300);
+  --color-gray-400: var(--color-slate-400);
+  --color-gray-500: var(--color-slate-500);
+  --color-gray-600: var(--color-slate-600);
+  --color-gray-700: var(--color-slate-700);
+  --color-gray-800: var(--color-slate-800);
+  --color-gray-900: var(--color-slate-900);
+  --color-gray-950: var(--color-slate-950);
+
+  /* Zinc alias — round-1 primitives used bg-zinc-900/text-zinc-100 etc. for a dark theme;
+     keep each stop's original relative-lightness rank but resolve through the same warm ramp
+     so zinc and slate stop being two independently-drifting "neutral" palettes. */
+  --color-zinc-50: var(--color-slate-50);
+  --color-zinc-100: var(--color-slate-800);
+  --color-zinc-200: var(--color-slate-700);
+  --color-zinc-300: var(--color-slate-600);
+  --color-zinc-400: var(--color-slate-500);
+  --color-zinc-500: var(--color-slate-500);
+  --color-zinc-600: var(--color-slate-400);
+  --color-zinc-700: var(--color-slate-300);
+  --color-zinc-750: var(--color-slate-300);
+  --color-zinc-800: var(--color-slate-200);
+  --color-zinc-850: var(--color-slate-200);
+  --color-zinc-855: var(--color-slate-100);
+  --color-zinc-900: var(--color-slate-50);
+  --color-zinc-950: var(--color-slate-100);
 }
 
 /* Core Global Stylesheet for PHAROS - Premium Light UI/UX Theme */
@@ -80,6 +109,9 @@
   --primary-light: #16406d;
   --primary-accent: #0f52ba; /* Delhi Police Royal Blue */
   --primary-glow: rgba(15, 82, 186, 0.08);
+  /* Fallback for shared UI primitives rendered outside a .theme-*-page wrapper */
+  --accent-color: var(--primary-accent);
+  --accent-color-hover: var(--primary-light);
   --accent-gold: #cca43b; /* Crest Gold */
   --accent-gold-glow: rgba(204, 164, 59, 0.08);
   --success: #16a34a;
@@ -98,7 +130,7 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
 
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: 'Lato', 'Noto Sans Devanagari', sans-serif;
 
   color-scheme: light;
 }
@@ -112,7 +144,7 @@ body {
   padding: 0;
   background-color: var(--bg-primary) !important;
   color: var(--text-primary) !important;
-  font-family: 'Outfit', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Lato', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -145,15 +177,6 @@ body {
   }
 }
 
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(37, 99, 235, 0.1);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(37, 99, 235, 0.25);
-  }
-}
-
 @keyframes spinSlow {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -161,30 +184,6 @@ body {
 
 .fade-in-up {
   animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Glassmorphism Panels */
-.glass-panel {
-  background: rgba(20, 23, 34, 0.7) !important;
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(31, 39, 53, 0.7) !important;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-}
-
-.glass-panel:hover {
-  border-color: rgba(37, 99, 235, 0.5) !important;
-  box-shadow: 0 8px 32px 0 rgba(37, 99, 235, 0.1);
-}
-
-/* Hover scales */
-.hover-scale {
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.hover-scale:hover {
-  transform: translateY(-3px) scale(1.01);
-  border-color: var(--primary) !important;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 0 15px var(--primary-glow);
 }
 
 /* Typography Gradient */
@@ -290,18 +289,6 @@ body {
   border-radius: 6px !important;
   font-weight: 500 !important;
   transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.ant-btn-primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
-  border: none !important;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25) !important;
-}
-
-.ant-btn-primary:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.4) !important;
-  transform: translateY(-1px);
 }
 
 .ant-btn:active, .btn:active, .quick-profile-card:active {
@@ -1307,7 +1294,7 @@ textarea.form-control {
   flex: 1;
 }
 
-/* Buttons - Big, Attractive, Production-Grade */
+/* Buttons - flat fill, background-only hover, no glow */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1317,12 +1304,11 @@ textarea.form-control {
   font-size: 1rem;
   font-weight: 700;
   padding: 0.75rem 1.6rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-control);
   cursor: pointer;
   border: 1px solid transparent;
   letter-spacing: 0.01em;
-  box-shadow: var(--shadow-sm);
-  transition: background-color 0.2s var(--ease-spring-snappy), border-color 0.2s var(--ease-spring-snappy), color 0.2s var(--ease-spring-snappy), box-shadow 0.2s var(--ease-spring-snappy), transform 0.2s var(--ease-spring-snappy);
+  transition: background-color 0.2s var(--ease-spring-snappy), border-color 0.2s var(--ease-spring-snappy), color 0.2s var(--ease-spring-snappy);
 }
 
 .btn:active {
@@ -1330,20 +1316,17 @@ textarea.form-control {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-accent) 0%, var(--primary-light) 100%);
+  background: var(--primary-accent);
   color: var(--text-inverse);
-  box-shadow: 0 4px 14px rgba(15, 82, 186, 0.3);
   border: none;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-light) 0%, #0d2a4a 100%);
-  box-shadow: 0 6px 20px rgba(15, 82, 186, 0.4);
-  transform: translateY(-2px);
+  background: var(--primary-light);
 }
 
 .btn-primary:active {
-  transform: translateY(0) scale(0.97) !important;
+  transform: scale(0.97) !important;
 }
 
 .btn-secondary {
@@ -1356,37 +1339,30 @@ textarea.form-control {
   background-color: var(--bg-primary);
   border-color: var(--primary-accent);
   color: var(--primary-accent);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(15, 82, 186, 0.12);
 }
 
 .btn-secondary:active {
-  transform: translateY(0) scale(0.97) !important;
+  transform: scale(0.97) !important;
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  background: #dc2626;
   color: var(--text-inverse);
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
   border: none;
 }
 
 .btn-danger:hover {
-  background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
-  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
-  transform: translateY(-1px);
+  background: #b91c1c;
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #16a34a 0%, #166534 100%);
+  background: #16a34a;
   color: var(--text-inverse);
-  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
   border: none;
 }
 
 .btn-success:hover {
-  background: linear-gradient(135deg, #15803d 0%, #14532d 100%);
-  transform: translateY(-1px);
+  background: #15803d;
 }
 
 .btn-link {
@@ -1417,15 +1393,13 @@ textarea.form-control {
 }
 
 .ant-btn-primary {
-  background: linear-gradient(135deg, var(--primary-accent) 0%, var(--primary-light) 100%) !important;
+  background: var(--primary-accent) !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(15, 82, 186, 0.3) !important;
+  box-shadow: none !important;
 }
 
 .ant-btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-light) 0%, #0d2a4a 100%) !important;
-  box-shadow: 0 6px 20px rgba(15, 82, 186, 0.4) !important;
-  transform: translateY(-2px) !important;
+  background: var(--primary-light) !important;
 }
 
 .ant-btn-default {
@@ -3907,29 +3881,6 @@ textarea.form-control {
 .theme-acp-page .hero-banner-gradient .pointer-events-none {
   border-color: rgba(71, 85, 105, 0.05) !important;
 }
-.user-greeting-badge {
-  position: absolute !important;
-  top: 11px !important;
-  right: 24px !important;
-  z-index: 30 !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  color: #ffffff !important;
-}
-
-.theme-shared-page .hero-banner-gradient .user-greeting-badge,
-.theme-acp-page .hero-banner-gradient .user-greeting-badge,
-.theme-shared-page .user-greeting-badge,
-.theme-acp-page .user-greeting-badge {
-  color: #0f172a !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-}
-
 /* Hide number input spinners globally to clean up numeric fields like Beat No */
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button {

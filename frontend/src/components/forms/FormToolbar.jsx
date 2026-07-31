@@ -70,9 +70,9 @@ export default function FormToolbar({
             <button
               type="button"
               onClick={onSubmit}
-              className="flex items-center gap-2.5 px-10 py-3 bg-gradient-to-r from-[var(--accent-color)] to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white
-                font-extrabold rounded-xl text-base shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all cursor-pointer hover:-translate-y-0.5
-                focus:outline-none focus:ring-4 focus:ring-emerald-500/30"
+              className="flex items-center gap-2.5 px-10 py-3 bg-[var(--accent-color)] hover:bg-emerald-600 text-white
+                font-extrabold rounded-control text-base transition-colors cursor-pointer
+                focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             >
               <SendHorizonal size={18} />
               <span>{lang === 'hi' ? 'रिकॉर्ड सबमिट करें' : 'Submit Record'}</span>

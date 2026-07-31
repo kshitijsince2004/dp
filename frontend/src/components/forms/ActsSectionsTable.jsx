@@ -207,33 +207,13 @@ export default function ActsSectionsTable({
     />
   );
 
+  // Derived, not user-editable: ref.local_heads.crime_category (ruling 16) already classifies
+  // every local head as HEINOUS/NON_HEINOUS/OTHER, so this just reflects the current selection.
+  const isHeinous = getLocalHeadOptions().find((o) => o.value === values.local_head)?.crime_category === 'HEINOUS';
   const heinousOffenceBlock = (
-    <div className="flex items-center gap-4 mt-0.5">
-      <label className="flex items-center gap-1.5 text-[#0d2a4a] font-medium cursor-pointer select-none">
-        <input
-          type="radio"
-          name="heinous_offence"
-          disabled={readOnly}
-          value="yes"
-          checked={values.heinous_offence === true || values.heinous_offence === 'yes'}
-          onChange={() => handleChange('heinous_offence', true)}
-          className="accent-[#0f52ba] cursor-pointer"
-        />
-        <span>{lang === 'hi' ? 'हाँ' : 'Yes'}</span>
-      </label>
-      <label className="flex items-center gap-1.5 text-[#0d2a4a] font-medium cursor-pointer select-none">
-        <input
-          type="radio"
-          name="heinous_offence"
-          disabled={readOnly}
-          value="no"
-          checked={values.heinous_offence === false || values.heinous_offence === 'no'}
-          onChange={() => handleChange('heinous_offence', false)}
-          className="accent-[#0f52ba] cursor-pointer"
-        />
-        <span>{lang === 'hi' ? 'नहीं' : 'No'}</span>
-      </label>
-    </div>
+    <span className={`text-[11px] font-bold ${isHeinous ? 'text-red-600' : 'text-[#0d2a4a]'}`}>
+      {isHeinous ? (lang === 'hi' ? 'हाँ' : 'Yes') : (lang === 'hi' ? 'नहीं' : 'No')}
+    </span>
   );
 
   return (
@@ -314,6 +294,10 @@ export default function ActsSectionsTable({
             </legend>
             <div className="flex flex-col gap-2 text-[11px]">
               {majorMinorBlock}
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[#0d2a4a] font-bold">{lang === 'hi' ? 'जघन्य अपराध' : 'Heinous Offences'}</span>
+                {heinousOffenceBlock}
+              </div>
             </div>
           </fieldset>
         ) : localHeadLayout === 'split' ? (

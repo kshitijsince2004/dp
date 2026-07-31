@@ -162,7 +162,10 @@ export const getCompare = async (req, res) => {
 export const getOverview = async (req, res) => {
   const jq = req.jurisdictionQuery;
   try {
-    let query = db('records').select('record_type').count('* as count');
+    let query = db('records')
+      .select('record_type')
+      .count('* as count')
+      .whereIn('current_status', ['submitted', 'PENDING_SHO', 'DISTRICT_REVIEW', 'HQ_RECEIVED', 'CLOSED', 'COMPILED']);
     if (jq.ps_id) query = query.where('ps_id', jq.ps_id);
     if (jq.district_id) query = query.where('district_id', jq.district_id);
     if (jq.sub_div_id) query = query.where('sub_div_id', jq.sub_div_id);
@@ -256,21 +259,21 @@ export const getByPs = async (req, res) => {
 export const getByCrimeHead = async (req, res) => {
   const jq = req.jurisdictionQuery;
   try {
-    // Single-head classification (§9.4): the is_primary record_offences row's major_head.
     let query = db('records')
-      .select('mh.major_head as crime_head')
+      .select('lh.local_head as crime_head')
       .count('* as count')
-      .leftJoin('record_offences as ro', (j) => j.on('records.id', 'ro.record_id').andOn('ro.is_primary', db.raw('true')))
-      .leftJoin('ref.major_heads as mh', 'ro.major_head_id', 'mh.major_head_code')
-      .where('record_type', 'CASE');
+      .join('fir_details as fir', 'records.id', 'fir.record_id')
+      .join('ref.local_heads as lh', 'fir.local_head_id', 'lh.local_head_cd')
+      .where('records.record_type', 'CASE')
+      .where('lh.crime_category', 'HEINOUS');
 
     if (jq.ps_id) query = query.where('records.ps_id', jq.ps_id);
     if (jq.district_id) query = query.where('records.district_id', jq.district_id);
     if (jq.sub_div_id) query = query.where('records.sub_div_id', jq.sub_div_id);
 
-    const rows = await query.groupBy('mh.major_head').orderBy('count', 'desc').limit(10);
+    const rows = await query.groupBy('lh.local_head').orderBy('count', 'desc').limit(10);
     const data = rows.map(r => ({
-      name: r.heinous_offence,
+      name: r.crime_head,
       count: parseInt(r.count, 10) || 0
     }));
     return res.status(200).json({ success: true, data });
@@ -423,6 +426,16 @@ const applyJurisdictionScope = (query, jq) => {
   return query;
 };
 
+// Same as applyJurisdictionScope but qualifies the column with a table alias — needed once a
+// query joins in a detail table that also carries its own ps_id (e.g. fir_details), which would
+// otherwise make an unqualified "ps_id" ambiguous to Postgres.
+const scopeRecords = (query, jq, alias = 'records') => {
+  if (jq.ps_id) query = query.where(`${alias}.ps_id`, jq.ps_id);
+  if (jq.district_id) query = query.where(`${alias}.district_id`, jq.district_id);
+  if (jq.sub_div_id) query = query.where(`${alias}.sub_div_id`, jq.sub_div_id);
+  return query;
+};
+
 const toISODate = (d) => {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -455,6 +468,17 @@ const getDateRangeForPeriod = (period) => {
     return {
       currentStart: toISODate(currentStart), currentEnd: toISODate(today),
       previousStart: toISODate(previousStart), previousEnd: toISODate(previousMonthEnd)
+    };
+  }
+
+  if (period === 'year') {
+    const currentStart = new Date(today.getFullYear(), 0, 1);
+    const previousYearEnd = new Date(currentStart);
+    previousYearEnd.setDate(previousYearEnd.getDate() - 1);
+    const previousStart = new Date(previousYearEnd.getFullYear(), 0, 1);
+    return {
+      currentStart: toISODate(currentStart), currentEnd: toISODate(today),
+      previousStart: toISODate(previousStart), previousEnd: toISODate(previousYearEnd)
     };
   }
 
@@ -537,12 +561,18 @@ const computeLeftOutAccused = async (jq, startDate, endDate, { heinousOnly = fal
     let caseQuery = db('records')
       .select('records.id', 'fir.fir_no as fir_no')
       .leftJoin('fir_details as fir', 'records.id', 'fir.record_id')
-      .where('record_type', 'CASE')
-      .whereBetween('record_date', [startDate, endDate]);
+      .where('records.record_type', 'CASE')
+      .whereBetween('records.record_date', [startDate, endDate]);
     if (heinousOnly) {
-      caseQuery = caseQuery.whereRaw(`${jsonbPath('data', 'heinous_offence')} = 'true'`);
+      // Heinous is not a stored flag — it's derived from the FIR's crime head (local_head_id)
+      // resolving to a ref.local_heads row tagged crime_category = 'HEINOUS'.
+      caseQuery = caseQuery
+        .join('ref.local_heads as lh', 'fir.local_head_id', 'lh.local_head_cd')
+        .where('lh.crime_category', 'HEINOUS');
     }
-    caseQuery = applyJurisdictionScope(caseQuery, jq);
+    // fir_details also carries its own ps_id column, so the scope filter must be qualified
+    // to "records." here or Postgres rejects it as an ambiguous column reference.
+    caseQuery = scopeRecords(caseQuery, jq);
     const cases = await caseQuery;
     if (cases.length === 0) return { count: 0, list: [] };
 
@@ -601,9 +631,48 @@ const computeLeftOutAccused = async (jq, startDate, endDate, { heinousOnly = fal
   }
 };
 
+// CASE records in range+scope whose FIR crime head (fir_details.local_head_id) resolves to a
+// ref.local_heads row tagged crime_category = 'HEINOUS'.
+const countHeinousCases = async (jq, startDate, endDate) => {
+  let query = db('records')
+    .join('fir_details as fir', 'records.id', 'fir.record_id')
+    .join('ref.local_heads as lh', 'fir.local_head_id', 'lh.local_head_cd')
+    .where('records.record_type', 'CASE')
+    .where('lh.crime_category', 'HEINOUS')
+    .whereBetween('records.record_date', [startDate, endDate]);
+  query = scopeRecords(query, jq);
+  const row = await query.count('* as count').first();
+  return parseInt(row.count, 10) || 0;
+};
+
+// CASE records in range+scope marked worked-out (fir_details.is_worked_out).
+const countWorkedOutCases = async (jq, startDate, endDate) => {
+  let query = db('records')
+    .join('fir_details as fir', 'records.id', 'fir.record_id')
+    .where('records.record_type', 'CASE')
+    .where('fir.is_worked_out', true)
+    .whereBetween('records.record_date', [startDate, endDate]);
+  query = scopeRecords(query, jq);
+  const row = await query.count('* as count').first();
+  return parseInt(row.count, 10) || 0;
+};
+
+// Counts persons rows (role=ARRESTEE) with a given gender, restricted to a specific set of
+// ARREST record ids (e.g. the Kalandra/standalone-arrest id list) — avoids re-deriving that set.
+const countGenderInPersonIds = async (recordIds, gender) => {
+  if (!recordIds || recordIds.length === 0) return 0;
+  const row = await db('persons')
+    .whereIn('record_id', recordIds)
+    .andWhere('role', 'ARRESTEE')
+    .andWhere('gender', gender)
+    .count('* as count')
+    .first();
+  return parseInt(row.count, 10) || 0;
+};
+
 export const getPsDashboardSummary = async (req, res) => {
   const jq = req.jurisdictionQuery;
-  const period = ['day', 'week', 'month'].includes(req.query.period) ? req.query.period : 'day';
+  const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'day';
 
   try {
     const { currentStart, currentEnd, previousStart, previousEnd } = getDateRangeForPeriod(period);
@@ -640,13 +709,14 @@ export const getPsDashboardSummary = async (req, res) => {
 
 export const getPsDashboardStatsV2 = async (req, res) => {
   const jq = req.jurisdictionQuery;
-  const period = ['day', 'week', 'month'].includes(req.query.period) ? req.query.period : 'day';
+  const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'day';
 
   try {
     const { currentStart, currentEnd, previousStart, previousEnd } = getDateRangeForPeriod(period);
 
     const [
       firCurrent, firPrevious,
+      workoutCurrent, workoutPrevious,
       arrestInFirCurrent, arrestInFirPrevious,
       heinousCurrent, heinousPrevious,
       standaloneIdsCurrent, standaloneIdsPrevious,
@@ -654,6 +724,8 @@ export const getPsDashboardStatsV2 = async (req, res) => {
     ] = await Promise.all([
       countRecordsByTypes(jq, ['CASE'], currentStart, currentEnd),
       countRecordsByTypes(jq, ['CASE'], previousStart, previousEnd),
+      countWorkedOutCases(jq, currentStart, currentEnd),
+      countWorkedOutCases(jq, previousStart, previousEnd),
       countLinkedArrests(jq, currentStart, currentEnd),
       countLinkedArrests(jq, previousStart, previousEnd),
       countHeinousCases(jq, currentStart, currentEnd),
@@ -678,6 +750,7 @@ export const getPsDashboardStatsV2 = async (req, res) => {
       data: {
         period,
         fir: box(firCurrent, firPrevious),
+        workout: box(workoutCurrent, workoutPrevious),
         arrest_in_fir: box(arrestInFirCurrent, arrestInFirPrevious),
         heinous_case: box(heinousCurrent, heinousPrevious),
         leftout_heinous: box(leftOutCurrent.count, leftOutPrevious.count),
@@ -694,7 +767,7 @@ export const getPsDashboardStatsV2 = async (req, res) => {
 
 export const getCaseTypeBreakdown = async (req, res) => {
   const jq = req.jurisdictionQuery;
-  const period = ['day', 'week', 'month'].includes(req.query.period) ? req.query.period : 'day';
+  const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'day';
 
   try {
     const { currentStart, currentEnd, previousStart, previousEnd } = getDateRangeForPeriod(period);
@@ -757,6 +830,21 @@ const getBucketDefsForPeriod = (period) => {
     };
   }
 
+  if (period === 'year') {
+    const currentYear = today.getFullYear();
+    return {
+      rangeStart: `${currentYear}-01-01 00:00:00`,
+      rangeEnd: `${currentYear}-12-31 23:59:59`,
+      labels: TREND_MONTH_NAMES,
+      // Bucket index IS the month number (0-11) — no lookup table needed, just guard the year.
+      bucketIndex: (recordDateVal) => {
+        if (!recordDateVal) return -1;
+        const d = new Date(recordDateVal);
+        return d.getFullYear() === currentYear ? d.getMonth() : -1;
+      }
+    };
+  }
+
   const spanDays = period === 'week' ? 7 : 30;
   const dates = [];
   for (let i = spanDays - 1; i >= 0; i--) {
@@ -805,7 +893,7 @@ export const getCasesByMonthTrend = async (req, res) => {
   const period = req.query.period;
 
   try {
-    if (period && ['day', 'week', 'month'].includes(period)) {
+    if (period && ['day', 'week', 'month', 'year'].includes(period)) {
       const trendData = await getTrendForRecordType(jq, CASE_LIKE_TYPES, period);
       return res.status(200).json({ success: true, data: trendData });
     }
@@ -893,7 +981,7 @@ export const getByDistrict = async (req, res) => {
 
 export const getArrestsTrend = async (req, res) => {
   const jq = req.jurisdictionQuery;
-  const period = ['day', 'week', 'month'].includes(req.query.period) ? req.query.period : 'week';
+  const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'week';
   try {
     const trendData = await getTrendForRecordType(jq, ['ARREST'], period);
     const data = trendData.map(item => ({ day: item.label, value: item.value }));
@@ -955,7 +1043,7 @@ const getTrendBreakdownByCategory = async (jq, period) => {
 
 export const getArrestsTrendBreakdown = async (req, res) => {
   const jq = req.jurisdictionQuery;
-  const period = ['day', 'week', 'month'].includes(req.query.period) ? req.query.period : 'week';
+  const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'week';
   try {
     const points = await getTrendBreakdownByCategory(jq, period);
     return res.status(200).json({ success: true, data: { period, points } });
@@ -968,66 +1056,85 @@ export const getArrestsTrendBreakdown = async (req, res) => {
 
 export const getCrimeHeadMatrix = async (req, res) => {
   const jq = req.jurisdictionQuery;
-  const period = ['day', 'week', 'month'].includes(req.query.period) ? req.query.period : 'day';
+  const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'day';
   try {
     const { currentStart, currentEnd } = getDateRangeForPeriod(period);
-    const localHeadExpr = jsonbPath('data', 'local_head');
 
-    const groupByCrimeHead = async (recordType) => {
+    // FIR (CASE) / UIDB counts grouped by crime head, via each record type's own detail table's
+    // local_head_id -> ref.local_heads. detailTable/idColumn differ per record type; join shape is shared.
+    const groupByCrimeHead = async (recordType, detailTable) => {
       let query = db('records')
-        .select(db.raw(`${localHeadExpr} as crime_head`))
+        .join(`${detailTable} as d`, 'records.id', 'd.record_id')
+        .join('ref.local_heads as lh', 'd.local_head_id', 'lh.local_head_cd')
+        .select('lh.local_head as crime_head')
         .count('* as count')
-        .where('record_type', recordType)
-        .whereRaw(`${localHeadExpr} IS NOT NULL`)
-        .whereBetween('record_date', [currentStart, currentEnd]);
-      query = applyJurisdictionScope(query, jq);
-      const rows = await query.groupBy(db.raw(localHeadExpr));
+        .where('records.record_type', recordType)
+        .whereBetween('records.record_date', [currentStart, currentEnd]);
+      query = scopeRecords(query, jq);
+      const rows = await query.groupBy('lh.local_head');
       return new Map(rows.map(r => [r.crime_head, parseInt(r.count, 10) || 0]));
     };
 
     // Arrests linked to a CASE (CASE_ARREST), classified by the linked CASE's own crime head —
-    // an ARREST record's own local_head is usually unset, the CASE it's linked to carries it.
+    // an ARREST record's own local_head is often unset, the CASE it's linked to carries it.
     const groupLinkedArrestsByCaseCrimeHead = async () => {
       let query = db('record_links as rl')
         .join('link_type_registry as ltr', 'rl.link_type_id', 'ltr.id')
         .join('records as arrest_rec', 'arrest_rec.id', 'rl.target_record_id')
-        .join('records as case_rec', 'case_rec.id', 'rl.source_record_id')
+        .join('fir_details as case_fir', 'case_fir.record_id', 'rl.source_record_id')
+        .join('ref.local_heads as lh', 'case_fir.local_head_id', 'lh.local_head_cd')
         .where('ltr.code', 'CASE_ARREST')
         .whereBetween('arrest_rec.record_date', [currentStart, currentEnd])
-        .whereRaw(`${jsonbPath('case_rec.data', 'local_head')} IS NOT NULL`)
-        .select(db.raw(`${jsonbPath('case_rec.data', 'local_head')} as crime_head`))
+        .select('lh.local_head as crime_head')
         .count('* as count');
       if (jq.ps_id) query = query.where('arrest_rec.ps_id', jq.ps_id);
       if (jq.district_id) query = query.where('arrest_rec.district_id', jq.district_id);
       if (jq.sub_div_id) query = query.where('arrest_rec.sub_div_id', jq.sub_div_id);
-      const rows = await query.groupBy(db.raw(jsonbPath('case_rec.data', 'local_head')));
+      const rows = await query.groupBy('lh.local_head');
       return new Map(rows.map(r => [r.crime_head, parseInt(r.count, 10) || 0]));
     };
 
-    const [firMap, uidbMap, standaloneArrestIds, linkedArrestByCaseHeadMap] = await Promise.all([
-      groupByCrimeHead('CASE'),
-      groupByCrimeHead('UIDB'),
+    // Worked-out FIR counts grouped by crime head (fir_details.is_worked_out is a real column now).
+    const groupWorkedOutByCrimeHead = async () => {
+      let query = db('records')
+        .join('fir_details as fir', 'records.id', 'fir.record_id')
+        .join('ref.local_heads as lh', 'fir.local_head_id', 'lh.local_head_cd')
+        .select('lh.local_head as crime_head')
+        .count('* as count')
+        .where('records.record_type', 'CASE')
+        .where('fir.is_worked_out', true)
+        .whereBetween('records.record_date', [currentStart, currentEnd]);
+      query = scopeRecords(query, jq);
+      const rows = await query.groupBy('lh.local_head');
+      return new Map(rows.map(r => [r.crime_head, parseInt(r.count, 10) || 0]));
+    };
+
+    const [firMap, uidbMap, standaloneArrestIds, linkedArrestByCaseHeadMap, workoutMap] = await Promise.all([
+      groupByCrimeHead('CASE', 'fir_details'),
+      groupByCrimeHead('UIDB', 'uidb_details'),
       getStandaloneArrestIds(jq, currentStart, currentEnd),
-      groupLinkedArrestsByCaseCrimeHead()
+      groupLinkedArrestsByCaseCrimeHead(),
+      groupWorkedOutByCrimeHead()
     ]);
 
     let kalandraMap = new Map();
     if (standaloneArrestIds.length > 0) {
-      const rows = await db('records')
-        .select(db.raw(`${localHeadExpr} as crime_head`))
+      const rows = await db('arrest_details as ad')
+        .join('ref.local_heads as lh', 'ad.local_head_id', 'lh.local_head_cd')
+        .select('lh.local_head as crime_head')
         .count('* as count')
-        .whereIn('id', standaloneArrestIds)
-        .whereRaw(`${localHeadExpr} IS NOT NULL`)
-        .groupBy(db.raw(localHeadExpr));
+        .whereIn('ad.record_id', standaloneArrestIds)
+        .groupBy('lh.local_head');
       kalandraMap = new Map(rows.map(r => [r.crime_head, parseInt(r.count, 10) || 0]));
     }
 
     const crimeHeads = [...new Set([
-      ...firMap.keys(), ...uidbMap.keys(), ...kalandraMap.keys(), ...linkedArrestByCaseHeadMap.keys()
+      ...firMap.keys(), ...uidbMap.keys(), ...kalandraMap.keys(),
+      ...linkedArrestByCaseHeadMap.keys(), ...workoutMap.keys()
     ])].sort();
 
-    // PCR_CALL and MISSING record types have no local_head field at all, so they're excluded
-    // entirely rather than shown as an always-blank column.
+    // PCR_CALL and MISSING record types have no crime-head classification at all, so they're
+    // excluded entirely rather than shown as an always-blank column.
     const rows = crimeHeads.map(head => {
       const linkedArrests = linkedArrestByCaseHeadMap.get(head) || 0;
       const kalandraArrests = kalandraMap.get(head) || 0;
@@ -1037,7 +1144,7 @@ export const getCrimeHeadMatrix = async (req, res) => {
         Arrest: linkedArrests + kalandraArrests, // total arrests: against-FIR + Kalandra combined
         Kalandra: kalandraArrests,
         UIDB: uidbMap.get(head) || 0,
-        Workout: null
+        Workout: workoutMap.get(head) || 0
       };
     });
 
@@ -1054,23 +1161,24 @@ export const getCrimeHeadMatrix = async (req, res) => {
 
 export const getCaseStatusBreakdown = async (req, res) => {
   const jq = req.jurisdictionQuery;
-  const period = ['day', 'week', 'month'].includes(req.query.period) ? req.query.period : 'day';
+  const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'day';
   try {
     const { currentStart, currentEnd } = getDateRangeForPeriod(period);
 
     const fieldRow = await db('field_registry')
       .where({ field_key: 'case_status', is_active: true })
-      .whereRaw(`applicable_record_types::text LIKE '%CASE%'`)
+      .whereRaw(`record_types @> '["CASE"]'::jsonb`)
       .first();
-    const options = parseJsonField(fieldRow?.options) || [];
+    const options = fieldRow?.options || []; // options is native jsonb — already a parsed array
 
     let query = db('records')
-      .select(db.raw(`${jsonbPath('data', 'case_status')} as case_status`))
+      .join('fir_details as fir', 'records.id', 'fir.record_id')
+      .select('fir.case_status as case_status')
       .count('* as count')
-      .where('record_type', 'CASE')
-      .whereBetween('record_date', [currentStart, currentEnd]);
-    query = applyJurisdictionScope(query, jq);
-    const rows = await query.groupBy(db.raw(jsonbPath('data', 'case_status')));
+      .where('records.record_type', 'CASE')
+      .whereBetween('records.record_date', [currentStart, currentEnd]);
+    query = scopeRecords(query, jq);
+    const rows = await query.groupBy('fir.case_status');
     const countByStatus = new Map(rows.map(r => [r.case_status, parseInt(r.count, 10) || 0]));
 
     const data = options.map(opt => ({
@@ -1094,31 +1202,23 @@ const shiftDateByYears = (dateStr, delta) => {
   return toISODate(new Date(y + delta, m - 1, d));
 };
 
-// Normalizes a crime-head string for matching against excel_heinous_offences: expands the
-// "Att."/"Kid." abbreviations already used consistently throughout the local_head/crime_head
-// option list (e.g. "Att. to Murder" -> "attempt to murder"), so it lines up with the
-// unabbreviated wording used in the heinous-offences reference table.
-const normalizeForHeinousMatch = (s) => (s || '')
-  .replace(/\bAtt\.\s*/gi, 'Attempt ')
-  .replace(/\bKid\.\s*/gi, 'Kidnapping ')
-  .replace(/\s+/g, ' ')
-  .trim()
-  .toLowerCase();
-
 export const getCrimeHeadYearTrend = async (req, res) => {
   const jq = req.jurisdictionQuery;
   const { durationPresetId, dateFrom, dateTo } = req.query;
 
   try {
-    const presetId = durationPresetId || 'hq_dur_1_current_year';
-    const presetRow = await db('filter_presets')
-      .where({ scope: 'HQ_DURATION', is_active: true, id: presetId })
-      .first();
+    // No hardcoded default preset id: when the caller doesn't specify one, fall back to
+    // whichever active HQ_DURATION preset covers the smallest span (i.e. "Current Year").
+    const presetRow = durationPresetId
+      ? await db('filter_presets').where({ scope: 'HQ_DURATION', is_active: true, id: durationPresetId }).first()
+      : await db('filter_presets')
+          .where({ scope: 'HQ_DURATION', is_active: true })
+          .orderByRaw(`(filter_spec->'conditions'->0->>'value')::int asc`)
+          .first();
 
     let yearsBack = 0;
     if (presetRow) {
-      const spec = parseJsonField(presetRow.filter_spec);
-      yearsBack = parseInt(spec?.conditions?.[0]?.value, 10) || 0;
+      yearsBack = parseInt(presetRow.filter_spec?.conditions?.[0]?.value, 10) || 0;
     }
 
     const today = new Date();
@@ -1138,22 +1238,30 @@ export const getCrimeHeadYearTrend = async (req, res) => {
     const overallStart = yearWindows.reduce((min, w) => (w.start < min ? w.start : min), yearWindows[0].start);
     const overallEnd = yearWindows.reduce((max, w) => (w.end > max ? w.end : max), yearWindows[0].end);
 
-    // Crime-head categories are DB-driven (field_registry), same zero-fill pattern as getCaseStatusBreakdown,
-    // so crime heads with no records in range still appear as X-axis ticks.
-    const fieldRow = await db('field_registry').where({ field_key: 'local_head', is_active: true }).first();
-    const crimeHeadOptions = parseJsonField(fieldRow?.options) || [];
+    // Crime-head categories AND heinous classification both come straight from ref.local_heads
+    // (crime_category = 'HEINOUS'/'OTHER') — the single canonical source, so crime heads with no
+    // records in range still appear as X-axis ticks and heinous status never needs text-matching.
+    const localHeads = await db('ref.local_heads').select('local_head_cd', 'local_head', 'crime_category');
 
-    // Heinous classification is DB-driven from excel_heinous_offences, not a hardcoded list —
-    // updating that table changes which crime heads land in the Heinous chart, no code change needed.
-    const heinousOffenceRows = await db('excel_heinous_offences').select('heinous_offence');
-    const heinousNormalizedSet = new Set(heinousOffenceRows.map(r => normalizeForHeinousMatch(r.heinous_offence)));
+    // CASE/ARREST/UIDB each carry their crime head via their own detail table's local_head_id —
+    // one query per record type (all share the same records+detail+local_heads join shape).
+    const fetchCrimeHeadRows = async (recordType, detailTable) => {
+      let query = db('records')
+        .select('records.record_date', 'lh.local_head as crime_head')
+        .join(`${detailTable} as d`, 'records.id', 'd.record_id')
+        .join('ref.local_heads as lh', 'd.local_head_id', 'lh.local_head_cd')
+        .where('records.record_type', recordType)
+        .whereBetween('records.record_date', [overallStart, overallEnd]);
+      query = scopeRecords(query, jq);
+      return query;
+    };
 
-    let pivotQuery = db('records')
-      .select('record_date', db.raw(`COALESCE(${jsonbPath('data', 'local_head')}, ${jsonbPath('data', 'crime_head')}) as crime_head`))
-      .whereIn('record_type', ['CASE', 'ARREST', 'UIDB'])
-      .whereBetween('record_date', [overallStart, overallEnd]);
-    pivotQuery = applyJurisdictionScope(pivotQuery, jq);
-    const pivotRows = await pivotQuery;
+    const [caseRows, arrestRows, uidbRows] = await Promise.all([
+      fetchCrimeHeadRows('CASE', 'fir_details'),
+      fetchCrimeHeadRows('ARREST', 'arrest_details'),
+      fetchCrimeHeadRows('UIDB', 'uidb_details')
+    ]);
+    const pivotRows = [...caseRows, ...arrestRows, ...uidbRows];
 
     const countMap = new Map(yearWindows.map(w => [w.year, new Map()]));
     pivotRows.forEach(r => {
@@ -1166,12 +1274,12 @@ export const getCrimeHeadYearTrend = async (req, res) => {
     });
 
     const years = yearWindows.map(w => w.year);
-    const rows = crimeHeadOptions.map(opt => {
+    const rows = localHeads.map(head => {
       const row = {
-        crime_head: opt.value,
-        is_heinous: heinousNormalizedSet.has(normalizeForHeinousMatch(opt.value))
+        crime_head: head.local_head,
+        is_heinous: head.crime_category === 'HEINOUS'
       };
-      years.forEach(y => { row[y] = countMap.get(y).get(opt.value) || 0; });
+      years.forEach(y => { row[y] = countMap.get(y).get(head.local_head) || 0; });
       return row;
     });
 

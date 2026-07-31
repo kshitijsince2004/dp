@@ -13,7 +13,7 @@ export const Input = forwardRef(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-sm font-medium text-zinc-300"
+            className="text-sm font-medium text-slate-600"
           >
             {label}
           </label>
@@ -22,18 +22,18 @@ export const Input = forwardRef(
           id={inputId}
           ref={ref}
           className={clsx(
-            'w-full h-10 px-3 rounded-xl bg-zinc-900 border text-zinc-100 text-sm placeholder:text-zinc-500 transition-all duration-200',
-            'focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent',
+            'w-full h-10 px-3 rounded-control bg-white border text-slate-900 text-sm placeholder:text-slate-400 transition-colors duration-200',
+            'focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:border-transparent',
             error
               ? 'border-red-500 focus:ring-red-500'
-              : 'border-zinc-700 hover:border-zinc-600',
+              : 'border-slate-300 hover:border-slate-400',
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-xs text-red-500">{error}</p>}
         {helperText && !error && (
-          <p className="text-xs text-zinc-500">{helperText}</p>
+          <p className="text-xs text-slate-500">{helperText}</p>
         )}
       </div>
     );

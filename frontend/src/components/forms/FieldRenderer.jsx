@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { AlertCircle } from 'lucide-react';
 import api from '../../utils/api.js';
 
 import DateTimePickerPopup from './DateTimePickerPopup.jsx';
@@ -12,10 +13,11 @@ import SelectField   from './SelectField.jsx';
 import CheckboxField from './CheckboxField.jsx';
 import RadioField    from './RadioField.jsx';
 import { DISTRICTS_AND_STATIONS } from '../../utils/policeData.js';
+import { sanitizeFieldValue } from '../../utils/fieldValidation.js';
 
 const inputBase = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
 
-export default function FieldRenderer({
+function FieldRendererCore({
   field, value, onChange, readOnly, hasError, lang, values, handleChange,
   wrapperClassName,
   // Generic style override for TEXT/TEXTAREA/NUMBER inputs (e.g. dense table rows).
@@ -115,6 +117,10 @@ export default function FieldRenderer({
     }
   };
 
+  // Each cell in a composite number+date+time row (e.g. GD Number / GD Date & Time) sits
+  // borderless inside its (already-bordered) table cell — no separate pill/box around it.
+  const compositeCellBox = `flex items-center min-w-0 ${containerBg} ${status === 'error' ? 'bg-red-50' : ''}`;
+
   // Shared composite-field date+time cell: a single DateTimePickerPopup driving two
   // separate values (e.g. gd_date + gd_time), replacing the old DateInput (native
   // calendar) + native <input type="time"> pairing — same calendar+slider popup as
@@ -123,7 +129,7 @@ export default function FieldRenderer({
     const combined = values?.[dateKey] ? `${values[dateKey]} ${values?.[timeKey] || '00:00'}` : '';
     console.log('[PHAROS-DEBUG][FieldRenderer.compositeDateTimeCell] render', { dateKey, timeKey, rawDateVal: values?.[dateKey], rawTimeVal: values?.[timeKey], combinedPassedToPopup: combined });
     return (
-      <div className={`${widthClass} flex items-center min-w-0 px-3.5 py-1`}>
+      <div className={`${widthClass} ${compositeCellBox} px-3.5 py-1`}>
         <DateTimePickerPopup
           value={combined}
           onDone={(_formatted, datePart, timePart) => {
@@ -140,16 +146,13 @@ export default function FieldRenderer({
 
   if (key === 'gd_no') {
     return (
-      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
+      <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className={`flex-1 ${compositeCellBox}`}>
           <input
             type="text"
             disabled={readOnly}
             value={values?.gd_no || ''}
-            onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, ''); // type sirf numeric rkhna
-              handleFieldChange('gd_no', val);
-            }}
+            onChange={(e) => handleFieldChange('gd_no', sanitizeFieldValue(field, e.target.value))}
             placeholder={lang === 'hi' ? 'जीडी नंबर' : 'GD Number'}
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
           />
@@ -160,22 +163,18 @@ export default function FieldRenderer({
   }
 
   if (key === 'arrest_date') {
-    return (
-      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        {compositeDateTimeCell('arrest_date', 'arrest_time', 'w-full')}
-      </div>
-    );
+    return compositeDateTimeCell('arrest_date', 'arrest_time', 'w-full');
   }
 
   if (key === 'fir_no') {
     return (
-      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
+      <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className={`flex-1 ${compositeCellBox}`}>
           <input
             type="text"
             disabled={readOnly}
             value={values?.fir_no || ''}
-            onChange={(e) => handleFieldChange('fir_no', e.target.value)}
+            onChange={(e) => handleFieldChange('fir_no', sanitizeFieldValue(field, e.target.value))}
             placeholder={lang === 'hi' ? 'प्राथमिकी (FIR) संख्या' : 'FIR Number'}
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
           />
@@ -270,11 +269,11 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
   }
 
   if (type === 'TEXT') {
-    return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} className={inputClassName} />;
+    return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, sanitizeFieldValue(field, v))} status={status} placeholder={placeholder} className={inputClassName} />;
   }
 
   if (type === 'NUMBER') {
-    return <NumberField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
+    return <NumberField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} sanitize={(v) => sanitizeFieldValue(field, v)} />;
   }
 
   if (type === 'DATE') {
@@ -313,12 +312,6 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
           placeholder={selectPlaceholder || placeholder}
           options={options}
           lang={lang}
-          // Every FieldRenderer consumer in this codebase (DynamicForm.jsx, FormSection.jsx)
-          // is a dense police-form wizard — 'compact' (search-box, no big portal chrome) is
-          // the only variant actually used anywhere; default to it so call sites that render
-          // SELECT fields generically (person sub-tabs, address grids, etc.) don't have to
-          // repeat `selectVariant="compact"` individually to avoid falling back to
-          // SelectField's bigger default styling.
           variant={selectVariant || 'compact'}
           className={selectClassName}
           multiple={key === 'sections' || key.endsWith('_sections') || key.includes('sections')}
@@ -397,7 +390,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
         type={type === 'PHONE' ? 'tel' : 'email'}
         disabled={readOnly}
         value={value ?? ''}
-        onChange={(e) => handleFieldChange(key, e.target.value)}
+        onChange={(e) => handleFieldChange(key, sanitizeFieldValue(field, e.target.value))}
         placeholder={placeholder || ''}
         className={`${inputBase} ${status === 'error' ? 'border-red-400 bg-red-50' : ''}`}
       />
@@ -417,5 +410,20 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
   }
 
   // Fallback — render as plain text input
-  return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
+  return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, sanitizeFieldValue(field, v))} status={status} placeholder={placeholder} />;
+}
+
+export default function FieldRenderer(props) {
+  const { error } = props;
+  return (
+    <div className="w-full">
+      <FieldRendererCore {...props} hasError={props.hasError || !!error} />
+      {error && (
+        <span className="flex items-center gap-1 text-xs text-red-500 font-medium mt-1">
+          <AlertCircle size={12} className="flex-shrink-0" />
+          {error}
+        </span>
+      )}
+    </div>
+  );
 }

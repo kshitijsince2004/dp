@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
 import {
-  Building, ShieldAlert, FileCheck, PhoneCall, Filter, ArrowUpRight, ArrowDownRight
+  Building, ShieldAlert, FileCheck, PhoneCall, Filter, ArrowUpRight, ArrowDownRight, Layers
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -12,6 +11,7 @@ import phqImage from '../../assets/phq.jpeg';
 import useAuthStore from '../../store/authStore.js';
 import SearchableSelect from '../../components/forms/SearchableSelect.jsx';
 import StatCard from '../../components/ui/StatCard.jsx';
+import { getCrimeHeadGroup } from '../../utils/crimeHeadGroups.js';
 
 const FILTER_SELECT_CLASS = 'w-full rounded-control border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-[#1A202C] min-h-[38px]';
 
@@ -40,10 +40,14 @@ function CrimeHeadBarTooltip({ active, label, payload }) {
   );
 }
 
+const MIN_BAR_WIDTH = 42;
+const SCROLL_THRESHOLD = 20;
+
 function CrimeHeadBarChart({ rows, years }) {
+  const needsScroll = rows.length > SCROLL_THRESHOLD;
   return (
-    <div className="overflow-x-auto p-6">
-      <div style={{ width: Math.max(1100, rows.length * 42), height: 380 }}>
+    <div className={needsScroll ? 'overflow-x-auto p-6' : 'p-6'}>
+      <div style={{ width: needsScroll ? rows.length * MIN_BAR_WIDTH : '100%', height: 340 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 10, right: 20, left: 0, bottom: 90 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
@@ -83,8 +87,6 @@ function CrimeHeadBarChart({ rows, years }) {
 }
 
 export default function HQDashboard() {
-  const { i18n } = useTranslation();
-  const currentLng = i18n.language || 'en';
   const { user, jurisdiction } = useAuthStore();
 
   const [durationPresetId, setDurationPresetId] = useState('');
@@ -148,7 +150,10 @@ export default function HQDashboard() {
   const changeRate = chartResp?.change_rate ?? null;
 
   const heinousRows = chartRows.filter((r) => r.is_heinous);
-  const nonHeinousRows = chartRows.filter((r) => !r.is_heinous);
+  // Frontend-curated Non-Heinous list (crimeHeadGroups.js), not every DB row that merely
+  const nonHeinousRows = chartRows.filter(
+    (r) => !r.is_heinous && getCrimeHeadGroup({ label: r.crime_head }) === 'NON_HEINOUS'
+  );
 
   const cards = [
     { label: 'Delhi-wide FIR cases', value: (stats.cases_today || 0) , color: 'text-amber-500', icon: Building },
@@ -167,10 +172,6 @@ export default function HQDashboard() {
 
       {/* ══════════════ HERO HEADER ══════════════ */}
       <div className="relative overflow-hidden hero-banner-gradient px-8 py-8">
-        <span className="user-greeting-badge text-5xl font-bold text-white/95 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 shadow-sm">
-          Hi, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
-        </span>
-        {/* PHQ image filling the complete dashboard background */}
         <div
           className="pointer-events-none absolute inset-0 w-full h-full"
           style={{
@@ -180,15 +181,12 @@ export default function HQDashboard() {
             opacity: 0.65
           }}
         />
-        {/* Dark overlay layer for text readability contrast */}
         <div
           className="pointer-events-none absolute inset-0 w-full h-full bg-[#0a1120]/75"
         />
-        {/* Decorative blur orbs */}
         <div className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-10 left-1/3 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
         <div className="pointer-events-none absolute top-1/3 right-1/3 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
-        {/* Grid texture */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
           style={{ backgroundImage: 'repeating-linear-gradient(0deg,white 0,white 1px,transparent 1px,transparent 48px),repeating-linear-gradient(90deg,white 0,white 1px,transparent 1px,transparent 48px)' }}
@@ -196,15 +194,13 @@ export default function HQDashboard() {
 
         <div className="relative z-10 mx-auto max-w-screen-xl">
           {/* Top row */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-white/80 backdrop-blur-sm">
-              <Building size={12} className="text-amber-400" />
-              {getDistrictName()} · HQ COMMAND CENTER
-            </span>
+          <div className="flex items-center gap-2 mb-3 text-xs font-semibold tracking-wide text-white/70">
+            <Building size={12} className="text-amber-400" />
+            {getDistrictName()} · HQ Command Center
           </div>
 
-          {/* Heading + hero stat tiles */}
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          {/* Heading + welcome */}
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-white">
                 Delhi Police
@@ -213,15 +209,12 @@ export default function HQDashboard() {
                 Headquarters Command Console
               </p>
               <p className="mt-4 max-w-lg text-sm leading-relaxed text-slate-200">
-                Global command center overview — comparative metrics and operational aggregates across all 15 ranges and zones of Delhi.
+                Global command center overview: comparative metrics and operational aggregates across all 15 ranges and zones of Delhi.
               </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1">
-                  <ShieldAlert size={11} className="text-white/50" />
-                  <span className="text-xs text-white/60">15 Ranges &amp; Zones</span>
-                </div>
-              </div>
             </div>
+            <p className="text-2xl font-semibold text-white/90 m-0 text-right shrink-0">
+              Welcome back, {user?.name || user?.username || 'User'}
+            </p>
           </div>
         </div>
 
@@ -234,7 +227,7 @@ export default function HQDashboard() {
 
         {/* ── Overview Stat Cards ── */}
         <div className="mt-8">
-          <div className="mb-3 text-label font-semibold uppercase tracking-wide text-[#4A5568]">Operational Overview</div>
+          <div className="mb-3 text-label font-semibold text-[#4A5568]">Operational Overview</div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {cards.map((card, idx) => (
               <StatCard
@@ -312,9 +305,9 @@ export default function HQDashboard() {
         </div>
 
         {/* ── Crime-Head Year Trend ── */}
-        <div className="mt-6 overflow-hidden rounded-card border border-slate-200 bg-white">
-          {/* Panel header */}
-          <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3">
+        <div className="mt-6">
+          {/* Section header */}
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-slate-200 bg-white px-4 py-3">
             <div className="flex items-center gap-3">
               <ShieldAlert size={16} className="text-slate-400 shrink-0" />
               <div>
@@ -335,17 +328,25 @@ export default function HQDashboard() {
             )}
           </div>
 
-          {/* Heinous crime heads */}
-          <div className="px-4 pt-3 text-label font-semibold uppercase tracking-wide text-[#4A5568]">
-            Heinous Crime Heads
-          </div>
-          <CrimeHeadBarChart rows={heinousRows} years={years} />
+          <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+            {/* Heinous crime heads */}
+            <div className="overflow-hidden rounded-card border border-slate-200 bg-white">
+              <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-3">
+                <ShieldAlert size={16} className="text-[#DC2626] shrink-0" />
+                <p className="text-label font-semibold text-[#4A5568]">Heinous Crime Heads · {heinousRows.length}</p>
+              </div>
+              <CrimeHeadBarChart rows={heinousRows} years={years} />
+            </div>
 
-          {/* Non-heinous crime heads */}
-          <div className="border-y border-slate-200 px-4 pt-3 text-label font-semibold uppercase tracking-wide text-[#4A5568]">
-            Non-Heinous Crime Heads · {nonHeinousRows.length}
+            {/* Non-heinous crime heads */}
+            <div className="overflow-hidden rounded-card border border-slate-200 bg-white">
+              <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-3">
+                <Layers size={16} className="text-[var(--accent-color)] shrink-0" />
+                <p className="text-label font-semibold text-[#4A5568]">Non-Heinous Crime Heads · {nonHeinousRows.length}</p>
+              </div>
+              <CrimeHeadBarChart rows={nonHeinousRows} years={years} />
+            </div>
           </div>
-          <CrimeHeadBarChart rows={nonHeinousRows} years={years} />
         </div>
 
         {/* Footer */}

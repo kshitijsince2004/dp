@@ -24,34 +24,25 @@ const itemVariants = {
   show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 95, damping: 14 } }
 };
 
-const CustomTooltip = ({ active, payload, label }) => {
+const METRIC_META = {
+  cases:   { color: '#cca43b', label: 'FIR Cases' },
+  pcr:     { color: '#0f52ba', label: 'PCR Calls' },
+  arrests: { color: '#16a34a', label: 'Arrests' },
+};
+
+const CustomTooltip = ({ active, payload, label, activeMetric }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const meta = METRIC_META[activeMetric];
     return (
       <div className="bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-xl p-4 min-w-[180px] transition-all">
         <p className="text-xs font-extrabold text-slate-800 mb-2 font-display uppercase tracking-wider">{label}</p>
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#cca43b]" />
-              FIR Cases
-            </span>
-            <span className="text-xs font-bold font-mono text-slate-800">{data.cases || 0}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#0f52ba]" />
-              PCR Calls
-            </span>
-            <span className="text-xs font-bold font-mono text-slate-800">{data.pcr || 0}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#16a34a]" />
-              Arrests
-            </span>
-            <span className="text-xs font-bold font-mono text-slate-800">{data.arrests || 0}</span>
-          </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: meta.color }} />
+            {meta.label}
+          </span>
+          <span className="text-xs font-bold font-mono text-slate-800">{data[activeMetric] || 0}</span>
         </div>
       </div>
     );
@@ -60,8 +51,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function DistrictDashboard() {
-  const { t, i18n } = useTranslation();
-  const currentLng = i18n.language || 'en';
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, jurisdiction } = useAuthStore();
   const [activeMetric, setActiveMetric] = useState('cases'); // 'cases' | 'pcr' | 'arrests'
@@ -102,9 +92,6 @@ export default function DistrictDashboard() {
  
       {/* ══════════════ HERO HEADER ══════════════ */}
       <div className="relative overflow-hidden hero-banner-gradient px-8 py-8">
-        <span className="user-greeting-badge text-5xl font-bold text-white/95 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 shadow-sm">
-          Hi, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
-        </span>
         <div className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-10 left-1/3 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
         <div className="pointer-events-none absolute top-1/2 right-1/4 h-28 w-28 rounded-full bg-white/5 blur-2xl" />
@@ -116,16 +103,14 @@ export default function DistrictDashboard() {
         />
  
         <div className="relative z-10 mx-auto max-w-screen-xl">
-          {/* Top badge row */}
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-white/80 backdrop-blur-sm">
-              <Shield size={12} className="text-amber-400" />
-              {getDistrictName()} · DISTRICT DCP CONSOLE
-            </span>
+          {/* Top row */}
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wide text-white/70">
+            <Shield size={12} className="text-amber-400" />
+            {getDistrictName()} · District DCP Console
           </div>
- 
-          {/* Heading + CTA */}
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+
+          {/* Heading + welcome */}
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
               <h1 className="text-4xl font-bold leading-tight tracking-tight text-white">
                 District DCP
@@ -135,6 +120,9 @@ export default function DistrictDashboard() {
                 Aggregated operational statistics and crime logs spanning all Police Stations under district jurisdiction.
               </p>
             </div>
+            <p className="text-2xl font-semibold text-white/90 m-0 text-right shrink-0">
+              Welcome back, {user?.name || user?.username || 'User'}
+            </p>
           </div>
         </div>
  
@@ -152,10 +140,10 @@ export default function DistrictDashboard() {
  
         {/* ── Action strip ── */}
         <motion.div variants={itemVariants} className="mt-8 flex items-center justify-between">
-          <h2 className="text-label font-semibold uppercase tracking-wide text-[#4A5568]">Operational Overview</h2>
+          <h2 className="text-label font-semibold text-[#4A5568]">Operational Overview</h2>
           <button
             onClick={() => navigate('/compile')}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--accent-color)] to-[var(--accent-color-hover)] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-red-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/30 active:scale-[0.98] cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-control bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] px-5 py-2.5 text-xs font-bold text-white transition-colors duration-200 cursor-pointer"
           >
             <BookOpen size={13} className="text-amber-300" />
             Compile Daily Logs
@@ -239,7 +227,7 @@ export default function DistrictDashboard() {
           <div className="p-4">
             <div className="h-[340px] w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
+                <BarChart data={chartData} margin={{ top: 15, right: 10, left: -20, bottom: 20 }}>
                   <defs>
                     <linearGradient id="casesGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#cca43b" />
@@ -255,15 +243,26 @@ export default function DistrictDashboard() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="station" stroke="#A0AEC0" fontSize={10} tickLine={false} axisLine={false} dy={10} className="font-semibold" />
-                  <YAxis stroke="#A0AEC0" fontSize={10} tickLine={false} axisLine={false} dx={-10} className="font-semibold" />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F0F4F9', opacity: 0.6 }} />
-                  <Bar 
-                    dataKey={activeMetric}   
-                    name={activeMetric === 'cases' ? 'FIR Cases' : activeMetric === 'pcr' ? 'PCR Calls' : 'Arrests'} 
-                    fill={activeMetric === 'cases' ? 'url(#casesGrad)' : activeMetric === 'pcr' ? 'url(#pcrGrad)' : 'url(#arrestsGrad)'}   
-                    radius={[6, 6, 0, 0]} 
-                    maxBarSize={30} 
+                  <XAxis
+                    dataKey="station"
+                    stroke="#A0AEC0"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
+                    angle={-35}
+                    textAnchor="end"
+                    height={70}
+                    className="font-semibold"
+                  />
+                  <YAxis stroke="#A0AEC0" fontSize={10} tickLine={false} axisLine={false} dx={-10} allowDecimals={false} className="font-semibold" />
+                  <Tooltip content={<CustomTooltip activeMetric={activeMetric} />} cursor={{ fill: '#F0F4F9', opacity: 0.6 }} />
+                  <Bar
+                    dataKey={activeMetric}
+                    name={METRIC_META[activeMetric].label}
+                    fill={`url(#${activeMetric}Grad)`}
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={30}
                     className="outline-none focus:outline-none"
                   />
                 </BarChart>

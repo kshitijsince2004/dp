@@ -47,7 +47,7 @@ const DIARIES = [
   {
     key: 'COMBINED_DAILY_DIARY',
     label: 'Combine Daily Diary',
-    description: 'Consolidated logs compiled over a date range — 24 report sheets',
+    description: 'Consolidated logs compiled over a date range (24 report sheets)',
     icon: Layers,
     status: 'active',
     levels: ['PS', 'DISTRICT', 'HQ'],
@@ -206,9 +206,9 @@ export default function CompilationUI() {
     onSuccess: (data) => {
       const total = data?.compiled_summary?.total_records ?? 0;
       if (total > 0) {
-        toast.success(`Compilation created — ${total} DISTRICT_REVIEW records bundled.`);
+        toast.success(`Compilation created. ${total} DISTRICT_REVIEW records bundled.`);
       } else {
-        toast('No approved records to bundle yet — export will use all records for the date.', { icon: 'ℹ️' });
+        toast('No approved records to bundle yet. Export will use all records for the date.', { icon: 'ℹ️' });
       }
       queryClient.invalidateQueries({ queryKey: ['compilations'] });
     },
@@ -396,7 +396,7 @@ export default function CompilationUI() {
   };
 
   return (
-    <div className={`space-y-6 w-full ${getThemeClass()} p-5 rounded-2xl bg-[var(--bg-page-main)] border border-slate-200 shadow-sm`}>
+    <div className={`space-y-6 w-full ${getThemeClass()} p-5 rounded-panel bg-[var(--bg-page-main)] border border-slate-200`}>
       {/* Back Header */}
       <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
         <button
@@ -417,11 +417,11 @@ export default function CompilationUI() {
       </div>
 
       {/* Step 1: Diary selector */}
-      <div className="border border-slate-200 bg-white rounded-xl p-5 shadow-sm space-y-4">
+      <div className="border border-slate-200 bg-white rounded-card p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
+          <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5 font-display">
             <Layers size={14} className="text-[var(--accent-color)]" />
-            <span>Step 1 — Select Diary</span>
+            <span>Step 1: Select Diary</span>
           </h3>
           {selectedDiary && (
             <button
@@ -484,10 +484,10 @@ export default function CompilationUI() {
       ) : (
       <>
       {/* Step 2: Date range + Police Station + Report selection */}
-      <div className="border border-slate-200 bg-white rounded-xl p-5 shadow-sm space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
+      <div className="border border-slate-200 bg-white rounded-card p-4 space-y-4">
+        <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5 font-display">
           <Calendar size={14} className="text-[var(--accent-color)]" />
-          <span>Step 2 — {selectedDiary.label}: Select Reports &amp; Date Range</span>
+          <span>Step 2 · {selectedDiary.label}: Select Reports &amp; Date Range</span>
         </h3>
 
         <p className="text-xs text-slate-500 font-medium">
@@ -737,7 +737,7 @@ export default function CompilationUI() {
             <button
               onClick={handleCompileTrigger}
               disabled={exporting || selectedFields.size === 0}
-              className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shrink-0 shadow-md shadow-red-500/20"
+              className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-6 py-2.5 rounded-control text-sm font-bold transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shrink-0"
             >
               {exporting ? (
                 <>
@@ -759,7 +759,7 @@ export default function CompilationUI() {
 
         {/* Compiled Records List */}
         <div className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
+          <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5 font-display">
             <Database size={14} className="text-[var(--accent-color)]" />
             <span>Compiled {userLevel === 'HQ' ? 'HQ' : userLevel === 'DISTRICT' ? 'District' : 'Station'} Archives</span>
           </h3>

@@ -186,7 +186,7 @@ export default function FieldManager() {
             Field Registry Manager
           </h1>
           <p className="text-slate-500 text-xs mt-1 font-semibold">
-            Define form fields for all police stations or specific districts — no code changes required.
+            Define form fields for all police stations or specific districts, no code changes required.
           </p>
         </div>
         {activeTab === 'global' && (
@@ -398,7 +398,7 @@ export default function FieldManager() {
                 {/* Step 1: Pick record types FIRST so sections can filter */}
                 <div className="space-y-1.5">
                   <label className="text-zinc-400 font-semibold">
-                    Applicable Record Types * <span className="text-zinc-600 font-normal">(select first — sections will filter accordingly)</span>
+                    Applicable Record Types * <span className="text-zinc-600 font-normal">(select first, sections will filter accordingly)</span>
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {RECORD_TYPES.map((rt) => (
@@ -431,7 +431,7 @@ export default function FieldManager() {
                         }
                       }}
                       className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] cursor-pointer">
-                      <option value="">— choose a section —</option>
+                      <option value="">Choose a section</option>
                       {knownSections.map((s) => (
                         <option key={s.key} value={s.key}>{s.label || s.key}</option>
                       ))}

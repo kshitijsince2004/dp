@@ -155,20 +155,20 @@ export default function Queue() {
 
       {/* Hero Header — mirrors Dashboard's gradient banner */}
       <div className="hero-banner-gradient px-8 py-10 relative overflow-hidden">
-        <span className="user-greeting-badge text-4xl font-bold text-white/95 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 shadow-sm">
-          Hi, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
-        </span>
         <div className="pointer-events-none absolute -top-8 -right-8 h-48 w-48 rounded-full border border-white/5" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h1 className="mt-4 text-3xl font-bold text-white flex items-center gap-3 font-display">
+            <h1 className="text-3xl font-bold text-white flex items-center gap-3 font-display">
               {t('nav.queue', 'Approval Desk')}
             </h1>
             <p className="mt-2 text-sm text-white/60 max-w-xl font-semibold">
               Review pending records submitted from your jurisdiction and approve or return them for correction.
             </p>
           </div>
+          <p className="text-2xl font-semibold text-white/90 m-0 text-right shrink-0">
+            Welcome back, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
+          </p>
         </div>
       </div>
 

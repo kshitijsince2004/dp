@@ -117,7 +117,7 @@ export const getBeats = async (psCd) => {
 };
 
 export const getLocalHeads = async () => {
-  return db('ref.local_heads').select('local_head_cd', 'local_head').orderBy('local_head', 'asc');
+  return db('ref.local_heads').select('local_head_cd', 'local_head', 'crime_category').orderBy('local_head', 'asc');
 };
 
 let cachedRegistry = null;

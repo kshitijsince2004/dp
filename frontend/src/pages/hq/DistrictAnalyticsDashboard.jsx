@@ -77,6 +77,8 @@ export default function DistrictAnalyticsDashboard() {
         return diffDays >= 0 && diffDays <= 7;
       } else if (timeframe === 'Monthly') {
         return diffDays >= 0 && diffDays <= 30;
+      } else if (timeframe === 'Yearly') {
+        return diffDays >= 0 && diffDays <= 365;
       }
       return true;
     });
@@ -162,56 +164,62 @@ export default function DistrictAnalyticsDashboard() {
 
   const trendData = useMemo(() => {
     if (!selectedDistrictId) return [];
-    
+
     // Filter raw records for this district
-    const distRecords = rawRecords.filter(r => 
+    const distRecords = rawRecords.filter(r =>
       r.district_id === selectedDistrictId &&
       ['submitted', 'PENDING_SHO', 'DISTRICT_REVIEW', 'HQ_RECEIVED', 'CLOSED', 'COMPILED'].includes(r.current_status)
     );
 
-    // Timeline range: last 30 days if Monthly, else 7 days
+    const bumpBucket = (bucket, recordType) => {
+      const type = (recordType || '').toUpperCase();
+      if (type === 'CASE' || type === 'CASES') { bucket.cases++; bucket.total++; }
+      else if (type === 'ARREST') { bucket.arrests++; bucket.total++; }
+      else if (type === 'PCR_CALL') { bucket.pcr++; bucket.total++; }
+      else if (type === 'MISSING') { bucket.missing++; bucket.total++; }
+    };
+
     const baseDate = new Date();
     baseDate.setHours(0, 0, 0, 0);
-    const numDays = timeframe === 'Monthly' ? 30 : 7;
 
-    const datesList = [];
+    if (timeframe === 'Yearly') {
+      // Last 12 months, keyed by 'YYYY-MM', x-axis labeled by month name only.
+      const timelineMap = {};
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(baseDate.getFullYear(), baseDate.getMonth() - i, 1);
+        const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        timelineMap[ym] = {
+          date: ym,
+          displayDate: d.toLocaleDateString('en-IN', { month: 'short' }),
+          cases: 0, arrests: 0, pcr: 0, missing: 0, total: 0
+        };
+      }
+
+      distRecords.forEach(r => {
+        const d = new Date(r.record_date);
+        const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (timelineMap[ym]) bumpBucket(timelineMap[ym], r.record_type);
+      });
+
+      return Object.values(timelineMap);
+    }
+
+    // Daily buckets: last 30 days if Monthly, else last 7 days
+    const numDays = timeframe === 'Monthly' ? 30 : 7;
+    const timelineMap = {};
     for (let i = numDays - 1; i >= 0; i--) {
       const d = new Date(baseDate);
       d.setDate(baseDate.getDate() - i);
-      datesList.push(toDateStr(d));
-    }
-
-    const timelineMap = {};
-    datesList.forEach(dateStr => {
+      const dateStr = toDateStr(d);
       timelineMap[dateStr] = {
         date: dateStr,
-        displayDate: new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
-        cases: 0,
-        arrests: 0,
-        pcr: 0,
-        missing: 0,
-        total: 0
+        displayDate: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+        cases: 0, arrests: 0, pcr: 0, missing: 0, total: 0
       };
-    });
+    }
 
     distRecords.forEach(r => {
-      const dateStr = r.record_date;
-      if (timelineMap[dateStr]) {
-        const type = (r.record_type || '').toUpperCase();
-        if (type === 'CASE' || type === 'CASES') {
-          timelineMap[dateStr].cases++;
-          timelineMap[dateStr].total++;
-        } else if (type === 'ARREST') {
-          timelineMap[dateStr].arrests++;
-          timelineMap[dateStr].total++;
-        } else if (type === 'PCR_CALL') {
-          timelineMap[dateStr].pcr++;
-          timelineMap[dateStr].total++;
-        } else if (type === 'MISSING') {
-          timelineMap[dateStr].missing++;
-          timelineMap[dateStr].total++;
-        }
-      }
+      if (timelineMap[r.record_date]) bumpBucket(timelineMap[r.record_date], r.record_type);
     });
 
     return Object.values(timelineMap);
@@ -272,37 +280,13 @@ export default function DistrictAnalyticsDashboard() {
   };
 
   const metricTabs = [
-    { 
-      key: 'total', 
-      label: 'All Incidents', 
-      icon: ShieldAlert, 
-      activeClass: 'bg-gradient-to-br from-[#2E0854] to-[#17022e] border-[#17022e] text-white shadow-md shadow-purple-900/20' 
-    },
-    { 
-      key: 'cases', 
-      label: 'FIR Cases', 
-      icon: Building, 
-      activeClass: 'bg-gradient-to-br from-[#2E0854] to-[#17022e] border-[#17022e] text-white shadow-md shadow-purple-900/20' 
-    },
-    { 
-      key: 'pcr', 
-      label: 'PCR Calls', 
-      icon: PhoneCall, 
-      activeClass: 'bg-gradient-to-br from-[#2E0854] to-[#17022e] border-[#17022e] text-white shadow-md shadow-purple-900/20' 
-    },
-    {
-      key: 'arrests',
-      label: 'Arrests',
-      icon: FileCheck,
-      activeClass: 'bg-gradient-to-br from-[#2E0854] to-[#17022e] border-[#17022e] text-white shadow-md shadow-purple-900/20'
-    },
-    {
-      key: 'missing',
-      label: 'Missing Persons',
-      icon: UserX,
-      activeClass: 'bg-gradient-to-br from-[#2E0854] to-[#17022e] border-[#17022e] text-white shadow-md shadow-purple-900/20'
-    }
+    { key: 'total', label: 'All Incidents', icon: ShieldAlert },
+    { key: 'cases', label: 'FIR Cases', icon: Building },
+    { key: 'pcr', label: 'PCR Calls', icon: PhoneCall },
+    { key: 'arrests', label: 'Arrests', icon: FileCheck },
+    { key: 'missing', label: 'Missing Persons', icon: UserX },
   ];
+  const METRIC_TAB_ACTIVE_CLASS = 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white';
 
   if (loadingNodes || loadingRecords) {
     return (
@@ -333,20 +317,19 @@ export default function DistrictAnalyticsDashboard() {
         <div className="pointer-events-none absolute -bottom-16 left-1/4 h-64 w-64 rounded-full bg-indigo-500/15 blur-3xl" />
 
         <div className="relative z-10 mx-auto max-w-screen-xl flex flex-col justify-between h-full gap-6">
-          {/* Header pill-badges */}
+          {/* Header row */}
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-white/95 backdrop-blur-sm shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-white/70">
               <Building size={12} className="text-purple-300" />
-              DELHI POLICE · DISTRICT ANALYTICS
-            </span>
+              Delhi Police · District Analytics
+            </div>
 
-            {/* Pulsing Live Metrics Tag */}
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-emerald-400 backdrop-blur-sm shadow-sm">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              LIVE METRICS
+              Live
             </span>
           </div>
 
@@ -366,7 +349,7 @@ export default function DistrictAnalyticsDashboard() {
 
             {/* Calendar toggle control */}
             <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-1 backdrop-blur-md self-start lg:self-auto">
-              {['Daily', 'Weekly', 'Monthly'].map((item) => (
+              {['Daily', 'Weekly', 'Monthly', 'Yearly'].map((item) => (
                 <button
                   key={item}
                   onClick={() => setTimeframe(item)}
@@ -390,12 +373,10 @@ export default function DistrictAnalyticsDashboard() {
         {/* ── Summary KPI Cards ── */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="rounded-card border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Aggregated Incidents</span>
-              <div className="rounded-xl bg-purple-50 p-2.5 text-purple-600">
-                <ShieldAlert size={18} />
-              </div>
+              <span className="text-xs font-semibold text-slate-500">Total Aggregated Incidents</span>
+              <ShieldAlert size={18} className="text-purple-600 shrink-0" />
             </div>
             <div className="mt-4">
               <div className="text-3xl font-extrabold text-slate-900 tabular-nums">{summaryKpis.total}</div>
@@ -403,12 +384,10 @@ export default function DistrictAnalyticsDashboard() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="rounded-card border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Highest Volume District</span>
-              <div className="rounded-xl bg-red-50 p-2.5 text-red-600">
-                <AlertTriangle size={18} />
-              </div>
+              <span className="text-xs font-semibold text-slate-500">Highest Volume District</span>
+              <AlertTriangle size={18} className="text-red-600 shrink-0" />
             </div>
             <div className="mt-4">
               <div 
@@ -423,12 +402,10 @@ export default function DistrictAnalyticsDashboard() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="rounded-card border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Lowest Volume District</span>
-              <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600">
-                <Award size={18} />
-              </div>
+              <span className="text-xs font-semibold text-slate-500">Lowest Volume District</span>
+              <Award size={18} className="text-emerald-600 shrink-0" />
             </div>
             <div className="mt-4">
               <div 
@@ -443,12 +420,10 @@ export default function DistrictAnalyticsDashboard() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="rounded-card border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">District Average</span>
-              <div className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600">
-                <TrendingUp size={18} />
-              </div>
+              <span className="text-xs font-semibold text-slate-500">District Average</span>
+              <TrendingUp size={18} className="text-indigo-600 shrink-0" />
             </div>
             <div className="mt-4">
               <div className="text-3xl font-extrabold text-slate-900 tabular-nums">{summaryKpis.avg}</div>
@@ -467,9 +442,9 @@ export default function DistrictAnalyticsDashboard() {
               <button
                 key={tab.key}
                 onClick={() => setActiveMetric(tab.key)}
-                className={`flex items-center gap-2 rounded-xl border px-5 py-2.5 text-xs font-bold tracking-wide transition-all duration-200 shadow-sm ${
+                className={`flex items-center gap-2 rounded-control border px-5 py-2.5 text-xs font-bold tracking-wide transition-colors duration-200 ${
                   isActive
-                    ? tab.activeClass
+                    ? METRIC_TAB_ACTIVE_CLASS
                     : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -484,9 +459,9 @@ export default function DistrictAnalyticsDashboard() {
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
           
           {/* LEFT: Styled Ranked Leaderboard */}
-          <div className="lg:col-span-5 rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100/60 p-6 shadow-sm flex flex-col gap-4">
+          <div className="lg:col-span-5 rounded-panel border border-purple-200 bg-purple-50/60 p-5 flex flex-col gap-4">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Ranked Leaderboard</h3>
+              <h3 className="text-sm font-bold text-slate-900">Ranked Leaderboard</h3>
               <p className="text-xs text-slate-500 mt-0.5">Districts ordered by incidence density ({timeframe})</p>
             </div>
             
@@ -495,9 +470,9 @@ export default function DistrictAnalyticsDashboard() {
                 const rank = index + 1;
                 // Style highlights for Top and Bottom rank indicators
                 let rankBadgeBg = 'bg-slate-100 text-slate-600 border-slate-200';
-                if (rank === 1) rankBadgeBg = 'bg-red-500 text-white border-red-600 shadow-sm';
+                if (rank === 1) rankBadgeBg = 'bg-red-500 text-white border-red-600';
                 else if (rank === 2) rankBadgeBg = 'bg-orange-500 text-white border-orange-600';
-                else if (rank === sortedDistricts.length) rankBadgeBg = 'bg-emerald-500 text-white border-emerald-600 shadow-sm';
+                else if (rank === sortedDistricts.length) rankBadgeBg = 'bg-emerald-500 text-white border-emerald-600';
 
                 const totalVal = summaryKpis.total || 1;
                 const percentage = Math.round((item[activeMetric] / totalVal) * 100);
@@ -506,7 +481,7 @@ export default function DistrictAnalyticsDashboard() {
                   <div
                     key={item.id}
                     onClick={() => handleSelectDistrict(item.id)}
-                    className="group flex items-center justify-between border border-slate-200/60 bg-white hover:bg-purple-50/30 hover:border-purple-300 px-4 py-3 rounded-xl cursor-pointer shadow-sm hover:shadow-md transition-all duration-150"
+                    className="group flex items-center justify-between border border-slate-200 bg-white hover:border-purple-300 px-4 py-3 rounded-control cursor-pointer transition-colors duration-150"
                   >
                     <div className="flex items-center gap-3">
                       <span className={`flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-black ${rankBadgeBg}`}>
@@ -535,9 +510,9 @@ export default function DistrictAnalyticsDashboard() {
           </div>
 
           {/* RIGHT: Visual Leaderboard Bar Chart */}
-          <div className="lg:col-span-7 rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100/60 p-6 shadow-sm flex flex-col gap-4">
+          <div className="lg:col-span-7 rounded-panel border border-purple-200 bg-purple-50/60 p-5 flex flex-col gap-4">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Comparative visual breakdown</h3>
+              <h3 className="text-sm font-bold text-slate-900">Comparative visual breakdown</h3>
               <p className="text-xs text-slate-500 mt-0.5">Click bars to inspect individual police stations</p>
             </div>
 
@@ -628,7 +603,7 @@ export default function DistrictAnalyticsDashboard() {
         {selectedDistrictId && selectedDistrict && (
           <div 
             ref={trendSectionRef}
-            className="mt-8 rounded-3xl border border-purple-800 bg-gradient-to-br from-[#2E0854] to-[#120124] p-8 shadow-2xl text-white relative overflow-hidden transition-all duration-300"
+            className="mt-8 rounded-panel border border-purple-800 bg-gradient-to-br from-[#2E0854] to-[#120124] p-8 text-white relative overflow-hidden transition-all duration-300"
           >
             {/* Background glowing effects */}
             <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-purple-500/10 blur-3xl"></div>
@@ -645,7 +620,9 @@ export default function DistrictAnalyticsDashboard() {
                   <span className="text-sm font-normal text-purple-200">({selectedDistrict.name_hi})</span>
                 </h3>
                 <p className="text-xs text-purple-300 mt-1">
-                  Timeline analysis showing filtered {activeMetric.toUpperCase()} trends over the last {timeframe === 'Monthly' ? 30 : 7} days.
+                  Timeline analysis showing filtered {activeMetric.toUpperCase()} trends over the last {
+                    timeframe === 'Yearly' ? '12 months' : timeframe === 'Monthly' ? '30 days' : '7 days'
+                  }.
                 </p>
               </div>
               

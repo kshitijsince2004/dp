@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { AlertCircle, AlertTriangle, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import FieldRenderer from './FieldRenderer.jsx';
 import SelectField from './SelectField.jsx';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
+import { parseRules } from '../../utils/fieldValidation.js';
 
 const ACTS_OPTIONS = [
   { value: 'IPC', label_en: 'IPC', label_hi: 'आईपीसी (IPC)' },
@@ -160,7 +161,7 @@ function ActsAndSectionsManager({ values, handleChange, readOnly, lang }) {
           <button
             type="button"
             onClick={addAct}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 rounded-lg shadow transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 rounded-control transition-colors cursor-pointer"
           >
             <Plus size={14} />
             {lang === 'hi' ? 'अधिनियम जोड़ें' : 'Add Act'}
@@ -179,7 +180,7 @@ function ActsAndSectionsManager({ values, handleChange, readOnly, lang }) {
           return (
             <div
               key={index}
-              className="p-4 border border-slate-200 rounded-lg bg-white space-y-3 relative shadow-sm"
+              className="p-4 border border-slate-200 rounded-control bg-white space-y-3 relative"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500">
@@ -295,12 +296,6 @@ function ActsAndSectionsManager({ values, handleChange, readOnly, lang }) {
   );
 }
 
-function parseRules(rawRules) {
-  if (!rawRules) return {};
-  if (typeof rawRules === 'object') return rawRules;
-  try { return JSON.parse(rawRules); } catch { return {}; }
-}
-
 function isFullWidth(field) {
   const fw = ['TEXTAREA', 'FILE'];
   return fw.includes((field.field_type || '').toUpperCase()) || field.full_width === true;
@@ -354,7 +349,7 @@ function RepeaterSection({
     : (lang === 'hi' ? 'व्यक्ति' : 'Person');
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white border border-slate-200 rounded-card overflow-hidden">
       <div className="flex items-center justify-between bg-slate-50 border-b border-slate-200 px-6 py-4">
         <div className="flex items-center gap-3">
           <span className="flex items-center justify-center w-7 h-7 rounded-md bg-[var(--accent-glow)] text-[var(--accent-color)] text-xs font-bold border border-[var(--accent-color)]/20">
@@ -371,7 +366,7 @@ function RepeaterSection({
           <button
             type="button"
             onClick={addEntry}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 rounded-lg shadow transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 rounded-control transition-colors cursor-pointer"
           >
             <Plus size={13} />
             {lang === 'hi' ? `${entityLabel} जोड़ें` : `Add ${entityLabel}`}
@@ -403,7 +398,7 @@ function RepeaterSection({
           const summary = summaryKey ? entry[summaryKey] : null;
 
           return (
-            <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <div key={idx} className="border border-slate-200 rounded-control overflow-hidden">
               <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-b border-slate-200">
                 <button
                   type="button"
@@ -413,7 +408,7 @@ function RepeaterSection({
                   {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                   <span>
                     {entityLabel} #{idx + 1}
-                    {summary && <span className="text-slate-400 font-normal ml-2">— {summary}</span>}
+                    {summary && <span className="text-slate-400 font-normal ml-2">{summary}</span>}
                   </span>
                 </button>
                 {!readOnly && (
@@ -515,7 +510,7 @@ export default function FormSection({
   }
 
   return (
-    <div className={hideHeader ? "bg-transparent overflow-visible" : "bg-white border border-[#7a9cc5] rounded-xl shadow-sm overflow-hidden"}>
+    <div className={hideHeader ? "bg-transparent overflow-visible" : "bg-white border border-[#7a9cc5] rounded-card overflow-hidden"}>
       {/* Section header */}
       {!hideHeader && (
         <div className="flex items-center justify-between bg-[#f0f5fa] border-b border-[#7a9cc5] px-6 py-4">
@@ -557,7 +552,7 @@ export default function FormSection({
             </legend>
           )}
 
-          <div className={hideHeader ? "grid grid-cols-1 md:grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden" : "grid grid-cols-1 md:grid-cols-[220px_1fr] border border-[#c7d8ea]"}>
+          <div className={hideHeader ? "grid grid-cols-1 md:grid-cols-[220px_1fr] rounded overflow-hidden" : "grid grid-cols-1 md:grid-cols-[220px_1fr]"}>
             {(() => {
               // Filter out keys we should skip
               const keysToSkip = [
@@ -565,7 +560,15 @@ export default function FormSection({
                 'ipc_sections', 'excise_sections', 'arms_sections', 'gambling_sections', 'other_sections',
                 'ipc_major_head', 'excise_major_head', 'arms_major_head', 'gambling_major_head', 'other_major_head',
                 'theft_minor_head', 'murder_minor_head', 'hurt_minor_head', 'cheating_minor_head', 'robbery_minor_head',
-                'excise_minor_head', 'arms_minor_head', 'gambling_minor_head', 'other_minor_head'
+                'excise_minor_head', 'arms_minor_head', 'gambling_minor_head', 'other_minor_head',
+                // Already rendered by ActsSectionsTable's Major/Minor panel (writes to the same
+                // major_heads/minor_heads field_keys) — a second generic row here would just be a
+                // redundant plain-text editor for data the panel above already owns.
+                'major_heads', 'minor_heads',
+                // Rendered by ActsSectionsTable as a value derived from the selected Local Head
+                // (see heinousOffenceBlock) — it's readonly/ui_only in the registry, so the generic
+                // fallback here would only ever render an empty, non-functional radio group.
+                'heinous_offence'
               ];
 
               const visibleFields = section.fields.filter(f => {
@@ -627,16 +630,10 @@ export default function FormSection({
                         value={values[key]}
                         onChange={handleChange}
                         readOnly={readOnly || field.readonly === true || field.readonly === 'true'}
-                        hasError={!!error}
+                        error={error}
                         lang={lang}
                         values={values}
                       />
-                      {error && (
-                        <span className="flex items-center gap-1 text-xs text-red-500 font-medium mt-1">
-                          <AlertCircle size={12} className="flex-shrink-0" />
-                          {error}
-                        </span>
-                      )}
                     </div>
                   </React.Fragment>
                 );

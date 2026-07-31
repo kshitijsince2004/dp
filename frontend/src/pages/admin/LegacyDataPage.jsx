@@ -149,14 +149,14 @@ function ErrorList({ errors = [] }) {
         <span className="opacity-30">·</span>
         <span className="text-amber-600 dark:text-amber-400">Warnings ({warnings.length})</span>
         <span className="opacity-60 font-semibold text-[10px]">
-          — across {totalDistinct} distinct issue{totalDistinct === 1 ? '' : 's'}
+          · across {totalDistinct} distinct issue{totalDistinct === 1 ? '' : 's'}
         </span>
       </p>
       {hardErrors.length > 0 && (
         <div className="border border-rose-500/30 bg-rose-500/5 rounded-2xl p-5 space-y-3">
           <p className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-2 text-xs">
             <AlertTriangle size={14} />
-            Errors ({hardErrors.length}) — these rows were skipped
+            Errors ({hardErrors.length}): these rows were skipped
             <span className="opacity-60 font-semibold text-[10px]">({hardGroups.length} distinct)</span>
           </p>
           <div className="max-h-64 overflow-y-auto space-y-1.5 pr-2">
@@ -170,7 +170,7 @@ function ErrorList({ errors = [] }) {
         <div className="border border-amber-500/30 bg-amber-500/5 rounded-2xl p-5 space-y-3">
           <p className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-2 text-xs">
             <AlertCircle size={14} />
-            Warnings ({warnings.length}) — imported anyway, review recommended
+            Warnings ({warnings.length}): imported anyway, review recommended
             <span className="opacity-60 font-semibold text-[10px]">({warnGroups.length} distinct)</span>
           </p>
           <div className="max-h-64 overflow-y-auto space-y-1.5 pr-2">
@@ -344,7 +344,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
       return res.data?.data;
     },
     onSuccess: (data) => {
-      toast.success(t('import.importQueued', 'Import queued — processing in the background'));
+      toast.success(t('import.importQueued', 'Import queued, processing in the background'));
       setConfirmedBatchId(data.batch_id);
     },
     onError: (err) => {
@@ -488,8 +488,8 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
               }`}>
                 <Clock size={12} />
                 {isLegacy
-                  ? t('import.legacyModeBadge', 'Legacy import — lands as LEGACY_IMPORTED, bypasses workflow')
-                  : t('import.liveModeBadge', 'Live import — lands in your queue as DRAFT')}
+                  ? t('import.legacyModeBadge', 'Legacy import: lands as LEGACY_IMPORTED, bypasses workflow')
+                  : t('import.liveModeBadge', 'Live import: lands in your queue as DRAFT')}
               </span>
             </div>
 
@@ -564,7 +564,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
               <ErrorList errors={validationResult.errors} />
               {validationResult?.errors_truncated && (
                 <p className="text-[var(--text-main-theme)]/60 text-[10px] font-semibold italic">
-                  {t('import.errorsTruncated', 'Only the first errors are shown here — the full list is recorded against the batch.')}
+                  {t('import.errorsTruncated', 'Only the first errors are shown here. The full list is recorded against the batch.')}
                 </p>
               )}
               <p className="text-[var(--text-main-theme)]/70 font-semibold text-[10px]">
@@ -600,7 +600,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
                 disabled={cancelMutation.isPending}
                 onClick={() => cancelMutation.mutate()}
                 className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 bg-transparent px-4 py-2 rounded-xl transition-all cursor-pointer font-bold shadow-sm disabled:opacity-50"
-                title={t('import.cancelHint', 'Discards this batch — no records have been written yet')}
+                title={t('import.cancelHint', 'Discards this batch, no records have been written yet')}
               >
                 {cancelMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Ban size={12} />}
                 {t('import.cancelBatch', 'Cancel Batch')}
@@ -628,7 +628,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
               {t('import.importing', 'Importing records…')}
             </p>
             <p className="text-[var(--text-main-theme)]/60 text-[10px] mt-1 font-semibold">
-              {t('import.importingHint', 'This runs in the background — you can leave this page and check the Import Batches tab later.')}
+              {t('import.importingHint', 'This runs in the background. You can leave this page and check the Import Batches tab later.')}
             </p>
           </div>
           {polledBatch?.total_rows > 0 && (
@@ -722,7 +722,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
 
           {polledBatch.linked > 0 || polledBatch.unmatched > 0 ? (
             <p className="text-[var(--text-main-theme)]/60 text-[10px] font-semibold italic text-center">
-              {t('import.linkageAsyncHint', 'Linked/unmatched counts resolve asynchronously and may still be climbing — reopen this batch from Import Batches to see the latest.')}
+              {t('import.linkageAsyncHint', 'Linked/unmatched counts resolve asynchronously and may still be climbing. Reopen this batch from Import Batches to see the latest.')}
             </p>
           ) : null}
 
