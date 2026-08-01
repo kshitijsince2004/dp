@@ -14,6 +14,7 @@ export default function SearchableSelect({
   dropdownClassName,
   multiple = false,
   style,
+  title,
 }) {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
@@ -163,7 +164,7 @@ export default function SearchableSelect({
   }
 
   return (
-    <div className={`relative ${wrapperLayoutClass || 'w-full'}`} ref={triggerRef}>
+    <div className={`relative ${wrapperLayoutClass || 'w-full'}`} ref={triggerRef} title={title}>
       <input
         type="text"
         disabled={disabled}

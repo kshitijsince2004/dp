@@ -2402,6 +2402,14 @@ export default function DynamicForm({
   const [selectedMajorHead, setSelectedMajorHead] = useState('');
   const [selectedMinorHead, setSelectedMinorHead] = useState('');
   const [majorMinorRows, setMajorMinorRows] = useState([]);
+  // Keep the locked Major Head in sync with the table (covers rows seeded from an
+  // existing record on load, where selectedMajorHead starts empty) so the Minor Head
+  // dropdown/fetch always targets the already-added major head, never a stale one.
+  useEffect(() => {
+    if (majorMinorRows.length > 0 && selectedMajorHead !== majorMinorRows[0].majorHead) {
+      setSelectedMajorHead(majorMinorRows[0].majorHead);
+    }
+  }, [majorMinorRows, selectedMajorHead]);
   const allSchemaFields = React.useMemo(() => deepFlattenSchema(schema), [schema]);
   // Keyed lookup so onChange handlers can resolve a field's type/format rules by key
   // alone (they only ever receive (key, val), never the field object itself).
@@ -3712,7 +3720,9 @@ const handleAddMajorMinorRow = useCallback(() => {
   // crime_head is never satisfiable and step validation blocks Next forever.
   const firstMajor = majorMinorRows[0]?.majorHead || selectedMajorHead;
   handleChange('crime_head', firstMajor);
-  setSelectedMajorHead('');
+  // Major Head stays locked to the first-added value (see ActsSectionsTable's
+  // `disabled={majorMinorRows.length > 0}`) — only Minor Head resets, so the next
+  // "+ Add" can only append another minor head under the same major head.
   setSelectedMinorHead('');
 }, [selectedMajorHead, selectedMinorHead, majorMinorRows, handleChange]);
 /** Delete a major/minor head row from the table */
@@ -3722,6 +3732,11 @@ const handleDeleteMajorMinorRow = useCallback((index) => {
   handleChange('major_heads', updated.map(r => r.majorHead).join(', '));
   handleChange('minor_heads', updated.map(r => r.minorHead).join(', '));
   handleChange('crime_head', updated[0]?.majorHead || '');
+  // Table emptied out — unlock Major Head so a different one can be chosen.
+  if (updated.length === 0) {
+    setSelectedMajorHead('');
+    setSelectedMinorHead('');
+  }
 }, [majorMinorRows, handleChange]);
 
 // Single bundle of everything <ActsSectionsTable> needs, so every call site (ARREST/UIDB

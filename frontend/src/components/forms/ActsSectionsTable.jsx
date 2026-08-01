@@ -28,29 +28,6 @@ function rejoinBareYearFragments(fragments) {
   return out;
 }
 
-/** Re-merge comma-split act-name fragments back into whole registry labels (B5, 2026-07-21 —
- * "when i add aadhaar act, benefits and services also gets added"). `act_name` is stored/
- * transported as a comma-joined string (parallel to `sections`) — an act label that itself
- * CONTAINS a comma (e.g. 'Aadhaar (Targeted Delivery of Financial and Other Subsidies, Benefits
- * and Services) Act, 2016') gets shattered into extra fragments by a naive split, each of which
- * then renders/round-trips as its own phantom act row and desyncs the acts[i]<->sections[i]
- * pairing for every citation after it.
- *
- * Runs `rejoinBareYearFragments` first (see its own doc comment — covers the grouped-act/alias
- * registry gap), then does a LONGEST-match pass against the acts registry: for every starting
- * fragment, scan every possible window and keep the LONGEST one that equals a known act label
- * (case-insensitive), then consume it whole. Longest match — not first/shortest — because a
- * shorter prefix window CAN also legitimately match (a group alias like 'Arms Act' is itself in
- * the registry as its own entry), and stopping there would strand a still-attached trailing
- * fragment as its own phantom act; longest-match keeps extending past a short match to see if a
- * longer window matches too, and prefers that. A plain act with no commas ('IPC') still emits
- * immediately — there's nothing longer to find. A window that never matches at any width is
- * emitted as its own single fragment (conservative — doesn't guess-merge two unrelated unknown
- * acts together). Mirrors the backend's identical merge in records.mapper.js's
- * `zipOffenceStrings` (same bug, same fix shape — the backend's version skips the year pre-pass
- * because its known-label set already includes every full `ref.acts.act_long`, alias-collapse
- * gap and all). Replaces the old 4-digit-year-only rejoin hack, which caught ", 2016"/", 1959"
- * but not comma-containing act names in general (Aadhaar's middle fragment). */
 export function reMergeKnownActFragments(fragments, knownLabelsLower) {
   const yearJoined = rejoinBareYearFragments(fragments);
   if (!knownLabelsLower || !knownLabelsLower.size) return yearJoined;
@@ -78,12 +55,6 @@ export function reMergeKnownActFragments(fragments, knownLabelsLower) {
 /**
  * Acts & Sections registered-list panel + Major/Minor Head cascading table +
  * Local Head select + "Add Acts & Section" modal.
- *
- * Used identically by the ARREST/UIDB general-info step and the CASE
- * acts-and-sections step — the only visual difference between the two call
- * sites is whether the Local Head select sits in its own fieldset below
- * Major/Minor (`localHeadLayout="split"`) or inline inside the Major/Minor
- * fieldset (`localHeadLayout="combined"`).
  */
 export default function ActsSectionsTable({
   values,
@@ -183,22 +154,29 @@ export default function ActsSectionsTable({
     closeAddModal();
   };
 
+  const isMajorHeadLocked = majorMinorRows.length > 0;
+
   const majorMinorBlock = (
     <>
       <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-2 text-[11px] items-center">
         <span className="text-[#0d2a4a] font-bold">Major Head</span>
-        <SearchableSelect
-          disabled={readOnly}
-          value={selectedMajorHead}
-          onChange={(val) => {
-            setSelectedMajorHead(val);
-            setSelectedMinorHead('');
-          }}
-          options={getMajorHeadOptions()}
-          placeholder="select an option"
-          lang={lang}
-          className="w-full h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-text"
-        />
+        <div className="relative w-full">
+          <SearchableSelect
+            disabled={readOnly || isMajorHeadLocked}
+            value={selectedMajorHead}
+            onChange={(val) => {
+              setSelectedMajorHead(val);
+              setSelectedMinorHead('');
+            }}
+            options={getMajorHeadOptions()}
+            placeholder="select an option"
+            lang={lang}
+            title={isMajorHeadLocked ? 'Major Head is locked to the first entry added below — delete all rows to pick a different one.' : undefined}
+            className={`w-full h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 ${
+              isMajorHeadLocked ? 'cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500' : 'cursor-text'
+            }`}
+          />
+        </div>
 
         <span className="text-[#0d2a4a] font-bold">Minor Head</span>
         <div className="flex items-center gap-2">
@@ -279,8 +257,7 @@ export default function ActsSectionsTable({
     />
   );
 
-  // Derived, not user-editable: ref.local_heads.crime_category (ruling 16) already classifies
-  // every local head as HEINOUS/NON_HEINOUS/OTHER, so this just reflects the current selection.
+  // Derived, not user-editable: ref.local_heads.crime_category 
   const isHeinous = getLocalHeadOptions().find((o) => o.value === values.local_head)?.crime_category === 'HEINOUS';
   const heinousOffenceBlock = (
     <span className={`text-[11px] font-bold ${isHeinous ? 'text-red-600' : 'text-[#0d2a4a]'}`}>
