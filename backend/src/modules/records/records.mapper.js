@@ -933,7 +933,14 @@ export async function buildOffenceRows(trx, recordType, data, offencesInput) {
     });
     log.debug('buildOffenceRows: built offence row', { recordType, act: r.act, section: r.section, actId, otherActName, sectionId, majorHeadId, minorHeadId });
   }
-  if (built.length) built[0].is_primary = true;
+  if (built.length) {
+    // Respect an explicit user-selected primary index from the form (primary_act_index).
+    // Falls back to 0 (first row) when absent — preserving the historical default.
+    const reqIdx = (data.primary_act_index != null && !Number.isNaN(+data.primary_act_index))
+      ? Math.min(Math.max(0, parseInt(data.primary_act_index, 10)), built.length - 1)
+      : 0;
+    built.forEach((r, i) => { r.is_primary = (i === reqIdx); });
+  }
 
   const crimeHeadLabel = recordType === 'ARREST' ? data.crime_head : null;
   if (crimeHeadLabel) {
@@ -1065,7 +1072,9 @@ export async function recomposeRecord(trx, registry, recordType, {
     data.sections = joinNonEmpty(offenceRows.map((o) => o.section_label));
     data.major_heads = joinNonEmpty(offenceRows.map((o) => o.major_head_label));
     data.minor_heads = joinNonEmpty(offenceRows.map((o) => o.minor_head_label));
-    const primary = offenceRows.find((o) => o.is_primary);
+    const primaryIdx = offenceRows.findIndex((o) => o.is_primary);
+    if (primaryIdx >= 0) data.primary_act_index = primaryIdx;
+    const primary = offenceRows[primaryIdx >= 0 ? primaryIdx : 0];
     if (primary?.major_head_label && recordType === 'ARREST') data.crime_head = primary.major_head_label;
   }
   if (detailRow?.local_head_id_label) data.local_head = detailRow.local_head_id_label;

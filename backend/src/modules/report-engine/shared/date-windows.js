@@ -37,6 +37,33 @@ export function addYears(dateStr, n) {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * Build date windows for a Fortnightly (FN) Diary.
+ * fnEndStr: the last day of the fortnight (user-selected, e.g. "2026-05-31").
+ * fnStart  = fnEnd - 14 days  (inclusive 15-day window).
+ * Corresponding year windows shift both ends back by exactly one year.
+ */
+export function buildFnDateWindows(fnEndStr) {
+  const fnEnd   = parseToISO(fnEndStr);
+  const fnStart = addDays(fnEnd, -14);
+  const yearNum = parseInt(fnEnd.slice(0, 4), 10);
+  const jan1Curr = `${yearNum}-01-01`;
+
+  const fnEndLY   = addYears(fnEnd, -1);
+  const fnStartLY = addDays(fnEndLY, -14);
+  const jan1LY    = `${yearNum - 1}-01-01`;
+
+  return {
+    fnEnd,
+    fnStart,
+    fnEndLY,
+    fnStartLY,
+    jan1Curr,
+    jan1LY,
+    yearNum,
+  };
+}
+
 export function buildDateWindows(cutoffStr) {
   const cutoff = parseToISO(cutoffStr);
   const yearNum = parseInt(cutoff.slice(0, 4), 10);

@@ -66,7 +66,8 @@ const templates = [
   { id: "dd-financial-fraud-arrest",      name_en: "Daily Diary: Financial Fraud Arrest",    name_hi: "वित्तीय धोखाधड़ी गिरफ्तार",             format: ["excel"], applicable_record_types: ["ARREST","CASE"],                    template_type: "DAILY_DIARY_PARALLEL" },
   { id: "dd-ndps-action",                 name_en: "Daily Diary: NDPS Action",               name_hi: "एनडीपीएस कार्रवाई",                     format: ["excel"], applicable_record_types: ["CASE","ARREST"],                    template_type: "DAILY_DIARY_PARALLEL" },
   { id: "PHQ_DIARY",                      name_en: "PHQ Daily Crime Diary",                   name_hi: "मुख्यालय दैनिक अपराध डायरी",              format: ["excel"], applicable_record_types: ["CASE","ARREST"],                     template_type: "PHQ_DIARY" },
-  { id: "DISTRICT_DIARY",                 name_en: "District Crime Diary (18 Sheets)",        name_hi: "जिला अपराध डायरी",                       format: ["excel"], applicable_record_types: ["CASE","ARREST","PCR_CALL"],          template_type: "DISTRICT_DIARY" }
+  { id: "DISTRICT_DIARY",                 name_en: "District Crime Diary (18 Sheets)",        name_hi: "जिला अपराध डायरी",                       format: ["excel"], applicable_record_types: ["CASE","ARREST","PCR_CALL"],          template_type: "DISTRICT_DIARY" },
+  { id: "FN_DIARY",                       name_en: "Fortnightly Crime Diary (43 Sheets)",      name_hi: "पाक्षिक अपराध डायरी",                    format: ["excel"], applicable_record_types: ["CASE","ARREST","MISSING"],           template_type: "FN_DIARY" }
 ];
 
 export const getTemplates = async (req, res) => {
@@ -508,7 +509,7 @@ export const generateReport = async (req, res) => {
 
     // Check if this is a PHQ / District template or metadata-driven template (Node.js engine)
     const tCode = (selectedTemplate?.code || (typeof template_id === 'string' && !UUID_RE.test(template_id) ? template_id : '')).toUpperCase();
-    const isReportEngineTemplate = tCode.startsWith('PHQ') || tCode === 'PHQ_DIARY' || tCode.startsWith('DISTRICT') || tCode === 'DISTRICT_DIARY' || selectedTemplate?.template_type === 'PHQ_DIARY' || selectedTemplate?.template_type === 'DISTRICT_DIARY';
+    const isReportEngineTemplate = tCode.startsWith('PHQ') || tCode === 'PHQ_DIARY' || tCode.startsWith('DISTRICT') || tCode === 'DISTRICT_DIARY' || tCode === 'FN_DIARY' || selectedTemplate?.template_type === 'PHQ_DIARY' || selectedTemplate?.template_type === 'DISTRICT_DIARY' || selectedTemplate?.template_type === 'FN_DIARY';
     const isMetadataTemplate = isReportEngineTemplate || (selectedTemplate && selectedTemplate.template_definition && parseJsonField(selectedTemplate.template_definition) && Object.keys(parseJsonField(selectedTemplate.template_definition)).length > 0);
 
     if (isMetadataTemplate) {
@@ -572,10 +573,11 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
   const templateCode = (template?.code || (typeof template_id === 'string' && !UUID_RE.test(template_id) ? template_id : '')).toUpperCase();
   const isPHQ = templateCode.startsWith('PHQ') || templateCode === 'PHQ_DIARY' || template?.template_type === 'PHQ_DIARY';
   const isDistrict = templateCode.startsWith('DISTRICT') || templateCode === 'DISTRICT_DIARY' || template?.template_type === 'DISTRICT_DIARY';
+  const isFnDiary = templateCode === 'FN_DIARY' || template?.template_type === 'FN_DIARY';
 
-  if (isPHQ || isDistrict) {
+  if (isPHQ || isDistrict || isFnDiary) {
     const { generateReport } = await import('../report-engine/report-engine.service.js');
-    const rawDateStr = parsedFilters.date || parsedFilters.from_date || parsedFilters.from || new Date().toISOString().split('T')[0];
+    const rawDateStr = parsedFilters.date || parsedFilters.fn_end_date || parsedFilters.from_date || parsedFilters.from || new Date().toISOString().split('T')[0];
     let runDateStr = String(rawDateStr).trim();
     if (/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(runDateStr)) {
       const parts = runDateStr.split(/[\/-]/);
@@ -586,7 +588,7 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
     }
     const scope = parsedFilters.scope_node_id || parsedFilters.ps_id || parsedFilters.station_id || parsedFilters.district_id || parsedFilters.scope || 'ALL_DELHI_TOTAL';
     const selectedSheets = parsedFilters.selected_sheets || [];
-    const reportFamily = isDistrict ? 'DISTRICT_DIARY' : 'PHQ_DIARY';
+    const reportFamily = isFnDiary ? 'FN_DIARY' : isDistrict ? 'DISTRICT_DIARY' : 'PHQ_DIARY';
 
     const buffer = await generateReport({
       reportFamily,

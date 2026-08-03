@@ -108,6 +108,8 @@ export default function ActsSectionsTable({
   getMinorHeadOptions,
   getLocalHeadOptions,
   localHeadLayout = 'split',
+  primaryActIndex = 0,
+  onPrimaryChange,
 }) {
   const [actSearchInput, setActSearchInput] = useState('');
   const [actDropdownOpen, setActDropdownOpen] = useState(false);
@@ -154,6 +156,10 @@ export default function ActsSectionsTable({
     const nextSecs = secs.filter((_, idx) => idx !== i);
     handleChange('act_name', nextActs.join(', '));
     handleChange('sections', nextSecs.join(', '));
+    if (onPrimaryChange) {
+      if (i < primaryActIndex) onPrimaryChange(primaryActIndex - 1);
+      else if (i === primaryActIndex) onPrimaryChange(0);
+    }
   };
 
   const closeAddModal = () => {
@@ -337,19 +343,20 @@ export default function ActsSectionsTable({
                   <th className="px-2 py-1 text-left font-bold w-12 border-r border-[#7a9cc5]">S.No.</th>
                   <th className="px-2 py-1 text-left font-bold border-r border-[#7a9cc5]">Acts</th>
                   <th className="px-2 py-1 text-left font-bold border-r border-[#7a9cc5]">Sections</th>
+                  <th className="px-2 py-1 text-center font-bold w-16 border-r border-[#7a9cc5]" title="Primary act used for statistical reporting">Primary</th>
                   {!readOnly && <th className="px-2 py-1 text-center font-bold w-16">Delete</th>}
                 </tr>
               </thead>
               <tbody>
                 {maxLen === 0 ? (
                   <tr>
-                    <td colSpan={readOnly ? 3 : 4} className="px-2 py-3 text-center text-gray-500 italic">
+                    <td colSpan={readOnly ? 4 : 5} className="px-2 py-3 text-center text-gray-500 italic">
                       No Acts & Sections added yet. Click "+ Add Acts & Section" to add.
                     </td>
                   </tr>
                 ) : (
                   Array.from({ length: maxLen }).map((_, i) => (
-                    <tr key={i} className="border-b border-[#7a9cc5] bg-white">
+                    <tr key={i} className={`border-b border-[#7a9cc5] ${i === primaryActIndex ? 'bg-[#eef6ff]' : 'bg-white'}`}>
                       <td className="px-2 py-1 border-r border-[#7a9cc5] text-[#0d2a4a] font-mono text-center">
                         {i + 1}
                       </td>
@@ -358,6 +365,17 @@ export default function ActsSectionsTable({
                       </td>
                       <td className="px-2 py-1 border-r border-[#7a9cc5] text-[#0d2a4a]">
                         {secs[i] || ''}
+                      </td>
+                      <td className="px-2 py-1 text-center border-r border-[#7a9cc5]">
+                        <input
+                          type="radio"
+                          name="primary_act_radio"
+                          checked={i === primaryActIndex}
+                          disabled={readOnly}
+                          onChange={() => onPrimaryChange && onPrimaryChange(i)}
+                          className="accent-[#0f52ba] cursor-pointer disabled:cursor-default"
+                          title="Mark as primary act for reporting"
+                        />
                       </td>
                       {!readOnly && (
                         <td className="px-2 py-1 text-center">

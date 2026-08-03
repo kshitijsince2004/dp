@@ -3803,6 +3803,8 @@ const actsSectionsProps = {
   getMajorHeadOptions: () => dbMajorHeadOptions,
   getMinorHeadOptions: () => dbMinorHeadOptions,
   getLocalHeadOptions,
+  primaryActIndex: Number(values.primary_act_index ?? 0),
+  onPrimaryChange: (idx) => handleChange('primary_act_index', idx),
 };
 
 /* ── Navigate forward (with step validation) ──────────────────────────── */

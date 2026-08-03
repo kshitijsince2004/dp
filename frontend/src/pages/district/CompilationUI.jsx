@@ -72,6 +72,24 @@ const DISTRICT_REPORTS = [
   { tableName: "C3", label: "C3 — D13 66DP (66 DP Summary)", category: "C", num: 17 },
 ];
 
+const FN_REPORTS = [
+  { tableName: "STAT01", label: "STAT 1 — Cases Reported (By Crime Head × 4 Period Columns)", category: "A", num: 1 },
+  { tableName: "STAT02", label: "STAT 2 — Disposal During FN (Solved / Cancelled / Untraced / Arrested)", category: "A", num: 2 },
+  { tableName: "STAT03", label: "STAT 3 — Cases Under Local & Special Laws (By Act)", category: "A", num: 3 },
+  { tableName: "STAT05", label: "STAT 5 — Burglary Mode of Operation", category: "B", num: 4 },
+  { tableName: "STAT07", label: "STAT 7 — Theft & Recovery of Property", category: "B", num: 5 },
+  { tableName: "STAT08", label: "STAT 8 — Vehicle Theft & Recovery", category: "B", num: 6 },
+  { tableName: "STAT09", label: "STAT 9 — Property Seized", category: "B", num: 7 },
+  { tableName: "STAT11", label: "STAT 11 — Victims by Category (Women / Children / SC-ST)", category: "C", num: 8 },
+  { tableName: "STAT13", label: "STAT 13 — Kidnapping & Abduction", category: "C", num: 9 },
+  { tableName: "STAT14", label: "STAT 14 — Preventive Measures", category: "C", num: 10 },
+  { tableName: "STAT19", label: "STAT 19 — Missing Persons (Reported / Traced / Pending)", category: "C", num: 11 },
+  { tableName: "STAT24", label: "STAT 24 — Crimes Against Women", category: "C", num: 12 },
+  { tableName: "STAT36", label: "STAT 36 — Running Balance of Cases", category: "D", num: 13 },
+  { tableName: "STAT37", label: "STAT 37 — Pending Cases by Age Buckets", category: "D", num: 14 },
+  { tableName: "STAT40", label: "STAT 40 — Court Disposal (Stub — data pending)", category: "D", num: 15 },
+];
+
 const DIARIES = [
   {
     key: 'COMBINED_DAILY_DIARY',
@@ -99,6 +117,15 @@ const DIARIES = [
     status: 'active',
     levels: ['HQ', 'DISTRICT', 'PS'],
     reports: PHQ_REPORTS,
+  },
+  {
+    key: 'FN_DIARY',
+    label: 'Fortnightly Crime Diary',
+    description: 'District-level fortnightly statistical digest — 15 sheets (select the FN End Date)',
+    icon: Calendar,
+    status: 'active',
+    levels: ['HQ', 'DISTRICT'],
+    reports: FN_REPORTS,
   },
 ];
 
@@ -196,6 +223,7 @@ export default function CompilationUI() {
       }
 
       // Auto-select District Diary for District/DCP users, PHQ Diary for HQ users
+      // FN Diary is never auto-selected — it requires explicit FN end date selection
       const targetDiaryKey = lvl === 'DISTRICT' ? 'DISTRICT_DIARY' : lvl === 'HQ' ? 'PHQ_DIARY' : 'COMBINED_DAILY_DIARY';
       const defaultDiary = DIARIES.find(d => d.key === targetDiaryKey);
       if (defaultDiary) {
@@ -213,6 +241,10 @@ export default function CompilationUI() {
     log.debug('action:diary_select', { diaryKey: diary.key });
     setSelectedDiary(diary);
     setSelectedFields(new Set(diary.reports.map(r => r.tableName)));
+    // Pre-select all sheets for report-engine diaries
+    if (diary.key === 'DISTRICT_DIARY' || diary.key === 'FN_DIARY') {
+      setSelectedSheets(diary.reports.map(r => r.tableName));
+    }
   };
 
   const handleChangeDiary = () => {
@@ -434,7 +466,7 @@ export default function CompilationUI() {
     log.info('action:compile_logs_click', { diaryKey: selectedDiary.key, dateFrom, dateTo, psCount: selectedPSIds.size, reportCount: selectedFields.size });
     setExporting(true);
 
-    const isReportEngine = selectedDiary.key === 'PHQ_DIARY' || selectedDiary.key === 'DISTRICT_DIARY';
+    const isReportEngine = selectedDiary.key === 'PHQ_DIARY' || selectedDiary.key === 'DISTRICT_DIARY' || selectedDiary.key === 'FN_DIARY';
 
     // 1. Persist compilation in DB
     try {
@@ -453,13 +485,13 @@ export default function CompilationUI() {
     let jobId;
     try {
       if (isReportEngine) {
+        const isFnDiary = selectedDiary.key === 'FN_DIARY';
         const res = await api.post('/reports/generate', {
           template_id: selectedDiary.key,
           format: 'EXCEL',
           filters: {
             date: dateFrom,
-            from_date: dateFrom,
-            to_date: dateFrom,
+            ...(isFnDiary ? { fn_end_date: dateFrom } : { from_date: dateFrom, to_date: dateFrom }),
             scope_node_id: selectedScopeNodeId,
             selected_sheets: selectedSheets
           }
@@ -487,11 +519,13 @@ export default function CompilationUI() {
     }
 
     // 3. Poll until READY or COMPLETED
-    const loadingMessage = selectedDiary.key === 'DISTRICT_DIARY'
-      ? 'Generating District Diary Excel…'
-      : (selectedDiary.key === 'PHQ_DIARY'
-          ? (userLevel === 'PS' ? 'Generating PS Comparative Report Excel…' : 'Generating PHQ Diary Excel…')
-          : 'Generating Daily Diary Excel…');
+    const loadingMessage = selectedDiary.key === 'FN_DIARY'
+      ? 'Generating Fortnightly Crime Diary Excel…'
+      : selectedDiary.key === 'DISTRICT_DIARY'
+        ? 'Generating District Diary Excel…'
+        : (selectedDiary.key === 'PHQ_DIARY'
+            ? (userLevel === 'PS' ? 'Generating PS Comparative Report Excel…' : 'Generating PHQ Diary Excel…')
+            : 'Generating Daily Diary Excel…');
     const loadingToastId = toast.loading(loadingMessage);
 
     try {
@@ -533,11 +567,13 @@ export default function CompilationUI() {
 
     // 4. Download completed file via authenticated Blob fetch
     try {
-      const filename = selectedDiary.key === 'DISTRICT_DIARY'
-        ? `District_Diary_${dateFrom.replace(/\//g, '-')}.xlsx`
-        : (selectedDiary.key === 'PHQ_DIARY'
-            ? (userLevel === 'PS' ? `PS_Comparative_Report_${dateFrom.replace(/\//g, '-')}.xlsx` : `PHQ_Diary_${dateFrom.replace(/\//g, '-')}.xlsx`)
-            : `Daily_Diary_${dateFrom.replace(/\//g, '-')}.xlsx`);
+      const filename = selectedDiary.key === 'FN_DIARY'
+        ? `FN_Diary_${dateFrom.replace(/\//g, '-')}.xlsx`
+        : selectedDiary.key === 'DISTRICT_DIARY'
+          ? `District_Diary_${dateFrom.replace(/\//g, '-')}.xlsx`
+          : (selectedDiary.key === 'PHQ_DIARY'
+              ? (userLevel === 'PS' ? `PS_Comparative_Report_${dateFrom.replace(/\//g, '-')}.xlsx` : `PHQ_Diary_${dateFrom.replace(/\//g, '-')}.xlsx`)
+              : `Daily_Diary_${dateFrom.replace(/\//g, '-')}.xlsx`);
       
       const response = await api.get(`/reports/download/${jobId}/${filename}`, { responseType: 'blob', timeout: 60000 });
       const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -553,11 +589,13 @@ export default function CompilationUI() {
 
       log.info('action:export_download_success', { jobId, filename });
 
-      const successMessage = selectedDiary.key === 'DISTRICT_DIARY'
-        ? 'District Diary Excel downloaded! Check your Downloads folder.'
-        : (selectedDiary.key === 'PHQ_DIARY'
-            ? (userLevel === 'PS' ? 'PS Comparative Report Excel downloaded! Check your Downloads folder.' : 'PHQ Diary Excel downloaded! Check your Downloads folder.')
-            : 'Daily Diary Excel downloaded! Check your Downloads folder.');
+      const successMessage = selectedDiary.key === 'FN_DIARY'
+        ? 'Fortnightly Crime Diary Excel downloaded! Check your Downloads folder.'
+        : selectedDiary.key === 'DISTRICT_DIARY'
+          ? 'District Diary Excel downloaded! Check your Downloads folder.'
+          : (selectedDiary.key === 'PHQ_DIARY'
+              ? (userLevel === 'PS' ? 'PS Comparative Report Excel downloaded! Check your Downloads folder.' : 'PHQ Diary Excel downloaded! Check your Downloads folder.')
+              : 'Daily Diary Excel downloaded! Check your Downloads folder.');
       toast.success(successMessage);
     } catch (err) {
       console.error('[CompilationUI] Download failed:', err);
@@ -721,18 +759,20 @@ export default function CompilationUI() {
       <div className="border border-slate-200 bg-white rounded-xl p-5 shadow-sm space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
           <Calendar size={14} className="text-[var(--accent-color)]" />
-          <span>Step 2 — {selectedDiary.key === 'PHQ_DIARY' && userLevel === 'PS' ? 'PS Comparative Report' : selectedDiary.label}: {selectedDiary.key === 'PHQ_DIARY' ? 'Select Scope & Sheets' : 'Select Reports & Date Range'}</span>
+          <span>Step 2 — {selectedDiary.key === 'PHQ_DIARY' && userLevel === 'PS' ? 'PS Comparative Report' : selectedDiary.label}: {selectedDiary.key === 'FN_DIARY' ? 'Select FN End Date, Scope & Sheets' : selectedDiary.key === 'PHQ_DIARY' ? 'Select Scope & Sheets' : 'Select Reports & Date Range'}</span>
         </h3>
 
         <p className="text-xs text-slate-500 font-medium">
-          {selectedDiary.key === 'PHQ_DIARY'
-            ? <>Generate comparative crime reports dynamically at any level of the Delhi Police hierarchy.</>
-            : userLevel === 'PS'
-              ? <>This will export today's records for <span className="text-[var(--accent-color)] font-semibold">{myStation?.name || 'your station'}</span> only.</>
-              : <>This will bundle all records currently at <span className="text-[var(--accent-color)] font-semibold">DISTRICT_REVIEW</span> status in your district into a single compilation packet.</>}
+          {selectedDiary.key === 'FN_DIARY'
+            ? <>Select the <span className="text-[var(--accent-color)] font-semibold">last day of the fortnight</span> as the FN End Date. The 15-day window will be computed automatically.</>
+            : selectedDiary.key === 'PHQ_DIARY'
+              ? <>Generate comparative crime reports dynamically at any level of the Delhi Police hierarchy.</>
+              : userLevel === 'PS'
+                ? <>This will export today's records for <span className="text-[var(--accent-color)] font-semibold">{myStation?.name || 'your station'}</span> only.</>
+                : <>This will bundle all records currently at <span className="text-[var(--accent-color)] font-semibold">DISTRICT_REVIEW</span> status in your district into a single compilation packet.</>}
         </p>
 
-        {selectedDiary.key === 'PHQ_DIARY' || selectedDiary.key === 'DISTRICT_DIARY' ? (
+        {selectedDiary.key === 'PHQ_DIARY' || selectedDiary.key === 'DISTRICT_DIARY' || selectedDiary.key === 'FN_DIARY' ? (
           /* Hierarchy-Aware Report Selection UI */
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-slate-100 pb-4">
@@ -740,7 +780,7 @@ export default function CompilationUI() {
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
                   <Calendar size={10} className="text-slate-400" />
-                  <span>As-Of Date</span>
+                  <span>{selectedDiary.key === 'FN_DIARY' ? 'FN End Date' : 'As-Of Date'}</span>
                 </span>
                 <DateInput
                   value={dateFrom}
@@ -800,14 +840,16 @@ export default function CompilationUI() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                  Select Worksheets ({selectedSheets.length}/{(selectedDiary.key === 'DISTRICT_DIARY' ? DISTRICT_REPORTS : (scopeDetails?.available_sheets || [])).length})
+                  Select Worksheets ({selectedSheets.length}/{(selectedDiary.key === 'DISTRICT_DIARY' ? DISTRICT_REPORTS : selectedDiary.key === 'FN_DIARY' ? FN_REPORTS : (scopeDetails?.available_sheets || [])).length})
                 </span>
                 <button
                   type="button"
                   onClick={() => {
-                    const allKeys = selectedDiary.key === 'DISTRICT_DIARY' 
+                    const allKeys = selectedDiary.key === 'DISTRICT_DIARY'
                       ? DISTRICT_REPORTS.map(r => r.tableName)
-                      : (scopeDetails?.available_sheets || []);
+                      : selectedDiary.key === 'FN_DIARY'
+                        ? FN_REPORTS.map(r => r.tableName)
+                        : (scopeDetails?.available_sheets || []);
                     if (selectedSheets.length === allKeys.length) {
                       setSelectedSheets([]);
                     } else {
@@ -816,14 +858,16 @@ export default function CompilationUI() {
                   }}
                   className="text-[10px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
                 >
-                  {selectedSheets.length === (selectedDiary.key === 'DISTRICT_DIARY' ? DISTRICT_REPORTS.length : (scopeDetails?.available_sheets || []).length) ? 'Deselect All' : 'Select All'}
+                  {selectedSheets.length === (selectedDiary.key === 'DISTRICT_DIARY' ? DISTRICT_REPORTS.length : selectedDiary.key === 'FN_DIARY' ? FN_REPORTS.length : (scopeDetails?.available_sheets || []).length) ? 'Deselect All' : 'Select All'}
                 </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                 {(selectedDiary.key === 'DISTRICT_DIARY'
                   ? DISTRICT_REPORTS.map(r => ({ key: r.tableName, label: r.label, desc: `Category ${r.category} Sheet` }))
-                  : (scopeDetails?.available_sheets || []).map(s => ({ key: s, label: s.replace(/_/g, ' '), desc: SHEET_DESC[s] || 'Comparative Sheet' }))
+                  : selectedDiary.key === 'FN_DIARY'
+                    ? FN_REPORTS.map(r => ({ key: r.tableName, label: r.label, desc: `Category ${r.category} Sheet` }))
+                    : (scopeDetails?.available_sheets || []).map(s => ({ key: s, label: s.replace(/_/g, ' '), desc: SHEET_DESC[s] || 'Comparative Sheet' }))
                 ).map(item => {
                   const isChecked = selectedSheets.includes(item.key);
                   return (
