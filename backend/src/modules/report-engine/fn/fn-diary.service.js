@@ -270,41 +270,67 @@ export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets 
     }
   }
 
+  // ── Sheet Column Boundaries ──────────────────────────────────────────
+  const SHEET_MAX_COLS = {
+    STAT_1: 6,   STAT_1A: 6,  STAT_1B: 6,  STAT_2: 6,   STAT_3: 6,   STAT_4: 6,   STAT_5: 4,
+    STAT_6: 6,   STAT_7: 6,   STAT_8: 6,   STAT_9: 6,   STAT_10: 6,  STAT_11: 9,  STAT_12: 10,
+    STAT_13: 7,  STAT_14: 6,  STAT_15: 4,  STAT_16: 6,  STAT_17: 4,  STAT_18: 8,  STAT_19: 7,
+    STAT_20: 20, STAT_21: 6,  STAT_22: 6,  STAT_23: 8,  STAT_24: 5,  STAT_25: 10, STAT_26: 10,
+    STAT_27: 8,  STAT_28: 8,  STAT_29: 10, STAT_30: 6,  STAT_31: 8,  STAT_32: 6,  STAT_33: 6,
+    STAT_34: 6,  STAT_35: 6,  STAT_36: 8,  STAT_37: 7,  STAT_38: 6,  STAT_39: 6,  STAT_40: 8,
+    STAT_41: 8
+  };
+
   for (const ws of workbook.worksheets) {
+    const rawKey = ws.name.replace(/\s+/g, '').toUpperCase();
     const num = parseInt(ws.name.replace(/[^0-9]/g, '')) || 1;
-    // Section-grouped professional tab colors
-    if (num <= 10) ws.properties.tabColor = { argb: 'FF1E3A8A' };       // Deep Navy
-    else if (num <= 20) ws.properties.tabColor = { argb: 'FF2563EB' };  // Slate Blue
-    else if (num <= 30) ws.properties.tabColor = { argb: 'FF0D9488' };  // Teal
-    else ws.properties.tabColor = { argb: 'FF4F46E5' };                 // Indigo
 
-    // Data Row Color Coding & Zero-Filling
-    const maxR = Math.min(ws.rowCount, 45);
-    for (let r = 5; r <= maxR; r++) {
-      const row = ws.getRow(r);
-      const startCol = ws.name === 'STAT_11' ? 4 : 3;
-      for (let c = startCol; c <= 8; c++) {
-        const cell = row.getCell(c);
-        if (cell.master && cell.master.address !== cell.address) continue;
-        if (cell.value === null || cell.value === undefined || cell.value === '') {
-          cell.value = 0;
-        }
-        if (typeof cell.value === 'number') {
-          cell.alignment = { horizontal: 'right', vertical: 'middle' };
-          cell.numFmt = '#,##0';
-        }
-      }
-    }
+    // Tab colours grouped by reporting section
+    if (num <= 10) ws.properties.tabColor = { argb: 'FF1E3A8A' };      // Deep Navy
+    else if (num <= 20) ws.properties.tabColor = { argb: 'FF2563EB' }; // Slate Blue
+    else if (num <= 30) ws.properties.tabColor = { argb: 'FF0D9488' }; // Teal
+    else ws.properties.tabColor = { argb: 'FF4F46E5' };                // Indigo
 
-    // Formula Sanitation to ensure ExcelJS writeBuffer succeeds without formula clone errors
+    // Formula sanitation across all cells in the worksheet to prevent ExcelJS shared formula clone errors
     ws.eachRow({ includeEmpty: true }, (row) => {
       row.eachCell({ includeEmpty: true }, (cell) => {
-        if (cell._value && cell._value.model) {
+        if (cell._value?.model) {
           delete cell._value.model.sharedFormula;
           delete cell._value.model.master;
         }
       });
     });
+
+    const maxR = Math.min(ws.rowCount, 65);
+    const startDataCol = ws.name === 'STAT_11' ? 4 : 3;
+    const endDataCol   = SHEET_MAX_COLS[rawKey] || SHEET_MAX_COLS[`STAT_${num}`] || 6;
+
+    for (let r = 4; r <= maxR; r++) {
+      const row   = ws.getRow(r);
+      const textA = String(row.getCell(1).value ?? '').trim().toUpperCase();
+      const textB = String(row.getCell(2).value ?? '').trim().toUpperCase();
+      const label = textB || textA;
+
+      // Skip section header rows (e.g. "A. HEINOUS CRIME", "B. NON-HEINOUS CRIME")
+      const isSection = /^[AB]\.\s|HEINOUS CRIME|NON.?HEINOUS/i.test(label) || /^[AB]\.\s/.test(textA);
+      if (isSection) continue;
+
+      for (let c = startDataCol; c <= endDataCol; c++) {
+        const cell = row.getCell(c);
+
+        // Skip slave cells of merged regions
+        if (cell.master && cell.master.address !== cell.address) continue;
+
+        const v = cell.value;
+
+        // Only style cells that have been explicitly written by a renderer
+        if (v === null || v === undefined || v === '') continue;
+        if (typeof v !== 'number') continue;
+
+        cell.numFmt    = '#,##0';
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+      }
+    }
   }
 
   return await workbook.xlsx.writeBuffer();
