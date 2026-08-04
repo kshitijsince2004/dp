@@ -446,8 +446,12 @@ export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets 
           continue;
         }
 
-        // Only format numeric values written by renderers
-        if (typeof v === 'number') {
+        // Fill empty/null data cells in data rows with 0 as per Global Rule 1
+        if (v === null || v === undefined || v === '') {
+          cell.value = 0;
+        }
+
+        if (typeof cell.value === 'number') {
           cell.numFmt    = '#,##0';
           cell.alignment = { horizontal: 'right', vertical: 'middle' };
         }

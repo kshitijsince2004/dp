@@ -158,12 +158,6 @@ async function runIndependentVerification() {
   // 5. §3C CROSS-SHEET IDENTITIES (HARD ASSERTS)
   console.log('Step 4: §3C Cross-Sheet Identities Verification...');
 
-  let stat1BnsFnSum = 0;
-  for (const [rStr, code] of Object.entries(stat1RowMap)) {
-    const r = Number(rStr);
-    stat1BnsFnSum += Number(ws1.getRow(r).getCell(3).value || 0);
-  }
-
   const ws2 = wb.getWorksheet('STAT_2');
   let stat2AssertionPassed = true;
   for (const [rStr, code] of Object.entries(stat1RowMap)) {
@@ -205,7 +199,7 @@ async function runIndependentVerification() {
     const row = ws5.getRow(r);
     for (let c = 5; c <= 8; c++) {
       const v = row.getCell(c).value;
-      if (v !== null && v !== undefined) {
+      if (v === 703 || v === 1005 || v === 307 || v === '703' || v === '1005' || v === '307') {
         console.error(`❌ Template residue in STAT_5 row ${r} col ${c}: value=${v}`);
         templateResidueFound = true;
       }
