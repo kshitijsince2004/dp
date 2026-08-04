@@ -313,22 +313,32 @@ export default function Queue() {
                   <tbody className="divide-y divide-[var(--border-card-theme)]/40 text-[var(--text-main-theme)]">
                     {filteredQueue.map((rec) => {
                       const refId =
-                        rec.data.fir_no ||
-                        rec.data.gd_no ||
-                        rec.data.linked_fir_dd_no ||
-                        rec.data.dd_fir_no ||
-                        rec.data.uidbNumber ||
-                        'N/A';
+                        rec.fir_no ||
+                        rec.arrest_fir_no ||
+                        rec.missing_fir_no ||
+                        rec.uidb_no ||
+                        rec.legacy_ref ||
+                        rec.data?.fir_no ||
+                        rec.data?.gd_no ||
+                        rec.data?.linked_fir_dd_no ||
+                        rec.data?.dd_fir_no ||
+                        rec.data?.uidbNumber ||
+                        (rec.id ? rec.id.slice(0, 8) : 'N/A');
 
                       const gist =
-                        rec.data.brief_facts ||
-                        rec.data.call_gist ||
-                        rec.data.recovered_material ||
-                        rec.data.physical_description ||
-                        rec.data.description ||
-                        rec.data.foundPlace ||
+                        rec.data?.brief_facts ||
+                        rec.data?.call_gist ||
+                        rec.data?.recovered_material ||
+                        rec.data?.physical_description ||
+                        rec.data?.description ||
+                        rec.data?.foundPlace ||
+                        rec.case_local_head ||
+                        rec.call_head ||
+                        rec.arrest_local_head ||
+                        rec.uidb_local_head ||
                         'No description logged';
 
+                      const recDate = rec.record_date || rec.registration_date || rec.created_at || rec.data?.record_date || 'N/A';
                       const isSentBack = rec.current_status === 'SENT_BACK_HC' || rec.current_status === 'SENT_BACK';
 
                       return (
@@ -353,8 +363,8 @@ export default function Queue() {
                             />
                           </td>
                           <td className="p-4 font-mono font-bold text-[var(--text-main-theme)]">{refId}</td>
-                          <td className="p-4 text-[var(--text-main-theme)] opacity-85 font-semibold">Parliament Street</td>
-                          <td className="p-4 font-mono text-[var(--text-main-theme)] opacity-60">{rec.data.record_date || 'N/A'}</td>
+                          <td className="p-4 text-[var(--text-main-theme)] opacity-85 font-semibold">{rec.ps_name || 'Police Station'}</td>
+                          <td className="p-4 font-mono text-[var(--text-main-theme)] opacity-60">{typeof recDate === 'string' ? recDate.slice(0, 10) : 'N/A'}</td>
                           <td className="p-4 max-w-[280px] truncate text-[var(--text-main-theme)] opacity-85 font-semibold" title={gist}>
                             {gist}
                           </td>

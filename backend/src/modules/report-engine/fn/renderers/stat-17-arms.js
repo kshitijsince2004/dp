@@ -10,6 +10,6 @@ export function renderStat17(workbook, _scope, calcData) {
   ws.getCell('D4').value = g('ARMS_ACT', 'uptoY');
 
   const dbcA = calcData.distByCodeArr || {};
-  ws.getCell('C5').value = Number(dbcA['ARMS_ACT']?.fnY  || 0);
-  ws.getCell('D5').value = Number(dbcA['ARMS_ACT']?.fnY1 || 0);
+  ws.getCell('C5').value = Number(dbcA['ARMS_ACT']?.fnY   || 0);
+  ws.getCell('D5').value = Number(dbcA['ARMS_ACT']?.uptoY || 0);
 }

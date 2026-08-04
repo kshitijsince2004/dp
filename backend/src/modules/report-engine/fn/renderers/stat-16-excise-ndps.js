@@ -21,5 +21,7 @@ export function renderStat16(workbook, _scope, calcData) {
   ws.getCell('F14').value = g('NDPS_ACT',     'uptoY1');
 
   ws.getCell('C26').value = g('GAMBLING_ACT', 'fnY');
-  ws.getCell('D26').value = g('GAMBLING_ACT', 'uptoY');
+  ws.getCell('D26').value = g('GAMBLING_ACT', 'fnY1');
+  ws.getCell('E26').value = g('GAMBLING_ACT', 'uptoY');
+  ws.getCell('F26').value = g('GAMBLING_ACT', 'uptoY1');
 }

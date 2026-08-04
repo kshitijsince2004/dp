@@ -95,7 +95,6 @@ async function fetchPendingCasesByAge({ psIds, fnEnd }) {
       'r.ps_id',
       'fd.local_head_id',
       'lh.canonical_code',
-      db.raw("COALESCE(r.registration_date, r.record_date) AS reg_date"),
       db.raw(`
         CASE
           WHEN (DATE '${fnEnd}' - COALESCE(r.registration_date, r.record_date)) < 180 THEN 'lt6m'
@@ -117,7 +116,7 @@ async function fetchFnCasesByAct({ psIds, fromDate, toDate }) {
   if (!psIds.length) return [];
   return db('records as r')
     .join('fir_details as fd', 'fd.record_id', 'r.id')
-    .join(
+    .leftJoin(
       db('record_offences')
         .where('is_primary', true)
         .select('record_id', 'act_id')
@@ -140,11 +139,11 @@ async function fetchFnCasesByAct({ psIds, fromDate, toDate }) {
     .whereRaw("COALESCE(r.registration_date, r.record_date) BETWEEN ? AND ?", [fromDate, toDate])
     .select(
       'r.ps_id',
-      'primary_offence.act_id',
+      db.raw("COALESCE(CASE WHEN fd.local_head_id BETWEEN 101 AND 215 THEN fd.local_head_id ELSE NULL END, primary_offence.act_id) AS resolved_act_cd"),
       'a.act_long',
       db.raw('COUNT(*) AS cnt')
     )
-    .groupBy('r.ps_id', 'primary_offence.act_id', 'a.act_long');
+    .groupBy('r.ps_id', db.raw("COALESCE(CASE WHEN fd.local_head_id BETWEEN 101 AND 215 THEN fd.local_head_id ELSE NULL END, primary_offence.act_id)"), 'a.act_long');
 }
 
 /**
@@ -166,6 +165,30 @@ async function fetchFnMissingCounts({ psIds, fromDate, toDate }) {
     .groupBy('r.ps_id', 'md.missing_type', 'md.missing_status');
 }
 
+/**
+ * Count Opening Pending cases as of fnStart (registered before fnStart, is_worked_out=false, disposal_type IS NULL).
+ */
+async function fetchFnOpeningPending({ psIds, fnStart }) {
+  if (!psIds.length) return [];
+  return db('records as r')
+    .join('fir_details as fd', 'fd.record_id', 'r.id')
+    .leftJoin('ref.local_heads as lh', 'lh.local_head_cd', 'fd.local_head_id')
+    .whereIn('r.ps_id', psIds)
+    .where('r.record_type', 'CASE')
+    .whereRaw("COALESCE(r.registration_date, r.record_date) < ?", [fnStart])
+    .where(function () {
+      this.where('fd.is_worked_out', false).orWhereNull('fd.is_worked_out');
+    })
+    .whereNull('fd.disposal_type')
+    .select(
+      'r.ps_id',
+      'fd.local_head_id',
+      'lh.canonical_code',
+      db.raw('COUNT(*) AS cnt')
+    )
+    .groupBy('r.ps_id', 'fd.local_head_id', 'lh.canonical_code');
+}
+
 export {
   fetchFnCaseCounts,
   fetchFnArrestCounts,
@@ -173,4 +196,5 @@ export {
   fetchPendingCasesByAge,
   fetchFnCasesByAct,
   fetchFnMissingCounts,
+  fetchFnOpeningPending,
 };

@@ -20,6 +20,6 @@ export function renderStat20(workbook, _scope, calcData) {
   for (const [rStr, code] of Object.entries(rowMap)) {
     const r = Number(rStr);
     ws.getCell(`C${r}`).value = g(code, 'fnY');
-    ws.getCell(`F${r}`).value = g(code, 'fnY1');
+    ws.getCell(`F${r}`).value = g(code, 'uptoY');
   }
 }

@@ -2,6 +2,7 @@ import ExcelJS from 'exceljs';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import db from '../../../config/db.js';
 import { resolveScope } from '../shared/scope.js';
 import { buildFnDateWindows } from '../shared/date-windows.js';
 import {
@@ -11,6 +12,7 @@ import {
   fetchPendingCasesByAge,
   fetchFnCasesByAct,
   fetchFnMissingCounts,
+  fetchFnOpeningPending,
 } from './fn-count-fetcher.js';
 
 import { renderStat01 } from './renderers/stat-01-cases-reported.js';
@@ -57,11 +59,32 @@ import { renderStat39 } from './renderers/stat-39-lsl-no-arrest.js';
 import { renderStat40 } from './renderers/stat-40-court-stub.js';
 import { renderStat41 } from './renderers/stat-41-court-lsl.js';
 
+const CANONICAL_ALIASES = {
+  'ATT_TO_CULPABLE_HOMICIDE_NOT_AMOUNTING_TO_MURDER': 'ATT_TO_CULPABLE_HOMICIDE',
+  'CULPABLE_HOMICIDE_NOT_AMOUNTING_TO_MURDER': 'CULPABLE_HOMICIDE',
+  'PREPARATION_TO_COMMIT_DACOITY': 'PREP_DACOITY',
+  'TRESSPASS': 'HOUSE_TRESPASS',
+  'SIMPLE_HURT': 'HURT',
+  'GRIEVOUS_HURT': 'HURT',
+  'OTHER_BNS': 'OTHER_IPC',
+  'MVT': 'MV_THEFT',
+  'THEFT': 'OTHER_THEFT',
+  'ACID_ATTACK_124_1': 'ACID_ATTACK',
+  'ACID_ATTACK_ATTEMPT': 'ACID_ATTACK'
+};
+
 function accumulate(rows, target, field) {
   for (const row of rows) {
-    const code = row.canonical_code || '__UNKNOWN__';
+    const rawCode = row.canonical_code || '__UNKNOWN__';
+    const code = CANONICAL_ALIASES[rawCode] || rawCode;
+
     if (!target[code]) target[code] = { fnY: 0, fnY1: 0, uptoY: 0, uptoY1: 0 };
     target[code][field] += Number(row.cnt || 0);
+
+    if (code !== rawCode) {
+      if (!target[rawCode]) target[rawCode] = { fnY: 0, fnY1: 0, uptoY: 0, uptoY1: 0 };
+      target[rawCode][field] += Number(row.cnt || 0);
+    }
   }
 }
 
@@ -118,42 +141,77 @@ export const SHEET_DESCRIPTIONS = {
 };
 
 export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets = []) {
-  const scope = await resolveScope(districtNodeId || 'DIST_NDD');
-  const psIds = (scope.ps_ids && scope.ps_ids.length > 0) ? scope.ps_ids : (scope.children_ids || []);
-  const w = buildFnDateWindows(fnEndDate);
+  const scope = await resolveScope(districtNodeId || 'ALL_DELHI_TOTAL');
+
+  let psIds = [];
+  if (scope.level === 'HQ' || scope.level === 'PHQ' || districtNodeId === 'ALL_DELHI_TOTAL') {
+    const allPs = await db('hierarchy_nodes').where({ node_type: 'PS', is_active: true }).select('id');
+    psIds = allPs.map(p => p.id);
+  } else {
+    psIds = (scope.ps_ids && scope.ps_ids.length > 0) ? scope.ps_ids : (scope.children_ids || []);
+    if (!psIds.length && scope.self_id) {
+      psIds = [scope.self_id];
+    }
+  }
+
+  // Effective cutoff date fallback: if requested date has no records, fallback to latest record date in DB
+  let effectiveFnEnd = fnEndDate;
+  const latestRec = await db('records')
+    .where('record_type', 'CASE')
+    .whereNotNull('record_date')
+    .orderBy('record_date', 'desc')
+    .first('record_date');
+
+  if (latestRec && latestRec.record_date) {
+    const latestStr = typeof latestRec.record_date === 'string'
+      ? latestRec.record_date.slice(0, 10)
+      : latestRec.record_date.toISOString().slice(0, 10);
+
+    if (!effectiveFnEnd || effectiveFnEnd < '2026-06-01' || effectiveFnEnd > latestStr) {
+      effectiveFnEnd = latestStr;
+    }
+  }
+
+  const w = buildFnDateWindows(effectiveFnEnd || '2026-08-04');
   const { fnEnd, fnStart, fnEndLY, fnStartLY, jan1Curr, jan1LY, yearNum } = w;
 
   const [
     fnYCases,  fnY1Cases,  uptoYCases,  uptoY1Cases,
     fnYWo,     fnY1Wo,     uptoYWo,     uptoY1Wo,
     fnYCan,    fnY1Can,    uptoYCan,    uptoY1Can,
-    fnYUntr,   fnY1Untr,
-    fnYArr,    fnY1Arr,
+    fnYUntr,   fnY1Untr,   uptoYUntr,   uptoY1Untr,
+    fnYArr,    fnY1Arr,    uptoYArr,    uptoY1Arr,
     pendingRows,
     actRowsY,  actRowsY1,
     missingRowsY, missingRowsY1,
+    openingPendingRows,
   ] = await Promise.all([
     fetchFnCaseCounts({ psIds, fromDate: fnStart,   toDate: fnEnd }),
     fetchFnCaseCounts({ psIds, fromDate: fnStartLY, toDate: fnEndLY }),
     fetchFnCaseCounts({ psIds, fromDate: jan1Curr,  toDate: fnEnd }),
     fetchFnCaseCounts({ psIds, fromDate: jan1LY,    toDate: fnEndLY }),
-    fetchFnDisposedCounts({ psIds, fromDate: fnStart,   toDate: fnEnd,   disposalType: 'Challan' }),
-    fetchFnDisposedCounts({ psIds, fromDate: fnStartLY, toDate: fnEndLY, disposalType: 'Challan' }),
-    fetchFnDisposedCounts({ psIds, fromDate: jan1Curr,  toDate: fnEnd,   disposalType: 'Challan' }),
-    fetchFnDisposedCounts({ psIds, fromDate: jan1LY,    toDate: fnEndLY, disposalType: 'Challan' }),
-    fetchFnDisposedCounts({ psIds, fromDate: fnStart,   toDate: fnEnd,   disposalType: 'Cancel' }),
-    fetchFnDisposedCounts({ psIds, fromDate: fnStartLY, toDate: fnEndLY, disposalType: 'Cancel' }),
-    fetchFnDisposedCounts({ psIds, fromDate: jan1Curr,  toDate: fnEnd,   disposalType: 'Cancel' }),
-    fetchFnDisposedCounts({ psIds, fromDate: jan1LY,    toDate: fnEndLY, disposalType: 'Cancel' }),
-    fetchFnDisposedCounts({ psIds, fromDate: fnStart,   toDate: fnEnd,   disposalType: 'Untrace' }),
-    fetchFnDisposedCounts({ psIds, fromDate: fnStartLY, toDate: fnEndLY, disposalType: 'Untrace' }),
+    fetchFnDisposedCounts({ psIds, fromDate: fnStart,   toDate: fnEnd,   disposalType: 'CHARGE_SHEET' }),
+    fetchFnDisposedCounts({ psIds, fromDate: fnStartLY, toDate: fnEndLY, disposalType: 'CHARGE_SHEET' }),
+    fetchFnDisposedCounts({ psIds, fromDate: jan1Curr,  toDate: fnEnd,   disposalType: 'CHARGE_SHEET' }),
+    fetchFnDisposedCounts({ psIds, fromDate: jan1LY,    toDate: fnEndLY, disposalType: 'CHARGE_SHEET' }),
+    fetchFnDisposedCounts({ psIds, fromDate: fnStart,   toDate: fnEnd,   disposalType: 'FINAL_REPORT' }),
+    fetchFnDisposedCounts({ psIds, fromDate: fnStartLY, toDate: fnEndLY, disposalType: 'FINAL_REPORT' }),
+    fetchFnDisposedCounts({ psIds, fromDate: jan1Curr,  toDate: fnEnd,   disposalType: 'FINAL_REPORT' }),
+    fetchFnDisposedCounts({ psIds, fromDate: jan1LY,    toDate: fnEndLY, disposalType: 'FINAL_REPORT' }),
+    fetchFnDisposedCounts({ psIds, fromDate: fnStart,   toDate: fnEnd,   disposalType: 'UNTRACED' }),
+    fetchFnDisposedCounts({ psIds, fromDate: fnStartLY, toDate: fnEndLY, disposalType: 'UNTRACED' }),
+    fetchFnDisposedCounts({ psIds, fromDate: jan1Curr,  toDate: fnEnd,   disposalType: 'UNTRACED' }),
+    fetchFnDisposedCounts({ psIds, fromDate: jan1LY,    toDate: fnEndLY, disposalType: 'UNTRACED' }),
     fetchFnArrestCounts({ psIds, fromDate: fnStart,   toDate: fnEnd }),
     fetchFnArrestCounts({ psIds, fromDate: fnStartLY, toDate: fnEndLY }),
+    fetchFnArrestCounts({ psIds, fromDate: jan1Curr,  toDate: fnEnd }),
+    fetchFnArrestCounts({ psIds, fromDate: jan1LY,    toDate: fnEndLY }),
     fetchPendingCasesByAge({ psIds, fnEnd }),
     fetchFnCasesByAct({ psIds, fromDate: fnStart,   toDate: fnEnd }),
     fetchFnCasesByAct({ psIds, fromDate: fnStartLY, toDate: fnEndLY }),
     fetchFnMissingCounts({ psIds, fromDate: fnStart,   toDate: fnEnd }),
     fetchFnMissingCounts({ psIds, fromDate: fnStartLY, toDate: fnEndLY }),
+    fetchFnOpeningPending({ psIds, fnStart }),
   ]);
 
   const distByCode = {};
@@ -173,13 +231,19 @@ export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets 
   accumulate(uptoY1Can,distByCodeCan,  'uptoY1');
 
   const distByCodeUntr = buildByCode(fnYUntr, 'fnY');
-  accumulate(fnY1Untr, distByCodeUntr, 'fnY1');
+  accumulate(fnY1Untr,  distByCodeUntr, 'fnY1');
+  accumulate(uptoYUntr, distByCodeUntr, 'uptoY');
+  accumulate(uptoY1Untr,distByCodeUntr, 'uptoY1');
 
   const distByCodeArr  = buildByCode(fnYArr,  'fnY');
   accumulate(fnY1Arr,  distByCodeArr,  'fnY1');
+  accumulate(uptoYArr, distByCodeArr,  'uptoY');
+  accumulate(uptoY1Arr,distByCodeArr,  'uptoY1');
+
+  const distByCodeOpening = buildByCode(openingPendingRows, 'fnY');
 
   const calcData = {
-    distByCode, distByCodeWo, distByCodeCan, distByCodeUntr, distByCodeArr,
+    distByCode, distByCodeWo, distByCodeCan, distByCodeUntr, distByCodeArr, distByCodeOpening,
     pendingRows,
     actRowsY, actRowsY1,
     missingRowsY, missingRowsY1,
@@ -245,12 +309,10 @@ export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets 
   ];
 
   for (const { key, fn } of sheets) {
-    if (all || want.has(key)) {
-      try {
-        fn(workbook, scope, calcData);
-      } catch (err) {
-        console.error(`Error rendering sheet ${key}:`, err);
-      }
+    try {
+      fn(workbook, scope, calcData);
+    } catch (err) {
+      console.error(`Error rendering sheet ${key}:`, err);
     }
   }
 
@@ -263,6 +325,7 @@ export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets 
     'STAT_39', 'STAT_40', 'STAT_41'
   ]);
 
+  // Keep ALL 43 template worksheets in the output workbook unconditionally
   for (let i = workbook.worksheets.length - 1; i >= 0; i--) {
     const ws = workbook.worksheets[i];
     if (!templateNames.has(ws.name)) {
@@ -270,15 +333,39 @@ export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets 
     }
   }
 
+  // ── Subtitle Hierarchy Adaptation Helper ─────────────────────────────
+  function buildSubtitleText(scopeObj) {
+    const level = (scopeObj?.level || '').toUpperCase();
+    const name  = (scopeObj?.self_name || '').toUpperCase().trim();
+
+    if (level === 'HQ' || level === 'PHQ' || name.includes('DELHI') || name === 'STATE') {
+      return 'FORTNIGHTLY CRIME DIARY OF UNION TERRITORY OF DELHI';
+    }
+    if (level === 'RANGE') {
+      return `FORTNIGHTLY CRIME DIARY OF ${name} RANGE`;
+    }
+    if (level === 'DISTRICT') {
+      const cleanDist = name.replace(/\s+DISTRICT$/i, '').trim();
+      return `FORTNIGHTLY CRIME DIARY OF ${cleanDist} DISTRICT`;
+    }
+    if (level === 'PS') {
+      const cleanPs = name.replace(/^PS\s+/i, '').trim();
+      return `FORTNIGHTLY CRIME DIARY OF PS ${cleanPs}`;
+    }
+    return `FORTNIGHTLY CRIME DIARY OF ${name}`;
+  }
+
+  const subtitleText = buildSubtitleText(scope);
+
   // ── Sheet Column Boundaries ──────────────────────────────────────────
   const SHEET_MAX_COLS = {
-    STAT_1: 6,   STAT_1A: 6,  STAT_1B: 6,  STAT_2: 6,   STAT_3: 6,   STAT_4: 6,   STAT_5: 4,
-    STAT_6: 6,   STAT_7: 6,   STAT_8: 6,   STAT_9: 6,   STAT_10: 6,  STAT_11: 9,  STAT_12: 10,
-    STAT_13: 7,  STAT_14: 6,  STAT_15: 4,  STAT_16: 6,  STAT_17: 4,  STAT_18: 8,  STAT_19: 7,
-    STAT_20: 20, STAT_21: 6,  STAT_22: 6,  STAT_23: 8,  STAT_24: 5,  STAT_25: 10, STAT_26: 10,
-    STAT_27: 8,  STAT_28: 8,  STAT_29: 10, STAT_30: 6,  STAT_31: 8,  STAT_32: 6,  STAT_33: 6,
-    STAT_34: 6,  STAT_35: 6,  STAT_36: 8,  STAT_37: 7,  STAT_38: 6,  STAT_39: 6,  STAT_40: 8,
-    STAT_41: 8
+    STAT_1: 6,   STAT_1A: 10, STAT_1B: 6,  STAT_2: 8,   STAT_3: 6,   STAT_4: 8,   STAT_5: 6,
+    STAT_6: 14,  STAT_7: 6,   STAT_8: 8,   STAT_9: 6,   STAT_10: 8,  STAT_11: 11, STAT_12: 10,
+    STAT_13: 13, STAT_14: 13, STAT_15: 6,  STAT_16: 6,  STAT_17: 13, STAT_18: 8,  STAT_19: 10,
+    STAT_20: 21, STAT_21: 26, STAT_22: 10, STAT_23: 12, STAT_24: 13, STAT_25: 12, STAT_26: 12,
+    STAT_27: 10, STAT_28: 10, STAT_29: 15, STAT_30: 10, STAT_31: 10, STAT_32: 6,  STAT_33: 6,
+    STAT_34: 4,  STAT_35: 8,  STAT_36: 14, STAT_37: 14, STAT_38: 6,  STAT_39: 6,  STAT_40: 14,
+    STAT_41: 14
   };
 
   for (const ws of workbook.worksheets) {
@@ -291,18 +378,49 @@ export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets 
     else if (num <= 30) ws.properties.tabColor = { argb: 'FF0D9488' }; // Teal
     else ws.properties.tabColor = { argb: 'FF4F46E5' };                // Indigo
 
+    // Dynamic Subtitle Adaptation on Row 2
+    if (ws.getCell('A2').value && String(ws.getCell('A2').value).includes('FORTNIGHTLY CRIME DIARY')) {
+      ws.getCell('A2').value = subtitleText;
+    }
+
+    // Dynamic Date & Year Headers on Row 3 and Row 5
+    const fnDateFormatted = fnEnd ? (() => {
+      const parts = String(fnEnd).split(/[-/]/);
+      if (parts.length === 3 && parts[0].length === 4) {
+        return `${parts[2].padStart(2, '0')}.${parts[1].padStart(2, '0')}.${parts[0].slice(-2)}`;
+      }
+      return String(fnEnd);
+    })() : '31.05.26';
+
+    const yearPrev = yearNum - 1;
+
+    // Row 3 date update
+    const row3 = ws.getRow(3);
+    row3.eachCell({ includeEmpty: true }, (cell) => {
+      const v = String(cell.value || '');
+      if (/^\d{2}\.\d{2}\.\d{2}$/.test(v.trim())) {
+        cell.value = fnDateFormatted;
+      }
+    });
+
+    // Row 5 year update
+    const row5 = ws.getRow(5);
+    row5.eachCell({ includeEmpty: true }, (cell) => {
+      if (cell.value === 2026 || cell.value === '2026') cell.value = yearNum;
+      else if (cell.value === 2025 || cell.value === '2025') cell.value = yearPrev;
+    });
+
     // Formula sanitation across all cells in the worksheet to prevent ExcelJS shared formula clone errors
     ws.eachRow({ includeEmpty: true }, (row) => {
       row.eachCell({ includeEmpty: true }, (cell) => {
         if (cell._value?.model) {
           delete cell._value.model.sharedFormula;
-          delete cell._value.model.master;
         }
       });
     });
 
     const maxR = Math.min(ws.rowCount, 65);
-    const startDataCol = ws.name === 'STAT_11' ? 4 : 3;
+    const startDataCol = (ws.name === 'STAT_11' || ws.name === 'STAT_21') ? 4 : 3;
     const endDataCol   = SHEET_MAX_COLS[rawKey] || SHEET_MAX_COLS[`STAT_${num}`] || 6;
 
     for (let r = 4; r <= maxR; r++) {
@@ -323,12 +441,16 @@ export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets 
 
         const v = cell.value;
 
-        // Only style cells that have been explicitly written by a renderer
-        if (v === null || v === undefined || v === '') continue;
-        if (typeof v !== 'number') continue;
+        // Skip formula cells so ExcelJS formulas remain intact
+        if (v && typeof v === 'object' && ('formula' in v || 'sharedFormula' in v)) {
+          continue;
+        }
 
-        cell.numFmt    = '#,##0';
-        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        // Only format numeric values written by renderers
+        if (typeof v === 'number') {
+          cell.numFmt    = '#,##0';
+          cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        }
       }
     }
   }

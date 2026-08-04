@@ -9,25 +9,26 @@ export function renderStat02(workbook, _scope, calcData) {
   const gC = (code, field) => Number(dbcC[code]?.[field] || 0);
   const gA = (code, field) => Number(dbcA[code]?.[field] || 0);
 
-  // C=solved FN, D=solved Upto, E=cancelled FN, F=cancelled Upto, G=arrested FN, H=arrested Upto
+  // Exact data rows mapping for STAT_2 (formula and header rows skipped)
   const rowMap = {
-    7:  'DACOITY',         8:  'MURDER',         9:  'ATT_TO_MURDER',
-    10: 'ROBBERY',         11: 'RIOT',           12: 'KID_FOR_RANSOM',
+    7:  'DACOITY',                 8:  'MURDER',                 9:  'ATT_TO_MURDER',
+    10: 'ROBBERY',                 11: 'RIOT',                   12: 'KID_FOR_RANSOM',
     13: 'RAPE',
-    16: 'EXTORTION',       17: 'SNATCHING',
-    19: 'SIMPLE_HURT',     20: 'GRIEVOUS_HURT',
+    16: 'EXTORTION',               17: 'SNATCHING',
+    19: 'SIMPLE_HURT',             20: 'GRIEVOUS_HURT',
     21: 'BURGLARY',
-    23: 'MV_THEFT',        24: 'HOUSE_THEFT',    25: 'SERVANT_THEFT',
-    26: 'PICKPOCKETING',   27: 'OTHER_THEFT',
-    28: 'CULPABLE_HOMICIDE', 29: 'ATT_TO_CULPABLE_HOMICIDE',
-    30: 'HOUSE_TRESPASS',  31: 'CRIMINAL_BREACH_OF_TRUST',
-    32: 'CHEATING',        33: 'FORGERY',        34: 'COUNTERFEITING',
-    35: 'MISCHIEF',        36: 'ARSON',          37: 'THREATENING',
-    39: 'FATAL_ACCIDENT',  40: 'SIMPLE_ACCIDENT',
-    41: 'KIDNAPPING',      42: 'ABDUCTION',      43: 'MO_WOMEN',
-    44: 'EVE_TEASING',     45: 'DOWRY_DEATH',
-    46: 'ELECTION_OFFENCES', 47: 'PREP_DACOITY',
-    49: 'ACID_ATTACK_124_1', 50: 'ACID_ATTACK_ATTEMPT',
+    23: 'MV_THEFT',                24: 'HOUSE_THEFT',            25: 'SERVANT_THEFT',
+    26: 'PICKPOCKETING',           27: 'OTHER_THEFT',
+    28: 'CULPABLE_HOMICIDE',       29: 'ATT_TO_CULPABLE_HOMICIDE',
+    30: 'HOUSE_TRESPASS',          31: 'CRIMINAL_BREACH_OF_TRUST',
+    32: 'CHEATING',                33: 'FORGERY',                34: 'COUNTERFEITING',
+    35: 'MISCHIEF',                36: 'ARSON',                  37: 'THREATENING',
+    39: 'FATAL_ACCIDENT',          40: 'SIMPLE_ACCIDENT',
+    41: 'KIDNAPPING',              42: 'ABDUCTION',              43: 'MO_WOMEN',
+    44: 'EVE_TEASING',             45: 'DOWRY_DEATH',
+    46: 'ELECTION_OFFENCES',       47: 'PREP_DACOITY',
+    49: 'ACID_ATTACK_124_1',       50: 'ACID_ATTACK_ATTEMPT',
+    51: 'OTHER_BNS',
   };
 
   for (const [rStr, code] of Object.entries(rowMap)) {
@@ -37,6 +38,6 @@ export function renderStat02(workbook, _scope, calcData) {
     ws.getCell(`E${r}`).value = gC(code, 'fnY');
     ws.getCell(`F${r}`).value = gC(code, 'uptoY');
     ws.getCell(`G${r}`).value = gA(code, 'fnY');
-    ws.getCell(`H${r}`).value = gA(code, 'fnY1');
+    ws.getCell(`H${r}`).value = gA(code, 'uptoY');
   }
 }

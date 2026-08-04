@@ -14,5 +14,7 @@ export function renderStat26(workbook, _scope, calcData) {
   ws.getCell('C17').value = pFN;
   ws.getCell('D17').value = pUpto;
   ws.getCell('G17').value = g(dbcW, 'POCSO', 'fnY');
+  ws.getCell('H17').value = g(dbcW, 'POCSO', 'uptoY');
   ws.getCell('K17').value = g(dbcA, 'POCSO', 'fnY');
+  ws.getCell('L17').value = g(dbcA, 'POCSO', 'uptoY');
 }

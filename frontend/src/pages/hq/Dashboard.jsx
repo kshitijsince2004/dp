@@ -198,6 +198,28 @@ export default function HQDashboard() {
     },
   });
 
+  const filteredRecords = useMemo(() => {
+    if (!Array.isArray(records)) return [];
+    return records.filter(r => {
+      if (!r) return false;
+      if (filterType !== 'All' && r.record_type !== filterType) return false;
+      if (filterDistrict !== 'All' && r.district_id !== filterDistrict && r.district_name !== filterDistrict) return false;
+      if (filterLocalHead !== 'All') {
+        const rLocalHead = r.case_local_head || r.arrest_local_head || r.call_head || r.uidb_local_head || r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
+        if (!rLocalHead || !String(rLocalHead).toLowerCase().includes(String(filterLocalHead).toLowerCase())) return false;
+      }
+      if (dateFrom || dateTo) {
+        const recDateStr = r.created_at || r.record_date || r.registration_date || r.data?.record_date || r.data?.date;
+        if (recDateStr) {
+          const recDateOnly = String(recDateStr).slice(0, 10);
+          if (dateFrom && recDateOnly < dateFrom) return false;
+          if (dateTo && recDateOnly > dateTo) return false;
+        }
+      }
+      return true;
+    });
+  }, [records, filterType, filterDistrict, filterLocalHead, dateFrom, dateTo]);
+
   const cards = [
     { label: 'Delhi-wide FIR cases', value: (stats.cases_today || 0) , color: 'text-amber-500', icon: Building },
     { label: 'Total PCR emergency calls', value: (stats.pcr_today || 0) , color: 'text-blue-500', icon: PhoneCall },
@@ -463,42 +485,8 @@ export default function HQDashboard() {
               <div>
                 <h3 className="text-base font-bold text-[#1A202C]">Real-time Jurisdiction Activity Feed</h3>
                 <p className="mt-0.5 text-xs text-[#718096]">
-                  Showing {Math.min(8, records.filter(r => {
-                    if (filterType !== 'All' && r.record_type !== filterType) return false;
-                    if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
-                    if (filterLocalHead !== 'All') {
-                      const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
-                      if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
-                    }
-                    if (dateFrom || dateTo) {
-                      const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
-                      if (recDateStr) {
-                        const recDate = new Date(recDateStr);
-                        const recDateOnly = recDate.toISOString().split('T')[0];
-                        if (dateFrom && recDateOnly < dateFrom) return false;
-                        if (dateTo && recDateOnly > dateTo) return false;
-                      }
-                    }
-                    return true;
-                  }).length)} of{' '}
-                  {records.filter(r => {
-                    if (filterType !== 'All' && r.record_type !== filterType) return false;
-                    if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
-                    if (filterLocalHead !== 'All') {
-                      const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
-                      if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
-                    }
-                    if (dateFrom || dateTo) {
-                      const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
-                      if (recDateStr) {
-                        const recDate = new Date(recDateStr);
-                        const recDateOnly = recDate.toISOString().split('T')[0];
-                        if (dateFrom && recDateOnly < dateFrom) return false;
-                        if (dateTo && recDateOnly > dateTo) return false;
-                      }
-                    }
-                    return true;
-                  }).length} records
+                  Showing {Math.min(8, filteredRecords.length)} of{' '}
+                  {filteredRecords.length} records
                   {filterType !== 'All' ? ` · ${filterType}` : ''}
                   {filterLocalHead !== 'All' ? ` · ${filterLocalHead}` : ''}
                   {filterDuration !== 'All' ? ` · ${filterDuration}` : ''}
@@ -538,29 +526,12 @@ export default function HQDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0F4F9]">
-                {records
-                  .filter(r => {
-                    if (filterType !== 'All' && r.record_type !== filterType) return false;
-                    if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
-                    if (filterLocalHead !== 'All') {
-                      const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
-                      if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
-                    }
-                    if (dateFrom || dateTo) {
-                      const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
-                      if (recDateStr) {
-                        const recDate = new Date(recDateStr);
-                        const recDateOnly = recDate.toISOString().split('T')[0];
-                        if (dateFrom && recDateOnly < dateFrom) return false;
-                        if (dateTo && recDateOnly > dateTo) return false;
-                      }
-                    }
-                    return true;
-                  })
+                {filteredRecords
                   .slice(0, 8)
                   .map((rec, idx) => {
-                    const refId = rec.data.fir_no || rec.data.gd_no || rec.data.linked_fir_dd_no || rec.data.dd_fir_no || rec.data.uidbNumber || 'N/A';
-                    const gist = rec.data.brief_facts || rec.data.call_gist || rec.data.recovered_material || rec.data.physical_description || rec.data.description || rec.data.foundPlace || 'No facts details';
+                    const refId = rec.fir_no || rec.arrest_fir_no || rec.missing_fir_no || rec.uidb_no || rec.legacy_ref || rec.data?.fir_no || rec.data?.gd_no || rec.data?.linked_fir_dd_no || rec.data?.dd_fir_no || rec.data?.uidbNumber || (rec.id ? rec.id.slice(0, 8) : 'N/A');
+                    const gist = rec.data?.brief_facts || rec.data?.call_gist || rec.data?.recovered_material || rec.data?.physical_description || rec.data?.description || rec.data?.foundPlace || rec.case_local_head || rec.call_head || rec.arrest_local_head || rec.uidb_local_head || 'No facts details';
+                    const distName = rec.district_name || rec.ps_name || rec.data?.district || rec.districtKey || rec.district_id || 'New Delhi District';
                     const tMeta = typeMeta[rec.record_type] || { bg: 'bg-[#F0F4F9] text-[#4A5568] border-[#E2E8F0]', label: rec.record_type };
                     return (
                       <tr
@@ -582,7 +553,7 @@ export default function HQDashboard() {
                           <div className="flex items-center gap-1.5">
                             <MapPin size={11} className="text-[#003087] flex-shrink-0" />
                             <span className="font-medium text-[#4A5568]">
-                              {rec.data?.district || rec.districtKey || rec.district_id || 'New Delhi District'}
+                              {distName}
                             </span>
                           </div>
                         </td>
@@ -618,24 +589,7 @@ export default function HQDashboard() {
             </table>
 
             {/* Empty state */}
-            {records.filter(r => {
-              if (filterType !== 'All' && r.record_type !== filterType) return false;
-              if (filterDistrict !== 'All' && r.district_id !== filterDistrict) return false;
-              if (filterLocalHead !== 'All') {
-                const rLocalHead = r.local_head || r.data?.local_head || r.crime_head || r.data?.crime_head;
-                if (!rLocalHead || !rLocalHead.toLowerCase().includes(filterLocalHead.toLowerCase())) return false;
-              }
-              if (dateFrom || dateTo) {
-                const recDateStr = r.created_at || r.data?.record_date || r.data?.date;
-                if (recDateStr) {
-                  const recDate = new Date(recDateStr);
-                  const recDateOnly = recDate.toISOString().split('T')[0];
-                  if (dateFrom && recDateOnly < dateFrom) return false;
-                  if (dateTo && recDateOnly > dateTo) return false;
-                }
-              }
-              return true;
-            }).length === 0 && (
+            {filteredRecords.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F0F4F9] border border-[#E2E8F0]">
                   <AlertCircle size={24} className="text-[#718096]" />

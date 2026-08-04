@@ -421,22 +421,32 @@ export default function MyRecords() {
                   <tbody className="divide-y divide-[#E2E8F0] text-[#1A202C]">
                     {filteredRecords.map((rec, index) => {
                       const refId =
-                        rec.data.fir_no ||
-                        rec.data.gd_no ||
-                        rec.data.linked_fir_dd_no ||
-                        rec.data.dd_fir_no ||
-                        rec.data.uidbNumber ||
-                        'N/A';
+                        rec.fir_no ||
+                        rec.arrest_fir_no ||
+                        rec.missing_fir_no ||
+                        rec.uidb_no ||
+                        rec.legacy_ref ||
+                        rec.data?.fir_no ||
+                        rec.data?.gd_no ||
+                        rec.data?.linked_fir_dd_no ||
+                        rec.data?.dd_fir_no ||
+                        rec.data?.uidbNumber ||
+                        (rec.id ? rec.id.slice(0, 8) : 'N/A');
 
                       const gist =
-                        rec.data.brief_facts ||
-                        rec.data.call_gist ||
-                        rec.data.recovered_material ||
-                        rec.data.physical_description ||
-                        rec.data.description ||
-                        rec.data.foundPlace ||
+                        rec.data?.brief_facts ||
+                        rec.data?.call_gist ||
+                        rec.data?.recovered_material ||
+                        rec.data?.physical_description ||
+                        rec.data?.description ||
+                        rec.data?.foundPlace ||
+                        rec.case_local_head ||
+                        rec.call_head ||
+                        rec.arrest_local_head ||
+                        rec.uidb_local_head ||
                         'No description text logged';
 
+                      const recDate = rec.record_date || rec.registration_date || rec.created_at || rec.data?.record_date || 'N/A';
                       const isSentBack = rec.current_status === 'SENT_BACK_HC' || rec.current_status === 'SENT_BACK';
                       const isEditable = rec.current_status === 'DRAFT' || isSentBack;
 
@@ -464,7 +474,7 @@ export default function MyRecords() {
                             {refId}
                           </td>
                           <td className="p-4 font-mono text-[#4A5568] font-semibold text-xs">
-                            {rec.data.record_date || 'N/A'}
+                            {typeof recDate === 'string' ? recDate.slice(0, 10) : 'N/A'}
                           </td>
                           <td className="p-4 max-w-[280px] truncate text-[#4A5568] font-medium text-sm" title={gist}>
                             {gist}
