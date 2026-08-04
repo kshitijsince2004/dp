@@ -1,95 +1,66 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
-import { ALL_HEADS, buildGroupSums } from '../fn-heads.js';
+export function renderStat36(workbook, _scope, calcData) {
+  const ws = workbook.getWorksheet('STAT_36') || workbook.getWorksheet('STAT 36');
+  if (!ws) return;
 
-/**
- * STAT 36 — Running Balance of Cases
- * Formula: Pending at FN Start = Total registered upto fnEnd−15 days that are still pending
- *          Registered during FN  = cases with reg_date in [fnStart, fnEnd]
- *          Disposed during FN    = worked_out_date in [fnStart, fnEnd]
- *          Balance at FN End     = Pending at start + Registered − Disposed
- */
-export function renderStat36(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('STAT 36 Disposal Balance');
-  const distName = (scope.self_name || 'DISTRICT').replace(/\s+DISTRICT$/i, '').toUpperCase();
-  const { yearNum, fnEnd, fnStart } = calcData;
+  const dbc  = calcData.distByCode     || {};
+  const dbcW = calcData.distByCodeWo   || {};
+  const dbcC = calcData.distByCodeCan  || {};
+  const dbcU = calcData.distByCodeUntr || {};
+  const g = (map, code, field) => Number(map[code]?.[field] || 0);
 
-  sheet.mergeCells('A1:G1');
-  const t1 = sheet.getCell('A1');
-  t1.value = `STAT 36 — RUNNING BALANCE OF CASES — ${distName} DISTRICT`;
-  t1.font = FONTS.TITLE;
-  t1.alignment = { horizontal: 'center', vertical: 'middle' };
+  // STAT_36 columns:
+  //   C = Pending at beginning of FN (we compute uptoY - fnY)
+  //   D = Registered during FN (formula in template referencing STAT_1; we overwrite)
+  //   F = Challaned (worked out) during FN
+  //   G = Cancelled during FN
+  //   H = Untraced during FN
+  //   E, I, N = formulas (total, disposed, balance) — left as template formulas
 
-  sheet.mergeCells('A2:G2');
-  sheet.getCell('A2').value = `FN Period: ${fnStart} to ${fnEnd}  |  Year: ${yearNum}`;
-  sheet.getCell('A2').font = FONTS.DATA;
-  sheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' };
+  // Row map mirrors STAT_1 but STAT_36 row 38 = Total Accident (formula, no sub-rows),
+  // and rows 39-47 shift by 2 vs STAT_1 (no Fatal/Simple sub-rows).
+  const rowMap = {
+    7:  'DACOITY',         8:  'MURDER',         9:  'ATT_TO_MURDER',
+    10: 'ROBBERY',         11: 'RIOT',           12: 'KID_FOR_RANSOM',
+    13: 'RAPE',
+    16: 'EXTORTION',       17: 'SNATCHING',
+    19: 'SIMPLE_HURT',     20: 'GRIEVOUS_HURT',
+    21: 'BURGLARY',
+    23: 'MV_THEFT',        24: 'HOUSE_THEFT',    25: 'SERVANT_THEFT',
+    26: 'PICKPOCKETING',   27: 'OTHER_THEFT',
+    28: 'CULPABLE_HOMICIDE', 29: 'ATT_TO_CULPABLE_HOMICIDE',
+    30: 'HOUSE_TRESPASS',  31: 'CRIMINAL_BREACH_OF_TRUST',
+    32: 'CHEATING',        33: 'FORGERY',        34: 'COUNTERFEITING',
+    35: 'MISCHIEF',        36: 'ARSON',          37: 'THREATENING',
+    // R38 = Total Accident formula row (no sub-rows in STAT_36)
+    39: 'KIDNAPPING',      40: 'ABDUCTION',
+    41: 'MO_WOMEN',        42: 'EVE_TEASING',    43: 'DOWRY_DEATH',
+    // R44 = Misappropriation (C44 hardcoded 0 in template)
+    45: 'PREP_DACOITY',    46: 'ACID_ATTACK_124_1',
+  };
 
-  const hdr = sheet.addRow([
-    'Head of Crime',
-    'Pending at FN Start',
-    'Registered During FN',
-    'Total',
-    'Solved (Challan)',
-    'Cancelled / Untraced',
-    'Balance at FN End',
-  ]);
-  hdr.height = 30;
-  hdr.eachCell(c => {
-    c.font = FONTS.HEADER;
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.OLIVE_GREEN } };
-    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-  });
+  for (const [rStr, code] of Object.entries(rowMap)) {
+    const r   = Number(rStr);
+    const reg   = g(dbc,  code, 'fnY');
+    const upto  = g(dbc,  code, 'uptoY');
+    const wo    = g(dbcW, code, 'fnY');
+    const can   = g(dbcC, code, 'fnY');
+    const untr  = g(dbcU, code, 'fnY');
+    const pendStart = Math.max(0, upto - reg);
 
-  const dbc     = calcData.distByCode    || {};
-  const dbcWo   = calcData.distByCodeWo  || {};
-  const dbcCan  = calcData.distByCodeCan || {};
-  const dbcUntr = calcData.distByCodeUntr|| {};
+    ws.getCell(`C${r}`).value = pendStart;
+    ws.getCell(`D${r}`).value = reg;
+    ws.getCell(`F${r}`).value = wo;
+    ws.getCell(`G${r}`).value = can;
+    ws.getCell(`H${r}`).value = untr;
+  }
 
-  // Pending at FN start = (uptoY cases) - (uptoY solved+cancelled+untraced before fnStart)
-  // Approximation: uptoY total − fnY (registered in this FN) − disposed during this FN
-  // Since we don't have a separate "pending at FN start" count from the DB, use:
-  //   pendingStart = uptoY − fnY
-  // Then balance = pendingStart + fnY − disposed_fnY = uptoY − disposed_fnY
-
-  const g  = (map, code, field) => Number(map[code]?.[field] || 0);
-  const f  = v => v > 0 ? v : '-';
-  const sums = buildGroupSums(dbc);
-  const sumsWo  = buildGroupSums(dbcWo);
-  const sumsCan = buildGroupSums(dbcCan);
-  const sumsUntr= buildGroupSums(dbcUntr);
-
-  ALL_HEADS.forEach(h => {
-    let reg, uptoY, wo, can, untr;
-    if (h.isTotal) {
-      reg   = sums[h.group].fnY;   uptoY = sums[h.group].uptoY;
-      wo    = sumsWo[h.group].fnY; can   = sumsCan[h.group].fnY; untr = sumsUntr[h.group].fnY;
-    } else {
-      reg   = g(dbc,    h.code, 'fnY');   uptoY = g(dbc,    h.code, 'uptoY');
-      wo    = g(dbcWo,  h.code, 'fnY');   can   = g(dbcCan, h.code, 'fnY'); untr = g(dbcUntr, h.code, 'fnY');
-    }
-    const pendStart = Math.max(0, uptoY - reg);
-    const total     = pendStart + reg;
-    const disposed  = wo + can + untr;
-    const balance   = Math.max(0, total - disposed);
-
-    const row = sheet.addRow([
-      h.label,
-      f(pendStart),
-      f(reg),
-      f(total),
-      f(wo),
-      f(can + untr),
-      f(balance),
-    ]);
-    row.height = 20;
-    row.eachCell((cell, col) => {
-      cell.font = h.isTotal ? FONTS.HEADER : FONTS.DATA;
-      if (h.isTotal) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.LIGHT_GRAY } };
-      cell.alignment = col === 1 ? { horizontal: 'left', vertical: 'middle' } : { horizontal: 'center', vertical: 'middle' };
-      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-    });
-  });
-
-  sheet.columns.forEach((col, idx) => { col.width = idx === 0 ? 34 : 18; });
+  // Total Accident row (R38): sum Fatal + Simple
+  const accReg  = g(dbc,  'FATAL_ACCIDENT', 'fnY')  + g(dbc,  'SIMPLE_ACCIDENT', 'fnY');
+  const accUpto = g(dbc,  'FATAL_ACCIDENT', 'uptoY') + g(dbc,  'SIMPLE_ACCIDENT', 'uptoY');
+  const accWo   = g(dbcW, 'FATAL_ACCIDENT', 'fnY')   + g(dbcW, 'SIMPLE_ACCIDENT', 'fnY');
+  const accCan  = g(dbcC, 'FATAL_ACCIDENT', 'fnY')   + g(dbcC, 'SIMPLE_ACCIDENT', 'fnY');
+  ws.getCell('C38').value = Math.max(0, accUpto - accReg);
+  ws.getCell('D38').value = accReg;
+  ws.getCell('F38').value = accWo;
+  ws.getCell('G38').value = accCan;
 }

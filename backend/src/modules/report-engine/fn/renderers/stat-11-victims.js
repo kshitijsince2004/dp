@@ -1,55 +1,64 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+export function renderStat11(workbook, _scope, calcData) {
+  const ws = workbook.getWorksheet('STAT_11') || workbook.getWorksheet('STAT 11');
+  if (!ws) return;
 
-const VICTIM_CATS = [
-  { label: 'Children (< 18 yrs)', field: 'child' },
-  { label: 'Women',                field: 'women' },
-  { label: 'Senior Citizens',      field: 'senior' },
-  { label: 'SC/ST',                field: 'scst' },
-  { label: 'Total Victims',        field: '__total__' },
-];
+  const dbc  = calcData.distByCode    || {};
+  const dbcW = calcData.distByCodeWo  || {};
+  const dbcC = calcData.distByCodeCan || {};
+  const dbcA = calcData.distByCodeArr || {};
+  const g  = (map, code, field) => Number(map[code]?.[field] || 0);
 
-export function renderStat11(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('STAT 11 Victims');
-  const distName = (scope.self_name || 'DISTRICT').replace(/\s+DISTRICT$/i, '').toUpperCase();
-  const { yearNum, fnEnd, fnStart } = calcData;
-  const yearPrev = yearNum - 1;
+  // STAT_11 Crime Against Women
+  // Columns: D=casesFN, E=casesUpto, F=woFN, G=woUpto, H=canFN, I=canUpto, J=arrFN, K=arrUpto
+  // Row 6-13: Rape sub-types (only RAPE total available, writing to row 5 total which is formula)
+  // Row 14: Deceitful promise to marry (no separate canonical code)
+  // Row 22: Snatching from Women → SNATCHING
+  // Row 23: Kidnapping/Abduction of Women → sum KIDNAPPING + ABDUCTION
+  // Row 24: Trafficking (no data)
+  // Row 26: Total Acid Attack (formula row)
+  // Row 27-28: Acid attack sub-types
+  // Row 31: Misappropriation of dowry (hardcoded 0 in template)
+  // Row 32: Cruelty by in-laws → CRUELTY_BY_HUSBAND
+  // Row 33-35: Total Dowry Death → DOWRY_DEATH
+  // Row 36: Dowry Prohibition Act
+  // Row 39: POCSO Women victim (formula row)
 
-  sheet.mergeCells('A1:C1');
-  const t1 = sheet.getCell('A1');
-  t1.value = `STAT 11 — VICTIMS BY CATEGORY — ${distName} DISTRICT`;
-  t1.font = FONTS.TITLE;
-  t1.alignment = { horizontal: 'center', vertical: 'middle' };
+  // Snatching from Women (row 22)
+  ws.getCell('D22').value = g(dbc,  'SNATCHING', 'fnY');
+  ws.getCell('E22').value = g(dbc,  'SNATCHING', 'uptoY');
+  ws.getCell('F22').value = g(dbcW, 'SNATCHING', 'fnY');
+  ws.getCell('G22').value = g(dbcW, 'SNATCHING', 'uptoY');
+  ws.getCell('H22').value = g(dbcC, 'SNATCHING', 'fnY');
+  ws.getCell('I22').value = g(dbcC, 'SNATCHING', 'uptoY');
+  ws.getCell('J22').value = g(dbcA, 'SNATCHING', 'fnY');
 
-  sheet.mergeCells('A2:C2');
-  sheet.getCell('A2').value = `FN Period: ${fnStart} to ${fnEnd}`;
-  sheet.getCell('A2').font = FONTS.DATA;
-  sheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' };
+  // Dowry Death (row 33 is formula total; write sub-rows 34/35 with combined total)
+  ws.getCell('D33').value = g(dbc,  'DOWRY_DEATH', 'fnY');
+  ws.getCell('F33').value = g(dbcW, 'DOWRY_DEATH', 'fnY');
+  ws.getCell('H33').value = g(dbcC, 'DOWRY_DEATH', 'fnY');
+  ws.getCell('J33').value = g(dbcA, 'DOWRY_DEATH', 'fnY');
 
-  const hdr = sheet.addRow(['Victim Category', `FN ${yearNum}`, `FN ${yearPrev}`]);
-  hdr.height = 26;
-  hdr.getCell(1).value = 'Victim Category';
-  hdr.getCell(2).value = `FN ${yearNum}`;
-  hdr.getCell(3).value = `FN ${yearPrev}`;
-  hdr.eachCell(c => {
-    c.font = FONTS.HEADER;
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.OLIVE_GREEN } };
-    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-  });
+  // Cruelty by in-laws / Misappropriation of dowry (row 32)
+  ws.getCell('D32').value = g(dbc,  'CRUELTY_BY_HUSBAND', 'fnY');
+  ws.getCell('E32').value = g(dbc,  'CRUELTY_BY_HUSBAND', 'uptoY');
+  ws.getCell('F32').value = g(dbcW, 'CRUELTY_BY_HUSBAND', 'fnY');
+  ws.getCell('J32').value = g(dbcA, 'CRUELTY_BY_HUSBAND', 'fnY');
 
-  const note = sheet.addRow(['Note: Victim demographic breakdown not yet available; data from victim module pending.']);
-  note.getCell(1).font = { ...FONTS.DATA, italic: true, color: { argb: 'FF888888' } };
+  // Acid Attack sub-types (rows 27-28)
+  ws.getCell('D27').value = g(dbc,  'ACID_ATTACK_124_1', 'fnY');
+  ws.getCell('E27').value = g(dbc,  'ACID_ATTACK_124_1', 'uptoY');
+  ws.getCell('J27').value = g(dbcA, 'ACID_ATTACK_124_1', 'fnY');
+  ws.getCell('D28').value = g(dbc,  'ACID_ATTACK_ATTEMPT', 'fnY');
+  ws.getCell('E28').value = g(dbc,  'ACID_ATTACK_ATTEMPT', 'uptoY');
+  ws.getCell('J28').value = g(dbcA, 'ACID_ATTACK_ATTEMPT', 'fnY');
 
-  VICTIM_CATS.forEach(cat => {
-    const row = sheet.addRow([cat.label, '-', '-']);
-    row.height = 20;
-    row.eachCell((cell, col) => {
-      cell.font = cat.field === '__total__' ? FONTS.HEADER : FONTS.DATA;
-      if (cat.field === '__total__') cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.LIGHT_GRAY } };
-      cell.alignment = col === 1 ? { horizontal: 'left', vertical: 'middle' } : { horizontal: 'center', vertical: 'middle' };
-      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-    });
-  });
+  // Assault on women with intent (row 15 = formula, write sub-row 16 = MO_WOMEN)
+  ws.getCell('D16').value = g(dbc,  'MO_WOMEN', 'fnY');
+  ws.getCell('E16').value = g(dbc,  'MO_WOMEN', 'uptoY');
+  ws.getCell('J16').value = g(dbcA, 'MO_WOMEN', 'fnY');
 
-  sheet.columns.forEach((col, idx) => { col.width = idx === 0 ? 36 : 14; });
+  // Insult to modesty (row 21)
+  ws.getCell('D21').value = g(dbc,  'EVE_TEASING', 'fnY');
+  ws.getCell('E21').value = g(dbc,  'EVE_TEASING', 'uptoY');
+  ws.getCell('J21').value = g(dbcA, 'EVE_TEASING', 'fnY');
 }

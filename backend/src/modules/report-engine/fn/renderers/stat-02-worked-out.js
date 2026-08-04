@@ -1,80 +1,42 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
-import { ALL_HEADS, buildGroupSums } from '../fn-heads.js';
+export function renderStat02(workbook, _scope, calcData) {
+  const ws = workbook.getWorksheet('STAT_2') || workbook.getWorksheet('STAT 2');
+  if (!ws) return;
 
-export function renderStat02(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('STAT 2 Worked Out');
-  const distName = (scope.self_name || 'DISTRICT').replace(/\s+DISTRICT$/i, '').toUpperCase();
-  const { yearNum, fnEnd, fnStart } = calcData;
-  const yearPrev = yearNum - 1;
+  const dbc  = calcData.distByCodeWo  || {};
+  const dbcC = calcData.distByCodeCan || {};
+  const dbcA = calcData.distByCodeArr || {};
+  const gW = (code, field) => Number(dbc[code]?.[field]  || 0);
+  const gC = (code, field) => Number(dbcC[code]?.[field] || 0);
+  const gA = (code, field) => Number(dbcA[code]?.[field] || 0);
 
-  sheet.mergeCells('A1:I1');
-  const t1 = sheet.getCell('A1');
-  t1.value = `STAT 2 — DISPOSAL DURING FORTNIGHT — ${distName} DISTRICT`;
-  t1.font = FONTS.TITLE;
-  t1.alignment = { horizontal: 'center', vertical: 'middle' };
+  // C=solved FN, D=solved Upto, E=cancelled FN, F=cancelled Upto, G=arrested FN, H=arrested Upto
+  const rowMap = {
+    7:  'DACOITY',         8:  'MURDER',         9:  'ATT_TO_MURDER',
+    10: 'ROBBERY',         11: 'RIOT',           12: 'KID_FOR_RANSOM',
+    13: 'RAPE',
+    16: 'EXTORTION',       17: 'SNATCHING',
+    19: 'SIMPLE_HURT',     20: 'GRIEVOUS_HURT',
+    21: 'BURGLARY',
+    23: 'MV_THEFT',        24: 'HOUSE_THEFT',    25: 'SERVANT_THEFT',
+    26: 'PICKPOCKETING',   27: 'OTHER_THEFT',
+    28: 'CULPABLE_HOMICIDE', 29: 'ATT_TO_CULPABLE_HOMICIDE',
+    30: 'HOUSE_TRESPASS',  31: 'CRIMINAL_BREACH_OF_TRUST',
+    32: 'CHEATING',        33: 'FORGERY',        34: 'COUNTERFEITING',
+    35: 'MISCHIEF',        36: 'ARSON',          37: 'THREATENING',
+    39: 'FATAL_ACCIDENT',  40: 'SIMPLE_ACCIDENT',
+    41: 'KIDNAPPING',      42: 'ABDUCTION',      43: 'MO_WOMEN',
+    44: 'EVE_TEASING',     45: 'DOWRY_DEATH',
+    46: 'ELECTION_OFFENCES', 47: 'PREP_DACOITY',
+    49: 'ACID_ATTACK_124_1', 50: 'ACID_ATTACK_ATTEMPT',
+  };
 
-  sheet.mergeCells('A2:I2');
-  sheet.getCell('A2').value = `FN Period: ${fnStart} to ${fnEnd}`;
-  sheet.getCell('A2').font = FONTS.DATA;
-  sheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' };
-
-  const r3 = sheet.addRow([
-    'Head of Crime',
-    `Cases Solved FN ${yearNum}`, `Cases Solved FN ${yearPrev}`,
-    `Cases Cancelled FN ${yearNum}`, `Cases Cancelled FN ${yearPrev}`,
-    `Untraced FN ${yearNum}`, `Untraced FN ${yearPrev}`,
-    `Persons Arrested FN ${yearNum}`, `Persons Arrested FN ${yearPrev}`,
-  ]);
-  r3.height = 30;
-  r3.eachCell(c => {
-    c.font = FONTS.HEADER;
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.OLIVE_GREEN } };
-    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-  });
-
-  const dbc      = calcData.distByCode || {};
-  const dbcWo    = calcData.distByCodeWo || {};
-  const dbcCan   = calcData.distByCodeCan || {};
-  const dbcUntr  = calcData.distByCodeUntr || {};
-  const dbcArr   = calcData.distByCodeArr || {};
-  const sumsWo   = buildGroupSums(dbcWo);
-  const sumsCan  = buildGroupSums(dbcCan);
-  const sumsUntr = buildGroupSums(dbcUntr);
-  const sumsArr  = buildGroupSums(dbcArr);
-
-  const g = (map, code, field) => Number(map[code]?.[field] || 0);
-  const f = v => v > 0 ? v : '-';
-
-  ALL_HEADS.forEach(h => {
-    let woY, woY1, canY, canY1, untrY, untrY1, arrY, arrY1;
-    if (h.isTotal) {
-      woY   = sumsWo[h.group].fnY;   woY1   = sumsWo[h.group].fnY1;
-      canY  = sumsCan[h.group].fnY;  canY1  = sumsCan[h.group].fnY1;
-      untrY = sumsUntr[h.group].fnY; untrY1 = sumsUntr[h.group].fnY1;
-      arrY  = sumsArr[h.group].fnY;  arrY1  = sumsArr[h.group].fnY1;
-    } else {
-      woY   = g(dbcWo,   h.code, 'fnY'); woY1   = g(dbcWo,   h.code, 'fnY1');
-      canY  = g(dbcCan,  h.code, 'fnY'); canY1  = g(dbcCan,  h.code, 'fnY1');
-      untrY = g(dbcUntr, h.code, 'fnY'); untrY1 = g(dbcUntr, h.code, 'fnY1');
-      arrY  = g(dbcArr,  h.code, 'fnY'); arrY1  = g(dbcArr,  h.code, 'fnY1');
-    }
-
-    const row = sheet.addRow([
-      h.label,
-      f(woY), f(woY1),
-      f(canY), f(canY1),
-      f(untrY), f(untrY1),
-      f(arrY), f(arrY1),
-    ]);
-    row.height = 20;
-    row.eachCell((cell, col) => {
-      cell.font = h.isTotal ? FONTS.HEADER : FONTS.DATA;
-      if (h.isTotal) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.LIGHT_GRAY } };
-      cell.alignment = col === 1 ? { horizontal: 'left', vertical: 'middle' } : { horizontal: 'center', vertical: 'middle' };
-      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-    });
-  });
-
-  sheet.columns.forEach((col, idx) => { col.width = idx === 0 ? 34 : 14; });
+  for (const [rStr, code] of Object.entries(rowMap)) {
+    const r = Number(rStr);
+    ws.getCell(`C${r}`).value = gW(code, 'fnY');
+    ws.getCell(`D${r}`).value = gW(code, 'uptoY');
+    ws.getCell(`E${r}`).value = gC(code, 'fnY');
+    ws.getCell(`F${r}`).value = gC(code, 'uptoY');
+    ws.getCell(`G${r}`).value = gA(code, 'fnY');
+    ws.getCell(`H${r}`).value = gA(code, 'fnY1');
+  }
 }
