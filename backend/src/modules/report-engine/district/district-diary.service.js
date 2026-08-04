@@ -42,7 +42,7 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
         .whereIn('ps_id', psIds)
         .where('record_type', 'CASE')
         .whereRaw("COALESCE(registration_date, record_date) <= ?", [dates.cutoff])
-        .max(db.raw("COALESCE(registration_date, record_date) as max_d"))
+        .select(db.raw("MAX(COALESCE(registration_date, record_date)) as max_d"))
         .first()
     : null;
   const effectiveCutoff = effectiveCutoffRow?.max_d

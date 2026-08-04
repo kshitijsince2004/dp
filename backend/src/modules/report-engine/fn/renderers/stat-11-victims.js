@@ -6,70 +6,68 @@ export function renderStat11(workbook, _scope, calcData) {
   const dbcW = calcData.distByCodeWo  || {};
   const dbcC = calcData.distByCodeCan || {};
   const dbcA = calcData.distByCodeArr || {};
+
   const g  = (map, code, field) => Number(map[code]?.[field] || 0);
 
-  // STAT_11 Crime Against Women
-  // Columns: D=casesFN, E=casesUpto, F=woFN, G=woUpto, H=canFN, I=canUpto, J=arrFN, K=arrUpto
-  // Row 6-13: Rape sub-types (only RAPE total available, writing to row 5 total which is formula)
-  // Row 14: Deceitful promise to marry (no separate canonical code)
-  // Row 22: Snatching from Women → SNATCHING
-  // Row 23: Kidnapping/Abduction of Women → sum KIDNAPPING + ABDUCTION
-  // Row 24: Trafficking (no data)
-  // Row 26: Total Acid Attack (formula row)
-  // Row 27-28: Acid attack sub-types
-  // Row 31: Misappropriation of dowry (hardcoded 0 in template)
-  // Row 32: Cruelty by in-laws → CRUELTY_BY_HUSBAND
-  // Row 33-35: Total Dowry Death → DOWRY_DEATH
-  // Row 36: Dowry Prohibition Act
-  // Row 39: POCSO Women victim (formula row)
+  // Data rows to code mapping for STAT_11 (Formula rows: 5, 15, 26, 30, 33, 39, 44 are skipped)
+  const rowCodeMap = {
+    6:  'RAPE',
+    7:  null,
+    8:  null,
+    9:  null,
+    10: null,
+    11: null,
+    12: null,
+    13: null,
+    14: null,
+    16: 'MO_WOMEN',
+    17: null,
+    18: null,
+    19: null,
+    20: null,
+    21: 'EVE_TEASING',
+    22: 'SNATCHING',
+    23: 'KIDNAPPING',
+    24: null,
+    25: 'ABETMENT_OF_SUICIDE',
+    27: 'ACID_ATTACK_124_1',
+    28: 'ACID_ATTACK_ATTEMPT',
+    29: null,
+    31: null,
+    32: 'CRIMINAL_BREACH_OF_TRUST', // or CRUELTY_BY_HUSBAND
+    34: 'DOWRY_DEATH',
+    35: null,
+    36: 'DOWRY_PROHIBITION_ACT',
+    37: 'DOMESTIC_VIOLENCE_ACT',
+    38: 'SEXUAL_HARASSMENT_ACT',
+    40: 'POCSO',
+    41: null,
+    42: null,
+    43: null,
+  };
 
-  // Snatching from Women (row 22)
-  ws.getCell('D22').value = g(dbc,  'SNATCHING', 'fnY');
-  ws.getCell('E22').value = g(dbc,  'SNATCHING', 'uptoY');
-  ws.getCell('F22').value = g(dbcW, 'SNATCHING', 'fnY');
-  ws.getCell('G22').value = g(dbcW, 'SNATCHING', 'uptoY');
-  ws.getCell('H22').value = g(dbcC, 'SNATCHING', 'fnY');
-  ws.getCell('I22').value = g(dbcC, 'SNATCHING', 'uptoY');
-  ws.getCell('J22').value = g(dbcA, 'SNATCHING', 'fnY');
-  ws.getCell('K22').value = g(dbcA, 'SNATCHING', 'uptoY');
+  const formulaRows = new Set([5, 15, 26, 30, 33, 39, 44]);
 
-  // Dowry Death (row 33 is formula total; write sub-rows 34/35 with combined total)
-  ws.getCell('D33').value = g(dbc,  'DOWRY_DEATH', 'fnY');
-  ws.getCell('E33').value = g(dbc,  'DOWRY_DEATH', 'uptoY');
-  ws.getCell('F33').value = g(dbcW, 'DOWRY_DEATH', 'fnY');
-  ws.getCell('G33').value = g(dbcW, 'DOWRY_DEATH', 'uptoY');
-  ws.getCell('H33').value = g(dbcC, 'DOWRY_DEATH', 'fnY');
-  ws.getCell('I33').value = g(dbcC, 'DOWRY_DEATH', 'uptoY');
-  ws.getCell('J33').value = g(dbcA, 'DOWRY_DEATH', 'fnY');
-  ws.getCell('K33').value = g(dbcA, 'DOWRY_DEATH', 'uptoY');
+  for (let r = 6; r <= 43; r++) {
+    if (formulaRows.has(r)) continue;
 
-  // Cruelty by in-laws / Misappropriation of dowry (row 32)
-  ws.getCell('D32').value = g(dbc,  'CRUELTY_BY_HUSBAND', 'fnY');
-  ws.getCell('E32').value = g(dbc,  'CRUELTY_BY_HUSBAND', 'uptoY');
-  ws.getCell('F32').value = g(dbcW, 'CRUELTY_BY_HUSBAND', 'fnY');
-  ws.getCell('G32').value = g(dbcW, 'CRUELTY_BY_HUSBAND', 'uptoY');
-  ws.getCell('J32').value = g(dbcA, 'CRUELTY_BY_HUSBAND', 'fnY');
-  ws.getCell('K32').value = g(dbcA, 'CRUELTY_BY_HUSBAND', 'uptoY');
+    const code = rowCodeMap[r];
+    const repFn   = code ? g(dbc,  code, 'fnY')   : 0;
+    const repUpto = code ? g(dbc,  code, 'uptoY') : 0;
+    const woFn    = code ? g(dbcW, code, 'fnY')   : 0;
+    const woUpto  = code ? g(dbcW, code, 'uptoY') : 0;
+    const canFn   = code ? g(dbcC, code, 'fnY')   : 0;
+    const canUpto = code ? g(dbcC, code, 'uptoY') : 0;
+    const arrFn   = code ? g(dbcA, code, 'fnY')   : 0;
+    const arrUpto = code ? g(dbcA, code, 'uptoY') : 0;
 
-  // Acid Attack sub-types (rows 27-28)
-  ws.getCell('D27').value = g(dbc,  'ACID_ATTACK_124_1', 'fnY');
-  ws.getCell('E27').value = g(dbc,  'ACID_ATTACK_124_1', 'uptoY');
-  ws.getCell('J27').value = g(dbcA, 'ACID_ATTACK_124_1', 'fnY');
-  ws.getCell('K27').value = g(dbcA, 'ACID_ATTACK_124_1', 'uptoY');
-  ws.getCell('D28').value = g(dbc,  'ACID_ATTACK_ATTEMPT', 'fnY');
-  ws.getCell('E28').value = g(dbc,  'ACID_ATTACK_ATTEMPT', 'uptoY');
-  ws.getCell('J28').value = g(dbcA, 'ACID_ATTACK_ATTEMPT', 'fnY');
-  ws.getCell('K28').value = g(dbcA, 'ACID_ATTACK_ATTEMPT', 'uptoY');
-
-  // Assault on women with intent (row 15 = formula, write sub-row 16 = MO_WOMEN)
-  ws.getCell('D16').value = g(dbc,  'MO_WOMEN', 'fnY');
-  ws.getCell('E16').value = g(dbc,  'MO_WOMEN', 'uptoY');
-  ws.getCell('J16').value = g(dbcA, 'MO_WOMEN', 'fnY');
-  ws.getCell('K16').value = g(dbcA, 'MO_WOMEN', 'uptoY');
-
-  // Insult to modesty (row 21)
-  ws.getCell('D21').value = g(dbc,  'EVE_TEASING', 'fnY');
-  ws.getCell('E21').value = g(dbc,  'EVE_TEASING', 'uptoY');
-  ws.getCell('J21').value = g(dbcA, 'EVE_TEASING', 'fnY');
-  ws.getCell('K21').value = g(dbcA, 'EVE_TEASING', 'uptoY');
+    ws.getCell(`D${r}`).value = repFn;
+    ws.getCell(`E${r}`).value = repUpto;
+    ws.getCell(`F${r}`).value = woFn;
+    ws.getCell(`G${r}`).value = woUpto;
+    ws.getCell(`H${r}`).value = canFn;
+    ws.getCell(`I${r}`).value = canUpto;
+    ws.getCell(`J${r}`).value = arrFn;
+    ws.getCell(`K${r}`).value = arrUpto;
+  }
 }
