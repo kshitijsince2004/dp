@@ -20,14 +20,9 @@ import SearchableSelect from './SearchableSelect.jsx';
 import DateInput from '../ui/DateInput.jsx';
 import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
 import ActsSectionsTable, { reMergeKnownActFragments } from './ActsSectionsTable.jsx';
-import { validateFieldPattern } from '../../utils/fieldPatterns.js';
+import { parseRules, getFieldError, checkFieldFormat, validateFieldPattern } from '../../utils/fieldValidation.js';
 import { log } from '../../utils/logger.js';
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
-function parseRules(rawRules) {
-  if (!rawRules) return {};
-  if (typeof rawRules === 'object') return rawRules;
-  try { return JSON.parse(rawRules); } catch { return {}; }
-}
 function getFieldOptions(fieldsArr, key) {
   const field = fieldsArr.find((f) => f.field_key === key);
   if (!field?.options) return [];
@@ -337,7 +332,6 @@ export default function DynamicForm({
     setSearchError('');
 
     // Real backend cases only; MOCK_FIR_LIST is a fallback for when the backend has none
-    // (e.g. dev/demo environments), not something to permanently mix into live results.
     const backendCases = (casesData || []).map(c => ({
       fir_no: c.data?.fir_no || c.fir_no || `FIR No. ${c.id}`,
       fir_date: c.data?.fir_date || c.fir_date || c.record_date,
@@ -411,7 +405,7 @@ export default function DynamicForm({
     return (
       <div className="space-y-6">
         {/* Search Panel Card */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-card overflow-hidden">
 
           <div className="p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -473,7 +467,7 @@ export default function DynamicForm({
 
         {/* Results Card */}
         {hasSearched && (
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden transition-all duration-300">
+          <div className="bg-white border border-slate-200 rounded-card overflow-hidden transition-all duration-300">
             <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-800 tracking-wide flex items-center gap-2 font-display">
                 <Database size={16} className="text-[var(--accent-color)]" />
@@ -611,7 +605,7 @@ export default function DynamicForm({
 
         {/* Linked FIR Offence Details Card */}
         {selectedFir && (
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-white border border-slate-200 rounded-card overflow-hidden mt-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
               <h3 className="text-sm font-bold text-slate-800 tracking-wide flex items-center gap-2 font-display">
                 <Bookmark size={16} className="text-[var(--accent-color)]" />
@@ -745,7 +739,7 @@ export default function DynamicForm({
     return (
       <div className="space-y-4">
         {/* Top card fields */}
-        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-visible mt-2">
+        <div className="grid grid-cols-[220px_1fr] rounded overflow-visible mt-2">
           {renderReadOnlyRow(fieldLabel('uid') || (lang === 'hi' ? 'रिकॉर्ड यूआईडी (UID)' : 'Record UID'), values.uid || 'NEW_DRAFT_PENDING', true)}
           {renderReadOnlyRow(fieldLabel('district') || (lang === 'hi' ? 'जिला' : 'District'), values.district || user?.district)}
           {renderReadOnlyRow(fieldLabel('police_station') || (lang === 'hi' ? 'थाना' : 'Police Station'), values.police_station || user?.police_station)}
@@ -763,6 +757,7 @@ export default function DynamicForm({
                   value={values.case_type || ''}
                   onChange={handleChange}
                   readOnly={readOnly}
+                  error={touched.case_type ? errors.case_type : null}
                   lang={lang}
                   values={values}
                 />
@@ -773,7 +768,8 @@ export default function DynamicForm({
           {/* GD Number, Date & Time */}
           <React.Fragment>
             <div className="bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center min-h-[40px] rounded-bl">
-              {(fieldLabel('gd_no') || (lang === 'hi' ? 'जीडी नंबर, दिनांक और समय' : 'GD Number, Date & Time'))}{' *'}
+              {(fieldLabel('gd_no') || (lang === 'hi' ? 'जीडी नंबर, दिनांक और समय' : 'GD Number, Date & Time'))}
+              {isFieldRequired('gd_no') && <span className="text-red-500 font-bold">{' *'}</span>}
             </div>
             <div className="px-3 py-1 bg-white flex items-center gap-2 min-h-[40px] relative rounded-br">
               <FieldRenderer
@@ -782,6 +778,7 @@ export default function DynamicForm({
                 handleChange={handleChange}
                 values={values}
                 readOnly={readOnly}
+                error={touched.gd_no ? errors.gd_no : null}
               />
             </div>
           </React.Fragment>
@@ -800,25 +797,28 @@ export default function DynamicForm({
     return (
       <div className="space-y-3">
         {/* Main Table for GD and Complaint details */}
-        <div className="bg-[#f0f4f8] border border-[#7a9cc5] rounded overflow-visible shadow-sm">
+        <div className="rounded overflow-visible">
           <table className="w-full border-collapse">
             <tbody>
               {/* Row 1: GD/SD/DD Number / Date / Time */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
-                  {fieldLabel('gd_no') || 'GD/SD/DD Number / Date / Time'} <span className="text-red-500">*</span>
+                  {fieldLabel('gd_no') || 'GD/SD/DD Number / Date / Time'} {isFieldRequired('gd_no') && <span className="text-red-500">*</span>}
                 </td>
-                <td className="w-2/3 bg-white px-2.5 py-1 flex items-center gap-2" style={{ position: 'relative' }}>
-                  <FieldRenderer
-                    field={allFields.find(f => f.field_key === 'gd_no')}
-                    value={values.gd_no}
-                    handleChange={handleChange}
-                    values={values}
-                    readOnly={readOnly}
-                  />
+                <td className="w-2/3 bg-white px-2.5 py-1" style={{ position: 'relative' }}>
+                  <div className="flex items-center gap-2 max-w-[482px]">
+                    <FieldRenderer
+                      field={allFields.find(f => f.field_key === 'gd_no')}
+                      value={values.gd_no}
+                      handleChange={handleChange}
+                      values={values}
+                      readOnly={readOnly}
+                      error={touched.gd_no ? errors.gd_no : null}
+                    />
+                  </div>
                 </td>
               </tr>
-              
+
               {/* Row: Case Registration Type */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
@@ -831,6 +831,7 @@ export default function DynamicForm({
                       value={values.case_type || ''}
                       onChange={handleChange}
                       readOnly={readOnly}
+                      error={touched.case_type ? errors.case_type : null}
                       lang={lang}
                       values={values}
                       selectVariant="compact"
@@ -840,31 +841,25 @@ export default function DynamicForm({
                 </td>
               </tr>
 
-              {/* Row 3: FIR/Complaint Number, Date & Time — "Complaint No." is this
-                  station's name for the FIR number, same field_key (fir_no). There is no
-                  separate `complaint_no` field_registry row (only referenced by the old,
-                  still-on-legacy-schema import module) — looking one up here previously
-                  returned undefined, which FieldRenderer silently renders as nothing,
-                  leaving this row permanently blank with no way to enter the FIR number
-                  at all. Renders the same composite Number+Date+Time widget as GD Number
-                  above (FieldRenderer's dedicated `fir_no` branch). */}
               <tr className="border-b border-[#7a9cc5]">
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
                   {fieldLabel('fir_no') || 'Complaint No.'}
                 </td>
-                <td className="w-2/3 bg-white px-2.5 py-1 flex items-center gap-2" style={{ position: 'relative' }}>
-                  <FieldRenderer
-                    field={allFields.find(f => f.field_key === 'fir_no')}
-                    value={values.fir_no}
-                    handleChange={handleChange}
-                    values={values}
-                    readOnly={readOnly}
-                    lang={lang}
-                  />
+                <td className="w-2/3 bg-white px-2.5 py-1" style={{ position: 'relative' }}>
+                  <div className="flex items-center gap-2 max-w-[483px]">
+                    <FieldRenderer
+                      field={allFields.find(f => f.field_key === 'fir_no')}
+                      value={values.fir_no}
+                      handleChange={handleChange}
+                      values={values}
+                      readOnly={readOnly}
+                      lang={lang}
+                      error={touched.fir_no ? errors.fir_no : null}
+                    />
+                  </div>
                 </td>
               </tr>
 
-              {/* Row 4: Source / Reference of Complaint */}
               <tr>
                 <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
                   {fieldLabel('source_reference') || 'Source / Reference of Complaint'} <span className="text-red-500">*</span>
@@ -877,6 +872,7 @@ export default function DynamicForm({
                     values={values}
                     readOnly={readOnly}
                     lang={lang}
+                    error={touched.source_reference ? errors.source_reference : null}
                     selectVariant="compact"
                     selectClassName="w-64 h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-pointer"
                     selectPlaceholder="Select an option"
@@ -916,7 +912,7 @@ export default function DynamicForm({
             {isRequired && <span className="text-red-500 font-bold">*</span>}
           </div>
           <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-            <FieldRenderer field={field} value={values[key]} onChange={handleChange} readOnly={isDisabled} hasError={touched[key] && !!errors[key]} lang={lang} values={values} />
+            <FieldRenderer field={field} value={values[key]} onChange={handleChange} readOnly={isDisabled} error={touched[key] ? errors[key] : null} lang={lang} values={values} />
           </div>
         </React.Fragment>
       );
@@ -977,7 +973,7 @@ export default function DynamicForm({
     arrested: { hasNickname: true, extraContactField: null },
   };
 
-  function renderPersonPersonalInfoSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, showInlineErrors, lang, readOnly) {
+  function renderPersonPersonalInfoSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, lang, readOnly) {
     const cfg = PERSON_TAB_VARIANTS[prefix];
     const extraRequired = prefix === 'complainant' ? [] : [`${prefix}_first_name`, `${prefix}_gender`];
 
@@ -1001,13 +997,10 @@ export default function DynamicForm({
               value={valuesObj[key]}
               onChange={onFieldChange}
               readOnly={isDisabled}
-              hasError={touchedObj?.[key] && !!errorsObj?.[key]}
+              error={touchedObj?.[key] ? errorsObj?.[key] : null}
               lang={lang}
               values={valuesObj}
             />
-            {showInlineErrors && touchedObj?.[key] && errorsObj?.[key] && (
-              <p className="text-red-500 text-[10px] mt-0.5">{errorsObj[key]}</p>
-            )}
           </div>
         </React.Fragment>
       );
@@ -1019,6 +1012,7 @@ export default function DynamicForm({
         value={valuesObj[key] ?? fallback}
         onChange={onFieldChange}
         readOnly={readOnly}
+        error={touchedObj?.[key] ? errorsObj?.[key] : null}
         lang={lang}
         values={valuesObj}
       />
@@ -1118,7 +1112,7 @@ export default function DynamicForm({
     );
   }
 
-  function renderPersonAddressSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, showInlineErrors, lang, readOnly) {
+  function renderPersonAddressSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, lang, readOnly) {
     const isSame = valuesObj[`${prefix}_perm_same`] === 'Yes' || valuesObj[`${prefix}_perm_same`] === true;
 
     const field = (key, customLabel = null, isLast = false, forceReadOnly = false) => {
@@ -1140,13 +1134,10 @@ export default function DynamicForm({
               value={valuesObj[key]}
               onChange={onFieldChange}
               readOnly={isDisabled}
-              hasError={touchedObj?.[key] && !!errorsObj?.[key]}
+              error={touchedObj?.[key] ? errorsObj?.[key] : null}
               lang={lang}
               values={valuesObj}
             />
-            {showInlineErrors && touchedObj?.[key] && errorsObj?.[key] && (
-              <p className="text-red-500 text-[10px] mt-0.5">{errorsObj[key]}</p>
-            )}
           </div>
         </React.Fragment>
       );
@@ -1232,8 +1223,8 @@ export default function DynamicForm({
         {/* Sub-tab content */}
         <div className="p-2 border border-t-0 border-[#7a9cc5] rounded-b bg-transparent">
           {complainantTab === 'personal'
-            ? renderPersonPersonalInfoSubTab('complainant', allFields, values, handleChange, touched, errors, false, lang, readOnly)
-            : renderPersonAddressSubTab('complainant', allFields, values, handleChange, touched, errors, false, lang, readOnly)}
+            ? renderPersonPersonalInfoSubTab('complainant', allFields, values, handleChange, touched, errors, lang, readOnly)
+            : renderPersonAddressSubTab('complainant', allFields, values, handleChange, touched, errors, lang, readOnly)}
         </div>
       </div>
     );
@@ -1339,8 +1330,8 @@ export default function DynamicForm({
               {/* Modal Body (scrollable) */}
               <div className="flex-1 overflow-y-auto p-4 border border-t-0 border-[#7a9cc5] bg-white">
                 {victimSubTab === 'personal'
-                  ? renderPersonPersonalInfoSubTab('victim', allFields, victimTempValues, handleVictimModalChange, victimModalTouched, victimModalErrors, true, lang, readOnly)
-                  : renderPersonAddressSubTab('victim', allFields, victimTempValues, handleVictimModalChange, victimModalTouched, victimModalErrors, true, lang, readOnly)}
+                  ? renderPersonPersonalInfoSubTab('victim', allFields, victimTempValues, handleVictimModalChange, victimModalTouched, victimModalErrors, lang, readOnly)
+                  : renderPersonAddressSubTab('victim', allFields, victimTempValues, handleVictimModalChange, victimModalTouched, victimModalErrors, lang, readOnly)}
               </div>
 
               {/* Modal Footer */}
@@ -1469,8 +1460,8 @@ export default function DynamicForm({
               {/* Modal Body (scrollable) */}
               <div className="flex-1 overflow-y-auto p-4 border border-t-0 border-[#7a9cc5] bg-white">
                 {accusedSubTab === 'personal'
-                  ? renderPersonPersonalInfoSubTab('accused', allFields, accusedTempValues, handleAccusedModalChange, accusedModalTouched, accusedModalErrors, true, lang, readOnly)
-                  : renderPersonAddressSubTab('accused', allFields, accusedTempValues, handleAccusedModalChange, accusedModalTouched, accusedModalErrors, true, lang, readOnly)}
+                  ? renderPersonPersonalInfoSubTab('accused', allFields, accusedTempValues, handleAccusedModalChange, accusedModalTouched, accusedModalErrors, lang, readOnly)
+                  : renderPersonAddressSubTab('accused', allFields, accusedTempValues, handleAccusedModalChange, accusedModalTouched, accusedModalErrors, lang, readOnly)}
               </div>
 
               {/* Modal Footer */}
@@ -1916,7 +1907,7 @@ export default function DynamicForm({
           <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
             {lang === 'hi' ? (tab.title_hi || tab.title_en) : tab.title_en}
           </legend>
-          <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden mt-2">
+          <div className="grid grid-cols-[220px_1fr] rounded overflow-hidden mt-2">
             {visibleFields.map((field, idx) => {
               const key = field.field_key;
               const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
@@ -1931,7 +1922,7 @@ export default function DynamicForm({
                     {isRequired && <span className="text-red-500 font-bold">*</span>}
                   </div>
                   <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-                    <FieldRenderer field={field} value={arrestedTempValues[key]} onChange={handleArrestedModalChange} readOnly={isDisabled} hasError={arrestedModalTouched[key] && !!arrestedModalErrors[key]} lang={lang} values={arrestedTempValues} />
+                    <FieldRenderer field={field} value={arrestedTempValues[key]} onChange={handleArrestedModalChange} readOnly={isDisabled} error={arrestedModalTouched[key] ? arrestedModalErrors[key] : null} lang={lang} values={arrestedTempValues} />
                   </div>
                 </React.Fragment>
               );
@@ -1944,10 +1935,10 @@ export default function DynamicForm({
     /** Render the active sub-tab content — uses shared person helpers for person_particulars/address, generic grid for others */
     const renderActiveSubTabContent = () => {
       if (arrestedSubTab === 'person_particulars') {
-        return renderPersonPersonalInfoSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, true, lang, readOnly);
+        return renderPersonPersonalInfoSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, lang, readOnly);
       }
       if (arrestedSubTab === 'address') {
-        return renderPersonAddressSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, true, lang, readOnly);
+        return renderPersonAddressSubTab('arrested', allFields, arrestedTempValues, handleArrestedModalChange, arrestedModalTouched, arrestedModalErrors, lang, readOnly);
       }
       if (arrestedSubTab === 'property') {
         return renderPropertyEditor(
@@ -2097,7 +2088,7 @@ export default function DynamicForm({
               value={values[key]}
               onChange={handleChange}
               readOnly={isDisabled}
-              hasError={touched[key] && !!errors[key]}
+              error={touched[key] ? errors[key] : null}
               lang={lang}
               values={values}
             />
@@ -2108,7 +2099,7 @@ export default function DynamicForm({
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-[220px_1fr] border border-[#7a9cc5] rounded overflow-hidden">
+        <div className="grid grid-cols-[220px_1fr] rounded overflow-hidden">
           {activeFields.map((field, idx) => renderFieldWithLabel(field, idx))}
         </div>
       </div>
@@ -2411,13 +2402,42 @@ export default function DynamicForm({
   const [selectedMajorHead, setSelectedMajorHead] = useState('');
   const [selectedMinorHead, setSelectedMinorHead] = useState('');
   const [majorMinorRows, setMajorMinorRows] = useState([]);
+  // Keep the locked Major Head in sync with the table (covers rows seeded from an
+  // existing record on load, where selectedMajorHead starts empty) so the Minor Head
+  // dropdown/fetch always targets the already-added major head, never a stale one.
+  useEffect(() => {
+    if (majorMinorRows.length > 0 && selectedMajorHead !== majorMinorRows[0].majorHead) {
+      setSelectedMajorHead(majorMinorRows[0].majorHead);
+    }
+  }, [majorMinorRows, selectedMajorHead]);
   const allSchemaFields = React.useMemo(() => deepFlattenSchema(schema), [schema]);
+  // Keyed lookup so onChange handlers can resolve a field's type/format rules by key
+  // alone (they only ever receive (key, val), never the field object itself).
+  const fieldsByKey = React.useMemo(() => {
+    const map = {};
+    allSchemaFields.forEach((f) => { map[f.field_key] = f; });
+    return map;
+  }, [allSchemaFields]);
+
+  const applyLiveValidation = React.useCallback((key, val, setModalErrors, setModalTouched) => {
+    const fieldDef = fieldsByKey[key];
+    const err = fieldDef ? getFieldError(fieldDef, val, lang) : null;
+    setModalErrors((e) => {
+      if (!err) {
+        if (!e[key]) return e;
+        const n = { ...e }; delete n[key]; return n;
+      }
+      return e[key] === err ? e : { ...e, [key]: err };
+    });
+    setModalTouched((t) => (t[key] ? t : { ...t, [key]: true }));
+  }, [fieldsByKey, lang]);
   const getSectionSubTabs = (sectionKey) => schema?.find((s) => s.section === sectionKey)?.sub_tabs || [];
   const fieldLabel = (key) => {
     const f = allSchemaFields.find((x) => x.field_key === key);
     if (!f) return null;
     return lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en;
   };
+  const isFieldRequired = (key) => !!parseRules(fieldsByKey[key]?.validation_rules).required;
 
   const renderSubTabBar = (sectionKey, activeTab, setActiveTab, extraWrapperClass = '') => (
     <div className={`flex gap-2 border-b border-[#7a9cc5] pb-0 bg-slate-100/50 p-1 ${extraWrapperClass}`}>
@@ -2511,10 +2531,7 @@ export default function DynamicForm({
       // Address copying and auto-sync
       syncPermAddress(next, 'victim', key, val);
 
-      // Clear error on change
-      if (victimModalErrors[key]) {
-        setVictimModalErrors((e) => { const n = { ...e }; delete n[key]; return n; });
-      }
+      applyLiveValidation(key, val, setVictimModalErrors, setVictimModalTouched);
 
       return next;
     });
@@ -2585,10 +2602,7 @@ export default function DynamicForm({
       // Address copying and auto-sync
       syncPermAddress(next, 'accused', key, val);
 
-      // Clear error on change
-      if (accusedModalErrors[key]) {
-        setAccusedModalErrors((e) => { const n = { ...e }; delete n[key]; return n; });
-      }
+      applyLiveValidation(key, val, setAccusedModalErrors, setAccusedModalTouched);
 
       return next;
     });
@@ -2609,15 +2623,8 @@ export default function DynamicForm({
         if (!allowed.includes(currentValue)) return;
       }
 
-      const rules = parseRules(f.validation_rules);
-      if (rules.required) {
-        const val = accusedTempValues[f.field_key];
-        const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
-        if (isEmpty) {
-          const label = lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en;
-          errs[f.field_key] = lang === 'hi' ? `${label} आवश्यक है` : `${label} is required`;
-        }
-      }
+      const err = getFieldError(f, accusedTempValues[f.field_key], lang);
+      if (err) errs[f.field_key] = err;
     });
 
     if (!accusedTempValues.accused_first_name) {
@@ -2738,9 +2745,7 @@ export default function DynamicForm({
 
       syncPermAddress(next, 'arrested', key, val);
 
-      if (arrestedModalErrors[key]) {
-        setArrestedModalErrors((e) => { const n = { ...e }; delete n[key]; return n; });
-      }
+      applyLiveValidation(key, val, setArrestedModalErrors, setArrestedModalTouched);
 
       return next;
     });
@@ -2765,15 +2770,8 @@ export default function DynamicForm({
         } catch (e) { }
       }
 
-      const rules = parseRules(f.validation_rules);
-      if (rules.required) {
-        const val = arrestedTempValues[f.field_key];
-        const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
-        if (isEmpty) {
-          const label = lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en;
-          errs[f.field_key] = lang === 'hi' ? `${label} आवश्यक है` : `${label} is required`;
-        }
-      }
+      const err = getFieldError(f, arrestedTempValues[f.field_key], lang);
+      if (err) errs[f.field_key] = err;
     });
 
     if (!arrestedTempValues.arrested_first_name) {
@@ -2819,15 +2817,8 @@ export default function DynamicForm({
         if (!allowed.includes(currentValue)) return;
       }
 
-      const rules = parseRules(f.validation_rules);
-      if (!rules.required) return;
-
-      const val = victimTempValues[f.field_key];
-      const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
-      if (isEmpty) {
-        const label = lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en;
-        errs[f.field_key] = lang === 'hi' ? `${label} आवश्यक है` : `${label} is required`;
-      }
+      const err = getFieldError(f, victimTempValues[f.field_key], lang);
+      if (err) errs[f.field_key] = err;
     });
 
     if (!victimTempValues.victim_first_name) {
@@ -3187,38 +3178,6 @@ useEffect(() => {
 }, [repeaterState?.property_details?.length, readOnly, recordType]);
 
 /* ── Autosave repeater (persons/properties) changes ─────────────────────── */
-// Victim/Accused/Arrested entries and property rows live in `repeaterState`, NOT in
-// `values` — the field-level autosave never sees them. Before this effect existed, they
-// were only sent on the final wizard Submit: every draft saved via autosave or the
-// "Save Draft" button silently dropped them (the "victim info doesn't get saved" bug).
-// Seed/starter-row writes raise repeaterSeedSkipRef (a flag, not a counter — multiple
-// programmatic writes can batch into a single commit and therefore a single run of this
-// effect) so reopening a draft doesn't immediately PUT its own data back.
-//
-// B1 (2026-07-23, root cause #1 — the "even on simple edit" silent-delete): this effect used
-// to gate on a plain `repeaterAutosaveReadyRef` boolean meaning "skip only the very first
-// invocation, on the assumption it's always the pristine mount". That assumption breaks under
-// React 18 StrictMode (frontend/src/main.jsx wraps the app in <StrictMode>, dev-only but that's
-// exactly where this was reproduced/logged): StrictMode double-invokes effects on mount, and
-// the ready-flag flips true on the FIRST (legitimate, skipped) invocation and stays true across
-// the simulated remount — so the SECOND invocation (repeaterState still `{}`, the real seed
-// below hasn't run yet) was treated as a genuine user edit and scheduled a real autosave PUT
-// with persons:[]/properties:[] via `triggerAutosave` (`useAutosave.js`), which captures those
-// arrays in a `setTimeout` closure fired 2s later. Because the REAL seed (once initialPersons/
-// finalSchema are ready) sets `repeaterSeedSkipRef` and therefore never calls `triggerAutosave`
-// again, nothing ever cancels or reschedules that stale timer — it fires with the empty arrays
-// regardless of what repeaterState becomes in the meantime, and the backend's id-preserving
-// upsert deletes every person/property row not echoed back. Root-caused via tester logs (record
-// 1c71a6f7…, requestId 661b33ed): a `form:build_repeater_payload personsCount:0` fired 5ms after
-// mount (schema/persons not yet loaded), a real seed with personsCount:1 never re-logged
-// (correctly self-suppressed by repeaterSeedSkipRef) — yet 2s later the STALE first timer PUT
-// persons:[] and the arrestee was gone.
-//
-// Fix: gate on the SAME per-record bookkeeping the seed effect above uses (`repeaterSeededIdRef`)
-// instead of "is this the first commit". This is deterministic and immune to extra effect
-// invocations from any source (StrictMode or otherwise) — no autosave can ever be scheduled off
-// a repeaterState change until the seed effect has actually completed for the CURRENTLY loaded
-// record id, so a not-yet-seeded empty repeaterState can never reach `triggerAutosave`.
 const repeaterSeedSkipRef = useRef(false);
 useEffect(() => {
   const rid = initialValues?.id ?? null;
@@ -3361,8 +3320,6 @@ useEffect(() => {
     }
   }
 
-  // Formulate gd_date_time if missing but gd_date/gd_time exist
-  // gd_date is stored as dd/mm/yyyy, so no format conversion is needed here.
   if (!updatedSeed.gd_date_time && updatedSeed.gd_date) {
     const timePart = updatedSeed.gd_time || '00:00';
     updatedSeed.gd_date_time = `${updatedSeed.gd_date} ${timePart.substring(0, 5)}`;
@@ -3462,12 +3419,13 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
       const prefix = field.field_key === 'gd_no' ? 'gd' : 'fir';
       const num = currentValues[`${prefix}_no`];
       const dt = currentValues[`${prefix}_date`];
-      console.log('[PHAROS-DEBUG][validateSection]', field.field_key, 'composite check:', {
-        num: JSON.stringify(num), dt: JSON.stringify(dt), required: !!rules.required,
-      });
       const labels = prefix === 'gd'
         ? { en: 'GD', hi: 'जीडी' }
         : { en: 'FIR', hi: 'प्राथमिकी' };
+      console.log('[PHAROS-DEBUG][validateSection]', field.field_key, 'composite check:', {
+        num: JSON.stringify(num), dt: JSON.stringify(dt), required: !!rules.required,
+      });
+
       if (rules.required && !(num && dt)) {
         errs[field.field_key] = lang === 'hi'
           ? `${labels.hi} नंबर और दिनांक भरना आवश्यक है।`
@@ -3476,34 +3434,28 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
         errs[field.field_key] = lang === 'hi'
           ? `${labels.hi} दिनांक भी भरें।`
           : `Please also fill the ${labels.en} Date.`;
+      } else if (num) {
+        const fmtErr = checkFieldFormat(field, num, lang);
+        if (fmtErr) errs[field.field_key] = fmtErr;
       }
       return;
     }
 
-    if (!rules.required) return;
-
     const val = currentValues[field.field_key];
-    const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
-    console.log('[PHAROS-DEBUG][validateSection] required-field check:', field.field_key, {
-      value: val, typeofValue: typeof val, isEmpty, fieldType: field.field_type,
-      show_when: field.show_when || null,
-    });
-
-    if (isEmpty) {
-      // `sections` has no direct input — it is only written by the Acts & Sections
-      // table's "+ Add Acts & Section" modal. Point the officer at that button
-      // instead of naming a field they cannot find on the form.
-      if (field.field_key === 'sections') {
+    if (field.field_key === 'sections') {
+      // `sections` has no direct input — it is only written by the Acts & Sections table's
+      // "+ Add Acts & Section" modal. Point the officer at that button instead of naming a
+      // field they cannot find on the form.
+      const isEmpty = val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0);
+      if (isEmpty && rules.required) {
         errs.sections = lang === 'hi'
           ? 'कम से कम एक अधिनियम और धारा जोड़ें ("+ Add Acts & Section" बटन से)।'
           : 'Add at least one Act & Section (use the "+ Add Acts & Section" button).';
         return;
       }
-      const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-      errs[field.field_key] = lang === 'hi'
-        ? `${label} आवश्यक है`
-        : `${label} is required`;
     }
+    const err = getFieldError(field, val, lang);
+    if (err) errs[field.field_key] = err;
   });
   if (Object.keys(errs).length > 0) {
     log.warn('form:validation_fail', { step: stepIdx, section: section.section, errorKeys: Object.keys(errs) });
@@ -3605,15 +3557,17 @@ const handleChange = useCallback((key, val) => {
         next.mp_known = false;
       }
     }
-    // Clear error on change
-    if (errors[key]) {
-      setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
-    }
-    // Auto-save using custom hook (2 seconds debounce). Repeater data rides along on
-    // every save — a flat-field autosave that omitted `persons` used to be the write
-    // that (on create) froze the record's persons at [] forever.
-    const { persons, properties } = buildRepeaterPayload();
-    triggerAutosave(next, activeRecordIdRef.current, persons, properties);
+    const liveFieldDef = fieldsByKey[key];
+    const liveErr = liveFieldDef ? getFieldError(liveFieldDef, val, lang) : null;
+    setErrors((e) => {
+      if (!liveErr) {
+        if (!e[key]) return e;
+        const n = { ...e }; delete n[key]; return n;
+      }
+      return e[key] === liveErr ? e : { ...e, [key]: liveErr };
+    });
+    // Auto-save using custom hook (2 seconds debounce)
+    triggerAutosave(next, activeRecordIdRef.current);
     return next;
   });
 
@@ -3747,7 +3701,7 @@ const handleChange = useCallback((key, val) => {
   }
 
   setTouched((prev) => ({ ...prev, [key]: true }));
-}, [readOnly, errors, triggerAutosave, values]);
+}, [readOnly, triggerAutosave, values, fieldsByKey, lang]);
 
 /** Add a major/minor head row to the table */
 const handleAddMajorMinorRow = useCallback(() => {
@@ -3766,7 +3720,9 @@ const handleAddMajorMinorRow = useCallback(() => {
   // crime_head is never satisfiable and step validation blocks Next forever.
   const firstMajor = majorMinorRows[0]?.majorHead || selectedMajorHead;
   handleChange('crime_head', firstMajor);
-  setSelectedMajorHead('');
+  // Major Head stays locked to the first-added value (see ActsSectionsTable's
+  // `disabled={majorMinorRows.length > 0}`) — only Minor Head resets, so the next
+  // "+ Add" can only append another minor head under the same major head.
   setSelectedMinorHead('');
 }, [selectedMajorHead, selectedMinorHead, majorMinorRows, handleChange]);
 /** Delete a major/minor head row from the table */
@@ -3776,6 +3732,11 @@ const handleDeleteMajorMinorRow = useCallback((index) => {
   handleChange('major_heads', updated.map(r => r.majorHead).join(', '));
   handleChange('minor_heads', updated.map(r => r.minorHead).join(', '));
   handleChange('crime_head', updated[0]?.majorHead || '');
+  // Table emptied out — unlock Major Head so a different one can be chosen.
+  if (updated.length === 0) {
+    setSelectedMajorHead('');
+    setSelectedMinorHead('');
+  }
 }, [majorMinorRows, handleChange]);
 
 // Single bundle of everything <ActsSectionsTable> needs, so every call site (ARREST/UIDB
@@ -4106,7 +4067,7 @@ if (isError || finalSchema.length === 0) {
       ? `Server returned ${status}. Check that the backend is running.`
       : 'No fields are configured for this record type. Re-run the database seed or switch to Mock Mode.';
   return (
-    <div className="flex flex-col items-center justify-center p-16 text-slate-500 gap-4 bg-white border border-dashed border-slate-300 rounded-xl shadow-sm">
+    <div className="flex flex-col items-center justify-center p-16 text-slate-500 gap-4 bg-white border border-dashed border-slate-300 rounded-card">
       <AlertTriangle size={32} className="text-amber-500" />
       <p className="text-sm font-semibold text-slate-700">Form schema not found</p>
       <p className="text-xs text-slate-400 text-center max-w-xs leading-relaxed">{hint}</p>
@@ -4178,31 +4139,30 @@ return (
         )}
       </div>
     </div>
-
-    {/* ── Validation summary ── */}
-    {Object.keys(errors).length > 0 && Object.values(touched).some(Boolean) && (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600 shadow-sm space-y-2">
-        <div className="flex items-center gap-2 font-bold text-red-700 mb-1">
-          <AlertCircle size={16} />
-          <span>
-            {lang === 'hi'
-              ? `${Object.keys(errors).filter(k => touched[k]).length} फ़ील्ड अपूर्ण हैं`
-              : `${Object.keys(errors).filter(k => touched[k]).length} field(s) need your attention`}
-          </span>
-        </div>
-        {Object.entries(errors)
-          .filter(([k]) => touched[k])
-          .slice(0, 5)
-          .map(([, msg]) => (
-            <div key={msg} className="flex items-center gap-2 text-red-600">
+    {(() => {
+      const isEmptyVal = (v) => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
+      const missingRequired = Object.entries(errors).filter(([k]) => touched[k] && isEmptyVal(values[k]));
+      if (!missingRequired.length) return null;
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-card p-4 text-sm text-red-600 space-y-2">
+          <div className="flex items-center gap-2 font-bold text-red-700 mb-1">
+            <AlertCircle size={16} />
+            <span>
+              {lang === 'hi'
+                ? `${missingRequired.length} फ़ील्ड अपूर्ण हैं`
+                : `${missingRequired.length} field(s) need your attention`}
+            </span>
+          </div>
+          {missingRequired.slice(0, 5).map(([k, msg]) => (
+            <div key={k} className="flex items-center gap-2 text-red-600">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
               {msg}
             </div>
           ))}
-      </div>
-    )}
+        </div>
+      );
+    })()}
 
-    {/* ── Active Section (flat field form OR repeater panel) ── */}
     {activeSection && (
       <div className="space-y-3">
         <form onSubmit={(e) => e.preventDefault()} noValidate>

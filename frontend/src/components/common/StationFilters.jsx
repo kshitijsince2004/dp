@@ -185,32 +185,21 @@ export default function StationFilters({
     return list;
   }, [datePresets]);
 
-  const selectClassName = "w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] px-4 py-2.5 text-sm font-medium text-[#1A202C] shadow-sm outline-none transition-all duration-150 hover:border-[#003087] focus:border-[#003087] focus:ring-2 focus:ring-[#003087]/10 cursor-pointer";
-
-  const selectStyle = {
-    minHeight: '42px',
-    border: '1px solid #E2E8F0',
-    borderRadius: '12px',
-    backgroundColor: '#F8FAFF',
-    paddingLeft: '16px',
-    paddingRight: '20px',
-    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-  };
+  const selectClassName = "w-full rounded-control border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-[#1A202C] min-h-[38px] cursor-pointer";
 
   return (
-    <div className="mb-2" style={{ backgroundColor: 'transparent' }}>
+    <div className="mb-2">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* District Filter (HQ only) */}
         {isHq && (
           <div className="flex flex-col gap-1.5 w-full">
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">District</label>
+            <label className="text-label font-semibold text-slate-600 uppercase tracking-wide">District</label>
             <SearchableSelect
               value={filters.districtId || ""}
               onChange={(val) => handleChange("districtId", val)}
               options={districtOptions}
               placeholder="All Districts"
               className={selectClassName}
-              style={selectStyle}
             />
           </div>
         )}
@@ -218,76 +207,70 @@ export default function StationFilters({
         {/* Station Filter */}
         {visibleStations.length > 0 && (
           <div className="flex flex-col gap-1.5 w-full">
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Police Station</label>
+            <label className="text-label font-semibold text-slate-600 uppercase tracking-wide">Police Station</label>
             <SearchableSelect
               value={filters.psId || ""}
               onChange={(val) => handleChange("psId", val)}
               options={stationOptions}
               placeholder="All Stations"
               className={selectClassName}
-              style={selectStyle}
             />
           </div>
         )}
 
         {/* Record Type Filter */}
         <div className="flex flex-col gap-1.5 w-full">
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Record Type</label>
+          <label className="text-label font-semibold text-slate-600 uppercase tracking-wide">Record Type</label>
           <SearchableSelect
             value={filters.recordType || ""}
             onChange={(val) => handleChange("recordType", val)}
             options={recordTypeOptions}
             placeholder="All Categories"
             className={selectClassName}
-            style={selectStyle}
           />
         </div>
 
         {/* Local Head Filter */}
         <div className="flex flex-col gap-1.5 w-full">
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Local Head</label>
+          <label className="text-label font-semibold text-slate-600 uppercase tracking-wide">Local Head</label>
           <SearchableSelect
             value={filters.localHead || ""}
             onChange={(val) => handleChange("localHead", val)}
             options={localHeadOptions}
             placeholder="All Local Heads"
             className={selectClassName}
-            style={selectStyle}
           />
         </div>
 
         {/* Duration/Preset Filter */}
         <div className="flex flex-col gap-1.5 w-full">
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Duration</label>
+          <label className="text-label font-semibold text-slate-600 uppercase tracking-wide">Duration</label>
           <SearchableSelect
             value={filters.datePreset || ""}
             onChange={handlePresetChange}
             options={presetOptions}
             placeholder="All Durations"
             className={selectClassName}
-            style={selectStyle}
           />
         </div>
 
         {/* Date From */}
         <div className="flex flex-col gap-1.5 w-full">
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Date From</label>
+          <label className="text-label font-semibold text-slate-600 uppercase tracking-wide">Date From</label>
           <DateInput
             value={filters.dateFrom || ""}
             onChange={(val) => handleChange("dateFrom", val)}
             inputClassName={selectClassName + " animate-none"}
-            style={{ minHeight: '42px', backgroundColor: '#F8FAFF' }}
           />
         </div>
 
         {/* Date To */}
         <div className="flex flex-col gap-1.5 w-full">
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Date To</label>
+          <label className="text-label font-semibold text-slate-600 uppercase tracking-wide">Date To</label>
           <DateInput
             value={filters.dateTo || ""}
             onChange={(val) => handleChange("dateTo", val)}
             inputClassName={selectClassName + " animate-none"}
-            style={{ minHeight: '42px', backgroundColor: '#F8FAFF' }}
           />
         </div>
       </div>

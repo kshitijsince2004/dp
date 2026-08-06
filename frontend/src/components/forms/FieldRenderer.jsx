@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { AlertCircle } from 'lucide-react';
 import api from '../../utils/api.js';
 import { log } from '../../utils/logger.js';
 
@@ -13,6 +14,7 @@ import SelectField   from './SelectField.jsx';
 import CheckboxField from './CheckboxField.jsx';
 import RadioField    from './RadioField.jsx';
 import { DISTRICTS_AND_STATIONS } from '../../utils/policeData.js';
+import { sanitizeFieldValue } from '../../utils/fieldValidation.js';
 
 // #5 dual-mode (2026-07-20): all Delhi PS, flattened+deduped+sorted from the district map. Shown
 // for a PERSON-address PS field only when that person's state = Delhi (mirrors the import
@@ -26,7 +28,7 @@ const EVENT_PS_KEYS = new Set(['occurrence_police_station', 'arrest_police_stati
 
 const inputBase = "w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-colors placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
 
-export default function FieldRenderer({
+function FieldRendererCore({
   field, value, onChange, readOnly, hasError, lang, values, handleChange,
   wrapperClassName,
   // Generic style override for TEXT/TEXTAREA/NUMBER inputs (e.g. dense table rows).
@@ -148,6 +150,10 @@ export default function FieldRenderer({
     }
   };
 
+  // Each cell in a composite number+date+time row (e.g. GD Number / GD Date & Time) sits
+  // borderless inside its (already-bordered) table cell — no separate pill/box around it.
+  const compositeCellBox = `flex items-center min-w-0 ${containerBg} ${status === 'error' ? 'bg-red-50' : ''}`;
+
   // Shared composite-field date+time cell: a single DateTimePickerPopup driving two
   // separate values (e.g. gd_date + gd_time), replacing the old DateInput (native
   // calendar) + native <input type="time"> pairing — same calendar+slider popup as
@@ -156,7 +162,7 @@ export default function FieldRenderer({
     const combined = values?.[dateKey] ? `${values[dateKey]} ${values?.[timeKey] || '00:00'}` : '';
     log.debug('form:composite_datetime_render', { dateKey, timeKey, hasDate: !!values?.[dateKey], hasTime: !!values?.[timeKey] });
     return (
-      <div className={`${widthClass} flex items-center min-w-0 px-3.5 py-1`}>
+      <div className={`${widthClass} ${compositeCellBox} px-3.5 py-1`}>
         <DateTimePickerPopup
           value={combined}
           onDone={(_formatted, datePart, timePart) => {
@@ -173,17 +179,13 @@ export default function FieldRenderer({
 
   if (key === 'gd_no') {
     return (
-      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
+      <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className={`flex-1 ${compositeCellBox}`}>
           <input
             type="text"
             disabled={readOnly}
             value={values?.gd_no || ''}
-            onChange={(e) => handleFieldChange('gd_no', e.target.value)}
-            // GD numbers are alphanumeric (e.g. "22A") — bug batch 2026-07-23, #B7. The prior
-            // digit-only filter (`replace(/\D/g, '')`) silently stripped any letters as the
-            // officer typed, e.g. "22A" -> "22". Pass the raw value through, same as fir_no
-            // below (also free-text, no keystroke filter).
+            onChange={(e) => handleFieldChange('gd_no', sanitizeFieldValue(field, e.target.value))}
             placeholder={lang === 'hi' ? 'जीडी नंबर' : 'GD Number'}
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
           />
@@ -194,22 +196,18 @@ export default function FieldRenderer({
   }
 
   if (key === 'arrest_date') {
-    return (
-      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        {compositeDateTimeCell('arrest_date', 'arrest_time', 'w-full')}
-      </div>
-    );
+    return compositeDateTimeCell('arrest_date', 'arrest_time', 'w-full');
   }
 
   if (key === 'fir_no') {
     return (
-      <div className={`w-full ${containerBg} border-2 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-100 overflow-hidden focus-within:border-[var(--accent-color)] transition-colors ${status === 'error' ? 'border-red-400 bg-red-50 focus-within:border-red-500' : 'border-slate-200'}`}>
-        <div className="flex-1 flex items-center min-w-0">
+      <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className={`flex-1 ${compositeCellBox}`}>
           <input
             type="text"
             disabled={readOnly}
             value={values?.fir_no || ''}
-            onChange={(e) => handleFieldChange('fir_no', e.target.value)}
+            onChange={(e) => handleFieldChange('fir_no', sanitizeFieldValue(field, e.target.value))}
             placeholder={lang === 'hi' ? 'प्राथमिकी (FIR) संख्या' : 'FIR Number'}
             className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
           />
@@ -304,65 +302,11 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
   }
 
   if (type === 'TEXT') {
-    // #10 follow-up (2026-07-20): lat/long fields (validation_rules.pattern === 'latlong') must
-    // reject non-numeric input AT KEYSTROKE, not only flag it on submit — testers reported the
-    // field "still accepting text". Filter to a valid numeric-in-progress shape (optional leading
-    // '-', digits, at most one '.'). Mirrors the IO-mobile digit-only constraint.
-    const rawRules = field.validation_rules;
-    const rules = typeof rawRules === 'string' ? (() => { try { return JSON.parse(rawRules); } catch { return {}; } })() : (rawRules || {});
-    if (rules.pattern === 'latlong') {
-      const filterLatLong = (v) => {
-        let s = String(v).replace(/[^\d.-]/g, '');       // drop anything but digit / dot / minus
-        s = s.replace(/(?!^)-/g, '');                      // '-' only allowed at the start
-        const firstDot = s.indexOf('.');
-        if (firstDot !== -1) s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, ''); // one dot max
-        return s;
-      };
-      return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, filterLatLong(v))} status={status} placeholder={placeholder} className={inputClassName} />;
-    }
-    // Pincode fields (bug batch 2026-07-23, #B4): constrain to digits only, max 6 chars, at
-    // keystroke — was a plain TEXT input that accepted anything. Applies to every *_pincode
-    // field (occurrence/complainant/victim/accused/arrested present+perm, mp, deceased) via
-    // validation_rules.pattern:"pincode" in config/fields/*.json (submit-time 6-digit check
-    // lives in fieldPatterns.js, read by DynamicForm's validateSection).
-    if (rules.pattern === 'pincode') {
-      const filterPincode = (v) => String(v).replace(/\D/g, '').slice(0, 6);
-      return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, filterPincode(v))} status={status} placeholder={placeholder} className={inputClassName} maxLength={6} inputMode="numeric" />;
-    }
-    // Mobile-number fields (C3, 2026-07-26): same convention as pincode (#B4) — digits only at
-    // keystroke, capped at 10 (Indian mobile), via validation_rules.pattern:"mobile". Submit-time
-    // check (exact 10 digits) lives in fieldPatterns.js/validateFieldPattern, already wired
-    // generically through DynamicForm's validateSection. Empty stays valid (field is optional —
-    // was and remains not `required`).
-    if (rules.pattern === 'mobile') {
-      const filterMobile = (v) => String(v).replace(/\D/g, '').slice(0, 10);
-      return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, filterMobile(v))} status={status} placeholder={placeholder} className={inputClassName} maxLength={10} inputMode="numeric" />;
-    }
-    // UIDB "Approximate Age" (C5, 2026-07-26; re-report of #B9 — the B9 pass added the
-    // age_range submit-time pattern check but no keystroke filter, so this field — the ONLY age
-    // field UIDB actually has (config/fields/uidb.json `approx_age`) — still let an officer type
-    // anything and only flagged it after the field lost focus). `approx_age` is deliberately
-    // free-ISH (fieldPatterns.js AGE_RANGE_SHAPE): a bare number ("30"), a range ("25-30"), "60+",
-    // or "unknown"/"Unknown" are all legitimate — do NOT reduce this to digits-only, that would
-    // break the range/unknown use case the field exists for. Filter to the superset of characters
-    // that shape can ever use (digits, hyphen, plus, whitespace, and only the letters that spell
-    // "unknown") so stray/garbage characters are genuinely unenterable, while every legitimate
-    // value stays fully typeable letter-by-keystroke. Final exact-shape enforcement (e.g. rejecting
-    // "unknown" or an out-of-range number) still happens on blur/submit via validateFieldPattern.
-    if (rules.pattern === 'age_range') {
-      const filterAgeRange = (v) => String(v).replace(/[^0-9uUnNkKoOwW+\-\s]/g, '').slice(0, 20);
-      return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, filterAgeRange(v))} status={status} placeholder={placeholder} className={inputClassName} maxLength={20} />;
-    }
-    return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} className={inputClassName} />;
+    return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, sanitizeFieldValue(field, v))} status={status} placeholder={placeholder} className={inputClassName} />;
   }
 
   if (type === 'NUMBER') {
-    // Sane range bounds (bug batch 2026-07-23, #B9 — UIDB age was found to have no bound
-    // checking anywhere on any age field; applied consistently to every NUMBER field that
-    // opts in via validation_rules.min/max, e.g. the *_age_year fields (0-120), not just UIDB).
-    const rawRules = field.validation_rules;
-    const rules = typeof rawRules === 'string' ? (() => { try { return JSON.parse(rawRules); } catch { return {}; } })() : (rawRules || {});
-    return <NumberField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} min={rules.min} max={rules.max} />;
+    return <NumberField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} sanitize={(v) => sanitizeFieldValue(field, v)} />;
   }
 
   if (type === 'DATE') {
@@ -407,12 +351,6 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
           placeholder={selectPlaceholder || placeholder}
           options={options}
           lang={lang}
-          // Every FieldRenderer consumer in this codebase (DynamicForm.jsx, FormSection.jsx)
-          // is a dense police-form wizard — 'compact' (search-box, no big portal chrome) is
-          // the only variant actually used anywhere; default to it so call sites that render
-          // SELECT fields generically (person sub-tabs, address grids, etc.) don't have to
-          // repeat `selectVariant="compact"` individually to avoid falling back to
-          // SelectField's bigger default styling.
           variant={selectVariant || 'compact'}
           className={selectClassName}
           multiple={key === 'sections' || key.endsWith('_sections') || key.includes('sections')}
@@ -491,7 +429,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
         type={type === 'PHONE' ? 'tel' : 'email'}
         disabled={readOnly}
         value={value ?? ''}
-        onChange={(e) => handleFieldChange(key, e.target.value)}
+        onChange={(e) => handleFieldChange(key, sanitizeFieldValue(field, e.target.value))}
         placeholder={placeholder || ''}
         className={`${inputBase} ${status === 'error' ? 'border-red-400 bg-red-50' : ''}`}
       />
@@ -511,5 +449,20 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
   }
 
   // Fallback — render as plain text input
-  return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, v)} status={status} placeholder={placeholder} />;
+  return <TextField id={`field-${key}`} disabled={readOnly} value={value} onChange={(v) => handleFieldChange(key, sanitizeFieldValue(field, v))} status={status} placeholder={placeholder} />;
+}
+
+export default function FieldRenderer(props) {
+  const { error } = props;
+  return (
+    <div className="w-full">
+      <FieldRendererCore {...props} hasError={props.hasError || !!error} />
+      {error && (
+        <span className="flex items-center gap-1 text-xs text-red-500 font-medium mt-1">
+          <AlertCircle size={12} className="flex-shrink-0" />
+          {error}
+        </span>
+      )}
+    </div>
+  );
 }

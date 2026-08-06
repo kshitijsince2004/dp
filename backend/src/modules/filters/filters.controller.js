@@ -105,6 +105,9 @@ const withAliases = (row) => ({
 
 export const listPresets = async (req, res) => {
   try {
+    // filter_presets.scope_id is FK'd to hierarchy_nodes, so it can't hold a role name or a
+    // user id — ROLE-scoped presets aren't supported yet (createPreset falls back to USER).
+    // USER-scoped ownership is tracked via created_by instead, which already FKs to users.
     const userId = req.user.id || req.user.userId;
     log.debug('listPresets: enter', { userId });
 
@@ -134,6 +137,28 @@ export const listPresets = async (req, res) => {
     return res.status(200).json({ status: 'success', data: mergedList });
   } catch (error) {
     log.error('listPresets: failed', { err: error });
+    return res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
+export const listDurationPresets = async (req, res) => {
+  try {
+    const rows = await db('filter_presets')
+      .where({ scope: 'HQ_DURATION', is_active: true })
+      .orderBy('id', 'asc');
+
+    const parsed = rows.map(r => ({
+      ...r,
+      filter_spec: typeof r.filter_spec === 'string' ? JSON.parse(r.filter_spec) : r.filter_spec,
+      name_en: r.name,
+      name_hi: r.name,
+      applicable_record_types: typeof r.record_types === 'string'
+        ? JSON.parse(r.record_types || '[]')
+        : r.record_types
+    }));
+
+    return res.status(200).json({ status: 'success', data: parsed });
+  } catch (error) {
     return res.status(500).json({ status: 'error', message: error.message });
   }
 };

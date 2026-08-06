@@ -430,9 +430,9 @@ export default function CompilationUI() {
       const total = data?.compiled_summary?.total_records ?? 0;
       log.info('action:compile_success', { compilationId: data?.id, totalRecords: total });
       if (total > 0) {
-        toast.success(`Compilation created — ${total} DISTRICT_REVIEW records bundled.`);
+        toast.success(`Compilation created. ${total} DISTRICT_REVIEW records bundled.`);
       } else {
-        toast('No approved records to bundle yet — export will use all records for the date.', { icon: 'ℹ️' });
+        toast('No approved records to bundle yet. Export will use all records for the date.', { icon: 'ℹ️' });
       }
       queryClient.invalidateQueries({ queryKey: ['compilations'] });
     },
@@ -662,7 +662,7 @@ export default function CompilationUI() {
   };
 
   return (
-    <div className={`space-y-6 w-full ${getThemeClass()} p-5 rounded-2xl bg-[var(--bg-page-main)] border border-slate-200 shadow-sm`}>
+    <div className={`space-y-6 w-full ${getThemeClass()} p-5 rounded-panel bg-[var(--bg-page-main)] border border-slate-200`}>
       {/* Back Header */}
       <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
         <button
@@ -683,11 +683,11 @@ export default function CompilationUI() {
       </div>
 
       {/* Step 1: Diary selector */}
-      <div className="border border-slate-200 bg-white rounded-xl p-5 shadow-sm space-y-4">
+      <div className="border border-slate-200 bg-white rounded-card p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
+          <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5 font-display">
             <Layers size={14} className="text-[var(--accent-color)]" />
-            <span>Step 1 — Select Diary</span>
+            <span>Step 1: Select Diary</span>
           </h3>
           {selectedDiary && (
             <button
@@ -1188,7 +1188,7 @@ export default function CompilationUI() {
 
         {/* Compiled Records List */}
         <div className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
+          <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5 font-display">
             <Database size={14} className="text-[var(--accent-color)]" />
             <span>Compiled {userLevel === 'HQ' ? 'HQ' : userLevel === 'DISTRICT' ? 'District' : 'Station'} Archives</span>
           </h3>

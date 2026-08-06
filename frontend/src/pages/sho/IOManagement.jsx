@@ -116,7 +116,7 @@ export default function IOManagement() {
             <span>Investigating Officers</span>
           </h1>
           <p className="text-slate-500 text-xs mt-1 font-semibold">
-            Curate the IO roster for your police station — these officers appear in the
+            Curate the IO roster for your police station. These officers appear in the
             Investigating Officer dropdown when registering a new record.
           </p>
         </div>

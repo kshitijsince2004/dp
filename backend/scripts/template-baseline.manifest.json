@@ -3580,6 +3580,14 @@
           "label": "PIS No. of IO",
           "hint": "PIS number of a registered IO, e.g. 28080214",
           "validation": null
+        },
+        {
+          "col": 50,
+          "key": "uidb_no",
+          "section": "General Information",
+          "label": "UIDB Gazette Number",
+          "hint": "[Required] text",
+          "validation": null
         }
       ],
       "row2Merges": [
@@ -4194,7 +4202,7 @@
           "key": "heinous_offence",
           "section": "General Information",
           "label": "Heinous Offence",
-          "hint": "select: Yes, No",
+          "hint": "select: ",
           "validation": {
             "type": "list",
             "formulae": [
@@ -4679,7 +4687,7 @@
           "col": 4,
           "key": "arrest_place",
           "section": "Arrest Detail",
-          "label": "Place of Arrest",
+          "label": "House No. of Arrest",
           "hint": "text",
           "validation": null
         },

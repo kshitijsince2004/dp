@@ -236,8 +236,10 @@ export const getFieldsForForm = async (req, res) => {
     // 5. Beats
     const beatOptions = (await fieldsService.getBeats()).map(toValueLabel('beat_name'));
 
-    // 6. Local Heads
-    const localHeadOptions = (await fieldsService.getLocalHeads()).map(toValueLabel('local_head'));
+    // 6. Local Heads — crime_category carried through (not dropped like toValueLabel would) so the
+    // form can derive Heinous Offence from the selected local head instead of storing it separately.
+    const localHeadOptions = (await fieldsService.getLocalHeads())
+      .map(r => ({ value: r.local_head, label_en: r.local_head, label_hi: r.local_head, crime_category: r.crime_category }));
 
     // 7. Property Categories — numeric parent_cd as value, giving a stable join key into
     // /lookup/property-items/:parent_cd. property_minor_category's options are intentionally NOT
@@ -1502,7 +1504,10 @@ export const listBeats = async (req, res) => {
 export const listLocalHeads = async (req, res) => {
   try {
     const rows = await fieldsService.getLocalHeads();
-    const data = rows.map(r => ({ value: r.local_head_cd, label: r.local_head }));
+    // crime_category carried through (HEINOUS/NON_HEINOUS/OTHER) so consumers — e.g. the
+    // Analytics Console's crime-head category chart — can classify Heinous straight from the
+    // DB's own curated overlay instead of re-deriving it from a duplicated name list.
+    const data = rows.map(r => ({ value: r.local_head_cd, label: r.local_head, crime_category: r.crime_category }));
     return res.status(200).json({ success: true, data });
   } catch (error) {
     log.error('listLocalHeads: failed', { err: error });

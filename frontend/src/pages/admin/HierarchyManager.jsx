@@ -129,7 +129,7 @@ function NodeForm({ initialData, nodes, onSave, onCancel, isSaving }) {
             onChange={set('parent_id')}
             className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[#cca43b] transition-all cursor-pointer"
           >
-            <option value="">— No parent (root) —</option>
+            <option value="">No parent (root)</option>
             {nodes
               .filter((n) => n.id !== initialData?.id)
               .map((n) => (
@@ -291,7 +291,7 @@ export default function HierarchyManager() {
             <span>Hierarchy Node Configurator</span>
           </h1>
           <p className="text-slate-500 text-xs mt-1 font-semibold">
-            Inspect, add, or update jurisdiction nodes — Ranges, Districts, Sub-Divisions, and Police Stations.
+            Inspect, add, or update jurisdiction nodes: Ranges, Districts, Sub-Divisions, and Police Stations.
           </p>
         </div>
         {isAdmin && (

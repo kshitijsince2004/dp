@@ -19,7 +19,7 @@ const JOIN_OPTIONS = {
     { value: 'CASE_VICTIM',  label: 'FIR + Victims (one row per victim)' },
   ],
   ARREST: [
-    { value: 'ARREST_ARRESTED', label: 'Arrests + Arrested Persons — Full Details (one row per person)' },
+    { value: 'ARREST_ARRESTED', label: 'Arrests + Arrested Persons (full details, one row per person)' },
   ],
 };
 
@@ -282,7 +282,7 @@ export default function CustomExcelBuilder() {
             clearInterval(iv);
             log.info('action:generate_report_ready', { jobId, attempts });
             toast.dismiss(loadingToastId);
-            toast.success('Report ready — click Download to save.');
+            toast.success('Report ready. Click Download to save.');
             setJobState({ status: 'ready', jobId });
           } else if (status === 'FAILED' || attempts > 40) {
             clearInterval(iv);
@@ -391,7 +391,7 @@ export default function CustomExcelBuilder() {
               disabled={joinOptions.length === 0}
               className={inputCls + ' cursor-pointer disabled:opacity-40'}
             >
-              <option value="">No join — single table</option>
+              <option value="">No join (single table)</option>
               {joinOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             {joinOptions.length === 0 && (

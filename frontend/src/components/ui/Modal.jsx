@@ -49,20 +49,20 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md', className
       {/* Panel */}
       <div
         className={clsx(
-          'relative w-full rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xl',
+          'relative w-full rounded-panel bg-white border border-slate-200',
           sizes[size],
           className
         )}
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between p-6 border-b border-zinc-800">
-            <h2 id="modal-title" className="text-lg font-semibold text-zinc-100">
+          <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <h2 id="modal-title" className="text-lg font-semibold text-slate-900">
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+              className="p-1.5 rounded-control text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />

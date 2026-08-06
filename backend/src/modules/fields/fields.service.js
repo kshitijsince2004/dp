@@ -156,10 +156,7 @@ export const getBeats = async (psCd) => {
 };
 
 export const getLocalHeads = async () => {
-  log.debug('getLocalHeads: enter', {});
-  const rows = await db('ref.local_heads').select('local_head_cd', 'local_head').orderBy('local_head', 'asc');
-  log.debug('getLocalHeads: exit', { count: rows.length });
-  return rows;
+  return db('ref.local_heads').select('local_head_cd', 'local_head', 'crime_category').orderBy('local_head', 'asc');
 };
 
 let cachedRegistry = null;

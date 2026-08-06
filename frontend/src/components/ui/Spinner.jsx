@@ -17,7 +17,7 @@ export const Spinner = ({ size = 'md', fullPage = false, className = '' }) => {
       role="status"
       aria-label="Loading"
       className={clsx(
-        'rounded-full border-zinc-700 border-t-violet-500 animate-spin',
+        'rounded-full border-slate-200 border-t-[var(--accent-color)] animate-spin',
         sizes[size],
         className
       )}
@@ -26,7 +26,7 @@ export const Spinner = ({ size = 'md', fullPage = false, className = '' }) => {
 
   if (fullPage) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-zinc-950/80 z-50">
+      <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
         {spinner}
       </div>
     );

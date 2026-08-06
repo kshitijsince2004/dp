@@ -8,6 +8,7 @@ const router = Router();
 router.use(authMiddleware, enforceScope);
 
 router.get('/presets', controller.listPresets);
+router.get('/duration-presets', controller.listDurationPresets);
 router.post('/presets', controller.createPreset);
 router.delete('/presets/:id', controller.deletePreset);
 

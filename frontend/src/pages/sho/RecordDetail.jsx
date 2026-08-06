@@ -281,7 +281,7 @@ export default function RecordDetail() {
             <>
               <button
                 onClick={() => { log.debug('action:send_back_modal_open', { recordId: id }); setSendBackModalOpen(true); }}
-                className="bg-red-55/10 hover:bg-red-500 text-red-600 hover:text-white border-2 border-red-200/50 hover:border-red-500 px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer hover:shadow-md hover:shadow-red-500/25 hover:-translate-y-0.5"
+                className="bg-red-55/10 hover:bg-red-500 text-red-600 hover:text-white border-2 border-red-200/50 hover:border-red-500 px-5 py-2.5 rounded-control text-sm font-bold transition-colors cursor-pointer"
               >
                 {t('actions.sendBack', 'Send Back')}
               </button>
@@ -531,7 +531,7 @@ export default function RecordDetail() {
               </button>
               <button
                 onClick={handleSendBackSubmit}
-                className="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-red-500/25 cursor-pointer transition-all hover:-translate-y-0.5"
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-control text-sm font-bold cursor-pointer transition-colors"
               >
                 Send Request
               </button>
@@ -600,7 +600,7 @@ export default function RecordDetail() {
               </button>
               <button
                 onClick={handleOverrideSave}
-                className="bg-gradient-to-r from-[#cca43b] to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-amber-500/25 cursor-pointer transition-all hover:-translate-y-0.5"
+                className="bg-[#cca43b] hover:bg-amber-600 text-white px-6 py-2.5 rounded-control text-sm font-bold cursor-pointer transition-colors"
               >
                 Save Override
               </button>

@@ -259,9 +259,6 @@ export default function MyRecords() {
     /* ── Full-page background matching Dashboard's deep navy gradient ── */
     <div className="min-h-screen theme-hc-page page-bg">
       <div className="hero-banner-gradient px-8 pt-6 pb-14 relative overflow-hidden shadow-xl">
-        <span className="user-greeting-badge text-3xl font-bold text-white/95 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 shadow-sm">
-          Hi, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
-        </span>
         <div className="absolute -top-10 -right-10 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
@@ -275,7 +272,11 @@ export default function MyRecords() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3 md:flex-shrink-0 bg-transparent w-full md:w-auto md:pt-14">
+          <div className="flex flex-col items-end gap-3 md:flex-shrink-0 w-full md:w-auto">
+            <p className="text-2xl font-semibold text-white/90 m-0 text-right">
+              Welcome back, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
+            </p>
+            <div className="flex flex-wrap gap-3 justify-end w-full bg-transparent">
             {/* Sent Back Box */}
             <div className="rounded-2xl bg-red-600/25 border border-red-400/40 backdrop-blur-sm px-4 py-2.5 min-w-[100px] text-center transition-all duration-200 hover:scale-105 hover:bg-white/20">
               <div className="text-2xl font-bold text-red-200 tabular-nums">{sentBackCount}</div>
@@ -291,6 +292,7 @@ export default function MyRecords() {
                 {t('status.DRAFT', 'Draft')}
               </div>
             </div>
+            </div>
           </div>
         </div>
       </div>
@@ -303,11 +305,8 @@ export default function MyRecords() {
         className="mx-auto max-w-7xl px-6 pb-10 -mt-4 space-y-5"
       >
 
-        {/* Unified Filter Strip — card floating over the page bg */}
-        <motion.div
-          variants={itemVariants}
-          className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] p-4 transition-shadow duration-200 hover:shadow-lg"
-        >
+        {/* Unified Filter Strip */}
+        <motion.div variants={itemVariants}>
           <UnifiedFilterStrip
             filters={filters}
             onFilterChange={setFilters}
@@ -495,7 +494,7 @@ export default function MyRecords() {
                             {/* View Action */}
                             <button
                               onClick={() => navigate(`/records/${rec.id}`)}
-                              className="bg-[var(--accent-glow)] hover:bg-[var(--accent-color)] text-[var(--accent-color)] hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-[var(--accent-color)]/30 hover:border-[var(--accent-color)] hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95"
+                              className="bg-[var(--accent-glow)] hover:bg-[var(--accent-color)] text-[var(--accent-color)] hover:text-white p-2 rounded-control transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-[var(--accent-color)]/30 hover:border-[var(--accent-color)]"
                               title="View Details"
                             >
                               <Eye size={14} />
@@ -516,7 +515,7 @@ export default function MyRecords() {
                             {isEditable && (
                               <button
                                 onClick={() => navigate(`/records/new/${rec.record_type}?edit=${rec.id}`)}
-                                className="bg-amber-50 hover:bg-[#cca43b] text-amber-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-amber-200 hover:border-[#cca43b] hover:shadow-lg hover:shadow-amber-500/20 active:scale-95"
+                                className="bg-amber-50 hover:bg-[#cca43b] text-amber-700 hover:text-white p-2 rounded-control transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-amber-200 hover:border-[#cca43b]"
                                 title="Edit Record"
                               >
                                 <FileEdit size={14} />
@@ -531,7 +530,7 @@ export default function MyRecords() {
                                     submitMutation.mutate(rec.id);
                                   }
                                 }}
-                                className="bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-emerald-200 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95"
+                                className="bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white p-2 rounded-control transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-emerald-200 hover:border-emerald-500"
                                 title="Submit to SHO"
                               >
                                 <Send size={14} />

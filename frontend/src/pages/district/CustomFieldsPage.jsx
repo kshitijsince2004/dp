@@ -308,7 +308,7 @@ export default function CustomFieldsPage() {
           <button key={type} onClick={() => setFilterType(type)}
             className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
               filterType === type
-                ? 'bg-[var(--accent-color)] text-white border-transparent shadow-md shadow-red-500/10'
+                ? 'bg-[var(--accent-color)] text-white border-transparent'
                 : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50'
             }`}>
             {type}
@@ -465,7 +465,7 @@ export default function CustomFieldsPage() {
                 {/* Step 1: Record types first */}
                 <div className="space-y-1.5">
                   <label className="text-zinc-400 font-semibold">
-                    Applicable Record Types * <span className="text-zinc-600 font-normal">(select first — sections will filter accordingly)</span>
+                    Applicable Record Types * <span className="text-zinc-600 font-normal">(select first, sections will filter accordingly)</span>
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {RECORD_TYPES.map((rt) => (
@@ -498,7 +498,7 @@ export default function CustomFieldsPage() {
                         }
                       }}
                       className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] cursor-pointer">
-                      <option value="">— choose a section —</option>
+                      <option value="">Choose a section</option>
                       {knownSections.map((s) => (
                         <option key={s.key} value={s.key}>
                           {getSectionLabel(s.key, i18n.language, s) || s.key}
