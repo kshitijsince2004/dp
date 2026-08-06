@@ -55,7 +55,7 @@ export default function StationPerformanceDashboard() {
         // Load hierarchy nodes, raw records and pre-aggregated PS stats in parallel
         const [nodesRes, recordsRes, psStatsRes] = await Promise.all([
           api.get("/hierarchy/nodes"),
-          api.get("/records"),
+          api.get("/records?limit=200"),
           api.get("/analytics/by-ps").catch(() => ({ data: { data: [] } })), // non-fatal
         ]);
 

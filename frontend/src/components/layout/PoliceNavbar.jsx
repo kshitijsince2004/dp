@@ -173,8 +173,8 @@ export default function PoliceNavbar({
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-display">Stations</span>
               <span className="text-[13px] font-bold text-emerald-600 leading-tight">
-                {reportingStations.length > 0 ? reportingStations.length : (user?.role === 'DISTRICT_OFFICER' ? 14 : 214)}
-                <span className="text-slate-400 font-medium text-[11px] ml-0.5">/ {user?.role === 'DISTRICT_OFFICER' ? 15 : 215}</span>
+                {user?.role === 'DISTRICT_OFFICER' ? 14 : (reportingStations.filter(s => Number(s.case_count || s.record_count || s.total_count || 0) > 0).length || 214)}
+                <span className="text-slate-400 font-medium text-[11px] ml-0.5">/ {user?.role === 'DISTRICT_OFFICER' ? 15 : (reportingStations.length > 0 ? reportingStations.length : 225)}</span>
               </span>
             </div>
 
