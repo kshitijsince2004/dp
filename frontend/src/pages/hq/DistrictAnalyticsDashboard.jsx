@@ -59,7 +59,7 @@ export default function DistrictAnalyticsDashboard() {
     queryFn: async () => {
       log.debug('data:load_start', { what: 'records_all' });
       try {
-        const res = await api.get('/records');
+        const res = await api.get('/records?limit=200');
         const rows = res.data?.data?.cases || res.data?.data || [];
         log.debug('data:load_success', { what: 'records_all', count: rows.length });
         return rows;

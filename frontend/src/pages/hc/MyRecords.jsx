@@ -64,7 +64,7 @@ export default function MyRecords() {
   const { data: allRecords = [] } = useQuery({
     queryKey: ['all-records-stats'],
     queryFn: async () => {
-      const res = await api.get('/records');
+      const res = await api.get('/records?limit=200');
       const payload = res.data.data;
       if (payload?.cases) return payload.cases;
       if (payload?.queue) return payload.queue;
