@@ -152,12 +152,6 @@ export default function HQDashboard() {
     queryFn: async () => {
       log.debug('data:load_start', { what: 'crime_head_year_trend', durationPresetId, dateFrom, dateTo });
       try {
-<<<<<<< HEAD
-        const res = await api.get('/records?limit=200');
-        const rows = res.data.data.cases ?? [];
-        log.debug('data:load_success', { what: 'records_all', count: rows.length });
-        return rows;
-=======
         const params = new URLSearchParams();
         if (durationPresetId) params.set('durationPresetId', durationPresetId);
         if (dateFrom) params.set('dateFrom', dateFrom);
@@ -165,7 +159,6 @@ export default function HQDashboard() {
         const res = await api.get(`/analytics/crime-head-year-trend?${params.toString()}`);
         log.debug('data:load_success', { what: 'crime_head_year_trend' });
         return res.data.data;
->>>>>>> 3596e1a74aa0558d7489b293938bd5d566e0a1dc
       } catch (err) {
         log.error('data:load_error', { what: 'crime_head_year_trend', err });
         throw err;
@@ -175,7 +168,6 @@ export default function HQDashboard() {
     keepPreviousData: true,
   });
 
-<<<<<<< HEAD
   const filteredRecords = useMemo(() => {
     if (!Array.isArray(records)) return [];
     return records.filter(r => {
@@ -197,17 +189,15 @@ export default function HQDashboard() {
       return true;
     });
   }, [records, filterType, filterDistrict, filterLocalHead, dateFrom, dateTo]);
-=======
+
   const years = chartResp?.years ?? [];
   const chartRows = chartResp?.rows ?? [];
   const changeRate = chartResp?.change_rate ?? null;
 
   const heinousRows = chartRows.filter((r) => r.is_heinous);
-  // Frontend-curated Non-Heinous list (crimeHeadGroups.js), not every DB row that merely
   const nonHeinousRows = chartRows.filter(
     (r) => !r.is_heinous && getCrimeHeadGroup({ label: r.crime_head }) === 'NON_HEINOUS'
   );
->>>>>>> 3596e1a74aa0558d7489b293938bd5d566e0a1dc
 
   const cards = [
     { label: 'Delhi-wide FIR cases', value: (stats.cases_today || 0) , color: 'text-amber-500', icon: Building },
@@ -366,7 +356,6 @@ export default function HQDashboard() {
             <div className="flex items-center gap-3">
               <ShieldAlert size={16} className="text-slate-400 shrink-0" />
               <div>
-<<<<<<< HEAD
                 <h3 className="text-base font-bold text-[#1A202C]">Real-time Jurisdiction Activity Feed</h3>
                 <p className="mt-0.5 text-xs text-[#718096]">
                   Showing {Math.min(8, filteredRecords.length)} of{' '}
