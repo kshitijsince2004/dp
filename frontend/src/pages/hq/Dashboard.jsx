@@ -187,7 +187,7 @@ export default function HQDashboard() {
     queryFn: async () => {
       log.debug('data:load_start', { what: 'records_all' });
       try {
-        const res = await api.get('/records');
+        const res = await api.get('/records?limit=200');
         const rows = res.data.data.cases ?? [];
         log.debug('data:load_success', { what: 'records_all', count: rows.length });
         return rows;
@@ -494,20 +494,46 @@ export default function HQDashboard() {
               </div>
             </div>
 
-            {/* Type pills legend */}
+            {/* Type pills legend & filter triggers */}
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3 py-1.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setFilterType(prev => prev === 'CASE' ? 'All' : 'CASE')}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 shadow-sm transition-all cursor-pointer ${
+                  filterType === 'CASE'
+                    ? 'border-[#D97706] bg-[#FDE68A] text-[#92400E] ring-2 ring-[#D97706]/30 font-bold'
+                    : 'border-[#FDE68A] bg-[#FFFBEB] text-[#D97706] hover:bg-[#FDE68A]/50'
+                }`}
+              >
                 <Clock3 size={11} className="text-[#D97706]" />
-                <span className="text-xs font-semibold text-[#D97706]">Cases</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#6EE7B7] bg-[#ECFDF5] px-3 py-1.5 shadow-sm">
+                <span className="text-xs font-semibold">Cases</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterType(prev => prev === 'ARREST' ? 'All' : 'ARREST')}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 shadow-sm transition-all cursor-pointer ${
+                  filterType === 'ARREST'
+                    ? 'border-[#059669] bg-[#6EE7B7] text-[#065F46] ring-2 ring-[#059669]/30 font-bold'
+                    : 'border-[#6EE7B7] bg-[#ECFDF5] text-[#059669] hover:bg-[#6EE7B7]/50'
+                }`}
+              >
                 <CheckCircle2 size={11} className="text-[#059669]" />
-                <span className="text-xs font-semibold text-[#059669]">Arrests</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-1.5 shadow-sm">
+                <span className="text-xs font-semibold">Arrests</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterType(prev => prev === 'PCR_CALL' ? 'All' : 'PCR_CALL')}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 shadow-sm transition-all cursor-pointer ${
+                  filterType === 'PCR_CALL'
+                    ? 'border-[#003087] bg-[#BFDBFE] text-[#1E3A8A] ring-2 ring-[#003087]/30 font-bold'
+                    : 'border-[#BFDBFE] bg-[#EFF6FF] text-[#003087] hover:bg-[#BFDBFE]/50'
+                }`}
+              >
                 <PhoneCall size={11} className="text-[#003087]" />
-                <span className="text-xs font-semibold text-[#003087]">PCR</span>
-              </div>
+                <span className="text-xs font-semibold">PCR</span>
+              </button>
             </div>
           </div>
 
@@ -518,6 +544,7 @@ export default function HQDashboard() {
                 <tr className="border-b border-[#E2E8F0] bg-[#F8FAFF] text-[#718096]">
                   <th className="px-5 py-3.5 pl-6 font-semibold uppercase tracking-wide">#</th>
                   <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Reference No.</th>
+                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Police Station</th>
                   <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">District</th>
                   <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Record Type</th>
                   <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Facts Gist</th>
@@ -529,9 +556,19 @@ export default function HQDashboard() {
                 {filteredRecords
                   .slice(0, 8)
                   .map((rec, idx) => {
-                    const refId = rec.fir_no || rec.arrest_fir_no || rec.missing_fir_no || rec.uidb_no || rec.legacy_ref || rec.data?.fir_no || rec.data?.gd_no || rec.data?.linked_fir_dd_no || rec.data?.dd_fir_no || rec.data?.uidbNumber || (rec.id ? rec.id.slice(0, 8) : 'N/A');
+                    const firNumber = rec.fir_no || rec.arrest_fir_no || rec.data?.fir_no || rec.data?.arrest_fir_no || rec.data?.linked_fir_dd_no || rec.data?.dd_fir_no || rec.missing_fir_no || rec.data?.missing_fir_no;
+                    const refId = firNumber 
+                      ? (firNumber.toUpperCase().startsWith('FIR') ? firNumber : `FIR ${firNumber}`)
+                      : rec.record_type === 'UIDB' 
+                        ? (rec.uidb_no || rec.data?.uidb_no || rec.data?.uidbNumber ? `UIDB ${rec.uidb_no || rec.data?.uidb_no || rec.data?.uidbNumber}` : `UIDB-${rec.id?.slice(0, 8)}`)
+                        : rec.record_type === 'MISSING'
+                          ? `MP-${rec.id?.slice(0, 8)}`
+                          : rec.record_type === 'PCR_CALL'
+                            ? `PCR-${rec.id?.slice(0, 8)}`
+                            : rec.legacy_ref || rec.uid || (rec.id ? rec.id.slice(0, 8) : 'N/A');
                     const gist = rec.data?.brief_facts || rec.data?.call_gist || rec.data?.recovered_material || rec.data?.physical_description || rec.data?.description || rec.data?.foundPlace || rec.case_local_head || rec.call_head || rec.arrest_local_head || rec.uidb_local_head || 'No facts details';
-                    const distName = rec.district_name || rec.ps_name || rec.data?.district || rec.districtKey || rec.district_id || 'New Delhi District';
+                    const psName = rec.ps_name || rec.data?.police_station || rec.data?.ps || 'PS Parliament Street';
+                    const distName = rec.district_name || rec.data?.district || rec.districtKey || rec.district_id || 'New Delhi District';
                     const tMeta = typeMeta[rec.record_type] || { bg: 'bg-[#F0F4F9] text-[#4A5568] border-[#E2E8F0]', label: rec.record_type };
                     return (
                       <tr
@@ -547,6 +584,10 @@ export default function HQDashboard() {
                         {/* Reference */}
                         <td className="px-5 py-4">
                           <span className="font-mono text-sm font-bold text-[#0A1628]">{refId}</span>
+                        </td>
+                        {/* Police Station */}
+                        <td className="px-5 py-4 font-semibold text-[#0A1628]">
+                          {psName}
                         </td>
                         {/* District */}
                         <td className="px-5 py-4">

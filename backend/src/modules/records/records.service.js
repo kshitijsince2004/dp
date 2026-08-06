@@ -810,6 +810,15 @@ export const listRecords = async (recordType, filters, jurisdictionQuery) => {
     log.debug('listRecords: filtered by arrest_kind', { arrestKind: filters.arrestKind });
   }
 
+  if (filters.limit) {
+    const lim = parseInt(filters.limit, 10);
+    if (!isNaN(lim) && lim > 0) query = query.limit(lim);
+  }
+  if (filters.offset) {
+    const off = parseInt(filters.offset, 10);
+    if (!isNaN(off) && off >= 0) query = query.offset(off);
+  }
+
   const rawRecords = await query.orderBy('records.created_at', 'desc');
   log.info('listRecords: exit', { recordType, resultCount: rawRecords.length });
   return rawRecords.map((r) => ({ ...r, data: buildListSummary(r) }));

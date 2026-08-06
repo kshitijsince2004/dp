@@ -412,6 +412,7 @@ export default function MyRecords() {
                         />
                       </th>
                       <th className="p-4">{t('common.referenceId', 'Ref ID / Number')}</th>
+                      <th className="p-4">Police Station</th>
                       <th className="p-4">{t('common.recordDate', 'Record Date')}</th>
                       <th className="p-4">{t('common.details', 'Gist')}</th>
                       <th className="p-4">{t('common.status', 'Status')}</th>
@@ -420,17 +421,23 @@ export default function MyRecords() {
                   </thead>
                   <tbody className="divide-y divide-[#E2E8F0] text-[#1A202C]">
                     {filteredRecords.map((rec, index) => {
+                      const psName = rec.ps_name || rec.data?.police_station || rec.data?.ps || 'PS Parliament Street';
                       const refId =
                         rec.fir_no ||
                         rec.arrest_fir_no ||
-                        rec.missing_fir_no ||
-                        rec.uidb_no ||
-                        rec.legacy_ref ||
                         rec.data?.fir_no ||
-                        rec.data?.gd_no ||
+                        rec.data?.arrest_fir_no ||
                         rec.data?.linked_fir_dd_no ||
                         rec.data?.dd_fir_no ||
+                        rec.missing_fir_no ||
+                        rec.data?.missing_fir_no ||
+                        rec.uidb_no ||
+                        rec.data?.uidb_no ||
                         rec.data?.uidbNumber ||
+                        rec.uid ||
+                        rec.data?.uid ||
+                        rec.legacy_ref ||
+                        rec.data?.gd_no ||
                         (rec.id ? rec.id.slice(0, 8) : 'N/A');
 
                       const gist =
@@ -472,6 +479,9 @@ export default function MyRecords() {
                           </td>
                           <td className="p-4 font-mono font-bold text-[var(--accent-color)] text-sm group-hover:text-[var(--accent-color-hover)] transition-colors">
                             {refId}
+                          </td>
+                          <td className="p-4 text-xs font-semibold text-[#1A202C]">
+                            {psName}
                           </td>
                           <td className="p-4 font-mono text-[#4A5568] font-semibold text-xs">
                             {typeof recDate === 'string' ? recDate.slice(0, 10) : 'N/A'}

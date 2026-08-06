@@ -315,14 +315,19 @@ export default function Queue() {
                       const refId =
                         rec.fir_no ||
                         rec.arrest_fir_no ||
-                        rec.missing_fir_no ||
-                        rec.uidb_no ||
-                        rec.legacy_ref ||
                         rec.data?.fir_no ||
-                        rec.data?.gd_no ||
+                        rec.data?.arrest_fir_no ||
                         rec.data?.linked_fir_dd_no ||
                         rec.data?.dd_fir_no ||
+                        rec.missing_fir_no ||
+                        rec.data?.missing_fir_no ||
+                        rec.uidb_no ||
+                        rec.data?.uidb_no ||
                         rec.data?.uidbNumber ||
+                        rec.uid ||
+                        rec.data?.uid ||
+                        rec.legacy_ref ||
+                        rec.data?.gd_no ||
                         (rec.id ? rec.id.slice(0, 8) : 'N/A');
 
                       const gist =

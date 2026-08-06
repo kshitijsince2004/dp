@@ -47,14 +47,32 @@ export const getContracts = async () => {
   return result;
 };
 
+let contractsCache = null;
+let contractsCacheTime = 0;
+const CACHE_TTL_MS = 60000; // 1 minute cache
+
+async function getAllActiveContracts() {
+  const now = Date.now();
+  if (contractsCache && (now - contractsCacheTime < CACHE_TTL_MS)) {
+    return contractsCache;
+  }
+  const list = await db('level_data_contracts').where({ is_active: true });
+  contractsCache = list;
+  contractsCacheTime = now;
+  return contractsCache;
+}
+
+export function invalidateContractsCache() {
+  contractsCache = null;
+}
+
 async function findActiveContract(recordType, toLevel) {
-  const contract = await db('level_data_contracts')
-    .where({ to_level: toLevel, is_active: true })
-    .andWhere((builder) => {
-      builder.where('record_type', recordType).orWhere('record_type', '*');
-    })
-    .first();
-  log.debug('findActiveContract: resolved', { recordType, toLevel, found: !!contract, contractCode: contract?.code ?? null });
+  const allContracts = await getAllActiveContracts();
+  const contract = allContracts.find(c => 
+    c.to_level === toLevel &&
+    c.is_active &&
+    (c.record_type === recordType || c.record_type === '*')
+  );
   return contract;
 }
 
@@ -155,6 +173,9 @@ const STRUCTURAL_RECORD_KEYS = new Set([
   'imported_at', 'imported_by', 'import_batch_id',
   'created_by', 'updated_by', 'created_at', 'updated_at',
   'ps_name', 'district_name', 'creator_name',
+  'fir_no', 'arrest_fir_no', 'missing_fir_no', 'uidb_no',
+  'case_status', 'arrest_case_status', 'missing_status', 'uidb_status', 'final_call_status',
+  'case_local_head', 'arrest_local_head', 'uidb_local_head', 'call_head',
   'data', // nested object — masked separately, never dropped wholesale
 ]);
 

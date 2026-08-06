@@ -115,7 +115,7 @@ export default function HomePage() {
                   <div className="hologram-text-block">
                     <span className="hologram-title glow-text">PRISM</span>
                     <div className="hologram-line" />
-                    <span className="text-sm font-bold">Police Report Intelligence Statistic & Management System</span>
+                    <span className="text-lg font-bold">Police Reporting Intelligence & Statistics Management</span>
                   </div>
                 </div>
 
@@ -164,7 +164,7 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-              
+
             </motion.div>
           </div>
 
