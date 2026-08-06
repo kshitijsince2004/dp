@@ -83,17 +83,36 @@ const ACT_BUCKETS = ['ARMS_ACT', 'EXCISE_ACT', 'NDPS_ACT', 'GAMBLING', 'POCSO_AC
 // Workout = "W/O" in the reference sketch. Heads with no records this period still count
 // (as 0) since the rollup is driven by the full registry, not just active matrix rows.
 export function aggregateCrimeHeadCategories(localHeads = [], matrixRows = []) {
-  const countsByName = new Map(matrixRows.map((row) => [normalize(row.crime_head), row]));
+  const countsByName = new Map(matrixRows.map((row) => [normalize(row.crime_head || row.local_head || row.name), row]));
 
   const totals = { HEINOUS: { reported: 0, workout: 0 }, NON_HEINOUS: { reported: 0, workout: 0 }, OTHER_IPC: { reported: 0, workout: 0 } };
   ACT_BUCKETS.forEach((b) => { totals[b] = { reported: 0, workout: 0 }; });
 
-  localHeads.forEach((headRow) => {
-    const group = getCrimeHeadGroup(headRow);
-    const bucket = totals[group] ? group : 'OTHER_IPC';
-    const matrixRow = countsByName.get(normalize(headRow.label));
-    totals[bucket].reported += matrixRow?.FIR || 0;
-    totals[bucket].workout += matrixRow?.Workout || 0;
+  const processedNorms = new Set();
+
+  if (Array.isArray(localHeads) && localHeads.length > 0) {
+    localHeads.forEach((headRow) => {
+      const norm = normalize(headRow.label || headRow.value);
+      processedNorms.add(norm);
+      const group = getCrimeHeadGroup(headRow);
+      const bucket = totals[group] ? group : 'OTHER_IPC';
+      const matrixRow = countsByName.get(norm);
+      totals[bucket].reported += matrixRow?.FIR || matrixRow?.cases || matrixRow?.reported || matrixRow?.count || 0;
+      totals[bucket].workout += matrixRow?.Workout || matrixRow?.workout || matrixRow?.solved || 0;
+    });
+  }
+
+  // Include any matrixRows not in localHeads (or when localHeads is empty)
+  matrixRows.forEach((row) => {
+    const name = row.crime_head || row.local_head || row.name;
+    const norm = normalize(name);
+    if (!processedNorms.has(norm)) {
+      processedNorms.add(norm);
+      const group = getCrimeHeadGroup({ label: name, crime_category: row.is_heinous ? 'HEINOUS' : undefined });
+      const bucket = totals[group] ? group : 'OTHER_IPC';
+      totals[bucket].reported += (row.FIR || row.cases || row.reported || row.count || 0);
+      totals[bucket].workout += (row.Workout || row.workout || row.solved || 0);
+    }
   });
 
   const totalIpc = {
