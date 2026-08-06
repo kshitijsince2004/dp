@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Building, ShieldAlert, FileCheck, PhoneCall, Filter, ArrowUpRight, ArrowDownRight, Layers
+  Building, ShieldAlert, FileCheck, PhoneCall, Filter, ArrowUpRight, ArrowDownRight, Layers,
+  Clock3, CheckCircle2, ChevronRight, AlertCircle, MapPin
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -15,6 +16,25 @@ import { getCrimeHeadGroup } from '../../utils/crimeHeadGroups.js';
 import { log } from '../../utils/logger.js';
 
 const FILTER_SELECT_CLASS = 'w-full rounded-control border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-[#1A202C] min-h-[38px]';
+
+const typeMeta = {
+  CASE: { bg: 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]', label: 'FIR Case' },
+  ARREST: { bg: 'bg-[#D1FAE5] text-[#059669] border-[#6EE7B7]', label: 'Arrest' },
+  PCR_CALL: { bg: 'bg-[#DBEAFE] text-[#003087] border-[#BFDBFE]', label: 'PCR Call' },
+  MISSING: { bg: 'bg-[#FEE2E2] text-[#DC2626] border-[#FCA5A5]', label: 'Missing' },
+  UIDB: { bg: 'bg-[#F3E8FF] text-[#7C3AED] border-[#DDD6FE]', label: 'UIDB' },
+};
+
+const statusMeta = (status) => {
+  switch (status) {
+    case 'HQ_RECEIVED': return 'bg-[#D1FAE5] text-[#059669] border-[#6EE7B7]';
+    case 'DISTRICT_REVIEW': return 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]';
+    case 'PENDING_SHO': return 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]';
+    case 'SENT_BACK': return 'bg-[#FEE2E2] text-[#DC2626] border-[#FCA5A5]';
+    case 'DRAFT': return 'bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]';
+    default: return 'bg-[#F0F4F9] text-[#4A5568] border-[#E2E8F0]';
+  }
+};
 
 // One color per year-offset-from-current (index 0 = current year), so a given year's
 // line color never repaints when the Duration selection changes. Max 5 lines (Last 5 Years).
@@ -94,6 +114,29 @@ export default function HQDashboard() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [durationPresets, setDurationPresets] = useState([]);
+  const [filterType, setFilterType] = useState('All');
+  const [filterDistrict, setFilterDistrict] = useState('All');
+  const [filterLocalHead, setFilterLocalHead] = useState('All');
+  const [filterDuration, setFilterDuration] = useState('All');
+
+  // Fetch real-time activity feed records
+  const { data: recordsData = [] } = useQuery({
+    queryKey: ['records', 'activity-feed'],
+    queryFn: async () => {
+      log.debug('data:load_start', { what: 'activity_feed_records' });
+      try {
+        const res = await api.get('/records?limit=200');
+        const rows = res.data?.data?.cases || res.data?.data || res.data || [];
+        log.debug('data:load_success', { what: 'activity_feed_records', count: Array.isArray(rows) ? rows.length : 0 });
+        return Array.isArray(rows) ? rows : [];
+      } catch (err) {
+        log.error('data:load_error', { what: 'activity_feed_records', err });
+        return [];
+      }
+    },
+  });
+
+  const records = Array.isArray(recordsData) ? recordsData : [];
 
   useEffect(() => {
     log.debug('page:mount', { route: '/hq', userId: user?.id, role: user?.role });
