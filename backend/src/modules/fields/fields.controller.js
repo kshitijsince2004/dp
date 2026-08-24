@@ -1565,5 +1565,67 @@ export const listRecordTypes = async (req, res) => {
   }
 };
 
+export const listPoliceStationsLookup = async (req, res) => {
+  try {
+    const rows = await db('hierarchy_nodes as ps')
+      .leftJoin('hierarchy_nodes as dist', 'ps.parent_id', 'dist.id')
+      .where('ps.node_type', 'PS')
+      .select(
+        'ps.id',
+        'ps.name',
+        'ps.code',
+        'dist.name as district_name'
+      )
+      .orderBy('dist.name', 'asc')
+      .orderBy('ps.name', 'asc');
+
+    const data = rows.map((r) => ({
+      value: r.id,
+      label: r.district_name ? `${r.name} (${r.district_name})` : r.name,
+      label_en: r.district_name ? `${r.name} (${r.district_name})` : r.name,
+      name: r.name,
+      code: r.code,
+      district: r.district_name,
+    }));
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    log.error('listPoliceStationsLookup: failed', { err: error });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const listAgenciesLookup = async (req, res) => {
+  try {
+    const rows = await db('ref.agencies')
+      .where('is_active', true)
+      .select('id', 'code', 'name', 'category')
+      .orderByRaw(`
+        CASE category
+          WHEN 'INTERNAL' THEN 1
+          WHEN 'STATE' THEN 2
+          WHEN 'NATIONAL' THEN 3
+          WHEN 'INTERNATIONAL' THEN 4
+          ELSE 5
+        END, name ASC
+      `);
+
+    const data = rows.map((r) => ({
+      value: r.id,
+      label: `${r.name} [${r.category}]`,
+      label_en: `${r.name} [${r.category}]`,
+      name: r.name,
+      code: r.code,
+      category: r.category,
+    }));
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    log.error('listAgenciesLookup: failed', { err: error });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
 
 

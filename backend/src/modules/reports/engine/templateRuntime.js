@@ -21,7 +21,12 @@ export async function generateMetadataReport(jobId, template, userFilters, forma
     ? JSON.parse(template.template_definition)
     : template.template_definition;
 
-  const runDateStr = userFilters.date || userFilters.from_date || userFilters.from || new Date().toISOString().split('T')[0];
+  const rawDateStr = userFilters.date || userFilters.from_date || userFilters.from || new Date().toISOString().split('T')[0];
+  let runDateStr = String(rawDateStr).trim();
+  if (/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(runDateStr)) {
+    const parts = runDateStr.split(/[\/-]/);
+    runDateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+  }
   const queryCache = new Map();
   
   // Resolve jurisdiction
@@ -339,10 +344,22 @@ async function renderMatrixSectionHTML(section, runDateStr, jurisdictionQuery, u
   return html;
 }
 
+function formatDateISO(val) {
+  if (!val) return null;
+  const str = String(val).trim();
+  if (/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(str)) {
+    const parts = str.split(/[\/-]/);
+    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+  }
+  return str.split('T')[0];
+}
+
 async function queryRecordsForSection(trx, sectionDef, period, jurisdictionQuery, userFilters) {
   const record_type = sectionDef.record_type || 'CASE';
-  const from = userFilters.dateFrom || userFilters.date_from || userFilters.from || period.from;
-  const to = userFilters.dateTo || userFilters.date_to || userFilters.to || period.to;
+  const rawFrom = userFilters.dateFrom || userFilters.date_from || userFilters.from || period.from;
+  const rawTo = userFilters.dateTo || userFilters.date_to || userFilters.to || period.to;
+  const from = formatDateISO(rawFrom);
+  const to = formatDateISO(rawTo);
 
   let query = trx('records').where({ record_type }).whereBetween('record_date', [from, to]);
 

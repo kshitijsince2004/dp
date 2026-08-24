@@ -26,6 +26,9 @@ import {
   executeJoinedQuery,
   executeMissingUidbCrossMatch,
 } from './queryEngine.js';
+import { runPivotReport } from '../warehouse/pivot-engine.js';
+import { resolveUserScope } from '../warehouse/warehouse.controller.js';
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -605,6 +608,110 @@ export const deleteSavedReport = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// POST /api/reports/builder/saved/:id/run
+// Run a saved pivot report by ID and log usage audit entry.
+// ─────────────────────────────────────────────────────────────────────────────
+export const runSavedReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const uid = userId(req);
+    const role = userRole(req);
+
+    const saved = await db('report_builder_saved').where({ id }).first();
+    if (!saved) {
+      return res.status(404).json({ success: false, message: 'Saved report not found' });
+    }
+
+    const spec = typeof saved.query_spec === 'string' ? JSON.parse(saved.query_spec) : (saved.query_spec || {});
+    const { scopeType, scopeId } = resolveUserScope(req.user);
+
+    const result = await runPivotReport({
+      rows: spec.rows || [],
+      columns: spec.columns || [],
+      measure: spec.measure || 'case_count',
+      filters: spec.filters || {},
+      scopeType,
+      scopeId,
+    });
+
+    // Write audit log entry
+    await writeAuditLog({
+      user_id: uid,
+      user_role: role,
+      run_type: 'SAVED_PIVOT_RUN',
+      table_spec: saved.name,
+      fields_spec: [...(spec.rows || []), ...(spec.columns || [])],
+      filter_spec: spec.filters || {},
+      row_count: result.rowHeaders?.length || 0,
+      ip_address: req.ip || null,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        saved_report: { id: saved.id, name: saved.name, description: saved.description, is_system_preset: !!saved.is_system_preset },
+        pivot: result,
+      },
+    });
+  } catch (err) {
+    logger.error(`[ReportBuilder] runSavedReport error: ${err.message}`);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/reports/builder/quick-access
+// Returns combined saved reports & role-targeted system presets with run counts.
+// ─────────────────────────────────────────────────────────────────────────────
+export const getQuickAccessReports = async (req, res) => {
+  try {
+    const uid = userId(req);
+    const role = userRole(req);
+
+    const allSaved = await db('report_builder_saved').select('*');
+
+    // Filter by ownership or system preset visibility for user's role
+    const filtered = allSaved.filter((r) => {
+      if (r.created_by === uid) return true;
+      if (r.is_system_preset) {
+        if (!r.visible_to_roles) return true;
+        const allowedRoles = typeof r.visible_to_roles === 'string' ? parseJson(r.visible_to_roles, []) : r.visible_to_roles;
+        return Array.isArray(allowedRoles) && allowedRoles.includes(role);
+      }
+      return !!r.is_shared;
+    });
+
+    // Get usage counts from audit table
+    const usageCounts = await db('report_builder_audit')
+      .where('user_id', uid)
+      .select('table_spec')
+      .count('* as runs')
+      .groupBy('table_spec');
+
+    const usageMap = Object.fromEntries(
+      usageCounts.map((u) => [u.table_spec, parseInt(u.runs || 0, 10)])
+    );
+
+    const enriched = filtered.map((r) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      is_system_preset: !!r.is_system_preset,
+      created_by: r.created_by,
+      created_at: r.created_at,
+      spec: parseJson(r.query_spec, {}),
+      run_count: usageMap[r.name] || 0,
+    })).sort((a, b) => b.run_count - a.run_count);
+
+    return res.status(200).json({ success: true, data: enriched });
+  } catch (err) {
+    logger.error(`[ReportBuilder] getQuickAccessReports error: ${err.message}`);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/reports/builder/lookups/:type
 // Returns dropdown options for filter UIs.
 // type: districts | police-stations | crime-heads | case-status | arrestee-status
@@ -620,17 +727,17 @@ export const getLookupValues = async (req, res) => {
 
     switch (type) {
       case 'districts': {
-        let q = db('hierarchy_nodes').where({ node_type: 'DISTRICT', is_active: true }).select('id', 'name_en', 'name_hi', 'code');
+        let q = db('hierarchy_nodes').where({ node_type: 'DISTRICT', is_active: true }).select('id', 'name', 'code');
         if (jurisdictionQuery.district_id) q = q.where('id', jurisdictionQuery.district_id);
-        data = await q.orderBy('name_en');
+        data = await q.orderBy('name');
         break;
       }
       case 'police-stations': {
-        let q = db('hierarchy_nodes').where({ node_type: 'PS', is_active: true }).select('id', 'name_en', 'name_hi', 'code', 'parent_id');
+        let q = db('hierarchy_nodes').where({ node_type: 'PS', is_active: true }).select('id', 'name', 'code', 'parent_id');
         if (jurisdictionQuery.ps_id) q = q.where('id', jurisdictionQuery.ps_id);
         else if (jurisdictionQuery.district_id) q = q.where('parent_id', jurisdictionQuery.district_id);
         if (req.query.district_id) q = q.where('parent_id', req.query.district_id);
-        data = await q.orderBy('name_en');
+        data = await q.orderBy('name');
         break;
       }
       case 'crime-heads': {

@@ -104,25 +104,37 @@ export default function LoginPage() {
       </div>
 
       {/* ── Left Panel: Branding ── */}
-      <div className="login-branding-panel" style={{paddingTop: '100px'}}>
+      <div className="login-branding-panel" style={{paddingTop: '120px'}}>
         <div className="branding-hero-center">
-          <p className="text-xs font-bold text-slate-300 mb-4 tracking-wider">
-            POLICE REPORTING, INTELLIGENCE &amp; STATISTICS MANAGEMENT
+          <p className="text-base sm:text-lg font-black text-amber-400 mb-3 tracking-widest uppercase">
+            Police Reporting, Intelligence &amp; Statistics Management
           </p>
           <p className="branding-desc">
             PRISM enables single-point data entry, automated report generation, hierarchical approvals, and district-wide analytics.
           </p>
           <div className="branding-features-list">
-            <div className="branding-feature-item"><span className="branding-feature-dot" /><span>Hierarchical 5-Tier Data Integration</span></div>
-            <div className="branding-feature-item"><span className="branding-feature-dot" /><span>Daily Morning Diary Compilation for Districts</span></div>
-            <div className="branding-feature-item"><span className="branding-feature-dot" /><span>Interactive Crime Trend Filtering for Headquarters</span></div>
-            <div className="branding-feature-item"><span className="branding-feature-dot" /><span>Fortnightly Command Report Analytics</span></div>
+            <div className="branding-feature-item">
+              <span className="branding-feature-dot" />
+              <span>Hierarchical 5-Tier Data Integration</span>
+            </div>
+            <div className="branding-feature-item">
+              <span className="branding-feature-dot" />
+              <span>Daily Morning Diary Compilation for Districts</span>
+            </div>
+            <div className="branding-feature-item">
+              <span className="branding-feature-dot" />
+              <span>Interactive Crime Trend Filtering for Headquarters</span>
+            </div>
+            <div className="branding-feature-item">
+              <span className="branding-feature-dot" />
+              <span>Fortnightly Command Report Analytics</span>
+            </div>
           </div>
         </div>
 
         <div className="branding-footer">
-          <span>Security Level: Command Authorization Required</span>
-          <span className="branding-motto">SHANTI · SEVA · NYAYA</span>
+          <span className="text-sm font-semibold tracking-wide text-slate-400">Security Level: Command Authorization Required</span>
+          <span className="branding-motto text-sm sm:text-base font-black">SHANTI · SEVA · NYAYA</span>
         </div>
       </div>
 
@@ -156,7 +168,7 @@ export default function LoginPage() {
             transition={{ delay: 0.1, duration: 0.35 }}
             className="login-form-section"
           >
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
 
               <div className="login-form-group">
                 <label htmlFor="login-email">Badge No / Official Email</label>

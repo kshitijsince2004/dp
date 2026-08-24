@@ -1,7 +1,7 @@
 import * as recordsService from './records.service.js';
 import * as workflowEngine from '../workflow/workflow.engine.js';
 import { verifyRecordAccess } from '../../middleware/rbac.middleware.js';
-import { maskRecordData, maskRecordDetails } from '../level-contracts/levelContracts.service.js';
+import { maskRecordData, maskRecordDataBatch, maskRecordDetails } from '../level-contracts/levelContracts.service.js';
 import { toISO } from '../../utils/dateFormat.js';
 import { getLogger } from '../../utils/logger.js';
 import { redact } from '../../utils/redact.js';
@@ -37,9 +37,7 @@ export const getRecords = async (req, res) => {
       },
       req.jurisdictionQuery
     );
-    const maskedRecords = await Promise.all(
-      records.map(record => maskRecordData(record, req.user))
-    );
+    const maskedRecords = await maskRecordDataBatch(records, req.user);
     log.info('getRecords: exit', { type, resultCount: maskedRecords.length, userId: req.user?.id });
     return res.status(200).json({ success: true, data: { cases: maskedRecords } }); // named cases for UI compatibility
   } catch (error) {
@@ -84,6 +82,16 @@ export const create = async (req, res) => {
   if (!record_type || !record_date || !data) {
     log.warn('create: rejected — missing record_type/record_date/data', { record_type, record_date, hasData: !!data });
     return res.status(400).json({ success: false, message: 'record_type, record_date, and data block are required' });
+  }
+
+  // G2 defence-in-depth (Kalandra safety) — mirrors import.compose.js. If the data block
+  // carries is_dd_based=true (stamped by DynamicForm for caseType=kalandra), clear fir_no
+  // so linkResolver never auto-links a standalone DD arrest to a CASE. Applied here rather
+  // than inside the service so the sanitised value is what the mapper/registry writes.
+  if (record_type === 'ARREST' && data.is_dd_based === true) {
+    delete data.fir_no;
+    delete data.fir_date;
+    log.debug('create: G2 Kalandra guard applied — fir_no/fir_date stripped from is_dd_based record', { record_type });
   }
 
   try {
@@ -276,9 +284,7 @@ export const getQueue = async (req, res) => {
       },
       req.jurisdictionQuery
     );
-    const maskedRecords = await Promise.all(
-      records.map(record => maskRecordData(record, req.user))
-    );
+    const maskedRecords = await maskRecordDataBatch(records, req.user);
     log.info('getQueue: exit', { role: req.user?.role, resultCount: maskedRecords.length, userId: req.user?.id });
     return res.status(200).json({ success: true, data: { queue: maskedRecords } });
   } catch (error) {
@@ -391,9 +397,7 @@ export const searchRecords = async (req, res) => {
       filter_spec,
       req.jurisdictionQuery
     );
-    const maskedRecords = await Promise.all(
-      records.map(record => maskRecordData(record, req.user))
-    );
+    const maskedRecords = await maskRecordDataBatch(records, req.user);
     log.info('searchRecords: exit', { record_type, resultCount: maskedRecords.length, userId: req.user?.id });
     return res.status(200).json({ success: true, data: { cases: maskedRecords } });
   } catch (error) {

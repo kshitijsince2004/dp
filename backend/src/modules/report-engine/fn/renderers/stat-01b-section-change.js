@@ -11,9 +11,18 @@ export function renderStat01B(workbook, _scope, calcData) {
 
   for (const [rStr, code] of Object.entries(rowMap)) {
     const r = Number(rStr);
-    ws.getCell(`C${r}`).value = g(code, 'fnY');
-    ws.getCell(`D${r}`).value = g(code, 'uptoY');
-    ws.getCell(`E${r}`).value = 0;
-    ws.getCell(`F${r}`).value = 0;
+    const fnY = g(code, 'fnY');
+    const uptoY = g(code, 'uptoY');
+    if (fnY > 0 || uptoY > 0) {
+      ws.getCell(`C${r}`).value = fnY;
+      ws.getCell(`D${r}`).value = uptoY;
+      ws.getCell(`E${r}`).value = 0;
+      ws.getCell(`F${r}`).value = 0;
+    } else {
+      ws.getCell(`C${r}`).value = null;
+      ws.getCell(`D${r}`).value = null;
+      ws.getCell(`E${r}`).value = null;
+      ws.getCell(`F${r}`).value = null;
+    }
   }
 }

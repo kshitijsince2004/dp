@@ -155,44 +155,44 @@ export default function IOManagement() {
       ) : (
         <div className="border border-slate-200 bg-white rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse text-sm sm:text-base">
               <thead>
-                <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 tracking-wider">
-                  <th className="p-3.5 pl-5">Name</th>
-                  <th className="p-3.5">Rank</th>
-                  <th className="p-3.5">PIS No.</th>
-                  <th className="p-3.5">Mobile</th>
-                  <th className="p-3.5">Status</th>
-                  <th className="p-3.5 pr-5 text-right">Actions</th>
+                <tr className="bg-slate-50 text-slate-750 font-bold border-b border-slate-200 tracking-wider">
+                  <th className="p-4 pl-5">Name</th>
+                  <th className="p-4">Rank</th>
+                  <th className="p-4">PIS No.</th>
+                  <th className="p-4">Mobile</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 pr-5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-600">
+              <tbody className="divide-y divide-slate-100 text-slate-700">
                 {ios.map((io) => (
                   <tr key={io.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-3.5 pl-5 font-semibold text-slate-750">{io.name}</td>
-                    <td className="p-3.5 text-slate-500">{io.rank || '—'}</td>
-                    <td className="p-3.5 font-mono text-slate-500">{io.pis_no || '—'}</td>
-                    <td className="p-3.5 font-mono text-slate-500">{io.mobile || '—'}</td>
-                    <td className="p-3.5">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    <td className="p-4 pl-5 font-bold text-slate-900">{io.name}</td>
+                    <td className="p-4 text-slate-600 font-medium">{io.rank || '—'}</td>
+                    <td className="p-4 font-mono font-semibold text-slate-700">{io.pis_no || '—'}</td>
+                    <td className="p-4 font-mono font-semibold text-slate-700">{io.mobile || '—'}</td>
+                    <td className="p-4">
+                      <span className={`text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg border ${
                         io.is_active
-                          ? 'bg-emerald-50 text-emerald-600 border-emerald-250'
-                          : 'bg-red-50 text-red-600 border-red-200'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                          : 'bg-red-50 text-red-700 border-red-300'
                       }`}>
                         {io.is_active ? 'ACTIVE' : 'INACTIVE'}
                       </span>
                     </td>
-                    <td className="p-3.5 pr-5 text-right space-x-1.5 whitespace-nowrap">
+                    <td className="p-4 pr-5 text-right space-x-2 whitespace-nowrap">
                       <button
                         onClick={() => toggleActiveMutation.mutate({ id: io.id, is_active: io.is_active })}
                         disabled={toggleActiveMutation.isPending}
-                        className={`p-1.5 rounded transition-all cursor-pointer inline-flex items-center gap-1 text-[11px] font-semibold border ${
+                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold border ${
                           io.is_active
-                            ? 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200'
-                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200'
+                            ? 'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
+                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
                         }`}
                       >
-                        {io.is_active ? <UserX size={12} /> : <UserCheck size={12} />}
+                        {io.is_active ? <UserX size={14} /> : <UserCheck size={14} />}
                         <span>{io.is_active ? 'Deactivate' : 'Activate'}</span>
                       </button>
                       <button
@@ -200,10 +200,10 @@ export default function IOManagement() {
                           if (window.confirm(`Remove ${io.name} from the roster?`)) deleteMutation.mutate(io.id);
                         }}
                         disabled={deleteMutation.isPending}
-                        className="p-1.5 rounded bg-slate-105 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 transition-all cursor-pointer inline-flex items-center"
-                        title="Remove"
+                        className="p-2 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 transition-all cursor-pointer inline-flex items-center"
+                        title="Remove IO"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                       </button>
                     </td>
                   </tr>

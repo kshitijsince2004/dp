@@ -63,7 +63,7 @@ const STATUS_BAR = {
 
 export default function AnalyticsDashboard() {
   const { user, jurisdiction } = useAuthStore();
-  const [period, setPeriod] = useState('weekly');
+  const [period, setPeriod] = useState('monthly');
 
   useEffect(() => {
     log.debug('page:mount', { route: '/analytics', userId: user?.id, role: user?.role });

@@ -126,7 +126,9 @@ export const AppRouter = () => (
               <Route path="/sho/investigating-officers" element={<IOManagement />} />
             </Route>
             <Route path="/district" element={<DistrictDashboard />} />
-            <Route path="/compile" element={<CompilationUI />} />
+            <Route element={<ProtectedRoute roles={['PS', 'HC', 'SHO', 'ACP', 'DISTRICT', 'DISTRICT_OFFICER', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN']} />}>
+              <Route path="/compile" element={<CompilationUI />} />
+            </Route>
             <Route path="/hq" element={<HQDashboard />} />
             <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/reports" element={<ReportsPage />} />
@@ -136,10 +138,18 @@ export const AppRouter = () => (
             <Route element={<ProtectedRoute roles={['SYSTEM_ADMIN', 'HQ_ADMIN', 'SHO', 'DISTRICT_OFFICER', 'HQ_ANALYST']} />}>
               <Route path="/admin/users" element={<Users />} />
             </Route>
-            <Route path="/admin/hierarchy" element={<HierarchyManager />} />
-            <Route path="/admin/fields" element={<FieldManager />} />
-            <Route path="/admin/audit" element={<AuditPage />} />
-            <Route path="/admin/level-contracts" element={<LevelContractsPage />} />
+            <Route element={<ProtectedRoute roles={['SYSTEM_ADMIN', 'HQ_ADMIN']} />}>
+              <Route path="/admin/hierarchy" element={<HierarchyManager />} />
+            </Route>
+            <Route element={<ProtectedRoute roles={['SYSTEM_ADMIN', 'HQ_ADMIN', 'DISTRICT_OFFICER']} />}>
+              <Route path="/admin/fields" element={<FieldManager />} />
+            </Route>
+            <Route element={<ProtectedRoute roles={['SYSTEM_ADMIN', 'HQ_ADMIN', 'DISTRICT_OFFICER', 'HQ_ANALYST']} />}>
+              <Route path="/admin/audit" element={<AuditPage />} />
+            </Route>
+            <Route element={<ProtectedRoute roles={['SYSTEM_ADMIN', 'HQ_ADMIN']} />}>
+              <Route path="/admin/level-contracts" element={<LevelContractsPage />} />
+            </Route>
             {/* Bulk import: HC/DISTRICT_OFFICER are the only roles the backend lets validate/
                 confirm/list batches (import.router.js allow('HC','DISTRICT_OFFICER'));
                 SYSTEM_ADMIN kept for admin visibility/debugging parity with other admin pages. */}

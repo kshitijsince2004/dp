@@ -45,10 +45,13 @@ router.get('/export/:jobId', ctrl.getExportStatus);
 // POST /api/reports/builder/saved         — create a new saved template
 // PUT  /api/reports/builder/saved/:id     — update
 // DEL  /api/reports/builder/saved/:id     — delete
+router.get('/quick-access', ctrl.getQuickAccessReports);
 router.get('/saved',     ctrl.listSavedReports);
 router.post('/saved',    ctrl.createSavedReport);
+router.post('/saved/:id/run', ctrl.runSavedReport);
 router.put('/saved/:id', ctrl.updateSavedReport);
 router.delete('/saved/:id', ctrl.deleteSavedReport);
+
 
 // ── Lookup Dropdowns ──────────────────────────────────────────────────────────
 // GET /api/reports/builder/lookups/:type

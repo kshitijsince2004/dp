@@ -699,7 +699,7 @@ export default function DynamicForm({
                         }
                       }}
                       placeholder={lang === 'hi' ? 'उदा. 379 या 34' : 'e.g. 379 or 34'}
-                      className="flex-1 bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all"
+                      className="flex-1 bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2 rounded-xl outline-none focus:border-blue-600 transition-all"
                     />
                     <button
                       type="button"
@@ -727,10 +727,10 @@ export default function DynamicForm({
   const renderArrestGeneralInfoStep = () => {
     const renderReadOnlyRow = (label, val, isFirst = false, isLast = false) => (
       <React.Fragment>
-        <div className={`bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center min-h-[40px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''} ${isFirst ? 'rounded-tl' : ''}`}>
+        <div className={`bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center min-h-[44px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''} border-r border-[#c7d8ea]`}>
           {label}
         </div>
-        <div className={`px-3 py-1 bg-white text-slate-700 text-[12px] flex items-center min-h-[40px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''} ${isFirst ? 'rounded-tr' : ''}`}>
+        <div className={`px-4 py-2.5 bg-white text-slate-700 text-sm sm:text-base font-medium flex items-center min-h-[44px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
           {val || '—'}
         </div>
       </React.Fragment>
@@ -739,7 +739,7 @@ export default function DynamicForm({
     return (
       <div className="space-y-4">
         {/* Top card fields */}
-        <div className="grid grid-cols-[220px_1fr] rounded overflow-visible mt-2">
+        <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] border-2 border-[#7a9cc5] rounded-2xl overflow-hidden shadow-sm bg-white mt-2">
           {renderReadOnlyRow(fieldLabel('uid') || (lang === 'hi' ? 'रिकॉर्ड यूआईडी (UID)' : 'Record UID'), values.uid || 'NEW_DRAFT_PENDING', true)}
           {renderReadOnlyRow(fieldLabel('district') || (lang === 'hi' ? 'जिला' : 'District'), values.district || user?.district)}
           {renderReadOnlyRow(fieldLabel('police_station') || (lang === 'hi' ? 'थाना' : 'Police Station'), values.police_station || user?.police_station)}
@@ -747,10 +747,10 @@ export default function DynamicForm({
 
           {/* Case Type field */}
           <React.Fragment>
-            <div className="bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center border-b border-[#c7d8ea] min-h-[40px]">
+            <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-b border-r border-[#c7d8ea] min-h-[44px]">
               {fieldLabel('case_type') || (lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE')}
             </div>
-            <div className="px-3 py-1 bg-white flex items-center border-b border-[#c7d8ea] min-h-[40px]">
+            <div className="px-4 py-2 bg-white flex items-center border-b border-[#c7d8ea] min-h-[44px]">
               <div className="w-full max-w-md">
                 <FieldRenderer
                   field={allSchemaFields.find(f => f.field_key === 'case_type')}
@@ -767,11 +767,11 @@ export default function DynamicForm({
 
           {/* GD Number, Date & Time */}
           <React.Fragment>
-            <div className="bg-[#dfeaf5] px-3 py-2 text-[12px] font-semibold text-[#0d2a4a] flex items-center min-h-[40px] rounded-bl">
+            <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-r border-[#c7d8ea] min-h-[44px]">
               {(fieldLabel('gd_no') || (lang === 'hi' ? 'जीडी नंबर, दिनांक और समय' : 'GD Number, Date & Time'))}
               {isFieldRequired('gd_no') && <span className="text-red-500 font-bold">{' *'}</span>}
             </div>
-            <div className="px-3 py-1 bg-white flex items-center gap-2 min-h-[40px] relative rounded-br">
+            <div className="px-4 py-2 bg-white flex items-center gap-3 min-h-[44px] relative">
               <FieldRenderer
                 field={allSchemaFields.find(f => f.field_key === 'gd_no')}
                 value={values.gd_no}
@@ -790,23 +790,22 @@ export default function DynamicForm({
     );
   };
 
-
   const renderActsAndSectionsStep = () => {
     const allFields = deepFlattenSchema(schema);
 
     return (
       <div className="space-y-3">
-        {/* Main Table for GD and Complaint details */}
-        <div className="rounded overflow-visible">
+        {/* Main Card for GD and Complaint details */}
+        <div className="rounded-2xl border-2 border-[#7a9cc5] overflow-hidden shadow-sm bg-white">
           <table className="w-full border-collapse">
             <tbody>
               {/* Row 1: GD/SD/DD Number / Date / Time */}
               <tr className="border-b border-[#7a9cc5]">
-                <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
-                  {fieldLabel('gd_no') || 'GD/SD/DD Number / Date / Time'} {isFieldRequired('gd_no') && <span className="text-red-500">*</span>}
+                <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-sm sm:text-base font-bold px-4 py-2 border-r border-[#7a9cc5] align-middle">
+                  {fieldLabel('gd_no') || 'GD/SD/DD Number / Date / Time'} <span className="text-red-500 font-bold">*</span>
                 </td>
-                <td className="w-2/3 bg-white px-2.5 py-1" style={{ position: 'relative' }}>
-                  <div className="flex items-center gap-2 max-w-[482px]">
+                <td className="w-2/3 bg-white px-4 py-2" style={{ position: 'relative' }}>
+                  <div className="flex items-center gap-3 w-full max-w-2xl">
                     <FieldRenderer
                       field={allFields.find(f => f.field_key === 'gd_no')}
                       value={values.gd_no}
@@ -821,11 +820,11 @@ export default function DynamicForm({
 
               {/* Row: Case Registration Type */}
               <tr className="border-b border-[#7a9cc5]">
-                <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
+                <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-sm sm:text-base font-medium px-4 py-2 border-r border-[#7a9cc5] align-middle">
                   {fieldLabel('case_type') || (lang === 'hi' ? 'मामला पंजीकरण प्रकार' : 'Case Registration Type')}
                 </td>
-                <td className="w-2/3 bg-white px-2.5 py-1">
-                  <div className="w-64">
+                <td className="w-2/3 bg-white px-4 py-2">
+                  <div className="w-full max-w-md">
                     <FieldRenderer
                       field={allFields.find(f => f.field_key === 'case_type')}
                       value={values.case_type || ''}
@@ -834,19 +833,17 @@ export default function DynamicForm({
                       error={touched.case_type ? errors.case_type : null}
                       lang={lang}
                       values={values}
-                      selectVariant="compact"
-                      selectClassName="w-64 h-7 px-2 border border-[#7a9cc5] rounded bg-white text-[12px] outline-none focus:border-blue-500 cursor-text"
                     />
                   </div>
                 </td>
               </tr>
 
               <tr className="border-b border-[#7a9cc5]">
-                <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
+                <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-sm sm:text-base font-medium px-4 py-2 border-r border-[#7a9cc5] align-middle">
                   {fieldLabel('fir_no') || 'Complaint No.'}
                 </td>
-                <td className="w-2/3 bg-white px-2.5 py-1" style={{ position: 'relative' }}>
-                  <div className="flex items-center gap-2 max-w-[483px]">
+                <td className="w-2/3 bg-white px-4 py-2" style={{ position: 'relative' }}>
+                  <div className="flex items-center gap-3 w-full max-w-2xl">
                     <FieldRenderer
                       field={allFields.find(f => f.field_key === 'fir_no')}
                       value={values.fir_no}
@@ -861,22 +858,21 @@ export default function DynamicForm({
               </tr>
 
               <tr>
-                <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-[11px] font-bold px-2.5 py-1 border-r border-[#7a9cc5] align-middle">
-                  {fieldLabel('source_reference') || 'Source / Reference of Complaint'} <span className="text-red-500">*</span>
+                <td className="w-1/3 bg-[#d0e0f8] text-[#0d2a4a] text-sm sm:text-base font-bold px-4 py-2 border-r border-[#7a9cc5] align-middle">
+                  {fieldLabel('source_reference') || 'Source / Reference of Complaint'} <span className="text-red-500 font-bold">*</span>
                 </td>
-                <td className="w-2/3 bg-white px-2.5 py-1">
-                  <FieldRenderer
-                    field={allFields.find(f => f.field_key === 'source_reference')}
-                    value={values.source_reference}
-                    handleChange={handleChange}
-                    values={values}
-                    readOnly={readOnly}
-                    lang={lang}
-                    error={touched.source_reference ? errors.source_reference : null}
-                    selectVariant="compact"
-                    selectClassName="w-64 h-6 px-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-pointer"
-                    selectPlaceholder="Select an option"
-                  />
+                <td className="w-2/3 bg-white px-4 py-2">
+                  <div className="w-full max-w-md">
+                    <FieldRenderer
+                      field={allFields.find(f => f.field_key === 'source_reference')}
+                      value={values.source_reference}
+                      handleChange={handleChange}
+                      values={values}
+                      readOnly={readOnly}
+                      lang={lang}
+                      error={touched.source_reference ? errors.source_reference : null}
+                    />
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -891,12 +887,7 @@ export default function DynamicForm({
   const renderOccurrenceStep = () => {
     const sectionFields = activeSection?.fields || [];
     const occInfoFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type !== 'RADIO');
-    // Place-of-occurrence = every address field with sort_order >= 3 (house_no 3 … police_station
-    // 3.9, then pincode 4, latitude 4.1, longitude 4.2). The old `< 4` upper cap silently dropped
-    // occurrence_pincode / occurrence_latitude / occurrence_longitude from the form entirely
-    // (they exist in config + DB but never rendered). No occurrence field has sort_order >= 5.
     const occPlaceFields = sectionFields.filter(f => f.sort_order >= 3);
-
     const occRadioFields = sectionFields.filter(f => f.sort_order < 3 && f.field_type === 'RADIO');
 
     const renderFieldRow = (field, isLast = false) => {
@@ -907,11 +898,11 @@ export default function DynamicForm({
       const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
       return (
         <React.Fragment key={key}>
-          <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <div className={`bg-[#dfeaf5] px-4 py-2 text-sm sm:text-base text-[#0d2a4a] flex items-center gap-1.5 border-r border-[#c7d8ea] ${isRequired ? 'font-bold' : 'font-medium'} ${!isLast ? 'border-b' : ''}`}>
             <span>{label}</span>
             {isRequired && <span className="text-red-500 font-bold">*</span>}
           </div>
-          <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <div className={`px-4 py-1.5 bg-white flex items-center min-h-[40px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <FieldRenderer field={field} value={values[key]} onChange={handleChange} readOnly={isDisabled} error={touched[key] ? errors[key] : null} lang={lang} values={values} />
           </div>
         </React.Fragment>
@@ -919,44 +910,49 @@ export default function DynamicForm({
     };
 
     return (
-      <div className="grid grid-cols-2 gap-4 text-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm sm:text-base">
         {/* LEFT COLUMN */}
         <div className="space-y-3">
           {/* OCCURRENCE INFORMATION — driven by backend fields with sort_order < 3 */}
-          <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+          <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3.5 bg-[#f0f4f8]/20 shadow-sm">
+            <legend className="px-2.5 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base tracking-wide">
               {lang === 'hi' ? 'घटना की जानकारी' : 'Occurrence Information'}
             </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm">
               {occInfoFields.map((f, i) => renderFieldRow(f, i === occInfoFields.length - 1))}
             </div>
           </fieldset>
 
-          {occRadioFields.map((radioField) => (
-            <fieldset key={radioField.field_key} className={`border rounded px-2 py-3 ${touched[radioField.field_key] && errors[radioField.field_key] ? 'border-red-400 bg-red-50' : 'border-[#7a9cc5]'}`}>
-              <div className="flex items-center gap-6 text-[12px]">
-                <span className="font-medium">
-                  {lang === 'hi' ? (radioField.label_hi || radioField.label_en) : radioField.label_en}
-                  {!!parseRules(radioField.validation_rules).required && <span className="text-red-500 font-bold ml-0.5">*</span>}
-                </span>
-                {getFieldOptions(sectionFields, radioField.field_key).map((opt) => (
-                  <label key={opt.value} className="flex items-center gap-1">
-                    <input type="radio" checked={values?.[radioField.field_key] === opt.value} onChange={() => handleChange(radioField.field_key, opt.value)} />
-                    {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          ))}
+          {occRadioFields.map((radioField) => {
+            const isReq = !!parseRules(radioField.validation_rules).required;
+            return (
+              <fieldset key={radioField.field_key} className={`border-2 rounded-2xl p-3 shadow-sm ${touched[radioField.field_key] && errors[radioField.field_key] ? 'border-red-400 bg-red-50' : 'border-[#7a9cc5] bg-[#f0f4f8]/20'}`}>
+                <div className="flex items-center gap-6 text-sm sm:text-base">
+                  <span className={`text-[#0d2a4a] ${isReq ? 'font-bold' : 'font-medium'}`}>
+                    {lang === 'hi' ? (radioField.label_hi || radioField.label_en) : radioField.label_en}
+                    {isReq && <span className="text-red-500 font-bold ml-1">*</span>}
+                  </span>
+                  <div className="flex items-center gap-4">
+                    {getFieldOptions(sectionFields, radioField.field_key).map((opt) => (
+                      <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700">
+                        <input type="radio" checked={values?.[radioField.field_key] === opt.value} onChange={() => handleChange(radioField.field_key, opt.value)} className="w-4 h-4 accent-[#0f52ba] cursor-pointer" />
+                        {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </fieldset>
+            );
+          })}
         </div>
 
-        {/* RIGHT COLUMN — Place of Occurrence driven by backend address fields (sort_order >= 3: address 3.x + pincode/lat/long 4.x) */}
+        {/* RIGHT COLUMN — Place of Occurrence */}
         <div>
-          <fieldset className="border border-[#7a9cc5] rounded px-2 py-2 h-full">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+          <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3.5 bg-[#f0f4f8]/20 h-full shadow-sm">
+            <legend className="px-2.5 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base tracking-wide">
               {lang === 'hi' ? 'घटनास्थल' : 'Place of Occurrence'}
             </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm">
               {occPlaceFields.map((f, i) => renderFieldRow(f, i === occPlaceFields.length - 1))}
             </div>
           </fieldset>
@@ -977,7 +973,6 @@ export default function DynamicForm({
     const cfg = PERSON_TAB_VARIANTS[prefix];
     const extraRequired = prefix === 'complainant' ? [] : [`${prefix}_first_name`, `${prefix}_gender`];
 
-
     const field = (key, customLabel = null, isLast = false, forceReadOnly = false, extraRequiredKeys = []) => {
       const f = allFields.find((x) => x.field_key === key);
       if (!f) return null;
@@ -987,11 +982,11 @@ export default function DynamicForm({
       const isDisabled = forceReadOnly || readOnly || f.readonly === true || f.readonly === 'true';
       return (
         <React.Fragment key={key}>
-          <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <div className={`bg-[#dfeaf5] px-4 py-2 text-sm sm:text-base text-[#0d2a4a] flex items-center gap-1.5 border-r border-[#c7d8ea] ${isRequired ? 'font-bold' : 'font-medium'} ${!isLast ? 'border-b' : ''}`}>
             <span>{label}</span>
             {isRequired && <span className="text-red-500 font-bold">*</span>}
           </div>
-          <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <div className={`px-4 py-1.5 bg-white flex items-center min-h-[40px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <FieldRenderer
               field={f}
               value={valuesObj[key]}
@@ -1019,12 +1014,12 @@ export default function DynamicForm({
     );
 
     return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
 
-          {/* Left Column - Personal Info (no border outline) */}
+          {/* Left Column - Personal Info */}
           <div className="space-y-3">
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
+            <div className="grid grid-cols-[220px_1fr] border-2 border-[#7a9cc5] rounded-2xl overflow-hidden shadow-sm bg-white">
               {field(`${prefix}_npr`, lang === 'hi' ? 'यूआईडी (UID)' : 'UID')}
               {field(`${prefix}_first_name`, null, false, false, extraRequired)}
               {field(`${prefix}_middle_name`)}
@@ -1040,17 +1035,17 @@ export default function DynamicForm({
           </div>
 
           {/* Right Column - Gender, Marital Status, Mobile, Email, extra */}
-          <div className="border border-[#7a9cc5] rounded px-2 py-2 self-start">
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea]">
+          <div className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm self-start">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm">
               {field(`${prefix}_gender`, null, false, false, extraRequired)}
 
               {/* Mobile number with country code */}
               <React.Fragment>
-                <div className="bg-[#dfeaf5] px-2 py-2 border-b text-[12px] font-medium flex items-center gap-1">
+                <div className="bg-[#dfeaf5] px-4 py-2 border-b border-r border-[#c7d8ea] text-sm sm:text-base font-medium text-[#0d2a4a] flex items-center gap-1.5">
                   <span>{lang === 'hi' ? 'मोबाइल नंबर' : 'Mobile No.'}</span>
                 </div>
-                <div className="px-2 py-1 border-b flex gap-1.5 items-center">
-                  <div className="w-14">{rawField(`${prefix}_mobile_country_code`, '+91')}</div>
+                <div className="px-4 py-1.5 bg-white border-b border-[#c7d8ea] flex gap-2 items-center min-h-[40px]">
+                  <div className="w-20">{rawField(`${prefix}_mobile_country_code`, '+91')}</div>
                   <div className="flex-1">{rawField(`${prefix}_mobile`)}</div>
                 </div>
               </React.Fragment>
@@ -1071,39 +1066,51 @@ export default function DynamicForm({
         </div>
 
         {/* Bottom part */}
-        <div className="grid grid-cols-2 gap-4 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
 
           {/* Relation Details */}
-          <div className="border border-[#7a9cc5] rounded px-2 py-2 self-start">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+          <div className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm self-start">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base tracking-wide">
               {lang === 'hi' ? 'रिश्तेदार का विवरण' : 'Relative Details'}
             </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm mt-2">
               {field(`${prefix}_relation_type`)}
               {field(`${prefix}_relative_name`, null, true)}
             </div>
           </div>
 
           {/* Age Panel */}
-          <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+          <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base tracking-wide">
               {lang === 'hi' ? 'आयु विवरण' : 'Age Panel'}
             </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] mt-2">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm mt-2">
               {field(`${prefix}_dob`)}
 
               {/* Age (Year / Month) */}
               <React.Fragment>
-                <div className="bg-[#dfeaf5] px-2 py-2 border-b text-[12px] font-medium flex items-center gap-1">
+                <div className="bg-[#dfeaf5] px-4 py-2 border-b border-r border-[#c7d8ea] text-sm sm:text-base font-medium text-[#0d2a4a] flex items-center gap-1.5">
                   <span>{lang === 'hi' ? 'आयु (वर्ष / महीने)' : 'Age (Year / Month)'}</span>
                 </div>
-                <div className="px-2 py-1 border-b flex gap-2">
+                <div className="px-4 py-1.5 bg-white border-b border-[#c7d8ea] flex gap-2 min-h-[40px] items-center">
                   <div className="flex-1">{rawField(`${prefix}_age_year`)}</div>
                   <div className="flex-1">{rawField(`${prefix}_age_month`)}</div>
                 </div>
               </React.Fragment>
 
               {field(`${prefix}_birth_year`, null, true)}
+            </div>
+          </fieldset>
+
+          {/* Demographic & Socio-Economic Details */}
+          <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm col-span-1 lg:col-span-2">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base tracking-wide">
+              {lang === 'hi' ? 'सामाजिक एवं आर्थिक विवरण' : 'Demographic & Socio-Economic Details'}
+            </legend>
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm mt-2">
+              {field(`${prefix}_social_category`, lang === 'hi' ? 'सामाजिक श्रेणी' : 'Social Category')}
+              {field(`${prefix}_education`, lang === 'hi' ? 'शिक्षा' : 'Education')}
+              {field(`${prefix}_financial_status`, lang === 'hi' ? 'वित्तीय स्थिति' : 'Financial Status', true)}
             </div>
           </fieldset>
 
@@ -1124,11 +1131,11 @@ export default function DynamicForm({
       const isDisabled = forceReadOnly || readOnly || f.readonly === true || f.readonly === 'true';
       return (
         <React.Fragment key={key}>
-          <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <div className={`bg-[#dfeaf5] px-4 py-2 text-sm sm:text-base text-[#0d2a4a] flex items-center gap-1.5 border-r border-[#c7d8ea] ${isRequired ? 'font-bold' : 'font-medium'} ${!isLast ? 'border-b' : ''}`}>
             <span>{label}</span>
             {isRequired && <span className="text-red-500 font-bold">*</span>}
           </div>
-          <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <div className={`px-4 py-1.5 bg-white flex items-center min-h-[40px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <FieldRenderer
               field={f}
               value={valuesObj[key]}
@@ -1144,23 +1151,23 @@ export default function DynamicForm({
     };
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-3">
 
         {/* PRESENT ADDRESS PANEL */}
-        <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+        <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm">
+          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
             {lang === 'hi' ? 'वर्तमान पता' : 'Present Address'}
           </legend>
 
-          <div className="grid grid-cols-2 gap-4 mt-2">
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-1.5">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
               {field(`${prefix}_house_no`)}
               {field(`${prefix}_street`)}
               {field(`${prefix}_colony`)}
               {field(`${prefix}_city_town_village`)}
               {field(`${prefix}_tehsil_block_mandal`, null, true)}
             </div>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
+            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
               {field(`${prefix}_country`)}
               {field(`${prefix}_state`)}
               {field(`${prefix}_district`)}
@@ -1171,15 +1178,15 @@ export default function DynamicForm({
         </fieldset>
 
         {/* PERMANENT ADDRESS PANEL */}
-        <fieldset className="border border-[#7a9cc5] rounded px-2 py-2">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+        <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm">
+          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
             {lang === 'hi' ? 'स्थायी पता' : 'Permanent Address'}
           </legend>
 
           {/* Same as present toggle */}
-          <div className="bg-[#dfeaf5]/50 border border-[#c7d8ea] px-3 py-2 flex items-center justify-between mb-4 text-xs font-semibold rounded">
+          <div className="bg-[#dfeaf5] border border-[#c7d8ea] px-3.5 py-1.5 flex items-center justify-between mb-2 text-xs sm:text-sm font-bold text-[#0d2a4a] rounded-xl shadow-sm">
             <span>{lang === 'hi' ? 'क्या स्थायी पता वर्तमान पते के समान है?' : 'Is Permanent Address same as Present Address?'}</span>
-            <div className="w-24">
+            <div className="w-32">
               <FieldRenderer
                 field={allFields.find((x) => x.field_key === `${prefix}_perm_same`)}
                 value={valuesObj[`${prefix}_perm_same`]}
@@ -1190,16 +1197,15 @@ export default function DynamicForm({
               />
             </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+            <div className="grid grid-cols-[240px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
               {field(`${prefix}_perm_house_no`, null, false, isSame)}
               {field(`${prefix}_perm_street`, null, false, isSame)}
               {field(`${prefix}_perm_colony`, null, false, isSame)}
               {field(`${prefix}_perm_city_town_village`, null, false, isSame)}
               {field(`${prefix}_perm_tehsil_block_mandal`, null, true, isSame)}
             </div>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] self-start">
+            <div className="grid grid-cols-[240px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
               {field(`${prefix}_perm_country`, null, false, isSame)}
               {field(`${prefix}_perm_state`, null, false, isSame)}
               {field(`${prefix}_perm_district`, null, false, isSame)}
@@ -1242,13 +1248,13 @@ export default function DynamicForm({
 
         {/* Header bar with "+ Add Victim" button at top-right */}
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
+          <h3 className="text-base sm:text-lg font-bold text-[#0d2a4a] uppercase tracking-wide">
             {lang === 'hi' ? `पीड़ित सूची (${victims.length})` : `Victim List (${victims.length})`}
           </h3>
           <button
             type="button"
             onClick={openVictimAddModal}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] transition-colors cursor-pointer"
           >
             <span className="text-base leading-none">+</span>
             {lang === 'hi' ? 'पीड़ित जोड़ें' : 'Add Victim'}
@@ -1256,41 +1262,41 @@ export default function DynamicForm({
         </div>
 
         {/* Summary Table */}
-        <div className="border border-[#7a9cc5] rounded overflow-hidden">
-          <table className="w-full text-xs">
+        <div className="border-2 border-[#7a9cc5] rounded-xl overflow-hidden shadow-sm">
+          <table className="w-full text-sm sm:text-base">
             <thead>
               <tr className="bg-[#0d2a4a] text-white">
-                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
-                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
-                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
-                <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
+                <th className="px-4 py-2.5 text-left w-16 font-bold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
+                <th className="px-4 py-2.5 text-left font-bold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
+                <th className="px-4 py-2.5 text-left font-bold">{lang === 'hi' ? 'पता' : 'Address'}</th>
+                <th className="px-4 py-2.5 text-center w-32 font-bold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
               </tr>
             </thead>
             <tbody>
               {victims.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
+                  <td colSpan={4} className="px-4 py-6 text-center text-slate-400 italic text-sm">
                     {lang === 'hi' ? 'कोई पीड़ित नहीं जोड़ा गया। "+ पीड़ित जोड़ें" पर क्लिक करें।' : 'No victims added yet. Click "+ Add Victim" to add.'}
                   </td>
                 </tr>
               ) : (
                 victims.map((victim, idx) => (
                   <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
-                    <td className="px-3 py-2 font-medium">{idx + 1}</td>
-                    <td className="px-3 py-2">{getVictimName(victim)}</td>
-                    <td className="px-3 py-2 text-slate-600">{getVictimAddress(victim)}</td>
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-4 py-2.5 font-bold text-[#0d2a4a]">{idx + 1}</td>
+                    <td className="px-4 py-2.5 font-medium text-[#0d2a4a]">{getVictimName(victim)}</td>
+                    <td className="px-4 py-2.5 text-slate-700">{getVictimAddress(victim)}</td>
+                    <td className="px-4 py-2.5 text-center">
                       <button
                         type="button"
                         onClick={() => openVictimEditModal(idx)}
-                        className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
+                        className="text-[#0d2a4a] hover:text-[#ea580c] font-bold mr-3 cursor-pointer underline transition-colors"
                       >
                         {lang === 'hi' ? 'संपादन' : 'Edit'}
                       </button>
                       <button
                         type="button"
                         onClick={() => deleteVictimEntry(idx)}
-                        className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
+                        className="text-red-500 hover:text-red-700 font-bold cursor-pointer underline transition-colors"
                       >
                         {lang === 'hi' ? 'हटाएं' : 'Delete'}
                       </button>
@@ -1309,7 +1315,7 @@ export default function DynamicForm({
 
               {/* Modal Header */}
               <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
-                <h2 className="text-sm font-bold uppercase tracking-wide">
+                <h2 className="text-base font-bold uppercase tracking-wide">
                   {activeVictimIndex !== null
                     ? (lang === 'hi' ? 'पीड़ित जानकारी संपादित करें' : 'Edit Victim Information')
                     : (lang === 'hi' ? 'पीड़ित जानकारी' : 'Victim Information')}
@@ -1339,14 +1345,14 @@ export default function DynamicForm({
                 <button
                   type="button"
                   onClick={saveVictimEntry}
-                  className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors"
+                  className="px-6 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] cursor-pointer transition-colors"
                 >
                   {lang === 'hi' ? 'सहेजें' : 'Save'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsVictimModalOpen(false)}
-                  className="px-6 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded hover:bg-slate-300 cursor-pointer transition-colors"
+                  className="px-6 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-300 cursor-pointer transition-colors"
                 >
                   {lang === 'hi' ? 'बंद करें' : 'Close'}
                 </button>
@@ -1372,13 +1378,13 @@ export default function DynamicForm({
 
         {/* Header bar with "+ Add Accused" button at top-right */}
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">
+          <h3 className="text-base sm:text-lg font-bold text-[#0d2a4a] uppercase tracking-wide">
             {lang === 'hi' ? `अभियुक्त सूची (${accusedList.length})` : `Accused List (${accusedList.length})`}
           </h3>
           <button
             type="button"
             onClick={openAccusedAddModal}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] transition-colors cursor-pointer"
           >
             <span className="text-base leading-none">+</span>
             {lang === 'hi' ? 'अभियुक्त जोड़ें' : 'Add Accused'}
@@ -1386,41 +1392,41 @@ export default function DynamicForm({
         </div>
 
         {/* Summary Table */}
-        <div className="border border-[#7a9cc5] rounded overflow-hidden">
-          <table className="w-full text-xs">
+        <div className="border-2 border-[#7a9cc5] rounded-xl overflow-hidden shadow-sm">
+          <table className="w-full text-sm sm:text-base">
             <thead>
               <tr className="bg-[#0d2a4a] text-white">
-                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
-                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
-                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
-                <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
+                <th className="px-4 py-2.5 text-left w-16 font-bold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
+                <th className="px-4 py-2.5 text-left font-bold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
+                <th className="px-4 py-2.5 text-left font-bold">{lang === 'hi' ? 'पता' : 'Address'}</th>
+                <th className="px-4 py-2.5 text-center w-32 font-bold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
               </tr>
             </thead>
             <tbody>
               {accusedList.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
+                  <td colSpan={4} className="px-4 py-6 text-center text-slate-400 italic text-sm">
                     {lang === 'hi' ? 'कोई अभियुक्त नहीं जोड़ा गया। "+ अभियुक्त जोड़ें" पर क्लिक करें।' : 'No accused added yet. Click "+ Add Accused" to add.'}
                   </td>
                 </tr>
               ) : (
                 accusedList.map((accused, idx) => (
                   <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
-                    <td className="px-3 py-2 font-medium">{idx + 1}</td>
-                    <td className="px-3 py-2">{getAccusedName(accused)}</td>
-                    <td className="px-3 py-2 text-slate-600">{getAccusedAddress(accused)}</td>
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-4 py-2.5 font-bold text-[#0d2a4a]">{idx + 1}</td>
+                    <td className="px-4 py-2.5 font-medium text-[#0d2a4a]">{getAccusedName(accused)}</td>
+                    <td className="px-4 py-2.5 text-slate-700">{getAccusedAddress(accused)}</td>
+                    <td className="px-4 py-2.5 text-center">
                       <button
                         type="button"
                         onClick={() => openAccusedEditModal(idx)}
-                        className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors"
+                        className="text-[#0d2a4a] hover:text-[#ea580c] font-bold mr-3 cursor-pointer underline transition-colors"
                       >
                         {lang === 'hi' ? 'संपादन' : 'Edit'}
                       </button>
                       <button
                         type="button"
                         onClick={() => deleteAccusedEntry(idx)}
-                        className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors"
+                        className="text-red-500 hover:text-red-700 font-bold cursor-pointer underline transition-colors"
                       >
                         {lang === 'hi' ? 'हटाएं' : 'Delete'}
                       </button>
@@ -1581,7 +1587,7 @@ export default function DynamicForm({
     const renderExtraDetailRow = (row, idx) => {
       const extraFields = getExtraFields(row);
       if (!row.property_major_category || extraFields.length === 0) return null;
-      const cls = 'w-full px-2 py-1.5 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400';
+      const cls = 'w-full px-3 py-2 text-sm sm:text-base font-semibold border-2 border-[#c7d8ea] rounded-xl bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400';
       return (
         <tr key={`${idx}-extra`} className="border-t border-[#dce9f4] bg-[#f3f8fd]">
           <td colSpan={7} className="px-4 py-3">
@@ -1589,8 +1595,8 @@ export default function DynamicForm({
               {extraFields.map(field => {
                 const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
                 const fieldVal = row[field.field_key] || '';
-                const wrapCls = `flex flex-col gap-1${field.full_width ? ' col-span-full' : ''}`;
-                const labelEl = <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{label}</label>;
+                const wrapCls = `flex flex-col gap-1.5${field.full_width ? ' col-span-full' : ''}`;
+                const labelEl = <label className="text-xs sm:text-sm font-bold text-[#0d2a4a] uppercase tracking-wide">{label}</label>;
 
                 // Type of Arm — cascades off "Type of Property" (row.property_minor_category,
                 // which holds the selected arms_category_cd), listing only fire_arms rows whose
@@ -1904,10 +1910,10 @@ export default function DynamicForm({
       const visibleFields = fields.filter(f => !keysToSkip.includes(f.field_key) && evalCond(f.show_when, arrestedTempValues));
       return (
         <fieldset className="bg-white">
-          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base">
             {lang === 'hi' ? (tab.title_hi || tab.title_en) : tab.title_en}
           </legend>
-          <div className="grid grid-cols-[220px_1fr] rounded overflow-hidden mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] border-2 border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm mt-2">
             {visibleFields.map((field, idx) => {
               const key = field.field_key;
               const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
@@ -1917,11 +1923,11 @@ export default function DynamicForm({
               const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
               return (
                 <React.Fragment key={key}>
-                  <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+                  <div className={`bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base ${isRequired ? 'font-bold text-[#0d2a4a]' : 'font-semibold text-[#0d2a4a]'} flex items-center gap-2 min-h-[48px] border-r border-[#c7d8ea] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
                     <span>{label}</span>
                     {isRequired && <span className="text-red-500 font-bold">*</span>}
                   </div>
-                  <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+                  <div className={`px-4 py-2 bg-white flex flex-col justify-center min-h-[48px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
                     <FieldRenderer field={field} value={arrestedTempValues[key]} onChange={handleArrestedModalChange} readOnly={isDisabled} error={arrestedModalTouched[key] ? arrestedModalErrors[key] : null} lang={lang} values={arrestedTempValues} />
                   </div>
                 </React.Fragment>
@@ -1965,7 +1971,7 @@ export default function DynamicForm({
           <button
             type="button"
             onClick={openArrestedAddModal}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] transition-colors cursor-pointer"
           >
             <span className="text-base leading-none">+</span>
             {lang === 'hi' ? 'गिरफ्तार व्यक्ति जोड़ें' : 'Add Arrested Person'}
@@ -1973,34 +1979,34 @@ export default function DynamicForm({
         </div>
 
         {/* Summary Table */}
-        <div className="border border-[#7a9cc5] rounded overflow-hidden">
-          <table className="w-full text-xs">
+        <div className="border-2 border-[#7a9cc5] rounded-xl overflow-hidden shadow-sm">
+          <table className="w-full text-sm sm:text-base">
             <thead>
               <tr className="bg-[#0d2a4a] text-white">
-                <th className="px-3 py-2 text-left w-14 font-semibold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
-                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
-                <th className="px-3 py-2 text-left font-semibold">{lang === 'hi' ? 'पता' : 'Address'}</th>
-                <th className="px-3 py-2 text-center w-28 font-semibold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
+                <th className="px-4 py-2.5 text-left w-16 font-bold">{lang === 'hi' ? 'क्र.सं.' : 'S.No.'}</th>
+                <th className="px-4 py-2.5 text-left font-bold">{lang === 'hi' ? 'नाम' : 'Name'}</th>
+                <th className="px-4 py-2.5 text-left font-bold">{lang === 'hi' ? 'पता' : 'Address'}</th>
+                <th className="px-4 py-2.5 text-center w-32 font-bold">{lang === 'hi' ? 'कार्रवाई' : 'Actions'}</th>
               </tr>
             </thead>
             <tbody>
               {arrestedList.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-3 py-6 text-center text-slate-400 italic">
+                  <td colSpan={4} className="px-4 py-6 text-center text-slate-400 italic text-sm">
                     {lang === 'hi' ? 'कोई गिरफ्तार व्यक्ति नहीं जोड़ा गया। "+ गिरफ्तार व्यक्ति जोड़ें" पर क्लिक करें।' : 'No arrested persons added yet. Click "+ Add Arrested Person" to add.'}
                   </td>
                 </tr>
               ) : (
                 arrestedList.map((arr, idx) => (
                   <tr key={idx} className={`border-t border-[#c7d8ea] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#f0f5fa]'}`}>
-                    <td className="px-3 py-2 font-medium">{idx + 1}</td>
-                    <td className="px-3 py-2">{getArrestedName(arr)}</td>
-                    <td className="px-3 py-2 text-slate-600">{getArrestedAddress(arr)}</td>
-                    <td className="px-3 py-2 text-center">
-                      <button type="button" onClick={() => openArrestedEditModal(idx)} className="text-[#0d2a4a] hover:text-[#ea580c] font-semibold mr-3 cursor-pointer underline transition-colors">
+                    <td className="px-4 py-2.5 font-bold text-[#0d2a4a]">{idx + 1}</td>
+                    <td className="px-4 py-2.5 font-medium text-[#0d2a4a]">{getArrestedName(arr)}</td>
+                    <td className="px-4 py-2.5 text-slate-700">{getArrestedAddress(arr)}</td>
+                    <td className="px-4 py-2.5 text-center">
+                      <button type="button" onClick={() => openArrestedEditModal(idx)} className="text-[#0d2a4a] hover:text-[#ea580c] font-bold mr-3 cursor-pointer underline transition-colors">
                         {lang === 'hi' ? 'संपादन' : 'Edit'}
                       </button>
-                      <button type="button" onClick={() => deleteArrestedEntry(idx)} className="text-red-500 hover:text-red-700 font-semibold cursor-pointer underline transition-colors">
+                      <button type="button" onClick={() => deleteArrestedEntry(idx)} className="text-red-500 hover:text-red-700 font-bold cursor-pointer underline transition-colors">
                         {lang === 'hi' ? 'हटाएं' : 'Delete'}
                       </button>
                     </td>
@@ -2017,7 +2023,7 @@ export default function DynamicForm({
             <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-[1050px] h-[85vh] max-h-[750px] flex flex-col overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between bg-[#0d2a4a] text-white px-5 py-3">
-                <h2 className="text-sm font-bold uppercase tracking-wide">
+                <h2 className="text-base font-bold uppercase tracking-wide">
                   {activeArrestedIndex !== null
                     ? (lang === 'hi' ? 'गिरफ्तार व्यक्ति की जानकारी संपादित करें' : 'Edit Arrested Person Information')
                     : (lang === 'hi' ? 'गिरफ्तार व्यक्ति की जानकारी' : 'Arrested Person Information')}
@@ -2035,10 +2041,10 @@ export default function DynamicForm({
 
               {/* Footer */}
               <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
-                <button type="button" onClick={saveArrestedEntry} className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors">
+                <button type="button" onClick={saveArrestedEntry} className="px-6 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] cursor-pointer transition-colors">
                   {lang === 'hi' ? 'सहेजें' : 'Save'}
                 </button>
-                <button type="button" onClick={() => setIsArrestedModalOpen(false)} className="px-6 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded hover:bg-slate-300 cursor-pointer transition-colors">
+                <button type="button" onClick={() => setIsArrestedModalOpen(false)} className="px-6 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-300 cursor-pointer transition-colors">
                   {lang === 'hi' ? 'बंद करें' : 'Close'}
                 </button>
               </div>
@@ -2078,11 +2084,11 @@ export default function DynamicForm({
 
       return (
         <React.Fragment key={key}>
-          <div className={`bg-[#dfeaf5] px-2 py-2 text-[12px] font-medium flex items-center gap-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <div className={`bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base ${isRequired ? 'font-bold text-[#0d2a4a]' : 'font-semibold text-[#0d2a4a]'} flex items-center gap-2 min-h-[48px] border-r border-[#c7d8ea] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <span>{label}</span>
             {isRequired && <span className="text-red-500 font-bold">*</span>}
           </div>
-          <div className={`px-2 py-1 ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <div className={`px-4 py-2 bg-white flex flex-col justify-center min-h-[48px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <FieldRenderer
               field={field}
               value={values[key]}
@@ -2099,7 +2105,7 @@ export default function DynamicForm({
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-[220px_1fr] rounded overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] border-2 border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm">
           {activeFields.map((field, idx) => renderFieldWithLabel(field, idx))}
         </div>
       </div>
@@ -2440,14 +2446,14 @@ export default function DynamicForm({
   const isFieldRequired = (key) => !!parseRules(fieldsByKey[key]?.validation_rules).required;
 
   const renderSubTabBar = (sectionKey, activeTab, setActiveTab, extraWrapperClass = '') => (
-    <div className={`flex gap-2 border-b border-[#7a9cc5] pb-0 bg-slate-100/50 p-1 ${extraWrapperClass}`}>
+    <div className={`flex gap-2 border-b-2 border-[#7a9cc5] pb-0 bg-slate-100/50 p-1.5 ${extraWrapperClass}`}>
       {getSectionSubTabs(sectionKey).map((t) => (
         <button
           key={t.id}
           type="button"
           onClick={() => setActiveTab(t.id)}
-          className={`px-4 py-1.5 text-xs font-bold border border-b-0 border-[#7a9cc5] rounded-t cursor-pointer transition-colors ${activeTab === t.id
-              ? 'bg-[#ea580c] text-white'
+          className={`px-5 py-2.5 text-sm sm:text-base font-bold border border-b-0 border-[#7a9cc5] rounded-t-lg cursor-pointer transition-colors shadow-sm ${activeTab === t.id
+              ? 'bg-[#ea580c] text-white shadow-md'
               : 'bg-[#0d2a4a] text-white hover:bg-[#16406d]'
             }`}
         >
@@ -4022,6 +4028,17 @@ const handleFormSubmit = (e) => {
     finalValues.occurrence_time = finalValues.time_of_occurrence;
   }
 
+  // G2 (Kalandra safety) — mirrors import.compose.js: stamp the discriminator and clear
+  // any fir_no so linkResolver never auto-links a standalone DD arrest to a FIR/CASE.
+  // This is the frontend half of the fix; records.controller.js applies the same guard
+  // server-side as defence-in-depth.
+  if (recordType === 'ARREST' && caseType === 'kalandra') {
+    finalValues.is_dd_based = true;
+    delete finalValues.fir_no;
+    delete finalValues.fir_date;
+    log.debug('form:kalandra_stamp', { recordType, caseType, action: 'set is_dd_based=true, cleared fir_no/fir_date' });
+  }
+
   const { persons, properties } = buildRepeaterPayload();
 
   try {
@@ -4103,9 +4120,9 @@ return (
   <div className="space-y-3" ref={formRef}>
 
     {/* Horizontal Tabs Navigation */}
-    <div className="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-[#0d2a4a] mb-2 gap-2 pb-1.5 bg-[#f8fafc]">
+    <div className="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-[#0d2a4a] mb-4 gap-3 pb-3 bg-[#f8fafc]">
       {finalSchema.length > 1 ? (
-        <div className="flex flex-wrap gap-1.5 py-1">
+        <div className="flex flex-wrap gap-2 py-1.5">
           {finalSchema.map((sec, idx) => {
             const isSelected = idx === currentStep;
             const title = lang === 'hi' ? (sec.title_hi || sec.title_en) : sec.title_en;
@@ -4116,12 +4133,13 @@ return (
                 key={idx}
                 type="button"
                 onClick={() => handleStepClick(idx)}
-                className={`px-3 py-1.5 text-[10px] font-bold transition-all rounded-md cursor-pointer uppercase tracking-tight whitespace-nowrap flex items-center gap-1 select-none border border-[#0d2a4a] ${isSelected
-                    ? 'bg-[#ea580c] border-[#ea580c] text-white shadow-sm'
+                className={`px-4 py-2.5 text-xs sm:text-sm font-bold transition-all rounded-xl cursor-pointer uppercase tracking-wider whitespace-nowrap flex items-center gap-2 select-none border-2 shadow-sm ${
+                  isSelected
+                    ? 'bg-[#ea580c] border-[#ea580c] text-white shadow-md scale-[1.02]'
                     : 'bg-[#0d2a4a] border-[#0d2a4a] text-white hover:bg-[#16406d] hover:border-[#16406d]'
-                  }`}
+                }`}
               >
-                {hasError && <AlertCircle size={10} className="text-red-300 animate-pulse" />}
+                {hasError && <AlertCircle size={14} className="text-red-300 animate-pulse" />}
                 <span>{title}</span>
               </button>
             );
@@ -4130,10 +4148,10 @@ return (
       ) : (
         <div />
       )}
-      <div className="flex items-center gap-3 px-2 py-1 self-end md:self-center">
+      <div className="flex items-center gap-3 px-3 py-1.5 self-end md:self-center">
         <FormAutosave status={saveStatus} lang={lang} />
         {readOnly && (
-          <span className="text-[10px] font-bold text-slate-500 bg-slate-200 border border-slate-300 px-2 py-0.5 rounded uppercase tracking-wider">
+          <span className="text-xs font-bold text-slate-600 bg-slate-200 border border-slate-300 px-3 py-1 rounded-lg uppercase tracking-wider">
             {lang === 'hi' ? 'केवल पठन' : 'Read Only'}
           </span>
         )}
@@ -4144,9 +4162,9 @@ return (
       const missingRequired = Object.entries(errors).filter(([k]) => touched[k] && isEmptyVal(values[k]));
       if (!missingRequired.length) return null;
       return (
-        <div className="bg-red-50 border border-red-200 rounded-card p-4 text-sm text-red-600 space-y-2">
-          <div className="flex items-center gap-2 font-bold text-red-700 mb-1">
-            <AlertCircle size={16} />
+        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-5 text-sm sm:text-base text-red-700 space-y-2.5 shadow-sm">
+          <div className="flex items-center gap-2.5 font-black text-red-800 text-base sm:text-lg mb-1.5">
+            <AlertCircle size={20} className="shrink-0" />
             <span>
               {lang === 'hi'
                 ? `${missingRequired.length} फ़ील्ड अपूर्ण हैं`
@@ -4154,9 +4172,9 @@ return (
             </span>
           </div>
           {missingRequired.slice(0, 5).map(([k, msg]) => (
-            <div key={k} className="flex items-center gap-2 text-red-600">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-              {msg}
+            <div key={k} className="flex items-center gap-2.5 text-sm sm:text-base font-bold text-red-700">
+              <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+              <span>{msg}</span>
             </div>
           ))}
         </div>

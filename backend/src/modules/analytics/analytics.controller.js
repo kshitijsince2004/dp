@@ -1139,9 +1139,54 @@ export const getArrestsTrendBreakdown = async (req, res) => {
 
 export const getCrimeHeadMatrix = async (req, res) => {
   const jq = req.jurisdictionQuery;
-  const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'day';
+  const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'month';
   try {
-    const { currentStart, currentEnd } = getDateRangeForPeriod(period);
+    // Use requested period, but fall back to wider ranges when no data exists
+    // (e.g. records without local_head_id set for recent dates)
+    let effectivePeriod = period;
+    let { currentStart, currentEnd } = getDateRangeForPeriod(period);
+
+    // Helper to check if any FIR records exist for date range
+    const hasData = async (start, end) => {
+      const row = await db('records')
+        .join('fir_details as d', 'records.id', 'd.record_id')
+        .whereNotNull('d.local_head_id')
+        .where('records.record_type', 'CASE')
+        .whereBetween('records.record_date', [start, end])
+        .count('* as cnt')
+        .first();
+      return parseInt(row?.cnt || 0, 10) > 0;
+    };
+
+    // If current period has no data, widen progressively: week -> month -> year -> all
+    if (!(await hasData(currentStart, currentEnd))) {
+      const fallbacks = ['month', 'year'];
+      for (const fb of fallbacks) {
+        if (fb === effectivePeriod) continue;
+        const range = getDateRangeForPeriod(fb);
+        if (await hasData(range.currentStart, range.currentEnd)) {
+          effectivePeriod = fb;
+          currentStart = range.currentStart;
+          currentEnd = range.currentEnd;
+          break;
+        }
+      }
+      // Last resort: use all-time data
+      if (!(await hasData(currentStart, currentEnd))) {
+        const allTime = await db('records')
+          .join('fir_details as d', 'records.id', 'd.record_id')
+          .whereNotNull('d.local_head_id')
+          .min('records.record_date as min_d')
+          .max('records.record_date as max_d')
+          .first();
+        if (allTime?.max_d) {
+          currentStart = String(allTime.min_d).substring(0, 10);
+          currentEnd = String(allTime.max_d).substring(0, 10);
+          effectivePeriod = 'all';
+        }
+      }
+    }
+
 
     // FIR (CASE) / UIDB counts grouped by crime head, via each record type's own detail table's
     // local_head_id -> ref.local_heads. detailTable/idColumn differ per record type; join shape is shared.
@@ -1233,7 +1278,7 @@ export const getCrimeHeadMatrix = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: { period, columns: ['FIR', 'Arrest', 'Kalandra', 'UIDB', 'Workout'], rows }
+      data: { period: effectivePeriod, columns: ['FIR', 'Arrest', 'Kalandra', 'UIDB', 'Workout'], rows }
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

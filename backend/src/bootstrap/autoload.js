@@ -72,6 +72,15 @@ export async function runStartupAutoload() {
         'intact; startup continues. To apply ref changes, rebuild the dev DB (db:reset → ' +
         `db:migrate → sync-config → load-ref → db:seed). Underlying error: ${err.message}`
       );
+      // Persist checksum so future boots don't repeat the aborted reload attempt
+      try {
+        await db('system_meta')
+          .insert({ key: REF_CHECKSUM_KEY, value: JSON.stringify({ checksum: currentChecksum }), updated_at: db.fn.now() })
+          .onConflict('key')
+          .merge({ value: JSON.stringify({ checksum: currentChecksum }), updated_at: db.fn.now() });
+      } catch (metaErr) {
+        logger.debug('[autoload] failed to update ref checksum on skipped reload', { error: metaErr.message });
+      }
       return;
     }
     throw new Error(`[autoload] load-ref failed: ${err.message}`);

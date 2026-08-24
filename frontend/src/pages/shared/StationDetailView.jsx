@@ -64,8 +64,9 @@ export default function StationDetailView() {
           api.get("/records"),
         ]);
 
+        const rawRecs = recordsRes.data.data;
         setNodes(nodesRes.data.data || []);
-        setRecords(recordsRes.data.data || []);
+        setRecords(rawRecs?.cases || rawRecs?.queue || (Array.isArray(rawRecs) ? rawRecs : []));
         log.debug('data:load_success', { what: 'station_detail', stationId: id });
         setError(null);
       } catch (err) {

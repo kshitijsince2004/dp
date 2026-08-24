@@ -124,7 +124,7 @@ const DIARIES = [
     description: 'District-level fortnightly statistical digest — 15 sheets (select the FN End Date)',
     icon: Calendar,
     status: 'active',
-    levels: ['HQ', 'DISTRICT'],
+    levels: ['HQ', 'DISTRICT', 'PS'],
     reports: FN_REPORTS,
   },
 ];
@@ -166,8 +166,9 @@ export default function CompilationUI() {
   const availableDiaries = DIARIES.filter(d => d.levels.includes(userLevel));
 
   const today = formatDMY(new Date());
-  const [dateFrom, setDateFrom] = useState(today);
-  const [dateTo, setDateTo]   = useState(today);      // defaults to same as dateFrom (single-day export)
+  const defaultFromDate = '01/01/2025';
+  const [dateFrom, setDateFrom] = useState(defaultFromDate);
+  const [dateTo, setDateTo]   = useState(today);
   const [exporting, setExporting] = useState(false);
 
   // Step 1: which diary is being compiled
@@ -520,7 +521,7 @@ export default function CompilationUI() {
 
     // 3. Poll until READY or COMPLETED
     const loadingMessage = selectedDiary.key === 'FN_DIARY'
-      ? 'Generating Fortnightly Crime Diary Excel…'
+      ? (userLevel === 'PS' ? 'Generating Station Fortnightly Diary Excel…' : 'Generating Fortnightly Crime Diary Excel…')
       : selectedDiary.key === 'DISTRICT_DIARY'
         ? 'Generating District Diary Excel…'
         : (selectedDiary.key === 'PHQ_DIARY'
@@ -734,12 +735,18 @@ export default function CompilationUI() {
                 </div>
                 <div>
                   <div className="text-sm font-bold text-slate-800">
-                    {diary.key === 'PHQ_DIARY' && userLevel === 'PS' ? 'PS Comparative Report' : diary.label}
+                    {diary.key === 'PHQ_DIARY' && userLevel === 'PS'
+                      ? 'PS Comparative Report'
+                      : diary.key === 'FN_DIARY' && userLevel === 'PS'
+                        ? 'PS Fortnightly Diary'
+                        : diary.label}
                   </div>
                   <div className="text-[11px] text-slate-500 mt-0.5">
                     {diary.key === 'PHQ_DIARY' && userLevel === 'PS'
                       ? 'Police Station consolidated comparative diary — 9 station-level comparative sheets'
-                      : diary.description}
+                      : diary.key === 'FN_DIARY' && userLevel === 'PS'
+                        ? 'Police Station fortnightly statistical digest — 15 statistical sheets (select the FN End Date)'
+                        : diary.description}
                   </div>
                 </div>
               </button>
@@ -759,7 +766,7 @@ export default function CompilationUI() {
       <div className="border border-slate-200 bg-white rounded-xl p-5 shadow-sm space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
           <Calendar size={14} className="text-[var(--accent-color)]" />
-          <span>Step 2 — {selectedDiary.key === 'PHQ_DIARY' && userLevel === 'PS' ? 'PS Comparative Report' : selectedDiary.label}: {selectedDiary.key === 'FN_DIARY' ? 'Select FN End Date, Scope & Sheets' : selectedDiary.key === 'PHQ_DIARY' ? 'Select Scope & Sheets' : 'Select Reports & Date Range'}</span>
+          <span>Step 2 — {selectedDiary.key === 'PHQ_DIARY' && userLevel === 'PS' ? 'PS Comparative Report' : selectedDiary.key === 'FN_DIARY' && userLevel === 'PS' ? 'PS Fortnightly Diary' : selectedDiary.label}: {selectedDiary.key === 'FN_DIARY' ? 'Select FN End Date, Scope & Sheets' : selectedDiary.key === 'PHQ_DIARY' ? 'Select Scope & Sheets' : 'Select Reports & Date Range'}</span>
         </h3>
 
         <p className="text-xs text-slate-500 font-medium">
@@ -1214,13 +1221,13 @@ export default function CompilationUI() {
             {compilations.map((comp) => (
               <div
                 key={comp.id}
-                className="border border-zinc-800 bg-zinc-950/40 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs"
+                className="border border-zinc-800 bg-zinc-950/40 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-sm sm:text-base"
               >
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-zinc-200">Period: {formatPeriod(comp.period)}</span>
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                      className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border ${
                         comp.status === 'SUBMITTED'
                           ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40'
                           : 'bg-amber-950/30 text-amber-400 border-amber-800/40'
@@ -1228,25 +1235,25 @@ export default function CompilationUI() {
                     >
                       {comp.status}
                     </span>
-                    <span className="text-zinc-600 font-mono text-[10px]">#{comp.id?.slice(0, 12)}</span>
+                    <span className="text-zinc-500 font-mono text-xs">#{comp.id?.slice(0, 12)}</span>
                   </div>
 
                   {comp.compiled_summary ? (
-                    <div className="flex gap-4 text-zinc-400 text-[11px] flex-wrap pt-1">
-                      <span className="flex items-center gap-1">
-                        <FileText size={11} className="text-amber-500" />
+                    <div className="flex gap-4 text-zinc-400 text-xs sm:text-sm font-semibold flex-wrap pt-1">
+                      <span className="flex items-center gap-1.5">
+                        <FileText size={14} className="text-amber-500" />
                         Cases: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'firs')}</strong>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Shield size={11} className="text-emerald-500" />
+                      <span className="flex items-center gap-1.5">
+                        <Shield size={14} className="text-emerald-500" />
                         Arrests: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'arrests')}</strong>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Phone size={11} className="text-blue-400" />
+                      <span className="flex items-center gap-1.5">
+                        <Phone size={14} className="text-blue-400" />
                         PCR Calls: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'pcrCalls')}</strong>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <UserX size={11} className="text-purple-400" />
+                      <span className="flex items-center gap-1.5">
+                        <UserX size={14} className="text-purple-400" />
                         Missing: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'missing')}</strong>
                       </span>
                       <span className="flex items-center gap-1">

@@ -99,38 +99,38 @@ export default function PersonSearchPage() {
             <p className="text-sm text-slate-400">No arrest records found matching those details.</p>
           ) : (
             <>
-              <p className="text-xs text-slate-500 mb-3">{results.length} arrest record{results.length !== 1 ? 's' : ''} found</p>
+              <p className="text-sm font-bold text-slate-500 mb-3">{results.length} arrest record{results.length !== 1 ? 's' : ''} found</p>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm sm:text-base">
                   <thead>
-                    <tr className="border-b border-slate-700 text-xs text-slate-400 uppercase tracking-wider">
-                      <th className="text-left py-2 pr-4">Name</th>
-                      <th className="text-left py-2 pr-4">Relative Name</th>
-                      <th className="text-left py-2 pr-4">Gender / Age</th>
-                      <th className="text-left py-2 pr-4">Address</th>
-                      <th className="text-left py-2 pr-4">FIR No.</th>
-                      <th className="text-left py-2 pr-4">Arrest Date</th>
-                      <th className="text-left py-2 pr-4">PS</th>
-                      <th className="text-left py-2">Status</th>
+                    <tr className="border-b border-slate-300 text-sm sm:text-base font-bold text-slate-700 uppercase tracking-wider">
+                      <th className="text-left py-3 pr-4">Name</th>
+                      <th className="text-left py-3 pr-4">Relative Name</th>
+                      <th className="text-left py-3 pr-4">Gender / Age</th>
+                      <th className="text-left py-3 pr-4">Address</th>
+                      <th className="text-left py-3 pr-4">FIR No.</th>
+                      <th className="text-left py-3 pr-4">Arrest Date</th>
+                      <th className="text-left py-3 pr-4">PS</th>
+                      <th className="text-left py-3">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {results.map(r => (
-                      <tr key={r.person_id || r.record_id} className="border-b border-slate-800 hover:bg-slate-800/40">
-                        <td className="py-2 pr-4 font-medium">{r.name || '—'}</td>
-                        <td className="py-2 pr-4 text-slate-400">
+                      <tr key={r.person_id || r.record_id} className="border-b border-slate-200 hover:bg-slate-50/50">
+                        <td className="py-3 pr-4 font-bold text-slate-900">{r.name || '—'}</td>
+                        <td className="py-3 pr-4 text-slate-600 font-medium">
                           {r.relative_name || '—'}
                           {r.relative_name && r.relation_type ? ` (${r.relation_type})` : ''}
                         </td>
-                        <td className="py-2 pr-4 text-slate-400">{[r.gender, r.age].filter(Boolean).join(' / ') || '—'}</td>
-                        <td className="py-2 pr-4 text-slate-400">{r.address || '—'}</td>
-                        <td className="py-2 pr-4 text-slate-400">{r.fir_no || '—'}</td>
-                        <td className="py-2 pr-4 text-slate-400">
+                        <td className="py-3 pr-4 text-slate-600 font-medium">{[r.gender, r.age].filter(Boolean).join(' / ') || '—'}</td>
+                        <td className="py-3 pr-4 text-slate-600 font-medium">{r.address || '—'}</td>
+                        <td className="py-3 pr-4 font-mono font-bold text-slate-800">{r.fir_no || '—'}</td>
+                        <td className="py-3 pr-4 font-mono text-slate-600 font-semibold">
                           {r.arrest_date ? formatDate(r.arrest_date) : (r.record_date ? formatDate(r.record_date) : '—')}
                         </td>
-                        <td className="py-2 pr-4 text-slate-400">{r.ps_name}</td>
-                        <td className="py-2">
-                          <span className={`text-xs px-2 py-0.5 rounded border ${r.current_status === 'DRAFT' ? 'bg-slate-500/10 text-slate-400 border-slate-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'}`}>
+                        <td className="py-3 pr-4 text-slate-600 font-medium">{r.ps_name}</td>
+                        <td className="py-3">
+                          <span className={`text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg border ${r.current_status === 'DRAFT' ? 'bg-slate-100 text-slate-600 border-slate-300' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
                             {r.current_status}
                           </span>
                         </td>

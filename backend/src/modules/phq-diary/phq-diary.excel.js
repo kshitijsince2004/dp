@@ -85,10 +85,8 @@ function numCell(ws, row, col, value, opts = {}) {
 function varCell(ws, row, col, value, opts = {}) {
   const cell = ws.getCell(row, col);
   let strVal = '-';
-  if (value === null || value === undefined || value === '-') {
+  if (value === null || value === undefined || value === '-' || value === Infinity || value === '+∞' || (typeof value === 'number' && !isFinite(value))) {
     strVal = '-';
-  } else if (value === Infinity || value === '+∞') {
-    strVal = '+∞';
   } else if (typeof value === 'number') {
     strVal = (value >= 0 ? '+' : '') + value.toFixed(1) + '%';
   } else {

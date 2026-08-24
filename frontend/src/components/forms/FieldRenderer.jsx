@@ -72,19 +72,46 @@ function FieldRendererCore({
     staleTime: Infinity,
   });
 
+  const isCaseStatusField = fieldKey === 'case_status';
+  const { data: psOptions = [] } = useQuery({
+    queryKey: ['policeStationsLookup'],
+    queryFn: async () => {
+      const res = await api.get('/fields/lookup/police-stations');
+      return res.data.data || [];
+    },
+    enabled: isCaseStatusField,
+    staleTime: 5 * 60_000,
+  });
+
+  const { data: agencyOptions = [] } = useQuery({
+    queryKey: ['agenciesLookup'],
+    queryFn: async () => {
+      const res = await api.get('/fields/lookup/agencies');
+      return res.data.data || [];
+    },
+    enabled: isCaseStatusField,
+    staleTime: 5 * 60_000,
+  });
+
   if (!field) return null;
   const key     = field.field_key;
   // Composite Number+Date(+Time) widgets (gd_no/fir_no/arrest_date, below) render their own
   // date/time cell inline via DateTimePickerPopup. gd_date/gd_time/fir_date/fir_time/arrest_time
   // are ALSO separate field_registry rows in the same section, so FormSection's per-field loop
   // renders them a SECOND time as standalone DateField/TimeField inputs next to the composite —
-  // a visible duplicate widget (bug batch 2026-07-23, #B8, reported on Missing Person's GD
-  // Number). Suppressing them here (their value is still collected/submitted normally by
-  // DynamicForm — only the extra standalone INPUT is removed) fixes the duplicate without
-  // touching FormSection.jsx's section.fields list (owned by another agent). NOTE for FE-core:
-  // a fully clean fix additionally removes the now-empty label row by adding these keys to
-  // FormSection.jsx's `keysToSkip` array.
-  if (key === 'gd_date' || key === 'gd_time' || key === 'fir_date' || key === 'fir_time' || key === 'arrest_time') {
+  // a visible duplicate widget. Similarly, transfer_to, transferred_to_ps_id, transferred_to_agency_id,
+  // and date_of_transfer are rendered inline inside case_status's composite block.
+  if (
+    key === 'gd_date' ||
+    key === 'gd_time' ||
+    key === 'fir_date' ||
+    key === 'fir_time' ||
+    key === 'arrest_time' ||
+    key === 'transfer_to' ||
+    key === 'transferred_to_ps_id' ||
+    key === 'transferred_to_agency_id' ||
+    key === 'date_of_transfer'
+  ) {
     return null;
   }
   const type    = (field.field_type || 'TEXT').toUpperCase();
@@ -345,6 +372,11 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
             handleFieldChange(key, v);
             if (isCaseStatus && v !== 'TRANSFER') {
               handleFieldChange('transfer_to', '');
+              handleFieldChange('transferred_to_ps_id', '');
+              handleFieldChange('transferred_to_ps', '');
+              handleFieldChange('transferred_to_agency_id', '');
+              handleFieldChange('transferred_to_agency', '');
+              handleFieldChange('date_of_transfer', '');
             }
           }}
           status={status}
@@ -356,8 +388,9 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
           multiple={key === 'sections' || key.endsWith('_sections') || key.includes('sections')}
         />
         {isCaseStatus && isTransferSelected && (
-          <div className="flex flex-col gap-2 mt-1">
-            <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 animate-in slide-in-from-top-1 duration-100">
+          <div className="flex flex-col gap-3 mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl animate-in slide-in-from-top-1 duration-100">
+            {/* Transfer Type Radio */}
+            <div className="flex items-center gap-4">
               <span className="text-xs font-bold text-[#0d2a4a]">
                 {lang === 'hi' ? 'स्थानांतरण का प्रकार:' : 'Transfer To:'}
               </span>
@@ -367,10 +400,14 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
                   name="case_status_transfer_to"
                   disabled={readOnly}
                   checked={values?.transfer_to === 'PS'}
-                  onChange={() => handleFieldChange('transfer_to', 'PS')}
+                  onChange={() => {
+                    handleFieldChange('transfer_to', 'PS');
+                    handleFieldChange('transferred_to_agency_id', '');
+                    handleFieldChange('transferred_to_agency', '');
+                  }}
                   className="accent-[#0f52ba] cursor-pointer"
                 />
-                <span>{lang === 'hi' ? 'पुलिस स्टेशन (PS)' : 'PS'}</span>
+                <span>{lang === 'hi' ? 'पुलिस स्टेशन (PS)' : 'Police Station (PS)'}</span>
               </label>
               <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer select-none">
                 <input
@@ -378,13 +415,65 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
                   name="case_status_transfer_to"
                   disabled={readOnly}
                   checked={values?.transfer_to === 'Agency'}
-                  onChange={() => handleFieldChange('transfer_to', 'Agency')}
+                  onChange={() => {
+                    handleFieldChange('transfer_to', 'Agency');
+                    handleFieldChange('transferred_to_ps_id', '');
+                    handleFieldChange('transferred_to_ps', '');
+                  }}
                   className="accent-[#0f52ba] cursor-pointer"
                 />
                 <span>{lang === 'hi' ? 'एजेंसी (Agency)' : 'Agency'}</span>
               </label>
             </div>
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 animate-in slide-in-from-top-1 duration-100">
+
+            {/* If PS is selected: Searchable Dropdown for Police Station */}
+            {values?.transfer_to === 'PS' && (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-slate-700">
+                  {lang === 'hi' ? 'गंतव्य पुलिस स्टेशन चुनें:' : 'Select Destination Police Station:'}
+                </span>
+                <SelectField
+                  id="field-transferred_to_ps_id"
+                  disabled={readOnly}
+                  value={values?.transferred_to_ps_id || values?.transferred_to_ps}
+                  onChange={(val) => {
+                    handleFieldChange('transferred_to_ps_id', val);
+                    const opt = psOptions.find((p) => String(p.value) === String(val));
+                    if (opt) handleFieldChange('transferred_to_ps', opt.name);
+                  }}
+                  placeholder={lang === 'hi' ? 'पुलिस स्टेशन खोजें या चुनें...' : 'Search & select police station...'}
+                  options={psOptions}
+                  lang={lang}
+                  variant="compact"
+                />
+              </div>
+            )}
+
+            {/* If Agency is selected: Searchable Dropdown for Agency */}
+            {values?.transfer_to === 'Agency' && (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-slate-700">
+                  {lang === 'hi' ? 'गंतव्य एजेंसी चुनें:' : 'Select Destination Agency:'}
+                </span>
+                <SelectField
+                  id="field-transferred_to_agency_id"
+                  disabled={readOnly}
+                  value={values?.transferred_to_agency_id || values?.transferred_to_agency}
+                  onChange={(val) => {
+                    handleFieldChange('transferred_to_agency_id', val);
+                    const opt = agencyOptions.find((a) => String(a.value) === String(val));
+                    if (opt) handleFieldChange('transferred_to_agency', opt.name);
+                  }}
+                  placeholder={lang === 'hi' ? 'एजेंसी खोजें या चुनें (जैसे CBI, NIA, Crime Branch)...' : 'Search & select agency (e.g. CBI, NIA, Crime Branch)...'}
+                  options={agencyOptions}
+                  lang={lang}
+                  variant="compact"
+                />
+              </div>
+            )}
+
+            {/* Date of Transfer */}
+            <div className="flex items-center gap-3">
               <span className="text-xs font-bold text-[#0d2a4a] shrink-0">
                 {lang === 'hi' ? 'स्थानांतरण की तिथि:' : 'Date of Transfer:'}
               </span>

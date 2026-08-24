@@ -1105,16 +1105,17 @@ def generate_report(job_id):
         df.to_csv(file_path, index=False)
 
     elif format_type in ['EXCEL', 'XLSX']:
+        target_template_id = template_id or (custom_definition.get('template_id') if isinstance(custom_definition, dict) else None)
         is_daily_diary = (
             (not template and custom_definition and custom_definition.get('type') == 'DAILY_DIARY')
-            or template_id in DAILY_DIARY_PARALLEL_TEMPLATE_IDS
+            or target_template_id in DAILY_DIARY_PARALLEL_TEMPLATE_IDS
         )
         if is_daily_diary:
-            print(f"[Worker] Running Python daily-diary engine for template: {template_id}")
+            print(f"[Worker] Running Python daily-diary engine for template: {target_template_id}")
             records = _fetch_records(filters or {})
             classified = _classify_records(records)
             # Resolve active table names: per-template override → filter param → all
-            active_tables = TEMPLATE_TO_TABLE_NAMES.get(template_id) if template_id else None
+            active_tables = TEMPLATE_TO_TABLE_NAMES.get(target_template_id) if target_template_id else None
             if active_tables is None:
                 raw_tnames = (filters or {}).get('table_names') or (filters or {}).get('tableNames')
                 if isinstance(raw_tnames, str):

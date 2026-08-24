@@ -1,0 +1,76 @@
+{
+  "_source": "Verified from live DB — SELECT DISTINCT case_status FROM fir_details",
+  "_verified_date": "2026-08-18",
+  "_rule": "Use EXACT DB values. Never approximate.",
+  "worked_out_boolean": "is_worked_out",
+  "challan": [
+    "CHARGESHEETED",
+    "CHALLAN",
+    "PIR_JCL",
+    "PIR-JCL",
+    "CHARGESHEET",
+    "CHARGE SHEET",
+    "POLICE INVESTIGATION REPORT(PIR-JCL)"
+  ],
+  "cancelled": [
+    "CANCELLED",
+    "CANCELLATION",
+    "CLOSURE",
+    "UNFOUNDED",
+    "FALSE"
+  ],
+  "untraced": [
+    "UNTRACED",
+    "UNTRACED_REPORT"
+  ],
+  "pending": [
+    "PENDING_INVESTIGATION",
+    "UNDER_INVESTIGATION",
+    "PENDING",
+    "UNDER INVESTIGATION"
+  ],
+  "case_type_efir": [
+    "E_FIR",
+    "EFIR",
+    "E-FIR",
+    "E_THEFT",
+    "E_MVT",
+    "MV THEFT (E-FIR)",
+    "OTHER THEFT (E-FIR)"
+  ],
+  "case_type_manual": [
+    "MANUAL",
+    "REGULAR"
+  ],
+  "case_type_zero_fir": [
+    "ZERO_FIR",
+    "ZERO FIR"
+  ],
+  "case_type_cctns": [
+    "CCTNS",
+    "CCTNS_IMPORT"
+  ],
+  "missing_type_abandoned": [
+    "ABANDONED",
+    "DESERTED"
+  ],
+  "missing_type_runaway": [
+    "RUNAWAY",
+    "ELOPED"
+  ],
+  "court_disposal_convicted": [
+    "CONVICTED"
+  ],
+  "court_disposal_acquitted": [
+    "ACQUITTED"
+  ],
+  "court_disposal_compounded": [
+    "COMPOUNDED"
+  ],
+  "court_disposal_discharged": [
+    "DISCHARGED"
+  ],
+  "court_disposal_pending": [
+    "PENDING_TRIAL"
+  ]
+}

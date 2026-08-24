@@ -1,0 +1,138 @@
+{
+  "dimensions": [
+    {
+      "key": "ps_name",
+      "label": "Police Station",
+      "data_type": "text",
+      "sql_expr": "COALESCE(hn.name, 'UNKNOWN PS')",
+      "requires_join": ["hierarchy_nodes hn ON hn.id = r.ps_id"]
+    },
+    {
+      "key": "district_name",
+      "label": "District",
+      "data_type": "text",
+      "sql_expr": "COALESCE(hn_d.name, 'UNKNOWN DISTRICT')",
+      "requires_join": ["hierarchy_nodes hn_d ON hn_d.id = r.district_id"]
+    },
+    {
+      "key": "crime_head",
+      "label": "Crime Head",
+      "data_type": "text",
+      "sql_expr": "COALESCE(lh.canonical_code, 'UNCLASSIFIED')",
+      "requires_join": [
+        "fir_details fd ON fd.record_id = r.id",
+        "ref.local_heads lh ON lh.local_head_cd = fd.local_head_id"
+      ]
+    },
+    {
+      "key": "act_name",
+      "label": "Act",
+      "data_type": "text",
+      "sql_expr": "COALESCE(a.act_short, a.act_name, 'OTHER')",
+      "requires_join": [
+        "record_offences ro ON ro.record_id = r.id AND ro.sort_order = 0",
+        "ref.acts a ON a.act_cd = ro.act_id"
+      ]
+    },
+    {
+      "key": "case_status",
+      "label": "Case Status",
+      "data_type": "category",
+      "sql_expr": "COALESCE(fd.case_status, 'PENDING')",
+      "requires_join": ["fir_details fd ON fd.record_id = r.id"]
+    },
+    {
+      "key": "record_type",
+      "label": "Record Type",
+      "data_type": "category",
+      "sql_expr": "r.record_type"
+    },
+    {
+      "key": "workflow_status",
+      "label": "Workflow Status",
+      "data_type": "category",
+      "sql_expr": "r.current_status"
+    },
+    {
+      "key": "month",
+      "label": "Month",
+      "data_type": "date",
+      "sql_expr": "TO_CHAR(COALESCE(fd.fir_date, r.record_date), 'YYYY-MM')",
+      "requires_join": ["fir_details fd ON fd.record_id = r.id"]
+    },
+    {
+      "key": "year",
+      "label": "Year",
+      "data_type": "date",
+      "sql_expr": "TO_CHAR(COALESCE(fd.fir_date, r.record_date), 'YYYY')",
+      "requires_join": ["fir_details fd ON fd.record_id = r.id"]
+    },
+    {
+      "key": "arrest_type",
+      "label": "Arrest Type",
+      "data_type": "category",
+      "sql_expr": "CASE WHEN ad.is_dd_based THEN 'Kalandra' ELSE 'Against FIR' END",
+      "requires_join": ["arrest_details ad ON ad.record_id = r.id"]
+    },
+    {
+      "key": "gender",
+      "label": "Gender",
+      "data_type": "category",
+      "sql_expr": "COALESCE(p.gender, 'UNSPECIFIED')",
+      "requires_join": ["persons p ON p.record_id = r.id"]
+    },
+    {
+      "key": "social_category",
+      "label": "Social Status (SC/ST/OBC/General)",
+      "data_type": "category",
+      "sql_expr": "COALESCE(p.social_category, 'UNSPECIFIED')",
+      "requires_join": ["persons p ON p.record_id = r.id"]
+    },
+    {
+      "key": "education",
+      "label": "Educational Status",
+      "data_type": "category",
+      "sql_expr": "COALESCE(p.education, 'UNSPECIFIED')",
+      "requires_join": ["persons p ON p.record_id = r.id"]
+    },
+    {
+      "key": "financial_status",
+      "label": "Financial Status",
+      "data_type": "category",
+      "sql_expr": "COALESCE(p.financial_status, 'UNSPECIFIED')",
+      "requires_join": ["persons p ON p.record_id = r.id"]
+    }
+  ],
+  "measures": [
+    {
+      "key": "case_count",
+      "label": "Number of Cases",
+      "sql_expr": "COUNT(DISTINCT r.id)",
+      "default_for_record_type": "CASE"
+    },
+    {
+      "key": "arrest_count",
+      "label": "Number of Arrests",
+      "sql_expr": "COUNT(DISTINCT CASE WHEN r.record_type = 'ARREST' THEN r.id ELSE NULL END)",
+      "default_for_record_type": "ARREST"
+    },
+    {
+      "key": "person_count",
+      "label": "Number of Persons",
+      "sql_expr": "COUNT(DISTINCT p.id)",
+      "requires_join": ["persons p ON p.record_id = r.id"]
+    },
+    {
+      "key": "property_value_stolen",
+      "label": "Value of Property Stolen (₹)",
+      "sql_expr": "COALESCE(SUM(CASE WHEN rp.status = 'STOLEN' THEN rp.estimated_value ELSE 0 END), 0)",
+      "requires_join": ["record_properties rp ON rp.record_id = r.id"]
+    },
+    {
+      "key": "property_value_recovered",
+      "label": "Value of Property Recovered (₹)",
+      "sql_expr": "COALESCE(SUM(CASE WHEN rp.status = 'RECOVERED' THEN rp.estimated_value ELSE 0 END), 0)",
+      "requires_join": ["record_properties rp ON rp.record_id = r.id"]
+    }
+  ]
+}

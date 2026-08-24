@@ -174,6 +174,45 @@
         },
         {
           "col": 17,
+          "key": "complainant_social_category",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Social Category",
+          "hint": "select: SC, ST, OBC, GEN, UNKNOWN",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"SC,ST,OBC,GEN,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 18,
+          "key": "complainant_education",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Education",
+          "hint": "select: ILLITERATE, SCHOOL_DROPOUT, UP_TO_10TH, UP_TO_12TH, GRADUATE, PROFESSIONAL, UNKNOWN",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,PROFESSIONAL,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 19,
+          "key": "complainant_financial_status",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Financial Status",
+          "hint": "select: BPL, LOWER, MIDDLE, UPPER, UNKNOWN",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"BPL,LOWER,MIDDLE,UPPER,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 20,
           "key": "complainant_relation_type",
           "section": "Complainant Personal Details",
           "label": "Complainant Relation Type",
@@ -186,7 +225,7 @@
           }
         },
         {
-          "col": 18,
+          "col": 21,
           "key": "complainant_relative_name",
           "section": "Complainant Personal Details",
           "label": "Complainant Relative Name",
@@ -194,7 +233,7 @@
           "validation": null
         },
         {
-          "col": 19,
+          "col": 22,
           "key": "complainant_mobile_country_code",
           "section": "Complainant Personal Details",
           "label": "Complainant Mobile Country Code",
@@ -202,7 +241,7 @@
           "validation": null
         },
         {
-          "col": 20,
+          "col": 23,
           "key": "complainant_mobile",
           "section": "Complainant Personal Details",
           "label": "Complainant Mobile No.",
@@ -215,7 +254,7 @@
           }
         },
         {
-          "col": 21,
+          "col": 24,
           "key": "complainant_qualification",
           "section": "Complainant Personal Details",
           "label": "Complainant Qualification",
@@ -228,7 +267,7 @@
           }
         },
         {
-          "col": 22,
+          "col": 25,
           "key": "complainant_age_year",
           "section": "Complainant Personal Details",
           "label": "Complainant Age (Years)",
@@ -236,7 +275,7 @@
           "validation": null
         },
         {
-          "col": 23,
+          "col": 26,
           "key": "complainant_house_no",
           "section": "Complainant Present Address",
           "label": "Complainant House No.",
@@ -244,7 +283,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 27,
           "key": "complainant_street",
           "section": "Complainant Present Address",
           "label": "Complainant Street",
@@ -252,7 +291,7 @@
           "validation": null
         },
         {
-          "col": 25,
+          "col": 28,
           "key": "complainant_colony",
           "section": "Complainant Present Address",
           "label": "Complainant Colony",
@@ -260,7 +299,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 29,
           "key": "complainant_city_town_village",
           "section": "Complainant Present Address",
           "label": "Complainant Village / City / Town",
@@ -268,7 +307,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 30,
           "key": "complainant_tehsil_block_mandal",
           "section": "Complainant Present Address",
           "label": "Complainant Tehsil / Block / Mandal",
@@ -276,7 +315,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 31,
           "key": "complainant_country",
           "section": "Complainant Present Address",
           "label": "Complainant Nationality",
@@ -289,7 +328,7 @@
           }
         },
         {
-          "col": 29,
+          "col": 32,
           "key": "complainant_state",
           "section": "Complainant Present Address",
           "label": "Complainant State",
@@ -302,7 +341,7 @@
           }
         },
         {
-          "col": 30,
+          "col": 33,
           "key": "complainant_district",
           "section": "Complainant Present Address",
           "label": "Complainant District",
@@ -310,12 +349,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IFERROR(VLOOKUP($AC5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
+              "INDIRECT(IFERROR(VLOOKUP($AF5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 31,
+          "col": 34,
           "key": "complainant_police_station",
           "section": "Complainant Present Address",
           "label": "Complainant Police Station",
@@ -323,12 +362,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IF($AC5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
+              "INDIRECT(IF($AF5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
         {
-          "col": 32,
+          "col": 35,
           "key": "complainant_pincode",
           "section": "Complainant Present Address",
           "label": "Complainant Pin Code",
@@ -341,7 +380,7 @@
           }
         },
         {
-          "col": 33,
+          "col": 36,
           "key": "complainant_perm_same",
           "section": "Complainant Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -354,7 +393,7 @@
           }
         },
         {
-          "col": 34,
+          "col": 37,
           "key": "complainant_perm_house_no",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent House No.",
@@ -362,7 +401,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 38,
           "key": "complainant_perm_street",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Street",
@@ -370,7 +409,7 @@
           "validation": null
         },
         {
-          "col": 36,
+          "col": 39,
           "key": "complainant_perm_colony",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Colony",
@@ -378,7 +417,7 @@
           "validation": null
         },
         {
-          "col": 37,
+          "col": 40,
           "key": "complainant_perm_city_town_village",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Village / City / Town",
@@ -386,7 +425,7 @@
           "validation": null
         },
         {
-          "col": 38,
+          "col": 41,
           "key": "complainant_perm_tehsil_block_mandal",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Tehsil / Block / Mandal",
@@ -394,7 +433,7 @@
           "validation": null
         },
         {
-          "col": 39,
+          "col": 42,
           "key": "complainant_perm_country",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Nationality",
@@ -407,7 +446,7 @@
           }
         },
         {
-          "col": 40,
+          "col": 43,
           "key": "complainant_perm_state",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent State",
@@ -420,7 +459,7 @@
           }
         },
         {
-          "col": 41,
+          "col": 44,
           "key": "complainant_perm_district",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent District",
@@ -428,12 +467,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IFERROR(VLOOKUP($AN5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
+              "INDIRECT(IFERROR(VLOOKUP($AQ5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 42,
+          "col": 45,
           "key": "complainant_perm_police_station",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Police Station",
@@ -441,12 +480,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IF($AN5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
+              "INDIRECT(IF($AQ5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
         {
-          "col": 43,
+          "col": 46,
           "key": "complainant_perm_pincode",
           "section": "Complainant Permanent Address",
           "label": "Complainant Permanent Pin Code",
@@ -459,7 +498,7 @@
           }
         },
         {
-          "col": 44,
+          "col": 47,
           "key": "occurrence_house_no",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence House No.",
@@ -467,7 +506,7 @@
           "validation": null
         },
         {
-          "col": 45,
+          "col": 48,
           "key": "occurrence_street",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Street",
@@ -475,7 +514,7 @@
           "validation": null
         },
         {
-          "col": 46,
+          "col": 49,
           "key": "occurrence_colony",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Colony",
@@ -483,7 +522,7 @@
           "validation": null
         },
         {
-          "col": 47,
+          "col": 50,
           "key": "occurrence_city_town_village",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Village / City / Town",
@@ -491,7 +530,7 @@
           "validation": null
         },
         {
-          "col": 48,
+          "col": 51,
           "key": "occurrence_tehsil_block_mandal",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Tehsil / Block / Mandal",
@@ -499,7 +538,7 @@
           "validation": null
         },
         {
-          "col": 49,
+          "col": 52,
           "key": "occurrence_district",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence District",
@@ -512,7 +551,7 @@
           }
         },
         {
-          "col": 50,
+          "col": 53,
           "key": "occurrence_police_station",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Police Station",
@@ -520,12 +559,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(VLOOKUP($AW5,DISTRICT_TO_PS_NR,2,FALSE))"
+              "INDIRECT(VLOOKUP($AZ5,DISTRICT_TO_PS_NR,2,FALSE))"
             ]
           }
         },
         {
-          "col": 51,
+          "col": 54,
           "key": "occurrence_pincode",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Pin Code",
@@ -538,7 +577,7 @@
           }
         },
         {
-          "col": 52,
+          "col": 55,
           "key": "occurrence_landmark",
           "section": "Place of Occurrence Address",
           "label": "Place of Occurrence Landmark",
@@ -546,7 +585,7 @@
           "validation": null
         },
         {
-          "col": 53,
+          "col": 56,
           "key": "io_pis",
           "section": "IO Details",
           "label": "PIS No. of IO",
@@ -554,7 +593,7 @@
           "validation": null
         },
         {
-          "col": 54,
+          "col": 57,
           "key": "case_status",
           "section": "Action Taken",
           "label": "Status",
@@ -567,7 +606,7 @@
           }
         },
         {
-          "col": 55,
+          "col": 58,
           "key": "disposal_type",
           "section": "Action Taken",
           "label": "Disposal Type",
@@ -580,7 +619,7 @@
           }
         },
         {
-          "col": 56,
+          "col": 59,
           "key": "rc_no",
           "section": "Action Taken",
           "label": "RC No.",
@@ -588,7 +627,15 @@
           "validation": null
         },
         {
-          "col": 57,
+          "col": 60,
+          "key": "transferred_to_ps_id",
+          "section": "General Information",
+          "label": "Transferred to Police Station",
+          "hint": "select: ",
+          "validation": null
+        },
+        {
+          "col": 61,
           "key": "work_out",
           "section": "General Information",
           "label": "WorkOut",
@@ -601,7 +648,15 @@
           }
         },
         {
-          "col": 58,
+          "col": 62,
+          "key": "transferred_to_agency_id",
+          "section": "General Information",
+          "label": "Transferred to Agency",
+          "hint": "select: ",
+          "validation": null
+        },
+        {
+          "col": 63,
           "key": "work_out_date",
           "section": "General Information",
           "label": "WorkOut Date",
@@ -615,79 +670,117 @@
           }
         },
         {
-          "col": 59,
-          "key": null,
-          "section": "General Information",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 60,
-          "key": null,
-          "section": "General Information",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 61,
-          "key": null,
-          "section": "General Information",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 62,
-          "key": null,
-          "section": "General Information",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 63,
-          "key": null,
-          "section": "General Information",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
           "col": 64,
-          "key": null,
+          "key": "date_of_transfer",
           "section": "General Information",
-          "label": null,
-          "hint": null,
-          "validation": null
+          "label": "Date of Transfer",
+          "hint": "date (dd-mm-yyyy)",
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6,
+              10
+            ]
+          }
         },
         {
           "col": 65,
-          "key": null,
+          "key": "burglary_mo_cd",
           "section": "General Information",
-          "label": null,
-          "hint": null,
+          "label": "burglary_mo_cd",
+          "hint": "select",
           "validation": null
         },
         {
           "col": 66,
-          "key": null,
+          "key": "cheating_amount",
           "section": "General Information",
-          "label": null,
-          "hint": null,
+          "label": "cheating_amount",
+          "hint": "number",
           "validation": null
         },
         {
           "col": 67,
-          "key": null,
+          "key": "court_case_no",
           "section": "General Information",
-          "label": null,
-          "hint": null,
+          "label": "court_case_no",
+          "hint": "text",
           "validation": null
         },
         {
           "col": 68,
+          "key": "court_disposal_date",
+          "section": "General Information",
+          "label": "court_disposal_date",
+          "hint": "date",
+          "validation": null
+        },
+        {
+          "col": 69,
+          "key": "court_disposal_type",
+          "section": "General Information",
+          "label": "court_disposal_type",
+          "hint": "select",
+          "validation": null
+        },
+        {
+          "col": 70,
+          "key": "court_name",
+          "section": "General Information",
+          "label": "court_name",
+          "hint": "select",
+          "validation": null
+        },
+        {
+          "col": 71,
+          "key": "direction_authority",
+          "section": "General Information",
+          "label": "direction_authority",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 72,
+          "key": "education",
+          "section": "General Information",
+          "label": "education",
+          "hint": "select",
+          "validation": null
+        },
+        {
+          "col": 73,
+          "key": "financial_status",
+          "section": "General Information",
+          "label": "financial_status",
+          "hint": "select",
+          "validation": null
+        },
+        {
+          "col": 74,
+          "key": "registered_on_direction",
+          "section": "General Information",
+          "label": "registered_on_direction",
+          "hint": "boolean",
+          "validation": null
+        },
+        {
+          "col": 75,
+          "key": "sent_to_court_date",
+          "section": "General Information",
+          "label": "sent_to_court_date",
+          "hint": "date",
+          "validation": null
+        },
+        {
+          "col": 76,
+          "key": "social_category",
+          "section": "General Information",
+          "label": "social_category",
+          "hint": "select",
+          "validation": null
+        },
+        {
+          "col": 77,
           "key": null,
           "section": "General Information",
           "label": null,
@@ -695,7 +788,79 @@
           "validation": null
         },
         {
-          "col": 69,
+          "col": 78,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 79,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 80,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 81,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 82,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 83,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 84,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 85,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 86,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 87,
           "key": null,
           "section": "General Information",
           "label": null,
@@ -705,12 +870,12 @@
       ],
       "row2Merges": [
         "A2:K2",
-        "AH2:AQ2",
-        "AR2:AZ2",
-        "BB2:BD2",
-        "BE2:BQ2",
-        "L2:V2",
-        "W2:AG2"
+        "AK2:AT2",
+        "AU2:BC2",
+        "BE2:BG2",
+        "BH2:CI2",
+        "L2:Y2",
+        "Z2:AJ2"
       ]
     },
     "Victim Information": {
@@ -1043,32 +1208,32 @@
         },
         {
           "col": 33,
-          "key": null,
-          "section": "Victim Permanent Address",
-          "label": null,
-          "hint": null,
+          "key": "victim_social_category",
+          "section": "Victim Personal Details",
+          "label": "victim_social_category",
+          "hint": "select",
           "validation": null
         },
         {
           "col": 34,
-          "key": null,
-          "section": "Victim Permanent Address",
-          "label": null,
-          "hint": null,
+          "key": "victim_education",
+          "section": "Victim Personal Details",
+          "label": "victim_education",
+          "hint": "select",
           "validation": null
         },
         {
           "col": 35,
-          "key": null,
-          "section": "Victim Permanent Address",
-          "label": null,
-          "hint": null,
+          "key": "victim_financial_status",
+          "section": "Victim Personal Details",
+          "label": "victim_financial_status",
+          "hint": "select",
           "validation": null
         },
         {
           "col": 36,
           "key": null,
-          "section": "Victim Permanent Address",
+          "section": "Victim Personal Details",
           "label": null,
           "hint": null,
           "validation": null
@@ -1076,16 +1241,41 @@
         {
           "col": 37,
           "key": null,
-          "section": "Victim Permanent Address",
+          "section": "Victim Personal Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 38,
+          "key": null,
+          "section": "Victim Personal Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 39,
+          "key": null,
+          "section": "Victim Personal Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 40,
+          "key": null,
+          "section": "Victim Personal Details",
           "label": null,
           "hint": null,
           "validation": null
         }
       ],
       "row2Merges": [
+        "AG2:AN2",
         "B2:K2",
         "L2:V2",
-        "W2:AK2"
+        "W2:AF2"
       ]
     },
     "Act and Sections": {
@@ -1213,6 +1403,45 @@
         },
         {
           "col": 7,
+          "key": "accused_social_category",
+          "section": "Accused Personal Details",
+          "label": "Accused Social Category",
+          "hint": "select: SC, ST, OBC, GEN, UNKNOWN",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"SC,ST,OBC,GEN,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 8,
+          "key": "accused_education",
+          "section": "Accused Personal Details",
+          "label": "Accused Education",
+          "hint": "select: ILLITERATE, SCHOOL_DROPOUT, UP_TO_10TH, UP_TO_12TH, GRADUATE, PROFESSIONAL, UNKNOWN",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,PROFESSIONAL,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 9,
+          "key": "accused_financial_status",
+          "section": "Accused Personal Details",
+          "label": "Accused Financial Status",
+          "hint": "select: BPL, LOWER, MIDDLE, UPPER, UNKNOWN",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"BPL,LOWER,MIDDLE,UPPER,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 10,
           "key": "accused_relation_type",
           "section": "Accused Personal Details",
           "label": "Accused Relation Type",
@@ -1225,7 +1454,7 @@
           }
         },
         {
-          "col": 8,
+          "col": 11,
           "key": "accused_relative_name",
           "section": "Accused Personal Details",
           "label": "Accused Relative Name",
@@ -1233,7 +1462,7 @@
           "validation": null
         },
         {
-          "col": 9,
+          "col": 12,
           "key": "accused_mobile_country_code",
           "section": "Accused Personal Details",
           "label": "Accused Mobile Country Code",
@@ -1241,7 +1470,7 @@
           "validation": null
         },
         {
-          "col": 10,
+          "col": 13,
           "key": "accused_mobile",
           "section": "Accused Personal Details",
           "label": "Accused Mobile No.",
@@ -1254,7 +1483,7 @@
           }
         },
         {
-          "col": 11,
+          "col": 14,
           "key": "accused_qualification",
           "section": "Accused Personal Details",
           "label": "Accused Qualification",
@@ -1267,7 +1496,7 @@
           }
         },
         {
-          "col": 12,
+          "col": 15,
           "key": "accused_age_year",
           "section": "Accused Personal Details",
           "label": "Accused Age (Years)",
@@ -1275,7 +1504,7 @@
           "validation": null
         },
         {
-          "col": 13,
+          "col": 16,
           "key": "accused_house_no",
           "section": "Accused Present Address",
           "label": "Accused House No.",
@@ -1283,7 +1512,7 @@
           "validation": null
         },
         {
-          "col": 14,
+          "col": 17,
           "key": "accused_street",
           "section": "Accused Present Address",
           "label": "Accused Street",
@@ -1291,7 +1520,7 @@
           "validation": null
         },
         {
-          "col": 15,
+          "col": 18,
           "key": "accused_colony",
           "section": "Accused Present Address",
           "label": "Accused Colony",
@@ -1299,7 +1528,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 19,
           "key": "accused_city_town_village",
           "section": "Accused Present Address",
           "label": "Accused Village / City / Town",
@@ -1307,7 +1536,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 20,
           "key": "accused_tehsil_block_mandal",
           "section": "Accused Present Address",
           "label": "Accused Tehsil / Block / Mandal",
@@ -1315,7 +1544,7 @@
           "validation": null
         },
         {
-          "col": 18,
+          "col": 21,
           "key": "accused_country",
           "section": "Accused Present Address",
           "label": "Accused Nationality",
@@ -1328,7 +1557,7 @@
           }
         },
         {
-          "col": 19,
+          "col": 22,
           "key": "accused_state",
           "section": "Accused Present Address",
           "label": "Accused State",
@@ -1341,7 +1570,7 @@
           }
         },
         {
-          "col": 20,
+          "col": 23,
           "key": "accused_district",
           "section": "Accused Present Address",
           "label": "Accused District",
@@ -1349,12 +1578,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IFERROR(VLOOKUP($S5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
+              "INDIRECT(IFERROR(VLOOKUP($V5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 21,
+          "col": 24,
           "key": "accused_police_station",
           "section": "Accused Present Address",
           "label": "Accused Police Station",
@@ -1362,12 +1591,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IF($S5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
+              "INDIRECT(IF($V5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
         {
-          "col": 22,
+          "col": 25,
           "key": "accused_pincode",
           "section": "Accused Present Address",
           "label": "Accused Pin Code",
@@ -1380,7 +1609,7 @@
           }
         },
         {
-          "col": 23,
+          "col": 26,
           "key": "accused_perm_same",
           "section": "Accused Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -1393,7 +1622,7 @@
           }
         },
         {
-          "col": 24,
+          "col": 27,
           "key": "accused_perm_house_no",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent House No.",
@@ -1401,7 +1630,7 @@
           "validation": null
         },
         {
-          "col": 25,
+          "col": 28,
           "key": "accused_perm_street",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Street",
@@ -1409,7 +1638,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 29,
           "key": "accused_perm_colony",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Colony",
@@ -1417,7 +1646,7 @@
           "validation": null
         },
         {
-          "col": 27,
+          "col": 30,
           "key": "accused_perm_city_town_village",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Village / City / Town",
@@ -1425,7 +1654,7 @@
           "validation": null
         },
         {
-          "col": 28,
+          "col": 31,
           "key": "accused_perm_tehsil_block_mandal",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Tehsil / Block / Mandal",
@@ -1433,7 +1662,7 @@
           "validation": null
         },
         {
-          "col": 29,
+          "col": 32,
           "key": "accused_perm_country",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Nationality",
@@ -1446,7 +1675,7 @@
           }
         },
         {
-          "col": 30,
+          "col": 33,
           "key": "accused_perm_state",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent State",
@@ -1459,7 +1688,7 @@
           }
         },
         {
-          "col": 31,
+          "col": 34,
           "key": "accused_perm_district",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent District",
@@ -1467,12 +1696,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IFERROR(VLOOKUP($AD5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
+              "INDIRECT(IFERROR(VLOOKUP($AG5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 32,
+          "col": 35,
           "key": "accused_perm_police_station",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Police Station",
@@ -1480,12 +1709,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IF($AD5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
+              "INDIRECT(IF($AG5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
         {
-          "col": 33,
+          "col": 36,
           "key": "accused_perm_pincode",
           "section": "Accused Permanent Address",
           "label": "Accused Permanent Pin Code",
@@ -1498,31 +1727,31 @@
           }
         },
         {
-          "col": 34,
-          "key": null,
-          "section": "Accused Permanent Address",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 35,
-          "key": null,
-          "section": "Accused Permanent Address",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 36,
-          "key": null,
-          "section": "Accused Permanent Address",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
           "col": 37,
+          "key": null,
+          "section": "Accused Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 38,
+          "key": null,
+          "section": "Accused Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 39,
+          "key": null,
+          "section": "Accused Permanent Address",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 40,
           "key": null,
           "section": "Accused Permanent Address",
           "label": null,
@@ -1531,9 +1760,9 @@
         }
       ],
       "row2Merges": [
-        "B2:L2",
-        "M2:W2",
-        "X2:AK2"
+        "AA2:AN2",
+        "B2:O2",
+        "P2:Z2"
       ]
     },
     "Property Details": {
@@ -2024,32 +2253,56 @@
         },
         {
           "col": 10,
-          "key": null,
-          "section": "IO Details",
-          "label": null,
-          "hint": null,
+          "key": "education",
+          "section": "General Info",
+          "label": "education",
+          "hint": "select",
           "validation": null
         },
         {
           "col": 11,
-          "key": null,
-          "section": "IO Details",
-          "label": null,
-          "hint": null,
+          "key": "financial_status",
+          "section": "General Info",
+          "label": "financial_status",
+          "hint": "select",
           "validation": null
         },
         {
           "col": 12,
-          "key": null,
-          "section": "IO Details",
-          "label": null,
-          "hint": null,
+          "key": "social_category",
+          "section": "General Info",
+          "label": "social_category",
+          "hint": "select",
           "validation": null
         },
         {
           "col": 13,
           "key": null,
-          "section": "IO Details",
+          "section": "General Info",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 14,
+          "key": null,
+          "section": "General Info",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 15,
+          "key": null,
+          "section": "General Info",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 16,
+          "key": null,
+          "section": "General Info",
           "label": null,
           "hint": null,
           "validation": null
@@ -2058,7 +2311,7 @@
       "row2Merges": [
         "B2:F2",
         "G2:H2",
-        "I2:M2"
+        "J2:P2"
       ]
     },
     "Act and Sections": {
@@ -2253,6 +2506,45 @@
         },
         {
           "col": 14,
+          "key": "arrested_social_category",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Social Category",
+          "hint": "select: SC, ST, OBC, GEN, UNKNOWN",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"SC,ST,OBC,GEN,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 15,
+          "key": "arrested_education",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Education",
+          "hint": "select: ILLITERATE, SCHOOL_DROPOUT, UP_TO_10TH, UP_TO_12TH, GRADUATE, PROFESSIONAL, UNKNOWN",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,PROFESSIONAL,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 16,
+          "key": "arrested_financial_status",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Financial Status",
+          "hint": "select: BPL, LOWER, MIDDLE, UPPER, UNKNOWN",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"BPL,LOWER,MIDDLE,UPPER,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 17,
           "key": "arrested_relation_type",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Relation Type",
@@ -2265,7 +2557,7 @@
           }
         },
         {
-          "col": 15,
+          "col": 18,
           "key": "arrested_relative_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Relative Name",
@@ -2273,7 +2565,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 19,
           "key": "arrested_mobile_country_code",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Mobile Country Code",
@@ -2281,7 +2573,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 20,
           "key": "arrested_mobile",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Mobile No.",
@@ -2294,7 +2586,7 @@
           }
         },
         {
-          "col": 18,
+          "col": 21,
           "key": "arrested_qualification",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Qualification",
@@ -2307,7 +2599,7 @@
           }
         },
         {
-          "col": 19,
+          "col": 22,
           "key": "arrested_age_year",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Age (Years)",
@@ -2315,7 +2607,7 @@
           "validation": null
         },
         {
-          "col": 20,
+          "col": 23,
           "key": "arrested_house_no",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person House No.",
@@ -2323,7 +2615,7 @@
           "validation": null
         },
         {
-          "col": 21,
+          "col": 24,
           "key": "arrested_street",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Street",
@@ -2331,7 +2623,7 @@
           "validation": null
         },
         {
-          "col": 22,
+          "col": 25,
           "key": "arrested_colony",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Colony",
@@ -2339,7 +2631,7 @@
           "validation": null
         },
         {
-          "col": 23,
+          "col": 26,
           "key": "arrested_city_town_village",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Village / City / Town",
@@ -2347,7 +2639,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 27,
           "key": "arrested_tehsil_block_mandal",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Tehsil / Block / Mandal",
@@ -2355,7 +2647,7 @@
           "validation": null
         },
         {
-          "col": 25,
+          "col": 28,
           "key": "arrested_country",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Nationality",
@@ -2368,7 +2660,7 @@
           }
         },
         {
-          "col": 26,
+          "col": 29,
           "key": "arrested_state",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person State",
@@ -2381,7 +2673,7 @@
           }
         },
         {
-          "col": 27,
+          "col": 30,
           "key": "arrested_district",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person District",
@@ -2389,12 +2681,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IFERROR(VLOOKUP($Z5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
+              "INDIRECT(IFERROR(VLOOKUP($AC5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 28,
+          "col": 31,
           "key": "arrested_police_station",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Police Station",
@@ -2402,12 +2694,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IF($Z5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
+              "INDIRECT(IF($AC5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
         {
-          "col": 29,
+          "col": 32,
           "key": "arrested_pincode",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Pin Code",
@@ -2420,7 +2712,7 @@
           }
         },
         {
-          "col": 30,
+          "col": 33,
           "key": "arrested_perm_same",
           "section": "Arrested Person Present Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -2433,7 +2725,7 @@
           }
         },
         {
-          "col": 31,
+          "col": 34,
           "key": "arrested_perm_house_no",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent House No.",
@@ -2441,7 +2733,7 @@
           "validation": null
         },
         {
-          "col": 32,
+          "col": 35,
           "key": "arrested_perm_street",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Street",
@@ -2449,7 +2741,7 @@
           "validation": null
         },
         {
-          "col": 33,
+          "col": 36,
           "key": "arrested_perm_colony",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Colony",
@@ -2457,7 +2749,7 @@
           "validation": null
         },
         {
-          "col": 34,
+          "col": 37,
           "key": "arrested_perm_city_town_village",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Village / City / Town",
@@ -2465,7 +2757,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 38,
           "key": "arrested_perm_tehsil_block_mandal",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Tehsil / Block / Mandal",
@@ -2473,7 +2765,7 @@
           "validation": null
         },
         {
-          "col": 36,
+          "col": 39,
           "key": "arrested_perm_country",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Nationality",
@@ -2486,7 +2778,7 @@
           }
         },
         {
-          "col": 37,
+          "col": 40,
           "key": "arrested_perm_state",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent State",
@@ -2499,7 +2791,7 @@
           }
         },
         {
-          "col": 38,
+          "col": 41,
           "key": "arrested_perm_district",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent District",
@@ -2507,12 +2799,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IFERROR(VLOOKUP($AK5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
+              "INDIRECT(IFERROR(VLOOKUP($AN5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 39,
+          "col": 42,
           "key": "arrested_perm_police_station",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Police Station",
@@ -2520,12 +2812,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IF($AK5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
+              "INDIRECT(IF($AN5=\"Delhi\",\"OPT_POLICE_STATION\",\"\"))"
             ]
           }
         },
         {
-          "col": 40,
+          "col": 43,
           "key": "arrested_perm_pincode",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Pin Code",
@@ -2538,7 +2830,7 @@
           }
         },
         {
-          "col": 41,
+          "col": 44,
           "key": "nafis_prepared",
           "section": "Particular Details",
           "label": "NAFIS Prepared",
@@ -2551,7 +2843,7 @@
           }
         },
         {
-          "col": 42,
+          "col": 45,
           "key": "dossier_prepared",
           "section": "Particular Details",
           "label": "Dossier Prepared",
@@ -2564,7 +2856,7 @@
           }
         },
         {
-          "col": 43,
+          "col": 46,
           "key": "prev_involvement",
           "section": "Particular Details",
           "label": "Previous involvement",
@@ -2577,7 +2869,7 @@
           }
         },
         {
-          "col": 44,
+          "col": 47,
           "key": "bad_character",
           "section": "Particular Details",
           "label": "Bad Character (BC)",
@@ -2585,7 +2877,7 @@
           "validation": null
         },
         {
-          "col": 45,
+          "col": 48,
           "key": "proclaimed_offender",
           "section": "Particular Details",
           "label": "Proclaimed Offender (PO)",
@@ -2598,7 +2890,7 @@
           }
         },
         {
-          "col": 46,
+          "col": 49,
           "key": "verifying_officer_name",
           "section": "Particular Details",
           "label": "Arresting Officer Name",
@@ -2606,7 +2898,7 @@
           "validation": null
         },
         {
-          "col": 47,
+          "col": 50,
           "key": "verifying_officer_rank",
           "section": "Particular Details",
           "label": "Arresting Officer Rank",
@@ -2619,7 +2911,7 @@
           }
         },
         {
-          "col": 48,
+          "col": 51,
           "key": "status",
           "section": "Particular Details",
           "label": "Custody status",
@@ -2632,7 +2924,7 @@
           }
         },
         {
-          "col": 49,
+          "col": 52,
           "key": "scheme_of_arrest",
           "section": "Particular Details",
           "label": "Scheme of arrest",
@@ -2645,7 +2937,7 @@
           }
         },
         {
-          "col": 50,
+          "col": 53,
           "key": "listed_criminal",
           "section": "Particular Details",
           "label": "Listed Criminal / Bad Character (BC)",
@@ -2656,30 +2948,6 @@
               "\"Yes,No\""
             ]
           }
-        },
-        {
-          "col": 51,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 52,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 53,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
         },
         {
           "col": 54,
@@ -2704,14 +2972,38 @@
           "label": null,
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 57,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 58,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 59,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
-        "AE2:AN2",
-        "AO2:BD2",
+        "AH2:AQ2",
+        "AR2:BG2",
         "B2:H2",
-        "I2:S2",
-        "T2:AD2"
+        "I2:V2",
+        "W2:AG2"
       ]
     },
     "Property Details": {
@@ -3550,14 +3842,9 @@
           "col": 47,
           "key": "filed_by_acp_sdm",
           "section": "Inquest Details",
-          "label": "Inquest Filed by ACP / SDM",
-          "hint": "select: SDM, ACP, None",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"SDM,ACP,None\""
-            ]
-          }
+          "label": "Inquest Filed by ACP / SDM?",
+          "hint": "boolean",
+          "validation": null
         },
         {
           "col": 48,
@@ -3583,11 +3870,42 @@
         },
         {
           "col": 50,
-          "key": "uidb_no",
+          "key": "education",
           "section": "General Information",
-          "label": "UIDB Gazette Number",
-          "hint": "[Required] text",
-          "validation": null
+          "label": "education",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"High School,Intermediate,Graduate,Illiterate,Dropout,Not Known\""
+            ]
+          }
+        },
+        {
+          "col": 51,
+          "key": "financial_status",
+          "section": "General Information",
+          "label": "financial_status",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 52,
+          "key": "social_category",
+          "section": "General Information",
+          "label": "social_category",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"General,OBC (Other Backward Class),SC (Scheduled Caste),ST (Scheduled Tribe),EWS (Economically Weaker Section),Others,Not Known / Not Disclosed\""
+            ]
+          }
         }
       ],
       "row2Merges": [
@@ -3595,6 +3913,7 @@
         "AD2:AM2",
         "AN2:AQ2",
         "AR2:AV2",
+        "AX2:AZ2",
         "E2:AC2"
       ]
     },
@@ -4140,6 +4459,84 @@
               10
             ]
           }
+        },
+        {
+          "col": 47,
+          "key": "mp_social_category",
+          "section": "Address Details",
+          "label": "mp_social_category",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"General,OBC (Other Backward Class),SC (Scheduled Caste),ST (Scheduled Tribe),EWS (Economically Weaker Section),Others,Not Known / Not Disclosed\""
+            ]
+          }
+        },
+        {
+          "col": 48,
+          "key": "mp_education",
+          "section": "Address Details",
+          "label": "mp_education",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"High School,Intermediate,Graduate,Illiterate,Dropout,Not Known\""
+            ]
+          }
+        },
+        {
+          "col": 49,
+          "key": "mp_financial_status",
+          "section": "Address Details",
+          "label": "mp_financial_status",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 50,
+          "key": "education",
+          "section": "General Information",
+          "label": "education",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"High School,Intermediate,Graduate,Illiterate,Dropout,Not Known\""
+            ]
+          }
+        },
+        {
+          "col": 51,
+          "key": "financial_status",
+          "section": "General Information",
+          "label": "financial_status",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 52,
+          "key": "social_category",
+          "section": "General Information",
+          "label": "social_category",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"General,OBC (Other Backward Class),SC (Scheduled Caste),ST (Scheduled Tribe),EWS (Economically Weaker Section),Others,Not Known / Not Disclosed\""
+            ]
+          }
         }
       ],
       "row2Merges": [
@@ -4147,6 +4544,8 @@
         "AE2:AH2",
         "AI2:AQ2",
         "AS2:AT2",
+        "AU2:AW2",
+        "AX2:AZ2",
         "G2:AD2"
       ]
     }
@@ -4202,7 +4601,7 @@
           "key": "heinous_offence",
           "section": "General Information",
           "label": "Heinous Offence",
-          "hint": "select: ",
+          "hint": "select: Yes, No",
           "validation": {
             "type": "list",
             "formulae": [
@@ -4577,10 +4976,50 @@
               "\"Uneducated,10th,10+2,Graduate,Post-Graduate\""
             ]
           }
+        },
+        {
+          "col": 42,
+          "key": "education",
+          "section": "General Information",
+          "label": "education",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"High School,Intermediate,Graduate,Illiterate,Dropout,Not Known\""
+            ]
+          }
+        },
+        {
+          "col": 43,
+          "key": "financial_status",
+          "section": "General Information",
+          "label": "financial_status",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 44,
+          "key": "social_category",
+          "section": "General Information",
+          "label": "social_category",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"General,OBC (Other Backward Class),SC (Scheduled Caste),ST (Scheduled Tribe),EWS (Economically Weaker Section),Others,Not Known / Not Disclosed\""
+            ]
+          }
         }
       ],
       "row2Merges": [
         "A2:G2",
+        "AP2:AR2",
         "I2:AN2"
       ]
     },
@@ -4687,7 +5126,7 @@
           "col": 4,
           "key": "arrest_place",
           "section": "Arrest Detail",
-          "label": "House No. of Arrest",
+          "label": "Place of Arrest",
           "hint": "text",
           "validation": null
         },
@@ -4775,6 +5214,45 @@
         },
         {
           "col": 14,
+          "key": "arrested_social_category",
+          "section": "Arrested Person Personal Details",
+          "label": "arrested_social_category",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"SC,ST,OBC,GEN,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 15,
+          "key": "arrested_education",
+          "section": "Arrested Person Personal Details",
+          "label": "arrested_education",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,PROFESSIONAL,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 16,
+          "key": "arrested_financial_status",
+          "section": "Arrested Person Personal Details",
+          "label": "arrested_financial_status",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"BPL,LOWER,MIDDLE,UPPER,UNKNOWN\""
+            ]
+          }
+        },
+        {
+          "col": 17,
           "key": "arrested_relation_type",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Relation Type",
@@ -4787,7 +5265,7 @@
           }
         },
         {
-          "col": 15,
+          "col": 18,
           "key": "arrested_relative_name",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Relative Name",
@@ -4795,7 +5273,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 19,
           "key": "arrested_mobile_country_code",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Mobile Country Code",
@@ -4803,7 +5281,7 @@
           "validation": null
         },
         {
-          "col": 17,
+          "col": 20,
           "key": "arrested_mobile",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Mobile No.",
@@ -4816,7 +5294,7 @@
           }
         },
         {
-          "col": 18,
+          "col": 21,
           "key": "arrested_age_year",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Age (Years)",
@@ -4824,7 +5302,7 @@
           "validation": null
         },
         {
-          "col": 19,
+          "col": 22,
           "key": "arrested_house_no",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person House No.",
@@ -4832,7 +5310,7 @@
           "validation": null
         },
         {
-          "col": 20,
+          "col": 23,
           "key": "arrested_street",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Street",
@@ -4840,7 +5318,7 @@
           "validation": null
         },
         {
-          "col": 21,
+          "col": 24,
           "key": "arrested_colony",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Colony",
@@ -4848,7 +5326,7 @@
           "validation": null
         },
         {
-          "col": 22,
+          "col": 25,
           "key": "arrested_city_town_village",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Village / City / Town",
@@ -4856,7 +5334,7 @@
           "validation": null
         },
         {
-          "col": 23,
+          "col": 26,
           "key": "arrested_tehsil_block_mandal",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Tehsil / Block / Mandal",
@@ -4864,7 +5342,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 27,
           "key": "arrested_country",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Nationality",
@@ -4877,7 +5355,7 @@
           }
         },
         {
-          "col": 25,
+          "col": 28,
           "key": "arrested_state",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person State",
@@ -4890,7 +5368,7 @@
           }
         },
         {
-          "col": 26,
+          "col": 29,
           "key": "arrested_district",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person District",
@@ -4898,12 +5376,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IFERROR(VLOOKUP($Y5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
+              "INDIRECT(IFERROR(VLOOKUP($AB5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 27,
+          "col": 30,
           "key": "arrested_police_station",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Police Station",
@@ -4916,7 +5394,7 @@
           }
         },
         {
-          "col": 28,
+          "col": 31,
           "key": "arrested_pincode",
           "section": "Arrested Person Present Address",
           "label": "Arrested Person Pin Code",
@@ -4929,7 +5407,7 @@
           }
         },
         {
-          "col": 29,
+          "col": 32,
           "key": "arrested_perm_same",
           "section": "Arrested Person Permanent Address",
           "label": "Is Permanent Address same as Present Address?",
@@ -4942,7 +5420,7 @@
           }
         },
         {
-          "col": 30,
+          "col": 33,
           "key": "arrested_perm_house_no",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent House No.",
@@ -4950,7 +5428,7 @@
           "validation": null
         },
         {
-          "col": 31,
+          "col": 34,
           "key": "arrested_perm_street",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Street",
@@ -4958,7 +5436,7 @@
           "validation": null
         },
         {
-          "col": 32,
+          "col": 35,
           "key": "arrested_perm_colony",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Colony",
@@ -4966,7 +5444,7 @@
           "validation": null
         },
         {
-          "col": 33,
+          "col": 36,
           "key": "arrested_perm_city_town_village",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Village / City / Town",
@@ -4974,7 +5452,7 @@
           "validation": null
         },
         {
-          "col": 34,
+          "col": 37,
           "key": "arrested_perm_tehsil_block_mandal",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Tehsil / Block / Mandal",
@@ -4982,7 +5460,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 38,
           "key": "arrested_perm_country",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Nationality",
@@ -4995,7 +5473,7 @@
           }
         },
         {
-          "col": 36,
+          "col": 39,
           "key": "arrested_perm_state",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent State",
@@ -5008,7 +5486,7 @@
           }
         },
         {
-          "col": 37,
+          "col": 40,
           "key": "arrested_perm_district",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent District",
@@ -5016,12 +5494,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "INDIRECT(IFERROR(VLOOKUP($AJ5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
+              "INDIRECT(IFERROR(VLOOKUP($AM5,STATE_TO_DISTRICT_NR,2,FALSE),\"OPT_INDIA_DISTRICTS\"))"
             ]
           }
         },
         {
-          "col": 38,
+          "col": 41,
           "key": "arrested_perm_police_station",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Police Station",
@@ -5034,7 +5512,7 @@
           }
         },
         {
-          "col": 39,
+          "col": 42,
           "key": "arrested_perm_pincode",
           "section": "Arrested Person Permanent Address",
           "label": "Arrested Person Permanent Pin Code",
@@ -5047,7 +5525,7 @@
           }
         },
         {
-          "col": 40,
+          "col": 43,
           "key": "nafis_prepared",
           "section": "Verification & Police Record",
           "label": "NAFIS Prepared",
@@ -5060,7 +5538,7 @@
           }
         },
         {
-          "col": 41,
+          "col": 44,
           "key": "dossier_prepared",
           "section": "Verification & Police Record",
           "label": "Dossier Prepared",
@@ -5073,7 +5551,7 @@
           }
         },
         {
-          "col": 42,
+          "col": 45,
           "key": "prev_involvement",
           "section": "Verification & Police Record",
           "label": "Prev. Involvement (Y/N)",
@@ -5086,7 +5564,7 @@
           }
         },
         {
-          "col": 43,
+          "col": 46,
           "key": "bad_character",
           "section": "Verification & Police Record",
           "label": "Bad Character (BC)",
@@ -5099,7 +5577,7 @@
           }
         },
         {
-          "col": 44,
+          "col": 47,
           "key": "proclaimed_offender",
           "section": "Verification & Police Record",
           "label": "Proclaimed Offender (PO)",
@@ -5112,7 +5590,7 @@
           }
         },
         {
-          "col": 45,
+          "col": 48,
           "key": "verifying_officer_name",
           "section": "Verification & Police Record",
           "label": "Arresting Officer Name",
@@ -5120,7 +5598,7 @@
           "validation": null
         },
         {
-          "col": 46,
+          "col": 49,
           "key": "verifying_officer_rank",
           "section": "Verification & Police Record",
           "label": "Arresting Officer Rank",
@@ -5133,7 +5611,7 @@
           }
         },
         {
-          "col": 47,
+          "col": 50,
           "key": "status",
           "section": "Verification & Police Record",
           "label": "Status",
@@ -5146,7 +5624,7 @@
           }
         },
         {
-          "col": 48,
+          "col": 51,
           "key": "scheme_of_arrest",
           "section": "Verification & Police Record",
           "label": "Scheme of Arrest",
@@ -5160,12 +5638,12 @@
         }
       ],
       "row2Merges": [
-        "AC2:AM2",
-        "AN2:AV2",
+        "AF2:AP2",
+        "AQ2:AY2",
         "B2:H2",
-        "I2:O2",
-        "Q2:R2",
-        "S2:AB2"
+        "I2:R2",
+        "T2:U2",
+        "V2:AE2"
       ]
     }
   }

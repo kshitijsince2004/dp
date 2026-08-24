@@ -6,7 +6,7 @@ import ReportModal from "../ui/ReportModal.jsx";
 import { useNotifications } from "../../hooks/useNotifications.js";
 
 export default function DashboardLayout() {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // ── Real-time notifications from SSE + REST ──────────────────────────────
   const {

@@ -78,6 +78,7 @@ export default function SearchableSelect({
       setDropdownStyle({
         position: 'fixed',
         left: rect.left,
+        minWidth: Math.max(rect.width, 260),
         width: rect.width,
         zIndex: 9999,
         ...(openUpward
@@ -131,8 +132,8 @@ export default function SearchableSelect({
                   closeDropdown();
                 }
               }}
-              className={`px-2 py-1.5 cursor-pointer text-[11px] hover:bg-[#f0f4f8] transition-colors flex items-center gap-2 ${
-                isChecked ? 'bg-[#d0e0f8] font-bold text-[#0d2a4a]' : 'text-slate-700'
+              className={`px-3.5 py-2.5 cursor-pointer text-sm sm:text-base hover:bg-[#f0f4f8] transition-colors flex items-center gap-2.5 ${
+                isChecked ? 'bg-[#d0e0f8] font-bold text-[#0d2a4a]' : 'text-slate-700 font-medium'
               }`}
             >
               {multiple && (
@@ -140,7 +141,7 @@ export default function SearchableSelect({
                   type="checkbox"
                   checked={isChecked}
                   onChange={() => {}}
-                  className="accent-[#0f52ba] h-3.5 w-3.5 rounded cursor-pointer"
+                  className="accent-[#0f52ba] h-4 w-4 rounded cursor-pointer"
                 />
               )}
               <span>{getLabel(opt)}</span>
@@ -157,10 +158,10 @@ export default function SearchableSelect({
 
   let inputClass = className
     ? className.replace('flex-1', 'w-full')
-    : "w-full h-6 pl-1 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-text disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
+    : "w-full min-h-[44px] px-3.5 py-2 border-2 border-[#7a9cc5] rounded-xl bg-white text-sm sm:text-base font-medium outline-none focus:border-blue-500 cursor-text disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed";
 
   if (!inputClass.includes('pr-')) {
-    inputClass = `${inputClass} pr-5`;
+    inputClass = `${inputClass} pr-7`;
   }
 
   return (
@@ -179,7 +180,7 @@ export default function SearchableSelect({
         className={inputClass}
         style={style}
       />
-      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-[8px]">
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">
         ▼
       </span>
       {createPortal(dropdown, document.body)}

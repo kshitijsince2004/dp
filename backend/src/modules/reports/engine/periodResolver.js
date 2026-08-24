@@ -31,16 +31,18 @@ function addYearsSnappingLeap(dateObj, yearsOffset) {
 
 function parseBaseDate(val) {
   if (!val) return new Date();
-  if (val instanceof Date) return new Date(val);
-  if (typeof val === 'string' && val.includes('/')) {
-    const parts = val.split('/');
-    if (parts.length === 3) {
-      const [d, m, y] = parts;
-      return new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T00:00:00Z`);
-    }
+  if (val instanceof Date) return isNaN(val.getTime()) ? new Date() : new Date(val);
+  const str = String(val).trim();
+  if (/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(str)) {
+    const parts = str.split(/[\/-]/);
+    return new Date(Date.UTC(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0])));
   }
-  const str = String(val).split('T')[0];
-  return new Date(`${str}T00:00:00Z`);
+  if (/^\d{4}[\/-]\d{1,2}[\/-]\d{1,2}$/.test(str)) {
+    const parts = str.split(/[\/-]/);
+    return new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])));
+  }
+  const parsed = new Date(str);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 export function resolvePeriod(expression = 'DURING_DAY', baseDateStr = new Date().toISOString().split('T')[0], yearOffset = 0) {

@@ -13,7 +13,7 @@ const config = {
   connection: databaseUrl,
   pool: {
     min: 2,
-    max: 10
+    max: 30
   },
   migrations: {
     directory: path.resolve(__dirname, 'migrations'),

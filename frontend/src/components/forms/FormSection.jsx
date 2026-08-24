@@ -482,6 +482,7 @@ export default function FormSection({
   errors,
   touched,
   handleChange,
+  handleBlur,
   readOnly,
   targetFields = [],
   lang = 'en',
@@ -510,15 +511,15 @@ export default function FormSection({
   }
 
   return (
-    <div className={hideHeader ? "bg-transparent overflow-visible" : "bg-white border border-[#7a9cc5] rounded-card overflow-hidden"}>
+    <div className={hideHeader ? "bg-transparent overflow-visible" : "bg-white border-2 border-[#7a9cc5] rounded-2xl overflow-hidden shadow-sm"}>
       {/* Section header */}
       {!hideHeader && (
-        <div className="flex items-center justify-between bg-[#f0f5fa] border-b border-[#7a9cc5] px-6 py-4">
+        <div className="flex items-center justify-between bg-[#f0f5fa] border-b-2 border-[#7a9cc5] px-6 py-3.5">
           <div className="flex items-center gap-3">
-            <span className="flex items-center justify-center w-7 h-7 rounded-md bg-[#dfeaf5] text-[#0d2a4a] text-xs font-bold border border-[#7a9cc5]/40">
+            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#dfeaf5] text-[#0d2a4a] text-sm font-black border border-[#7a9cc5]/40">
               {currentStep + 1}
             </span>
-            <h2 className="text-base font-bold text-[#0d2a4a] tracking-wide">
+            <h2 className="text-lg sm:text-xl font-bold text-[#0d2a4a] tracking-wide">
               {lang === 'hi'
                 ? (section.title_hi || section.title_en)
                 : section.title_en}
@@ -527,12 +528,12 @@ export default function FormSection({
           <div className="flex items-center gap-3">
             <FormAutosave status={saveStatus} lang={lang} />
             {totalSteps > 1 && (
-              <span className="text-xs font-extrabold text-[#0d2a4a] bg-[#dfeaf5] border border-[#7a9cc5]/20 px-2.5 py-1 rounded-lg">
+              <span className="text-sm font-bold text-[#0d2a4a] bg-[#dfeaf5] border border-[#7a9cc5]/20 px-3 py-1.5 rounded-xl">
                 {lang === 'hi' ? `चरण ${currentStep + 1} / ${totalSteps}` : `Step ${currentStep + 1} / ${totalSteps}`}
               </span>
             )}
             {readOnly && (
-              <span className="text-[10px] font-bold text-slate-500 bg-slate-200 border border-slate-300 px-2 py-0.5 rounded uppercase tracking-wider">
+              <span className="text-xs font-bold text-slate-600 bg-slate-200 border border-slate-300 px-3 py-1 rounded-lg uppercase tracking-wider">
                 {lang === 'hi' ? 'केवल पठन' : 'Read Only'}
               </span>
             )}
@@ -541,18 +542,18 @@ export default function FormSection({
       )}
 
       {/* Fields grid container */}
-      <div className={hideHeader ? "p-0" : "p-4"}>
+      <div className={hideHeader ? "p-0" : "p-4 sm:p-6"}>
         {/* Enclose standard fields inside the styled blue border grid box */}
-        <fieldset className={hideHeader ? "border-none p-0 bg-transparent" : "border border-[#7a9cc5] rounded px-3 py-3 bg-white"}>
+        <fieldset className={hideHeader ? "border-none p-0 bg-transparent" : "border-2 border-[#7a9cc5] rounded-2xl px-4 py-4 bg-white shadow-sm"}>
           {!hideHeader && (
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs">
+            <legend className="px-2.5 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base tracking-wide">
               {lang === 'hi'
                 ? (section.title_hi || section.title_en)
                 : section.title_en}
             </legend>
           )}
 
-          <div className={hideHeader ? "grid grid-cols-1 md:grid-cols-[220px_1fr] rounded overflow-hidden" : "grid grid-cols-1 md:grid-cols-[220px_1fr]"}>
+          <div className={hideHeader ? "grid grid-cols-1 md:grid-cols-[260px_1fr] rounded-2xl overflow-hidden border-2 border-[#c7d8ea] shadow-sm" : "grid grid-cols-1 md:grid-cols-[260px_1fr] border-2 border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm"}>
             {(() => {
               // Filter out keys we should skip
               const keysToSkip = [
@@ -561,24 +562,8 @@ export default function FormSection({
                 'ipc_major_head', 'excise_major_head', 'arms_major_head', 'gambling_major_head', 'other_major_head',
                 'theft_minor_head', 'murder_minor_head', 'hurt_minor_head', 'cheating_minor_head', 'robbery_minor_head',
                 'excise_minor_head', 'arms_minor_head', 'gambling_minor_head', 'other_minor_head',
-                // Already rendered by ActsSectionsTable's Major/Minor panel (writes to the same
-                // major_heads/minor_heads field_keys) — a second generic row here would just be a
-                // redundant plain-text editor for data the panel above already owns.
                 'major_heads', 'minor_heads',
-                // Rendered by ActsSectionsTable as a value derived from the selected Local Head
-                // (see heinousOffenceBlock) — it's readonly/ui_only in the registry, so the generic
-                // fallback here would only ever render an empty, non-functional radio group.
                 'heinous_offence',
-                // B8 (2026-07-23): gd_date/gd_time/fir_date/fir_time/arrest_time are rendered
-                // INLINE by FieldRenderer's gd_no/fir_no/arrest_date composite Number+Date+Time
-                // widgets (FieldRenderer.jsx `compositeDateTimeCell`). record types whose
-                // general_info is hand-rendered (CASE/ARREST, see DynamicForm.jsx
-                // renderArrestGeneralInfoStep) never put these in a field list at all, but
-                // MISSING/UIDB fall through to this generic FormSection, whose field list from
-                // `/fields/form/:type` still carries them as their own standalone rows — doubling
-                // the date/time picker beside "GD Number". FieldRenderer now returns null for
-                // these keys (removing the duplicate INPUT); skip them here too so the whole row
-                // (label + now-empty input cell) doesn't render at all.
                 'gd_date', 'gd_time', 'fir_date', 'fir_time', 'arrest_time'
               ];
 
@@ -599,7 +584,7 @@ export default function FormSection({
 
                 if (key === 'act_name') {
                   return (
-                    <div key="acts-manager-block" className="col-span-1 md:col-span-2 p-2 border-b border-[#c7d8ea] overflow-visible">
+                    <div key="acts-manager-block" className="col-span-1 md:col-span-2 p-3 border-b border-[#c7d8ea] overflow-visible bg-white">
                       {actsSectionsProps ? (
                         <ActsSectionsTable {...actsSectionsProps} localHeadLayout={recordType === 'UIDB' ? 'hidden' : 'combined'} />
                       ) : (
@@ -617,31 +602,31 @@ export default function FormSection({
                 return (
                   <React.Fragment key={key}>
                     {/* Left label cell */}
-                    <div className={`bg-[#dfeaf5] px-3 py-2.5 text-[12px] font-semibold text-[#0d2a4a] flex items-center gap-1.5 min-h-[44px]
+                    <div className={`bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base ${isRequired ? 'font-bold' : 'font-medium'} text-[#0d2a4a] flex items-center gap-2 min-h-[46px] border-r border-[#c7d8ea]
                       ${!isLast ? 'border-b border-[#c7d8ea]' : ''}
                       ${isHighlighted ? 'bg-amber-50 text-amber-900' : ''}
                     `}>
                       <span>{label}</span>
                       {isRequired && <span className="text-red-500 font-bold">*</span>}
                       {isHighlighted && (
-                        <span className="flex items-center gap-1 text-[9px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-1 py-0.5 rounded shadow-sm ml-auto">
-                          <AlertTriangle size={8} />
+                        <span className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded shadow-sm ml-auto">
+                          <AlertTriangle size={12} />
                           {lang === 'hi' ? 'संशोधन' : 'Fix'}
                         </span>
                       )}
                     </div>
 
                     {/* Right field cell */}
-                    <div className={`px-3 py-2 bg-white flex flex-col justify-center min-h-[44px]
+                    <div className={`px-4 py-2 bg-white flex flex-col justify-center min-h-[46px]
                       ${!isLast ? 'border-b border-[#c7d8ea]' : ''}
-                      ${isHighlighted ? 'bg-amber-50/30' : ''}
                     `}>
                       <FieldRenderer
                         field={field}
                         value={values[key]}
                         onChange={handleChange}
-                        readOnly={readOnly || field.readonly === true || field.readonly === 'true'}
+                        onBlur={handleBlur}
                         error={error}
+                        readOnly={readOnly}
                         lang={lang}
                         values={values}
                       />

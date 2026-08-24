@@ -117,6 +117,38 @@ def build_workbook(sheets_data, sheets, file_path, date=''):
 
             target_title = TABLE_NAME_TO_TEMPLATE_TITLE.get(table_name)
             if not target_title or target_title not in wb.sheetnames:
+                sheet_label = sheet_def.get('label') or table_name.replace('_', ' ').title()
+                ws = wb.create_sheet(title=sheet_label[:31])
+                kept_sheet_titles.add(ws.title)
+
+                ws.cell(row=1, column=1, value=sheet_label).font = _TITLE_FONT
+                ws.cell(row=2, column=1, value=f"Date: {date}" if date else "").font = _META_FONT
+                ws.cell(row=3, column=1, value="")
+
+                col_labels = [SHARED_COLUMN_LABELS.get(k, k.replace('_', ' ').title()) for k in col_keys]
+                ws.append(col_labels)
+                header_row_idx = 4
+                for ci in range(1, len(col_labels) + 1):
+                    c = ws.cell(row=header_row_idx, column=ci)
+                    c.fill = _HEADER_FILL
+                    c.font = _HEADER_FONT
+                    c.alignment = _HEADER_ALIGN
+                    c.border = _THIN_BORDER
+
+                if rows:
+                    for row_offset, row_dict in enumerate(rows, start=1):
+                        row_values = [row_dict.get(k, '') for k in col_keys]
+                        ws.append(row_values)
+                        actual_row = header_row_idx + row_offset
+                        ws.row_dimensions[actual_row].height = 18
+                        use_zebra = (row_offset % 2 == 0)
+                        for ci, val in enumerate(row_values, start=1):
+                            cell = ws.cell(row=actual_row, column=ci)
+                            cell.font = _DATA_FONT
+                            cell.alignment = _DATA_ALIGN
+                            cell.border = _THIN_BORDER
+                            if use_zebra:
+                                cell.fill = _ZEBRA_FILL
                 continue
 
             kept_sheet_titles.add(target_title)
@@ -151,7 +183,7 @@ def build_workbook(sheets_data, sheets, file_path, date=''):
 
         # Remove any template sheets that were not in active_tables/sheets
         for sheet_title in list(wb.sheetnames):
-            if sheet_title not in kept_sheet_titles:
+            if sheet_title not in kept_sheet_titles and len(wb.worksheets) > 1:
                 wb.remove(wb[sheet_title])
 
         wb.save(file_path)

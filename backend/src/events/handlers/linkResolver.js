@@ -106,6 +106,16 @@ async function resolveAndLink(recordId) {
     return;
   }
 
+  // G2 (ruling 18): a Kalandra arrest (is_dd_based=true) is a standalone DD-based arrest
+  // and must NEVER be auto-linked to a CASE via its fir_no — the value in fir_no on
+  // such a row is a legacy data artefact (see import.compose.js delete data.fir_no).
+  // Checking after the fir_no null-guard (above) so the common path — most ARRESTs have
+  // is_dd_based=NULL or false and proceed normally — pays no extra query cost.
+  if (detail.is_dd_based === true) {
+    log.debug('resolveAndLink: is_dd_based=true — skipping CASE_ARREST link (Kalandra)', { recordId });
+    return;
+  }
+
   // `fir_details.fir_year` is allocator-assigned (ARCHITECTURE.md §6.2 FIR number
   // counter) — that allocator isn't built yet (deferred with the transfers module, per
   // this integration's handoff), so fir_year is NULL on every CASE record right now.

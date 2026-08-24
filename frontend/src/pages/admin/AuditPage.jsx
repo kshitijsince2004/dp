@@ -120,47 +120,98 @@ export default function AuditPage() {
       ) : (
         <div className="border border-slate-200 bg-white rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse text-sm sm:text-base">
               <thead>
-                <tr className="bg-slate-50 text-slate-650 uppercase font-semibold border-b border-slate-200 tracking-wider">
-                  <th className="p-3.5 pl-5">Action</th>
-                  <th className="p-3.5">Table / Entity</th>
-                  <th className="p-3.5">Performer Role</th>
-                  <th className="p-3.5">Field Modified</th>
-                  <th className="p-3.5">IP Address</th>
-                  <th className="p-3.5">Reason / Comment</th>
-                  <th className="p-3.5 pr-5 text-right">Timestamp (IST)</th>
+                <tr className="bg-slate-50 text-slate-750 font-bold border-b border-slate-200 tracking-wider">
+                  <th className="p-4 pl-5">Action</th>
+                  <th className="p-4">Record / Type</th>
+                  <th className="p-4">Performer Officer</th>
+                  <th className="p-4">Field Modifications</th>
+                  <th className="p-4">IP Address</th>
+                  <th className="p-4">Comment</th>
+                  <th className="p-4 pr-5 text-right">Timestamp (IST)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-150 text-slate-700">
                 {pagedLogs.map((log) => {
                   const style = ACTION_STYLES[log.action] || DEFAULT_STYLE;
                   const IconComp = style.icon;
+                  const officerName = log.operator_name || log.changed_by_name || '—';
+                  const badgeNo = log.badge_no || '—';
+                  const role = log.changed_by_role || log.role || '—';
+                  const changes = Array.isArray(log.field_changes) ? log.field_changes : [];
+
                   return (
-                    <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-3.5 pl-5">
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border ${style.cls}`}>
-                          <IconComp size={9} />
-                          {log.action}
-                        </span>
-                      </td>
-                      <td className="p-3.5 font-mono text-slate-500 text-[11px]">{log.table_name || '—'}</td>
-                      <td className="p-3.5">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700">
-                          {log.changed_by_role || log.role || '—'}
-                        </span>
-                      </td>
-                      <td className="p-3.5 font-mono text-[var(--accent-color)] text-[11px] font-semibold">{log.field_name || 'Full Payload'}</td>
-                      <td className="p-3.5 font-mono text-slate-500 text-[11px]">{log.ip_address || '—'}</td>
-                      <td className="p-3.5 text-slate-500 italic max-w-[200px] truncate" title={log.reason}>
-                        {log.reason || '—'}
-                      </td>
-                      <td className="p-3.5 pr-5 text-right font-mono text-slate-500 text-[11px] whitespace-nowrap">
-                        {log.changed_at
-                          ? new Date(log.changed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false })
-                          : '—'}
-                      </td>
-                    </tr>
+                    <React.Fragment key={log.id}>
+                      <tr className="hover:bg-slate-50/70 transition-colors">
+                        <td className="p-4 pl-5">
+                          <span className={`inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg border ${style.cls}`}>
+                            <IconComp size={12} />
+                            {log.action}
+                          </span>
+                        </td>
+                        <td className="p-4 font-semibold text-slate-800 text-sm">
+                          {log.record_id ? (
+                            <a
+                              href={`/records/${log.record_id}`}
+                              className="text-[var(--accent-color)] font-mono hover:underline font-bold"
+                            >
+                              {log.table_name || 'RECORD'} (#{String(log.record_id).slice(0, 8)})
+                            </a>
+                          ) : (
+                            <span className="font-mono">{log.table_name || '—'}</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <div>
+                            <div className="font-bold text-slate-900 text-sm">{officerName}</div>
+                            <div className="text-xs text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
+                              <span className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-bold text-[10px]">
+                                {role}
+                              </span>
+                              {badgeNo !== '—' && <span>Badge #{badgeNo}</span>}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4 font-mono text-sm">
+                          {changes.length > 0 ? (
+                            <span className="bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold px-2 py-1 rounded-md">
+                              {changes.length} field{changes.length > 1 ? 's' : ''} modified
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-xs font-semibold">No field diffs</span>
+                          )}
+                        </td>
+                        <td className="p-4 font-mono text-slate-600 text-xs font-semibold">{log.ip_address || '::1'}</td>
+                        <td className="p-4 text-slate-600 font-medium max-w-[200px] truncate text-xs" title={log.comment}>
+                          {log.comment || '—'}
+                        </td>
+                        <td className="p-4 pr-5 text-right font-mono text-slate-700 text-xs font-semibold whitespace-nowrap">
+                          {log.changed_at
+                            ? new Date(log.changed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                            : '—'}
+                        </td>
+                      </tr>
+                      {changes.length > 0 && (
+                        <tr className="bg-slate-50/40">
+                          <td colSpan={7} className="px-5 py-3 border-t border-slate-100">
+                            <div className="text-xs space-y-1.5 pl-6">
+                              <div className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Diff Summary:</div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {changes.map((c, cIdx) => (
+                                  <div key={cIdx} className="bg-white p-2 rounded-lg border border-slate-200 text-xs font-mono">
+                                    <span className="font-bold text-slate-800">{c.entity_label ? `${c.entity_label} — ` : ''}{c.label || c.field_key}: </span>
+                                    <span className="line-through text-red-500 font-bold ml-1">{String(c.old_value ?? '(empty)')}</span>
+                                    <span className="mx-1 text-slate-400">→</span>
+                                    <span className="text-emerald-700 font-bold">{String(c.new_value ?? '(empty)')}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
@@ -169,22 +220,22 @@ export default function AuditPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-200 bg-slate-50">
-              <span className="text-slate-500 text-xs font-semibold">
+            <div className="flex items-center justify-between px-5 py-3.5 border-t border-slate-200 bg-slate-50">
+              <span className="text-slate-600 text-sm font-bold">
                 Page {page} of {totalPages} · {filteredLogs.length} total entries
               </span>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-3 py-1 rounded bg-white border border-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-40 text-xs cursor-pointer transition-colors font-semibold shadow-sm"
+                  className="px-4 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-slate-900 disabled:opacity-40 text-sm cursor-pointer transition-colors font-bold shadow-xs"
                 >
                   ← Prev
                 </button>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="px-3 py-1 rounded bg-white border border-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-40 text-xs cursor-pointer transition-colors font-semibold shadow-sm"
+                  className="px-4 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-slate-900 disabled:opacity-40 text-sm cursor-pointer transition-colors font-bold shadow-xs"
                 >
                   Next →
                 </button>

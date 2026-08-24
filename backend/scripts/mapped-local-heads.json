@@ -1,0 +1,786 @@
+{
+  "high": [
+    {
+      "cd": 1,
+      "name": "Dacoity",
+      "canonical": "DACOITY"
+    },
+    {
+      "cd": 2,
+      "name": "Murder",
+      "canonical": "MURDER"
+    },
+    {
+      "cd": 3,
+      "name": "Att. to Murder",
+      "canonical": "ATT_TO_MURDER"
+    },
+    {
+      "cd": 4,
+      "name": "Robbery",
+      "canonical": "ROBBERY"
+    },
+    {
+      "cd": 5,
+      "name": "Riot",
+      "canonical": "RIOT"
+    },
+    {
+      "cd": 6,
+      "name": "Kid. For Ransom",
+      "canonical": "KID_FOR_RANSOM"
+    },
+    {
+      "cd": 7,
+      "name": "Rape",
+      "canonical": "RAPE"
+    },
+    {
+      "cd": 8,
+      "name": "Extortion",
+      "canonical": "EXTORTION"
+    },
+    {
+      "cd": 9,
+      "name": "Snatching",
+      "canonical": "SNATCHING"
+    },
+    {
+      "cd": 10,
+      "name": "Simple Hurt",
+      "canonical": "SIMPLE_HURT"
+    },
+    {
+      "cd": 11,
+      "name": "Grievous Hurt",
+      "canonical": "GRIEVOUS_HURT"
+    },
+    {
+      "cd": 12,
+      "name": "Burglary",
+      "canonical": "BURGLARY"
+    },
+    {
+      "cd": 13,
+      "name": "Violent Burglary",
+      "canonical": "VIOLENT_BURGLARY"
+    },
+    {
+      "cd": 14,
+      "name": "Kidnapping",
+      "canonical": "OTHER_KIDNAPPING"
+    },
+    {
+      "cd": 15,
+      "name": "Abduction",
+      "canonical": "ABDUCTION"
+    },
+    {
+      "cd": 16,
+      "name": "M.V. Theft",
+      "canonical": "MV_THEFT"
+    },
+    {
+      "cd": 17,
+      "name": "Servant Theft",
+      "canonical": "SERVANT_THEFT"
+    },
+    {
+      "cd": 18,
+      "name": "House Theft",
+      "canonical": "HOUSE_THEFT"
+    },
+    {
+      "cd": 19,
+      "name": "Other Theft",
+      "canonical": "OTHER_THEFT"
+    },
+    {
+      "cd": 20,
+      "name": "Theft in Shop",
+      "canonical": "CULPABLE_HOMICIDE"
+    },
+    {
+      "cd": 21,
+      "name": "Pick Pocketing",
+      "canonical": "ATT_CULPABLE_HOMICIDE"
+    },
+    {
+      "cd": 22,
+      "name": "Mobile Phone Theft",
+      "canonical": "CRIMINAL_TRESPASS"
+    },
+    {
+      "cd": 23,
+      "name": "Cycle Theft",
+      "canonical": "CBT"
+    },
+    {
+      "cd": 24,
+      "name": "M.V. Accessiories Theft",
+      "canonical": "CHEATING"
+    },
+    {
+      "cd": 25,
+      "name": "Electricity Theft",
+      "canonical": "FORGERY"
+    },
+    {
+      "cd": 26,
+      "name": "Stereo Theft",
+      "canonical": "COUNTERFEITING"
+    },
+    {
+      "cd": 27,
+      "name": "Cattle Theft",
+      "canonical": "MISCHIEF"
+    },
+    {
+      "cd": 28,
+      "name": "Electronic Articles Theft",
+      "canonical": "ARSON"
+    },
+    {
+      "cd": 29,
+      "name": "Simple Accident",
+      "canonical": "THREATENING"
+    },
+    {
+      "cd": 30,
+      "name": "Fatal Accident",
+      "canonical": "DOWRY_DEATH"
+    },
+    {
+      "cd": 31,
+      "name": "M.O. Women",
+      "canonical": "ELECTION_OFFENCES"
+    },
+    {
+      "cd": 32,
+      "name": "Flesh Trade",
+      "canonical": "PREP_OF_DACOITY"
+    },
+    {
+      "cd": 33,
+      "name": "Culpable Homicide not Amounting to Murder",
+      "canonical": "ACID_ATTACK"
+    },
+    {
+      "cd": 34,
+      "name": "Att. to Culpable Homicide not Amounting to Murder",
+      "canonical": "EVE_TEASING"
+    },
+    {
+      "cd": 35,
+      "name": "Tresspass",
+      "canonical": "PICK_POCKETING"
+    },
+    {
+      "cd": 36,
+      "name": "Preparation to Commit Dacoity",
+      "canonical": "MOBILE_THEFT"
+    },
+    {
+      "cd": 37,
+      "name": "Criminal Breach of Trust",
+      "canonical": "CYCLE_THEFT"
+    },
+    {
+      "cd": 38,
+      "name": "Cheating",
+      "canonical": "SHOP_THEFT"
+    },
+    {
+      "cd": 39,
+      "name": "Forgery",
+      "canonical": "CATTLE_THEFT"
+    },
+    {
+      "cd": 40,
+      "name": "Counterfeiting",
+      "canonical": "MV_ACCESSORY_THEFT"
+    },
+    {
+      "cd": 41,
+      "name": "Arson",
+      "canonical": "ASSAULT_ON_WOMEN_MODESTY"
+    },
+    {
+      "cd": 42,
+      "name": "Abetment of Suicide",
+      "canonical": "INSULT_MODESTY_WOMEN"
+    },
+    {
+      "cd": 43,
+      "name": "Cruelty by Husband",
+      "canonical": "ACCIDENTS"
+    },
+    {
+      "cd": 44,
+      "name": "Dowry Death",
+      "canonical": "OTHER_IPC"
+    },
+    {
+      "cd": 54,
+      "name": "Eve Teasing",
+      "canonical": "EVE_TEASING"
+    },
+    {
+      "cd": 60,
+      "name": "Election Offences",
+      "canonical": "ELECTION_OFFENCES"
+    },
+    {
+      "cd": 66,
+      "name": "Mischief",
+      "canonical": "MISCHIEF"
+    },
+    {
+      "cd": 101,
+      "name": "Arms Act",
+      "canonical": "SEC223_MANJHA"
+    },
+    {
+      "cd": 102,
+      "name": "Delhi Excise Act",
+      "canonical": "SEC223_SERVANT_VERIFICATION"
+    },
+    {
+      "cd": 103,
+      "name": "Gambling Act",
+      "canonical": "SEC223_TENANT_VERIFICATION"
+    },
+    {
+      "cd": 104,
+      "name": "Immoral Traffic(Prev.) Act, 1956 (SIT Act Renamed)",
+      "canonical": "SEC223_CYBER_CAFE"
+    },
+    {
+      "cd": 105,
+      "name": "Narcotics Drugs & Psychotropic Substances Act",
+      "canonical": "SEC223_ACID_SALE"
+    },
+    {
+      "cd": 129,
+      "name": "Central Motor Vehicles Rules,1989",
+      "canonical": "MVT"
+    },
+    {
+      "cd": 134,
+      "name": "Delhi Motor Vehicles Rules,1993",
+      "canonical": "MVT"
+    },
+    {
+      "cd": 147,
+      "name": "Motor Vehicle Act,1988",
+      "canonical": "MVT"
+    },
+    {
+      "cd": 208,
+      "name": "Luggage Theft",
+      "canonical": "OTHER_THEFT"
+    },
+    {
+      "cd": 209,
+      "name": "Day Burglary",
+      "canonical": "BURGLARY"
+    },
+    {
+      "cd": 210,
+      "name": "Night Burglary",
+      "canonical": "BURGLARY"
+    }
+  ],
+  "low": [
+    {
+      "cd": 45,
+      "name": "Misappropriation of Istri Dhan & cruelty by inlaws",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 46,
+      "name": "Att. to Commit Suicide",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 47,
+      "name": "Criminal Intimadation",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 48,
+      "name": "Unnatural Offences(SODOMY)",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 49,
+      "name": "Assault on Public Servant",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 50,
+      "name": "Affray",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 51,
+      "name": "Receiver of Stolen Property",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 52,
+      "name": "Violation of orders under Cr.P.C",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 53,
+      "name": "Sedition of Offences against State",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 55,
+      "name": "Public Nuisance",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 56,
+      "name": "Offence against Public Servent",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 57,
+      "name": "False Information to Police",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 58,
+      "name": "Impersonation",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 59,
+      "name": "Drugging/ Poisoning",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 61,
+      "name": "Escape from Police Custody",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 62,
+      "name": "Miscarriage Etc.",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 63,
+      "name": "Obscene Literature etc.",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 64,
+      "name": "Encroachment on Govt. Land",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 65,
+      "name": "Harbouring of Offenders",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 67,
+      "name": "wrongful Confinement/restraint",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 68,
+      "name": "Personating public servent",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 69,
+      "name": "Importation of girls",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 70,
+      "name": "Concealment of birth",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 71,
+      "name": "Adultery",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 72,
+      "name": "Offences Relating to religion",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 73,
+      "name": "Other Act",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 99,
+      "name": "Other IPC",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 106,
+      "name": "Copyright Act",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 107,
+      "name": "Trade & Merchandise Marks Act, 1958",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 108,
+      "name": "Protection of Civil Right Act- 1995",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 109,
+      "name": "Explosive Act- 1884",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 110,
+      "name": "Explosive Substances Act- 1908",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 111,
+      "name": "Child Labour Act-1986",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 112,
+      "name": "Foreigners Act-1946",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 113,
+      "name": "Dowry Prohibition Act-1961",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 114,
+      "name": "Essential Commodities Act-1955",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 115,
+      "name": "Essential services maintenance Act-1981",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 116,
+      "name": "Indecent Representation of women (Prohibition) Act",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 117,
+      "name": "Information Technology Act-2000",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 118,
+      "name": "Maharashtra Control of Organised Crime Act-1999",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 119,
+      "name": "Pasport Act-1967",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 120,
+      "name": "Prevention of Corruption Act-1988",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 121,
+      "name": "Prevention of Damage of Public Property Act-1984",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 122,
+      "name": "W. Bengal Prevention of Defacement of Property Act",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 123,
+      "name": "Wild Life (Protection) Act-1972",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 124,
+      "name": "Child Marriage Restraint Act 1929",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 125,
+      "name": "Prevention of Atocities SC/ST Act - 1989",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 126,
+      "name": "Antiquity & Art Treasure Act",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 127,
+      "name": "Bombay Prevention of begging Act - 1959",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 128,
+      "name": "Cable Television Network(Regulation) Ordinance 1995",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 130,
+      "name": "Chit Funds Act - 1982",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 131,
+      "name": "Cinematograph Act 1952",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 132,
+      "name": "Consumer Protection Act 1986",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 133,
+      "name": "Delhi Control of vehicular and Other Traffic on Road Act",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 135,
+      "name": "Delhi Police Act 1978",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 136,
+      "name": "Delhi Prohibition of Smoking and Non-smokers health Act",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 137,
+      "name": "Drug Control Act 1950",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 138,
+      "name": "Drugs and Cosmetics Act 1940",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 139,
+      "name": "Electricity Act 2003",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 140,
+      "name": "Environment (Protection) Act 1986",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 141,
+      "name": "Identification of Prisoners Act,1920",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 142,
+      "name": "Indian Forest Act 1927",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 143,
+      "name": "Indian Telegraph Act 1885",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 144,
+      "name": "Insecticides Act 1968",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 145,
+      "name": "Juvenile justice Act 2006",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 146,
+      "name": "Mental Health Act,1987",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 148,
+      "name": "National Security Act 1980",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 149,
+      "name": "Official Secret Act,1923",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 150,
+      "name": "Petroleum Act 1939",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 151,
+      "name": "Poisions Act 1919",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 152,
+      "name": "Pre conception and pre natal diagonstic(pro)",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 153,
+      "name": "Prevention of food adulteration 1954",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 154,
+      "name": "Prevention of illicit Traffic in N.D.P.S. Act 1988",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 155,
+      "name": "Prevention of Insult to National Honour Act 1971",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 156,
+      "name": "Prevention of Money Laundering Act 2002",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 157,
+      "name": "Prevention of Terrorism Act 2002",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 158,
+      "name": "Protection of human rights Act 1993",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 159,
+      "name": "Railway Act 1989",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 160,
+      "name": "Registration of Foreigner Act 1939",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 161,
+      "name": "Representation of the People Act 1951",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 162,
+      "name": "Rules of the Road Regulations 1989",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 163,
+      "name": "Transplantation of human Organs Act 1994",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 164,
+      "name": "Unlawful Activities (Prevension) Act 1967",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 165,
+      "name": "Civil Rights Act",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 166,
+      "name": "Waging War Against The Country",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 167,
+      "name": "Terror Funding And Fake Currency",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 200,
+      "name": "Delhi Preservation of Trees Act, 1994",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 201,
+      "name": "Un-Natural Death / Inquest Report",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 202,
+      "name": "Fire Incident",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 204,
+      "name": "The Delhi Prevention of Touting and Malpractices Against Tourists Ordinance Act 2010",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 205,
+      "name": "POCSO Act 2012",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 206,
+      "name": "Protection of Women Domestic Violence Act 2005",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 207,
+      "name": "Right to Information (RTI) Act",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 211,
+      "name": "Juvenile justice Act 2010",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 212,
+      "name": "Unlawful activities (P) Amendnents act 2008",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 213,
+      "name": "Juvenile justice Act 2015",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 214,
+      "name": "Punjab Excise Act 1914",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    },
+    {
+      "cd": 215,
+      "name": "Other BNS",
+      "reason": "Ambiguous or specialized head without 1:1 STAT_1 proforma row"
+    }
+  ]
+}

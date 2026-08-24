@@ -541,13 +541,25 @@ async function enrichDetailLabels(trx, detail) {
     detail.beat_id_label = row?.beat_name || null;
     log.debug('enrichDetailLabels: resolved beat ref lookup', { beatId: detail.beat_id, label: detail.beat_id_label });
   }
+  if (detail.transferred_to_ps_id) {
+    const psRow = await trx('hierarchy_nodes as ps')
+      .leftJoin('hierarchy_nodes as dist', 'ps.parent_id', 'dist.id')
+      .where('ps.id', detail.transferred_to_ps_id)
+      .select('ps.name', 'dist.name as district_name')
+      .first();
+    detail.transferred_to_ps_label = psRow ? (psRow.district_name ? `${psRow.name} (${psRow.district_name})` : psRow.name) : null;
+  }
+  if (detail.transferred_to_agency_id) {
+    const agencyRow = await trx('ref.agencies').where({ id: detail.transferred_to_agency_id }).first();
+    detail.transferred_to_agency_label = agencyRow?.name || null;
+  }
   return detail;
 }
 
 /** Fetch a record's full typed state — spine, detail (+labels), persons (+subtypes),
  * properties, offences (+labels), and every referenced `locations` row — the shared read
  * used by both getRecordDetails (display) and updateRecord (diff + upsert baseline). */
-async function fetchRecordFull(trx, id) {
+export async function fetchRecordFull(trx, id) {
   log.debug('fetchRecordFull: enter', { recordId: id });
   const record = await trx('records').where({ id }).first();
   if (!record) {
@@ -677,7 +689,23 @@ export async function validateRequiredFields(trx, recordType, flatData, { person
 
 function buildListSummary(r) {
   switch (r.record_type) {
-    case 'CASE': return { fir_no: r.fir_no, case_status: r.case_status, local_head: r.case_local_head, is_worked_out: r.is_worked_out, io_name: r.io_name };
+    case 'CASE': return {
+      fir_no: r.fir_no,
+      case_status: r.case_status,
+      local_head: r.case_local_head,
+      is_worked_out: r.is_worked_out,
+      io_name: r.io_name,
+      transfer_to_type: r.transfer_to_type,
+      transferred_to_ps_id: r.transferred_to_ps_id,
+      transferred_to_ps_name: r.transferred_to_ps_name,
+      transferred_to_ps_district_name: r.transferred_to_ps_district_name,
+      transferred_to_agency_id: r.transferred_to_agency_id,
+      transferred_to_agency_name: r.transferred_to_agency_name,
+      transferred_to_agency_category: r.transferred_to_agency_category,
+      date_of_transfer: r.date_of_transfer,
+      origin_ps_name: r.ps_name,
+      origin_district_name: r.district_name
+    };
     case 'ARREST': return { fir_no: r.arrest_fir_no, case_status: r.arrest_case_status, local_head: r.arrest_local_head, io_name: r.io_name };
     case 'PCR_CALL': return { final_call_status: r.final_call_status, call_head: r.call_head, io_name: r.io_name };
     case 'MISSING': return { missing_status: r.missing_status, fir_no: r.missing_fir_no, io_name: r.io_name };
@@ -694,6 +722,9 @@ function withListJoins(query) {
     .leftJoin('investigating_officers as io', 'records.io_id', 'io.id')
     .leftJoin('fir_details as fir', 'records.id', 'fir.record_id')
     .leftJoin('ref.local_heads as lh_fir', 'fir.local_head_id', 'lh_fir.local_head_cd')
+    .leftJoin('hierarchy_nodes as trans_ps', 'fir.transferred_to_ps_id', 'trans_ps.id')
+    .leftJoin('hierarchy_nodes as trans_ps_dist', 'trans_ps.parent_id', 'trans_ps_dist.id')
+    .leftJoin('ref.agencies as trans_agency', 'fir.transferred_to_agency_id', 'trans_agency.id')
     .leftJoin('arrest_details as arr', 'records.id', 'arr.record_id')
     .leftJoin('ref.local_heads as lh_arr', 'arr.local_head_id', 'lh_arr.local_head_cd')
     .leftJoin('pcr_call_details as pcr', 'records.id', 'pcr.record_id')
@@ -704,6 +735,14 @@ function withListJoins(query) {
       'records.*', 'ps.name as ps_name', 'dist.name as district_name', 'u.name as creator_name',
       'io.name as io_name',
       'fir.fir_no as fir_no', 'fir.case_status as case_status', 'fir.is_worked_out as is_worked_out',
+      'fir.transfer_to_type as transfer_to_type',
+      'fir.transferred_to_ps_id as transferred_to_ps_id',
+      'trans_ps.name as transferred_to_ps_name',
+      'trans_ps_dist.name as transferred_to_ps_district_name',
+      'fir.transferred_to_agency_id as transferred_to_agency_id',
+      'trans_agency.name as transferred_to_agency_name',
+      'trans_agency.category as transferred_to_agency_category',
+      'fir.date_of_transfer as date_of_transfer',
       'lh_fir.local_head as case_local_head',
       'arr.case_status as arrest_case_status', 'arr.fir_no as arrest_fir_no', 'lh_arr.local_head as arrest_local_head',
       'pcr.final_call_status as final_call_status', 'pcr.call_head as call_head',
@@ -716,7 +755,16 @@ export const listRecords = async (recordType, filters, jurisdictionQuery) => {
   log.debug('listRecords: enter', { recordType, filters: redact(filters), jurisdictionQuery });
   let query = withListJoins(db('records'));
 
-  if (jurisdictionQuery.ps_id) { query = query.where('records.ps_id', jurisdictionQuery.ps_id); log.debug('listRecords: scoped by ps_id', { psId: jurisdictionQuery.ps_id }); }
+  if (jurisdictionQuery.ps_id) {
+    query = query.where((b) => {
+      b.where('records.ps_id', jurisdictionQuery.ps_id)
+        .orWhere((tb) => {
+          tb.where('fir.transfer_to_type', 'PS')
+            .andWhere('fir.transferred_to_ps_id', jurisdictionQuery.ps_id);
+        });
+    });
+    log.debug('listRecords: scoped by ps_id (including incoming PS transfers)', { psId: jurisdictionQuery.ps_id });
+  }
   if (jurisdictionQuery.district_id) { query = query.where('records.district_id', jurisdictionQuery.district_id); log.debug('listRecords: scoped by district_id', { districtId: jurisdictionQuery.district_id }); }
   if (jurisdictionQuery.sub_div_id) { query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id); log.debug('listRecords: scoped by sub_div_id', { subDivId: jurisdictionQuery.sub_div_id }); }
 
@@ -810,8 +858,10 @@ export const listRecords = async (recordType, filters, jurisdictionQuery) => {
     log.debug('listRecords: filtered by arrest_kind', { arrestKind: filters.arrestKind });
   }
 
-  if (filters.limit) {
-    const lim = parseInt(filters.limit, 10);
+  if (filters.limit && (filters.limit === 'none' || filters.limit === 'all' || filters.limit === -1 || filters.limit === '-1')) {
+    // Explicitly requested unlimited records
+  } else {
+    const lim = filters.limit ? parseInt(filters.limit, 10) : 200;
     if (!isNaN(lim) && lim > 0) query = query.limit(lim);
   }
   if (filters.offset) {
@@ -1144,6 +1194,13 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
       const mergedFirDate = 'fir_date' in split.detail ? split.detail.fir_date : oldDetail?.fir_date;
       const firYear = deriveFirYear(mergedFirNo, mergedFirDate, record.record_date);
       if (firYear != null) split.detail.fir_year = firYear;
+
+      const currentCaseStatus = split.detail.case_status || oldDetail?.case_status;
+      if (currentCaseStatus && ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'CHARGESHEETED', 'CHALLAN'].includes(String(currentCaseStatus).toUpperCase())) {
+        if (!split.detail.sent_to_court_date && !oldDetail?.sent_to_court_date) {
+          split.detail.sent_to_court_date = new Date().toISOString().slice(0, 10);
+        }
+      }
       log.debug('updateRecord: derived fir_year', { recordId: id, firNo: mergedFirNo, firDate: mergedFirDate, firYear });
     }
 
@@ -1204,9 +1261,14 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
     await trx('records').where({ id }).update({ updated_by: user.id, updated_at: trx.fn.now() });
     log.debug('updateRecord: updated records spine row', { recordId: id, updatedBy: user.id });
 
+    const newFull = await fetchRecordFull(trx, id);
     const { data: newFlatData } = await mapper.recomposeRecord(trx, registry, recordType, {
-      spineRow: { ...record, io_id: split.spine.io_id ?? record.io_id }, detailRow: { ...oldDetail, ...split.detail },
-      personRows: oldPersonRows, propertyRows: oldPropertyRows, offenceRows: full.offenceRows, locationsById: full.locationsById,
+      spineRow: newFull.record,
+      detailRow: newFull.detail,
+      personRows: newFull.personRows,
+      propertyRows: newFull.propertyRows,
+      offenceRows: newFull.offenceRows,
+      locationsById: newFull.locationsById,
     });
     const diff = calculateDiff(oldFlatData, { ...newFlatData, ...data });
     if (diff.length === 0 && statusChanges.length === 0 && propertyStatusChanges.length === 0) {
@@ -1434,6 +1496,11 @@ export const updateDomainStatus = async (id, user, { statusField, newValue, effe
         const coerced = statusField === 'is_worked_out' ? (newValue === 'true' || newValue === true) : newValue;
         const updatePayload = { [column]: coerced, updated_at: trx.fn.now() };
         if (statusField === 'is_worked_out' && coerced === true) updatePayload.worked_out_date = effDate;
+        if (statusField === 'case_status' && ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'CHARGESHEETED', 'CHALLAN'].includes(String(coerced).toUpperCase())) {
+          if (detailTable === 'fir_details' && !detailRow.sent_to_court_date) {
+            updatePayload.sent_to_court_date = effDate || trx.fn.now();
+          }
+        }
         await trx(detailTable).where({ record_id: id }).update(updatePayload);
         log.info('updateDomainStatus: updated detail row status column', { recordId: id, detailTable, column, oldValue, newValue: coerced });
       }
@@ -1614,7 +1681,15 @@ export const checkDuplicateRecord = async (recordType, firNumber, accusedName, d
  * this integration (see docs/new-db-integration/02-records-write-path.md deferrals). */
 export const searchRecordsWithSpec = async (recordType, filterSpec, jurisdictionQuery = {}) => {
   let query = withListJoins(db('records'));
-  if (jurisdictionQuery.ps_id) query = query.where('records.ps_id', jurisdictionQuery.ps_id);
+  if (jurisdictionQuery.ps_id) {
+    query = query.where((b) => {
+      b.where('records.ps_id', jurisdictionQuery.ps_id)
+        .orWhere((tb) => {
+          tb.where('fir.transfer_to_type', 'PS')
+            .andWhere('fir.transferred_to_ps_id', jurisdictionQuery.ps_id);
+        });
+    });
+  }
   if (jurisdictionQuery.district_id) query = query.where('records.district_id', jurisdictionQuery.district_id);
   if (jurisdictionQuery.sub_div_id) query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id);
   if (recordType && recordType !== 'ALL') query = query.where('records.record_type', recordType);

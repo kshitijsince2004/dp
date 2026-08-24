@@ -10,6 +10,8 @@ import UnifiedFilterStrip from '../../components/common/UnifiedFilterStrip.jsx';
 import FilterPresetsPanel from '../../components/common/FilterPresetsPanel.jsx';
 import useAuthStore from '../../store/authStore.js';
 import StatusUpdateModal from '../../components/records/StatusUpdateModal.jsx';
+import { formatRecordRef, formatGist } from '../../utils/recordRef.js';
+import { getStatusConfig } from '../../utils/statusConfig.js';
 import { log } from '../../utils/logger.js';
 
 
@@ -73,8 +75,9 @@ export default function MyRecords() {
     },
   });
 
-  const sentBackCount = allRecords.filter(r => r.current_status === 'SENT_BACK' || r.current_status === 'SENT_BACK_HC').length;
-  const draftCount = allRecords.filter(r => r.current_status === 'DRAFT').length;
+  const safeAllRecords = Array.isArray(allRecords) ? allRecords : [];
+  const sentBackCount = safeAllRecords.filter(r => r.current_status === 'SENT_BACK' || r.current_status === 'SENT_BACK_HC').length;
+  const draftCount = safeAllRecords.filter(r => r.current_status === 'DRAFT').length;
 
   const [filters, setFilters] = useState({
     type: 'ALL',
@@ -92,17 +95,14 @@ export default function MyRecords() {
 
 
   // Fetch all records
-  const { data: records = [], isLoading } = useQuery({
+  const { data: rawRecords = [], isLoading } = useQuery({
     queryKey: ['records', filters],
     queryFn: async () => {
       const params = {};
       if (filters.type) params.type = filters.type;
-      // Derived ARREST sub-filter (Kalandra / against-FIR) — the backend decides which
-      // arrests qualify (see UnifiedFilterStrip.jsx); we only forward the enum.
       if (filters.arrestKind) params.arrest_kind = filters.arrestKind;
       if (filters.status) {
         if (filters.status === 'SENT_BACK_HC') {
-          // Both SENT_BACK_HC and SENT_BACK statuses are used to represent returned records in different components
           params.status = ['SENT_BACK_HC', 'SENT_BACK'];
         } else {
           params.status = filters.status;
@@ -117,15 +117,17 @@ export default function MyRecords() {
       try {
         const res = await api.get('/records', { params });
         const payload = res.data.data;
-        const rows = payload?.cases || payload?.queue || (Array.isArray(payload) ? payload : []);
+        const rows = payload?.cases || payload?.records || payload?.queue || (Array.isArray(payload) ? payload : []);
         log.debug('data:load_success', { what: 'records_list', count: rows.length });
-        return rows;
+        return Array.isArray(rows) ? rows : [];
       } catch (err) {
         log.error('data:load_error', { what: 'records_list', err });
         throw err;
       }
     },
   });
+
+  const records = Array.isArray(rawRecords) ? rawRecords : [];
 
   // Submit Draft to SHO mutation
   const submitMutation = useMutation({
@@ -258,37 +260,37 @@ export default function MyRecords() {
   return (
     /* ── Full-page background matching Dashboard's deep navy gradient ── */
     <div className="min-h-screen theme-hc-page page-bg">
-      <div className="hero-banner-gradient px-8 pt-6 pb-14 relative overflow-hidden shadow-xl">
+      <div className="hero-banner-gradient px-8 pt-8 pb-16 relative overflow-hidden shadow-xl">
         <div className="absolute -top-10 -right-10 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-6">
+        <div className="w-full max-w-[1920px] mx-auto relative z-10 flex flex-col md:flex-row justify-between items-start gap-6">
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3 m-0">
+            <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center gap-3 m-0 font-display tracking-tight">
               {t('nav.records', 'My Records Desk')}
             </h1>
-            <p className="text-sm text-white/70 font-medium m-0">
+            <p className="text-base text-white/80 font-medium m-0">
               {t('common.recordsSubtitle', 'Manage and submit your daily diary entries.')}
             </p>
           </div>
 
           <div className="flex flex-col items-end gap-3 md:flex-shrink-0 w-full md:w-auto">
-            <p className="text-2xl font-semibold text-white/90 m-0 text-right">
+            <p className="text-2xl font-bold text-white/95 m-0 text-right font-display">
               Welcome back, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
             </p>
             <div className="flex flex-wrap gap-3 justify-end w-full bg-transparent">
             {/* Sent Back Box */}
-            <div className="rounded-2xl bg-red-600/25 border border-red-400/40 backdrop-blur-sm px-4 py-2.5 min-w-[100px] text-center transition-all duration-200 hover:scale-105 hover:bg-white/20">
-              <div className="text-2xl font-bold text-red-200 tabular-nums">{sentBackCount}</div>
-              <div className="text-[10px] text-red-100/70 mt-0.5 font-medium uppercase tracking-wider">
+            <div className="rounded-2xl bg-red-600/30 border border-red-400/50 backdrop-blur-md px-5 py-3 min-w-[110px] text-center transition-all duration-200 hover:scale-105 hover:bg-white/20 shadow-sm">
+              <div className="text-3xl font-black text-red-200 tabular-nums">{sentBackCount}</div>
+              <div className="text-xs text-red-100/90 mt-1 font-bold uppercase tracking-wider">
                 {t('status.SENT_BACK_LABEL', 'Returned')}
               </div>
             </div>
 
             {/* Drafts Box */}
-            <div className="rounded-2xl bg-sky-500/15 border border-sky-400/30 backdrop-blur-sm px-4 py-2.5 min-w-[100px] text-center transition-all duration-200 hover:scale-105 hover:bg-white/20">
-              <div className="text-2xl font-bold text-sky-300 tabular-nums">{draftCount}</div>
-              <div className="text-[10px] text-sky-100/70 mt-0.5 font-medium uppercase tracking-wider">
+            <div className="rounded-2xl bg-sky-500/20 border border-sky-400/40 backdrop-blur-md px-5 py-3 min-w-[110px] text-center transition-all duration-200 hover:scale-105 hover:bg-white/20 shadow-sm">
+              <div className="text-3xl font-black text-sky-300 tabular-nums">{draftCount}</div>
+              <div className="text-xs text-sky-100/90 mt-1 font-bold uppercase tracking-wider">
                 {t('status.DRAFT', 'Draft')}
               </div>
             </div>
@@ -302,7 +304,7 @@ export default function MyRecords() {
         variants={pageVariants}
         initial="hidden"
         animate="show"
-        className="mx-auto max-w-7xl px-6 pb-10 -mt-4 space-y-5"
+        className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 pb-12 -mt-6 space-y-6"
       >
 
         {/* Unified Filter Strip */}
@@ -341,8 +343,8 @@ export default function MyRecords() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md"
           >
-            <div className="flex items-center gap-2 text-emerald-800 text-xs font-bold uppercase tracking-wider">
-              <span className="bg-emerald-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-[10px] tabular-nums font-extrabold shadow-sm">
+            <div className="flex items-center gap-2 text-emerald-800 text-sm font-bold uppercase tracking-wider">
+              <span className="bg-emerald-500 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs tabular-nums font-extrabold shadow-sm">
                 {selectedIds.length}
               </span>
               <span>{t('actions.selectedRecords', 'Records Selected')}</span>
@@ -351,16 +353,16 @@ export default function MyRecords() {
               type="button"
               onClick={handleBulkSubmit}
               disabled={bulkLoading}
-              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 hover:shadow-lg active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:bg-slate-300 disabled:cursor-not-allowed uppercase tracking-wider border-none"
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl text-sm font-extrabold transition-all duration-200 hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:bg-slate-300 disabled:cursor-not-allowed uppercase tracking-wider border-none"
             >
               {bulkLoading ? (
                 <>
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
                   <span>{t('actions.submitting', 'Submitting...')}</span>
                 </>
               ) : (
                 <>
-                  <Send size={13} />
+                  <Send size={16} />
                   <span>{t('actions.sendAllToSHO', 'Send Selected to SHO')}</span>
                 </>
               )}
@@ -373,7 +375,7 @@ export default function MyRecords() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl shadow-md border border-[#E2E8F0] text-[#4A5568]">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent-color)] mb-4"></div>
-              <p className="text-xs font-semibold tracking-wide text-[#718096]">
+              <p className="text-sm font-semibold tracking-wide text-[#718096]">
                 {t('common.loading', 'Syncing digital registry logs...')}
               </p>
             </div>
@@ -385,22 +387,22 @@ export default function MyRecords() {
               <div className="mx-auto w-16 h-16 rounded-2xl bg-[var(--accent-glow)] flex items-center justify-center mb-4 shadow-inner">
                 <FileText size={32} className="text-[var(--accent-color)]" />
               </div>
-              <p className="text-base font-bold text-[#1A202C]">
+              <p className="text-lg font-bold text-[#1A202C]">
                 {t('common.noRecords', 'No Daily Log Entries Found')}
               </p>
-              <p className="text-sm text-[#718096] mt-1 font-medium">
+              <p className="text-base text-[#718096] mt-1 font-medium">
                 {t('common.noRecordsDetail', 'Select a creation form above to enter your daily general diary records.')}
               </p>
             </motion.div>
           ) : (
             <motion.div
               variants={itemVariants}
-              className="bg-white rounded-3xl overflow-hidden shadow-md border border-[#E2E8F0] transition-shadow duration-200 hover:shadow-lg"
+              className="bg-white rounded-3xl overflow-hidden shadow-lg border border-[#E2E8F0] transition-shadow duration-200 hover:shadow-xl"
             >
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
+                <table className="w-full text-left border-collapse text-base">
                   <thead>
-                    <tr className="bg-gradient-to-r from-[var(--accent-color-hover)] to-[var(--accent-color)] text-white/80 uppercase font-bold text-xs tracking-wider">
+                    <tr className="bg-gradient-to-r from-[var(--accent-color-hover)] to-[var(--accent-color)] text-white uppercase font-black text-xs sm:text-sm tracking-wider">
                       <th className="p-4 pl-6 w-12 text-center">
                         <input
                           type="checkbox"
@@ -476,49 +478,92 @@ export default function MyRecords() {
                               className="rounded border-slate-300 text-[var(--accent-color)] focus:ring-[var(--accent-color)] h-4 w-4 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                             />
                           </td>
-                          <td className="p-4 font-mono font-bold text-[var(--accent-color)] text-sm group-hover:text-[var(--accent-color-hover)] transition-colors">
+                          <td className="p-4 font-mono font-bold text-[var(--accent-color)] text-sm sm:text-base group-hover:text-[var(--accent-color-hover)] transition-colors">
                             {refId}
                           </td>
-                          <td className="p-4 text-xs font-semibold text-[#1A202C]">
-                            {psName}
+                          <td className="p-4 text-sm sm:text-base font-semibold text-[#1A202C]">
+                            <div className="flex flex-col gap-0.5">
+                              <span>{psName}</span>
+                              {rec.transfer_to_type === 'PS' && user?.ps_id && String(rec.transferred_to_ps_id) === String(user.ps_id) && String(rec.ps_id) !== String(user.ps_id) && (
+                                <span className="text-[11px] font-bold text-sky-600 flex items-center gap-1">
+                                  ↙ Transferred from {rec.origin_ps_name || rec.ps_name}
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td className="p-4 font-mono text-[#4A5568] font-semibold text-xs">
+                          <td className="p-4 font-mono text-[#4A5568] font-semibold text-sm sm:text-base">
                             {typeof recDate === 'string' ? recDate.slice(0, 10) : 'N/A'}
                           </td>
-                          <td className="p-4 max-w-[280px] truncate text-[#4A5568] font-medium text-sm" title={gist}>
+                          <td className="p-4 max-w-[320px] truncate text-[#4A5568] font-medium text-sm sm:text-base" title={gist}>
                             {gist}
                           </td>
-                          <td className="p-4">{renderStatusBadge(rec.current_status)}</td>
+                          <td className="p-4">
+                            <div className="flex flex-col gap-1.5 items-start">
+                              {renderStatusBadge(rec.current_status)}
+                              {(rec.case_status === 'TRANSFER' || rec.data?.case_status === 'TRANSFER') && (
+                                <>
+                                  {/* Transfer to PS */}
+                                  {(rec.transfer_to_type === 'PS' || rec.data?.transfer_to === 'PS') && (
+                                    user?.ps_id && String(rec.transferred_to_ps_id) === String(user.ps_id) && String(rec.ps_id) !== String(user.ps_id) ? (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 shadow-xs"
+                                        title={`Transferred from ${rec.ps_name || rec.origin_ps_name || 'Origin PS'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
+                                      >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                                        ↙ Transferred In
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs"
+                                        title={`Transferred to ${rec.transferred_to_ps_name || rec.data?.transferred_to_ps || 'Destination PS'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
+                                      >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                        ↗ Transferred ({rec.transferred_to_ps_name || rec.data?.transferred_to_ps || 'PS'})
+                                      </span>
+                                    )
+                                  )}
+                                  {/* Transfer to Agency */}
+                                  {(rec.transfer_to_type === 'Agency' || rec.data?.transfer_to === 'Agency') && (
+                                    <span
+                                      className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-xs"
+                                      title={`Investigation conducted by ${rec.transferred_to_agency_name || rec.data?.transferred_to_agency || 'Agency'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
+                                    >
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                      🏛 {rec.transferred_to_agency_name || rec.data?.transferred_to_agency || 'Agency'}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </td>
                           <td className="p-3.5 pr-6 text-right space-x-2 whitespace-nowrap">
 
                             {/* View Action */}
                             <button
                               onClick={() => navigate(`/records/${rec.id}`)}
-                              className="bg-[var(--accent-glow)] hover:bg-[var(--accent-color)] text-[var(--accent-color)] hover:text-white p-2 rounded-control transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-[var(--accent-color)]/30 hover:border-[var(--accent-color)]"
+                              className="bg-[var(--accent-glow)] hover:bg-[var(--accent-color)] text-[var(--accent-color)] hover:text-white p-2.5 rounded-xl transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-[var(--accent-color)]/30 hover:border-[var(--accent-color)] shadow-xs"
                               title="View Details"
                             >
-                              <Eye size={14} />
+                              <Eye size={16} />
                             </button>
 
-                            {/* Update Status Action (WS9) — record's own domain progress,
-                                available regardless of workflow status (backend has no
-                                workflow-state gate on this, only the frozen check) */}
+                            {/* Update Status Action (WS9) */}
                             <button
                               onClick={() => setStatusModalRecordId(rec.id)}
-                              className="bg-violet-50 hover:bg-violet-500 text-violet-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-violet-200 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 active:scale-95"
+                              className="bg-violet-50 hover:bg-violet-500 text-violet-700 hover:text-white p-2.5 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-violet-200 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 active:scale-95 shadow-xs"
                               title={t('statusUpdate.updateAction', 'Update Status')}
                             >
-                              <RefreshCw size={14} />
+                              <RefreshCw size={16} />
                             </button>
 
                             {/* Edit Action */}
                             {isEditable && (
                               <button
                                 onClick={() => navigate(`/records/new/${rec.record_type}?edit=${rec.id}`)}
-                                className="bg-amber-50 hover:bg-[#cca43b] text-amber-700 hover:text-white p-2 rounded-control transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-amber-200 hover:border-[#cca43b]"
+                                className="bg-amber-50 hover:bg-[#cca43b] text-amber-700 hover:text-white p-2.5 rounded-xl transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-amber-200 hover:border-[#cca43b] shadow-xs"
                                 title="Edit Record"
                               >
-                                <FileEdit size={14} />
+                                <FileEdit size={16} />
                               </button>
                             )}
 
@@ -530,10 +575,10 @@ export default function MyRecords() {
                                     submitMutation.mutate(rec.id);
                                   }
                                 }}
-                                className="bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white p-2 rounded-control transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-emerald-200 hover:border-emerald-500"
+                                className="bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white p-2.5 rounded-xl transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-emerald-200 hover:border-emerald-600 shadow-xs"
                                 title="Submit to SHO"
                               >
-                                <Send size={14} />
+                                <Send size={16} />
                               </button>
                             )}
 
@@ -545,10 +590,10 @@ export default function MyRecords() {
                                     deleteMutation.mutate(rec.id);
                                   }
                                 }}
-                                className="bg-rose-50 hover:bg-rose-500 text-rose-700 hover:text-white p-2 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-rose-200 hover:border-rose-500 hover:shadow-lg hover:shadow-rose-500/20 active:scale-95"
+                                className="bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white p-2.5 rounded-xl transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-rose-200 hover:border-rose-600 shadow-xs"
                                 title="Delete Draft"
                               >
-                                <Trash2 size={14} />
+                                <Trash2 size={16} />
                               </button>
                             )}
                           </td>

@@ -47,7 +47,7 @@ const inputCls = [
   'px-3 py-2.5 outline-none focus:border-[var(--accent-color)] transition-all font-semibold',
 ].join(' ');
 
-const labelCls = 'text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-1.5';
+const labelCls = 'text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide block mb-1.5';
 
 const SectionCard = ({ children, className = '' }) => (
   <div
@@ -60,10 +60,10 @@ const SectionCard = ({ children, className = '' }) => (
 
 const SectionTitle = ({ icon: Icon, children }) => (
   <h3
-    className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 pb-2.5"
-    style={{ borderBottom: '1px solid var(--border-card-theme)', color: 'var(--text-main-theme)', opacity: 0.7 }}
+    className="text-sm sm:text-base font-bold uppercase tracking-wider flex items-center gap-2 pb-2.5"
+    style={{ borderBottom: '1px solid var(--border-card-theme)', color: 'var(--text-main-theme)', opacity: 0.85 }}
   >
-    {Icon && <Icon size={13} style={{ color: 'var(--accent-color)' }} />}
+    {Icon && <Icon size={16} style={{ color: 'var(--accent-color)' }} />}
     <span>{children}</span>
   </h3>
 );
@@ -76,10 +76,10 @@ function MultiSelectDropdown({ label, options, selected, onToggle, onSelectAll, 
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer font-semibold"
+        className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-xl text-sm text-slate-800 px-3.5 py-2.5 outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer font-bold shadow-xs"
       >
         <span className="truncate text-left">{label}</span>
-        <ChevronDown size={13} className="text-slate-400 shrink-0" />
+        <ChevronDown size={15} className="text-slate-400 shrink-0" />
       </button>
 
       {open && (

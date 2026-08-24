@@ -1,381 +1,581 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileSpreadsheet, Calendar, Download, RefreshCw, FileText, CheckCircle2 } from 'lucide-react';
+import {
+  FileSpreadsheet,
+  Plus,
+  X,
+  Play,
+  Save,
+  Download,
+  Filter,
+  Sparkles,
+  Layers,
+  BarChart3,
+  CheckCircle2,
+  Table as TableIcon,
+  Search,
+  Clock,
+  ChevronRight,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import DateInput from '../../components/ui/DateInput.jsx';
-import { formatDMY } from '../../utils/dateFormat.js';
 import { log } from '../../utils/logger.js';
 
 export default function ReportBuilder() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
+  const [rows, setRows] = useState(['ps_name']);
+  const [columns, setColumns] = useState(['crime_head']);
+  const [measure, setMeasure] = useState('case_count');
+  const [filters, setFilters] = useState({
+    recordType: '',
+    caseStatus: '',
+    fromDate: '',
+    toDate: '',
+  });
+
+  const [saveName, setSaveName] = useState('');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+
   useEffect(() => {
-    log.debug('page:mount', { route: '/report-builder', userId: user?.id, role: user?.role });
-    return () => log.debug('page:unmount', { route: '/report-builder' });
+    log.debug('page:mount', { route: '/reports/builder', userId: user?.id, role: user?.role });
   }, []);
 
-  const getThemeClass = () => {
-    const role = user?.role;
-    switch (role) {
-      case 'PS':
-      case 'HC':      return 'theme-hc-page';
-      case 'SHO':     return 'theme-sho-page';
-      case 'ACP':     return 'theme-acp-page';
-      case 'DISTRICT':
-      case 'DISTRICT_OFFICER': return 'theme-district-page';
-      case 'HQ':
-      case 'HQ_ANALYST':
-      case 'HQ_ADMIN': return 'theme-hq-page';
-      case 'SYSTEM_ADMIN': return 'theme-admin-page';
-      default:         return 'theme-hq-page';
-    }
-  };
-
-  const [templateId, setTemplateId] = useState('');
-  const [fromDate, setFromDate] = useState(() => formatDMY(new Date(Date.now() - 3600000 * 24 * 7)));
-  const [toDate, setToDate]     = useState(() => formatDMY(new Date()));
-  const [format, setFormat]     = useState('EXCEL');
-  const [generating, setGenerating] = useState(false);
-  const [reportResult, setReportResult] = useState(null);
-
-  // Fetch templates from API
-  const { data: templatesData, isLoading: templatesLoading } = useQuery({
-    queryKey: ['report-templates'],
+  // Fetch reportable fields catalogue
+  const { data: fieldsData, isLoading: fieldsLoading } = useQuery({
+    queryKey: ['warehouse-fields'],
     queryFn: async () => {
-      const res = await api.get('/reports/templates');
-      return res.data.data?.templates || [];
-    },
-    onSuccess: (list) => {
-      if (list.length && !templateId) setTemplateId(list[0].id);
-    }
-  });
-  const templates = templatesData || [];
-
-  // Set default once loaded
-  React.useEffect(() => {
-    if (templates.length && !templateId) setTemplateId(templates[0].id);
-  }, [templates]);
-
-  // Fetch history from API
-  const { data: historyData, refetch: refetchHistory } = useQuery({
-    queryKey: ['report-history'],
-    queryFn: async () => {
-      const res = await api.get('/reports/history');
-      return res.data.data || [];
-    }
-  });
-  const history = historyData || [];
-
-  const generateMutation = useMutation({
-    mutationFn: async (payload) => {
-      log.info('action:generate_report_start', payload);
-      const res = await api.post('/reports/generate', payload);
+      const res = await api.get('/warehouse/fields');
       return res.data.data;
     },
-    onSuccess: (data) => {
-      const jobId = data?.job_id || data?.job?.id;
-      if (!jobId) { log.error('action:generate_report_no_job_id', { data }); toast.error('Report job ID missing in response'); return; }
-      log.info('action:generate_report_queued', { jobId });
-
-      setGenerating(true);
-      toast.loading('Compiling report in background...', { id: 'report-toast' });
-
-      let attempts = 0;
-      const interval = setInterval(async () => {
-        attempts += 1;
-        try {
-          const statusRes = await api.get(`/reports/status/${jobId}`);
-          const jobStatus = statusRes.data.data?.status || statusRes.data.data?.job?.status;
-          log.debug('action:generate_report_poll_step', { jobId, attempt: attempts, status: jobStatus });
-
-          if (jobStatus === 'READY' || jobStatus === 'FAILED' || attempts >= 15) {
-            clearInterval(interval);
-            setGenerating(false);
-            refetchHistory();
-
-            if (jobStatus === 'READY') {
-              log.info('action:generate_report_ready', { jobId, attempts });
-              setReportResult({ jobId, format });
-              toast.success('Report ready for download!', { id: 'report-toast' });
-            } else if (jobStatus === 'FAILED') {
-              log.error('action:generate_report_failed', { jobId, attempts });
-              toast.error('Report generation failed. Check Python worker logs.', { id: 'report-toast' });
-            } else {
-              log.warn('action:generate_report_timeout', { jobId, attempts });
-              toast.error('Report is taking longer than expected. Check history later.', { id: 'report-toast' });
-            }
-          }
-        } catch (e) {
-          clearInterval(interval);
-          setGenerating(false);
-          log.error('action:generate_report_poll_error', { jobId, err: e });
-          toast.error('Failed to check report status', { id: 'report-toast' });
-        }
-      }, 2000);
-    },
-    onError: (err) => {
-      log.error('action:generate_report_start_failed', { err });
-      toast.error(err.response?.data?.message || 'Failed to trigger report generation');
-    }
   });
 
-  const handleGenerate = (e) => {
-    e.preventDefault();
-    if (!templateId) { toast.error('Select a template first'); return; }
-    log.debug('action:generate_report_click', { templateId, fromDate, toDate, format });
-    setReportResult(null);
-    const selected = templates.find(t => t.id === templateId || t.code === templateId);
-    generateMutation.mutate({
-      template_id: templateId,
-      template_code: selected?.code || templateId,
-      filters: { dateFrom: fromDate, dateTo: toDate, from_date: fromDate, to_date: toDate },
-      format,
-    });
-  };
+  // Fetch quick access & saved reports
+  const { data: quickAccessData, refetch: refetchQuickAccess } = useQuery({
+    queryKey: ['quick-access-reports'],
+    queryFn: async () => {
+      const res = await api.get('/reports/builder/quick-access');
+      return res.data.data;
+    },
+  });
 
-  const handleDownload = async (jobId, fmt) => {
-    log.debug('action:report_download_start', { jobId, fmt });
-    try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`/api/v1/reports/download/${jobId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+  // Fetch live pivot table preview
+  const {
+    data: pivotData,
+    isFetching: pivotFetching,
+    error: pivotError,
+  } = useQuery({
+    queryKey: ['pivot-query', rows, columns, measure, filters],
+    queryFn: async () => {
+      const res = await api.post('/warehouse/run', {
+        rows,
+        columns,
+        measure,
+        filters,
       });
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      const blob = await res.blob();
-      const ext = (fmt || 'xlsx').toLowerCase() === 'excel' ? 'xlsx' : (fmt || 'xlsx').toLowerCase();
-      const url = URL.createObjectURL(blob);
+      return res.data.data;
+    },
+    enabled: !!measure && (rows.length > 0 || columns.length > 0),
+  });
+
+  // Save report mutation
+  const saveMutation = useMutation({
+    mutationFn: async (name) => {
+      const res = await api.post('/reports/builder/saved', {
+        name,
+        query_spec: { rows, columns, measure, filters },
+      });
+      return res.data.data;
+    },
+    onSuccess: () => {
+      toast.success('Report saved successfully!');
+      setShowSaveModal(false);
+      setSaveName('');
+      refetchQuickAccess();
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Failed to save report');
+    },
+  });
+
+  // Export to Excel handler
+  const handleExport = async () => {
+    try {
+      toast.loading('Generating Excel file...', { id: 'export-toast' });
+      const res = await api.post(
+        '/warehouse/export',
+        { rows, columns, measure, filters, name: 'AdHoc_Pivot_Report' },
+        { responseType: 'blob' }
+      );
+      const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Pharos_Report_${jobId}.${ext}`;
+      link.setAttribute('download', `AdHoc_Pivot_Report_${Date.now()}.xlsx`);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      log.info('action:report_download_success', { jobId });
-      toast.success('Report downloaded');
+      link.remove();
+      toast.success('Excel report downloaded!', { id: 'export-toast' });
     } catch (err) {
-      log.error('action:report_download_failed', { jobId, err });
-      toast.error('Download failed: ' + err.message);
+      toast.error('Failed to export Excel file', { id: 'export-toast' });
     }
   };
 
-  const selectedTemplate = templates.find(t => t.id === templateId);
-  const availableFormats = selectedTemplate?.output_formats || ['EXCEL', 'PDF'];
+  const dimensions = fieldsData?.dimensions || [];
+  const measures = fieldsData?.measures || [];
+
+  const dimMap = Object.fromEntries(dimensions.map((d) => [d.key, d.label]));
+  const measureMap = Object.fromEntries(measures.map((m) => [m.key, m.label]));
+
+  const addRow = (key) => {
+    if (!rows.includes(key)) {
+      setRows([...rows, key]);
+      setColumns(columns.filter((c) => c !== key));
+    }
+  };
+
+  const addColumn = (key) => {
+    if (!columns.includes(key)) {
+      setColumns([...columns, key]);
+      setRows(rows.filter((r) => r !== key));
+    }
+  };
+
+  const removeRow = (key) => setRows(rows.filter((r) => r !== key));
+  const removeColumn = (key) => setColumns(columns.filter((c) => c !== key));
+
+  const loadPreset = (presetSpec) => {
+    if (presetSpec.rows) setRows(presetSpec.rows);
+    if (presetSpec.columns) setColumns(presetSpec.columns);
+    if (presetSpec.measure) setMeasure(presetSpec.measure);
+    if (presetSpec.filters) setFilters(presetSpec.filters);
+    toast.success('Report layout loaded!');
+  };
 
   return (
-    <div className={`space-y-6 p-5 rounded-2xl bg-[var(--bg-page-main)]/60 border border-[var(--border-card-theme)] backdrop-blur-md shadow-sm font-sans text-[var(--text-main-theme)] ${getThemeClass()}`}>
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-serif font-bold text-[var(--text-main-theme)] flex items-center gap-2.5">
-          <FileSpreadsheet className="text-[var(--accent-color)]" size={20} />
-          <span>Excel Export Manager</span>
-        </h1>
-        <p className="text-[var(--text-main-theme)]/70 text-xs mt-1">
-          Compile hierarchy-scoped data registers, morning general diaries, or crime head tallies into formatted spreadsheets.
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        {/* Parameters Card */}
-        <div className="bg-[var(--bg-card-theme)] border border-[var(--border-card-theme)] rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] border-b border-[var(--border-card-theme)] pb-2 flex items-center gap-1.5">
-            <Calendar size={14} className="text-[var(--accent-color)]" />
-            <span>Export Parameters</span>
-          </h3>
-
-          <form onSubmit={handleGenerate} className="space-y-5 text-sm">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-              {/* Template Selection */}
-              <div className="col-span-1 md:col-span-4 space-y-1.5">
-                <label className="text-[var(--text-main-theme)]/80 font-bold">Report Proforma Template:</label>
-                {templatesLoading ? (
-                  <div className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl p-2.5 text-[var(--text-main-theme)]/50 text-xs">
-                    Loading templates...
-                  </div>
-                ) : (
-                  <select
-                    value={templateId}
-                    onChange={(e) => {
-                      setTemplateId(e.target.value);
-                      setFormat('EXCEL');
-                    }}
-                    className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl p-2.5 text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer font-semibold shadow-sm"
-                  >
-                    {templates.map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.name_en}
-                        {t.template_type === 'LINKED' ? ' (Linked)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                )}
+    <div className="p-6 min-h-screen bg-slate-900 text-slate-100 font-sans">
+      {/* Header Banner */}
+      <div className="hero-banner-gradient p-6 rounded-2xl mb-6 shadow-xl relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                <BarChart3 size={24} />
               </div>
-
-              {/* From Date */}
-              <div className="col-span-1 md:col-span-3 space-y-1.5">
-                <label className="text-[var(--text-main-theme)]/80 font-bold">From Date:</label>
-                <DateInput
-                  value={fromDate}
-                  onChange={setFromDate}
-                  inputClassName="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl p-2 pr-9 text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all font-semibold shadow-sm text-sm"
-                />
-              </div>
-
-              {/* To Date */}
-              <div className="col-span-1 md:col-span-3 space-y-1.5">
-                <label className="text-[var(--text-main-theme)]/80 font-bold">To Date:</label>
-                <DateInput
-                  value={toDate}
-                  onChange={setToDate}
-                  inputClassName="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl p-2 pr-9 text-[var(--text-main-theme)] outline-none focus:border-[var(--accent-color)] transition-all font-semibold shadow-sm text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-8 pt-4">
-              {/* Actions button */}
               <div>
-                <button
-                  type="submit"
-                  disabled={generating}
-                  className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-bold px-5 py-2.5 rounded-xl transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border-none shadow-sm flex items-center gap-1.5 active:scale-95 text-sm"
-                >
-                  {generating ? (
-                    <>
-                      <RefreshCw size={14} className="animate-spin" />
-                      <span>Compiling Registry...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FileText size={14} />
-                      <span>Generate Excel Report</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Format selection */}
-              <div className="col-span-1 md:col-span-4 space-y-1.5">
-                <label className="text-[var(--text-main-theme)]/80 font-bold block mb-2">Output Format:</label>
-                <div className="flex gap-4 py-1 flex-wrap">
-                  {availableFormats.map(f => (
-                    <label key={f} className="flex items-center gap-1.5 cursor-pointer text-[var(--text-main-theme)]/80 font-semibold">
-                      <input
-                        type="radio"
-                        checked={format === f}
-                        onChange={() => setFormat(f)}
-                        className="accent-[var(--accent-color)]"
-                      />
-                      <span>{f === 'EXCEL' ? 'Excel (.xlsx)' : f === 'PDF' ? 'PDF' : f}</span>
-                    </label>
-                  ))}
-                </div>
+                <h1 className="text-2xl font-extrabold tracking-tight text-white font-display">
+                  Build Your Own Report & Pivot Builder
+                </h1>
+                <p className="text-slate-300 text-xs mt-0.5 font-medium">
+                  Custom matrix reporting for DCPs & Executives — pick fields, pivot rows/columns, save and export live data.
+                </p>
               </div>
             </div>
+          </div>
 
-            {/* Actions */}
-            <div className="pt-2 flex flex-wrap items-center gap-3">
-              <button
-                type="submit"
-                disabled={generating || !templateId}
-                className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-bold px-5 py-2.5 rounded-xl transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border-none shadow-sm flex items-center gap-1.5 active:scale-95"
-              >
-                {generating ? (
-                  <><RefreshCw size={14} className="animate-spin" /><span>Compiling...</span></>
-                ) : (
-                  <><FileText size={14} /><span>Generate Report</span></>
-                )}
-              </button>
-
-              {reportResult && (
-                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded-xl px-4 py-2 text-xs flex items-center gap-3 animate-in fade-in duration-200">
-                  <div className="flex gap-1.5 items-center font-semibold">
-                    <CheckCircle2 size={14} />
-                    <span>Report ready!</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDownload(reportResult.jobId, reportResult.format)}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors flex items-center gap-1.5 cursor-pointer border-none shadow-sm active:scale-95"
-                  >
-                    <Download size={12} />
-                    <span>Download Now</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {/* History Table */}
-        <div className="bg-[var(--bg-card-theme)] border border-[var(--border-card-theme)] rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-main-theme)] border-b border-[var(--border-card-theme)] pb-2">
-            Export History Log
-          </h3>
-
-          <div className="overflow-x-auto border border-[var(--border-card-theme)]/70 rounded-xl bg-[var(--bg-card-theme)]">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="bg-[var(--bg-page-main)]/50 text-[var(--text-main-theme)]/80 uppercase font-semibold border-b border-[var(--border-card-theme)]/70">
-                  <th className="p-3 pl-6 font-bold text-[var(--text-main-theme)]">Export ID</th>
-                  <th className="p-3 font-bold text-[var(--text-main-theme)]">Template</th>
-                  <th className="p-3 font-bold text-[var(--text-main-theme)]">Generated</th>
-                  <th className="p-3 font-bold text-[var(--text-main-theme)]">Format</th>
-                  <th className="p-3 font-bold text-[var(--text-main-theme)]">Status</th>
-                  <th className="p-3 pr-6 text-right font-bold text-[var(--text-main-theme)]">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-card-theme)]/30 text-[var(--text-main-theme)]">
-                {history.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="p-6 text-center text-[var(--text-main-theme)]/40 text-xs">
-                      No reports generated yet.
-                    </td>
-                  </tr>
-                )}
-                {history.map((item) => (
-                  <tr key={item.id} className="hover:bg-[var(--bg-page-main)]/30 transition-colors duration-150">
-                    <td className="p-3 pl-6 font-mono font-bold text-[var(--text-main-theme)] opacity-60 text-[10px]">
-                      {item.id?.slice(0, 8)}…
-                    </td>
-                    <td className="p-3 font-semibold text-[var(--text-main-theme)]">
-                      {item.template_id || '—'}
-                    </td>
-                    <td className="p-3 text-[11px] text-[var(--text-main-theme)]/70 font-mono">
-                      {item.created_at ? new Date(item.created_at).toLocaleString() : '—'}
-                    </td>
-                    <td className="p-3 uppercase font-bold text-[var(--accent-color)]">
-                      {item.format || '—'}
-                    </td>
-                    <td className="p-3">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        item.status === 'READY'   ? 'bg-emerald-500/15 text-emerald-600' :
-                        item.status === 'FAILED'  ? 'bg-red-500/15 text-red-500' :
-                        'bg-amber-500/15 text-amber-600'
-                      }`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="p-3 pr-6 text-right">
-                      <button
-                        disabled={item.status !== 'READY'}
-                        onClick={() => handleDownload(item.id, item.format)}
-                        className="bg-[var(--bg-page-main)] hover:bg-[var(--bg-page-main)]/85 text-[var(--accent-color)] font-bold px-3 py-1.5 rounded-lg text-[11px] transition-colors inline-flex items-center gap-1 cursor-pointer border border-[var(--border-card-theme)]/60 shadow-sm active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <Download size={10} />
-                        <span>Download</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowSaveModal(true)}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all cursor-pointer"
+            >
+              <Save size={16} />
+              <span>Save Report</span>
+            </button>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all cursor-pointer"
+            >
+              <Download size={16} className="text-emerald-400" />
+              <span>Export Excel</span>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Quick Access Tiles */}
+      {quickAccessData && quickAccessData.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+            <Sparkles size={14} className="text-amber-400" />
+            <span>Quick Access & Suggested Presets</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {quickAccessData.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => loadPreset(item.spec)}
+                className="p-3.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all shadow-md group relative overflow-hidden"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-bold text-xs text-slate-200 group-hover:text-emerald-400 truncate pr-2">
+                    {item.name}
+                  </span>
+                  {item.is_system_preset ? (
+                    <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-md font-semibold border border-blue-500/30 shrink-0">
+                      Preset
+                    </span>
+                  ) : (
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md font-semibold border border-emerald-500/30 shrink-0">
+                      Saved
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-700/50">
+                  <span className="truncate">
+                    {item.spec?.rows?.[0] ? dimMap[item.spec.rows[0]] || item.spec.rows[0] : 'Total'} × {item.spec?.columns?.[0] ? dimMap[item.spec.columns[0]] || item.spec.columns[0] : 'Summary'}
+                  </span>
+                  <ChevronRight size={14} className="text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Main Builder Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Field Catalogue Picker */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-4 shadow-xl">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+              <Layers size={15} className="text-emerald-400" />
+              <span>Reportable Fields</span>
+            </h3>
+
+            {/* Measures Section */}
+            <div className="mb-4">
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                1. Select Value (Measure)
+              </label>
+              <div className="space-y-1.5">
+                {measures.map((m) => (
+                  <button
+                    key={m.key}
+                    onClick={() => setMeasure(m.key)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+                      measure === m.key
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-inner'
+                        : 'bg-slate-900/60 text-slate-300 border-slate-700/50 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <span>{m.label}</span>
+                    {measure === m.key && <CheckCircle2 size={14} className="text-emerald-400" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Dimensions Section */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                2. Dimensions (Rows / Columns)
+              </label>
+              <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                {dimensions.map((d) => {
+                  const isRow = rows.includes(d.key);
+                  const isCol = columns.includes(d.key);
+                  return (
+                    <div
+                      key={d.key}
+                      className="p-2.5 bg-slate-900/60 border border-slate-700/50 rounded-xl flex items-center justify-between gap-2"
+                    >
+                      <span className="text-xs font-semibold text-slate-200 truncate">{d.label}</span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => (isRow ? removeRow(d.key) : addRow(d.key))}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                            isRow
+                              ? 'bg-emerald-500 text-slate-950'
+                              : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                          }`}
+                        >
+                          + Row
+                        </button>
+                        <button
+                          onClick={() => (isCol ? removeColumn(d.key) : addColumn(d.key))}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                            isCol
+                              ? 'bg-indigo-500 text-white'
+                              : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                          }`}
+                        >
+                          + Col
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Pivot Configuration & Grid */}
+        <div className="lg:col-span-9 space-y-4">
+          {/* Active Chips & Filters Bar */}
+          <div className="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-4 shadow-xl space-y-4">
+            {/* Active Fields Chips */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Rows Drop Box */}
+              <div className="p-3 bg-slate-900/70 border border-slate-700/60 rounded-xl">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                  Row Fields ({rows.length})
+                </span>
+                <div className="flex flex-wrap gap-1.5 min-h-[32px] items-center">
+                  {rows.length === 0 ? (
+                    <span className="text-slate-500 text-xs italic">No row dimensions</span>
+                  ) : (
+                    rows.map((rk) => (
+                      <span
+                        key={rk}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-semibold"
+                      >
+                        {dimMap[rk] || rk}
+                        <X
+                          size={13}
+                          onClick={() => removeRow(rk)}
+                          className="cursor-pointer hover:text-white"
+                        />
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Columns Drop Box */}
+              <div className="p-3 bg-slate-900/70 border border-slate-700/60 rounded-xl">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                  Column Fields ({columns.length})
+                </span>
+                <div className="flex flex-wrap gap-1.5 min-h-[32px] items-center">
+                  {columns.length === 0 ? (
+                    <span className="text-slate-500 text-xs italic">No column dimensions</span>
+                  ) : (
+                    columns.map((ck) => (
+                      <span
+                        key={ck}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 rounded-lg text-xs font-semibold"
+                      >
+                        {dimMap[ck] || ck}
+                        <X
+                          size={13}
+                          onClick={() => removeColumn(ck)}
+                          className="cursor-pointer hover:text-white"
+                        />
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Value Drop Box */}
+              <div className="p-3 bg-slate-900/70 border border-slate-700/60 rounded-xl">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                  Value (Measure)
+                </span>
+                <div className="min-h-[32px] flex items-center">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold">
+                    {measureMap[measure] || measure}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Controls */}
+            <div className="pt-3 border-t border-slate-700/50 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  Record Type
+                </label>
+                <select
+                  value={filters.recordType}
+                  onChange={(e) => setFilters({ ...filters, recordType: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 font-medium outline-none focus:border-emerald-500"
+                >
+                  <option value="">All Record Types</option>
+                  <option value="CASE font-medium">FIR Master (CASE)</option>
+                  <option value="ARREST">Arrest Master (ARREST)</option>
+                  <option value="PCR_CALL">PCR Call Log (PCR_CALL)</option>
+                  <option value="MISSING">Missing Persons (MISSING)</option>
+                  <option value="UIDB">UIDB Master (UIDB)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  Case Status
+                </label>
+                <select
+                  value={filters.caseStatus}
+                  onChange={(e) => setFilters({ ...filters, caseStatus: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 font-medium outline-none focus:border-emerald-500"
+                >
+                  <option value="">All Case Statuses</option>
+                  <option value="PENDING">PENDING</option>
+                  <option value="CHARGE SHEET">CHARGE SHEET</option>
+                  <option value="UNTRACTED">UNTRACED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  From Date
+                </label>
+                <input
+                  type="date"
+                  value={filters.fromDate}
+                  onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 font-medium outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  To Date
+                </label>
+                <input
+                  type="date"
+                  value={filters.toDate}
+                  onChange={(e) => setFilters({ ...filters, toDate: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 font-medium outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Pivot Grid Matrix Render */}
+          <div className="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-5 shadow-xl overflow-hidden">
+            {pivotFetching && (
+              <div className="p-8 text-center text-slate-400 text-xs font-semibold flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                <span>Running ad-hoc pivot aggregation...</span>
+              </div>
+            )}
+
+            {!pivotFetching && pivotError && (
+              <div className="p-6 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-semibold">
+                Failed to generate report matrix: {pivotError.message}
+              </div>
+            )}
+
+            {!pivotFetching && pivotData && (
+              <div>
+                {/* Warnings */}
+                {pivotData.warnings?.map((w, i) => (
+                  <div
+                    key={i}
+                    className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs font-semibold flex items-center gap-2"
+                  >
+                    <Clock size={16} />
+                    <span>{w}</span>
+                  </div>
+                ))}
+
+                {/* Matrix Table */}
+                <div className="overflow-x-auto max-h-[550px] overflow-y-auto border border-slate-700/60 rounded-xl shadow-inner">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="sticky top-0 z-20 bg-slate-900 text-slate-200 font-bold uppercase tracking-wider border-b border-slate-700">
+                      <tr>
+                        <th className="p-3 bg-slate-900 border-r border-slate-700/60 sticky left-0 z-30 min-w-[200px]">
+                          {rows.map((rk) => dimMap[rk] || rk).join(' / ') || 'Summary'}
+                        </th>
+                        {pivotData.columnHeaders?.map((ch, ci) => (
+                          <th key={ci} className="p-3 border-r border-slate-700/40 text-center min-w-[110px]">
+                            {ch.values.join(' / ')}
+                          </th>
+                        ))}
+                        <th className="p-3 bg-slate-900 border-l border-slate-700 text-right min-w-[100px] text-emerald-400">
+                          Total
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-700/40 font-medium">
+                      {pivotData.rowHeaders?.map((rh, ri) => (
+                        <tr
+                          key={ri}
+                          className={ri % 2 === 1 ? 'bg-slate-800/40 hover:bg-slate-700/30' : 'bg-slate-900/40 hover:bg-slate-700/30'}
+                        >
+                          <td className="p-3 font-semibold text-slate-200 border-r border-slate-700/60 sticky left-0 bg-slate-800/90">
+                            {rh.values.join(' / ')}
+                          </td>
+                          {pivotData.cells[ri]?.map((val, ci) => (
+                            <td key={ci} className="p-3 text-center border-r border-slate-700/30 text-slate-300 font-mono">
+                              {val.toLocaleString()}
+                            </td>
+                          ))}
+                          <td className="p-3 text-right font-bold text-emerald-400 bg-slate-900/60 border-l border-slate-700 font-mono">
+                            {pivotData.rowTotals[ri]?.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="sticky bottom-0 z-20 bg-slate-900 text-slate-100 font-bold border-t-2 border-slate-700">
+                      <tr>
+                        <td className="p-3 bg-slate-900 border-r border-slate-700/60 sticky left-0 z-30">
+                          Total
+                        </td>
+                        {pivotData.grandTotals?.map((gt, ci) => (
+                          <td key={ci} className="p-3 text-center border-r border-slate-700/40 text-emerald-400 font-mono">
+                            {gt.toLocaleString()}
+                          </td>
+                        ))}
+                        <td className="p-3 text-right text-emerald-400 bg-slate-900 border-l border-slate-700 font-mono text-sm">
+                          {pivotData.grandTotals?.reduce((a, b) => a + b, 0).toLocaleString()}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Save Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Save size={18} className="text-emerald-400" />
+              <span>Save Report Layout</span>
+            </h3>
+            <p className="text-slate-400 text-xs font-medium">
+              Save this pivot layout to your My Reports list for one-click access anytime.
+            </p>
+            <div>
+              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
+                Report Name
+              </label>
+              <input
+                type="text"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder="e.g. Monthly Heinous Crimes by PS"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-500 font-semibold"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setShowSaveModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => saveName.trim() && saveMutation.mutate(saveName.trim())}
+                disabled={!saveName.trim() || saveMutation.isLoading}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all cursor-pointer shadow-lg disabled:opacity-50"
+              >
+                {saveMutation.isLoading ? 'Saving...' : 'Save Report'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

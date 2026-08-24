@@ -210,70 +210,70 @@ export default function Users() {
       ) : (
         <div className="border border-slate-200 bg-white rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse text-sm sm:text-base">
               <thead>
-                <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 tracking-wider">
-                  <th className="p-3.5 pl-5">Badge / PIS</th>
-                  <th className="p-3.5">Officer Name</th>
-                  <th className="p-3.5">Role</th>
-                  <th className="p-3.5">Station / District</th>
-                  <th className="p-3.5">Auth Status</th>
-                  {canMutate && <th className="p-3.5 pr-5 text-right">Actions</th>}
+                <tr className="bg-slate-50 text-slate-750 font-bold border-b border-slate-200 tracking-wider">
+                  <th className="p-4 pl-5">Badge / PIS</th>
+                  <th className="p-4">Officer Name</th>
+                  <th className="p-4">Role</th>
+                  <th className="p-4">Station / District</th>
+                  <th className="p-4">Auth Status</th>
+                  {canMutate && <th className="p-4 pr-5 text-right">Actions</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-600">
+              <tbody className="divide-y divide-slate-100 text-slate-700">
                 {users.map((item) => {
                   const isActive = item.is_active ?? item.active ?? true;
                   const roleKey = item.role || 'HC';
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-3.5 pl-5 font-mono font-bold text-slate-800">
+                      <td className="p-4 pl-5 font-mono font-bold text-slate-900">
                         {item.badge_no || item.badgeNo || '—'}
                       </td>
-                      <td className="p-3.5 font-semibold text-slate-750">
+                      <td className="p-4 font-bold text-slate-900">
                         {item.name || item.username || '—'}
                       </td>
-                      <td className="p-3.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${ROLE_COLORS[roleKey] || 'text-slate-500 bg-slate-50 border-slate-200'}`}>
+                      <td className="p-4">
+                        <span className={`text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg border ${ROLE_COLORS[roleKey] || 'text-slate-600 bg-slate-50 border-slate-200'}`}>
                           {roleKey}
                         </span>
                       </td>
-                      <td className="p-3.5 text-slate-500 text-[11px]">
+                      <td className="p-4 text-slate-600 font-medium">
                         {item.ps_name || item.station_id || item.district_name || item.district_id || 'HQ / Platform'}
                       </td>
-                      <td className="p-3.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                      <td className="p-4">
+                        <span className={`text-xs sm:text-sm font-bold px-2.5 py-1 rounded-lg border ${
                           isActive
-                            ? 'bg-emerald-50 text-emerald-600 border-emerald-250'
-                            : 'bg-red-50 text-red-600 border-red-200'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                            : 'bg-red-50 text-red-700 border-red-300'
                         }`}>
                           {isActive ? 'ACTIVE' : 'DEACTIVATED'}
                         </span>
                       </td>
                       {canMutate && (
-                      <td className="p-3.5 pr-5 text-right space-x-1.5 whitespace-nowrap">
+                      <td className="p-4 pr-5 text-right space-x-2 whitespace-nowrap">
                         {/* Toggle Active */}
                         <button
                           onClick={() => toggleStatusMutation.mutate({ id: item.id, is_active: isActive })}
                           disabled={toggleStatusMutation.isPending}
-                          className={`p-1.5 rounded transition-all cursor-pointer inline-flex items-center gap-1 text-[11px] font-semibold border ${
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold border ${
                             isActive
-                              ? 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200'
-                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200'
+                              ? 'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
+                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
                           }`}
                           title={isActive ? 'Deactivate' : 'Reactivate'}
                         >
-                          {isActive ? <UserX size={12} /> : <UserCheck size={12} />}
+                          {isActive ? <UserX size={14} /> : <UserCheck size={14} />}
                           <span>{isActive ? 'Deactivate' : 'Activate'}</span>
                         </button>
  
                         {/* Reset Password */}
                         <button
                           onClick={() => openResetModal(item)}
-                          className="p-1.5 rounded bg-slate-105 hover:bg-slate-200 text-slate-600 hover:text-slate-800 border border-slate-200 transition-all cursor-pointer inline-flex items-center gap-1 text-[11px] font-semibold"
+                          className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold shadow-xs"
                           title="Reset Password"
                         >
-                          <KeyRound size={12} />
+                          <KeyRound size={14} />
                           <span>Reset PW</span>
                         </button>
  
@@ -286,10 +286,10 @@ export default function Users() {
                             }
                           }}
                           disabled={deleteUserMutation.isPending}
-                          className="p-1.5 rounded bg-slate-105 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 transition-all cursor-pointer inline-flex items-center"
+                          className="p-2 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 transition-all cursor-pointer inline-flex items-center"
                           title="Remove User"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </button>
                       </td>
                       )}

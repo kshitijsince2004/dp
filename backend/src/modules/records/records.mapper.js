@@ -15,6 +15,7 @@ import {
   resolvePropertyTypeColumn, isDeferredPropertyTypeColumn,
   loadKnownActLabels, loadValidActCds,
 } from './records.normalize.js';
+import { classifyRecordOffences } from '../classification/crimeClassification.service.js';
 import { getLogger } from '../../utils/logger.js';
 
 // STYLE ANCHOR followed (see records.service.js / HANDOFF.md §7). Per-field-in-a-loop lines are
@@ -515,6 +516,8 @@ const NICK_NAME_COLUMN = 'nick_names';
 const PERSONS_TABLE_COLUMNS = new Set([
   'name', 'relative_name', 'relation_type', 'gender', 'age', 'dob', 'mobile', 'qualification',
   'perm_same_as_present', 'relation_to_subject', 'sort_order',
+  // Demographic fields (migration 20260822000001): STAT_23 / STAT_20 breakdown columns
+  'social_category', 'education', 'financial_status',
 ]);
 
 /** Build one person's {columns, extra, subtypes, locations} from a flat key/value source
@@ -1080,15 +1083,24 @@ export async function recomposeRecord(trx, registry, recordType, {
   if (detailRow?.local_head_id_label) data.local_head = detailRow.local_head_id_label;
   if (detailRow?.beat_id_label) data.beat_no = detailRow.beat_id_label;
 
-  // #7a (2026-07-20): Heinous Offence is DERIVED read-only from the record's local-head
-  // classification (ref.local_heads.crime_category = 'HEINOUS' | 'OTHER'), attached onto
-  // detailRow by the caller (enrichDetailLabels). The `heinous_offence` field is storage:ui_only
-  // (never written), so this recompose is its only source. Left BLANK when no classification is
-  // set (local_head_id null) rather than asserting 'No' — absence ≠ non-heinous. Applies wherever
-  // a local_head exists (CASE/ARREST today; UIDB while its local_head_id is populated).
-  if (detailRow?.local_head_crime_category) {
-    data.heinous_offence = detailRow.local_head_crime_category === 'HEINOUS' ? 'Yes' : 'No';
-  }
+  // Transfer fields & resolved labels
+  if (detailRow?.transfer_to_type) data.transfer_to = detailRow.transfer_to_type;
+  if (detailRow?.transferred_to_ps_id) data.transferred_to_ps_id = detailRow.transferred_to_ps_id;
+  if (detailRow?.transferred_to_ps_label) data.transferred_to_ps = detailRow.transferred_to_ps_label;
+  if (detailRow?.transferred_to_agency_id) data.transferred_to_agency_id = detailRow.transferred_to_agency_id;
+  if (detailRow?.transferred_to_agency_label) data.transferred_to_agency = detailRow.transferred_to_agency_label;
+  if (detailRow?.date_of_transfer) data.date_of_transfer = detailRow.date_of_transfer;
+
+  // Derive Heinous vs Non-Heinous classification systematically at the backend from local head,
+  // major heads, acts, and sections.
+  const classification = classifyRecordOffences({
+    localHeadCategory: detailRow?.local_head_crime_category,
+    localHeadName: detailRow?.local_head_id_label,
+    offences: offenceRows,
+  });
+  data.crime_category = classification.category;
+  data.is_heinous = classification.isHeinous;
+  data.heinous_offence = classification.isHeinous ? 'Yes' : 'No';
 
   // persons: singleton roles flatten into `data`; repeater roles build the `persons[]` array
   const persons = [];

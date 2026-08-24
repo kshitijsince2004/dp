@@ -182,32 +182,32 @@ export default function Queue() {
       <div className="hero-banner-gradient px-8 py-10 relative overflow-hidden">
         <div className="pointer-events-none absolute -top-8 -right-8 h-48 w-48 rounded-full border border-white/5" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start gap-4">
+        <div className="w-full max-w-[1920px] mx-auto relative z-10 flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3 font-display">
+            <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center gap-3 font-display">
               {t('nav.queue', 'Approval Desk')}
             </h1>
-            <p className="mt-2 text-sm text-white/60 max-w-xl font-semibold">
+            <p className="mt-2 text-base text-white/80 max-w-xl font-semibold">
               Review pending records submitted from your jurisdiction and approve or return them for correction.
             </p>
           </div>
-          <p className="text-2xl font-semibold text-white/90 m-0 text-right shrink-0">
+          <p className="text-2xl font-bold text-white/95 m-0 text-right shrink-0 font-display">
             Welcome back, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
           </p>
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-6 pb-10">
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 pb-12">
 
         {/* Record Category Tabs */}
-        <div className="mt-6 theme-card bg-white rounded-control border border-[var(--border-card-theme)] px-2 py-2 flex flex-wrap gap-1">
+        <div className="mt-6 theme-card bg-white rounded-control border border-[var(--border-card-theme)] px-2 py-2 flex flex-wrap gap-1.5">
           {['ALL', 'CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB'].map((tab) => {
             const count = countFor(tab);
             return (
               <button
                 key={tab}
                 onClick={() => handleTabChange(tab)}
-                className={`px-5 py-2.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-2 border-none ${
+                className={`px-5 py-2.5 text-sm sm:text-base font-bold tracking-wide rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-2 border-none ${
                   activeTab === tab
                     ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-glow)]'
                     : 'text-[var(--text-main-theme)] opacity-80 hover:bg-[var(--bg-page-main)]/80 hover:text-[var(--accent-color)] bg-transparent'
@@ -215,7 +215,7 @@ export default function Queue() {
               >
                 {t(`recordTypes.${tab}`, tab)}
                 {count > 0 && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                     activeTab === tab ? 'bg-white/25 text-white' : 'bg-[var(--bg-page-main)] text-[var(--text-main-theme)] border border-[var(--border-card-theme)]'
                   }`}>
                     {count}
@@ -226,45 +226,40 @@ export default function Queue() {
           })}
         </div>
 
+        {/* Bulk Action Strip */}
         {selectedIds.length > 0 && (
-          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-card p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="mt-4 theme-card bg-white rounded-card border border-[var(--border-card-theme)] p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-[var(--text-main-theme)]">
               <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500 text-xs font-bold text-white">
                 {selectedIds.length}
               </span>
-              <span className="text-sm font-bold text-amber-900">
-                {bulkLoading ? 'Processing bulk actions…' : `${selectedIds.length} records selected for bulk action`}
-              </span>
+              <span>{selectedIds.length} record{selectedIds.length > 1 ? 's' : ''} selected</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <button
-                type="button"
-                onClick={handleBulkDecline}
+                onClick={handleBulkReject}
                 disabled={bulkLoading}
-                className="bg-red-55/10 hover:bg-red-500 text-red-650 hover:text-white border border-red-200 hover:border-red-500 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                className="bg-red-55/10 hover:bg-red-500 text-red-650 hover:text-white border border-red-200 hover:border-red-500 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer disabled:opacity-50"
               >
-                Decline All
+                Send Back for Correction
               </button>
               <button
-                type="button"
                 onClick={handleBulkApprove}
                 disabled={bulkLoading}
-                className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border-none shadow-sm hover:shadow-md disabled:opacity-50"
+                className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer border-none shadow-sm hover:shadow-md disabled:opacity-50"
               >
-                Approve All
+                Approve &amp; Forward to ACP
               </button>
             </div>
           </div>
         )}
 
-        {/* Queue Listing */}
-        <div className="mt-5">
+        {/* Queue Table */}
+        <div className="mt-6">
           {isLoading ? (
-            <div className="theme-card rounded-card bg-white border border-[var(--border-card-theme)] flex flex-col items-center justify-center p-20 text-[var(--text-main-theme)] gap-4">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-[3px] border-[var(--accent-color)]" />
-              <p className="text-sm font-semibold text-[var(--text-main-theme)]">
-                {t('common.loading', 'Syncing digital registry logs...')}
-              </p>
+            <div className="flex flex-col items-center justify-center p-20 text-[var(--text-main-theme)] opacity-60">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-color)] mb-4" />
+              <p className="text-sm font-semibold">Loading approval queue...</p>
             </div>
 
           ) : filteredQueue.length === 0 ? (
@@ -281,10 +276,10 @@ export default function Queue() {
           ) : (
             <div className="theme-card rounded-card bg-white border border-[var(--border-card-theme)] overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
+                <table className="w-full text-left border-collapse text-sm sm:text-base">
                   <thead>
-                    <tr className="border-b border-[var(--border-card-theme)]/70 bg-[var(--bg-page-main)]/80">
-                      <th className="p-4 pl-6 text-xs font-semibold uppercase tracking-wider text-[var(--text-main-theme)] font-bold w-12">
+                    <tr className="border-b border-[var(--border-card-theme)]/70 bg-[var(--bg-page-main)]/80 text-sm sm:text-base font-bold">
+                      <th className="p-4 pl-6 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)] w-12">
                         <input
                           type="checkbox"
                           checked={filteredQueue.length > 0 && selectedIds.length === filteredQueue.length}
@@ -298,14 +293,14 @@ export default function Queue() {
                           className="rounded border-[var(--border-card-theme)] accent-[var(--accent-color)] cursor-pointer w-4 h-4"
                         />
                       </th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--text-main-theme)] font-bold">
+                      <th className="p-4 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)]">
                         {t('common.referenceId', 'Ref ID / Number')}
                       </th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--text-main-theme)] font-bold">Police Station</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--text-main-theme)] font-bold">Record Date</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--text-main-theme)] font-bold">Gist</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--text-main-theme)] font-bold">Current Status</th>
-                      <th className="p-4 pr-6 text-xs font-semibold uppercase tracking-wider text-[var(--text-main-theme)] font-bold text-right">Review Action</th>
+                      <th className="p-4 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)]">Police Station</th>
+                      <th className="p-4 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)]">Record Date</th>
+                      <th className="p-4 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)]">Gist</th>
+                      <th className="p-4 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)]">Current Status</th>
+                      <th className="p-4 pr-6 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)] text-right">Review Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border-card-theme)]/40 text-[var(--text-main-theme)]">
@@ -365,20 +360,65 @@ export default function Queue() {
                               className="rounded border-[var(--border-card-theme)] accent-[var(--accent-color)] cursor-pointer w-4 h-4"
                             />
                           </td>
-                          <td className="p-4 font-mono font-bold text-[var(--text-main-theme)]">{refId}</td>
-                          <td className="p-4 text-[var(--text-main-theme)] opacity-85 font-semibold">{rec.ps_name || 'Police Station'}</td>
-                          <td className="p-4 font-mono text-[var(--text-main-theme)] opacity-60">{typeof recDate === 'string' ? recDate.slice(0, 10) : 'N/A'}</td>
-                          <td className="p-4 max-w-[280px] truncate text-[var(--text-main-theme)] opacity-85 font-semibold" title={gist}>
+                          <td className="p-4 font-mono font-bold text-[var(--text-main-theme)] text-sm sm:text-base">{refId}</td>
+                          <td className="p-4 text-[var(--text-main-theme)] font-semibold text-sm sm:text-base">
+                            <div className="flex flex-col gap-0.5">
+                              <span>{rec.ps_name || 'Police Station'}</span>
+                              {rec.transfer_to_type === 'PS' && user?.ps_id && String(rec.transferred_to_ps_id) === String(user.ps_id) && String(rec.ps_id) !== String(user.ps_id) && (
+                                <span className="text-[11px] font-bold text-sky-600 flex items-center gap-1">
+                                  ↙ Transferred from {rec.origin_ps_name || rec.ps_name}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4 font-mono text-[var(--text-main-theme)] text-sm sm:text-base font-semibold">{typeof recDate === 'string' ? recDate.slice(0, 10) : 'N/A'}</td>
+                          <td className="p-4 max-w-[280px] truncate text-[var(--text-main-theme)] font-semibold text-sm sm:text-base" title={gist}>
                             {gist}
                           </td>
                           <td className="p-4">
-                            <span className={`inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-full border ${
-                              isSentBack
-                                ? 'bg-rose-50 text-rose-700 border-rose-200/60'
-                                : 'bg-amber-50 text-amber-700 border-amber-200'
-                            }`}>
-                              {t(`status.${rec.current_status}`, rec.current_status)}
-                            </span>
+                            <div className="flex flex-col gap-1.5 items-start">
+                              <span className={`inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-full border ${
+                                isSentBack
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200/60'
+                                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}>
+                                {t(`status.${rec.current_status}`, rec.current_status)}
+                              </span>
+                              {(rec.case_status === 'TRANSFER' || rec.data?.case_status === 'TRANSFER') && (
+                                <>
+                                  {/* Transfer to PS */}
+                                  {(rec.transfer_to_type === 'PS' || rec.data?.transfer_to === 'PS') && (
+                                    user?.ps_id && String(rec.transferred_to_ps_id) === String(user.ps_id) && String(rec.ps_id) !== String(user.ps_id) ? (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 shadow-xs"
+                                        title={`Transferred from ${rec.ps_name || rec.origin_ps_name || 'Origin PS'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
+                                      >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                                        ↙ Transferred In
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs"
+                                        title={`Transferred to ${rec.transferred_to_ps_name || rec.data?.transferred_to_ps || 'Destination PS'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
+                                      >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                        ↗ Transferred ({rec.transferred_to_ps_name || rec.data?.transferred_to_ps || 'PS'})
+                                      </span>
+                                    )
+                                  )}
+                                  {/* Transfer to Agency */}
+                                  {(rec.transfer_to_type === 'Agency' || rec.data?.transfer_to === 'Agency') && (
+                                    <span
+                                      className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-xs"
+                                      title={`Investigation conducted by ${rec.transferred_to_agency_name || rec.data?.transferred_to_agency || 'Agency'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
+                                    >
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                      🏛 {rec.transferred_to_agency_name || rec.data?.transferred_to_agency || 'Agency'}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           </td>
                           <td className="p-4 pr-6 text-right whitespace-nowrap">
                             <button

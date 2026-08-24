@@ -30,34 +30,34 @@ import { renderStat10 } from './renderers/stat-10-other-theft.js';
 import { renderStat11 } from './renderers/stat-11-victims.js';
 import { renderStat12 } from './renderers/stat-12-organised-crime.js';
 import { renderStat13 } from './renderers/stat-13-kidnapping.js';
-import { renderStat14 } from './renderers/stat-14-preventive.js';
-import { renderStat15 } from './renderers/stat-15-proclaimed-offenders.js';
+import { renderStat14Preventive as renderStat14 } from './renderers/stat-14-preventive.js';
+import { renderStat15ProclaimedOffenders as renderStat15 } from './renderers/stat-15-proclaimed-offenders.js';
 import { renderStat16 } from './renderers/stat-16-excise-ndps.js';
 import { renderStat17 } from './renderers/stat-17-arms.js';
 import { renderStat18 } from './renderers/stat-18-vehicles-seized.js';
 import { renderStat19 } from './renderers/stat-19-missing.js';
 import { renderStat20 } from './renderers/stat-20-demographics.js';
-import { renderStat21 } from './renderers/stat-21-kalandra.js';
-import { renderStat22 } from './renderers/stat-22-sec223-bns.js';
-import { renderStat23 } from './renderers/stat-23-sc-st.js';
+import { renderStat21Kalandra as renderStat21 } from './renderers/stat-21-kalandra.js';
+import { renderStat22Sec223Bns as renderStat22 } from './renderers/stat-22-sec223-bns.js';
+import { renderStat23ScSt as renderStat23 } from './renderers/stat-23-sc-st.js';
 import { renderStat24 } from './renderers/stat-24-domestic-violence.js';
 import { renderStat25 } from './renderers/stat-25-pocso-only.js';
 import { renderStat26 } from './renderers/stat-26-pocso-total.js';
 import { renderStat27 } from './renderers/stat-27-children-crime.js';
 import { renderStat28 } from './renderers/stat-28-women-crime.js';
-import { renderStat29 } from './renderers/stat-29-trafficking.js';
-import { renderStat30 } from './renderers/stat-30-zero-fir.js';
-import { renderStat31 } from './renderers/stat-31-senior-citizens.js';
-import { renderStat32 } from './renderers/stat-32-cyber-crime.js';
-import { renderStat33 } from './renderers/stat-33-property-stolen-recovered.js';
-import { renderStat34 } from './renderers/stat-34-dp-act.js';
-import { renderStat35 } from './renderers/stat-35-preventive-detail.js';
+import { renderStat29Trafficking as renderStat29 } from './renderers/stat-29-trafficking.js';
+import { renderStat30ZeroFir as renderStat30 } from './renderers/stat-30-zero-fir.js';
+import { renderStat31SeniorCitizens as renderStat31 } from './renderers/stat-31-senior-citizens.js';
+import { renderStat32CyberCrime as renderStat32 } from './renderers/stat-32-cyber-crime.js';
+import { renderStat33PropertyStolenRecovered as renderStat33 } from './renderers/stat-33-property-stolen-recovered.js';
+import { renderStat34DpAct as renderStat34 } from './renderers/stat-34-dp-act.js';
+import { renderStat35PreventiveDetail as renderStat35 } from './renderers/stat-35-preventive-detail.js';
 import { renderStat36 } from './renderers/stat-36-disposal-balance.js';
 import { renderStat37 } from './renderers/stat-37-pending-age.js';
 import { renderStat38 } from './renderers/stat-38-bns-no-arrest.js';
 import { renderStat39 } from './renderers/stat-39-lsl-no-arrest.js';
-import { renderStat40 } from './renderers/stat-40-court-stub.js';
-import { renderStat41 } from './renderers/stat-41-court-lsl.js';
+import { renderStat40CourtStub as renderStat40 } from './renderers/stat-40-court-stub.js';
+import { renderStat41CourtLsl as renderStat41 } from './renderers/stat-41-court-lsl.js';
 
 const CANONICAL_ALIASES = {
   'ATT_TO_CULPABLE_HOMICIDE_NOT_AMOUNTING_TO_MURDER': 'ATT_TO_CULPABLE_HOMICIDE',
@@ -310,7 +310,7 @@ export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets 
 
   for (const { key, fn } of sheets) {
     try {
-      fn(workbook, scope, calcData);
+      await fn(workbook, scope, calcData);
     } catch (err) {
       console.error(`Error rendering sheet ${key}:`, err);
     }
@@ -428,6 +428,17 @@ export async function generateFnDiary(districtNodeId, fnEndDate, selectedSheets 
       const textA = String(row.getCell(1).value ?? '').trim().toUpperCase();
       const textB = String(row.getCell(2).value ?? '').trim().toUpperCase();
       const label = textB || textA;
+
+      // Clear stray zeroes and skip empty rows outside/below tables
+      if (!textA && !textB) {
+        for (let c = startDataCol; c <= endDataCol; c++) {
+          const cell = row.getCell(c);
+          if (cell.value === 0 || cell.value === '0') {
+            cell.value = null;
+          }
+        }
+        continue;
+      }
 
       // Skip section header rows (e.g. "A. HEINOUS CRIME", "B. NON-HEINOUS CRIME")
       const isSection = /^[AB]\.\s|HEINOUS CRIME|NON.?HEINOUS/i.test(label) || /^[AB]\.\s/.test(textA);

@@ -23,6 +23,17 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // ── Windows HMR fix ────────────────────────────────────────────────────
+    // chokidar's default inotify watcher misses events on Windows (especially
+    // when Docker/WSL2 is running). usePolling forces a stat-based poll so
+    // every file save is reliably detected and hot-reloaded.
+    watch: {
+      usePolling: true,
+      interval: 300,       // poll every 300 ms — fast enough to feel instant
+    },
+    hmr: {
+      overlay: true,       // show error overlay in browser
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

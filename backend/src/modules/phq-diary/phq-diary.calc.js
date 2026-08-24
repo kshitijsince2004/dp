@@ -24,15 +24,13 @@ import {
 export function computeVariation(curr, prev) {
   const c = Number(curr) || 0;
   const p = Number(prev) || 0;
-  if (c === 0 && p === 0) return null;
-  if (p === 0) return Infinity;
+  if (p === 0) return null;
   return ((c - p) / p) * 100;
 }
 
 export function varPct(curr, prev) {
   const v = computeVariation(curr, prev);
-  if (v === null) return '-';
-  if (v === Infinity) return '+∞';
+  if (v === null || !isFinite(v)) return '-';
   return (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
 }
 

@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { fileURLToPath } from 'url';
 import db from '../../config/db.js';
 import { generateMetadataReport } from './engine/templateRuntime.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,12 +10,17 @@ import { publish } from '../../events/eventBus.js';
 import { getLogger } from '../../utils/logger.js';
 import { toISO, toDMY } from '../../utils/dateFormat.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '../../../..');
+
 const log = getLogger('reports.controller');
 
 const runPythonFallback = (jobId) => {
   const pythonPath = process.env.PYTHON_PATH || 'python';
-  const cmd = `"${pythonPath}" -c "import sys; sys.path.insert(0, './python_worker'); from generator import generate_report; generate_report('${jobId}')"`;
-  exec(cmd, { cwd: path.resolve('.') }, (err, stdout, stderr) => {
+  const pyDir = path.resolve(projectRoot, 'python_worker').replace(/\\/g, '/');
+  const cmd = `"${pythonPath}" -c "import sys; sys.path.insert(0, '${pyDir}'); from generator import generate_report; generate_report('${jobId}')"`;
+  exec(cmd, { cwd: projectRoot }, (err, stdout, stderr) => {
     if (err) {
       log.error('PythonFallback: Error generating report', { jobId, err: err.message });
     } else {
@@ -107,8 +112,8 @@ export const getTemplates = async (req, res) => {
 
       return {
         id: t.id,
-        name_en: t.name_en,
-        name_hi: t.name_hi,
+        name_en: t.name || t.name_en,
+        name_hi: t.name_hi || t.name,
         template_type: t.template_type || 'PROFORMA',
         applicable_record_types: recTypes,
         output_formats: formats || ["PDF", "CSV", "EXCEL"],
@@ -164,7 +169,7 @@ const getRecordsForReport = async (templateId, filters) => {
   else if (templateId === 'cases-register') recordType = 'CASE';
 
   let query = db('records')
-    .select('records.*', 'ps.name_en as ps_name', 'dist.name_en as district_name')
+    .select('records.*', 'ps.name as ps_name', 'dist.name as district_name')
     .leftJoin('hierarchy_nodes as ps', 'records.ps_id', 'ps.id')
     .leftJoin('hierarchy_nodes as dist', 'records.district_id', 'dist.id');
 
@@ -174,8 +179,8 @@ const getRecordsForReport = async (templateId, filters) => {
 
   const psId = filters.psId || filters.station_id;
   const districtId = filters.districtId || filters.district_id;
-  const from = toISO(filters.from || filters.dateFrom || filters.from_date);
-  const to = toISO(filters.to || filters.dateTo || filters.to_date);
+  const from = toISO(filters.from || filters.dateFrom || filters.from_date || filters.date);
+  const to = toISO(filters.to || filters.dateTo || filters.to_date || filters.date);
 
   if (psId) query = query.where('records.ps_id', psId);
   if (districtId) query = query.where('records.district_id', districtId);
@@ -185,8 +190,10 @@ const getRecordsForReport = async (templateId, filters) => {
   // Dynamic user data filters from request parameters
   const systemKeys = new Set([
     'psId', 'station_id', 'districtId', 'district_id',
-    'from', 'dateFrom', 'from_date', 'to', 'dateTo', 'to_date',
-    'selected_sub_templates', 'page', 'limit'
+    'from', 'dateFrom', 'from_date', 'date',
+    'to', 'dateTo', 'to_date', 'date_to',
+    'selected_sub_templates', 'page', 'limit', 'format', 'template_id',
+    'scope_node_id', 'scopeNodeId', 'selected_sheets'
   ]);
 
   for (const [key, val] of Object.entries(filters)) {
@@ -197,14 +204,7 @@ const getRecordsForReport = async (templateId, filters) => {
     if (coreColumns.includes(key)) {
       query = query.where(`records.${key}`, val);
     } else {
-      // [PHAROS-DEBUG] pre-existing bug, NOT fixed here (out of scope for a logging-only pass):
-      // `records.data` jsonb no longer exists post-DB-restructure (docs/db-audit/DB_SCHEMA.md —
-      // domain data now lives in typed detail/persons/properties tables). This whereRaw will
-      // throw "column records.data does not exist" for any dynamic filter key reaching this
-      // branch. Logged at warn so a report-generation failure here is traceable to this exact
-      // known-stale query rather than looking like a fresh regression.
-      log.warn('getRecordsForReport: dynamic filter hits stale records.data jsonb column (pre-existing, not adapted to typed schema)', { templateId, key });
-      query = query.whereRaw("records.data @> ?::jsonb", [JSON.stringify({ [key]: val })]);
+      log.warn('getRecordsForReport: skipping dynamic filter for non-existent records.data column', { templateId, key });
     }
   }
 
@@ -219,7 +219,7 @@ const getRecordsForReport = async (templateId, filters) => {
 const getCompilationsForReport = async (filters) => {
   log.debug('getCompilationsForReport: enter', { filters: Object.keys(filters || {}) });
   let query = db('compilations')
-    .select('compilations.*', 'dist.name_en as district_name')
+    .select('compilations.*', 'dist.name as district_name')
     .leftJoin('hierarchy_nodes as dist', 'compilations.source_entity_id', 'dist.id');
 
   const districtId = filters.districtId || filters.district_id;
@@ -496,7 +496,9 @@ export const generateReport = async (req, res) => {
     await db('report_jobs').insert({
       id: jobId,
       template_id: dbTemplateId,
-      custom_definition: custom_definition ? JSON.stringify(custom_definition) : null,
+      custom_definition: custom_definition
+        ? JSON.stringify(custom_definition)
+        : JSON.stringify({ type: 'DAILY_DIARY', template_id: template_id }),
       filters: JSON.stringify(filters || {}),
       format: fmt,
       status: 'PENDING',
@@ -597,6 +599,28 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
       selectedSheets
     });
     fs.writeFileSync(filePath, buffer);
+    await db('report_jobs').where({ id: jobId }).update({
+      status: 'READY',
+      file_path: filePath,
+      updated_at: new Date().toISOString()
+    });
+    return;
+  }
+
+  const isDailyDiaryParallel = (
+    templateCode === 'DAILY-DIARY' || templateCode === 'DAILY_DIARY' ||
+    templateCode.startsWith('DD-') || templateCode.startsWith('DD_') ||
+    template?.template_type === 'DAILY_DIARY_PARALLEL' ||
+    (typeof template_id === 'string' && (template_id.startsWith('dd-') || template_id === 'daily-diary'))
+  );
+
+  if (isDailyDiaryParallel) {
+    const { execSync } = await import('child_process');
+    const pythonPath = process.env.PYTHON_PATH || 'python';
+    const pyDir = path.resolve(projectRoot, 'python_worker').replace(/\\/g, '/');
+    const cmd = `"${pythonPath}" -c "import sys; sys.path.insert(0, '${pyDir}'); from generator import generate_report; generate_report('${jobId}')"`;
+    log.info('generateReportInternal: executing Python daily-diary engine', { jobId, template_id });
+    execSync(cmd, { cwd: projectRoot });
     await db('report_jobs').where({ id: jobId }).update({
       status: 'READY',
       file_path: filePath,
@@ -851,41 +875,43 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
     log.debug('generateReportInternal: EXCEL branch', { jobId, template_id });
     if (template_id === 'daily-status') {
       log.debug('generateReportInternal: daily-status delegates to external Python export script', { jobId, template_id });
-      const date = toISO(parsedFilters.from || parsedFilters.dateFrom) || new Date().toISOString().split('T')[0];
-      const templatePath = path.resolve(__dirname, '../../../../Master/Daily_Diary_ProperHeaders.xlsx');
-      const scriptPath = path.resolve(__dirname, '../../../../Master/files/export_daily_report.py');
-      
-      let dbHost = 'localhost';
-      let dbPort = '5435';
-      let dbUser = 'postgres';
-      let dbPass = 'postgres';
-      let dbName = 'pharos_db';
+      const date = toISO(parsedFilters.from || parsedFilters.dateFrom || parsedFilters.date) || new Date().toISOString().split('T')[0];
+      const templatePath = path.resolve(projectRoot, 'Master/Daily_Diary_ProperHeaders.xlsx');
+      const scriptPath = path.resolve(projectRoot, 'Master/files/export_daily_report.py');
 
-      if (process.env.DATABASE_URL) {
-        try {
-          const url = new URL(process.env.DATABASE_URL);
-          dbHost = url.hostname || dbHost;
-          dbPort = url.port || dbPort;
-          dbUser = url.username || dbUser;
-          dbPass = url.password || dbPass;
-          dbName = url.pathname.replace(/^\//, '') || dbName;
-        } catch (e) {
-          // ignore
+      if (fs.existsSync(scriptPath) && fs.existsSync(templatePath)) {
+        let dbHost = 'localhost';
+        let dbPort = '5435';
+        let dbUser = 'postgres';
+        let dbPass = 'postgres';
+        let dbName = 'pharos_db';
+
+        if (process.env.DATABASE_URL) {
+          try {
+            const url = new URL(process.env.DATABASE_URL);
+            dbHost = url.hostname || dbHost;
+            dbPort = url.port || dbPort;
+            dbUser = url.username || dbUser;
+            dbPass = url.password || dbPass;
+            dbName = url.pathname.replace(/^\//, '') || dbName;
+          } catch (e) {
+            // ignore
+          }
         }
+
+        const cmd = `python "${scriptPath}" --date "${date}" --template "${templatePath}" --out "${filePath}" --host "${dbHost}" --port "${dbPort}" --dbname "${dbName}" --user "${dbUser}" --password "${dbPass}"`;
+
+        log.debug('generateReportInternal: executing daily-status export script', {
+          jobId, template_id, scriptPath, templatePath, date, outPath: filePath, dbHost, dbPort, dbName, dbUser, hasDbPass: !!dbPass,
+        });
+        const { execSync } = await import('child_process');
+        execSync(cmd);
+        log.info('generateReportInternal: daily-status export script completed', { jobId, filePath });
+      } else {
+        log.info('generateReportInternal: Master script not present, using ExcelJS fallback for daily-status', { jobId });
+        records = await getRecordsForReport(template_id, parsedFilters);
+        await generateExcelFile(template_id, records, parsedFilters, psName, filePath);
       }
-
-      const cmd = `python "${scriptPath}" --date "${date}" --template "${templatePath}" --out "${filePath}" --host "${dbHost}" --port "${dbPort}" --dbname "${dbName}" --user "${dbUser}" --password "${dbPass}"`;
-
-      // REDACTION (mandatory, HANDOFF §3): never log a credential. The previous console.log
-      // here printed the full shell command, which embeds `--password "${dbPass}"` in plaintext
-      // — a real secret leak into stdout/whatever captures it. Log the non-secret invocation
-      // shape instead (never `cmd`, never `dbPass`).
-      log.debug('generateReportInternal: executing daily-status export script', {
-        jobId, template_id, scriptPath, templatePath, date, outPath: filePath, dbHost, dbPort, dbName, dbUser, hasDbPass: !!dbPass,
-      });
-      const { execSync } = await import('child_process');
-      execSync(cmd);
-      log.info('generateReportInternal: daily-status export script completed', { jobId, filePath });
     } else {
       if (template_id === 'district-compilation' || template_id === 'ops-compilation') {
         records = await getCompilationsForReport(parsedFilters);

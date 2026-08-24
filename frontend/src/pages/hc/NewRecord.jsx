@@ -236,12 +236,12 @@ export default function NewRecord() {
   }
 
   return (
-    <div className="min-h-screen theme-hc-page page-bg py-3 px-2">
+    <div className="theme-hc-page page-bg py-2 px-2 sm:px-3 w-full">
       <motion.div 
         variants={pageVariants}
         initial="hidden"
         animate="show"
-        className="space-y-3 w-full police-watermark pb-3"
+        className="space-y-2.5 w-full police-watermark pb-2"
       >
         {/* Simple Page Header with Breadcrumbs */}
         <motion.div 
@@ -258,9 +258,9 @@ export default function NewRecord() {
                 Registration
               </button>
               <span>&gt;</span>
-              <span className="text-slate-800 font-semibold">Record</span>
+              <span className="text-slate-800 font-bold">Record</span>
             </div>
-            <h1 className="text-lg font-bold text-[#0d2a4a] mt-0.5 tracking-wide font-display uppercase">
+            <h1 className="text-xl sm:text-2xl font-black text-[#0d2a4a] mt-0.5 tracking-wide font-display uppercase">
               {type === 'CASE' || record?.record_type === 'CASE' 
                 ? 'FIR Registration' 
                 : `${editId ? 'Edit' : 'New'} ${type || record?.record_type || ''} Registration`}
@@ -268,16 +268,17 @@ export default function NewRecord() {
           </div>
           <button
             onClick={() => {
+              log.debug('action:new_record_back_click');
               if (caseType) {
                 setCaseType(null);
               } else {
                 navigate('/records');
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-100 text-[#0d2a4a] hover:text-[#0f52ba] rounded-xl transition-all duration-200 cursor-pointer border border-slate-200 active:scale-95 text-xs font-bold bg-white"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer"
           >
-            <ArrowLeft size={14} />
-            <span>Back</span>
+            <ArrowLeft size={15} />
+            <span>{t('common.back', 'Back')}</span>
           </button>
         </motion.div>
 

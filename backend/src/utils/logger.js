@@ -81,19 +81,19 @@ export const logger = winston.createLogger({
   format: baseFormat,
   transports: [
     new winston.transports.Console({ format: consoleFormat }),
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error', format: fileFormat }),
-    new winston.transports.File({ filename: 'logs/combined.log', format: fileFormat }),
+    new winston.transports.File({ filename: 'logs/error.log', level: 'error', format: fileFormat, maxsize: 10 * 1024 * 1024, maxFiles: 5, tailable: true }),
+    new winston.transports.File({ filename: 'logs/combined.log', format: fileFormat, maxsize: 10 * 1024 * 1024, maxFiles: 5, tailable: true }),
     // NEW (logging-instrumentation-2026-07-22): a plain, all-levels backend log file. In dev
     // this carries `debug` (inherits `logger`'s level, same as combined.log) — the dense
     // step-by-step trace the instrumentation effort is for. Additive: combined.log/error.log
     // are untouched and keep receiving everything they always did.
-    new winston.transports.File({ filename: 'logs/backend.log', format: fileFormat }),
+    new winston.transports.File({ filename: 'logs/backend.log', format: fileFormat, maxsize: 10 * 1024 * 1024, maxFiles: 5, tailable: true }),
   ],
   exceptionHandlers: [
-    new winston.transports.File({ filename: 'logs/exceptions.log', format: fileFormat }),
+    new winston.transports.File({ filename: 'logs/exceptions.log', format: fileFormat, maxsize: 5 * 1024 * 1024, maxFiles: 2 }),
   ],
   rejectionHandlers: [
-    new winston.transports.File({ filename: 'logs/rejections.log', format: fileFormat }),
+    new winston.transports.File({ filename: 'logs/rejections.log', format: fileFormat, maxsize: 5 * 1024 * 1024, maxFiles: 2 }),
   ],
 });
 

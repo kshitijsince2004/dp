@@ -18,19 +18,19 @@ export default function RadioField({ id, disabled, value, onChange, options = []
   // (hidden native input + drawn circle) would look out of place.
   if (variant === 'native') {
     return (
-      <div className={wrapperClassName || "flex items-center gap-4"}>
+      <div className={wrapperClassName || "flex items-center gap-6"}>
         {options.map((opt) => (
-          <label key={String(opt.value)} className={`flex items-center gap-1 cursor-pointer select-none ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          <label key={String(opt.value)} className={`flex items-center gap-2 cursor-pointer select-none ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
             <input
               type="radio"
               name={id}
               disabled={disabled}
               checked={value === opt.value}
               onChange={() => handleSelect(opt.value)}
-              className={inputClassName || "cursor-pointer"}
+              className={inputClassName || "cursor-pointer w-4 h-4"}
               style={{ accentColor: '#0f52ba' }}
             />
-            <span>{getLabel(opt)}</span>
+            <span className="text-sm sm:text-base font-bold text-[#0d2a4a]">{getLabel(opt)}</span>
           </label>
         ))}
       </div>
@@ -38,7 +38,7 @@ export default function RadioField({ id, disabled, value, onChange, options = []
   }
 
   return (
-    <div className="flex flex-wrap gap-3 pt-1">
+    <div className="flex flex-wrap gap-4 pt-1">
       {options.map((opt) => {
         const checked = value === opt.value;
         return (
@@ -47,22 +47,22 @@ export default function RadioField({ id, disabled, value, onChange, options = []
             type="button"
             disabled={disabled}
             onClick={() => !disabled && handleSelect(opt.value)}
-            className={`inline-flex items-center gap-2 cursor-pointer select-none bg-transparent border-0 p-0 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`inline-flex items-center gap-2.5 cursor-pointer select-none bg-transparent border-0 p-0 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <div
-              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0 bg-white ${
+              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0 bg-white ${
                 checked ? '' : 'border-slate-300'
               }`}
               style={checked ? { borderColor: '#0f52ba' } : {}}
             >
               {checked && (
                 <div
-                  className="w-2 h-2 rounded-full"
+                  className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: '#0f52ba' }}
                 />
               )}
             </div>
-            <span className="text-sm text-slate-700 font-medium">{getLabel(opt)}</span>
+            <span className="text-sm sm:text-base text-[#0d2a4a] font-bold">{getLabel(opt)}</span>
           </button>
         );
       })}

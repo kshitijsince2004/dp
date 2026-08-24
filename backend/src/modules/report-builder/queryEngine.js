@@ -17,7 +17,8 @@ import {
   getFieldDef,
   filterFieldsForRole,
 } from './reportableFields.config.js';
-import { resolveQueryMode, wh, whTable } from '../warehouse/warehouse.db.js';
+import { fetchRecordFull } from '../records/records.service.js';
+import { loadRegistry, recomposeRecord } from '../records/records.mapper.js';
 import { toISO } from '../../utils/dateFormat.js';
 
 // Map logical table names to warehouse fact tables
@@ -427,11 +428,11 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
     return { rows, total, page: parseInt(page, 10) || 1, pageSize: limit };
 
   } else {
-    // FALLBACK: Query live operational JSONB records table
+    // FALLBACK: Query live operational records table
     let query = db('records')
       .select('records.id', 'records.record_type', 'records.record_date',
               'records.current_status', 'records.created_at',
-              'ps.name_en as ps_name', 'dist.name_en as district_name')
+              'ps.name as ps_name', 'dist.name as district_name')
       .leftJoin('hierarchy_nodes as ps', 'records.ps_id', 'ps.id')
       .leftJoin('hierarchy_nodes as dist', 'records.district_id', 'dist.id')
       .where('records.record_type', table);
@@ -440,37 +441,45 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
     if (jurisdictionQuery.district_id) query = query.where('records.district_id', jurisdictionQuery.district_id);
     if (jurisdictionQuery.sub_div_id) query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id);
 
-    query = query.select('records.data');
-
+    // Apply DB column filters
     if (filters && filters.conditions && filters.conditions.length > 0) {
-      query = query.where(function () {
-        applyFilterSpec(this, filters, table, validatedFieldMap);
-      });
+      const dbFilters = {
+        ...filters,
+        conditions: (filters.conditions || []).filter(c => {
+          const tableKey = c.table || table;
+          const mapKey = `${tableKey}.${c.field}`;
+          const fieldDef = validatedFieldMap.get(mapKey);
+          return fieldDef && fieldDef.is_db_col;
+        })
+      };
+      if (dbFilters.conditions.length > 0) {
+        query = query.where(function () {
+          applyFilterSpec(this, dbFilters, table, validatedFieldMap);
+        });
+      }
     }
 
     if (sort && sort.field) {
       const sortDef = validatedFieldMap.get(`${table}.${sort.field}`) ||
                       validatedFieldMap.get(`_SYSTEM.${sort.field}`);
-      if (sortDef) {
-        const sortExpr = resolveFieldExpr(sortDef);
+      if (sortDef && sortDef.is_db_col) {
         const dir = (sort.dir || 'asc').toLowerCase() === 'desc' ? 'desc' : 'asc';
-        if (sortDef.is_db_col) {
-          query = query.orderBy(sortDef.db_col, dir);
-        } else {
-          query = query.orderByRaw(`${sortExpr} ${dir}`);
-        }
+        query = query.orderBy(sortDef.db_col, dir);
+      } else {
+        query = query.orderBy('records.created_at', 'desc');
       }
     } else {
       query = query.orderBy('records.created_at', 'desc');
     }
 
-    const countQuery = query.clone().clearSelect().clearOrder().count('records.id as count').first();
-    const [countRow, rows] = await Promise.all([
-      countQuery,
-      query.limit(limit).offset(offset)
-    ]);
+    const rows = await query.limit(Math.max(limit * 5, 100));
 
-    const total = parseInt(countRow?.count || 0, 10);
+    const nonDbFilters = (filters?.conditions || []).filter(c => {
+      const tableKey = c.table || table;
+      const mapKey = `${tableKey}.${c.field}`;
+      const fieldDef = validatedFieldMap.get(mapKey);
+      return fieldDef && !fieldDef.is_db_col;
+    });
 
     const selectedDataFields = fields
       .filter(f => {
@@ -479,30 +488,64 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
       })
       .map(f => typeof f === 'string' ? f : f.field);
 
-    const projected = rows.map(row => {
-      const rawData = typeof row.data === 'string' ? JSON.parse(row.data || '{}') : (row.data || {});
-      const projected = {
-        _id: row.id,
-        _record_type: row.record_type,
-        _record_date: row.record_date,
-        _status: row.current_status,
-        _created_at: row.created_at,
-        _ps_name: row.ps_name,
-        _district_name: row.district_name,
-        // "_ps_id"/"_district_id" are the _SYSTEM field keys the UI labels "Police Station"/
-        // "District" — aliased to the resolved names so the column isn't blank once selected.
-        _ps_id: row.ps_name,
-        _district_id: row.district_name,
-      };
-      for (const fKey of selectedDataFields) {
-        if (!fKey.startsWith('_')) {
-          projected[fKey] = rawData[fKey] ?? null;
+    const batchSize = 10;
+    const recomposedRows = [];
+    for (let i = 0; i < rows.length; i += batchSize) {
+      const chunk = rows.slice(i, i + batchSize);
+      const chunkResults = await Promise.all(chunk.map(async row => {
+        let rawData = {};
+        try {
+          const full = await fetchRecordFull(db, row.id);
+          if (full) {
+            const registry = await loadRegistry(db, row.record_type);
+            const recomposed = await recomposeRecord(db, registry, row.record_type, full);
+            rawData = recomposed?.data || {};
+          }
+        } catch (err) {
+          rawData = {};
         }
-      }
-      return projected;
-    });
 
-    return { rows: projected, total, page: parseInt(page, 10) || 1, pageSize: limit };
+        let passes = true;
+        for (const cond of nonDbFilters) {
+          const val = rawData[cond.field];
+          const op = (cond.operator || 'EQ').toUpperCase();
+          if (op === 'EQ' && String(val || '') !== String(cond.value || '')) { passes = false; break; }
+          if (op === 'NOT_EQ' && String(val || '') === String(cond.value || '')) { passes = false; break; }
+          if (op === 'CONTAINS' && !String(val || '').toLowerCase().includes(String(cond.value || '').toLowerCase())) { passes = false; break; }
+          if (op === 'IS_NOT_EMPTY' && (val === null || val === undefined || val === '')) { passes = false; break; }
+          if (op === 'IS_EMPTY' && (val !== null && val !== undefined && val !== '')) { passes = false; break; }
+        }
+        if (!passes) return null;
+
+        const proj = {
+          _id: row.id,
+          _record_type: row.record_type,
+          _record_date: row.record_date,
+          _status: row.current_status,
+          _created_at: row.created_at,
+          _ps_name: row.ps_name,
+          _district_name: row.district_name,
+          _ps_id: row.ps_name,
+          _district_id: row.district_name,
+        };
+        for (const fKey of selectedDataFields) {
+          if (!fKey.startsWith('_')) {
+            proj[fKey] = rawData[fKey] ?? null;
+          }
+        }
+        return proj;
+      }));
+
+      for (const res of chunkResults) {
+        if (res !== null) recomposedRows.push(res);
+      }
+      if (recomposedRows.length >= offset + limit) break;
+    }
+
+    const total = recomposedRows.length;
+    const paged = recomposedRows.slice(offset, offset + limit);
+
+    return { rows: paged, total, page: parseInt(page, 10) || 1, pageSize: limit };
   }
 }
 
@@ -636,7 +679,7 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
         'L.current_status as L_status', 'L.ps_id as L_ps_id',
         'L.district_id as L_district_id', 'L.created_at as L_created_at',
         'L.data as L_data',
-        'ps.name_en as ps_name', 'dist.name_en as district_name'
+        'ps.name as ps_name', 'dist.name as district_name'
       )
       .leftJoin('hierarchy_nodes as ps', 'L.ps_id', 'ps.id')
       .leftJoin('hierarchy_nodes as dist', 'L.district_id', 'dist.id')
@@ -750,7 +793,7 @@ async function executePersonJoinedQuery(spec, jurisdictionQuery, validatedFieldM
       'L.current_status as L_status', 'L.ps_id as L_ps_id',
       'L.district_id as L_district_id', 'L.created_at as L_created_at',
       'L.data as L_data',
-      'ps.name_en as ps_name', 'dist.name_en as district_name'
+      'ps.name as ps_name', 'dist.name as district_name'
     )
     .leftJoin('hierarchy_nodes as ps', 'L.ps_id', 'ps.id')
     .leftJoin('hierarchy_nodes as dist', 'L.district_id', 'dist.id')
@@ -859,7 +902,7 @@ export async function executeMissingUidbCrossMatch(params, jurisdictionQuery) {
     // Warehouse implementation: directly use typed columns
     let missingQ = db(`${whTable('fact_missing')} as fact_missing`)
       .select('fact_missing.source_record_id as id', 'fact_missing.record_date', 'fact_missing.ps_id', 'fact_missing.district_id',
-              'ps.name_en as ps_name', 'dist.name_en as district_name',
+              'ps.name as ps_name', 'dist.name as district_name',
               'fact_missing.missing_name', 'fact_missing.age', 'fact_missing.gender', 'fact_missing.missing_date',
               'fact_missing.physical_description')
       .leftJoin('hierarchy_nodes as ps', 'fact_missing.ps_id', 'ps.id')
@@ -867,7 +910,7 @@ export async function executeMissingUidbCrossMatch(params, jurisdictionQuery) {
 
     let uidbQ = db(`${whTable('fact_uidb')} as fact_uidb`)
       .select('fact_uidb.source_record_id as id', 'fact_uidb.record_date', 'fact_uidb.ps_id', 'fact_uidb.district_id',
-              'ps.name_en as ps_name', 'dist.name_en as district_name',
+              'ps.name as ps_name', 'dist.name as district_name',
               'fact_uidb.approx_age', 'fact_uidb.approx_age_num', 'fact_uidb.gender', 'fact_uidb.found_date',
               'fact_uidb.found_place', 'fact_uidb.description', 'fact_uidb.identified')
       .leftJoin('hierarchy_nodes as ps', 'fact_uidb.ps_id', 'ps.id')
@@ -945,14 +988,14 @@ export async function executeMissingUidbCrossMatch(params, jurisdictionQuery) {
     // FALLBACK: Query live operational JSONB records fuzzy search
     let missingQ = db('records as M')
       .select('M.id', 'M.record_date', 'M.ps_id', 'M.district_id', 'M.data',
-              'ps.name_en as ps_name', 'dist.name_en as district_name')
+              'ps.name as ps_name', 'dist.name as district_name')
       .leftJoin('hierarchy_nodes as ps', 'M.ps_id', 'ps.id')
       .leftJoin('hierarchy_nodes as dist', 'M.district_id', 'dist.id')
       .where('M.record_type', 'MISSING');
 
     let uidbQ = db('records as U')
       .select('U.id', 'U.record_date', 'U.ps_id', 'U.district_id', 'U.data',
-              'ps.name_en as ps_name', 'dist.name_en as district_name')
+              'ps.name as ps_name', 'dist.name as district_name')
       .leftJoin('hierarchy_nodes as ps', 'U.ps_id', 'ps.id')
       .leftJoin('hierarchy_nodes as dist', 'U.district_id', 'dist.id')
       .where('U.record_type', 'UIDB');

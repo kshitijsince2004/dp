@@ -146,7 +146,7 @@ export default function LoginPage() {
             transition={{ delay: 0.1, duration: 0.35 }}
             className="login-form-section"
           >
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
 
               <div className="login-form-group">
                 <label htmlFor="login-email">Badge No / Official Email</label>

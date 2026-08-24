@@ -12,7 +12,7 @@ export const LOG_ENABLED = import.meta.env.DEV || import.meta.env.VITE_DEBUG_LOG
 
 const RING_CAP = 2000;
 const FLUSH_INTERVAL_MS = 5000;
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace(/\/$/, '');
 const CLIENT_LOG_ENDPOINT = `${API_BASE}/logs/client`;
 
 function makeId(prefix) {
@@ -67,19 +67,13 @@ function openIdb() {
 const LS_FALLBACK_KEY = 'pharos_client_logs_fallback';
 
 async function persistEntry(entry) {
+  // Only persist errors/warnings to long-term storage to keep UI thread fast; in-memory ring keeps everything
+  if (entry.level !== 'error' && entry.level !== 'warn') return;
   try {
     const db = await openIdb();
     if (db) {
-      await new Promise((resolve) => {
-        try {
-          const tx = db.transaction(STORE_NAME, 'readwrite');
-          tx.objectStore(STORE_NAME).add(entry);
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => resolve();
-        } catch {
-          resolve();
-        }
-      });
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).add(entry);
       return;
     }
   } catch {
@@ -88,11 +82,10 @@ async function persistEntry(entry) {
   try {
     const existing = JSON.parse(localStorage.getItem(LS_FALLBACK_KEY) || '[]');
     existing.push(entry);
-    while (existing.length > RING_CAP) existing.shift();
+    while (existing.length > 200) existing.shift();
     localStorage.setItem(LS_FALLBACK_KEY, JSON.stringify(existing));
   } catch {
-    // localStorage full/unavailable (private browsing etc) — the in-memory ring still has it
-    // for this tab's lifetime, and downloadLogs() still works.
+    // localStorage full/unavailable
   }
 }
 

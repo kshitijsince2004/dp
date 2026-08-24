@@ -6,12 +6,80 @@ import { getLogger } from '../../utils/logger.js';
 
 const log = getLogger('audit.controller');
 
-const parseJsonField = (val) => {
-  if (val === null || val === undefined) return null;
-  if (typeof val === 'string') {
-    try { return JSON.parse(val); } catch (e) { return val; }
-  }
-  return val;
+const FIELD_LABELS = {
+  fir_no: 'FIR Number',
+  fir_date: 'FIR Date',
+  case_status: 'Case Status',
+  current_status: 'Workflow Status',
+  current_level: 'Workflow Level',
+  brief_facts: 'Brief Facts / Gist',
+  local_head_id: 'Crime Head',
+  local_head: 'Crime Head',
+  is_worked_out: 'Worked Out Status',
+  worked_out_date: 'Worked Out Date',
+  io_id: 'Investigating Officer ID',
+  io_name: 'Investigating Officer Name',
+  complainant_first_name: 'Complainant First Name',
+  complainant_last_name: 'Complainant Last Name',
+  complainant_mobile: 'Complainant Mobile',
+  complainant_gender: 'Complainant Gender',
+  complainant_age: 'Complainant Age',
+  complainant_birth_year: 'Complainant Birth Year',
+  complainant_education: 'Complainant Education',
+  complainant_social_category: 'Complainant Social Category',
+  complainant_financial_status: 'Complainant Financial Status',
+  victim_first_name: 'Victim First Name',
+  victim_last_name: 'Victim Last Name',
+  victim_gender: 'Victim Gender',
+  victim_age: 'Victim Age',
+  victim_social_category: 'Victim Social Category',
+  accused_first_name: 'Accused First Name',
+  accused_last_name: 'Accused Last Name',
+  accused_age: 'Accused Age',
+  arrested_first_name: 'Arrested Person First Name',
+  arrested_last_name: 'Arrested Person Last Name',
+  arrest_date: 'Arrest Date',
+  date_of_arrest: 'Arrest Date',
+  arrest_place: 'Arrest Place',
+  place_of_arrest: 'Arrest Place',
+  custody_status: 'Custody Status',
+  missing_name: 'Missing Person Name',
+  missing_status: 'Missing Status',
+  missing_date: 'Missing Date',
+  uidb_no: 'UIDB Number',
+  uidb_status: 'UIDB Status',
+  deceased_name: 'Deceased Name',
+  cause_of_death: 'Cause of Death',
+  act_name: 'Act Name',
+  sections: 'IPC/BNS Sections',
+  call_gist: 'PCR Call Gist',
+  call_head: 'PCR Call Head',
+  caller_name: 'Caller Name',
+  caller_mobile: 'Caller Mobile',
+  transferred_to_ps_id: 'Transferred to PS',
+  transferred_to_agency_id: 'Transferred to Agency',
+  sent_to_court_date: 'Sent to Court Date',
+  court_case_no: 'Court Case Number',
+  court_name: 'Court Name',
+  court_disposal_type: 'Court Disposal Status',
+  court_disposal_date: 'Court Disposal Date',
+};
+
+const formatChanges = (rawChanges) => {
+  const parsed = parseJsonField(rawChanges);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.map((item) => {
+    const key = item.field_key || item.field || item.field_name;
+    const label = FIELD_LABELS[key] || item.label || key;
+    return {
+      field_key: key,
+      field: key,
+      label,
+      old_value: item.old_value !== undefined ? item.old_value : item.old,
+      new_value: item.new_value !== undefined ? item.new_value : item.new,
+      entity_label: item.entity_label || null,
+    };
+  });
 };
 
 export const getRecordAudit = async (req, res) => {
@@ -24,30 +92,39 @@ export const getRecordAudit = async (req, res) => {
     log.debug('getRecordAudit: verifyRecordAccess passed', { recordId, userId: req.user?.id });
 
     const revisions = await db('record_revisions')
-      .select('record_revisions.*', 'u.username', 'u.badge_no', 'u.name')
+      .select(
+        'record_revisions.*',
+        'u.username',
+        'u.badge_no',
+        'u.name as user_name',
+        'u.role as user_role'
+      )
       .leftJoin('users as u', 'record_revisions.changed_by', 'u.id')
       .where('record_revisions.record_id', recordId)
       .orderBy('record_revisions.revision_number', 'asc');
 
-    const formatted = revisions.map(r => ({
+    const formatted = revisions.map((r) => ({
       ...r,
-      field_changes: parseJsonField(r.field_changes)
+      user_fullname: r.user_name || r.username,
+      changed_by_name: r.user_name || r.username,
+      changed_by_badge: r.badge_no || null,
+      changed_by_role: r.user_role || r.level,
+      field_changes: formatChanges(r.field_changes),
     }));
 
     log.info('getRecordAudit: 200', { recordId, revisionCount: formatted.length });
     return res.status(200).json({
       status: 'success',
       success: true,
-      data: formatted
+      data: formatted,
     });
   } catch (error) {
-    // Mirror records.controller.js's access-denial mapping exactly.
     const status = error.message.includes('Access denied') ? 403 : 500;
     log.error('getRecordAudit: failed', { recordId, status, err: error });
     return res.status(status).json({
       status: 'error',
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -61,10 +138,6 @@ export const getUserAudit = async (req, res) => {
   log.debug('getUserAudit: enter', { targetUserId: userId, callerRole: req.user?.role, from, to, page, limit });
 
   try {
-    // DISTRICT_OFFICER may only read the audit trail of users inside their own
-    // district — look up the target user first; deny if the districts differ.
-    // HQ_ANALYST/HQ_ADMIN/SYSTEM_ADMIN (already the only other roles `allow()`
-    // permits on this route) stay global.
     if (req.user.role === 'DISTRICT_OFFICER') {
       const targetUser = await db('users').where({ id: userId }).first();
       if (!targetUser) {
@@ -78,15 +151,16 @@ export const getUserAudit = async (req, res) => {
         return res.status(403).json({
           status: 'error',
           success: false,
-          message: 'Access denied: user falls outside your district jurisdiction'
+          message: 'Access denied: user falls outside your district jurisdiction',
         });
       }
       log.debug('getUserAudit: district scope check passed', { targetUserId: userId });
     }
 
     let query = db('record_revisions')
-      .select('record_revisions.*', 'r.record_type', 'r.current_status')
+      .select('record_revisions.*', 'r.record_type', 'r.current_status', 'u.name as user_name', 'u.badge_no', 'u.role as user_role')
       .leftJoin('records as r', 'record_revisions.record_id', 'r.id')
+      .leftJoin('users as u', 'record_revisions.changed_by', 'u.id')
       .where('record_revisions.changed_by', userId);
 
     let countQuery = db('record_revisions').where('changed_by', userId);
@@ -108,9 +182,13 @@ export const getUserAudit = async (req, res) => {
       .limit(limit)
       .offset(offset);
 
-    const formatted = list.map(r => ({
+    const formatted = list.map((r) => ({
       ...r,
-      field_changes: parseJsonField(r.field_changes)
+      user_fullname: r.user_name || r.changed_by,
+      changed_by_name: r.user_name || r.changed_by,
+      changed_by_badge: r.badge_no || null,
+      changed_by_role: r.user_role || r.level,
+      field_changes: formatChanges(r.field_changes),
     }));
 
     log.info('getUserAudit: 200', { targetUserId: userId, resultCount: formatted.length, total });
@@ -118,14 +196,14 @@ export const getUserAudit = async (req, res) => {
       status: 'success',
       success: true,
       data: formatted,
-      meta: { page, limit, total }
+      meta: { page, limit, total },
     });
   } catch (error) {
     log.error('getUserAudit: failed', { targetUserId: userId, err: error });
     return res.status(500).json({
       status: 'error',
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -133,24 +211,101 @@ export const getUserAudit = async (req, res) => {
 export const getAuditLogs = async (req, res) => {
   log.debug('getAuditLogs: enter', { userId: req.user?.id });
   try {
-    const list = await db('audit_logs')
-      .select('audit_logs.*', 'u.username as operator_name', 'u.badge_no')
-      .leftJoin('users as u', 'audit_logs.changed_by_id', 'u.id')
-      .orderBy('audit_logs.changed_at', 'desc')
-      .limit(200);
+    const page = parseInt(req.query.page || 1, 10);
+    const limit = parseInt(req.query.limit || 50, 10);
+    const offset = (page - 1) * limit;
+    const { action, search, from, to } = req.query;
 
-    log.info('getAuditLogs: 200', { resultCount: list.length });
+    let query = db('record_revisions as rr')
+      .select(
+        'rr.id',
+        'rr.record_id',
+        'rr.revision_number',
+        'rr.change_type as action',
+        'rr.field_changes',
+        'rr.changed_at',
+        'rr.comment',
+        'rr.reason',
+        'rr.ip_address',
+        'r.record_type',
+        'r.current_status',
+        'u.name as operator_name',
+        'u.badge_no',
+        'u.role as operator_role',
+        'u.username'
+      )
+      .join('records as r', 'rr.record_id', 'r.id')
+      .join('users as u', 'rr.changed_by', 'u.id');
+
+    let countQuery = db('record_revisions as rr')
+      .join('records as r', 'rr.record_id', 'r.id')
+      .join('users as u', 'rr.changed_by', 'u.id');
+
+    if (action && action !== 'ALL') {
+      query = query.where('rr.change_type', action);
+      countQuery = countQuery.where('rr.change_type', action);
+    }
+
+    if (search) {
+      const term = `%${search}%`;
+      query = query.where((b) => {
+        b.where('u.name', 'ILIKE', term)
+          .orWhere('u.badge_no', 'ILIKE', term)
+          .orWhere('u.username', 'ILIKE', term)
+          .orWhere('r.record_type', 'ILIKE', term);
+      });
+      countQuery = countQuery.where((b) => {
+        b.where('u.name', 'ILIKE', term)
+          .orWhere('u.badge_no', 'ILIKE', term)
+          .orWhere('u.username', 'ILIKE', term)
+          .orWhere('r.record_type', 'ILIKE', term);
+      });
+    }
+
+    if (from) {
+      query = query.where('rr.changed_at', '>=', from);
+      countQuery = countQuery.where('rr.changed_at', '>=', from);
+    }
+    if (to) {
+      query = query.where('rr.changed_at', '<=', to);
+      countQuery = countQuery.where('rr.changed_at', '<=', to);
+    }
+
+    const totalRes = await countQuery.count('* as count').first();
+    const total = parseInt(totalRes.count || 0, 10);
+
+    const list = await query.orderBy('rr.changed_at', 'desc').limit(limit).offset(offset);
+
+    const formatted = list.map((r) => ({
+      id: r.id,
+      record_id: r.record_id,
+      revision_number: r.revision_number,
+      action: r.action,
+      table_name: r.record_type,
+      changed_by_name: r.operator_name || r.username,
+      operator_name: r.operator_name || r.username,
+      badge_no: r.badge_no || '—',
+      changed_by_role: r.operator_role,
+      role: r.operator_role,
+      changed_at: r.changed_at,
+      ip_address: r.ip_address || '::1',
+      comment: r.comment || r.reason || null,
+      field_changes: formatChanges(r.field_changes),
+    }));
+
+    log.info('getAuditLogs: 200', { resultCount: formatted.length, total });
     return res.status(200).json({
       status: 'success',
       success: true,
-      data: list
+      data: formatted,
+      meta: { page, limit, total },
     });
   } catch (error) {
     log.error('getAuditLogs: failed', { err: error });
     return res.status(500).json({
       status: 'error',
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };

@@ -61,9 +61,9 @@ export async function previewDiary(req, res) {
     }
 
     const [caseRows, arrestRows, drugRows] = await Promise.all([
-      fetchCaseCounts(districtIds, windows),
-      fetchArrestCounts(districtIds, windows),
-      fetchDrugRecovery(districtIds, windows),
+      fetchCaseCounts(districtIds, 'district_id', windows),
+      fetchArrestCounts(districtIds, 'district_id', windows),
+      fetchDrugRecovery(districtIds, 'district_id', windows),
     ]);
 
     const data = buildManualyData(caseRows, arrestRows, drugRows, undefined, windows);

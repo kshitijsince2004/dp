@@ -271,15 +271,38 @@ async function resolveMasking(recordType, user) {
  * + nested `data` summary). Used by records.controller.js getRecords/getQueue/searchRecords. */
 export const maskRecordData = async (record, user) => {
   if (!record) return record;
-  log.debug('maskRecordData: enter', { recordId: record.id, recordType: record.record_type, userId: user?.id, role: user?.role });
   const visibleKeys = await resolveMasking(record.record_type, user);
   if (!visibleKeys) {
-    log.debug('maskRecordData: exit — no masking applied', { recordId: record.id });
     return record;
   }
-  const masked = maskRow(record, visibleKeys, STRUCTURAL_RECORD_KEYS);
-  log.info('maskRecordData: exit — masking applied', { recordId: record.id, recordType: record.record_type, visibleKeyCount: visibleKeys.length });
-  return masked;
+  return maskRow(record, visibleKeys, STRUCTURAL_RECORD_KEYS);
+};
+
+/** Fast batch masking for list views — resolves contract once per distinct record_type in the batch */
+export const maskRecordDataBatch = async (records, user) => {
+  if (!records || !records.length) return records || [];
+  if (!user || user.role === 'SYSTEM_ADMIN' || ROLE_LEVELS[user.role] === 'PS') {
+    return records;
+  }
+
+  const distinctTypes = [...new Set(records.map(r => r?.record_type).filter(Boolean))];
+  const keysByType = new Map();
+  let hasAnyMasking = false;
+
+  for (const rType of distinctTypes) {
+    const keys = await resolveMasking(rType, user);
+    keysByType.set(rType, keys);
+    if (keys) hasAnyMasking = true;
+  }
+
+  if (!hasAnyMasking) return records;
+
+  return records.map((record) => {
+    if (!record) return record;
+    const visibleKeys = keysByType.get(record.record_type);
+    if (!visibleKeys) return record;
+    return maskRow(record, visibleKeys, STRUCTURAL_RECORD_KEYS);
+  });
 };
 
 /** Masks a getRecordDetails() response: the spine `record` (+ its recomposed `data`), plus

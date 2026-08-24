@@ -26,6 +26,8 @@ router.get('/lookup/record-types', authMiddleware, fieldsController.listRecordTy
 // io_id's options_source target — scoped (enforceScope), unlike the ref.* lookups above
 // which are global reference data.
 router.get('/lookup/investigating-officers', authMiddleware, enforceScope, fieldsController.listInvestigatingOfficersLookup);
+router.get('/lookup/police-stations', authMiddleware, fieldsController.listPoliceStationsLookup);
+router.get('/lookup/agencies', authMiddleware, fieldsController.listAgenciesLookup);
 
 
 // Admin CRUD on field_registry

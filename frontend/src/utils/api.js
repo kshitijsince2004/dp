@@ -9,7 +9,7 @@ import { log, newRequestId } from './logger.js';
 // endpoint through `api` and creating a request/response logging feedback loop.
 const isLogsEndpoint = (url) => typeof url === 'string' && url.includes('/logs/client');
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Create central axios client
 const api = axios.create({

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, CheckSquare, X, Send, AlertTriangle, ShieldCheck, History, Edit, FileSpreadsheet, RefreshCw, Clock } from 'lucide-react';
+import { ArrowLeft, CheckSquare, X, Send, AlertTriangle, ShieldCheck, History, Edit, FileSpreadsheet, RefreshCw, Clock, Scale } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DynamicForm from '../../components/forms/DynamicForm.jsx';
 import { formSchemas } from '../../utils/api.js';
@@ -263,13 +263,13 @@ export default function RecordDetail() {
             <ArrowLeft size={18} />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-[var(--text-main-theme)] flex items-center gap-2.5 font-display">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-main-theme)] flex items-center gap-2.5 font-display">
               <span>Record Registry Details</span>
-              <span className="text-xs bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] text-[var(--text-main-theme)] px-2.5 py-1 rounded-lg uppercase font-mono font-bold tracking-wider">
+              <span className="text-xs sm:text-sm bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] text-[var(--text-main-theme)] px-3 py-1 rounded-lg uppercase font-mono font-bold tracking-wider">
                 {record.record_type}
               </span>
             </h1>
-            <p className="text-xs text-[var(--text-main-theme)] opacity-70 mt-1 font-semibold">
+            <p className="text-sm text-[var(--text-main-theme)] opacity-80 mt-1 font-semibold">
               Author: <strong className="text-[var(--text-main-theme)]">{record.created_by}</strong> · Created on: <span className="font-mono">{new Date(record.created_at).toLocaleString()}</span>
             </p>
           </div>
@@ -312,6 +312,44 @@ export default function RecordDetail() {
         </div>
       </div>
 
+      {/* Transfer Information Banner */}
+      {record.data?.case_status === 'TRANSFER' && (
+        <div className="rounded-2xl p-4.5 border transition-all duration-200 shadow-sm flex items-start gap-3.5 bg-gradient-to-r from-blue-50/90 to-indigo-50/90 border-indigo-200/80 text-indigo-950 animate-in fade-in duration-200">
+          <div className="p-2.5 bg-indigo-100 text-indigo-700 rounded-xl shrink-0 mt-0.5 shadow-xs">
+            <Send size={20} />
+          </div>
+          <div className="flex-1 space-y-1">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="font-extrabold text-sm uppercase tracking-wider text-indigo-950">
+                {record.data?.transfer_to === 'Agency'
+                  ? 'Case Transferred for Agency Investigation'
+                  : user?.ps_id && String(user.ps_id) === String(record.data?.transferred_to_ps_id)
+                    ? 'Incoming Case Transfer (Appended to this Police Station)'
+                    : 'Case Transferred Out to Another Police Station'}
+              </span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-indigo-200/80 text-indigo-800 shadow-xs">
+                {record.data?.date_of_transfer ? `Transfer Date: ${record.data.date_of_transfer}` : 'Transfer Status'}
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-indigo-900/90 font-medium leading-relaxed m-0">
+              {record.data?.transfer_to === 'Agency' ? (
+                <>
+                  Investigation for this case is actively assigned to <strong>{record.data.transferred_to_agency || 'External Agency'}</strong>. The case record continues to be maintained at origin Police Station <strong>{record.ps_name || 'Origin PS'}</strong>.
+                </>
+              ) : user?.ps_id && String(user.ps_id) === String(record.data?.transferred_to_ps_id) ? (
+                <>
+                  This case was transferred from <strong>{record.ps_name || 'Origin Police Station'}</strong> to this station (<strong>{record.data.transferred_to_ps || 'This PS'}</strong>) for further proceedings and record maintenance.
+                </>
+              ) : (
+                <>
+                  This case was transferred to <strong>{record.data.transferred_to_ps || 'Destination PS'}</strong> on {record.data.date_of_transfer || 'the recorded date'}. A transferred flag is maintained at this origin station.
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Form content */}
         <div className="lg:col-span-2 space-y-6">
@@ -329,16 +367,16 @@ export default function RecordDetail() {
         <div className="space-y-6">
           {/* Status info box */}
           <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-3 shadow-sm">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-70">Current Status</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80">Current Status</h3>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-[var(--text-main-theme)]">
+              <span className="text-base font-bold text-[var(--text-main-theme)]">
                 {t(`status.${record.current_status}`, record.current_status)}
               </span>
-              <span className="text-[10px] bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] text-[var(--text-main-theme)] font-semibold px-2 py-0.5 rounded">
+              <span className="text-xs bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] text-[var(--text-main-theme)] font-bold px-2.5 py-0.5 rounded">
                 Level: {record.current_level}
               </span>
             </div>
-            <p className="text-[var(--text-main-theme)] opacity-60 text-[11px] leading-relaxed font-semibold">
+            <p className="text-[var(--text-main-theme)] opacity-70 text-xs sm:text-sm leading-relaxed font-semibold">
               Records are visible in the hierarchy immediately after HC submission.
             </p>
           </div>
@@ -347,55 +385,96 @@ export default function RecordDetail() {
           {canUpdateStatus && (
             <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-3 shadow-sm">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-70 flex items-center gap-1.5">
-                  <RefreshCw size={13} className="text-[var(--accent-color)]" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
+                  <RefreshCw size={14} className="text-[var(--accent-color)]" />
                   <span>Case Progress</span>
                 </h3>
                 <button
                   onClick={() => { log.debug('action:status_update_modal_open', { recordId: id }); setStatusModalField(undefined); setStatusModalOpen(true); }}
-                  className="text-[11px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
+                  className="text-xs sm:text-sm font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
                 >
                   {t('statusUpdate.updateAction', 'Update Status')}
                 </button>
               </div>
               {record.record_type === 'CASE' && (
                 <div className="flex items-center justify-between border-t border-[var(--border-card-theme)]/50 pt-2.5">
-                  <span className="text-[11px] font-semibold text-[var(--text-main-theme)] opacity-70">
+                  <span className="text-xs sm:text-sm font-semibold text-[var(--text-main-theme)] opacity-80">
                     Worked Out: <strong>{record.data?.work_out === true || record.data?.work_out === 'true' ? 'Yes' : 'No'}</strong>
                     {record.data?.work_out_date ? ` (${record.data.work_out_date})` : ''}
                   </span>
                   <button
                     onClick={() => { log.debug('action:status_update_modal_open', { recordId: id, field: 'is_worked_out' }); setStatusModalField('is_worked_out'); setStatusModalOpen(true); }}
-                    className="text-[11px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
+                    className="text-xs sm:text-sm font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
                   >
-                    Flip
+                    Update
                   </button>
-                </div>
-              )}
-              {statusEvents.length > 0 && (
-                <div className="border-t border-[var(--border-card-theme)]/50 pt-2.5 space-y-1.5 max-h-[160px] overflow-y-auto">
-                  {statusEvents.map((ev) => (
-                    <div key={ev.id} className="text-[11px] text-[var(--text-main-theme)] opacity-80 flex items-start gap-1.5">
-                      <Clock size={11} className="mt-0.5 flex-shrink-0 opacity-60" />
-                      <span>
-                        <strong>{ev.status_field}</strong>: {ev.old_value || '—'} → <strong>{ev.new_value}</strong>
-                        <span className="opacity-60"> (effective {ev.effective_date}, by {ev.username})</span>
-                      </span>
-                    </div>
-                  ))}
                 </div>
               )}
             </div>
           )}
 
+          {/* Court Details Card (Phase 3 Strategic Court Implementation) */}
+          {record.record_type === 'CASE' && (
+            ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'CHARGESHEETED', 'CHALLAN'].includes(record.data?.case_status) ||
+            record.data?.sent_to_court_date
+          ) && (
+            <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-3.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
+                  <Scale size={15} className="text-[var(--accent-color)]" />
+                  <span>Court & Judicial Status</span>
+                </h3>
+                {['SHO', 'DISTRICT_OFFICER', 'DISTRICT', 'SYSTEM_ADMIN'].includes(user?.role) && (
+                  <button
+                    onClick={() => { log.debug('action:status_update_modal_open', { recordId: id }); setStatusModalField(undefined); setStatusModalOpen(true); }}
+                    className="text-xs sm:text-sm font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
+                  >
+                    Update
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2 text-xs sm:text-sm">
+                <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
+                  <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Sent to Court:</span>
+                  <span className="font-mono font-semibold">{record.data?.sent_to_court_date || '—'}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
+                  <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Court Case No:</span>
+                  <span className="font-mono font-semibold">{record.data?.court_case_no || '—'}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
+                  <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Court:</span>
+                  <span className="font-semibold">{record.data?.court_name || '—'}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
+                  <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Disposal Status:</span>
+                  <span className={`px-2 py-0.5 rounded font-bold text-xs ${
+                    record.data?.court_disposal_type === 'CONVICTED' ? 'bg-emerald-100 text-emerald-800' :
+                    record.data?.court_disposal_type === 'ACQUITTED' ? 'bg-amber-100 text-amber-800' :
+                    'bg-slate-100 text-slate-700'
+                  }`}>
+                    {record.data?.court_disposal_type || 'PENDING_TRIAL'}
+                  </span>
+                </div>
+                {record.data?.court_disposal_date && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Disposal Date:</span>
+                    <span className="font-mono font-semibold">{record.data.court_disposal_date}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Workflow logs timeline */}
           <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-4 shadow-sm">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
-              <History size={14} className="text-[var(--accent-color)]" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
+              <History size={16} className="text-[var(--accent-color)]" />
               <span>Workflow Transition History</span>
             </h3>
 
-            <div className="relative border-l border-[var(--border-card-theme)]/70 pl-4 ml-1 space-y-5 text-xs">
+            <div className="relative border-l border-[var(--border-card-theme)]/70 pl-4 ml-1 space-y-5 text-sm">
               {transitions.length === 0 ? (
                 <p className="text-[var(--text-main-theme)] opacity-65 italic p-1">No hierarchy transitions completed yet.</p>
               ) : (
@@ -405,17 +484,13 @@ export default function RecordDetail() {
                     <div className="space-y-1">
                       <div className="flex justify-between items-center gap-2">
                         <strong className="text-[var(--text-main-theme)] font-bold">{tran.action}</strong>
-                        <span className="text-[10px] text-[var(--text-main-theme)] opacity-60 font-mono font-semibold">
+                        <span className="text-xs text-[var(--text-main-theme)] opacity-70 font-mono font-semibold">
                           {new Date(tran.performed_at).toLocaleDateString()}
                         </span>
                       </div>
-                      {/* B2 (2026-07-23): `performed_by` is the raw users.id UUID FK — the
-                          backend now also joins/returns `performed_by_name` (falls back to
-                          `username` on rows from before that join existed); only fall back to
-                          the bare UUID if neither is present. */}
-                      <p className="text-[var(--text-main-theme)] opacity-80 font-medium">By: {tran.performed_by_name || tran.username || tran.performed_by}</p>
+                      <p className="text-[var(--text-main-theme)] opacity-85 font-semibold">By: {tran.performed_by_name || tran.username || tran.performed_by}</p>
                       {tran.comment && (
-                        <p className="bg-[var(--bg-page-main)]/45 text-[var(--text-main-theme)] p-2 rounded border border-[var(--border-card-theme)]/50 mt-1 italic text-[11px] font-semibold">
+                        <p className="bg-[var(--bg-page-main)]/45 text-[var(--text-main-theme)] p-2.5 rounded-lg border border-[var(--border-card-theme)]/50 mt-1 italic text-xs sm:text-sm font-semibold">
                           "{tran.comment}"
                         </p>
                       )}
@@ -436,35 +511,79 @@ export default function RecordDetail() {
 
           {/* Diffs & Revisions logs */}
           <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-4 shadow-sm">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
-              <FileSpreadsheet size={14} className="text-[var(--accent-color)]" />
-              <span>Field revision log</span>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
+              <FileSpreadsheet size={16} className="text-[var(--accent-color)]" />
+              <span>Audit Trail & Field Revision Log</span>
             </h3>
 
-            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-              {revisions.map((rev, idx) => (
-                <div key={idx} className="bg-[var(--bg-page-main)]/45 border border-[var(--border-card-theme)]/50 p-3 rounded-lg text-xs space-y-1">
-                  <div className="flex justify-between items-center border-b border-[var(--border-card-theme)]/50 pb-1">
-                    <span className="font-bold text-[var(--text-main-theme)]">Revision #{rev.revision_number}</span>
-                    <span className="text-[10px] text-[var(--text-main-theme)] opacity-60 font-semibold">{new Date(rev.changed_at).toLocaleDateString()}</span>
-                  </div>
-                  <p className="text-[10px] text-[var(--text-main-theme)] opacity-60 font-semibold">By: {rev.changed_by}</p>
-                  
-                  {rev.field_changes?.length > 0 && (
-                    <div className="space-y-1.5 mt-2">
-                      {rev.field_changes.map((ch, cIdx) => (
-                        <div key={cIdx} className="bg-[var(--bg-page-main)]/80 p-1.5 rounded text-[11px] border border-[var(--border-card-theme)]/60 shadow-sm">
-                          <div className="text-[var(--accent-color)] font-semibold">{ch.field_key}</div>
-                          <div className="grid grid-cols-2 gap-1.5 text-[var(--text-main-theme)] opacity-85 mt-0.5 font-medium">
-                            <span className="truncate border-r border-[var(--border-card-theme)]/60 pr-1">Old: <span className="line-through text-red-500 font-bold">{String(ch.old_value)}</span></span>
-                            <span className="truncate pl-1">New: <span className="text-emerald-600 font-bold">{String(ch.new_value)}</span></span>
+            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+              {revisions.length === 0 ? (
+                <p className="text-[var(--text-main-theme)] opacity-65 italic p-2 text-xs sm:text-sm">No edit revisions logged yet.</p>
+              ) : (
+                revisions.map((rev, idx) => {
+                  const officerName = rev.user_fullname || rev.user_name || rev.changed_by_name || rev.username || rev.changed_by;
+                  const badgeNo = rev.changed_by_badge || rev.badge_no;
+                  const officerRole = rev.changed_by_role || rev.level;
+                  const dateStr = rev.changed_at ? new Date(rev.changed_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+                  const changes = Array.isArray(rev.field_changes) ? rev.field_changes : [];
+
+                  return (
+                    <div key={idx} className="bg-[var(--bg-page-main)]/50 border border-[var(--border-card-theme)]/70 p-3.5 rounded-xl text-xs sm:text-sm space-y-2 shadow-xs">
+                      <div className="flex justify-between items-start border-b border-[var(--border-card-theme)]/50 pb-2 gap-2">
+                        <div>
+                          <div className="font-bold text-[var(--text-main-theme)] flex items-center gap-2">
+                            <span>{officerName}</span>
+                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] font-bold">
+                              {officerRole}
+                            </span>
+                          </div>
+                          {badgeNo && badgeNo !== '—' && (
+                            <p className="text-[11px] font-mono text-[var(--text-main-theme)] opacity-70 font-semibold mt-0.5">
+                              Badge #{badgeNo}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[11px] font-mono font-semibold text-[var(--text-main-theme)] opacity-75">
+                            {dateStr}
+                          </span>
+                          <div className="text-[10px] text-[var(--accent-color)] font-bold font-mono">
+                            Rev #{rev.revision_number} · {rev.change_type}
                           </div>
                         </div>
-                      ))}
+                      </div>
+
+                      {rev.comment && (
+                        <p className="text-xs italic bg-[var(--bg-page-main)]/60 p-2 rounded-lg border border-[var(--border-card-theme)]/50 text-[var(--text-main-theme)] font-semibold">
+                          "{rev.comment}"
+                        </p>
+                      )}
+
+                      {changes.length > 0 && (
+                        <div className="space-y-1.5 mt-2">
+                          {changes.map((ch, cIdx) => (
+                            <div key={cIdx} className="bg-[var(--bg-page-main)]/90 p-2.5 rounded-lg border border-[var(--border-card-theme)] shadow-2xs space-y-1">
+                              <div className="text-[var(--accent-color)] font-bold text-xs flex items-center justify-between">
+                                <span>{ch.entity_label ? `${ch.entity_label} — ` : ''}{ch.label || ch.field_key || ch.field}</span>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] sm:text-xs text-[var(--text-main-theme)] font-semibold">
+                                <div className="truncate border-b sm:border-b-0 sm:border-r border-[var(--border-card-theme)]/60 pb-0.5 sm:pb-0 sm:pr-1">
+                                  <span className="opacity-60">Before:</span>{' '}
+                                  <span className="line-through text-red-600 font-bold">{String(ch.old_value ?? '(empty)')}</span>
+                                </div>
+                                <div className="truncate sm:pl-1">
+                                  <span className="opacity-60">After:</span>{' '}
+                                  <span className="text-emerald-600 font-bold">{String(ch.new_value ?? '(empty)')}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

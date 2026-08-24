@@ -330,7 +330,7 @@ export default function PSDashboard() {
       </div>
 
       {/* Main Content Container */}
-      <div className="mx-auto max-w-7xl px-4 py-5 space-y-4">
+      <div className="w-full max-w-[1920px] mx-auto px-6 sm:px-10 lg:px-12 py-6 space-y-6">
 
         {/* Key metrics strip — pulled out of the hero so 8 cards have room to breathe */}
         <div>
