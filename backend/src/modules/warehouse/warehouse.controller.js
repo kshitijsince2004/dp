@@ -86,8 +86,18 @@ export async function runReport(req, res, next) {
 }
 
 /**
+ * Sanitizes cell values against formula injection vulnerability in Excel.
+ */
+function sanitizeExcelCell(val) {
+  if (typeof val === 'string' && /^[=+@-]/ .test(val)) {
+    return `'${val}`;
+  }
+  return val;
+}
+
+/**
  * POST /warehouse/export
- * Generates and downloads Excel (.xlsx) file
+ * Generates and downloads Excel (.xlsx) file with professional formatting, auto-widths, and sanitization.
  */
 export async function exportReport(req, res, next) {
   try {
@@ -99,21 +109,63 @@ export async function exportReport(req, res, next) {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet(name.slice(0, 30));
 
-    // Styling
-    const headerRow = ws.addRow(['Row Header', ...result.columnHeaders.map((c) => c.values.join(' / ')), 'Total']);
-    headerRow.font = { bold: true, color: { argb: 'FFFFFF' } };
-    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E293B' } };
+    // Sticky Header Frozen Split
+    ws.views = [{ state: 'frozen', ySplit: 1 }];
 
+    // Header Row Styling (Executive Slate #0F172A)
+    const colNames = ['Row Header', ...result.columnHeaders.map((c) => c.values.join(' / ')), 'Total'];
+    const headerRow = ws.addRow(colNames.map(sanitizeExcelCell));
+
+    headerRow.height = 24;
+    headerRow.font = { name: 'Calibri', bold: true, color: { argb: 'FFFFFF' }, size: 11 };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0F172A' } };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Data Rows
     result.rowHeaders.forEach((rh, ri) => {
-      const r = ws.addRow([rh.values.join(' / '), ...result.cells[ri], result.rowTotals[ri]]);
+      const rowValues = [rh.values.join(' / '), ...result.cells[ri], result.rowTotals[ri]];
+      const r = ws.addRow(rowValues.map(sanitizeExcelCell));
+      r.height = 20;
+
+      // Alternating row background fill
       if (ri % 2 === 1) {
         r.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
       }
+
+      // Format measure cells as numbers
+      for (let c = 2; c <= rowValues.length; c++) {
+        const cell = r.getCell(c);
+        if (typeof cell.value === 'number') {
+          cell.numFmt = '#,##0';
+          cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        }
+      }
     });
 
-    const totalRow = ws.addRow(['Total', ...result.grandTotals, result.grandTotals.reduce((a, b) => a + b, 0)]);
-    totalRow.font = { bold: true };
+    // Grand Total Row (Emerald Border & Slate Accent #E2E8F0)
+    const totalRowValues = ['Grand Total', ...result.grandTotals, result.grandTotals.reduce((a, b) => a + b, 0)];
+    const totalRow = ws.addRow(totalRowValues.map(sanitizeExcelCell));
+    totalRow.height = 22;
+    totalRow.font = { name: 'Calibri', bold: true, size: 11, color: { argb: '0F172A' } };
     totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E2E8F0' } };
+
+    for (let c = 1; c <= totalRowValues.length; c++) {
+      const cell = totalRow.getCell(c);
+      if (typeof cell.value === 'number') {
+        cell.numFmt = '#,##0';
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+      }
+    }
+
+    // Auto-calculate column widths to prevent truncation
+    ws.columns.forEach((column) => {
+      let maxLen = 12;
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        const len = cell.value ? String(cell.value).length : 0;
+        if (len > maxLen) maxLen = len;
+      });
+      column.width = Math.min(maxLen + 4, 45);
+    });
 
     const sanitizedFilename = name.replace(/[^a-zA-Z0-9_-]/g, '_');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -122,6 +174,7 @@ export async function exportReport(req, res, next) {
     await wb.xlsx.write(res);
     res.end();
   } catch (err) {
+    logger.error('exportReport failed', { err });
     next(err);
   }
 }

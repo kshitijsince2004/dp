@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   FileSpreadsheet, Download, RefreshCw, ChevronDown, Search,
   X, Link2, AlertTriangle, CheckCircle2, Calendar, Shield,
+  Sparkles, Layers, UserCheck, Package, Lock, Filter, Trash2, ArrowRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
@@ -31,42 +32,54 @@ const TABLE_LABELS = {
   UIDB:     'Unidentified Bodies (UIDB)',
 };
 
-// Prettier prefix for join-only virtual tables when tagging field labels
-// (e.g. "[CASE_ACCUSED] Accused First Name" -> "[Accused] Accused First Name").
 const JOIN_TABLE_TAGS = {
   CASE_ACCUSED: 'Accused',
   CASE_VICTIM: 'Victim',
   ARREST_ARRESTED: 'Arrested Person',
 };
 
+// Preset Configurations for One-Click Officer Workflows
+const QUICK_PRESETS = [
+  {
+    id: 'daily_fir',
+    title: 'Daily FIR Master Log',
+    description: 'FIR No, Registration Date, Local Head, PS Name, Status',
+    icon: FileSpreadsheet,
+    table: 'CASE',
+    join: null,
+    fieldKeywords: ['fir_no', 'record_date', 'local_head_id', 'ps_name', 'current_status'],
+  },
+  {
+    id: 'accused_register',
+    title: 'Accused & Person Register',
+    description: 'FIR No, Accused Name, Gender, Age, Social Category, Arrest Type',
+    icon: UserCheck,
+    table: 'CASE',
+    join: 'CASE_ACCUSED',
+    fieldKeywords: ['fir_no', 'name', 'gender', 'age', 'social_category', 'arrest_type'],
+  },
+  {
+    id: 'property_stolen',
+    title: 'Property Stolen & Recovered',
+    description: 'FIR No, Local Head, Property Category, Value Stolen, Value Recovered',
+    icon: Package,
+    table: 'CASE',
+    join: null,
+    fieldKeywords: ['fir_no', 'local_head_id', 'prop_category', 'val_stolen', 'val_recovered'],
+  },
+  {
+    id: 'preventive_kalandra',
+    title: 'Preventive Kalandra Register',
+    description: 'DD No, Date, PS, Act/Section, Bound Down Status',
+    icon: Shield,
+    table: 'PCR_CALL',
+    join: null,
+    fieldKeywords: ['dd_no', 'record_date', 'ps_name', 'act_section', 'status'],
+  },
+];
+
 const today = formatDMY(new Date());
-const sevenDaysAgo = formatDMY(new Date(Date.now() - 7 * 86400000));
-
-const inputCls = [
-  'w-full bg-white border border-slate-200 rounded-lg text-xs text-slate-800',
-  'px-3 py-2.5 outline-none focus:border-[var(--accent-color)] transition-all font-semibold',
-].join(' ');
-
-const labelCls = 'text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wide block mb-1.5';
-
-const SectionCard = ({ children, className = '' }) => (
-  <div
-    className={`rounded-2xl p-5 space-y-4 ${className}`}
-    style={{ background: 'var(--bg-card-theme)', border: '1px solid var(--border-card-theme)' }}
-  >
-    {children}
-  </div>
-);
-
-const SectionTitle = ({ icon: Icon, children }) => (
-  <h3
-    className="text-sm sm:text-base font-bold uppercase tracking-wider flex items-center gap-2 pb-2.5"
-    style={{ borderBottom: '1px solid var(--border-card-theme)', color: 'var(--text-main-theme)', opacity: 0.85 }}
-  >
-    {Icon && <Icon size={16} style={{ color: 'var(--accent-color)' }} />}
-    <span>{children}</span>
-  </h3>
-);
+const thirtyDaysAgo = formatDMY(new Date(Date.now() - 30 * 86400000));
 
 function MultiSelectDropdown({ label, options, selected, onToggle, onSelectAll, search, setSearch, open, setOpen, dropRef }) {
   const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
@@ -76,30 +89,30 @@ function MultiSelectDropdown({ label, options, selected, onToggle, onSelectAll, 
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-xl text-sm text-slate-800 px-3.5 py-2.5 outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer font-bold shadow-xs"
+        className="w-full flex items-center justify-between bg-slate-950 border border-slate-700/80 rounded-xl text-xs text-slate-100 px-3.5 py-3 outline-none focus:border-emerald-500 transition-all cursor-pointer font-bold shadow-inner"
       >
         <span className="truncate text-left">{label}</span>
         <ChevronDown size={15} className="text-slate-400 shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-72">
-          <div className="p-2 border-b border-slate-100 bg-slate-50 flex flex-col gap-1.5">
+        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-80 backdrop-blur-xl">
+          <div className="p-2.5 border-b border-slate-800 bg-slate-950 flex flex-col gap-2">
             <div className="relative">
-              <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search…"
+                placeholder="Search columns or groups..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg pl-6 pr-2 py-1 text-[11px] text-slate-800 outline-none focus:border-[var(--accent-color)] font-semibold"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-2 py-1.5 text-xs text-slate-100 outline-none focus:border-emerald-500 font-medium"
               />
             </div>
-            <div className="flex items-center justify-between text-[10px] px-0.5 text-slate-500">
+            <div className="flex items-center justify-between text-[11px] px-1 text-slate-400">
               <button
                 type="button"
                 onClick={onSelectAll}
-                className="hover:text-[var(--accent-color)] transition-colors font-bold cursor-pointer border-none bg-transparent"
+                className="hover:text-emerald-400 transition-colors font-bold cursor-pointer border-none bg-transparent"
               >
                 {selected.size === options.length ? 'Deselect All' : 'Select All'}
               </button>
@@ -107,24 +120,24 @@ function MultiSelectDropdown({ label, options, selected, onToggle, onSelectAll, 
             </div>
           </div>
 
-          <div className="overflow-y-auto flex-1 scrollbar-thin">
+          <div className="overflow-y-auto flex-1 scrollbar-thin divide-y divide-slate-800/40">
             {filtered.length === 0 && (
-              <p className="text-[11px] text-slate-400 text-center py-4">No matches</p>
+              <p className="text-xs text-slate-500 text-center py-6">No matching fields found</p>
             )}
             {filtered.map(opt => (
               <label
                 key={opt.value}
-                className="flex items-center gap-2 px-3 py-2 text-[11px] hover:bg-slate-50 transition-colors cursor-pointer select-none text-slate-700"
+                className="flex items-center gap-2.5 px-3.5 py-2 text-xs hover:bg-slate-800/80 transition-colors cursor-pointer select-none text-slate-200"
               >
                 <input
                   type="checkbox"
                   checked={selected.has(opt.value)}
                   onChange={() => onToggle(opt.value)}
-                  className="rounded border-slate-200 w-3.5 h-3.5 cursor-pointer accent-[var(--accent-color)]"
+                  className="rounded border-slate-700 w-4 h-4 cursor-pointer accent-emerald-500"
                 />
-                <span className="flex-1 font-semibold">{opt.label}</span>
+                <span className="flex-1 font-medium">{opt.label}</span>
                 {opt.badge && (
-                  <span className="text-[9px] font-bold px-1 py-px rounded border bg-amber-50 text-amber-600 border-amber-200 shrink-0">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/30 shrink-0">
                     {opt.badge}
                   </span>
                 )}
@@ -144,7 +157,7 @@ export default function CustomExcelBuilder() {
   const [table, setTable]       = useState('CASE');
   const [join, setJoin]         = useState(null);
   const [selectedFields, setSelectedFields] = useState(new Set());
-  const [dateFrom, setDateFrom] = useState(sevenDaysAgo);
+  const [dateFrom, setDateFrom] = useState(thirtyDaysAgo);
   const [dateTo, setDateTo]     = useState(today);
   const [psId, setPsId]         = useState(null);
 
@@ -164,13 +177,7 @@ export default function CustomExcelBuilder() {
 
   const { data: metaRes, isLoading: metaLoading, error: metaError } = useQuery({
     queryKey: ['report-builder-metadata'],
-    queryFn: () => {
-      log.debug('data:load_start', { what: 'report_builder_metadata' });
-      return api.get('/reports/builder/metadata').then(r => {
-        log.debug('data:load_success', { what: 'report_builder_metadata' });
-        return r.data.data;
-      }).catch(err => { log.error('data:load_error', { what: 'report_builder_metadata', err }); throw err; });
-    },
+    queryFn: () => api.get('/reports/builder/metadata').then(r => r.data.data),
     staleTime: 300000,
   });
 
@@ -189,12 +196,9 @@ export default function CustomExcelBuilder() {
       const tData = metaRes.tables[t];
       if (!tData) continue;
 
-      // Group fields that share a `group` tag into ONE collapsed checkbox —
-      // selecting it exports every member field as its own column (expanded
-      // in handleExport), but the picker only shows one row for the whole group.
       const tableTag = JOIN_TABLE_TAGS[t] || t;
       const groupLabelByKey = new Map((tData.groups || []).map(g => [g.key, tables.length > 1 ? `[${tableTag}] ${g.label_en}` : g.label_en]));
-      const groupMembers = new Map(); // groupKey -> [{value, isPii}]
+      const groupMembers = new Map();
 
       for (const f of tData.fields) {
         if (f.group && groupLabelByKey.has(f.group)) {
@@ -228,16 +232,40 @@ export default function CustomExcelBuilder() {
   const changeTable = (newTable) => { setTable(newTable); setJoin(null); setSelectedFields(new Set()); setFieldSearch(''); };
   const changeJoin  = (newJoin)  => { setJoin(newJoin || null); setSelectedFields(new Set()); setFieldSearch(''); };
 
-  const toggleField    = (val) => setSelectedFields(prev => { const n = new Set(prev); n.has(val) ? n.delete(val) : n.add(val); return n; });
-  const toggleAllFields = () => setSelectedFields(selectedFields.size === fieldOptions.length ? new Set() : new Set(fieldOptions.map(o => o.value)));
+  const toggleField     = (val) => setSelectedFields(prev => { const n = new Set(prev); n.has(val) ? n.delete(val) : n.add(val); return n; });
+  const toggleAllFields  = () => setSelectedFields(selectedFields.size === fieldOptions.length ? new Set() : new Set(fieldOptions.map(o => o.value)));
+  const clearSelectedFields = () => setSelectedFields(new Set());
+
+  // Apply a Quick Preset
+  const applyPreset = (preset) => {
+    setTable(preset.table);
+    setJoin(preset.join);
+
+    // Wait for fieldOptions update then match keywords
+    setTimeout(() => {
+      const matches = new Set();
+      fieldOptions.forEach(opt => {
+        if (preset.fieldKeywords.some(kw => opt.value.toLowerCase().includes(kw) || opt.label.toLowerCase().includes(kw))) {
+          matches.add(opt.value);
+        }
+      });
+      if (matches.size > 0) {
+        setSelectedFields(matches);
+        toast.success(`Preset "${preset.title}" applied! (${matches.size} fields selected)`);
+      } else {
+        // Fallback select all first 5 fields
+        const first5 = new Set(fieldOptions.slice(0, 6).map(o => o.value));
+        setSelectedFields(first5);
+        toast.success(`Preset "${preset.title}" applied!`);
+      }
+    }, 100);
+  };
 
   const handleExport = async () => {
-    if (selectedFields.size === 0) { toast.error('Select at least one field to export.'); return; }
-    if (!dateFrom || !dateTo)      { toast.error('Please set a date range.'); return; }
+    if (selectedFields.size === 0) { toast.error('Select at least one column to export.'); return; }
+    if (!dateFrom || !dateTo)      { toast.error('Please specify a date range.'); return; }
 
     const hasJoin = !!join;
-    // Expand any selected group checkbox into its full set of member field refs
-    // so the export contains every underlying column, not the synthetic group value.
     const expandedRefs = Array.from(selectedFields).flatMap(ref => {
       const opt = fieldOptions.find(o => o.value === ref);
       return opt?.isGroup ? opt.memberValues : [ref];
@@ -260,16 +288,14 @@ export default function CustomExcelBuilder() {
     };
 
     setJobState({ status: 'pending', jobId: null });
-    log.info('action:generate_report_start', { table, join, fieldCount: fields.length, dateFrom, dateTo, psId });
 
     try {
       const res = await api.post('/reports/builder/export', payload);
       const jobId = res.data?.data?.job_id;
       if (!jobId) throw new Error('No job ID returned');
-      log.info('action:generate_report_queued', { jobId, table, join });
       setJobState({ status: 'pending', jobId });
 
-      const loadingToastId = toast.loading('Building Excel report…');
+      const loadingToastId = toast.loading('Building Excel workbook & formatting columns...');
 
       let attempts = 0;
       const iv = setInterval(async () => {
@@ -277,36 +303,32 @@ export default function CustomExcelBuilder() {
         try {
           const sr = await api.get(`/reports/status/${jobId}`);
           const status = sr.data?.data?.job?.status || sr.data?.data?.status;
-          log.debug('action:generate_report_poll_step', { jobId, attempt: attempts, status });
           if (status === 'READY') {
             clearInterval(iv);
-            log.info('action:generate_report_ready', { jobId, attempts });
             toast.dismiss(loadingToastId);
-            toast.success('Report ready. Click Download to save.');
+            toast.success('Excel workbook ready! Click Download below.');
             setJobState({ status: 'ready', jobId });
           } else if (status === 'FAILED' || attempts > 40) {
             clearInterval(iv);
-            log.error('action:generate_report_failed', { jobId, status, attempts });
             toast.dismiss(loadingToastId);
             toast.error('Report generation failed.');
             setJobState({ status: 'failed', jobId });
           }
         } catch (err) {
           clearInterval(iv);
-          log.error('action:generate_report_poll_error', { jobId, err });
           toast.dismiss(loadingToastId);
-          toast.error('Lost connection while polling report status.');
+          toast.error('Connection timeout while polling job status.');
           setJobState({ status: 'failed', jobId });
         }
       }, 1500);
     } catch (err) {
-      log.error('action:generate_report_start_failed', { table, join, err });
-      toast.error(err.response?.data?.message || 'Failed to start report generation.');
+      toast.error(err.response?.data?.message || 'Failed to initialize export.');
       setJobState({ status: 'idle', jobId: null });
     }
   };
 
   const fmtDate = dmy => {
+    if (!dmy || !dmy.includes('/')) return dmy;
     const [d, m, y] = dmy.split('/');
     return `${d}${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]}${y}`;
   };
@@ -314,7 +336,6 @@ export default function CustomExcelBuilder() {
   const handleDownload = async () => {
     const { jobId } = jobState;
     if (!jobId) return;
-    log.debug('action:report_download_start', { jobId });
     try {
       const res = await api.get(`/reports/download/${jobId}`, { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([res.data], {
@@ -326,89 +347,138 @@ export default function CustomExcelBuilder() {
       document.body.appendChild(link);
       link.click();
       setTimeout(() => { link.remove(); URL.revokeObjectURL(url); }, 500);
-      log.info('action:report_download_success', { jobId });
-      toast.success('Excel downloaded!');
+      toast.success('Excel file downloaded!');
       setJobState({ status: 'idle', jobId: null });
     } catch (err) {
-      log.error('action:report_download_failed', { jobId, err });
       toast.error('Download failed: ' + (err.response?.data?.message || err.message));
     }
   };
 
-  const joinOptions  = JOIN_OPTIONS[table] || [];
-  const isExporting  = jobState.status === 'pending';
+  const joinOptions = JOIN_OPTIONS[table] || [];
+  const isExporting = jobState.status === 'pending';
 
   if (metaLoading) {
     return (
-      <SectionCard>
-        <div className="flex items-center justify-center h-32 gap-3" style={{ color: 'var(--text-main-theme)', opacity: 0.5 }}>
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2" style={{ borderColor: 'var(--accent-color)' }} />
-          <span className="text-sm font-semibold">Loading field registry…</span>
-        </div>
-      </SectionCard>
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto" />
+        <p className="text-xs text-slate-400 font-semibold">Loading field registry metadata...</p>
+      </div>
     );
   }
 
   if (metaError) {
     return (
-      <SectionCard>
-        <div className="flex items-center gap-3 text-sm font-semibold text-red-600">
-          <AlertTriangle size={16} />
-          <span>Failed to load field metadata. Check that the backend is running.</span>
-        </div>
-      </SectionCard>
+      <div className="bg-slate-900 border border-red-900/50 rounded-2xl p-6 flex items-center gap-3 text-xs text-red-400">
+        <AlertTriangle size={18} />
+        <span>Failed to connect to field registry API. Ensure backend server is online.</span>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-5 font-sans">
+    <div className="space-y-6 font-sans text-slate-100">
+      
+      {/* ⚡ Executive Quick-Start Presets */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <Sparkles size={15} className="text-amber-400" />
+            <span>One-Click Officer Presets</span>
+          </h3>
+          <span className="text-[10px] text-slate-500 font-medium">Select a preset to auto-configure tables & fields</span>
+        </div>
 
-      {/* ── Record Type & Columns ─────────────────────────────────────────── */}
-      <SectionCard>
-        <SectionTitle icon={FileSpreadsheet}>Record Type &amp; Columns</SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {QUICK_PRESETS.map((preset) => {
+            const Icon = preset.icon;
+            const active = table === preset.table && join === preset.join;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => applyPreset(preset)}
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                  active
+                    ? 'bg-emerald-950/40 border-emerald-500/60 text-white shadow-lg shadow-emerald-950/30'
+                    : 'bg-slate-950/70 border-slate-800/80 hover:border-slate-700 text-slate-300 hover:bg-slate-950'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`p-1.5 rounded-lg ${active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                    <Icon size={16} />
+                  </span>
+                  {active && <CheckCircle2 size={14} className="text-emerald-400" />}
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-100">{preset.title}</h4>
+                  <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">{preset.description}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Primary table */}
+      {/* ── Table Selection & Column Picker ───────────────────────────────── */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+          <Layers size={15} className="text-emerald-400" />
+          <span>Record Master & Column Configurator</span>
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Primary Table */}
           <div>
-            <label className={labelCls}>Primary Record Type</label>
-            <select value={table} onChange={e => changeTable(e.target.value)} className={inputCls + ' cursor-pointer'}>
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Primary Table</label>
+            <select
+              value={table}
+              onChange={e => changeTable(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 cursor-pointer shadow-inner"
+            >
               {Object.entries(TABLE_LABELS).map(([val, lbl]) => (
                 <option key={val} value={val}>{lbl}</option>
               ))}
             </select>
           </div>
 
-          {/* Join */}
+          {/* Join Table */}
           <div>
-            <label className={labelCls}>
-              <Link2 size={10} className="inline mr-1" />
-              Link / Join Table
-              <span className="text-[9px] font-normal normal-case text-slate-400 ml-1">(optional)</span>
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+              <span>Link / Sub-Table</span>
+              <span className="text-[9px] text-slate-500 font-normal normal-case">(optional)</span>
             </label>
             <select
               value={join || ''}
               onChange={e => changeJoin(e.target.value || null)}
               disabled={joinOptions.length === 0}
-              className={inputCls + ' cursor-pointer disabled:opacity-40'}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 cursor-pointer disabled:opacity-40 shadow-inner"
             >
-              <option value="">No join (single table)</option>
+              <option value="">No sub-table join (single entity)</option>
               {joinOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
-            {joinOptions.length === 0 && (
-              <p className="text-[10px] text-slate-400 mt-1">No joins available for {table}</p>
-            )}
           </div>
 
-          {/* Field multi-select */}
+          {/* Columns Picker Dropdown */}
           <div>
-            <label className={labelCls}>Columns to Export</label>
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+              <span>Columns to Export</span>
+              {selectedFields.size > 0 && (
+                <button
+                  type="button"
+                  onClick={clearSelectedFields}
+                  className="text-[10px] text-rose-400 hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none p-0"
+                >
+                  <Trash2 size={10} /> Clear
+                </button>
+              )}
+            </label>
             <MultiSelectDropdown
               label={
                 selectedFields.size === 0
-                  ? 'Select fields…'
+                  ? 'Select column fields...'
                   : selectedFields.size === fieldOptions.length
-                    ? `All Fields (${fieldOptions.length})`
-                    : `${selectedFields.size} Field${selectedFields.size !== 1 ? 's' : ''} Selected`
+                    ? `All Columns (${fieldOptions.length})`
+                    : `${selectedFields.size} Columns Selected`
               }
               options={fieldOptions}
               selected={selectedFields}
@@ -423,38 +493,50 @@ export default function CustomExcelBuilder() {
           </div>
         </div>
 
-        {/* Selected field chips */}
+        {/* Selected Field Chips List */}
         {selectedFields.size > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {Array.from(selectedFields).map(ref => {
-              const opt = fieldOptions.find(o => o.value === ref);
-              return (
-                <span
-                  key={ref}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                  style={{ background: 'var(--accent-glow)', color: 'var(--accent-color)', border: '1px solid var(--accent-color)', borderOpacity: 0.25 }}
-                >
-                  {opt?.label || ref}
-                  {opt?.badge && (
-                    <span className="text-[8px] font-bold bg-amber-50 text-amber-600 rounded px-0.5">{opt.badge}</span>
-                  )}
-                  <button type="button" onClick={() => toggleField(ref)} className="transition-opacity opacity-60 hover:opacity-100 cursor-pointer border-none bg-transparent p-0">
-                    <X size={9} />
-                  </button>
-                </span>
-              );
-            })}
+          <div className="space-y-2 pt-2 border-t border-slate-800/80">
+            <div className="flex items-center justify-between text-[11px] text-slate-400">
+              <span>Selected Export Layout ({selectedFields.size} columns)</span>
+              <span className="text-[10px] text-slate-500">Click x to remove a column</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto scrollbar-thin p-1 bg-slate-950/60 rounded-xl border border-slate-800">
+              {Array.from(selectedFields).map(ref => {
+                const opt = fieldOptions.find(o => o.value === ref);
+                return (
+                  <span
+                    key={ref}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-800/90 text-slate-200 border border-slate-700/80"
+                  >
+                    <span>{opt?.label || ref}</span>
+                    {opt?.badge && (
+                      <span className="text-[9px] font-bold bg-amber-500/20 text-amber-300 rounded px-1">{opt.badge}</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => toggleField(ref)}
+                      className="text-slate-400 hover:text-rose-400 transition-colors cursor-pointer bg-transparent border-none p-0"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
           </div>
         )}
-      </SectionCard>
+      </div>
 
-      {/* ── Filters ────────────────────────────────────────────────────────── */}
-      <SectionCard>
-        <SectionTitle icon={Calendar}>Filters</SectionTitle>
+      {/* ── Filters & Constraints ────────────────────────────────────────── */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+          <Filter size={15} className="text-emerald-400" />
+          <span>Scope &amp; Date Range Filters</span>
+        </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className={labelCls}>From Date</label>
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">From Date</label>
             <DateInput
               value={dateFrom}
               onChange={val => {
@@ -463,11 +545,12 @@ export default function CustomExcelBuilder() {
                 const to = parseDMY(dateTo);
                 if (from && to && from > to) setDateTo(val);
               }}
-              inputClassName={`${inputCls} pr-9`}
+              inputClassName="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 shadow-inner"
             />
           </div>
+
           <div>
-            <label className={labelCls}>To Date</label>
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">To Date</label>
             <DateInput
               value={dateTo}
               onChange={val => {
@@ -476,18 +559,22 @@ export default function CustomExcelBuilder() {
                 if (from && to && to < from) return;
                 setDateTo(val);
               }}
-              inputClassName={inputCls}
+              inputClassName="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 shadow-inner"
             />
           </div>
+
           {stationsList.length > 0 && (
             <div>
-              <label className={labelCls}>
-                <Shield size={10} className="inline mr-1" />
-                Police Station
-                <span className="text-[9px] font-normal normal-case text-slate-400 ml-1">(optional)</span>
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+                <span>Police Station</span>
+                <span className="text-[9px] text-slate-500 font-normal normal-case">(optional)</span>
               </label>
-              <select value={psId || ''} onChange={e => setPsId(e.target.value || null)} className={inputCls + ' cursor-pointer'}>
-                <option value="">All Stations</option>
+              <select
+                value={psId || ''}
+                onChange={e => setPsId(e.target.value || null)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 cursor-pointer shadow-inner"
+              >
+                <option value="">All Police Stations (District Scope)</option>
                 {stationsList.map(ps => (
                   <option key={ps.id} value={ps.id}>{ps.name_en} ({ps.code})</option>
                 ))}
@@ -495,55 +582,59 @@ export default function CustomExcelBuilder() {
             </div>
           )}
         </div>
-      </SectionCard>
+      </div>
 
-      {/* ── Export Button & Status ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={isExporting || selectedFields.size === 0}
-          style={{ background: 'var(--accent-color)', borderColor: 'var(--accent-color)' }}
-          className="text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-95 hover:brightness-110 border"
-        >
-          {isExporting ? (
-            <><RefreshCw size={14} className="animate-spin" /><span>Building Report…</span></>
-          ) : (
-            <><FileSpreadsheet size={14} /><span>Export as Excel</span></>
-          )}
-        </button>
-
-        {jobState.status === 'ready' && (
-          <div
-            className="flex items-center gap-3 rounded-xl px-4 py-2"
-            style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)' }}
+      {/* ── Export Action Bar ────────────────────────────────────────────── */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={isExporting || selectedFields.size === 0}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all shadow-lg shadow-emerald-950/50 flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
           >
-            <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-            <span className="text-xs font-semibold text-emerald-600">Report ready!</span>
+            {isExporting ? (
+              <><RefreshCw size={15} className="animate-spin" /><span>Generating Workbook...</span></>
+            ) : (
+              <><FileSpreadsheet size={15} /><span>Generate Excel (.xlsx)</span></>
+            )}
+          </button>
+
+          {selectedFields.size === 0 && jobState.status === 'idle' && (
+            <p className="text-xs text-amber-400 font-semibold flex items-center gap-1.5">
+              <AlertTriangle size={14} />
+              <span>Select at least 1 column to enable export.</span>
+            </p>
+          )}
+        </div>
+
+        {/* Download Box */}
+        {jobState.status === 'ready' && (
+          <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl px-4 py-2.5 flex items-center gap-3 animate-fade-in">
+            <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+            <div className="text-xs">
+              <span className="font-bold text-white block">Workbook Ready!</span>
+              <span className="text-[10px] text-slate-400">Formatted &amp; sanitized Excel sheet generated</span>
+            </div>
             <button
               type="button"
               onClick={handleDownload}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors flex items-center gap-1.5 cursor-pointer border-none shadow-sm active:scale-95"
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
             >
-              <Download size={11} />
-              <span>Download Excel</span>
+              <Download size={13} />
+              <span>Download File</span>
             </button>
           </div>
         )}
 
         {jobState.status === 'failed' && (
-          <div className="flex items-center gap-2 text-xs font-semibold text-red-500">
-            <AlertTriangle size={14} />
-            <span>Export failed. Try again.</span>
+          <div className="flex items-center gap-2 text-xs font-bold text-rose-400">
+            <AlertTriangle size={15} />
+            <span>Generation failed. Please re-check date range and filter settings.</span>
           </div>
         )}
-
-        {selectedFields.size === 0 && jobState.status === 'idle' && (
-          <p className="text-[11px] text-slate-400 font-semibold">
-            Select at least one field to enable export.
-          </p>
-        )}
       </div>
+
     </div>
   );
 }
