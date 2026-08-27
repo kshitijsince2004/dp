@@ -4,7 +4,7 @@ import {
   FileSpreadsheet, Download, RefreshCw, ChevronDown, Search,
   X, Link2, AlertTriangle, CheckCircle2, Calendar, Shield,
   Sparkles, Layers, UserCheck, Package, Lock, Filter, Trash2, ArrowRight,
-  Building2, Users, FileText
+  Building2, Users, FileText, ChevronUp, Tag
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
@@ -91,8 +91,15 @@ const QUICK_PRESETS = [
 const today = formatDMY(new Date());
 const thirtyDaysAgo = formatDMY(new Date(Date.now() - 30 * 86400000));
 
-function MultiSelectDropdown({ label, options, selected, onToggle, onSelectAll, search, setSearch, open, setOpen, dropRef }) {
-  const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+/**
+ * Categorized Field Picker with Form Section Groupings
+ */
+function CategorizedFieldPicker({ categorizedOptions, selected, onToggle, onToggleGroup, search, setSearch, open, setOpen, dropRef }) {
+  const [collapsedGroups, setCollapsedGroups] = useState({});
+
+  const toggleGroupCollapse = (grpLabel) => {
+    setCollapsedGroups(prev => ({ ...prev, [grpLabel]: !prev[grpLabel] }));
+  };
 
   return (
     <div ref={dropRef} className="relative">
@@ -101,58 +108,96 @@ function MultiSelectDropdown({ label, options, selected, onToggle, onSelectAll, 
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between bg-slate-950 border border-slate-700/80 rounded-xl text-xs text-slate-100 px-3.5 py-3 outline-none focus:border-emerald-500 transition-all cursor-pointer font-bold shadow-inner"
       >
-        <span className="truncate text-left">{label}</span>
+        <span className="truncate text-left flex items-center gap-2">
+          <Tag size={13} className="text-emerald-400" />
+          <span>{selected.size === 0 ? 'Select Form Sections & Fields...' : `${selected.size} Columns Selected`}</span>
+        </span>
         <ChevronDown size={15} className="text-slate-400 shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-80 backdrop-blur-xl">
+        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-96 backdrop-blur-xl">
+          {/* Search Header */}
           <div className="p-2.5 border-b border-slate-800 bg-slate-950 flex flex-col gap-2">
             <div className="relative">
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search columns or groups..."
+                placeholder="Search fields across sections..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-2 py-1.5 text-xs text-slate-100 outline-none focus:border-emerald-500 font-medium"
               />
             </div>
             <div className="flex items-center justify-between text-[11px] px-1 text-slate-400">
-              <button
-                type="button"
-                onClick={onSelectAll}
-                className="hover:text-emerald-400 transition-colors font-bold cursor-pointer border-none bg-transparent"
-              >
-                {selected.size === options.length ? 'Deselect All' : 'Select All'}
-              </button>
-              <span>{selected.size} of {options.length} selected</span>
+              <span className="font-semibold text-slate-300">Form-Matched Categories</span>
+              <span>{selected.size} columns active</span>
             </div>
           </div>
 
-          <div className="overflow-y-auto flex-1 scrollbar-thin divide-y divide-slate-800/40">
-            {filtered.length === 0 && (
+          {/* Categorized List */}
+          <div className="overflow-y-auto flex-1 scrollbar-thin divide-y divide-slate-800/60 p-1">
+            {categorizedOptions.length === 0 && (
               <p className="text-xs text-slate-500 text-center py-6">No matching fields found</p>
             )}
-            {filtered.map(opt => (
-              <label
-                key={opt.value}
-                className="flex items-center gap-2.5 px-3.5 py-2 text-xs hover:bg-slate-800/80 transition-colors cursor-pointer select-none text-slate-200"
-              >
-                <input
-                  type="checkbox"
-                  checked={selected.has(opt.value)}
-                  onChange={() => onToggle(opt.value)}
-                  className="rounded border-slate-700 w-4 h-4 cursor-pointer accent-emerald-500"
-                />
-                <span className="flex-1 font-medium">{opt.label}</span>
-                {opt.badge && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/30 shrink-0">
-                    {opt.badge}
-                  </span>
-                )}
-              </label>
-            ))}
+
+            {categorizedOptions.map((group) => {
+              const filteredFields = group.fields.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+              if (filteredFields.length === 0) return null;
+
+              const isCollapsed = collapsedGroups[group.groupLabel];
+              const allSelected = filteredFields.every(f => selected.has(f.value));
+
+              return (
+                <div key={group.groupLabel} className="py-1">
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between px-3 py-1.5 bg-slate-950/80 rounded-lg mb-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleGroupCollapse(group.groupLabel)}
+                      className="flex items-center gap-1.5 text-xs font-bold text-slate-200 hover:text-emerald-400 cursor-pointer bg-transparent border-none p-0"
+                    >
+                      {isCollapsed ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+                      <span>{group.groupLabel}</span>
+                      <span className="text-[10px] text-slate-500 font-normal">({filteredFields.length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onToggleGroup(filteredFields.map(f => f.value), !allSelected)}
+                      className="text-[10px] font-bold text-emerald-400 hover:underline cursor-pointer bg-transparent border-none p-0"
+                    >
+                      {allSelected ? 'Deselect Section' : 'Select Section'}
+                    </button>
+                  </div>
+
+                  {/* Section Fields */}
+                  {!isCollapsed && (
+                    <div className="space-y-0.5 pl-2">
+                      {filteredFields.map(opt => (
+                        <label
+                          key={opt.value}
+                          className="flex items-center gap-2.5 px-3 py-1.5 text-xs hover:bg-slate-800/80 rounded-md transition-colors cursor-pointer select-none text-slate-200"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected.has(opt.value)}
+                            onChange={() => onToggle(opt.value)}
+                            className="rounded border-slate-700 w-3.5 h-3.5 cursor-pointer accent-emerald-500"
+                          />
+                          <span className="flex-1 font-medium">{opt.label}</span>
+                          {opt.badge && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/30 shrink-0">
+                              {opt.badge}
+                            </span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -200,10 +245,13 @@ export default function CustomExcelBuilder() {
 
   const isDistrictOrHQ = ['DISTRICT_OFFICER', 'DCP', 'ACP', 'JCP', 'SCP', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'].includes(role);
 
-  const fieldOptions = useMemo(() => {
+  // Grouped Field Options by Form Category
+  const categorizedOptions = useMemo(() => {
     if (!metaRes?.tables) return [];
     const tables = join ? [table, join] : [table];
-    const opts = [];
+
+    const groupMap = new Map(); // groupLabel -> array of fields
+
     for (const t of tables) {
       const tData = metaRes.tables[t];
       if (!tData) continue;
@@ -218,14 +266,30 @@ export default function CustomExcelBuilder() {
           groupMembers.get(f.group).push({ value: `${t}.${f.key}`, isPii: !!f.is_pii });
           continue;
         }
-        opts.push({
+        
+        // Form Section Tagging
+        let section = 'General Registration Info';
+        const keyLower = f.key.toLowerCase();
+        if (keyLower.includes('complainant') || keyLower.includes('informant')) section = 'Complainant Details';
+        else if (keyLower.includes('accused') || keyLower.includes('suspect')) section = 'Accused & Suspect Details';
+        else if (keyLower.includes('victim')) section = 'Victim Details';
+        else if (keyLower.includes('occurrence') || keyLower.includes('place') || keyLower.includes('address')) section = 'Occurrence & Location Details';
+        else if (keyLower.includes('prop') || keyLower.includes('stolen') || keyLower.includes('recovered')) section = 'Property & Seizure Info';
+        else if (keyLower.includes('status') || keyLower.includes('date') || keyLower.includes('time')) section = 'Status & Dates';
+
+        const grpTitle = tables.length > 1 ? `[${tableTag}] ${section}` : section;
+        if (!groupMap.has(grpTitle)) groupMap.set(grpTitle, []);
+        groupMap.get(grpTitle).push({
           value: `${t}.${f.key}`,
-          label: tables.length > 1 ? `[${tableTag}] ${f.label_en}` : f.label_en,
+          label: f.label_en,
           badge: f.is_pii ? 'PII' : null,
         });
       }
+
       for (const [groupKey, members] of groupMembers) {
-        opts.push({
+        const grpTitle = tables.length > 1 ? `[${tableTag}] Form Sections` : 'Form Sections';
+        if (!groupMap.has(grpTitle)) groupMap.set(grpTitle, []);
+        groupMap.get(grpTitle).push({
           value: `${t}.__group__${groupKey}`,
           label: groupLabelByKey.get(groupKey),
           badge: members.some(m => m.isPii) ? 'PII' : null,
@@ -233,19 +297,42 @@ export default function CustomExcelBuilder() {
           memberValues: members.map(m => m.value),
         });
       }
+
       for (const f of (tData.system_fields || [])) {
-        opts.push({ value: `${t}.${f.key}`, label: tables.length > 1 ? `[${tableTag}] ${f.label_en}` : f.label_en, badge: null });
+        const grpTitle = tables.length > 1 ? `[${tableTag}] System Metadata` : 'System Metadata';
+        if (!groupMap.has(grpTitle)) groupMap.set(grpTitle, []);
+        groupMap.get(grpTitle).push({
+          value: `${t}.${f.key}`,
+          label: f.label_en,
+          badge: null,
+        });
       }
     }
-    opts.sort((a, b) => a.label.localeCompare(b.label));
-    return opts;
+
+    return Array.from(groupMap.entries()).map(([groupLabel, fields]) => ({
+      groupLabel,
+      fields: fields.sort((a, b) => a.label.localeCompare(b.label)),
+    }));
   }, [metaRes, table, join]);
+
+  // Flattened options list for lookup
+  const allFieldOptions = useMemo(() => {
+    return categorizedOptions.flatMap(g => g.fields);
+  }, [categorizedOptions]);
 
   const changeTable = (newTable) => { setTable(newTable); setJoin(null); setSelectedFields(new Set()); setFieldSearch(''); };
   const changeJoin  = (newJoin)  => { setJoin(newJoin || null); setSelectedFields(new Set()); setFieldSearch(''); };
 
-  const toggleField     = (val) => setSelectedFields(prev => { const n = new Set(prev); n.has(val) ? n.delete(val) : n.add(val); return n; });
-  const toggleAllFields  = () => setSelectedFields(selectedFields.size === fieldOptions.length ? new Set() : new Set(fieldOptions.map(o => o.value)));
+  const toggleField = (val) => setSelectedFields(prev => { const n = new Set(prev); n.has(val) ? n.delete(val) : n.add(val); return n; });
+  
+  const toggleGroupFields = (fieldValues, select) => {
+    setSelectedFields(prev => {
+      const n = new Set(prev);
+      fieldValues.forEach(v => (select ? n.add(v) : n.delete(v)));
+      return n;
+    });
+  };
+
   const clearSelectedFields = () => setSelectedFields(new Set());
 
   // Apply a Quick Preset
@@ -255,7 +342,7 @@ export default function CustomExcelBuilder() {
 
     setTimeout(() => {
       const matches = new Set();
-      fieldOptions.forEach(opt => {
+      allFieldOptions.forEach(opt => {
         if (preset.fieldKeywords.some(kw => opt.value.toLowerCase().includes(kw) || opt.label.toLowerCase().includes(kw))) {
           matches.add(opt.value);
         }
@@ -264,7 +351,7 @@ export default function CustomExcelBuilder() {
         setSelectedFields(matches);
         toast.success(`Preset "${preset.title}" applied! (${matches.size} fields selected)`);
       } else {
-        const first6 = new Set(fieldOptions.slice(0, 8).map(o => o.value));
+        const first6 = new Set(allFieldOptions.slice(0, 8).map(o => o.value));
         setSelectedFields(first6);
         toast.success(`Preset "${preset.title}" applied!`);
       }
@@ -277,7 +364,7 @@ export default function CustomExcelBuilder() {
 
     const hasJoin = !!join;
     const expandedRefs = Array.from(selectedFields).flatMap(ref => {
-      const opt = fieldOptions.find(o => o.value === ref);
+      const opt = allFieldOptions.find(o => o.value === ref);
       return opt?.isGroup ? opt.memberValues : [ref];
     });
     const fields = Array.from(new Set(expandedRefs)).map(ref => {
@@ -447,11 +534,11 @@ export default function CustomExcelBuilder() {
         </div>
       </div>
 
-      {/* ── Table Selection & Column Picker ───────────────────────────────── */}
+      {/* ── Table Selection & Categorized Column Picker ────────────────────── */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
         <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
           <Layers size={15} className="text-emerald-400" />
-          <span>Record Master &amp; Column Configurator</span>
+          <span>Form-Matched Record Master &amp; Categorized Column Configurator</span>
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -486,10 +573,10 @@ export default function CustomExcelBuilder() {
             </select>
           </div>
 
-          {/* Columns Picker Dropdown */}
+          {/* Categorized Columns Picker Dropdown */}
           <div>
             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
-              <span>Columns to Export</span>
+              <span>Form-Matched Columns to Export</span>
               {selectedFields.size > 0 && (
                 <button
                   type="button"
@@ -500,18 +587,11 @@ export default function CustomExcelBuilder() {
                 </button>
               )}
             </label>
-            <MultiSelectDropdown
-              label={
-                selectedFields.size === 0
-                  ? 'Select column fields...'
-                  : selectedFields.size === fieldOptions.length
-                    ? `All Columns (${fieldOptions.length})`
-                    : `${selectedFields.size} Columns Selected`
-              }
-              options={fieldOptions}
+            <CategorizedFieldPicker
+              categorizedOptions={categorizedOptions}
               selected={selectedFields}
               onToggle={toggleField}
-              onSelectAll={toggleAllFields}
+              onToggleGroup={toggleGroupFields}
               search={fieldSearch}
               setSearch={setFieldSearch}
               open={fieldDropOpen}
@@ -530,7 +610,7 @@ export default function CustomExcelBuilder() {
             </div>
             <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto scrollbar-thin p-1.5 bg-slate-950/60 rounded-xl border border-slate-800">
               {Array.from(selectedFields).map(ref => {
-                const opt = fieldOptions.find(o => o.value === ref);
+                const opt = allFieldOptions.find(o => o.value === ref);
                 return (
                   <span
                     key={ref}
