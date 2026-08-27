@@ -15,7 +15,6 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../../../..');
 
 import { traceRecordThroughReports } from '../report-engine/shared/trace-record.js';
-import { getLogger } from '../../utils/logger.js';
 
 
 const runPythonFallback = (jobId) => {
@@ -1415,6 +1414,7 @@ export const getFields = async (req, res) => {
       data: {
         fields: filtered
       }
+    });
   } catch (error) {
     log.error('getFields: failed', { record_type, err: error });
     return res.status(500).json({
@@ -1424,6 +1424,7 @@ export const getFields = async (req, res) => {
     });
   }
 };
+
 
 export const traceRecord = async (req, res) => {
   try {
