@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import {
   FileSpreadsheet, Download, RefreshCw, ChevronDown, Search,
   X, Link2, AlertTriangle, CheckCircle2, Calendar, Shield,
-  Sparkles, Layers, UserCheck, Package, Lock, Filter, Trash2, ArrowRight
+  Sparkles, Layers, UserCheck, Package, Lock, Filter, Trash2, ArrowRight,
+  Building2, Users, FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
@@ -40,6 +41,15 @@ const JOIN_TABLE_TAGS = {
 
 // Preset Configurations for One-Click Officer Workflows
 const QUICK_PRESETS = [
+  {
+    id: 'fir_360_dossier',
+    title: '360° Complete FIR Dossier',
+    description: 'FIR, Complainant, Accused, Victim & Incident Details (Full Multi-Entity Report)',
+    icon: Layers,
+    table: 'CASE',
+    join: 'CASE_ACCUSED',
+    fieldKeywords: ['fir_no', 'record_date', 'ps_name', 'complainant', 'occurrence', 'accused', 'status'],
+  },
   {
     id: 'daily_fir',
     title: 'Daily FIR Master Log',
@@ -188,6 +198,8 @@ export default function CustomExcelBuilder() {
     enabled: ['DISTRICT_OFFICER', 'JCP', 'SCP', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'].includes(role),
   });
 
+  const isDistrictOrHQ = ['DISTRICT_OFFICER', 'DCP', 'ACP', 'JCP', 'SCP', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'].includes(role);
+
   const fieldOptions = useMemo(() => {
     if (!metaRes?.tables) return [];
     const tables = join ? [table, join] : [table];
@@ -241,7 +253,6 @@ export default function CustomExcelBuilder() {
     setTable(preset.table);
     setJoin(preset.join);
 
-    // Wait for fieldOptions update then match keywords
     setTimeout(() => {
       const matches = new Set();
       fieldOptions.forEach(opt => {
@@ -253,9 +264,8 @@ export default function CustomExcelBuilder() {
         setSelectedFields(matches);
         toast.success(`Preset "${preset.title}" applied! (${matches.size} fields selected)`);
       } else {
-        // Fallback select all first 5 fields
-        const first5 = new Set(fieldOptions.slice(0, 6).map(o => o.value));
-        setSelectedFields(first5);
+        const first6 = new Set(fieldOptions.slice(0, 8).map(o => o.value));
+        setSelectedFields(first6);
         toast.success(`Preset "${preset.title}" applied!`);
       }
     }, 100);
@@ -295,7 +305,7 @@ export default function CustomExcelBuilder() {
       if (!jobId) throw new Error('No job ID returned');
       setJobState({ status: 'pending', jobId });
 
-      const loadingToastId = toast.loading('Building Excel workbook & formatting columns...');
+      const loadingToastId = toast.loading('Building Excel workbook & formatting multi-entity columns...');
 
       let attempts = 0;
       const iv = setInterval(async () => {
@@ -378,17 +388,35 @@ export default function CustomExcelBuilder() {
   return (
     <div className="space-y-6 font-sans text-slate-100">
       
+      {/* Scope Privilege Indicator Banner */}
+      <div className="bg-slate-950 border border-slate-800/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <Building2 size={18} className="text-emerald-400" />
+          <div>
+            <span className="font-bold text-white block">Hierarchical Scope Authority: <span className="text-emerald-400 uppercase font-mono">{role}</span></span>
+            <span className="text-slate-400 text-[11px]">
+              {isDistrictOrHQ
+                ? 'District Authority Enabled — You can customize reports for your entire district or filter down to any specific station.'
+                : 'Police Station Authority — Reports are automatically scoped to your assigned Station.'}
+            </span>
+          </div>
+        </div>
+        <span className="text-[10px] bg-slate-800 text-slate-300 px-3 py-1 rounded-lg border border-slate-700 font-bold shrink-0">
+          {isDistrictOrHQ ? 'Multi-Station Privileges Active' : 'Station Scoped'}
+        </span>
+      </div>
+
       {/* ⚡ Executive Quick-Start Presets */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
             <Sparkles size={15} className="text-amber-400" />
-            <span>One-Click Officer Presets</span>
+            <span>One-Click Multi-Entity &amp; Officer Presets</span>
           </h3>
-          <span className="text-[10px] text-slate-500 font-medium">Select a preset to auto-configure tables & fields</span>
+          <span className="text-[10px] text-slate-500 font-medium">Auto-configures tables, joins &amp; 360° dossier fields</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {QUICK_PRESETS.map((preset) => {
             const Icon = preset.icon;
             const active = table === preset.table && join === preset.join;
@@ -411,7 +439,7 @@ export default function CustomExcelBuilder() {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-slate-100">{preset.title}</h4>
-                  <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">{preset.description}</p>
+                  <p className="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{preset.description}</p>
                 </div>
               </button>
             );
@@ -423,13 +451,13 @@ export default function CustomExcelBuilder() {
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
         <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
           <Layers size={15} className="text-emerald-400" />
-          <span>Record Master & Column Configurator</span>
+          <span>Record Master &amp; Column Configurator</span>
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Primary Table */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Primary Table</label>
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Primary Record Type</label>
             <select
               value={table}
               onChange={e => changeTable(e.target.value)}
@@ -444,7 +472,7 @@ export default function CustomExcelBuilder() {
           {/* Join Table */}
           <div>
             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
-              <span>Link / Sub-Table</span>
+              <span>Link / Sub-Table Join</span>
               <span className="text-[9px] text-slate-500 font-normal normal-case">(optional)</span>
             </label>
             <select
@@ -500,7 +528,7 @@ export default function CustomExcelBuilder() {
               <span>Selected Export Layout ({selectedFields.size} columns)</span>
               <span className="text-[10px] text-slate-500">Click x to remove a column</span>
             </div>
-            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto scrollbar-thin p-1 bg-slate-950/60 rounded-xl border border-slate-800">
+            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto scrollbar-thin p-1.5 bg-slate-950/60 rounded-xl border border-slate-800">
               {Array.from(selectedFields).map(ref => {
                 const opt = fieldOptions.find(o => o.value === ref);
                 return (
@@ -527,11 +555,11 @@ export default function CustomExcelBuilder() {
         )}
       </div>
 
-      {/* ── Filters & Constraints ────────────────────────────────────────── */}
+      {/* ── Scope & Filter Constraints ────────────────────────────────────── */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
         <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
           <Filter size={15} className="text-emerald-400" />
-          <span>Scope &amp; Date Range Filters</span>
+          <span>Hierarchical Scope &amp; Date Range Filters</span>
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -566,7 +594,7 @@ export default function CustomExcelBuilder() {
           {stationsList.length > 0 && (
             <div>
               <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
-                <span>Police Station</span>
+                <span>Target Police Station Scope</span>
                 <span className="text-[9px] text-slate-500 font-normal normal-case">(optional)</span>
               </label>
               <select
@@ -574,7 +602,7 @@ export default function CustomExcelBuilder() {
                 onChange={e => setPsId(e.target.value || null)}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 cursor-pointer shadow-inner"
               >
-                <option value="">All Police Stations (District Scope)</option>
+                <option value="">All Police Stations in District Scope</option>
                 {stationsList.map(ps => (
                   <option key={ps.id} value={ps.id}>{ps.name_en} ({ps.code})</option>
                 ))}
@@ -614,7 +642,7 @@ export default function CustomExcelBuilder() {
             <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
             <div className="text-xs">
               <span className="font-bold text-white block">Workbook Ready!</span>
-              <span className="text-[10px] text-slate-400">Formatted &amp; sanitized Excel sheet generated</span>
+              <span className="text-[10px] text-slate-400">Multi-entity dossier Excel generated</span>
             </div>
             <button
               type="button"
