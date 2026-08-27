@@ -1,0 +1,665 @@
+{
+  "FN_DIARY": {
+    "STAT_1": {
+      "sheet_title": "BNS Cases Reported",
+      "rows": [
+        {
+          "row": 7,
+          "label": "Dacoity",
+          "source": "M-01 WHERE canonical_code='DACOITY'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code DACOITY in ref.local_heads"
+        },
+        {
+          "row": 8,
+          "label": "Murder",
+          "source": "M-01 WHERE canonical_code='MURDER'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code MURDER"
+        },
+        {
+          "row": 9,
+          "label": "Attempt to Murder",
+          "source": "M-01 WHERE canonical_code='ATT_TO_MURDER'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code ATT_TO_MURDER"
+        },
+        {
+          "row": 10,
+          "label": "Robbery",
+          "source": "M-01 WHERE canonical_code='ROBBERY'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code ROBBERY"
+        },
+        {
+          "row": 11,
+          "label": "Riot",
+          "source": "M-01 WHERE canonical_code='RIOT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code RIOT"
+        },
+        {
+          "row": 12,
+          "label": "Kidnapping for Ransom",
+          "source": "M-01 WHERE canonical_code='KID_FOR_RANSOM'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code KID_FOR_RANSOM"
+        },
+        {
+          "row": 13,
+          "label": "Rape",
+          "source": "M-01 WHERE canonical_code='RAPE'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code RAPE"
+        },
+        {
+          "row": 14,
+          "label": "Total Heinous",
+          "source": "SUM(rows 7-13)",
+          "status": "PROPOSED",
+          "evidence": "Subtotal of rows 7-13"
+        },
+        {
+          "row": 16,
+          "label": "Extortion",
+          "source": "M-01 WHERE canonical_code='EXTORTION'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code EXTORTION"
+        },
+        {
+          "row": 17,
+          "label": "Snatching",
+          "source": "M-01 WHERE canonical_code='SNATCHING'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code SNATCHING"
+        },
+        {
+          "row": 19,
+          "label": "Simple Hurt",
+          "source": "M-01 WHERE canonical_code='SIMPLE_HURT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code SIMPLE_HURT"
+        },
+        {
+          "row": 20,
+          "label": "Grievous Hurt",
+          "source": "M-01 WHERE canonical_code='GRIEVOUS_HURT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code GRIEVOUS_HURT"
+        },
+        {
+          "row": 21,
+          "label": "Burglary",
+          "source": "M-01 WHERE canonical_code='BURGLARY'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code BURGLARY"
+        },
+        {
+          "row": 23,
+          "label": "Motor Vehicle Theft",
+          "source": "M-01 WHERE canonical_code='MV_THEFT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code MV_THEFT"
+        },
+        {
+          "row": 24,
+          "label": "House Theft",
+          "source": "M-01 WHERE canonical_code='HOUSE_THEFT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code HOUSE_THEFT"
+        },
+        {
+          "row": 25,
+          "label": "Servant Theft",
+          "source": "M-01 WHERE canonical_code='SERVANT_THEFT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code SERVANT_THEFT"
+        },
+        {
+          "row": 26,
+          "label": "Pickpocketing",
+          "source": "M-01 WHERE canonical_code='PICKPOCKETING'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code PICKPOCKETING"
+        },
+        {
+          "row": 27,
+          "label": "Other Theft",
+          "source": "M-01 WHERE canonical_code='OTHER_THEFT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code OTHER_THEFT"
+        },
+        {
+          "row": 28,
+          "label": "Culpable Homicide",
+          "source": "M-01 WHERE canonical_code='CULPABLE_HOMICIDE'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code CULPABLE_HOMICIDE"
+        },
+        {
+          "row": 29,
+          "label": "Attempt to Culpable Homicide",
+          "source": "M-01 WHERE canonical_code='ATT_TO_CULPABLE_HOMICIDE'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code ATT_TO_CULPABLE_HOMICIDE"
+        },
+        {
+          "row": 30,
+          "label": "House Trespass",
+          "source": "M-01 WHERE canonical_code='HOUSE_TRESPASS'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code HOUSE_TRESPASS"
+        },
+        {
+          "row": 31,
+          "label": "Criminal Breach of Trust",
+          "source": "M-01 WHERE canonical_code='CRIMINAL_BREACH_OF_TRUST'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code CRIMINAL_BREACH_OF_TRUST"
+        },
+        {
+          "row": 32,
+          "label": "Cheating",
+          "source": "M-01 WHERE canonical_code='CHEATING'",
+          "status": "CONFIRMED",
+          "evidence": "Requires decision D2 on whether IT Act Cyber Fraud is categorized here or under Cyber Crime | Confirmed via Decision D1 (Option B) | Confirmed via Decision D2 (Option B) | Confirmed via Decision D3 (Option A) | Confirmed via Decision D4 (Option B)",
+          "confirmed_by": "Crime Branch",
+          "confirmed_date": "2026-08-27"
+        },
+        {
+          "row": 33,
+          "label": "Forgery",
+          "source": "M-01 WHERE canonical_code='FORGERY'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code FORGERY"
+        },
+        {
+          "row": 34,
+          "label": "Counterfeiting",
+          "source": "M-01 WHERE canonical_code='COUNTERFEITING'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code COUNTERFEITING"
+        },
+        {
+          "row": 35,
+          "label": "Mischief",
+          "source": "M-01 WHERE canonical_code='MISCHIEF'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code MISCHIEF"
+        },
+        {
+          "row": 36,
+          "label": "Arson",
+          "source": "M-01 WHERE canonical_code='ARSON'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code ARSON"
+        },
+        {
+          "row": 37,
+          "label": "Threatening / Criminal Intimidation",
+          "source": "M-01 WHERE canonical_code='THREATENING'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code THREATENING"
+        },
+        {
+          "row": 39,
+          "label": "Fatal Accident",
+          "source": "M-01 WHERE canonical_code='FATAL_ACCIDENT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code FATAL_ACCIDENT"
+        },
+        {
+          "row": 40,
+          "label": "Simple Accident",
+          "source": "M-01 WHERE canonical_code='SIMPLE_ACCIDENT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code SIMPLE_ACCIDENT"
+        },
+        {
+          "row": 41,
+          "label": "Kidnapping",
+          "source": "M-01 WHERE canonical_code='KIDNAPPING'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code KIDNAPPING"
+        },
+        {
+          "row": 42,
+          "label": "Abduction",
+          "source": "M-01 WHERE canonical_code='ABDUCTION'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code ABDUCTION"
+        },
+        {
+          "row": 43,
+          "label": "Outraging Modesty of Women",
+          "source": "M-01 WHERE canonical_code='MO_WOMEN'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code MO_WOMEN"
+        },
+        {
+          "row": 44,
+          "label": "Eve Teasing / Sexual Harassment",
+          "source": "M-01 WHERE canonical_code='EVE_TEASING'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code EVE_TEASING"
+        },
+        {
+          "row": 45,
+          "label": "Dowry Death",
+          "source": "M-01 WHERE canonical_code='DOWRY_DEATH'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code DOWRY_DEATH"
+        },
+        {
+          "row": 46,
+          "label": "Election Offences",
+          "source": "M-01 WHERE canonical_code='ELECTION_OFFENCES'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code ELECTION_OFFENCES"
+        },
+        {
+          "row": 47,
+          "label": "Preparation for Dacoity",
+          "source": "M-01 WHERE canonical_code='PREP_DACOITY'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code PREP_DACOITY"
+        },
+        {
+          "row": 49,
+          "label": "Acid Attack (Sec 124(1))",
+          "source": "M-01 WHERE canonical_code='ACID_ATTACK_124_1'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code ACID_ATTACK_124_1"
+        },
+        {
+          "row": 50,
+          "label": "Acid Attack Attempt",
+          "source": "M-01 WHERE canonical_code='ACID_ATTACK_ATTEMPT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code ACID_ATTACK_ATTEMPT"
+        },
+        {
+          "row": 51,
+          "label": "Other BNS Offences",
+          "source": "M-01 WHERE canonical_code='OTHER_BNS'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to canonical code OTHER_BNS"
+        },
+        {
+          "row": 53,
+          "label": "Grand Total BNS Reported",
+          "source": "SUM(all BNS rows)",
+          "status": "PROPOSED",
+          "evidence": "Grand total of all BNS categories"
+        }
+      ],
+      "assertions": [
+        {
+          "rule": "row_14_equals_sum_7_to_13",
+          "description": "Total Heinous (row 14) must equal sum of rows 7-13",
+          "type": "SUBTOTAL",
+          "member_rows": [
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "total_row": 14
+        },
+        {
+          "rule": "row_53_equals_sum_non_subtotal_rows",
+          "description": "Grand Total BNS (row 53) must equal sum of all non-subtotal BNS category rows",
+          "type": "SUBTOTAL",
+          "member_rows": [
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            16,
+            17,
+            19,
+            20,
+            21,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            49,
+            50,
+            51
+          ],
+          "total_row": 53
+        }
+      ]
+    },
+    "STAT_2": {
+      "sheet_title": "BNS Cases Worked Out / Solved",
+      "rows": [
+        {
+          "row": 7,
+          "label": "Dacoity Solved",
+          "source": "M-02 WHERE canonical_code='DACOITY'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to cases solved for DACOITY"
+        },
+        {
+          "row": 14,
+          "label": "Total Heinous Solved",
+          "source": "SUM(rows 7-13)",
+          "status": "PROPOSED",
+          "evidence": "Subtotal heinous solved"
+        },
+        {
+          "row": 53,
+          "label": "Grand Total BNS Solved",
+          "source": "SUM(all BNS solved rows)",
+          "status": "PROPOSED",
+          "evidence": "Grand total solved"
+        }
+      ],
+      "assertions": [
+        {
+          "rule": "stat2_row_14_equals_sum_7_to_13",
+          "description": "Total Heinous Solved (row 14) must equal sum of rows 7-13",
+          "type": "SUBTOTAL",
+          "member_rows": [
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "total_row": 14
+        }
+      ]
+    },
+    "STAT_16": {
+      "sheet_title": "Excise & NDPS Seizures",
+      "rows": [
+        {
+          "row": 7,
+          "label": "Excise Act Cases",
+          "source": "M-01 WHERE canonical_code='EXCISE_ACT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to EXCISE_ACT"
+        },
+        {
+          "row": 8,
+          "label": "NDPS Act Cases",
+          "source": "M-01 WHERE canonical_code='NDPS_ACT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped to NDPS_ACT"
+        }
+      ],
+      "assertions": []
+    },
+    "STAT_20": {
+      "sheet_title": "Arrestee Demographics",
+      "rows": [
+        {
+          "row": 7,
+          "label": "Illiterate",
+          "source": "COUNT(persons p) WHERE p.education='ILLITERATE'",
+          "status": "PROPOSED",
+          "evidence": "Demographic education query"
+        },
+        {
+          "row": 8,
+          "label": "Up to Primary",
+          "source": "COUNT(persons p) WHERE p.education='PRIMARY'",
+          "status": "PROPOSED",
+          "evidence": "Demographic education query"
+        },
+        {
+          "row": 15,
+          "label": "SC Category",
+          "source": "COUNT(persons p) WHERE p.social_category='SC'",
+          "status": "PROPOSED",
+          "evidence": "Demographic social category query"
+        },
+        {
+          "row": 16,
+          "label": "ST Category",
+          "source": "COUNT(persons p) WHERE p.social_category='ST'",
+          "status": "PROPOSED",
+          "evidence": "Demographic social category query"
+        },
+        {
+          "row": 17,
+          "label": "OBC Category",
+          "source": "COUNT(persons p) WHERE p.social_category='OBC'",
+          "status": "PROPOSED",
+          "evidence": "Demographic social category query"
+        },
+        {
+          "row": 18,
+          "label": "General Category",
+          "source": "COUNT(persons p) WHERE p.social_category='GENERAL'",
+          "status": "PROPOSED",
+          "evidence": "Demographic social category query"
+        },
+        {
+          "row": 22,
+          "label": "Residence Delhi",
+          "source": "COUNT(persons p) WHERE l.state='DELHI'",
+          "status": "CONFIRMED",
+          "evidence": "Residence Delhi query | Confirmed via Decision D1 (Option B) | Confirmed via Decision D2 (Option B) | Confirmed via Decision D3 (Option A) | Confirmed via Decision D4 (Option B)",
+          "confirmed_by": "Crime Branch",
+          "confirmed_date": "2026-08-27"
+        },
+        {
+          "row": 23,
+          "label": "Residence Outside Delhi",
+          "source": "COUNT(persons p) WHERE l.state!='DELHI'",
+          "status": "CONFIRMED",
+          "evidence": "Requires decision D4 for handling unmapped state/null location | Confirmed via Decision D1 (Option B) | Confirmed via Decision D2 (Option B) | Confirmed via Decision D3 (Option A) | Confirmed via Decision D4 (Option B)",
+          "confirmed_by": "Crime Branch",
+          "confirmed_date": "2026-08-27"
+        }
+      ],
+      "assertions": [
+        {
+          "rule": "stat20_social_category_sum",
+          "description": "Sum of social category rows (15-18) must equal total arrestees",
+          "type": "SUBTOTAL",
+          "member_rows": [
+            15,
+            16,
+            17,
+            18
+          ],
+          "total_row": 19
+        }
+      ]
+    },
+    "STAT_21": {
+      "sheet_title": "Kalandra & Preventive Action",
+      "rows": [
+        {
+          "row": 7,
+          "label": "Section 107/151 CrPC / BNSS",
+          "source": "COUNT(arrest_details) WHERE is_dd_based=true",
+          "status": "PROPOSED",
+          "evidence": "Preventive kalandra cases"
+        }
+      ],
+      "assertions": []
+    },
+    "STAT_25": {
+      "sheet_title": "POCSO Only Cases",
+      "rows": [
+        {
+          "row": 7,
+          "label": "POCSO Act Cases",
+          "source": "M-01 WHERE canonical_code='POCSO'",
+          "status": "PROPOSED",
+          "evidence": "POCSO Act cases"
+        }
+      ],
+      "assertions": []
+    },
+    "STAT_26": {
+      "sheet_title": "POCSO Total (IPC + LSL)",
+      "rows": [
+        {
+          "row": 7,
+          "label": "Total POCSO Cases",
+          "source": "M-01 WHERE canonical_code='POCSO' OR is_pocso_section=true",
+          "status": "PROPOSED",
+          "evidence": "POCSO total cases"
+        }
+      ],
+      "assertions": []
+    }
+  },
+  "PHQ_DIARY": {
+    "Upto_Date": {
+      "sheet_title": "PHQ Daily Crime Matrix (3-Year Comparative)",
+      "rows": [
+        {
+          "row": 5,
+          "label": "Dacoity",
+          "source": "M-01 WHERE canonical_code='DACOITY'",
+          "status": "PROPOSED",
+          "evidence": "Mapped across 23 unit columns for Y-2, Y-1, Y"
+        },
+        {
+          "row": 6,
+          "label": "Murder",
+          "source": "M-01 WHERE canonical_code='MURDER'",
+          "status": "PROPOSED",
+          "evidence": "Mapped across 23 unit columns"
+        },
+        {
+          "row": 7,
+          "label": "Attempt to Murder",
+          "source": "M-01 WHERE canonical_code='ATT_TO_MURDER'",
+          "status": "PROPOSED",
+          "evidence": "Mapped across 23 unit columns"
+        },
+        {
+          "row": 8,
+          "label": "Robbery",
+          "source": "M-01 WHERE canonical_code='ROBBERY'",
+          "status": "PROPOSED",
+          "evidence": "Mapped across 23 unit columns"
+        },
+        {
+          "row": 9,
+          "label": "Riot",
+          "source": "M-01 WHERE canonical_code='RIOT'",
+          "status": "PROPOSED",
+          "evidence": "Mapped across 23 unit columns"
+        },
+        {
+          "row": 10,
+          "label": "Kidnapping for Ransom",
+          "source": "M-01 WHERE canonical_code='KID_FOR_RANSOM'",
+          "status": "PROPOSED",
+          "evidence": "Mapped across 23 unit columns"
+        },
+        {
+          "row": 11,
+          "label": "Rape",
+          "source": "M-01 WHERE canonical_code='RAPE'",
+          "status": "PROPOSED",
+          "evidence": "Mapped across 23 unit columns"
+        },
+        {
+          "row": 12,
+          "label": "Total Heinous",
+          "source": "SUM(rows 5-11)",
+          "status": "PROPOSED",
+          "evidence": "Subtotal heinous for PHQ matrix"
+        }
+      ],
+      "assertions": [
+        {
+          "rule": "phq_uptodate_row12_heinous_total",
+          "description": "PHQ Row 12 (Total Heinous) must equal sum of rows 5-11",
+          "type": "SUBTOTAL",
+          "member_rows": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "total_row": 12
+        }
+      ]
+    },
+    "Monday_Morning": {
+      "sheet_title": "Monday Morning Weekly Executive Summary",
+      "rows": [
+        {
+          "row": 7,
+          "label": "RAPE & POCSO",
+          "source": "M-01 WHERE canonical_code IN ('RAPE', 'POCSO')",
+          "status": "PROPOSED",
+          "evidence": "Special display exception combining RAPE (IPC) + POCSO (LSL) into single row 7"
+        }
+      ],
+      "assertions": []
+    }
+  },
+  "DISTRICT_DIARY": {
+    "COMPILATION_MATRIX": {
+      "sheet_title": "District Crime Compilation Matrix",
+      "rows": [
+        {
+          "row": 5,
+          "label": "Total FIR Cases",
+          "source": "SUM(ps_columns)",
+          "status": "PROPOSED",
+          "evidence": "Sum of all PS columns in district"
+        }
+      ],
+      "assertions": [
+        {
+          "rule": "district_ps_sum_equals_district_total",
+          "description": "Sum of PS columns must equal District Total column",
+          "type": "SUBTOTAL",
+          "member_rows": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "total_row": 6
+        }
+      ]
+    }
+  }
+}

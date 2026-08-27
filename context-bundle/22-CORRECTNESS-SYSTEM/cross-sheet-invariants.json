@@ -1,0 +1,32 @@
+[
+  {
+    "id": "lo_ranges_equal_grand_total_minus_specialised",
+    "description": "PHQ Upto_Date grand total minus specialised units must equal L&O South + L&O North",
+    "left": "PHQ_DIARY.Upto_Date.grand_total - PHQ_DIARY.Upto_Date.specialised_units_sum",
+    "right": "PHQ_DIARY.L_AND_O_SOUTH.total + PHQ_DIARY.L_AND_O_NORTH.total"
+  },
+  {
+    "id": "district_diary_ps_sum_equals_district_total",
+    "description": "Sum of all PS columns in District Diary must equal the District Total column",
+    "left": "DISTRICT_DIARY.COMPILATION_MATRIX.sum_ps_columns",
+    "right": "DISTRICT_DIARY.COMPILATION_MATRIX.district_total_column"
+  },
+  {
+    "id": "fn_stat1_bns_total_equals_stat36_registered",
+    "description": "STAT_1 Total BNS (row 53) must equal STAT_36 'Registered during FN' summed across all heads",
+    "left": "FN_DIARY.STAT_1.row_53",
+    "right": "FN_DIARY.STAT_36.sum_registered_column"
+  },
+  {
+    "id": "fn_stat20_demographics_sum_equals_total_arrestees",
+    "description": "STAT_20 Social Category sum (SC+ST+OBC+General) must equal Total Arrestees",
+    "left": "FN_DIARY.STAT_20.row_19",
+    "right": "FN_DIARY.STAT_20.total_arrestees"
+  },
+  {
+    "id": "stat25_stat26_pocso_consistency",
+    "description": "STAT_25 POCSO Only count must be less than or equal to STAT_26 POCSO Total count",
+    "left": "FN_DIARY.STAT_25.row_7",
+    "right": "FN_DIARY.STAT_26.row_7"
+  }
+]
