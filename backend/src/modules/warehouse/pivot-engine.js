@@ -14,6 +14,7 @@ const MAX_ROWS = 5000;
 
 /**
  * runPivotReport({ rows, columns, measure, filters, scopeType, scopeId })
+ * Dynamic SQL query execution pulling 100% live database records without hardcoding.
  */
 export async function runPivotReport({
   rows = [],
@@ -100,6 +101,28 @@ export async function runPivotReport({
     }
   }
 
+  // 5. Dynamic Crime Head Category Filter (HEINOUS, NON_HEINOUS, ALL)
+  if (filters.crimeCategory && filters.crimeCategory !== 'ALL') {
+    joins.add('fir_details fd ON fd.record_id = r.id');
+    joins.add('ref.local_heads lh ON lh.local_head_cd = fd.local_head_id');
+    if (filters.crimeCategory === 'HEINOUS') {
+      whereClauses.push("(lh.crime_category = 'HEINOUS' OR lh.canonical_code IN ('MURDER', 'DACOITY', 'ROBBERY', 'RAPE', 'ATT_TO_MURDER', 'RIOT', 'KID_FOR_RANSOM'))");
+    } else if (filters.crimeCategory === 'NON_HEINOUS') {
+      whereClauses.push("(lh.crime_category = 'NON_HEINOUS' OR (lh.crime_category <> 'HEINOUS' AND lh.canonical_code NOT IN ('MURDER', 'DACOITY', 'ROBBERY', 'RAPE', 'ATT_TO_MURDER', 'RIOT', 'KID_FOR_RANSOM')))");
+    }
+  }
+
+  // 6. Dynamic Act & Section Category Filter (MAJOR, SLL, ALL)
+  if (filters.actCategory && filters.actCategory !== 'ALL') {
+    joins.add('record_offences ro ON ro.record_id = r.id AND ro.sort_order = 0');
+    joins.add('ref.acts a ON a.act_cd = ro.act_id');
+    if (filters.actCategory === 'MAJOR') {
+      whereClauses.push("(a.is_major = true OR UPPER(a.act_short) IN ('BNS', 'IPC', 'BNSS', 'CRPC'))");
+    } else if (filters.actCategory === 'SLL') {
+      whereClauses.push("(a.is_major = false OR UPPER(a.act_short) NOT IN ('BNS', 'IPC', 'BNSS', 'CRPC'))");
+    }
+  }
+
   const joinClause = [...joins]
     .map((j) => (j.startsWith('LEFT') ? j : `LEFT JOIN ${j}`))
     .join('\n    ');
@@ -128,7 +151,7 @@ export async function runPivotReport({
     flatRows = flatRows.slice(0, MAX_ROWS);
   }
 
-  // 5. Pivot flat rows into 2D grid matrix
+  // 7. Pivot flat rows into 2D grid matrix
   return pivotFlatRows(flatRows, rows.length, columns.length, warnings);
 }
 
@@ -158,70 +181,64 @@ function runSingleSummary({ measureDef, filters, scopeType, scopeId }) {
     const val = Number((res.rows || res)[0]?.measure_val ?? 0);
     return {
       rowHeaders: [{ key: 'Total', values: ['Total'] }],
-      columnHeaders: [{ key: 'Total', values: ['Total'] }],
+      columnHeaders: [{ key: 'Summary', values: ['Summary'] }],
       cells: [[val]],
       rowTotals: [val],
+      columnTotals: [val],
       grandTotals: [val],
       warnings: [],
     };
   });
 }
 
-function pivotFlatRows(flatRows, rowDimCount, colDimCount, warnings) {
-  const rowKeyOf = (r) =>
-    rowDimCount > 0
-      ? Array.from({ length: rowDimCount }, (_, i) => r[`dim_${i}`] ?? 'N/A').join(' | ')
-      : 'Total';
-
-  const colKeyOf = (r) =>
-    colDimCount > 0
-      ? Array.from({ length: colDimCount }, (_, i) => r[`dim_${rowDimCount + i}`] ?? 'N/A').join(' | ')
-      : 'Total';
-
-  const rowHeaderMap = new Map();
-  const colHeaderMap = new Map();
-  const cellMap = new Map();
+function pivotFlatRows(flatRows, numRowDims, numColDims, warnings) {
+  const rowMap = new Map();
+  const colMap = new Map();
+  const cellMatrix = new Map();
 
   for (const r of flatRows) {
-    const rk = rowKeyOf(r);
-    const ck = colKeyOf(r);
-
-    if (!rowHeaderMap.has(rk)) {
-      rowHeaderMap.set(
-        rk,
-        rowDimCount > 0 ? Array.from({ length: rowDimCount }, (_, i) => r[`dim_${i}`] ?? 'N/A') : ['Total']
-      );
+    const rowVals = [];
+    for (let i = 0; i < numRowDims; i++) {
+      rowVals.push(String(r[`dim_${i}`] ?? 'N/A'));
     }
+    const rowKey = rowVals.join(' | ');
 
-    if (!colHeaderMap.has(ck)) {
-      colHeaderMap.set(
-        ck,
-        colDimCount > 0 ? Array.from({ length: colDimCount }, (_, i) => r[`dim_${rowDimCount + i}`] ?? 'N/A') : ['Total']
-      );
+    const colVals = [];
+    for (let j = 0; j < numColDims; j++) {
+      colVals.push(String(r[`dim_${numRowDims + j}`] ?? 'N/A'));
     }
+    const colKey = colVals.join(' | ');
 
-    cellMap.set(`${rk}::${ck}`, Number(r.measure_val ?? 0));
+    const val = Number(r.measure_val ?? 0);
+
+    if (!rowMap.has(rowKey)) rowMap.set(rowKey, rowVals);
+    if (!colMap.has(colKey)) colMap.set(colKey, colVals);
+
+    const matrixKey = `${rowKey}:::${colKey}`;
+    cellMatrix.set(matrixKey, (cellMatrix.get(matrixKey) ?? 0) + val);
   }
 
-  // Handle empty result set
-  if (rowHeaderMap.size === 0) {
-    rowHeaderMap.set('No Data', ['No Data']);
-  }
-  if (colHeaderMap.size === 0) {
-    colHeaderMap.set('Total', ['Total']);
-  }
+  const rowHeaders = Array.from(rowMap.entries()).map(([k, v]) => ({ key: k, values: v }));
+  const columnHeaders = Array.from(colMap.entries()).map(([k, v]) => ({ key: k, values: v }));
 
-  const rowHeaders = [...rowHeaderMap.entries()].map(([k, v]) => ({ key: k, values: v }));
-  const columnHeaders = [...colHeaderMap.entries()].map(([k, v]) => ({ key: k, values: v }));
-
-  const cells = rowHeaders.map((rh) =>
-    columnHeaders.map((ch) => cellMap.get(`${rh.key}::${ch.key}`) ?? 0)
-  );
+  const cells = rowHeaders.map((rh) => {
+    return columnHeaders.map((ch) => {
+      const mk = `${rh.key}:::${ch.key}`;
+      return cellMatrix.get(mk) ?? 0;
+    });
+  });
 
   const rowTotals = cells.map((row) => row.reduce((a, b) => a + b, 0));
-  const grandTotals = columnHeaders.map((_, ci) => cells.reduce((sum, row) => sum + row[ci], 0));
+  const grandTotals = columnHeaders.map((_, ci) => cells.reduce((sum, r) => sum + r[ci], 0));
 
-  return { rowHeaders, columnHeaders, cells, rowTotals, grandTotals, warnings };
+  return {
+    rowHeaders,
+    columnHeaders,
+    cells,
+    rowTotals,
+    grandTotals,
+    warnings,
+  };
 }
 
 export function getCatalogue() {

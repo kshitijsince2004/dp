@@ -21,7 +21,8 @@ import {
   RotateCcw,
   Info,
   Shield,
-  Tag
+  Tag,
+  BookOpen
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
@@ -41,17 +42,19 @@ export default function ReportBuilder() {
     caseStatus: '',
     fromDate: '',
     toDate: '',
+    crimeCategory: 'ALL',
+    actCategory: 'ALL',
   });
 
   const [saveName, setSaveName] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [hoveredCell, setHoveredCell] = useState(null); // { rowIdx, colIdx }
+  const [hoveredCell, setHoveredCell] = useState(null);
 
   useEffect(() => {
     log.debug('page:mount', { route: '/reports/builder', userId: user?.id, role: user?.role });
   }, []);
 
-  // Fetch reportable fields catalogue
+  // Fetch reportable fields catalogue from DB
   const { data: fieldsData, isLoading: fieldsLoading } = useQuery({
     queryKey: ['warehouse-fields'],
     queryFn: async () => {
@@ -69,7 +72,7 @@ export default function ReportBuilder() {
     },
   });
 
-  // Fetch live pivot table preview
+  // Fetch live pivot table preview from DB
   const {
     data: pivotData,
     isFetching: pivotFetching,
@@ -184,7 +187,7 @@ export default function ReportBuilder() {
     setRows(['ps_name']);
     setColumns(['crime_head']);
     setMeasure('case_count');
-    setFilters({ recordType: '', caseStatus: '', fromDate: '', toDate: '' });
+    setFilters({ recordType: '', caseStatus: '', fromDate: '', toDate: '', crimeCategory: 'ALL', actCategory: 'ALL' });
     toast.success('Layout reset to default!');
   };
 
@@ -208,10 +211,10 @@ export default function ReportBuilder() {
               </div>
               <div>
                 <h1 className="text-2xl font-extrabold tracking-tight text-white font-display">
-                  Build Your Own Report &amp; Pivot Matrix
+                  Build Your Own Report &amp; Dynamic Pivot Engine
                 </h1>
                 <p className="text-slate-400 text-xs mt-0.5 font-medium">
-                  Executive dynamic reporting — arrange rows, columns, and measures with live matrix previews and Excel export.
+                  Dynamic database aggregation — filter by Heinous / Non-Heinous crime heads, Major / SLL Acts, and multi-level station scopes.
                 </p>
               </div>
             </div>
@@ -466,23 +469,39 @@ export default function ReportBuilder() {
               </div>
             </div>
 
-            {/* Filter Controls Bar */}
+            {/* Dynamic Categorization Filter Controls Bar */}
             <div className="pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Crime Head Filter (Heinous vs Non-Heinous vs All) */}
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  Record Type
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                  <Tag size={10} className="text-amber-400" />
+                  <span>Crime Head Scope</span>
                 </label>
                 <select
-                  value={filters.recordType}
-                  onChange={(e) => setFilters({ ...filters, recordType: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-semibold outline-none focus:border-emerald-500 cursor-pointer"
+                  value={filters.crimeCategory}
+                  onChange={(e) => setFilters({ ...filters, crimeCategory: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-bold outline-none focus:border-emerald-500 cursor-pointer"
                 >
-                  <option value="">All Record Types</option>
-                  <option value="CASE">FIR Master (CASE)</option>
-                  <option value="ARREST">Arrest Master (ARREST)</option>
-                  <option value="PCR_CALL">PCR Call Log (PCR_CALL)</option>
-                  <option value="MISSING">Missing Persons (MISSING)</option>
-                  <option value="UIDB">UIDB Master (UIDB)</option>
+                  <option value="ALL">All Crime Heads (Heinous → Non-Heinous → Other)</option>
+                  <option value="HEINOUS">Only Heinous Cases (Murder, Dacoity, Robbery, Rape, etc.)</option>
+                  <option value="NON_HEINOUS">Only Non-Heinous Cases (Theft, Hurt, Burglary, Cheating, etc.)</option>
+                </select>
+              </div>
+
+              {/* Act & Section Filter (Major vs SLL vs All) */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                  <BookOpen size={10} className="text-indigo-400" />
+                  <span>Acts &amp; Sections Filter</span>
+                </label>
+                <select
+                  value={filters.actCategory}
+                  onChange={(e) => setFilters({ ...filters, actCategory: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-indigo-300 font-bold outline-none focus:border-emerald-500 cursor-pointer"
+                >
+                  <option value="ALL">All Acts &amp; Sections (Major + Special/Local Laws)</option>
+                  <option value="MAJOR">Only Major Acts (BNS / IPC / BNSS)</option>
+                  <option value="SLL">Only Special &amp; Local Laws (SLL / Excise / NDPS / Arms / POCSO)</option>
                 </select>
               </div>
 
@@ -505,24 +524,20 @@ export default function ReportBuilder() {
 
               <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  From Date
+                  Record Type
                 </label>
-                <DateInput
-                  value={filters.fromDate}
-                  onChange={(val) => setFilters({ ...filters, fromDate: val })}
-                  inputClassName="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-semibold outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  To Date
-                </label>
-                <DateInput
-                  value={filters.toDate}
-                  onChange={(val) => setFilters({ ...filters, toDate: val })}
-                  inputClassName="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-semibold outline-none focus:border-emerald-500"
-                />
+                <select
+                  value={filters.recordType}
+                  onChange={(e) => setFilters({ ...filters, recordType: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-semibold outline-none focus:border-emerald-500 cursor-pointer"
+                >
+                  <option value="">All Record Types</option>
+                  <option value="CASE">FIR Master (CASE)</option>
+                  <option value="ARREST">Arrest Master (ARREST)</option>
+                  <option value="PCR_CALL">PCR Call Log (PCR_CALL)</option>
+                  <option value="MISSING">Missing Persons (MISSING)</option>
+                  <option value="UIDB">UIDB Master (UIDB)</option>
+                </select>
               </div>
             </div>
           </div>
@@ -538,14 +553,26 @@ export default function ReportBuilder() {
                   <span><strong className="text-white">{pivotData.columnHeaders?.length || 0}</strong> Columns</span>
                   <span><strong className="text-emerald-400 font-mono">{pivotData.grandTotals?.reduce((a, b) => a + b, 0).toLocaleString()}</strong> {measureMap[measure] || 'Total'}</span>
                 </div>
-                <span className="text-[10px] text-slate-500 font-mono">Live Aggregated Matrix</span>
+                <div className="flex items-center gap-2 text-[10px]">
+                  {filters.crimeCategory !== 'ALL' && (
+                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold">
+                      {filters.crimeCategory}
+                    </span>
+                  )}
+                  {filters.actCategory !== 'ALL' && (
+                    <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded font-bold">
+                      {filters.actCategory}
+                    </span>
+                  )}
+                  <span className="text-slate-500 font-mono">Dynamic DB Query</span>
+                </div>
               </div>
             )}
 
             {pivotFetching && (
               <div className="p-12 text-center text-slate-400 text-xs font-semibold flex flex-col items-center justify-center gap-3">
                 <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                <span>Processing ad-hoc 2D matrix aggregation...</span>
+                <span>Processing dynamic database matrix aggregation...</span>
               </div>
             )}
 
@@ -656,7 +683,7 @@ export default function ReportBuilder() {
                 type="text"
                 value={saveName}
                 onChange={(e) => setSaveName(e.target.value)}
-                placeholder="e.g. Monthly Crime Breakdown by PS"
+                placeholder="e.g. Monthly Heinous Crimes by PS"
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-500 font-semibold"
               />
             </div>
