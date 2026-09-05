@@ -7,18 +7,6 @@ echo     PHAROS Application Startup Script
 echo ===================================================
 echo.
 
-:: ── Step 0: Free lingering node ports (3000 & 5173) ─────────────────────────
-echo [0/6] Cleaning up previous application port locks...
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING 2^>nul') do (
-    echo  Freeing port 3000 (PID %%a^)...
-    taskkill /f /pid %%a >nul 2>&1
-)
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :5173 ^| findstr LISTENING 2^>nul') do (
-    echo  Freeing port 5173 (PID %%a^)...
-    taskkill /f /pid %%a >nul 2>&1
-)
-echo.
-
 :: ── Step 1: Ensure Docker daemon is reachable ──────────────────────────────
 echo [1/6] Checking Docker Desktop status...
 docker info >nul 2>&1
@@ -59,23 +47,25 @@ if %ERRORLEVEL% neq 0 (
     echo  [Warning] docker compose up encountered an issue. Checking containers...
 )
 
-:: Wait for PostgreSQL port 5435 to accept connections
-echo  Waiting for database readiness on port 5435...
+:: Wait for PostgreSQL database readiness smoothly via container health check or port 5435
+echo  Waiting for database container readiness...
 set /a _dbtries=0
 
 :waitdb
+docker compose exec -T db pg_isready -U postgres >nul 2>&1
+if %ERRORLEVEL% equ 0 goto dbready
 netstat -aon 2>nul | findstr :5435 | findstr LISTENING >nul 2>&1
 if %ERRORLEVEL% equ 0 goto dbready
 set /a _dbtries+=1
 if !_dbtries! geq 15 (
-    echo  [Warning] Port 5435 not yet detected as listening; proceeding with migrations...
+    echo  [Notice] Proceeding with database setup...
     goto dbready
 )
 ping 127.0.0.1 -n 3 >nul
 goto waitdb
 
 :dbready
-echo  [OK] Database port is ready.
+echo  [OK] Database service is ready.
 echo.
 
 echo [2/6] Verifying backend and frontend dependencies...
@@ -124,9 +114,6 @@ cd /d %~dp0
 echo.
 
 echo [6/6] Launching PHAROS Backend API...
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING 2^>nul') do (
-    taskkill /f /pid %%a >nul 2>&1
-)
 start "PHAROS Backend" cmd /k "cd /d %~dp0backend && npm run dev"
 echo  [OK] Backend launched on http://localhost:3000
 echo.
