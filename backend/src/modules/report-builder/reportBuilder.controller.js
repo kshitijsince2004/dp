@@ -49,53 +49,41 @@ const userRole = (req) => req.user?.role || 'HC';
  */
 async function writeAuditLog(entry) {
   try {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let userIdVal = entry.user_id;
+    let validUser = false;
+    if (userIdVal && typeof userIdVal === 'string' && UUID_RE.test(userIdVal)) {
+      const u = await db('users').where({ id: userIdVal }).first();
+      if (u) validUser = true;
+    }
+    if (!validUser) {
+      const fallback = await db('users').select('id').first();
+      userIdVal = fallback ? fallback.id : null;
+    }
+
+    let validJobId = null;
+    if (entry.job_id && typeof entry.job_id === 'string' && UUID_RE.test(entry.job_id)) {
+      const jobRow = await db('report_jobs').where({ id: entry.job_id }).first();
+      if (jobRow) validJobId = entry.job_id;
+    }
+
     await db('report_builder_audit').insert({
       id: uuidv4(),
-      user_id: entry.user_id,
-      user_role: entry.user_role,
-      run_type: entry.run_type,
-      table_spec: typeof entry.table_spec === 'string' ? entry.table_spec : JSON.stringify(entry.table_spec),
-      fields_spec: typeof entry.fields_spec === 'string' ? entry.fields_spec : JSON.stringify(entry.fields_spec || []),
-      filter_spec: typeof entry.filter_spec === 'string' ? entry.filter_spec : JSON.stringify(entry.filter_spec || {}),
+      user_id: userIdVal,
+      user_role: entry.user_role || 'HC',
+      run_type: entry.run_type || 'QUERY',
+      table_spec: JSON.stringify(entry.table_spec || ''),
+      fields_spec: JSON.stringify(entry.fields_spec || []),
+      filter_spec: JSON.stringify(entry.filter_spec || {}),
       format: entry.format || null,
       row_count: entry.row_count || 0,
-      job_id: entry.job_id || null,
+      job_id: validJobId,
       ip_address: entry.ip_address || null,
       created_at: new Date().toISOString(),
     });
   } catch (err) {
     logger.warn(`[ReportBuilderAudit] Failed to write audit log: ${err.message}`);
   }
-}
-
-/**
- * Build flat column list for a selected fields array.
- * Returns array of { label, key } for CSV/Excel headers.
- */
-function buildColumnHeaders(fields, tables, userRoleStr) {
-  const headers = [];
-  const tablesToSearch = Array.isArray(tables) ? tables : [tables];
-
-  // System virtual fields
-  const systemFieldDefs = filterFieldsForRole(REPORTABLE_FIELDS._SYSTEM || [], userRoleStr);
-
-  for (const fieldRef of fields) {
-    const { field, table: fTable } = typeof fieldRef === 'string'
-      ? { field: fieldRef, table: tablesToSearch[0] }
-      : fieldRef;
-    const t = fTable || tablesToSearch[0];
-
-    if (field.startsWith('_')) {
-      const def = systemFieldDefs.find(f => f.key === field);
-      headers.push({ key: field, label: def ? def.label_en : field });
-    } else {
-      const tableDefs = filterFieldsForRole(REPORTABLE_FIELDS[t] || [], userRoleStr);
-      const def = tableDefs.find(f => f.key === field);
-      const colKey = tablesToSearch.length > 1 ? `${t}__${field}` : field;
-      headers.push({ key: colKey, label: def ? `${t}: ${def.label_en}` : `${t}: ${field}` });
-    }
-  }
-  return headers;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -149,9 +137,17 @@ export const getMetadata = async (req, res) => {
       join_on: def.join_on,
     }));
 
+    const { ROW_GRAIN_OPTIONS, SYSTEM_PRESET_SPECS } = await import('./reportableFields.config.js');
+
     return res.status(200).json({
       success: true,
-      data: { tables, joins, allowed_tables: ALLOWED_TABLES }
+      data: {
+        tables,
+        joins,
+        allowed_tables: ALLOWED_TABLES,
+        row_grain_options: ROW_GRAIN_OPTIONS,
+        preset_specs: SYSTEM_PRESET_SPECS,
+      }
     });
   } catch (err) {
     logger.error(`[ReportBuilder] getMetadata error: ${err.message}`);
@@ -170,7 +166,7 @@ export const runQuery = async (req, res) => {
     const role = userRole(req);
     const uid = userId(req);
     const jurisdictionQuery = req.jurisdictionQuery || {};
-    const ip = req.ip || req.headers['x-forwarded-for'] || null;
+    const ip = req.ip || req.headers?.['x-forwarded-for'] || null;
 
     // Quick validation before query
     const { ok, errors } = validateQuerySpec(spec, role);
@@ -217,7 +213,7 @@ export const startExport = async (req, res) => {
     const format = (spec.format || 'csv').toLowerCase();
     const role = userRole(req);
     const uid = userId(req);
-    const ip = req.ip || req.headers['x-forwarded-for'] || null;
+    const ip = req.ip || req.headers?.['x-forwarded-for'] || null;
 
     if (!['csv', 'xlsx', 'pdf'].includes(format)) {
       return res.status(400).json({ success: false, message: 'format must be csv, xlsx, or pdf' });
@@ -237,31 +233,44 @@ export const startExport = async (req, res) => {
     const fileName = `rb_${jobId}.${ext}`;
     const filePath = path.join(reportsDir, fileName);
 
-    const templateId = `BUILDER_${(spec.table || 'UNKNOWN')}`;
-    const templateExists = await db('report_templates').where({ id: templateId }).first();
-    if (!templateExists) {
+    const templateCode = `BUILDER_${(spec.table || 'UNKNOWN')}`;
+    let template = await db('report_templates').where({ code: templateCode }).first();
+    if (!template) {
+      const newId = uuidv4();
       await db('report_templates').insert({
-        id: templateId,
-        name_en: `Custom Report: ${spec.table || 'UNKNOWN'}`,
-        name_hi: `कस्टम रिपोर्ट: ${spec.table || 'UNKNOWN'}`,
-        applicable_record_types: JSON.stringify([spec.table || 'CASE']),
-        applicable_levels: JSON.stringify(['HQ']),
+        id: newId,
+        code: templateCode,
+        name: `Custom Report: ${spec.table || 'UNKNOWN'}`,
+        record_types: JSON.stringify([spec.table || 'CASE']),
+        levels: JSON.stringify(['HQ']),
         template_definition: JSON.stringify({}),
         output_formats: JSON.stringify(['CSV', 'EXCEL', 'PDF']),
         is_active: true,
-        created_by: uid || 'U_SA001',
       });
+      template = { id: newId };
     }
 
-    // Insert job record (reuse existing report_jobs table)
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let creatorId = uid;
+    let validCreator = false;
+    if (creatorId && typeof creatorId === 'string' && UUID_RE.test(creatorId)) {
+      const u = await db('users').where({ id: creatorId }).first();
+      if (u) validCreator = true;
+    }
+    if (!validCreator) {
+      const fallbackUser = await db('users').select('id').first();
+      creatorId = fallbackUser ? fallbackUser.id : null;
+    }
+
+    // Insert job record (reuse existing report_jobs table with valid UUIDs)
     await db('report_jobs').insert({
       id: jobId,
-      template_id: templateId,
+      template_id: template.id,
       filters: JSON.stringify({ spec }),
       format: format.toUpperCase(),
       status: 'PENDING',
       file_path: filePath,
-      created_by: uid,
+      created_by: creatorId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
@@ -274,7 +283,9 @@ export const startExport = async (req, res) => {
       } catch (err) {
         logger.error(`[ReportBuilderExport] Job ${jobId} failed: ${err.message}`);
         await db('report_jobs').where({ id: jobId }).update({
-          status: 'FAILED', updated_at: new Date().toISOString()
+          status: 'FAILED',
+          error_message: String(err.message || 'Export execution failed').slice(0, 1000),
+          updated_at: new Date().toISOString()
         });
       }
     });
@@ -289,11 +300,132 @@ export const startExport = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Async export job worker
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Build Form Section Column list for a selected fields array.
+ * Groups fields belonging to the same form section under ONE section column header,
+ * and formats all member field data strategically inside each cell.
+ */
+function buildSectionConsolidatedHeaders(fields, tables, userRoleStr, rowGrain = 'per_fir') {
+  const tablesToSearch = Array.isArray(tables) ? tables : [tables];
+  const systemFieldDefs = filterFieldsForRole(REPORTABLE_FIELDS._SYSTEM || [], userRoleStr);
+
+  const sectionGroupsMap = new Map(); // fullGroupKey -> { groupKey, label, isGroup, memberFields: [] }
+
+  for (const fieldRef of fields) {
+    const { field, table: fTable } = typeof fieldRef === 'string'
+      ? { field: fieldRef, table: tablesToSearch[0] }
+      : fieldRef;
+    const t = fTable || tablesToSearch[0];
+
+    if (field.startsWith('_')) {
+      const def = systemFieldDefs.find(f => f.key === field);
+      const label = def ? def.label_en : field;
+      sectionGroupsMap.set(`sys__${field}`, {
+        groupKey: field,
+        label: label,
+        isGroup: false,
+        memberFields: [{ colKey: field, label_en: label, key: field }]
+      });
+    } else {
+      const tableDefs = filterFieldsForRole(REPORTABLE_FIELDS[t] || [], userRoleStr);
+      const def = tableDefs.find(f => f.key === field);
+      const colKey = tablesToSearch.length > 1 ? `${t}__${field}` : field;
+
+      const groupKey = def?.group;
+
+      const isGrainSection = (
+        (rowGrain === 'per_accused' && (groupKey === 'accused' || groupKey?.startsWith('accused_') || field.startsWith('accused_'))) ||
+        (rowGrain === 'per_victim' && (groupKey === 'victim' || groupKey?.startsWith('victim_') || field.startsWith('victim_'))) ||
+        (rowGrain === 'per_property' && (groupKey === 'property_details' || field.startsWith('property_') || field.includes('value')))
+      );
+
+      if (groupKey && !isGrainSection) {
+        const fullGroupKey = `${t}.${groupKey}`;
+        const groupLabel = GROUP_LABELS[fullGroupKey]?.label_en || groupKey;
+
+        if (!sectionGroupsMap.has(fullGroupKey)) {
+          sectionGroupsMap.set(fullGroupKey, {
+            groupKey: fullGroupKey,
+            label: groupLabel,
+            isGroup: true,
+            memberFields: []
+          });
+        }
+        sectionGroupsMap.get(fullGroupKey).memberFields.push({
+          colKey,
+          key: field,
+          label_en: def ? def.label_en : field
+        });
+      } else {
+        const cleanLabel = def ? def.label_en : field;
+        sectionGroupsMap.set(`single__${colKey}`, {
+          groupKey: colKey,
+          label: cleanLabel,
+          isGroup: false,
+          memberFields: [{ colKey, key: field, label_en: cleanLabel }]
+        });
+      }
+    }
+  }
+
+  return Array.from(sectionGroupsMap.values());
+}
+
+/** Strategically format all member field data inside a section column cell. */
+function formatSectionCell(row, groupDef, rowGrain = 'per_fir') {
+  if (!groupDef.isGroup) {
+    const member = groupDef.memberFields[0];
+    const val = row[member.colKey];
+    if (val === null || val === undefined || val === '') return '—';
+    if (typeof val === 'object') {
+      try { return JSON.stringify(val); } catch { return String(val); }
+    }
+    return String(val);
+  }
+
+  const fullKey = groupDef.groupKey || '';
+  if (fullKey.includes('accused') && row._compiled_accused && rowGrain !== 'per_accused') {
+    return row._compiled_accused;
+  }
+  if (fullKey.includes('victim') && row._compiled_victim && rowGrain !== 'per_victim') {
+    return row._compiled_victim;
+  }
+  if (fullKey.includes('property') && row._compiled_property && rowGrain !== 'per_property') {
+    return row._compiled_property;
+  }
+
+  // Address Compilation Helper: merges micro-address components into a single line
+  const addressParts = [];
+  const standardParts = [];
+
+  for (const member of groupDef.memberFields) {
+    const val = row[member.colKey];
+    if (val !== null && val !== undefined && val !== '' && val !== 'N/A' && val !== 'NA') {
+      const displayVal = typeof val === 'object' ? JSON.stringify(val) : String(val);
+
+      // Check if this is a micro-address field (house no, street, colony, city, landmark, district, pincode, state)
+      const keyLower = member.key.toLowerCase();
+      if (keyLower.includes('house_no') || keyLower.includes('street') || keyLower.includes('colony') ||
+          keyLower.includes('landmark') || keyLower.includes('city_town') || keyLower.includes('tehsil') ||
+          keyLower.includes('present_address') || keyLower.includes('pincode')) {
+        addressParts.push(displayVal);
+      } else {
+        standardParts.push(`${member.label_en}: ${displayVal}`);
+      }
+    }
+  }
+
+  const parts = [];
+  if (addressParts.length > 0) {
+    parts.push(`Address: ${addressParts.join(', ')}`);
+  }
+  parts.push(...standardParts);
+
+  if (parts.length === 0) return '—';
+  return parts.join(' \n'); // Separated strategically with newlines
+}
+
 async function runExportJob(jobId, spec, jurisdictionQuery, role, format, filePath, uid, ip) {
-  // Fetch all rows (no pagination for export — but capped at 50k for safety)
   const exportSpec = { ...spec, page: 1, pageSize: 50000 };
 
   let result;
@@ -305,21 +437,21 @@ async function runExportJob(jobId, spec, jurisdictionQuery, role, format, filePa
 
   const { rows } = result;
   const tables = spec.join ? [spec.table, spec.join] : [spec.table];
-  const headers = buildColumnHeaders(spec.fields || [], tables, role);
+  const rowGrain = spec.row_grain || 'per_fir';
+  const sectionHeaders = buildSectionConsolidatedHeaders(spec.fields || [], tables, role, rowGrain);
 
   if (format === 'csv') {
-    await generateCsv(rows, headers, filePath);
+    await generateCsv(rows, sectionHeaders, filePath, rowGrain);
   } else if (format === 'xlsx') {
-    await generateXlsx(rows, headers, spec, filePath);
+    await generateXlsx(rows, sectionHeaders, spec, filePath, rowGrain);
   } else if (format === 'pdf') {
-    await generatePdf(rows, headers, spec, filePath);
+    await generatePdf(rows, sectionHeaders, spec, filePath);
   }
 
   await db('report_jobs').where({ id: jobId }).update({
     status: 'READY', updated_at: new Date().toISOString()
   });
 
-  // Audit log
   await writeAuditLog({
     user_id: uid, user_role: role, run_type: 'EXPORT',
     table_spec: spec.join ? `${spec.table}+${spec.join}` : spec.table,
@@ -331,54 +463,91 @@ async function runExportJob(jobId, spec, jurisdictionQuery, role, format, filePa
   logger.info(`[ReportBuilderExport] Job ${jobId} complete — ${rows.length} rows, format=${format}`);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// File generators
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function generateCsv(rows, headers, filePath) {
-  const colKeys = headers.map(h => h.key);
-  const colLabels = headers.map(h => h.label);
+async function generateCsv(rows, sectionHeaders, filePath, rowGrain = 'per_fir') {
+  const colLabels = sectionHeaders.map(h => h.label);
   const lines = [colLabels.map(l => `"${String(l).replace(/"/g, '""')}"`).join(',')];
   for (const row of rows) {
-    const cells = colKeys.map(k => {
-      const v = row[k] ?? '';
-      return `"${String(v).replace(/"/g, '""')}"`;
+    const cells = sectionHeaders.map(groupDef => {
+      const formatted = formatSectionCell(row, groupDef, rowGrain);
+      return `"${formatted.replace(/"/g, '""')}"`;
     });
     lines.push(cells.join(','));
   }
   fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
 }
 
-async function generateXlsx(rows, headers, spec, filePath) {
+async function generateXlsx(rows, sectionHeaders, spec, filePath, rowGrain = 'per_fir') {
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'PHAROS Report Builder';
+  wb.creator = 'PHAROS Executive Report Command Center';
   wb.created = new Date();
-  const ws = wb.addWorksheet('Report');
+  const ws = wb.addWorksheet('Form Section Register Report');
 
-  // Meta rows
-  ws.addRow([`PHAROS CUSTOM REPORT — ${spec.table}${spec.join ? ` + ${spec.join}` : ''}`]);
-  ws.addRow([`Generated: ${new Date().toLocaleString()}`]);
-  ws.addRow([`Filters: ${spec.filters ? JSON.stringify(spec.filters) : 'None'}`]);
-  ws.addRow([]);
+  // Title Block Header
+  const titleRow = ws.addRow([`PHAROS OFFICIAL REGISTER REPORT — ${spec.table}${spec.join ? ` + ${spec.join}` : ''} [Grain: ${rowGrain}]`]);
+  titleRow.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+  titleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+  ws.mergeCells(1, 1, 1, Math.max(sectionHeaders.length, 4));
 
-  // Header row
-  const headerRow = ws.addRow(headers.map(h => h.label));
-  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A3C6B' } };
+  const metaRow = ws.addRow([`Generated: ${new Date().toLocaleString()} | Total Records: ${rows.length} | Row Grain: ${rowGrain}`]);
+  metaRow.font = { italic: true, size: 10, color: { argb: 'FF475569' } };
+
+  ws.addRow([]); // Spacing
+
+  // Form Section Column Header Row
+  const headerRow = ws.addRow(sectionHeaders.map(h => h.label));
+  headerRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0284C7' } }; // Vivid Blue Header
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  headerRow.height = 32;
+
+  // Thin Border Style for data preservation
+  const thinBorder = {
+    top: { style: 'thin', color: { argb: 'CBD5E1' } },
+    left: { style: 'thin', color: { argb: 'CBD5E1' } },
+    bottom: { style: 'thin', color: { argb: 'CBD5E1' } },
+    right: { style: 'thin', color: { argb: 'CBD5E1' } },
+  };
 
   // Data rows
+  let rIdx = 0;
   for (const row of rows) {
-    ws.addRow(headers.map(h => row[h.key] ?? ''));
+    const rowValues = sectionHeaders.map(groupDef => formatSectionCell(row, groupDef, rowGrain));
+
+    const addedRow = ws.addRow(rowValues);
+    
+    // Auto-calculate line count for height padding
+    let maxLinesInRow = 1;
+    rowValues.forEach(val => {
+      const lineCount = String(val).split('\n').length;
+      if (lineCount > maxLinesInRow) maxLinesInRow = lineCount;
+    });
+    addedRow.height = Math.max(24, maxLinesInRow * 18);
+
+    const isEven = rIdx % 2 === 0;
+    const bgArgb = isEven ? 'FFFFFFFF' : 'FFF8FAFC';
+
+    addedRow.eachCell((cell) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgArgb } };
+      cell.border = thinBorder;
+      cell.alignment = { vertical: 'top', wrapText: true };
+      cell.font = { size: 10, color: { argb: 'FF1E293B' } };
+    });
+
+    rIdx++;
   }
 
-  // Auto-width
-  ws.columns.forEach(col => {
-    let maxLen = 12;
-    col.eachCell({ includeEmpty: false }, cell => {
-      const len = cell.value ? String(cell.value).length : 0;
-      if (len > maxLen) maxLen = len;
+  // Strategic Auto-Column Width Calculation
+  ws.columns.forEach((col, cIdx) => {
+    if (cIdx >= sectionHeaders.length) return;
+    let maxLen = sectionHeaders[cIdx] ? sectionHeaders[cIdx].label.length : 20;
+    col.eachCell({ includeEmpty: false }, (cell, rowNumber) => {
+      if (rowNumber <= 3) return; // Skip title block
+      const cellLines = String(cell.value || '').split('\n');
+      cellLines.forEach(l => {
+        if (l.length > maxLen) maxLen = l.length;
+      });
     });
-    col.width = Math.min(maxLen + 2, 60);
+    col.width = Math.max(Math.min(maxLen + 4, 75), 24);
   });
 
   await wb.xlsx.writeFile(filePath);
@@ -681,6 +850,15 @@ export const getQuickAccessReports = async (req, res) => {
       return !!r.is_shared;
     });
 
+    // Deduplicate by name to prevent duplicate preset tiles
+    const uniqueMap = new Map();
+    for (const r of filtered) {
+      if (!uniqueMap.has(r.name)) {
+        uniqueMap.set(r.name, r);
+      }
+    }
+    const uniqueList = Array.from(uniqueMap.values());
+
     // Get usage counts from audit table
     const usageCounts = await db('report_builder_audit')
       .where('user_id', uid)
@@ -692,7 +870,7 @@ export const getQuickAccessReports = async (req, res) => {
       usageCounts.map((u) => [u.table_spec, parseInt(u.runs || 0, 10)])
     );
 
-    const enriched = filtered.map((r) => ({
+    const enriched = uniqueList.map((r) => ({
       id: r.id,
       name: r.name,
       description: r.description,

@@ -1,0 +1,7 @@
+cases_missing_fir_details: 0
+cases_missing_primary_offence: 5
+arrests_missing_arrest_details: 0
+offences_with_unresolvable_local_head: 0
+offences_with_unresolvable_section: 39
+persons_missing_location: 0
+arrests_missing_case_link: 17028

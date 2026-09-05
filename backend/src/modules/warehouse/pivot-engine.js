@@ -1,16 +1,59 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import db from '../../config/db.js';
 import { logger } from '../../utils/logger.js';
 
-// Load reportable fields catalogue
-const cataloguePath = path.join(process.cwd(), 'config', 'warehouse', 'reportable-fields.json');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load reportable fields catalogue — resolved relative to this file, with cwd fallbacks
+const cataloguePath = [
+  path.resolve(__dirname, '../../../config/warehouse/reportable-fields.json'),
+  path.resolve(process.cwd(), 'backend/config/warehouse/reportable-fields.json'),
+  path.resolve(process.cwd(), 'config/warehouse/reportable-fields.json'),
+].find((p) => fs.existsSync(p));
+
+if (!cataloguePath) {
+  throw new Error('Could not locate config/warehouse/reportable-fields.json');
+}
+
 const fieldsCatalogue = JSON.parse(fs.readFileSync(cataloguePath, 'utf8'));
+
+/**
+ * Humanise a raw dimension value for display headers:
+ * ATT_TO_MURDER -> "Attempt to Murder", HEINOUS -> "Heinous Offences", etc.
+ */
+function formatLabel(val) {
+  if (!val || val === 'N/A' || val === 'UNCLASSIFIED') return 'General / Unclassified';
+  if (val === 'ATT_TO_MURDER') return 'Attempt to Murder';
+  if (val === 'KID_FOR_RANSOM') return 'Kidnapping for Ransom';
+  if (val === 'HEINOUS') return 'Heinous Offences';
+  if (val === 'NON_HEINOUS') return 'Non-Heinous Offences';
+  if (val === 'OTHER') return 'Other Offences';
+  if (val === 'MAJOR') return 'Major Act (IPC / BNS / CrPC / BNSS)';
+  if (val === 'SLL') return 'Special & Local Law';
+  if (val === 'PCR_CALL') return 'PCR Call';
+  if (val === 'UIDB') return 'UIDB';
+  if (val === 'CASE') return 'FIR';
+  if (val.includes('_')) {
+    return val.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  }
+  return val;
+}
 
 const DIM_MAP = Object.fromEntries(fieldsCatalogue.dimensions.map((d) => [d.key, d]));
 const MEASURE_MAP = Object.fromEntries(fieldsCatalogue.measures.map((m) => [m.key, m]));
 
 const MAX_ROWS = 5000;
+
+// Dimensions that introduce a 1-to-many join off `records`. Combining any of
+// these with an additive (SUM / COUNT(*)) measure multiplies the measure by the
+// fan-out. COUNT(DISTINCT r.id)-style measures are unaffected, so only the
+// property measures (flagged is_property_measure) are guarded.
+const FANOUT_DIMENSIONS = new Set([
+  'gender', 'social_category', 'education', 'financial_status', // -> persons p
+  'act_name', 'act_class', // -> record_offences ro (up to 4 per record)
+]);
 
 /**
  * runPivotReport({ rows, columns, measure, filters, scopeType, scopeId })
@@ -37,6 +80,18 @@ export async function runPivotReport({
     throw new Error(`Invalid or unapproved measure key: ${measure}`);
   }
 
+  // Fan-out guard: an additive property measure must not be combined with a
+  // dimension that fans records out, or its SUM/COUNT is multiplied.
+  if (measureDef.is_property_measure) {
+    const bad = allDims.filter((k) => FANOUT_DIMENSIONS.has(k));
+    if (bad.length > 0) {
+      throw new Error(
+        `Measure "${measure}" cannot be combined with dimension(s) [${bad.join(', ')}] — ` +
+        `it would multiply property totals by the number of persons/offences per record.`
+      );
+    }
+  }
+
   // Handle zero-dimension pivot (e.g. single aggregate summary)
   if (allDims.length === 0) {
     return runSingleSummary({ measureDef, filters, scopeType, scopeId });
@@ -59,6 +114,9 @@ export async function runPivotReport({
 
   if (scopeType === 'PS' && scopeId) {
     whereClauses.push('r.ps_id = :scopeId');
+    params.scopeId = scopeId;
+  } else if (scopeType === 'SUB_DIV' && scopeId) {
+    whereClauses.push('r.sub_div_id = :scopeId');
     params.scopeId = scopeId;
   } else if (scopeType === 'DISTRICT' && scopeId) {
     whereClauses.push('r.district_id = :scopeId');
@@ -101,26 +159,25 @@ export async function runPivotReport({
     }
   }
 
-  // 5. Dynamic Crime Head Category Filter (HEINOUS, NON_HEINOUS, ALL)
+  // 5. Crime category filter — authoritative source is ref.local_heads.crime_category
+  //    only (HEINOUS / NON_HEINOUS / OTHER). No second hardcoded canonical_code list.
+  //    Dual join so ARREST records resolve their own head.
   if (filters.crimeCategory && filters.crimeCategory !== 'ALL') {
     joins.add('fir_details fd ON fd.record_id = r.id');
-    joins.add('ref.local_heads lh ON lh.local_head_cd = fd.local_head_id');
-    if (filters.crimeCategory === 'HEINOUS') {
-      whereClauses.push("(lh.crime_category = 'HEINOUS' OR lh.canonical_code IN ('MURDER', 'DACOITY', 'ROBBERY', 'RAPE', 'ATT_TO_MURDER', 'RIOT', 'KID_FOR_RANSOM'))");
-    } else if (filters.crimeCategory === 'NON_HEINOUS') {
-      whereClauses.push("(lh.crime_category = 'NON_HEINOUS' OR (lh.crime_category <> 'HEINOUS' AND lh.canonical_code NOT IN ('MURDER', 'DACOITY', 'ROBBERY', 'RAPE', 'ATT_TO_MURDER', 'RIOT', 'KID_FOR_RANSOM')))");
-    }
+    joins.add('arrest_details ad ON ad.record_id = r.id');
+    joins.add('ref.local_heads lh ON lh.local_head_cd = COALESCE(fd.local_head_id, ad.local_head_id)');
+    whereClauses.push('lh.crime_category = :crimeCategory');
+    params.crimeCategory = filters.crimeCategory;
   }
 
-  // 6. Dynamic Act & Section Category Filter (MAJOR, SLL, ALL)
+  // 6. Act classification filter — MAJOR vs SLL from the seeded ref.act_classification
+  //    map (see migration 20260904000001). No runtime ILIKE, no missing columns.
   if (filters.actCategory && filters.actCategory !== 'ALL') {
-    joins.add('record_offences ro ON ro.record_id = r.id AND ro.sort_order = 0');
-    joins.add('ref.acts a ON a.act_cd = ro.act_id');
-    if (filters.actCategory === 'MAJOR') {
-      whereClauses.push("(a.is_major = true OR UPPER(a.act_short) IN ('BNS', 'IPC', 'BNSS', 'CRPC'))");
-    } else if (filters.actCategory === 'SLL') {
-      whereClauses.push("(a.is_major = false OR UPPER(a.act_short) NOT IN ('BNS', 'IPC', 'BNSS', 'CRPC'))");
-    }
+    joins.add('record_offences ro ON ro.record_id = r.id AND ro.is_primary = true');
+    joins.add('ref.act_classification acl ON acl.act_cd = ro.act_id');
+    whereClauses.push('COALESCE(acl.class, :sllDefault) = :actCategory');
+    params.sllDefault = 'SLL';
+    params.actCategory = filters.actCategory;
   }
 
   const joinClause = [...joins]
@@ -165,6 +222,9 @@ function runSingleSummary({ measureDef, filters, scopeType, scopeId }) {
   if (scopeType === 'PS' && scopeId) {
     whereClauses.push('r.ps_id = :scopeId');
     params.scopeId = scopeId;
+  } else if (scopeType === 'SUB_DIV' && scopeId) {
+    whereClauses.push('r.sub_div_id = :scopeId');
+    params.scopeId = scopeId;
   } else if (scopeType === 'DISTRICT' && scopeId) {
     whereClauses.push('r.district_id = :scopeId');
     params.scopeId = scopeId;
@@ -199,13 +259,13 @@ function pivotFlatRows(flatRows, numRowDims, numColDims, warnings) {
   for (const r of flatRows) {
     const rowVals = [];
     for (let i = 0; i < numRowDims; i++) {
-      rowVals.push(String(r[`dim_${i}`] ?? 'N/A'));
+      rowVals.push(formatLabel(String(r[`dim_${i}`] ?? 'N/A')));
     }
     const rowKey = rowVals.join(' | ');
 
     const colVals = [];
     for (let j = 0; j < numColDims; j++) {
-      colVals.push(String(r[`dim_${numRowDims + j}`] ?? 'N/A'));
+      colVals.push(formatLabel(String(r[`dim_${numRowDims + j}`] ?? 'N/A')));
     }
     const colKey = colVals.join(' | ');
 

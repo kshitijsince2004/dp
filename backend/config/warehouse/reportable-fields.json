@@ -1,4 +1,5 @@
 {
+  "_note": "Warehouse pivot allowlist. Crime head/category resolve via canonical_code and dual fir_details/arrest_details join so ARREST records use their own head. Property measures are pre-scoped to record_properties and MUST NOT be combined with persons- or record_offences-derived dimensions (pivot-engine enforces this). Date anchor = COALESCE(fd.fir_date, r.record_date).",
   "dimensions": [
     {
       "key": "ps_name",
@@ -21,17 +22,39 @@
       "sql_expr": "COALESCE(lh.canonical_code, 'UNCLASSIFIED')",
       "requires_join": [
         "fir_details fd ON fd.record_id = r.id",
-        "ref.local_heads lh ON lh.local_head_cd = fd.local_head_id"
+        "arrest_details ad ON ad.record_id = r.id",
+        "ref.local_heads lh ON lh.local_head_cd = COALESCE(fd.local_head_id, ad.local_head_id)"
+      ]
+    },
+    {
+      "key": "crime_category",
+      "label": "Crime Category (Heinous / Non-Heinous / Other)",
+      "data_type": "category",
+      "sql_expr": "COALESCE(lh.crime_category, 'OTHER')",
+      "requires_join": [
+        "fir_details fd ON fd.record_id = r.id",
+        "arrest_details ad ON ad.record_id = r.id",
+        "ref.local_heads lh ON lh.local_head_cd = COALESCE(fd.local_head_id, ad.local_head_id)"
       ]
     },
     {
       "key": "act_name",
-      "label": "Act",
+      "label": "Act (primary offence)",
       "data_type": "text",
-      "sql_expr": "COALESCE(a.act_short, a.act_name, 'OTHER')",
+      "sql_expr": "COALESCE(a.act_long, ro.other_act_name, 'OTHER')",
       "requires_join": [
-        "record_offences ro ON ro.record_id = r.id AND ro.sort_order = 0",
+        "record_offences ro ON ro.record_id = r.id AND ro.is_primary = true",
         "ref.acts a ON a.act_cd = ro.act_id"
+      ]
+    },
+    {
+      "key": "act_class",
+      "label": "Act Classification (Major / Special & Local Law)",
+      "data_type": "category",
+      "sql_expr": "COALESCE(acl.class, 'SLL')",
+      "requires_join": [
+        "record_offences ro ON ro.record_id = r.id AND ro.is_primary = true",
+        "ref.act_classification acl ON acl.act_cd = ro.act_id"
       ]
     },
     {
@@ -75,6 +98,16 @@
       "requires_join": ["arrest_details ad ON ad.record_id = r.id"]
     },
     {
+      "key": "property_category",
+      "label": "Property Category",
+      "data_type": "category",
+      "sql_expr": "COALESCE(pc.code_type, 'UNCLASSIFIED')",
+      "requires_join": [
+        "record_properties rp_cat ON rp_cat.record_id = r.id",
+        "ref.property_categories pc ON pc.parent_cd = rp_cat.major_category_id"
+      ]
+    },
+    {
       "key": "gender",
       "label": "Gender",
       "data_type": "category",
@@ -105,8 +138,13 @@
   ],
   "measures": [
     {
+      "key": "record_count",
+      "label": "Number of Records",
+      "sql_expr": "COUNT(DISTINCT r.id)"
+    },
+    {
       "key": "case_count",
-      "label": "Number of Cases",
+      "label": "Number of Cases (FIR)",
       "sql_expr": "COUNT(DISTINCT r.id)",
       "default_for_record_type": "CASE"
     },
@@ -123,16 +161,32 @@
       "requires_join": ["persons p ON p.record_id = r.id"]
     },
     {
+      "key": "property_stolen_count",
+      "label": "Stolen Property Items",
+      "sql_expr": "COUNT(rp_cat.id) FILTER (WHERE rp_cat.status = 'STOLEN')",
+      "is_property_measure": true,
+      "requires_join": ["record_properties rp_cat ON rp_cat.record_id = r.id"]
+    },
+    {
+      "key": "property_recovered_count",
+      "label": "Recovered Property Items",
+      "sql_expr": "COUNT(rp_cat.id) FILTER (WHERE rp_cat.recovery_date IS NOT NULL OR rp_cat.status = 'RECOVERED')",
+      "is_property_measure": true,
+      "requires_join": ["record_properties rp_cat ON rp_cat.record_id = r.id"]
+    },
+    {
       "key": "property_value_stolen",
       "label": "Value of Property Stolen (₹)",
-      "sql_expr": "COALESCE(SUM(CASE WHEN rp.status = 'STOLEN' THEN rp.estimated_value ELSE 0 END), 0)",
-      "requires_join": ["record_properties rp ON rp.record_id = r.id"]
+      "sql_expr": "COALESCE(SUM(rp_cat.estimated_value) FILTER (WHERE rp_cat.status = 'STOLEN'), 0)",
+      "is_property_measure": true,
+      "requires_join": ["record_properties rp_cat ON rp_cat.record_id = r.id"]
     },
     {
       "key": "property_value_recovered",
       "label": "Value of Property Recovered (₹)",
-      "sql_expr": "COALESCE(SUM(CASE WHEN rp.status = 'RECOVERED' THEN rp.estimated_value ELSE 0 END), 0)",
-      "requires_join": ["record_properties rp ON rp.record_id = r.id"]
+      "sql_expr": "COALESCE(SUM(rp_cat.estimated_value) FILTER (WHERE rp_cat.recovery_date IS NOT NULL OR rp_cat.status = 'RECOVERED'), 0)",
+      "is_property_measure": true,
+      "requires_join": ["record_properties rp_cat ON rp_cat.record_id = r.id"]
     }
   ]
 }

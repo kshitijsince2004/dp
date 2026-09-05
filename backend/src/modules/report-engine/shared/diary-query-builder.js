@@ -5,16 +5,25 @@
 
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import db from '../../../config/db.js';
 import { buildFnDateWindows, parseToISO } from './date-windows.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load status map and section groups once at module init
 let caseStatusMap = {};
 let sectionGroups = {};
 
 try {
-  const statusMapPath = path.resolve(process.cwd(), 'config/diary/case-status-map.json');
-  if (fs.existsSync(statusMapPath)) {
+  const statusMapPath = [
+    path.resolve(__dirname, '../../../../config/diary/case-status-map.json'),
+    path.resolve(process.cwd(), 'backend/config/diary/case-status-map.json'),
+    path.resolve(process.cwd(), 'config/diary/case-status-map.json'),
+  ].find(p => fs.existsSync(p));
+
+  if (statusMapPath) {
     caseStatusMap = JSON.parse(fs.readFileSync(statusMapPath, 'utf8'));
   }
 } catch (e) {
@@ -22,8 +31,13 @@ try {
 }
 
 try {
-  const sectionGroupsPath = path.resolve(process.cwd(), 'config/sections/section-groups.json');
-  if (fs.existsSync(sectionGroupsPath)) {
+  const sectionGroupsPath = [
+    path.resolve(__dirname, '../../../../config/sections/section-groups.json'),
+    path.resolve(process.cwd(), 'backend/config/sections/section-groups.json'),
+    path.resolve(process.cwd(), 'config/sections/section-groups.json'),
+  ].find(p => fs.existsSync(p));
+
+  if (sectionGroupsPath) {
     sectionGroups = JSON.parse(fs.readFileSync(sectionGroupsPath, 'utf8'));
   }
 } catch (e) {

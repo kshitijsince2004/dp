@@ -824,7 +824,17 @@ def _enrich_records(records):
                 d['case_status']       = row['case_status'] or ''
                 d['custody_status']    = row['custody_status'] or ''
                 d['status']            = row['custody_status'] or ''  # pcjcbail in sheet 07
-                d['recovery']          = row['recovery'] or 'No'
+                # arresting officer name/rank columns were selected but never mapped,
+                # leaving every arrested-sheet "Name of IO" blank. Assign here; the
+                # persons loop (role=IO) still overrides via its "not in d" guard.
+                d['io_name']           = row['arresting_officer_name'] or d.get('io_name') or ''
+                d['io_rank']           = row['arresting_officer_rank'] or d.get('io_rank') or ''
+                # Some imported rows carry a literal "undefined: ..." prefix from a
+                # JS-side string concat bug — strip it so it doesn't reach the sheet.
+                _rec = (row['recovery'] or '').strip()
+                if _rec.lower().startswith('undefined:'):
+                    _rec = _rec.split(':', 1)[1].strip()
+                d['recovery']          = _rec or 'No'
                 d['integrated_pi']            = yn(row['integrated_pi'])
                 d['integrated_rate_picked']   = yn(row['integrated_pi'])  # sheet 10 alias
                 d['group_patrolling']  = yn(row['group_patrolling'])
@@ -1018,6 +1028,21 @@ def _enrich_records(records):
                 d = r['data']
                 d['sections'] = row['sections'] or ''
                 d['act_name'] = row['act_name'] or ''
+
+        # 8. IO USER RESOLUTION — fallback when io_name is missing
+        io_uuids = list(set([str(r['io_id']) for r in records if r.get('io_id') and not r['data'].get('io_name')]))
+        if io_uuids:
+            user_rows = _q("""
+                SELECT u.id, u.name, u.role
+                FROM users u
+                WHERE u.id IN (__PH__)
+            """, io_uuids)
+            user_map = {str(u['id']): u for u in user_rows}
+            for r in records:
+                io_id_str = str(r.get('io_id') or '')
+                if io_id_str in user_map and not r['data'].get('io_name'):
+                    r['data']['io_name'] = user_map[io_id_str]['name'] or ''
+                    r['data']['io_rank'] = user_map[io_id_str].get('role') or ''
 
     return records
 

@@ -1,0 +1,419 @@
+{
+  "CASE": {
+    "canonical_enum": [
+      {
+        "key": "record_type",
+        "table": "records",
+        "col": "record_type",
+        "label_en": "Target Record Type",
+        "synonyms": ["cases", "case", "fir", "firs", "crime records"]
+      },
+      {
+        "key": "local_head",
+        "table": "fir_details",
+        "col": "local_head_id",
+        "ref_table": "ref.local_heads",
+        "label_en": "Canonical Crime Head",
+        "synonyms": ["murder", "robbery", "dacoity", "burglary", "theft", "rape", "pocso", "ndps", "excise", "arms act", "kidnapping", "accident"]
+      },
+      {
+        "key": "ps_name",
+        "table": "hierarchy_nodes",
+        "col": "ps_id",
+        "node_type": "PS",
+        "label_en": "Police Station",
+        "synonyms": ["police station", "ps", "thana", "station"]
+      },
+      {
+        "key": "district_name",
+        "table": "hierarchy_nodes",
+        "col": "district_id",
+        "node_type": "DISTRICT",
+        "label_en": "Police District",
+        "synonyms": ["district", "dist", "jila"]
+      },
+      {
+        "key": "seizure_item",
+        "table": "record_properties",
+        "col": "major_category_id",
+        "ref_table": "ref.seizure_item_taxonomy",
+        "label_en": "Seizure Weapon / Category",
+        "synonyms": ["knife", "chaku", "churi", "gun", "pistol", "katta", "tamancha", "lathi", "iron rod", "mobile", "phone", "vehicle", "car", "bike"]
+      },
+      {
+        "key": "act_name",
+        "table": "record_offences",
+        "col": "act_id",
+        "ref_table": "ref.acts",
+        "label_en": "Act / Law Name"
+      },
+      {
+        "key": "section",
+        "table": "record_offences",
+        "col": "section_id",
+        "ref_table": "ref.sections",
+        "label_en": "Section of Law"
+      }
+    ],
+    "bounded_categorical": [
+      {
+        "key": "case_status",
+        "table": "fir_details",
+        "col": "case_status",
+        "options": ["PENDING", "CHARGE SHEET", "FINAL_REPORT", "UNTRACED", "CANCELLED", "TRANSFER"],
+        "label_en": "Case Status"
+      },
+      {
+        "key": "disposal_type",
+        "table": "fir_details",
+        "col": "disposal_type",
+        "options": ["CHARGE_SHEET", "FINAL_REPORT", "UNTRACED"],
+        "label_en": "Disposal Type"
+      },
+      {
+        "key": "property_status",
+        "table": "record_properties",
+        "col": "status",
+        "options": ["STOLEN", "RECOVERED", "SEIZED", "INTACT", "UNCLAIMED"],
+        "label_en": "Property Status"
+      }
+    ],
+    "numeric_range": [
+      {
+        "key": "estimated_value",
+        "table": "record_properties",
+        "col": "estimated_value",
+        "label_en": "Estimated Value (₹)"
+      },
+      {
+        "key": "recovered_value",
+        "table": "record_properties",
+        "col": "estimated_value",
+        "label_en": "Recovered Value (₹)"
+      }
+    ],
+    "date_range": [
+      {
+        "key": "record_date",
+        "table": "records",
+        "col": "record_date",
+        "label_en": "Record Date"
+      },
+      {
+        "key": "fir_date",
+        "table": "fir_details",
+        "col": "fir_date",
+        "label_en": "FIR Date"
+      },
+      {
+        "key": "registration_date",
+        "table": "records",
+        "col": "registration_date",
+        "label_en": "Registration Date"
+      }
+    ],
+    "fuzzy_text": [
+      {
+        "key": "brief_facts",
+        "table": "fir_details",
+        "col": "brief_facts",
+        "label_en": "Brief Facts / Narrative"
+      },
+      {
+        "key": "property_details",
+        "table": "record_properties",
+        "col": "details",
+        "label_en": "Property Description"
+      },
+      {
+        "key": "phone_make",
+        "table": "record_properties",
+        "col": "phone_make",
+        "label_en": "Mobile Phone Make"
+      },
+      {
+        "key": "phone_model",
+        "table": "record_properties",
+        "col": "phone_model",
+        "label_en": "Mobile Phone Model"
+      },
+      {
+        "key": "vehicle_make",
+        "table": "record_properties",
+        "col": "vehicle_make",
+        "label_en": "Vehicle Make / Brand"
+      }
+    ],
+    "restricted_fields": [
+      {
+        "key": "complainant_name",
+        "sensitivity": "restricted",
+        "reason": "Complainant PII"
+      },
+      {
+        "key": "victim_name",
+        "sensitivity": "restricted",
+        "reason": "Victim PII / POCSO Gating"
+      },
+      {
+        "key": "accused_name",
+        "sensitivity": "restricted",
+        "reason": "Accused PII"
+      }
+    ],
+    "not_searchable": [
+      {
+        "key": "extra",
+        "table": "records",
+        "reason": "Unstructured JSON blob"
+      },
+      {
+        "key": "id",
+        "table": "records",
+        "reason": "Internal UUID primary key"
+      }
+    ]
+  },
+  "ARREST": {
+    "canonical_enum": [
+      {
+        "key": "record_type",
+        "table": "records",
+        "col": "record_type",
+        "label_en": "Target Record Type",
+        "synonyms": ["arrest", "arrests", "custody", "detained"]
+      },
+      {
+        "key": "local_head",
+        "table": "fir_details",
+        "col": "local_head_id",
+        "ref_table": "ref.local_heads",
+        "label_en": "Canonical Crime Head"
+      },
+      {
+        "key": "ps_name",
+        "table": "hierarchy_nodes",
+        "col": "ps_id",
+        "node_type": "PS",
+        "label_en": "Police Station"
+      },
+      {
+        "key": "district_name",
+        "table": "hierarchy_nodes",
+        "col": "district_id",
+        "node_type": "DISTRICT",
+        "label_en": "Police District"
+      }
+    ],
+    "bounded_categorical": [
+      {
+        "key": "gender",
+        "table": "persons",
+        "col": "gender",
+        "options": ["MALE", "FEMALE", "TRANSGENDER"],
+        "label_en": "Gender",
+        "synonyms": ["male", "female", "man", "woman", "boy", "girl"]
+      },
+      {
+        "key": "custody_status",
+        "table": "arrest_details",
+        "col": "custody_status",
+        "options": ["judicial_custody", "police_custody", "bail", "released", "others"],
+        "label_en": "Custody Status"
+      }
+    ],
+    "numeric_range": [
+      {
+        "key": "age",
+        "table": "persons",
+        "col": "age",
+        "label_en": "Age (Years)"
+      }
+    ],
+    "date_range": [
+      {
+        "key": "record_date",
+        "table": "records",
+        "col": "record_date",
+        "label_en": "Arrest Date"
+      }
+    ],
+    "fuzzy_text": [
+      {
+        "key": "reason_for_detention",
+        "table": "arrest_details",
+        "col": "reason_for_detention",
+        "label_en": "Reason for Detention"
+      },
+      {
+        "key": "seizure_desc",
+        "table": "arrest_details",
+        "col": "seizure_desc",
+        "label_en": "Seizure Description"
+      }
+    ],
+    "restricted_fields": [
+      {
+        "key": "arrested_name",
+        "sensitivity": "restricted",
+        "reason": "Arrested Person PII"
+      }
+    ],
+    "not_searchable": [
+      {
+        "key": "extra",
+        "table": "arrest_details",
+        "reason": "Unstructured JSON blob"
+      }
+    ]
+  },
+  "MISSING": {
+    "canonical_enum": [
+      {
+        "key": "ps_name",
+        "table": "hierarchy_nodes",
+        "col": "ps_id",
+        "node_type": "PS",
+        "label_en": "Police Station"
+      },
+      {
+        "key": "district_name",
+        "table": "hierarchy_nodes",
+        "col": "district_id",
+        "node_type": "DISTRICT",
+        "label_en": "Police District"
+      }
+    ],
+    "bounded_categorical": [
+      {
+        "key": "missing_type",
+        "table": "missing_details",
+        "col": "missing_type",
+        "options": ["ADULT", "CHILD", "Missing"],
+        "label_en": "Missing Category"
+      },
+      {
+        "key": "gender",
+        "table": "persons",
+        "col": "gender",
+        "options": ["MALE", "FEMALE", "TRANSGENDER"],
+        "label_en": "Gender"
+      }
+    ],
+    "numeric_range": [
+      {
+        "key": "age",
+        "table": "persons",
+        "col": "age",
+        "label_en": "Age (Years)"
+      }
+    ],
+    "date_range": [
+      {
+        "key": "record_date",
+        "table": "records",
+        "col": "record_date",
+        "label_en": "Missing Date"
+      }
+    ],
+    "fuzzy_text": [
+      {
+        "key": "physical_description",
+        "table": "missing_details",
+        "col": "physical_description",
+        "label_en": "Physical Description / Clothing"
+      },
+      {
+        "key": "last_seen_location",
+        "table": "missing_details",
+        "col": "missing_place",
+        "label_en": "Last Seen Location"
+      }
+    ],
+    "restricted_fields": [
+      {
+        "key": "missing_name",
+        "sensitivity": "restricted",
+        "reason": "Missing Person Name / Minor Protection"
+      }
+    ],
+    "not_searchable": [
+      {
+        "key": "extra",
+        "table": "missing_details",
+        "reason": "Unstructured JSON blob"
+      }
+    ]
+  },
+  "UIDB": {
+    "canonical_enum": [
+      {
+        "key": "ps_name",
+        "table": "hierarchy_nodes",
+        "col": "ps_id",
+        "node_type": "PS",
+        "label_en": "Police Station"
+      },
+      {
+        "key": "district_name",
+        "table": "hierarchy_nodes",
+        "col": "district_id",
+        "node_type": "DISTRICT",
+        "label_en": "Police District"
+      }
+    ],
+    "bounded_categorical": [
+      {
+        "key": "gender",
+        "table": "persons",
+        "col": "gender",
+        "options": ["MALE", "FEMALE", "TRANSGENDER"],
+        "label_en": "Gender"
+      }
+    ],
+    "numeric_range": [
+      {
+        "key": "age",
+        "table": "persons",
+        "col": "age",
+        "label_en": "Estimated Age"
+      }
+    ],
+    "date_range": [
+      {
+        "key": "record_date",
+        "table": "records",
+        "col": "record_date",
+        "label_en": "Found Date"
+      }
+    ],
+    "fuzzy_text": [
+      {
+        "key": "physical_description",
+        "table": "uidb_details",
+        "col": "physical_description",
+        "label_en": "Physical Description / Marks"
+      },
+      {
+        "key": "found_location",
+        "table": "uidb_details",
+        "col": "found_location",
+        "label_en": "Found Location"
+      }
+    ],
+    "restricted_fields": [
+      {
+        "key": "informant_name",
+        "sensitivity": "restricted",
+        "reason": "Informant PII"
+      }
+    ],
+    "not_searchable": [
+      {
+        "key": "extra",
+        "table": "uidb_details",
+        "reason": "Unstructured JSON blob"
+      }
+    ]
+  }
+}

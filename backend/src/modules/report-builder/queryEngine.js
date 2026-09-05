@@ -20,6 +20,7 @@ import {
 import { fetchRecordFull } from '../records/records.service.js';
 import { loadRegistry, recomposeRecord } from '../records/records.mapper.js';
 import { toISO } from '../../utils/dateFormat.js';
+import { resolveQueryMode, whTable } from '../warehouse/warehouse.db.js';
 
 // Map logical table names to warehouse fact tables
 const FACT_TABLE_MAP = {
@@ -481,6 +482,8 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
       return fieldDef && !fieldDef.is_db_col;
     });
 
+    const rowGrain = spec.row_grain || 'per_fir';
+
     const selectedDataFields = fields
       .filter(f => {
         const ref = typeof f === 'string' ? { field: f, table } : f;
@@ -494,8 +497,9 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
       const chunk = rows.slice(i, i + batchSize);
       const chunkResults = await Promise.all(chunk.map(async row => {
         let rawData = {};
+        let full = null;
         try {
-          const full = await fetchRecordFull(db, row.id);
+          full = await fetchRecordFull(db, row.id);
           if (full) {
             const registry = await loadRegistry(db, row.record_type);
             const recomposed = await recomposeRecord(db, registry, row.record_type, full);
@@ -517,7 +521,7 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
         }
         if (!passes) return null;
 
-        const proj = {
+        const baseProj = {
           _id: row.id,
           _record_type: row.record_type,
           _record_date: row.record_date,
@@ -530,14 +534,137 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
         };
         for (const fKey of selectedDataFields) {
           if (!fKey.startsWith('_')) {
-            proj[fKey] = rawData[fKey] ?? null;
+            baseProj[fKey] = rawData[fKey] ?? null;
           }
         }
-        return proj;
+
+        // Pre-aggregate one-to-many entities independently to prevent fan-out duplication
+        const personRows = full?.personRows || [];
+        const propertyRows = full?.propertyRows || [];
+        const locationsById = full?.locationsById || {};
+
+        const accusedList = personRows.filter(p => p.role === 'ACCUSED' || p.role === 'ARRESTEE');
+        const victimList  = personRows.filter(p => p.role === 'VICTIM');
+
+        const compiledAccused = accusedList.length === 0 ? '—' : accusedList.map((p, idx) => {
+          const loc = locationsById[p.present_location_id]?.address_line1 || p.extra?.present_address || '';
+          return `${idx + 1}. ${p.name || 'Unnamed Accused'} (${p.gender || 'M/F'}, Age: ${p.age || 'N/A'})${loc ? ` - ${loc}` : ''}`;
+        }).join('\n');
+
+        const compiledVictim = victimList.length === 0 ? '—' : victimList.map((p, idx) => {
+          const loc = locationsById[p.present_location_id]?.address_line1 || p.extra?.present_address || '';
+          return `${idx + 1}. ${p.name || 'Unnamed Victim'} (${p.gender || 'M/F'}, Age: ${p.age || 'N/A'})${loc ? ` - ${loc}` : ''}`;
+        }).join('\n');
+
+        const compiledProperty = propertyRows.length === 0 ? '—' : propertyRows.map((pr, idx) => {
+          const cat = pr.property_category || pr.property_type || 'Property';
+          const valStolen = pr.estimated_value ? `₹${pr.estimated_value}` : 'N/A';
+          const valRec = pr.recovered_value ? `₹${pr.recovered_value}` : 'N/A';
+          return `${idx + 1}. ${cat} [Status: ${pr.status || pr.property_nature || 'N/A'}] (Stolen: ${valStolen}, Recovered: ${valRec})`;
+        }).join('\n');
+
+        baseProj._compiled_accused  = compiledAccused;
+        baseProj._compiled_victim   = compiledVictim;
+        baseProj._compiled_property = compiledProperty;
+
+        // Project output rows based on specified row_grain
+        if (rowGrain === 'per_accused') {
+          if (accusedList.length === 0) {
+            return [{
+              ...baseProj,
+              accused_first_name: '—', accused_last_name: '—', accused_gender: '—', accused_age_year: '—',
+              accused_social_category: '—', accused_present_address: '—', accused_name: '—'
+            }];
+          }
+          return accusedList.map(p => {
+            const loc = locationsById[p.present_location_id]?.address_line1 || p.extra?.present_address || '—';
+            const nameParts = (p.name || '').split(' ');
+            return {
+              ...baseProj,
+              accused_first_name: nameParts[0] || p.name || '—',
+              accused_last_name: nameParts.slice(1).join(' ') || '—',
+              accused_nickname: p.extra?.nickname || '—',
+              accused_gender: p.gender || '—',
+              accused_social_category: p.social_category || '—',
+              accused_relation_type: p.relation_type || '—',
+              accused_relative_name: p.relative_name || '—',
+              accused_mobile: p.mobile || '—',
+              accused_dob: p.dob || '—',
+              accused_age_year: p.age ?? '—',
+              accused_present_address: loc,
+              accused_city_town_village: locationsById[p.present_location_id]?.city_town_village || '—',
+              accused_district: locationsById[p.present_location_id]?.district || '—',
+              accused_state: locationsById[p.present_location_id]?.state || '—',
+              accused_pincode: locationsById[p.present_location_id]?.pincode || '—',
+            };
+          });
+
+        } else if (rowGrain === 'per_victim') {
+          if (victimList.length === 0) {
+            return [{
+              ...baseProj,
+              victim_first_name: '—', victim_last_name: '—', victim_gender: '—', victim_age_year: '—',
+              victim_social_category: '—', victim_present_address: '—', victim_name: '—'
+            }];
+          }
+          return victimList.map(p => {
+            const loc = locationsById[p.present_location_id]?.address_line1 || p.extra?.present_address || '—';
+            const nameParts = (p.name || '').split(' ');
+            return {
+              ...baseProj,
+              victim_first_name: nameParts[0] || p.name || '—',
+              victim_last_name: nameParts.slice(1).join(' ') || '—',
+              victim_nickname: p.extra?.nickname || '—',
+              victim_gender: p.gender || '—',
+              victim_social_category: p.social_category || '—',
+              victim_relation_type: p.relation_type || '—',
+              victim_relative_name: p.relative_name || '—',
+              victim_mobile: p.mobile || '—',
+              victim_dob: p.dob || '—',
+              victim_age_year: p.age ?? '—',
+              victim_present_address: loc,
+              victim_city_town_village: locationsById[p.present_location_id]?.city_town_village || '—',
+              victim_district: locationsById[p.present_location_id]?.district || '—',
+              victim_state: locationsById[p.present_location_id]?.state || '—',
+              victim_pincode: locationsById[p.present_location_id]?.pincode || '—',
+            };
+          });
+
+        } else if (rowGrain === 'per_property') {
+          if (propertyRows.length === 0) {
+            return [{
+              ...baseProj,
+              property_category: '—', property_type: '—', property_nature: '—',
+              estimated_value: 0, recovered_value: 0, recovery_date: '—',
+              recovery_place: '—', recovery_agency: '—', seizure_memo_no: '—', malkhana_number: '—'
+            }];
+          }
+          return propertyRows.map(pr => ({
+            ...baseProj,
+            property_category: pr.property_category || '—',
+            property_type: pr.property_type || '—',
+            property_nature: pr.status || pr.property_nature || '—',
+            estimated_value: pr.estimated_value ?? 0,
+            recovered_value: pr.recovered_value ?? 0,
+            recovery_date: pr.recovery_date || '—',
+            recovery_place: pr.recovery_place || '—',
+            recovery_agency: pr.recovery_agency || '—',
+            seizure_memo_no: pr.seizure_memo_no || '—',
+            malkhana_number: pr.malkhana_number || '—',
+          }));
+
+        } else {
+          // Default per_fir: 1 row per record
+          return [baseProj];
+        }
       }));
 
-      for (const res of chunkResults) {
-        if (res !== null) recomposedRows.push(res);
+      for (const resList of chunkResults) {
+        if (Array.isArray(resList)) {
+          recomposedRows.push(...resList);
+        } else if (resList !== null) {
+          recomposedRows.push(resList);
+        }
       }
       if (recomposedRows.length >= offset + limit) break;
     }
@@ -669,7 +796,7 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
     return { rows, total, page: parseInt(page, 10) || 1, pageSize: limit };
 
   } else {
-    // FALLBACK: Query live operational JSONB records in-memory join
+    // FALLBACK: Query live operational normalized records in-memory join
     const leftField  = join_on.left.field;
     const rightField = join_on.right.field;
 
@@ -678,7 +805,6 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
         'L.id as L_id', 'L.record_date as L_record_date',
         'L.current_status as L_status', 'L.ps_id as L_ps_id',
         'L.district_id as L_district_id', 'L.created_at as L_created_at',
-        'L.data as L_data',
         'ps.name as ps_name', 'dist.name as district_name'
       )
       .leftJoin('hierarchy_nodes as ps', 'L.ps_id', 'ps.id')
@@ -686,7 +812,7 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
       .where('L.record_type', leftTable);
 
     let rightQ = db('records as R')
-      .select('R.id as R_id', 'R.record_date as R_record_date', 'R.current_status as R_status', 'R.data as R_data')
+      .select('R.id as R_id', 'R.record_date as R_record_date', 'R.current_status as R_status')
       .where('R.record_type', rightTable);
 
     if (jurisdictionQuery.ps_id) leftQ = leftQ.where('L.ps_id', jurisdictionQuery.ps_id);
@@ -711,9 +837,20 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
 
     const [leftRows, rightRows] = await Promise.all([leftQ, rightQ]);
 
+    const leftReg  = await loadRegistry(db, leftTable);
+    const rightReg = await loadRegistry(db, rightTable);
+
     const rightMap = new Map();
     for (const rRow of rightRows) {
-      const rData = typeof rRow.R_data === 'string' ? JSON.parse(rRow.R_data || '{}') : (rRow.R_data || {});
+      let rData = {};
+      try {
+        const rFull = await fetchRecordFull(db, rRow.R_id);
+        if (rFull) {
+          const recomposed = await recomposeRecord(db, rightReg, rightTable, rFull);
+          rData = recomposed?.data || {};
+        }
+      } catch (_) {}
+
       const keyVal = rData[rightField];
       if (keyVal) {
         if (!rightMap.has(keyVal)) rightMap.set(keyVal, []);
@@ -723,7 +860,15 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
 
     const joinedRows = [];
     for (const lRow of leftRows) {
-      const lData = typeof lRow.L_data === 'string' ? JSON.parse(lRow.L_data || '{}') : (lRow.L_data || {});
+      let lData = {};
+      try {
+        const lFull = await fetchRecordFull(db, lRow.L_id);
+        if (lFull) {
+          const recomposed = await recomposeRecord(db, leftReg, leftTable, lFull);
+          lData = recomposed?.data || {};
+        }
+      } catch (_) {}
+
       const keyVal = lData[leftField];
       const matching = keyVal ? (rightMap.get(keyVal) || []) : [];
 
@@ -754,9 +899,6 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
         _created_at: left.L_created_at,
       };
       for (const fKey of leftFields) {
-        // System fields (_record_date, _status, etc.) are real columns already
-        // projected above as _left_*, not JSONB keys — skip them here or they'd
-        // wrongly come back null (mirrors the same guard in executeSingleTableQuery).
         if (fKey.startsWith('_')) continue;
         row[`${leftTable}__${fKey}`] = left.L_data[fKey] ?? null;
       }
@@ -785,14 +927,12 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
  */
 async function executePersonJoinedQuery(spec, jurisdictionQuery, validatedFieldMap, joinDef, { limit, offset, page }) {
   const { table: leftTable, join: rightTable, fields, filters } = spec;
-  const personType = joinDef.person_type;
 
   let leftQ = db('records as L')
     .select(
       'L.id as L_id', 'L.record_date as L_record_date',
       'L.current_status as L_status', 'L.ps_id as L_ps_id',
       'L.district_id as L_district_id', 'L.created_at as L_created_at',
-      'L.data as L_data',
       'ps.name as ps_name', 'dist.name as district_name'
     )
     .leftJoin('hierarchy_nodes as ps', 'L.ps_id', 'ps.id')
@@ -803,9 +943,6 @@ async function executePersonJoinedQuery(spec, jurisdictionQuery, validatedFieldM
   if (jurisdictionQuery.district_id) leftQ = leftQ.where('L.district_id', jurisdictionQuery.district_id);
   if (jurisdictionQuery.sub_div_id) leftQ = leftQ.where('L.sub_div_id', jurisdictionQuery.sub_div_id);
 
-  // Only record-level (left table) filter conditions are applied here — filtering on the
-  // person sub-fields themselves isn't wired up yet (mirrors the same gap that already
-  // exists for the right side of the LIVE fallback in executeJoinedQuery above).
   const leftFilters = { logic: 'AND', conditions: [] };
   if (filters && filters.conditions) {
     for (const cond of (filters.conditions || [])) {
@@ -819,33 +956,71 @@ async function executePersonJoinedQuery(spec, jurisdictionQuery, validatedFieldM
   }
 
   const leftRows = await leftQ;
-  const leftIds = leftRows.map(r => r.L_id);
-
-  let personRows = [];
-  if (leftIds.length > 0) {
-    personRows = await db('record_persons as RP')
-      .select('RP.id as R_id', 'RP.record_id as R_record_id', 'RP.data as R_data')
-      .where('RP.person_type', personType)
-      .whereIn('RP.record_id', leftIds)
-      .orderBy('RP.sort_order', 'asc');
-  }
-
-  const personsByRecordId = new Map();
-  for (const p of personRows) {
-    const pData = typeof p.R_data === 'string' ? JSON.parse(p.R_data || '{}') : (p.R_data || {});
-    if (!personsByRecordId.has(p.R_record_id)) personsByRecordId.set(p.R_record_id, []);
-    personsByRecordId.get(p.R_record_id).push({ R_id: p.R_id, R_data: pData });
-  }
+  const registry = await loadRegistry(db, leftTable);
 
   const joinedRows = [];
   for (const lRow of leftRows) {
-    const lData = typeof lRow.L_data === 'string' ? JSON.parse(lRow.L_data || '{}') : (lRow.L_data || {});
-    const matching = personsByRecordId.get(lRow.L_id) || [];
-    if (matching.length === 0) {
-      joinedRows.push({ left: { ...lRow, L_data: lData }, right: null });
+    let lData = {};
+    let full = null;
+    try {
+      full = await fetchRecordFull(db, lRow.L_id);
+      if (full) {
+        const recomposed = await recomposeRecord(db, registry, leftTable, full);
+        lData = recomposed?.data || {};
+      }
+    } catch (_) {}
+
+    const personRows = full?.personRows || [];
+    const locationsById = full?.locationsById || {};
+
+    let matchingPersons = [];
+    if (rightTable === 'CASE_ACCUSED') {
+      matchingPersons = personRows.filter(p => p.role === 'ACCUSED' || p.role === 'ARRESTEE');
+    } else if (rightTable === 'CASE_VICTIM') {
+      matchingPersons = personRows.filter(p => p.role === 'VICTIM');
+    } else if (rightTable === 'ARREST_ARRESTED') {
+      matchingPersons = personRows.filter(p => p.role === 'ARRESTEE' || p.role === 'ACCUSED');
+    }
+
+    if (matchingPersons.length === 0) {
+      joinedRows.push({ left: lRow, lData, right: null });
     } else {
-      for (const rRow of matching) {
-        joinedRows.push({ left: { ...lRow, L_data: lData }, right: rRow });
+      for (const p of matchingPersons) {
+        const loc = locationsById[p.present_location_id]?.address_line1 || p.extra?.present_address || '—';
+        const city = locationsById[p.present_location_id]?.city_town_village || '—';
+        const nameParts = (p.name || '').split(' ');
+        const firstName = nameParts[0] || p.name || '—';
+        const lastName  = nameParts.slice(1).join(' ') || '—';
+
+        const rData = {
+          name: p.name || '—',
+          accused_first_name: firstName,
+          accused_last_name: lastName,
+          accused_nickname: p.extra?.nickname || p.nick_names || '—',
+          accused_gender: p.gender || '—',
+          accused_social_category: p.social_category || '—',
+          accused_relation_type: p.relation_type || '—',
+          accused_relative_name: p.relative_name || '—',
+          accused_mobile: p.mobile || '—',
+          accused_dob: p.dob || '—',
+          accused_age_year: p.age ?? '—',
+          accused_present_address: loc,
+          accused_city_town_village: city,
+
+          victim_first_name: firstName,
+          victim_last_name: lastName,
+          victim_nickname: p.extra?.nickname || p.nick_names || '—',
+          victim_gender: p.gender || '—',
+          victim_social_category: p.social_category || '—',
+          victim_relation_type: p.relation_type || '—',
+          victim_relative_name: p.relative_name || '—',
+          victim_mobile: p.mobile || '—',
+          victim_dob: p.dob || '—',
+          victim_age_year: p.age ?? '—',
+          victim_present_address: loc,
+          victim_city_town_village: city,
+        };
+        joinedRows.push({ left: lRow, lData, right: rData });
       }
     }
   }
@@ -856,7 +1031,7 @@ async function executePersonJoinedQuery(spec, jurisdictionQuery, validatedFieldM
   const leftFields  = fields.filter(f => (typeof f === 'string' ? { field: f, table: leftTable } : f).table === leftTable).map(f => typeof f === 'string' ? f : f.field);
   const rightFields = fields.filter(f => (typeof f === 'string' ? { field: f, table: leftTable } : f).table !== leftTable).map(f => typeof f === 'string' ? f : f.field);
 
-  const projected = paged.map(({ left, right }) => {
+  const projected = paged.map(({ left, lData, right }) => {
     const row = {
       _left_id: left.L_id,
       _left_record_date: left.L_record_date,
@@ -868,19 +1043,13 @@ async function executePersonJoinedQuery(spec, jurisdictionQuery, validatedFieldM
       _created_at: left.L_created_at,
     };
     for (const fKey of leftFields) {
-      // System fields (_record_date, _status, etc.) are real columns already
-      // projected above as _left_*, not JSONB keys — skip them here or they'd
-      // wrongly come back null (mirrors the same guard in executeSingleTableQuery).
       if (fKey.startsWith('_')) continue;
-      row[`${leftTable}__${fKey}`] = left.L_data[fKey] ?? null;
+      row[`${leftTable}__${fKey}`] = lData[fKey] ?? null;
     }
     if (right) {
-      row._right_id = right.R_id;
       for (const fKey of rightFields) {
-        // System fields don't meaningfully exist on a record_persons row either
-        // (the frontend offers them generically for every joined table) — skip.
         if (fKey.startsWith('_')) continue;
-        row[`${rightTable}__${fKey}`] = right.R_data[fKey] ?? null;
+        row[`${rightTable}__${fKey}`] = right[fKey] ?? null;
       }
     }
     return row;

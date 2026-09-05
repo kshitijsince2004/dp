@@ -518,7 +518,7 @@ export const getFieldsForForm = async (req, res) => {
           title_en: 'FIR Contents',
           title_hi: 'प्राथमिकी विवरण',
           is_repeater: false,
-          fields: filteredFields.filter(f => f.field_key === 'brief_facts')
+          fields: filteredFields.filter(f => ['brief_facts', 'modus_operandi'].includes(f.field_key))
         },
         {
           section: 'victim_info',

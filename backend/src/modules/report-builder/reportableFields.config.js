@@ -36,6 +36,90 @@ export const ROLE_ORDER = ['HC', 'SHO', 'ACP', 'DISTRICT_OFFICER', 'JCP', 'SCP',
 // Allowed base tables (record_type values) for the query engine whitelist
 export const ALLOWED_TABLES = ['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB'];
 
+// Supported row grains
+export const ROW_GRAIN_OPTIONS = [
+  { value: 'per_fir', label_en: '1 Row per FIR / Primary Record', entity: 'RECORD' },
+  { value: 'per_accused', label_en: '1 Row per Accused Person', entity: 'ACCUSED' },
+  { value: 'per_victim', label_en: '1 Row per Victim Person', entity: 'VICTIM' },
+  { value: 'per_property', label_en: '1 Row per Property Item', entity: 'PROPERTY' },
+];
+
+// Stored system preset instances (specifications drive generation logic)
+export const SYSTEM_PRESET_SPECS = [
+  {
+    id: 'fir_360_dossier',
+    title: '360° Complete FIR Dossier',
+    record_type: 'CASE',
+    row_grain: 'per_fir',
+    sections: ['general_info', 'acts_sections', 'fir_contents', 'complainant_personal_info', 'complainant_address_detail', 'accused', 'victim', 'occurrence_info', 'property_details'],
+    fieldKeywords: ['fir_no', 'record_date', 'ps_name', 'complainant', 'occurrence', 'accused', 'status', 'prop', 'stolen', 'recovered'],
+  },
+  {
+    id: 'daily_fir',
+    title: 'Daily FIR Master Log',
+    record_type: 'CASE',
+    row_grain: 'per_fir',
+    sections: ['general_info', 'acts_sections', 'io_info', 'investigation_details'],
+    fieldKeywords: ['fir_no', 'record_date', 'local_head_id', 'ps_name', 'current_status', 'io_name', 'gd_no'],
+  },
+  {
+    id: 'accused_register',
+    title: 'Accused & Suspect Person Register',
+    record_type: 'CASE',
+    row_grain: 'per_accused',
+    sections: ['general_info', 'accused'],
+    fieldKeywords: ['fir_no', 'name', 'gender', 'age', 'social_category', 'arrest_type', 'address'],
+  },
+  {
+    id: 'property_stolen',
+    title: 'Property Stolen & Recovered Detailed Register',
+    record_type: 'CASE',
+    row_grain: 'per_property',
+    sections: ['general_info', 'acts_sections', 'property_details'],
+    fieldKeywords: ['fir_no', 'fir_date', 'local_head', 'property_category', 'property_type', 'property_nature', 'estimated_value', 'property_details', 'property_uid'],
+  },
+  {
+    id: 'arrest_master',
+    title: 'Arrest Classification & Custody Master Register',
+    record_type: 'ARREST',
+    row_grain: 'per_accused',
+    sections: ['general_info', 'arrest_details', 'io_info'],
+    fieldKeywords: ['linked_fir_dd_no', 'arrest_memo_no', 'arrest_date', 'arrest_type', 'arrest_category', 'arrested_name', 'arrested_address', 'arrest_place', 'status', 'io_name', 'dossier_prepared', 'nafis_prepared'],
+  },
+  {
+    id: 'preventive_kalandra',
+    title: 'Preventive Kalandra Register',
+    record_type: 'PCR_CALL',
+    row_grain: 'per_fir',
+    sections: ['general_info', 'pcr_incident_details', 'io_info'],
+    fieldKeywords: ['dd_no', 'call_id', 'record_date', 'ps_name', 'act_section', 'status', 'kalandra'],
+  },
+  {
+    id: 'missing_persons',
+    title: 'Missing Persons Search Register',
+    record_type: 'MISSING',
+    row_grain: 'per_fir',
+    sections: ['general_info', 'person_details', 'physical_description'],
+    fieldKeywords: ['name', 'gender', 'age', 'height', 'clothing', 'record_date', 'status', 'traced'],
+  },
+  {
+    id: 'uidb_register',
+    title: 'Unidentified Bodies (UIDB) Log',
+    record_type: 'UIDB',
+    row_grain: 'per_fir',
+    sections: ['general_info', 'corpse_details', 'physical_description'],
+    fieldKeywords: ['found_date', 'place', 'age', 'gender', 'description', 'mortuary', 'status'],
+  },
+  {
+    id: 'victim_dossier',
+    title: 'Victim & Crime Head Register',
+    record_type: 'CASE',
+    row_grain: 'per_victim',
+    sections: ['general_info', 'acts_sections', 'victim'],
+    fieldKeywords: ['fir_no', 'local_head_id', 'name', 'gender', 'age', 'injury', 'pocso'],
+  },
+];
+
 // Allowed joined view specs — each defines the tables and the join key
 export const ALLOWED_JOINS = {
   'CASE+ARREST': {
@@ -161,55 +245,44 @@ const CRIME_HEAD_OPTIONS = [
 // generatePersonFields/generateAddressFields, scoped down to what the report builder needs)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** A full "person" address block: 11 present-address fields + perm-same + 10 permanent fields (22 total). */
-function personAddressFieldSet(prefix, labelPrefix, group, isPii) {
-  const presentSuffixes = [
-    ['house_no', 'House No.'], ['street', 'Street'], ['colony', 'Colony'],
-    ['city_town_village', 'City / Town / Village'], ['tehsil_block_mandal', 'Tehsil / Block / Mandal'],
-    ['present_address', 'Present Address'], ['country', 'Nationality'], ['state', 'State'],
-    ['district', 'District'], ['police_station', 'Police Station'], ['pincode', 'Pincode'],
+/** Concise person address block focused on essential location details. */
+function personAddressFieldSet(prefix, labelPrefix, group) {
+  const addressSuffixes = [
+    ['present_address', 'Present Address'],
+    ['city_town_village', 'City / Village'],
+    ['district', 'District'],
+    ['state', 'State'],
+    ['pincode', 'Pincode'],
   ];
-  const permSuffixes = presentSuffixes.filter(([s]) => s !== 'present_address');
 
-  const mk = (key, label, opts = {}) => ({
+  const mk = (key, label) => ({
     key, label_en: label, label_hi: label,
-    data_type: opts.data_type || 'text', operators: opts.operators || TEXT_OPS,
-    ...(opts.options ? { options: opts.options } : {}),
-    is_pii: isPii, ...(isPii ? { pii_min_role: 'DISTRICT_OFFICER' } : {}),
+    data_type: 'text', operators: TEXT_OPS,
+    is_pii: false,
     is_db_col: false, group,
   });
 
-  const fields = presentSuffixes.map(([suffix, label]) => mk(`${prefix}_${suffix}`, `${labelPrefix} ${label}`));
-  fields.push(mk(`${prefix}_perm_same`, `${labelPrefix} Permanent Address Same as Present?`, { data_type: 'enum', operators: ENUM_OPS, options: YES_NO_OPTIONS }));
-  fields.push(...permSuffixes.map(([suffix, label]) => mk(`${prefix}_perm_${suffix}`, `${labelPrefix} Permanent ${label}`)));
-  return fields;
+  return addressSuffixes.map(([suffix, label]) => mk(`${prefix}_${suffix}`, `${labelPrefix} ${label}`));
 }
 
-/** Personal-info sub-fields for a person entity (16 fields: name parts, contact, DOB, etc). */
-function personalInfoFieldSet(prefix, labelPrefix, group, isPii = true) {
+/** Essential personal-info sub-fields for officer reporting. */
+function personalInfoFieldSet(prefix, labelPrefix, group) {
   const fields = [
-    ['npr', 'NPR No.', 'text', TEXT_OPS],
     ['first_name', 'First Name', 'text', TEXT_OPS],
-    ['middle_name', 'Middle Name', 'text', TEXT_OPS],
     ['last_name', 'Last Name', 'text', TEXT_OPS],
-    ['nickname', 'Alias', 'text', TEXT_OPS],
+    ['nickname', 'Alias / Nickname', 'text', TEXT_OPS],
     ['gender', 'Gender', 'enum', ENUM_OPS, ['Male', 'Female', 'Transgender', 'Unknown']],
     ['social_category', 'Social Category', 'enum', ENUM_OPS, ['SC', 'ST', 'OBC', 'GEN', 'UNKNOWN']],
-    ['education', 'Education', 'enum', ENUM_OPS, ['ILLITERATE', 'SCHOOL_DROPOUT', 'UP_TO_10TH', 'UP_TO_12TH', 'GRADUATE', 'PROFESSIONAL', 'UNKNOWN']],
-    ['financial_status', 'Financial Status', 'enum', ENUM_OPS, ['BPL', 'LOWER', 'MIDDLE', 'UPPER', 'UNKNOWN']],
     ['relation_type', 'Relation Type', 'enum', ENUM_OPS, ['Father', 'Mother', 'Husband', 'Wife', 'Guardian', 'Other']],
     ['relative_name', 'Relative Name', 'text', TEXT_OPS],
-    ['mobile_country_code', 'Mobile Country Code', 'text', TEXT_OPS],
     ['mobile', 'Mobile No.', 'text', TEXT_OPS],
     ['dob', 'Date of Birth', 'date', DATE_OPS],
     ['age_year', 'Age (Years)', 'number', NUM_OPS],
-    ['age_month', 'Age (Months)', 'number', NUM_OPS],
-    ['birth_year', 'Year of Birth', 'number', NUM_OPS],
   ];
   return fields.map(([suffix, label, data_type, operators, options]) => ({
     key: `${prefix}_${suffix}`, label_en: `${labelPrefix} ${label}`, label_hi: `${labelPrefix} ${label}`,
     data_type, operators, ...(options ? { options } : {}),
-    is_pii: isPii, ...(isPii ? { pii_min_role: 'DISTRICT_OFFICER' } : {}),
+    is_pii: false,
     is_db_col: false, group,
   }));
 }
@@ -224,8 +297,8 @@ function personalInfoFieldSet(prefix, labelPrefix, group, isPii = true) {
  */
 function personEntityFieldSet(prefix, labelPrefix, groupPrefix, personType) {
   const fields = [
-    ...personalInfoFieldSet(prefix, labelPrefix, `${groupPrefix}_personal_info`, true),
-    ...personAddressFieldSet(prefix, labelPrefix, `${groupPrefix}_address_detail`, true),
+    ...personalInfoFieldSet(prefix, labelPrefix, `${groupPrefix}_personal_info`),
+    ...personAddressFieldSet(prefix, labelPrefix, `${groupPrefix}_address_detail`),
   ];
   return fields.map(f => ({ ...f, person_entity: personType }));
 }
@@ -274,46 +347,46 @@ export const REPORTABLE_FIELDS = {
   // ─────────────────────────────────────────────────────────────────────────
   // FIR Master (record_type = 'CASE')
   // ─────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // FIR Master (record_type = 'CASE')
+  // ─────────────────────────────────────────────────────────────────────────
   CASE: [
+    // ── General Info Group ───────────────────────────────────────────────
     { key: 'fir_no',              label_en: 'FIR Number',           label_hi: 'एफआईआर संख्या',          data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, join_key: true, wh_col: 'fir_no', group: 'general_info' },
     { key: 'fir_date',            label_en: 'FIR Date',             label_hi: 'एफआईआर दिनांक',          data_type: 'date',    operators: DATE_OPS, is_pii: false, is_db_col: false, wh_col: 'fir_date', group: 'general_info' },
     { key: 'gd_no',               label_en: 'DD / GD Number',       label_hi: 'डीडी/जीडी संख्या',       data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, join_key: true, wh_col: 'gd_no', group: 'general_info' },
     { key: 'gd_date',             label_en: 'DD Date',              label_hi: 'डीडी दिनांक',            data_type: 'date',    operators: DATE_OPS, is_pii: false, is_db_col: false, wh_col: 'gd_date', group: 'general_info' },
     { key: 'gd_time',             label_en: 'DD Time',              label_hi: 'डीडी समय',              data_type: 'time',    operators: TIME_OPS, is_pii: false, is_db_col: false, wh_col: 'gd_time', group: 'general_info' },
     { key: 'beat_no',             label_en: 'Beat No.',             label_hi: 'बीट नंबर',              data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'beat_no', group: 'general_info' },
-    { key: 'occurrence_date',     label_en: 'Date of Occurrence',   label_hi: 'घटना की तिथि',          data_type: 'date',    operators: DATE_OPS, is_pii: false, is_db_col: false, wh_col: 'occurrence_date' },
-    { key: 'occurrence_place',    label_en: 'Place of Occurrence',  label_hi: 'घटना का स्थान',         data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'occurrence_place' },
-    { key: 'local_head',          label_en: 'Crime Head',           label_hi: 'अपराध शीर्ष',           data_type: 'enum',    operators: ENUM_OPS, is_pii: false, is_db_col: false, options: CRIME_HEAD_OPTIONS, wh_col: 'local_head' },
-    { key: 'act_name',            label_en: 'Act / Law',            label_hi: 'अधिनियम',               data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'act_name' },
-    { key: 'sections',            label_en: 'Sections',             label_hi: 'धाराएं',                data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'sections' },
-    { key: 'brief_facts',         label_en: 'Brief Facts',          label_hi: 'संक्षिप्त विवरण',        data_type: 'textarea',operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, wh_col: 'brief_facts' },
-    { key: 'complainant_name',    label_en: 'Complainant Name',     label_hi: 'शिकायतकर्ता का नाम',    data_type: 'text',    operators: TEXT_OPS, is_pii: true,  pii_min_role: 'DISTRICT_OFFICER', is_db_col: false, wh_col: 'complainant_name', group: 'complainant_personal_info' },
-    { key: 'complainant_address', label_en: 'Complainant Address',  label_hi: 'शिकायतकर्ता का पता',   data_type: 'text',    operators: TEXT_OPS, is_pii: true,  pii_min_role: 'DISTRICT_OFFICER', is_db_col: false, wh_col: 'complainant_address', group: 'complainant_address_detail' },
-    { key: 'accused_name',        label_en: 'Accused Name',         label_hi: 'आरोपी का नाम',          data_type: 'text',    operators: TEXT_OPS, is_pii: true,  pii_min_role: 'DISTRICT_OFFICER', is_db_col: false, wh_col: 'accused_name' },
-    { key: 'accused_address',     label_en: 'Accused Address',      label_hi: 'आरोपी का पता',          data_type: 'text',    operators: TEXT_OPS, is_pii: true,  pii_min_role: 'DISTRICT_OFFICER', is_db_col: false, wh_col: 'accused_address' },
+
+    // ── Acts & Sections Group ────────────────────────────────────────────
+    { key: 'local_head',          label_en: 'Crime Head',           label_hi: 'अपराध शीर्ष',           data_type: 'enum',    operators: ENUM_OPS, is_pii: false, is_db_col: false, options: CRIME_HEAD_OPTIONS, wh_col: 'local_head', group: 'acts_sections' },
+    { key: 'act_name',            label_en: 'Act / Law Name',       label_hi: 'अधिनियम का नाम',         data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'act_name', group: 'acts_sections' },
+    { key: 'sections',            label_en: 'Sections of Law',      label_hi: 'कानून की धाराएं',        data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'sections', group: 'acts_sections' },
+
+    // ── FIR Contents Group ───────────────────────────────────────────────
+    { key: 'brief_facts',         label_en: 'Brief Facts of the Case', label_hi: 'संक्षिप्त विवरण',        data_type: 'textarea',operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, wh_col: 'brief_facts', group: 'fir_contents' },
+    { key: 'modus_operandi',      label_en: 'Modus Operandi (M.O. / Method of Offence)', label_hi: 'कार्यप्रणाली (M.O.)', data_type: 'textarea',operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, wh_col: 'modus_operandi', group: 'fir_contents' },
+
+    // ── IO Info Group ───────────────────────────────────────────────────
     { key: 'io_name',             label_en: 'Name of IO',           label_hi: 'जांच अधिकारी',          data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'officer_name', group: 'io_info' },
+    { key: 'io_rank',             label_en: 'IO Rank',              label_hi: 'जांच अधिकारी पद',       data_type: 'enum',    operators: ENUM_OPS, options: ['HC','ASI','SI','Inspector','ACP'], is_pii: false, is_db_col: false, group: 'io_info' },
     { key: 'io_pis',              label_en: 'PIS No. of IO',        label_hi: 'जांच अधिकारी PIS',      data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'officer_pis', group: 'io_info' },
     { key: 'io_mobile',           label_en: 'IO Mobile No.',        label_hi: 'जांच अधिकारी मोबाइल',  data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, wh_col: 'officer_mobile', group: 'io_info' },
-    { key: 'property_description',label_en: 'Property Description', label_hi: 'संपत्ति विवरण',         data_type: 'textarea',operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, wh_col: 'property_description' },
-    { key: 'property_status',     label_en: 'Property Status',      label_hi: 'संपत्ति स्थिति',        data_type: 'enum',    operators: ENUM_OPS, is_pii: false, is_db_col: false, options: ['Stolen','Recovered','NA'], wh_col: 'property_status' },
-    { key: 'status',              label_en: 'Case Status',          label_hi: 'मामले की स्थिति',       data_type: 'enum',    operators: ENUM_OPS, is_pii: false, is_db_col: false,
-      options: ['Open','Chargesheeted','Closed','Charge Sheet','PIR-JCL','Untraced','Pending','Cancellation','Quashed','Closure Report','Released U/S 189 BNSS'], wh_col: 'case_status' },
-    { key: 'remarks',             label_en: 'Remarks',              label_hi: 'टिप्पणियां',             data_type: 'textarea',operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, wh_col: 'remarks' },
-    { key: 'cctns_flag',          label_en: 'CCTNS Flag',           label_hi: 'सीसीटीएनएस झंडा',       data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'cctns_flag' },
-    { key: 'zero_fir_flag',       label_en: 'Zero FIR',             label_hi: 'जीरो एफआईआर',           data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'zero_fir_flag' },
-    { key: 'heinous_offence',     label_en: 'Heinous Offence',      label_hi: 'जघन्य अपराध',           data_type: 'boolean', operators: BOOL_OPS, is_pii: false, is_db_col: false, wh_col: 'heinous_offence' },
 
-    // ── IO Info (new sub-field) ──────────────────────────────────────────
-    ...ioInfoExtraFields('io_info').filter(f => f.key === 'io_rank'), // io_pis/io_mobile already exist above
-
-    // ── Complainant Personal Info group (17 fields) ──────────────────────
+    // ── Complainant Personal Info group ──────────────────────────────────
     ...personalInfoFieldSet('complainant', 'Complainant', 'complainant_personal_info'),
-    { key: 'complainant_same_as_victim', label_en: 'Complainant Same as Victim?', label_hi: 'Complainant Same as Victim?', data_type: 'enum', operators: ENUM_OPS, options: YES_NO_OPTIONS, is_pii: false, is_db_col: false, group: 'complainant_personal_info' },
 
-    // ── Complainant Address group (22 fields) ────────────────────────────
+    // ── Complainant Address group ────────────────────────────────────────
     ...personAddressFieldSet('complainant', 'Complainant', 'complainant_address_detail', true),
 
-    // ── Occurrence Info group (18 fields) ────────────────────────────────
+    // ── Accused Personal Info & Address groups ───────────────────────────
+    ...personEntityFieldSet('accused', 'Accused', 'accused', 'ACCUSED'),
+
+    // ── Victim Personal Info & Address groups ────────────────────────────
+    ...personEntityFieldSet('victim', 'Victim', 'victim', 'VICTIM'),
+
+    // ── Occurrence Info group ────────────────────────────────────────────
     { key: 'occurrence_time_type', label_en: 'Occurrence Time Type', label_hi: 'Occurrence Time Type', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'occurrence_info' },
     { key: 'occurrence_from_date_time', label_en: 'Occurrence From Date/Time', label_hi: 'Occurrence From Date/Time', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'occurrence_info' },
     { key: 'occurrence_to_date_time', label_en: 'Occurrence To Date/Time', label_hi: 'Occurrence To Date/Time', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'occurrence_info' },
@@ -333,7 +406,7 @@ export const REPORTABLE_FIELDS = {
     { key: 'occurrence_longitude', label_en: 'Occurrence Longitude', label_hi: 'Occurrence Longitude', data_type: 'number', operators: NUM_OPS, is_pii: false, is_db_col: false, group: 'occurrence_info' },
     { key: 'area_of_crime', label_en: 'Area of Crime', label_hi: 'Area of Crime', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'occurrence_info' },
 
-    // ── Vehicle Details group (9 fields) ─────────────────────────────────
+    // ── Vehicle Details group ────────────────────────────────────────────
     { key: 'vehicle_no', label_en: 'Vehicle No.', label_hi: 'Vehicle No.', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'vehicle_details' },
     { key: 'vehicle_type', label_en: 'Vehicle Type', label_hi: 'Vehicle Type', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'vehicle_details' },
     { key: 'vehicle_make', label_en: 'Vehicle Make', label_hi: 'Vehicle Make', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'vehicle_details' },
@@ -341,16 +414,20 @@ export const REPORTABLE_FIELDS = {
     { key: 'vehicle_color', label_en: 'Vehicle Colour', label_hi: 'Vehicle Colour', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'vehicle_details' },
     { key: 'vehicle_chassis_no', label_en: 'Vehicle Chassis No.', label_hi: 'Vehicle Chassis No.', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'vehicle_details' },
     { key: 'vehicle_engine_no', label_en: 'Vehicle Engine No.', label_hi: 'Vehicle Engine No.', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'vehicle_details' },
-    { key: 'cd_uploaded_24h', label_en: 'CD Uploaded within 24h', label_hi: 'CD Uploaded within 24h', data_type: 'enum', operators: ENUM_OPS, options: YES_NO_OPTIONS, is_pii: false, is_db_col: false, group: 'vehicle_details' },
-    { key: 'footage_collected', label_en: 'Footage Collected', label_hi: 'Footage Collected', data_type: 'enum', operators: ENUM_OPS, options: YES_NO_OPTIONS, is_pii: false, is_db_col: false, group: 'vehicle_details' },
 
-    // ── Investigation Details group (2 fields) ───────────────────────────
+    // ── Investigation Details group ──────────────────────────────────────
+    { key: 'status',              label_en: 'Case Status',          label_hi: 'मामले की स्थिति',       data_type: 'enum',    operators: ENUM_OPS, is_pii: false, is_db_col: false, options: ['Open','Chargesheeted','Closed','Charge Sheet','PIR-JCL','Untraced','Pending','Cancellation','Quashed','Closure Report','Released U/S 189 BNSS'], wh_col: 'case_status', group: 'investigation_details' },
     { key: 'disposal_type', label_en: 'Disposal Type', label_hi: 'Disposal Type', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'investigation_details' },
     { key: 'rc_no', label_en: 'RC No.', label_hi: 'RC No.', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'investigation_details' },
+    { key: 'remarks',             label_en: 'Remarks',              label_hi: 'टिप्पणियां',             data_type: 'textarea',operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, wh_col: 'remarks', group: 'investigation_details' },
 
-    // ── Financial / Fraud Details group (2 fields) ───────────────────────
-    { key: 'cheated_amount', label_en: 'Cheated Amount', label_hi: 'Cheated Amount', data_type: 'number', operators: NUM_OPS, is_pii: false, is_db_col: false, group: 'financial_fraud' },
-    { key: 'modus_operandi', label_en: 'Modus Operandi', label_hi: 'Modus Operandi', data_type: 'textarea', operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, group: 'financial_fraud' },
+    // ── Property Stolen & Recovery Details group ─────────────────────────
+    { key: 'property_category',   label_en: 'Property Category',        label_hi: 'संपत्ति श्रेणी',       data_type: 'enum',    operators: ENUM_OPS, options: ['Jewellery & Precious Metals','Cash & Currency','Automobile / Vehicle','Mobile / Electronic Gadgets','Arms & Ammunition','Narcotics & Drugs','Machinery & Equipment','Documents & Certificates','Other Property'], is_pii: false, is_db_col: false, group: 'property_details' },
+    { key: 'property_type',       label_en: 'Property Sub-Type',        label_hi: 'संपत्ति उप-प्रकार',     data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'property_details' },
+    { key: 'property_nature',     label_en: 'Property Nature / Status', label_hi: 'संपत्ति स्थिति',    data_type: 'enum',    operators: ENUM_OPS, options: ['Stolen','Recovered','Seized','Intact','Unclaimed','Involved'], is_pii: false, is_db_col: false, group: 'property_details' },
+    { key: 'estimated_value',     label_en: 'Estimated Value (₹)',      label_hi: 'अनुमानित मूल्य (₹)', data_type: 'number',  operators: NUM_OPS, is_pii: false, is_db_col: false, group: 'property_details' },
+    { key: 'property_details',    label_en: 'Property Description',     label_hi: 'संपत्ति विवरण',        data_type: 'textarea',operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, group: 'property_details' },
+    { key: 'property_uid',        label_en: 'Property UID / Serial No.',label_hi: 'संपत्ति यूआईडी / क्रमांक', data_type: 'text',   operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'property_details' },
   ],
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -387,6 +464,11 @@ export const REPORTABLE_FIELDS = {
     // ── Custody Status Details group (2 fields) ──────────────────────────
     { key: 'other_status_reason', label_en: 'Other Status Reason', label_hi: 'Other Status Reason', data_type: 'textarea', operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, group: 'custody_status_detail' },
     { key: 'recovery', label_en: 'Recovery', label_hi: 'Recovery', data_type: 'textarea', operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, group: 'custody_status_detail' },
+
+    // ── Arrest Details & Classification group ───────────────────────────
+    { key: 'arrest_type',        label_en: 'Type of Arrest',        label_hi: 'गिरफ्तारी का प्रकार',   data_type: 'enum',    operators: ENUM_OPS, options: ['Direct FIR Arrest', 'DD / Kalandra Arrest', 'Preventive 126/135 BNSS', 'Notice U/S 35 BNSS', 'Court Warrant', 'Surrender', 'Other'], is_pii: false, is_db_col: false, group: 'arrest_details' },
+    { key: 'arrest_category',    label_en: 'Arrest Category',       label_hi: 'गिरफ्तारी श्रेणी',     data_type: 'enum',    operators: ENUM_OPS, options: ['Heinous Offender', 'Proclaimed Offender (PO)', 'Bad Character (BC)', 'Repeat Offender', 'First-Time Offender'], is_pii: false, is_db_col: false, group: 'arrest_details' },
+    { key: 'arrest_memo_no',     label_en: 'Arrest Memo / Entry No',label_hi: 'गिरफ्तारी मेमो सं.',    data_type: 'text',    operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'arrest_details' },
   ],
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -548,17 +630,24 @@ export const REPORTABLE_FIELDS = {
  */
 export const GROUP_LABELS = {
   'CASE.general_info': { label_en: 'General Info', label_hi: 'General Info' },
+  'CASE.acts_sections': { label_en: 'Acts & Sections (Act + Law Sections)', label_hi: 'अधिनियम एवं धाराएं' },
+  'CASE.fir_contents': { label_en: 'FIR Contents', label_hi: 'प्राथमिकी विवरण' },
   'CASE.io_info': { label_en: 'IO Info', label_hi: 'IO Info' },
   'CASE.complainant_personal_info': { label_en: 'Complainant Personal Info', label_hi: 'Complainant Personal Info' },
   'CASE.complainant_address_detail': { label_en: 'Complainant Address', label_hi: 'Complainant Address' },
+  'CASE.accused_personal_info': { label_en: 'Accused Personal Info', label_hi: 'Accused Personal Info' },
+  'CASE.accused_address_detail': { label_en: 'Accused Address', label_hi: 'Accused Address' },
+  'CASE.victim_personal_info': { label_en: 'Victim Personal Info', label_hi: 'Victim Personal Info' },
+  'CASE.victim_address_detail': { label_en: 'Victim Address', label_hi: 'Victim Address' },
   'CASE.occurrence_info': { label_en: 'Occurrence Info', label_hi: 'Occurrence Info' },
   'CASE.vehicle_details': { label_en: 'Vehicle Details', label_hi: 'Vehicle Details' },
   'CASE.investigation_details': { label_en: 'Investigation Details', label_hi: 'Investigation Details' },
-  'CASE.financial_fraud': { label_en: 'Financial / Fraud Details', label_hi: 'Financial / Fraud Details' },
+  'CASE.property_details': { label_en: 'Property Stolen & Recovery Details (Full Particulars)', label_hi: 'संपत्ति चोरी एवं बरामदगी विवरण' },
 
   'ARREST.io_info': { label_en: 'IO Info', label_hi: 'IO Info' },
   'ARREST.special_scheme': { label_en: 'Special Scheme', label_hi: 'Special Scheme' },
   'ARREST.custody_status_detail': { label_en: 'Custody Status Details', label_hi: 'Custody Status Details' },
+  'ARREST.arrest_details': { label_en: 'Arrest Classification & Custody Details', label_hi: 'गिरफ्तारी वर्गीकरण एवं अभिरक्षा' },
 
   'PCR_CALL.general_info': { label_en: 'General Info', label_hi: 'General Info' },
   'PCR_CALL.io_info': { label_en: 'IO Info', label_hi: 'IO Info' },
@@ -631,10 +720,5 @@ export function getFieldDef(table, key) {
  * Filter fields for a given user role — removes PII fields below pii_min_role threshold.
  */
 export function filterFieldsForRole(fields, userRole) {
-  const userRoleIdx = ROLE_ORDER.indexOf(userRole);
-  return fields.filter(f => {
-    if (!f.is_pii) return true;
-    const minRoleIdx = ROLE_ORDER.indexOf(f.pii_min_role || 'DISTRICT_OFFICER');
-    return userRoleIdx >= minRoleIdx;
-  });
+  return fields.filter(f => f.data_type !== 'boolean');
 }

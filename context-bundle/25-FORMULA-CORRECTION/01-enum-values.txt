@@ -1,0 +1,87 @@
+=== fir_details.case_status ===
+fir_details.case_status	null	29730
+fir_details.case_status	TRANSFER	2
+fir_details.case_status	PENDING	1
+fir_details.case_status	CHARGE SHEET	1
+
+=== fir_details.disposal_type ===
+fir_details.disposal_type	CHARGE_SHEET	164
+fir_details.disposal_type	FINAL_REPORT	82
+fir_details.disposal_type	UNTRACED	82
+
+=== fir_details.case_type ===
+fir_details.case_type	FIR	22325
+fir_details.case_type	DD_CASE	7387
+fir_details.case_type	cctns(manual FIR)	11
+fir_details.case_type	eMVT	2
+fir_details.case_type	zero FIR	2
+fir_details.case_type	eTheft	2
+
+=== fir_details.court_disposal_type ===
+
+=== missing_details.missing_type ===
+missing_details.missing_type	ADULT	328
+missing_details.missing_type	CHILD	164
+missing_details.missing_type	Missing	8
+
+=== persons.role ===
+persons.role	COMPLAINANT	29729
+persons.role	VICTIM	25632
+persons.role	ACCUSED	20074
+persons.role	ARRESTEE	17037
+persons.role	MISSING	500
+persons.role	INFORMANT	16
+persons.role	DECEASED	8
+persons.role	CALLER	8
+
+=== persons.gender ===
+persons.gender	MALE	77802
+persons.gender	FEMALE	15160
+persons.gender	null	30
+persons.gender	TRANSGENDER	12
+
+=== persons.social_category ===
+persons.social_category	OBC	1
+persons.social_category	SC	1
+
+=== records.record_type ===
+records.record_type	CASE	29734
+records.record_type	ARREST	17037
+records.record_type	MISSING	500
+records.record_type	PCR_CALL	418
+records.record_type	UIDB	254
+
+=== records.current_status ===
+records.current_status	SUBMITTED	28743
+records.current_status	APPROVED	9641
+records.current_status	DRAFT	9521
+records.current_status	HQ_RECEIVED	20
+records.current_status	PENDING_SHO	8
+records.current_status	SENT_BACK	6
+records.current_status	DISTRICT_REVIEW	4
+
+=== record_properties.status ===
+record_properties.status	STOLEN	743
+record_properties.status	SEIZED	164
+
+=== record_properties.recovery_agency ===
+
+=== arrest_details.is_dd_based ===
+arrest_details.is_dd_based	false	17028
+arrest_details.is_dd_based	true	9
+
+=== hierarchy_nodes.node_type ===
+hierarchy_nodes.node_type	PS	225
+hierarchy_nodes.node_type	SUB_DIV	92
+hierarchy_nodes.node_type	DISTRICT	23
+hierarchy_nodes.node_type	RANGE	6
+hierarchy_nodes.node_type	ZONE	2
+hierarchy_nodes.node_type	HQ	1
+
+=== ref.local_heads.crime_category ===
+ref.local_heads.crime_category	HEINOUS	7
+ref.local_heads.crime_category	NON_HEINOUS	76
+ref.local_heads.crime_category	OTHER	73
+
+=== locations.state ===
+

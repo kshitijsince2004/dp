@@ -1,14 +1,22 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import db from '../../../config/db.js';
 import { fetchRecordFull } from '../../records/records.service.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let contractRegisterCache = null;
 
 function getContractRegister() {
   if (!contractRegisterCache) {
-    const regPath = path.resolve(process.cwd(), '../context-bundle/22-CORRECTNESS-SYSTEM/sheet-contract-register.json');
-    if (fs.existsSync(regPath)) {
+    const regPath = [
+      path.resolve(__dirname, '../../../../../context-bundle/22-CORRECTNESS-SYSTEM/sheet-contract-register.json'),
+      path.resolve(process.cwd(), 'context-bundle/22-CORRECTNESS-SYSTEM/sheet-contract-register.json'),
+    ].find(p => fs.existsSync(p));
+
+    if (regPath) {
       contractRegisterCache = JSON.parse(fs.readFileSync(regPath, 'utf8'));
     } else {
       contractRegisterCache = {};

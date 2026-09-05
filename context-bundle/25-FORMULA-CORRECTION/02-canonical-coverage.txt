@@ -1,0 +1,468 @@
+=== CANONICAL CODE COVERAGE ===
+{
+  "total": "156",
+  "mapped": "156",
+  "unmapped": "0"
+}
+
+=== UNMAPPED LOCAL HEADS ===
+[]
+
+=== REF.ACTS (462) ===
+[
+  {
+    "act_cd": 3744,
+    "act_long": "AADHAAR (TARGETED DELIVERY OF FINANCIAL AND OTHER SUBSIDIES, BENEFITS AND SERVICES) ACT, 2016"
+  },
+  {
+    "act_cd": 84,
+    "act_long": "ADVOCATES ACT, 1961"
+  },
+  {
+    "act_cd": 86,
+    "act_long": "AIRCRAFT ACT, 1934"
+  },
+  {
+    "act_cd": 3837,
+    "act_long": "AIRCRAFT RULES,1937"
+  },
+  {
+    "act_cd": 2396,
+    "act_long": "AMUSEMENT AND BETTING JOKE ACT 1939"
+  },
+  {
+    "act_cd": 2671,
+    "act_long": "ANCIENT MONUMENTS AND ARCHAELOGICAL STIES AND REMAINS ACT, 1961"
+  },
+  {
+    "act_cd": 2397,
+    "act_long": "ANCIENT MONUMENTS AND RECORDS ACT 1959"
+  },
+  {
+    "act_cd": 2119,
+    "act_long": "ANCIENT MONUMENTS PRESERVATION ACT, 1904"
+  },
+  {
+    "act_cd": 451,
+    "act_long": "ANIMAL PRESERVATION ACT, 1890"
+  },
+  {
+    "act_cd": 452,
+    "act_long": "ANIMAL PRESERVATION ACT, 1948"
+  },
+  {
+    "act_cd": 1838,
+    "act_long": "ANIMAL PRESERVATION ACT, 1954"
+  },
+  {
+    "act_cd": 2,
+    "act_long": "ANTI-HIJACKING ACT, 1982"
+  },
+  {
+    "act_cd": 3,
+    "act_long": "ANTIQUES AND ART TREASURES ACT, 1972"
+  },
+  {
+    "act_cd": 4,
+    "act_long": "ARMS ACT, 1959"
+  },
+  {
+    "act_cd": 95,
+    "act_long": "ATOMIC ENERGY ACT, 1962"
+  },
+  {
+    "act_cd": 9990,
+    "act_long": "Air Prevention And Control Of Pollution act 1981"
+  },
+  {
+    "act_cd": 3908,
+    "act_long": "Aircraft (Security) Rules, 2011"
+  },
+  {
+    "act_cd": 9994,
+    "act_long": "Arms (Amendment) Act 2019"
+  },
+  {
+    "act_cd": 99,
+    "act_long": "BENAMI TRANSACTIONS (PROHIBITION) ACT, 1988"
+  },
+  {
+    "act_cd": 3705,
+    "act_long": "BOMBAY FORWARD CONTRACTS CONTROL ACT, 1947"
+  },
+  {
+    "act_cd": 3726,
+    "act_long": "BOMBAY JUDICIAL PROCEEDINGS (REGULATION OF REPORTS) ACT, 1955"
+  },
+  {
+    "act_cd": 5,
+    "act_long": "BONDED LABOUR SYSTEM (ABOLITION) ACT, 1976"
+  },
+  {
+    "act_cd": 2125,
+    "act_long": "BUREAU OF INDIAN STANDARDS ACT, 1986"
+  },
+  {
+    "act_cd": 3996,
+    "act_long": "Banning of Unregulated Deposit Schemes Act, 2019"
+  },
+  {
+    "act_cd": 4254,
+    "act_long": "Bed and Breakfast act 2007"
+  },
+  {
+    "act_cd": 3942,
+    "act_long": "Bihar Ban on Lottery Act, 1993"
+  },
+  {
+    "act_cd": 3939,
+    "act_long": "Bihar Collective Fines (Imposition) Act, 1982"
+  },
+  {
+    "act_cd": 3936,
+    "act_long": "Bihar Conduct of Examination Act, 1981"
+  },
+  {
+    "act_cd": 3938,
+    "act_long": "Bihar Control of Crimes Act, 1981"
+  },
+  {
+    "act_cd": 3937,
+    "act_long": "Bihar Essential Services Maintenance Act, 1948"
+  },
+  {
+    "act_cd": 3945,
+    "act_long": "Bihar Maintenance & Welfare of Parents & Senior Citizens Rules, 2012"
+  },
+  {
+    "act_cd": 3940,
+    "act_long": "Bihar Prevention of Beggary Act, 1951"
+  },
+  {
+    "act_cd": 3941,
+    "act_long": "Bihar Prevention of Defacement of Property Act, 1985"
+  },
+  {
+    "act_cd": 3981,
+    "act_long": "Biological Diversity Act 2002"
+  },
+  {
+    "act_cd": 3699,
+    "act_long": "Bombay Electricity (Special Powers) Act, 1946"
+  },
+  {
+    "act_cd": 3704,
+    "act_long": "Bombay Fodder and Grain Control Act, 1939"
+  },
+  {
+    "act_cd": 3718,
+    "act_long": "Bombay Housing Board Act, 1948"
+  },
+  {
+    "act_cd": 3723,
+    "act_long": "Bombay Industrial Relations Act, 1946"
+  },
+  {
+    "act_cd": 3729,
+    "act_long": "Bombay Khar Lands Act, 1948"
+  },
+  {
+    "act_cd": 3730,
+    "act_long": "Bombay Khoti Abolition Act, 1949"
+  },
+  {
+    "act_cd": 3740,
+    "act_long": "Bombay Sugarcane Cess Act, 1948"
+  },
+  {
+    "act_cd": 4150,
+    "act_long": "CANTONMENTS ACT, 2006"
+  },
+  {
+    "act_cd": 2405,
+    "act_long": "CATTLE PRESERVATION ACT 1950"
+  },
+  {
+    "act_cd": 105,
+    "act_long": "CATTLE PRESERVATION ACT,1951"
+  },
+  {
+    "act_cd": 6,
+    "act_long": "CATTLE TRESPASS ACT, 1871"
+  },
+  {
+    "act_cd": 2562,
+    "act_long": "CATTLE TRESPASS ACT, 1920"
+  },
+  {
+    "act_cd": 461,
+    "act_long": "CATTLE TRESSPASS ACT, 1959"
+  },
+  {
+    "act_cd": 2215,
+    "act_long": "CATTLE TRESSPASS ACT, 1961"
+  },
+  {
+    "act_cd": 2406,
+    "act_long": "CEMENT CONTROL ACT 1953"
+  },
+  {
+    "act_cd": 3950,
+    "act_long": "CENTRAL GOODS AND SERVICES TAX ACT(CGST), 2017"
+  }
+]
+
+=== REF.SECTIONS (17207) ===
+[
+  {
+    "section_cd": "0",
+    "section": "193(3)(i)",
+    "section_code": "4377-193(3)(i)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(i)(a)",
+    "section_code": "4377-193(3)(i)(a)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(i)(b)",
+    "section_code": "4377-193(3)(i)(b)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(i)(c)",
+    "section_code": "4377-193(3)(i)(c)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(i)(d)",
+    "section_code": "4377-193(3)(i)(d)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(i)(e)",
+    "section_code": "4377-193(3)(i)(e)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(i)(f)",
+    "section_code": "4377-193(3)(i)(f)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(i)(g)",
+    "section_code": "4377-193(3)(i)(g)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(i)(h)",
+    "section_code": "4377-193(3)(i)(h)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(i)(i)",
+    "section_code": "4377-193(3)(i)(i)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(ii)",
+    "section_code": "4377-193(3)(ii)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(3)(iii)",
+    "section_code": "4377-193(3)(iii)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(4)",
+    "section_code": "4377-193(4)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(5)",
+    "section_code": "4377-193(5)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(6)",
+    "section_code": "4377-193(6)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(6)(a)",
+    "section_code": "4377-193(6)(a)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(6)(b)",
+    "section_code": "4377-193(6)(b)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(7)",
+    "section_code": "4377-193(7)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(8)",
+    "section_code": "4377-193(8)"
+  },
+  {
+    "section_cd": "0",
+    "section": "193(9)",
+    "section_code": "4377-193(9)"
+  },
+  {
+    "section_cd": "0",
+    "section": "194(1)",
+    "section_code": "4377-194(1)"
+  },
+  {
+    "section_cd": "0",
+    "section": "194(2)",
+    "section_code": "4377-194(2)"
+  },
+  {
+    "section_cd": "0",
+    "section": "194(3)",
+    "section_code": "4377-194(3)"
+  },
+  {
+    "section_cd": "0",
+    "section": "194(3)(i)",
+    "section_code": "4377-194(3)(i)"
+  },
+  {
+    "section_cd": "0",
+    "section": "194(3)(ii)",
+    "section_code": "4377-194(3)(ii)"
+  },
+  {
+    "section_cd": "0",
+    "section": "194(3)(iii)",
+    "section_code": "4377-194(3)(iii)"
+  },
+  {
+    "section_cd": "0",
+    "section": "194(3)(iv)",
+    "section_code": "4377-194(3)(iv)"
+  },
+  {
+    "section_cd": "0",
+    "section": "194(3)(v)",
+    "section_code": "4377-194(3)(v)"
+  },
+  {
+    "section_cd": "0",
+    "section": "194(4)",
+    "section_code": "4377-194(4)"
+  },
+  {
+    "section_cd": "0",
+    "section": "195",
+    "section_code": "4377-195"
+  },
+  {
+    "section_cd": "0",
+    "section": "195(1)",
+    "section_code": "4377-195(1)"
+  },
+  {
+    "section_cd": "0",
+    "section": "195(2)",
+    "section_code": "4377-195(2)"
+  },
+  {
+    "section_cd": "0",
+    "section": "196",
+    "section_code": "4377-196"
+  },
+  {
+    "section_cd": "0",
+    "section": "196(1)",
+    "section_code": "4377-196(1)"
+  },
+  {
+    "section_cd": "0",
+    "section": "196(2)",
+    "section_code": "4377-196(2)"
+  },
+  {
+    "section_cd": "0",
+    "section": "196(2)(a)",
+    "section_code": "4377-196(2)(a)"
+  },
+  {
+    "section_cd": "0",
+    "section": "196(2)(b)",
+    "section_code": "4377-196(2)(b)"
+  },
+  {
+    "section_cd": "0",
+    "section": "196(3)",
+    "section_code": "4377-196(3)"
+  },
+  {
+    "section_cd": "0",
+    "section": "196(4)",
+    "section_code": "4377-196(4)"
+  },
+  {
+    "section_cd": "0",
+    "section": "196(5)",
+    "section_code": "4377-196(5)"
+  },
+  {
+    "section_cd": "0",
+    "section": "196(6)",
+    "section_code": "4377-196(6)"
+  },
+  {
+    "section_cd": "0",
+    "section": "197",
+    "section_code": "4377-197"
+  },
+  {
+    "section_cd": "0",
+    "section": "198",
+    "section_code": "4377-198"
+  },
+  {
+    "section_cd": "0",
+    "section": "198(a)",
+    "section_code": "4377-198(a)"
+  },
+  {
+    "section_cd": "0",
+    "section": "198(b)",
+    "section_code": "4377-198(b)"
+  },
+  {
+    "section_cd": "0",
+    "section": "198(c)",
+    "section_code": "4377-198(c)"
+  },
+  {
+    "section_cd": "0",
+    "section": "98(1)(a)",
+    "section_code": "4377-98(1)(a)"
+  },
+  {
+    "section_cd": "0",
+    "section": "199",
+    "section_code": "4377-199"
+  },
+  {
+    "section_cd": "0",
+    "section": "2",
+    "section_code": "4377-2"
+  },
+  {
+    "section_cd": "0",
+    "section": "2(1)",
+    "section_code": "4377-2(1)"
+  }
+]
+

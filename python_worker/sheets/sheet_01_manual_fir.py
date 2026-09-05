@@ -4,10 +4,22 @@ from formatters import format_person, format_person_no_age, format_occurrence, f
 NUM = 1
 TABLE_NAME = 'excel_1manual_fir'
 LABEL = 'Manual FIR'
-COLUMNS = ['ps', 'fir_no', 'us', 'complainant_details', 'time_of_occurrence', 'place_of_occurrence', 'gist', 'arrested_details', 'io_details']
-COLUMN_LABELS = {
-    'io_details': 'IO (Name / Rank)',
-}
+
+MANUAL_FIR_COLUMNS = [
+    ('ps',                  'Police Station'),
+    ('fir_no',              'FIR No.'),
+    ('us',                  'U/S (Act + Section)'),
+    ('complainant_details', 'Complainant (Name / S/O / R/O Address)'),
+    ('time_of_occurrence',  'Date & Time of Occurrence (DD/MM/YYYY HH:MM)'),
+    ('place_of_occurrence', 'Place of Occurrence (House No. / Street / Colony / Village / City / Tehsil / Landmark / District)'),
+    ('gist',                'Brief Facts / Gist of Case'),
+    ('arrested_details',    'Arrested Person (Name / Age / S/O / R/O Address)'),
+    ('io_details',          'Name of IO (Rank / Name / PIS No.)'),
+]
+
+COLUMNS = [key for key, _ in MANUAL_FIR_COLUMNS]
+
+COLUMN_LABELS = {key: label for key, label in MANUAL_FIR_COLUMNS}
 
 
 def filter_records(classified):
@@ -18,11 +30,6 @@ def map_row(r, idx):
     d = r['data']
 
     # Occurrence: combine date + time; support from-to range if end fields are present.
-    # r['record_date'] (the real DB column the report's date-range filter runs
-    # against) takes priority over any JSONB date field — gd_date/occurrence_date
-    # can hold stale/unrelated values (e.g. seeded independently of record_date),
-    # which made this column show dates outside the report's selected date range
-    # even though the row itself was correctly included by record_date.
     occ_datetime = format_occurrence(
         r.get('record_date') or d.get('gd_date') or d.get('fir_date') or d.get('occurrence_date'),
         d.get('gd_time') or d.get('time_of_occurrence') or d.get('occurrence_time'),
@@ -30,10 +37,14 @@ def map_row(r, idx):
         d.get('occurrence_end_time'),
     )
 
+    act = d.get('act_name') or ''
+    sec = d.get('sections') or d.get('under_section') or ''
+    us_str = f"{act} u/s {sec}".strip() if act and sec else (sec or act or '')
+
     return {
         'ps': r.get('ps_name') or '',
         'fir_no': d.get('fir_no') or '',
-        'us': d.get('sections') or d.get('under_section') or '',
+        'us': us_str,
         'complainant_details': format_person_no_age(
             d.get('complainant_name'),
             _complainant_parent(d),
@@ -41,7 +52,7 @@ def map_row(r, idx):
             d,
         ),
         'time_of_occurrence': occ_datetime,
-        'place_of_occurrence': d.get('occurrence_place') or '',
+        'place_of_occurrence': d.get('occurrence_place') or d.get('place_of_occurrence') or '',
         'gist': d.get('brief_facts') or '',
         'arrested_details': format_person(
             d.get('arrested_person') or d.get('accused_name'),
@@ -54,5 +65,5 @@ def map_row(r, idx):
             d.get('io_name'),
             d.get('io_rank') or d.get('rank_of_io'),
             d.get('io_pis'),
-        ),
+        ) or d.get('io_name') or '',
     }

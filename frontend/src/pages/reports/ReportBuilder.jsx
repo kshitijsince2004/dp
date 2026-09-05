@@ -1,28 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  FileSpreadsheet,
-  Plus,
-  X,
-  Play,
-  Save,
-  Download,
-  Filter,
-  Sparkles,
-  Layers,
-  BarChart3,
-  CheckCircle2,
-  Table as TableIcon,
-  Search,
-  Clock,
-  ChevronRight,
-  ArrowUpDown,
-  ArrowRightLeft,
-  RotateCcw,
-  Info,
-  Shield,
-  Tag,
-  BookOpen
+  FileSpreadsheet, Plus, X, Play, Save, Download, Filter, Sparkles,
+  Layers, BarChart3, CheckCircle2, Table as TableIcon, Search, Clock,
+  ChevronRight, ArrowRightLeft, RotateCcw, Info, Shield, Tag, BookOpen,
+  Eye, TrendingUp, DollarSign, Users, CheckSquare, Layers2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
@@ -37,6 +19,10 @@ export default function ReportBuilder() {
   const [rows, setRows] = useState(['ps_name']);
   const [columns, setColumns] = useState(['crime_head']);
   const [measure, setMeasure] = useState('case_count');
+  
+  // Single Classification Focus State: 'CRIME_HEAD' vs 'ACT_SECTION'
+  const [classificationMode, setClassificationMode] = useState('CRIME_HEAD');
+  
   const [filters, setFilters] = useState({
     recordType: '',
     caseStatus: '',
@@ -49,6 +35,7 @@ export default function ReportBuilder() {
   const [saveName, setSaveName] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [hoveredCell, setHoveredCell] = useState(null);
+  const [drilldownCell, setDrilldownCell] = useState(null);
 
   useEffect(() => {
     log.debug('page:mount', { route: '/reports/builder', userId: user?.id, role: user?.role });
@@ -90,6 +77,42 @@ export default function ReportBuilder() {
     },
     enabled: !!measure && (rows.length > 0 || columns.length > 0),
   });
+
+  // Handle Mutually-Exclusive Classification Mode Switch
+  const handleClassificationModeChange = (newMode) => {
+    setClassificationMode(newMode);
+    if (newMode === 'CRIME_HEAD') {
+      setColumns(['crime_head']);
+      setFilters(prev => ({ ...prev, actCategory: 'ALL', recordType: 'CASE' }));
+      toast.success('Switched to Crime Head Categorization (FIRs)');
+    } else if (newMode === 'ACT_SECTION') {
+      setColumns(['act_name']);
+      setFilters(prev => ({ ...prev, crimeCategory: 'ALL', recordType: '' }));
+      toast.success('Switched to Act & Section Legal Categorization');
+    }
+  };
+
+  const handleExportPivot = async () => {
+    try {
+      const loadingToastId = toast.loading('Exporting pivot matrix to Excel...');
+      const response = await api.post(
+        '/warehouse/export',
+        { rows, columns, measure, filters, name: `Pivot_${measure}_${Date.now()}` },
+        { responseType: 'blob' }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Pivot_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.dismiss(loadingToastId);
+      toast.success('Pivot Excel workbook downloaded!');
+    } catch (err) {
+      toast.error('Failed to export pivot table.');
+    }
+  };
 
   // Save report mutation
   const saveMutation = useMutation({
@@ -139,6 +162,19 @@ export default function ReportBuilder() {
   const dimMap = Object.fromEntries(dimensions.map((d) => [d.key, d.label]));
   const measureMap = Object.fromEntries(measures.map((m) => [m.key, m.label]));
 
+  // Heatmap intensity calculator for cells
+  const maxCellValue = pivotData?.cells
+    ? Math.max(...pivotData.cells.flatMap((r) => r), 1)
+    : 1;
+
+  const getHeatmapClass = (val) => {
+    if (!val || val === 0) return 'text-slate-500 bg-transparent';
+    const ratio = val / maxCellValue;
+    if (ratio > 0.6) return 'bg-emerald-500/25 text-emerald-200 font-bold';
+    if (ratio > 0.3) return 'bg-emerald-500/15 text-emerald-300 font-semibold';
+    return 'bg-emerald-500/5 text-slate-200';
+  };
+
   const addRow = (key) => {
     if (!rows.includes(key)) {
       setRows([...rows, key]);
@@ -187,7 +223,8 @@ export default function ReportBuilder() {
     setRows(['ps_name']);
     setColumns(['crime_head']);
     setMeasure('case_count');
-    setFilters({ recordType: '', caseStatus: '', fromDate: '', toDate: '', crimeCategory: 'ALL', actCategory: 'ALL' });
+    setClassificationMode('CRIME_HEAD');
+    setFilters({ recordType: 'CASE', caseStatus: '', fromDate: '', toDate: '', crimeCategory: 'ALL', actCategory: 'ALL' });
     toast.success('Layout reset to default!');
   };
 
@@ -199,24 +236,25 @@ export default function ReportBuilder() {
     toast.success('Report preset loaded!');
   };
 
+  const grandTotalVal = pivotData?.grandTotals?.reduce((a, b) => a + b, 0) || 0;
+
   return (
-    <div className="p-6 min-h-screen bg-slate-900 text-slate-100 font-sans">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-6 rounded-2xl mb-6 border border-slate-800 shadow-2xl relative overflow-hidden">
+    <div className="p-6 min-h-screen bg-slate-900 text-slate-100 font-sans space-y-6">
+      
+      {/* ── Executive Header Banner ────────────────────────────────────────── */}
+      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-6 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
-                <BarChart3 size={24} />
-              </div>
-              <div>
-                <h1 className="text-2xl font-extrabold tracking-tight text-white font-display">
-                  Build Your Own Report &amp; Dynamic Pivot Engine
-                </h1>
-                <p className="text-slate-400 text-xs mt-0.5 font-medium">
-                  Dynamic database aggregation — filter by Heinous / Non-Heinous crime heads, Major / SLL Acts, and multi-level station scopes.
-                </p>
-              </div>
+          <div className="flex items-center gap-3.5">
+            <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+              <BarChart3 size={26} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-white font-display">
+                Executive Custom Report Builder &amp; Dynamic Pivot Engine
+              </h1>
+              <p className="text-slate-400 text-xs mt-0.5 font-medium">
+                Clean, single-focus report customizer — analyze either by Crime Head OR by Act &amp; Section laws without overlapping filter confusion.
+              </p>
             </div>
           </div>
 
@@ -254,18 +292,18 @@ export default function ReportBuilder() {
         </div>
       </div>
 
-      {/* Quick Access Tiles */}
+      {/* ── Quick Access & Officer Presets ─────────────────────────────────── */}
       {quickAccessData && quickAccessData.length > 0 && (
-        <div className="mb-6 space-y-2">
+        <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
             <span className="flex items-center gap-2">
               <Sparkles size={14} className="text-amber-400" />
-              <span>Quick Access &amp; Saved Presets</span>
+              <span>One-Click Officer Presets &amp; Saved Reports</span>
             </span>
-            <span className="text-[10px] text-slate-500 font-normal">Click any tile to auto-configure layout</span>
+            <span className="text-[10px] text-slate-500 font-normal">Click any preset tile to auto-configure matrix</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {quickAccessData.map((item) => (
+            {Array.from(new Map(quickAccessData.map((item) => [item.name, item])).values()).map((item) => (
               <div
                 key={item.id}
                 onClick={() => loadPreset(item.spec)}
@@ -297,87 +335,97 @@ export default function ReportBuilder() {
         </div>
       )}
 
-      {/* Main Builder Grid */}
+      {/* ── 3-Step Guided Customization Layout ──────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Field Catalogue Picker */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2 border-b border-slate-800 pb-2.5">
-              <Layers size={15} className="text-emerald-400" />
-              <span>Reportable Catalogue</span>
+        
+        {/* Step 1 & 2: Left Panel (Measure & Dimension Selector) */}
+        <div className="lg:col-span-4 space-y-4">
+          
+          {/* Step 1: Select Metric Measure */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-extrabold">1</span>
+                <span>Select What to Count (Measure)</span>
+              </span>
             </h3>
-
-            {/* Measures Section */}
-            <div>
-              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                1. Select Value (Measure)
-              </label>
-              <div className="space-y-1.5">
-                {measures.map((m) => (
+            <div className="grid grid-cols-1 gap-2">
+              {measures.map((m) => {
+                const isSelected = measure === m.key;
+                return (
                   <button
                     key={m.key}
+                    type="button"
                     onClick={() => setMeasure(m.key)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
-                      measure === m.key
-                        ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/60 shadow-inner'
-                        : 'bg-slate-950/60 text-slate-300 border-slate-800 hover:bg-slate-950'
+                    className={`p-3 rounded-xl text-left transition-all cursor-pointer border flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-emerald-950/60 border-emerald-500/70 text-white shadow-inner'
+                        : 'bg-slate-950/60 border-slate-800/80 hover:bg-slate-950 text-slate-300'
                     }`}
                   >
-                    <span>{m.label}</span>
-                    {measure === m.key && <CheckCircle2 size={14} className="text-emerald-400" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Dimensions Section */}
-            <div>
-              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                2. Available Dimensions
-              </label>
-              <div className="space-y-1.5 max-h-[380px] overflow-y-auto scrollbar-thin pr-1">
-                {dimensions.map((d) => {
-                  const isRow = rows.includes(d.key);
-                  const isCol = columns.includes(d.key);
-                  return (
-                    <div
-                      key={d.key}
-                      className="p-2.5 bg-slate-950/60 border border-slate-800 rounded-xl flex items-center justify-between gap-2 hover:border-slate-700 transition-colors"
-                    >
-                      <span className="text-xs font-medium text-slate-200 truncate">{d.label}</span>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => (isRow ? removeRow(d.key) : addRow(d.key))}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                            isRow
-                              ? 'bg-emerald-500 text-slate-950'
-                              : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                          }`}
-                        >
-                          + Row
-                        </button>
-                        <button
-                          onClick={() => (isCol ? removeColumn(d.key) : addColumn(d.key))}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                            isCol
-                              ? 'bg-indigo-500 text-white'
-                              : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                          }`}
-                        >
-                          + Col
-                        </button>
-                      </div>
+                    <div>
+                      <h4 className="text-xs font-bold">{m.label}</h4>
+                      <span className="text-[10px] text-slate-500 font-mono">{m.key}</span>
                     </div>
-                  );
-                })}
-              </div>
+                    {isSelected && <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
+
+          {/* Step 2: Available Dimensions */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-extrabold">2</span>
+                <span>Select Groupings (Dimensions)</span>
+              </span>
+            </h3>
+            <div className="space-y-1.5 max-h-[340px] overflow-y-auto scrollbar-thin pr-1">
+              {dimensions.map((d) => {
+                const isRow = rows.includes(d.key);
+                const isCol = columns.includes(d.key);
+                return (
+                  <div
+                    key={d.key}
+                    className="p-2.5 bg-slate-950/60 border border-slate-800/90 rounded-xl flex items-center justify-between gap-2 hover:border-slate-700 transition-colors"
+                  >
+                    <span className="text-xs font-medium text-slate-200 truncate">{d.label}</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => (isRow ? removeRow(d.key) : addRow(d.key))}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                          isRow
+                            ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                            : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                        }`}
+                      >
+                        + Row
+                      </button>
+                      <button
+                        onClick={() => (isCol ? removeColumn(d.key) : addColumn(d.key))}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                          isCol
+                            ? 'bg-indigo-500 text-white shadow-sm'
+                            : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                        }`}
+                      >
+                        + Col
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
 
-        {/* Right Column: Pivot Configuration & Matrix Grid */}
-        <div className="lg:col-span-9 space-y-4">
-          {/* Active Chips & Filter Controls Bar */}
+        {/* Step 3: Main Matrix & Filter Controls Panel */}
+        <div className="lg:col-span-8 space-y-4">
+          
+          {/* Active Hierarchy Chips & Mutually Exclusive Mode Selector */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
             
             {/* Active Fields Hierarchy */}
@@ -469,41 +517,59 @@ export default function ReportBuilder() {
               </div>
             </div>
 
-            {/* Dynamic Categorization Filter Controls Bar */}
+            {/* 🎯 Mutually-Exclusive Classification Focus Toggle Bar */}
             <div className="pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-              {/* Crime Head Filter (Heinous vs Non-Heinous vs All) */}
+              
+              {/* Primary Focus Toggle (Crime Head OR Act & Section) */}
               <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
-                  <Tag size={10} className="text-amber-400" />
-                  <span>Crime Head Scope</span>
+                  <Layers2 size={10} className="text-emerald-400" />
+                  <span>Categorization Mode</span>
                 </label>
                 <select
-                  value={filters.crimeCategory}
-                  onChange={(e) => setFilters({ ...filters, crimeCategory: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-bold outline-none focus:border-emerald-500 cursor-pointer"
+                  value={classificationMode}
+                  onChange={(e) => handleClassificationModeChange(e.target.value)}
+                  className="w-full bg-slate-950 border border-emerald-500/60 rounded-xl px-3 py-2 text-xs text-emerald-300 font-bold outline-none focus:border-emerald-400 cursor-pointer shadow-sm"
                 >
-                  <option value="ALL">All Crime Heads (Heinous → Non-Heinous → Other)</option>
-                  <option value="HEINOUS">Only Heinous Cases (Murder, Dacoity, Robbery, Rape, etc.)</option>
-                  <option value="NON_HEINOUS">Only Non-Heinous Cases (Theft, Hurt, Burglary, Cheating, etc.)</option>
+                  <option value="CRIME_HEAD">1. Categorize by Crime Head</option>
+                  <option value="ACT_SECTION">2. Categorize by Act / Section Laws</option>
                 </select>
               </div>
 
-              {/* Act & Section Filter (Major vs SLL vs All) */}
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
-                  <BookOpen size={10} className="text-indigo-400" />
-                  <span>Acts &amp; Sections Filter</span>
-                </label>
-                <select
-                  value={filters.actCategory}
-                  onChange={(e) => setFilters({ ...filters, actCategory: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-indigo-300 font-bold outline-none focus:border-emerald-500 cursor-pointer"
-                >
-                  <option value="ALL">All Acts &amp; Sections (Major + Special/Local Laws)</option>
-                  <option value="MAJOR">Only Major Acts (BNS / IPC / BNSS)</option>
-                  <option value="SLL">Only Special &amp; Local Laws (SLL / Excise / NDPS / Arms / POCSO)</option>
-                </select>
-              </div>
+              {/* Dynamic Single-Focus Sub-Filter */}
+              {classificationMode === 'CRIME_HEAD' ? (
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                    <Tag size={10} className="text-amber-400" />
+                    <span>Crime Head Filter</span>
+                  </label>
+                  <select
+                    value={filters.crimeCategory}
+                    onChange={(e) => setFilters({ ...filters, crimeCategory: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-bold outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    <option value="ALL">All Crime Heads (Heinous → Non-Heinous)</option>
+                    <option value="HEINOUS">Only Heinous Cases (Murder, Dacoity, Rape, etc.)</option>
+                    <option value="NON_HEINOUS">Only Non-Heinous Cases (Theft, Hurt, Burglary)</option>
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                    <BookOpen size={10} className="text-indigo-400" />
+                    <span>Acts &amp; Sections Filter</span>
+                  </label>
+                  <select
+                    value={filters.actCategory}
+                    onChange={(e) => setFilters({ ...filters, actCategory: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-indigo-300 font-bold outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    <option value="ALL">All Acts &amp; Sections</option>
+                    <option value="MAJOR">Only Major Acts (BNS / IPC / BNSS)</option>
+                    <option value="SLL">Only Special &amp; Local Laws (SLL / Excise / NDPS / Arms)</option>
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
@@ -524,7 +590,7 @@ export default function ReportBuilder() {
 
               <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  Record Type
+                  Record Type Filter
                 </label>
                 <select
                   value={filters.recordType}
@@ -542,29 +608,44 @@ export default function ReportBuilder() {
             </div>
           </div>
 
-          {/* Live Pivot Grid Matrix Render */}
+          {/* ── Executive Matrix Render with Visual Density Heatmap ───────────── */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden space-y-4">
             
-            {/* Matrix Metrics Bar */}
+            {/* Executive Summary Metrics Banner */}
             {pivotData && (
-              <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800/80">
-                <div className="flex items-center gap-4">
-                  <span><strong className="text-white">{pivotData.rowHeaders?.length || 0}</strong> Rows</span>
-                  <span><strong className="text-white">{pivotData.columnHeaders?.length || 0}</strong> Columns</span>
-                  <span><strong className="text-emerald-400 font-mono">{pivotData.grandTotals?.reduce((a, b) => a + b, 0).toLocaleString()}</strong> {measureMap[measure] || 'Total'}</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Aggregated</span>
+                  <p className="text-base font-extrabold text-emerald-400 font-mono">
+                    {grandTotalVal.toLocaleString()}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2 text-[10px]">
-                  {filters.crimeCategory !== 'ALL' && (
-                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold">
-                      {filters.crimeCategory}
-                    </span>
-                  )}
-                  {filters.actCategory !== 'ALL' && (
-                    <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded font-bold">
-                      {filters.actCategory}
-                    </span>
-                  )}
-                  <span className="text-slate-500 font-mono">Dynamic DB Query</span>
+                <div className="space-y-0.5">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Active Rows</span>
+                  <p className="text-base font-extrabold text-white font-mono">
+                    {pivotData.rowHeaders?.length || 0}
+                  </p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Active Columns</span>
+                  <p className="text-base font-extrabold text-white font-mono">
+                    {pivotData.columnHeaders?.length || 0}
+                  </p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Categorization Mode</span>
+                  <p className="text-xs font-bold text-emerald-400 mt-1 uppercase font-mono">
+                    {classificationMode === 'CRIME_HEAD' ? 'Crime Head' : 'Act & Section'}
+                  </p>
+                </div>
+                <div className="flex items-center justify-end">
+                  <button
+                    onClick={handleExportPivot}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-950/40 transition-all cursor-pointer"
+                  >
+                    <Download size={14} />
+                    <span>Export Pivot Excel</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -596,7 +677,7 @@ export default function ReportBuilder() {
                   </div>
                 ))}
 
-                {/* Matrix Table */}
+                {/* Heatmap Matrix Table */}
                 <div className="overflow-x-auto max-h-[550px] overflow-y-auto border border-slate-800 rounded-xl shadow-inner scrollbar-thin">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="sticky top-0 z-20 bg-slate-950 text-slate-200 font-bold uppercase tracking-wider border-b border-slate-800">
@@ -623,18 +704,23 @@ export default function ReportBuilder() {
                           <td className="p-3 font-semibold text-slate-200 border-r border-slate-800 sticky left-0 bg-slate-900">
                             {rh.values.join(' / ')}
                           </td>
-                          {pivotData.cells[ri]?.map((val, ci) => (
-                            <td
-                              key={ci}
-                              onMouseEnter={() => setHoveredCell({ rowIdx: ri, colIdx: ci })}
-                              onMouseLeave={() => setHoveredCell(null)}
-                              className={`p-3 text-center border-r border-slate-800/60 text-slate-300 font-mono transition-colors ${
-                                hoveredCell?.rowIdx === ri || hoveredCell?.colIdx === ci ? 'bg-emerald-500/10 text-emerald-300' : ''
-                              }`}
-                            >
-                              {val.toLocaleString()}
-                            </td>
-                          ))}
+                          {pivotData.cells[ri]?.map((val, ci) => {
+                            const heatmapCls = getHeatmapClass(val);
+                            return (
+                              <td
+                                key={ci}
+                                onClick={() => val > 0 && setDrilldownCell({ row: rh.values.join(' / '), col: pivotData.columnHeaders[ci]?.values.join(' / '), count: val })}
+                                onMouseEnter={() => setHoveredCell({ rowIdx: ri, colIdx: ci })}
+                                onMouseLeave={() => setHoveredCell(null)}
+                                className={`p-3 text-center border-r border-slate-800/60 font-mono transition-colors cursor-pointer ${heatmapCls} ${
+                                  hoveredCell?.rowIdx === ri || hoveredCell?.colIdx === ci ? 'bg-emerald-500/20 text-emerald-200' : ''
+                                }`}
+                                title="Click to view drill-down records"
+                              >
+                                {val.toLocaleString()}
+                              </td>
+                            );
+                          })}
                           <td className="p-3 text-right font-bold text-emerald-400 bg-slate-950/80 border-l border-slate-800 font-mono">
                             {pivotData.rowTotals[ri]?.toLocaleString()}
                           </td>
@@ -652,7 +738,7 @@ export default function ReportBuilder() {
                           </td>
                         ))}
                         <td className="p-3 text-right text-emerald-400 bg-slate-950 border-l border-slate-800 font-mono text-sm">
-                          {pivotData.grandTotals?.reduce((a, b) => a + b, 0).toLocaleString()}
+                          {grandTotalVal.toLocaleString()}
                         </td>
                       </tr>
                     </tfoot>
@@ -661,7 +747,9 @@ export default function ReportBuilder() {
               </div>
             )}
           </div>
+
         </div>
+
       </div>
 
       {/* Save Preset Modal */}
@@ -705,6 +793,40 @@ export default function ReportBuilder() {
           </div>
         </div>
       )}
+
+      {/* Drill-down Drawer Preview Modal */}
+      {drilldownCell && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Eye size={16} className="text-emerald-400" />
+                <span>Matrix Cell Drill-Down</span>
+              </h3>
+              <button onClick={() => setDrilldownCell(null)} className="text-slate-400 hover:text-white cursor-pointer">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1 text-xs">
+              <p className="text-slate-300"><strong>Row Segment:</strong> {drilldownCell.row}</p>
+              <p className="text-slate-300"><strong>Column Segment:</strong> {drilldownCell.col}</p>
+              <p className="text-emerald-400 font-bold font-mono">Total Matching Records: {drilldownCell.count}</p>
+            </div>
+            <p className="text-[11px] text-slate-400">
+              This drill-down drawer shows the aggregated count of matching PostgreSQL records for this matrix cell under your assigned role scope.
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setDrilldownCell(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all cursor-pointer"
+              >
+                Close Drawer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

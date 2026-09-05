@@ -4,7 +4,7 @@ import {
   FileSpreadsheet, Download, RefreshCw, ChevronDown, Search,
   X, Link2, AlertTriangle, CheckCircle2, Calendar, Shield,
   Sparkles, Layers, UserCheck, Package, Lock, Filter, Trash2, ArrowRight,
-  Building2, Users, FileText, ChevronUp, Tag
+  Building2, Users, FileText, ChevronUp, Tag, CheckSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
@@ -44,47 +44,83 @@ const QUICK_PRESETS = [
   {
     id: 'fir_360_dossier',
     title: '360° Complete FIR Dossier',
-    description: 'FIR, Complainant, Accused, Victim & Incident Details (Full Multi-Entity Report)',
+    description: 'FIR, Complainant, Accused, Victim, Property & Occurrence (Full Multi-Entity Report)',
     icon: Layers,
     table: 'CASE',
     join: 'CASE_ACCUSED',
-    fieldKeywords: ['fir_no', 'record_date', 'ps_name', 'complainant', 'occurrence', 'accused', 'status'],
+    fieldKeywords: ['fir_no', 'record_date', 'ps_name', 'complainant', 'occurrence', 'accused', 'status', 'prop', 'stolen', 'recovered'],
   },
   {
     id: 'daily_fir',
     title: 'Daily FIR Master Log',
-    description: 'FIR No, Registration Date, Local Head, PS Name, Status',
+    description: 'FIR No, Registration Date, Local Head, PS Name, Status, IO Name',
     icon: FileSpreadsheet,
     table: 'CASE',
     join: null,
-    fieldKeywords: ['fir_no', 'record_date', 'local_head_id', 'ps_name', 'current_status'],
+    fieldKeywords: ['fir_no', 'record_date', 'local_head_id', 'ps_name', 'current_status', 'io_name', 'gd_no'],
   },
   {
     id: 'accused_register',
-    title: 'Accused & Person Register',
-    description: 'FIR No, Accused Name, Gender, Age, Social Category, Arrest Type',
+    title: 'Accused & Suspect Person Register',
+    description: 'FIR No, Accused Name, Gender, Age, Social Category, Arrest Type, Address',
     icon: UserCheck,
     table: 'CASE',
     join: 'CASE_ACCUSED',
-    fieldKeywords: ['fir_no', 'name', 'gender', 'age', 'social_category', 'arrest_type'],
+    fieldKeywords: ['fir_no', 'name', 'gender', 'age', 'social_category', 'arrest_type', 'address'],
   },
   {
     id: 'property_stolen',
-    title: 'Property Stolen & Recovered',
-    description: 'FIR No, Local Head, Property Category, Value Stolen, Value Recovered',
+    title: 'Property Stolen & Recovered Detailed Register',
+    description: 'FIR No, Property Category, Sub-Type, Nature, Estimated Value (₹), Property Description & Serial No / UID',
     icon: Package,
     table: 'CASE',
     join: null,
-    fieldKeywords: ['fir_no', 'local_head_id', 'prop_category', 'val_stolen', 'val_recovered'],
+    fieldKeywords: ['fir_no', 'fir_date', 'local_head', 'property_category', 'property_type', 'property_nature', 'estimated_value', 'property_details', 'property_uid'],
+  },
+  {
+    id: 'arrest_master',
+    title: 'Arrest Classification & Custody Master Register',
+    description: 'Arrest Memo No, Date of Arrest, Arrest Type, Category, Person Name, Address, Place of Arrest, Custody Status & IO Name',
+    icon: Users,
+    table: 'ARREST',
+    join: 'ARREST_ARRESTED',
+    fieldKeywords: ['linked_fir_dd_no', 'arrest_memo_no', 'arrest_date', 'arrest_type', 'arrest_category', 'arrested_name', 'arrested_address', 'arrest_place', 'status', 'io_name', 'dossier_prepared', 'nafis_prepared'],
   },
   {
     id: 'preventive_kalandra',
     title: 'Preventive Kalandra Register',
-    description: 'DD No, Date, PS, Act/Section, Bound Down Status',
+    description: 'Call ID, DD No, Date, PS Name, Act/Section, Bound Down Status (107/151 CrPC)',
     icon: Shield,
     table: 'PCR_CALL',
     join: null,
-    fieldKeywords: ['dd_no', 'record_date', 'ps_name', 'act_section', 'status'],
+    fieldKeywords: ['dd_no', 'call_id', 'record_date', 'ps_name', 'act_section', 'status', 'kalandra'],
+  },
+  {
+    id: 'missing_persons',
+    title: 'Missing Persons Search Register',
+    description: 'Name, Gender, Age, Height, Clothing, Date Missing, Status (Traced/Untraced)',
+    icon: Search,
+    table: 'MISSING',
+    join: null,
+    fieldKeywords: ['name', 'gender', 'age', 'height', 'clothing', 'record_date', 'status', 'traced'],
+  },
+  {
+    id: 'uidb_register',
+    title: 'Unidentified Bodies (UIDB) Log',
+    description: 'Found Date, Found Place, Estimated Age, Corpse Description, Mortuary Name',
+    icon: FileText,
+    table: 'UIDB',
+    join: null,
+    fieldKeywords: ['found_date', 'place', 'age', 'gender', 'description', 'mortuary', 'status'],
+  },
+  {
+    id: 'victim_dossier',
+    title: 'Victim & Crime Head Register',
+    description: 'FIR No, Crime Head, Victim Name, Gender, Age, Injury Type, POCSO / SC-ST Flag',
+    icon: UserCheck,
+    table: 'CASE',
+    join: 'CASE_VICTIM',
+    fieldKeywords: ['fir_no', 'local_head_id', 'name', 'gender', 'age', 'injury', 'pocso'],
   },
 ];
 
@@ -211,6 +247,7 @@ export default function CustomExcelBuilder() {
 
   const [table, setTable]       = useState('CASE');
   const [join, setJoin]         = useState(null);
+  const [rowGrain, setRowGrain] = useState('per_fir');
   const [selectedFields, setSelectedFields] = useState(new Set());
   const [dateFrom, setDateFrom] = useState(thirtyDaysAgo);
   const [dateTo, setDateTo]     = useState(today);
@@ -221,6 +258,7 @@ export default function CustomExcelBuilder() {
   const fieldDropRef = useRef(null);
 
   const [jobState, setJobState] = useState({ status: 'idle', jobId: null });
+  const [pendingPreset, setPendingPreset] = useState(null);
 
   useEffect(() => {
     const handler = e => {
@@ -248,53 +286,49 @@ export default function CustomExcelBuilder() {
   // Grouped Field Options by Form Category
   const categorizedOptions = useMemo(() => {
     if (!metaRes?.tables) return [];
-    const tables = join ? [table, join] : [table];
 
-    const groupMap = new Map(); // groupLabel -> array of fields
+    const tables = join ? [table, join] : [table];
+    const groupMap = new Map(); // sectionCategoryTitle -> array of field objects
 
     for (const t of tables) {
       const tData = metaRes.tables[t];
       if (!tData) continue;
 
       const tableTag = JOIN_TABLE_TAGS[t] || t;
-      const groupLabelByKey = new Map((tData.groups || []).map(g => [g.key, tables.length > 1 ? `[${tableTag}] ${g.label_en}` : g.label_en]));
-      const groupMembers = new Map();
+      const groupLabelByKey = new Map(
+        (tData.groups || []).map(g => [g.key, g.label_en])
+      );
 
-      for (const f of tData.fields) {
+      for (const f of (tData.fields || [])) {
+        let sectionTitle = 'General Info';
         if (f.group && groupLabelByKey.has(f.group)) {
-          if (!groupMembers.has(f.group)) groupMembers.set(f.group, []);
-          groupMembers.get(f.group).push({ value: `${t}.${f.key}`, isPii: !!f.is_pii });
-          continue;
+          sectionTitle = groupLabelByKey.get(f.group);
+        } else {
+          // Fallback categorization based on field key if ungrouped
+          const keyLower = f.key.toLowerCase();
+          if (keyLower.includes('complainant_address') || keyLower.includes('informant_address')) sectionTitle = 'Complainant Address';
+          else if (keyLower.includes('complainant') || keyLower.includes('informant')) sectionTitle = 'Complainant Personal Info';
+          else if (keyLower.includes('accused_address') || keyLower.includes('suspect_address')) sectionTitle = 'Accused Address';
+          else if (keyLower.includes('accused') || keyLower.includes('suspect')) sectionTitle = 'Accused Personal Info';
+          else if (keyLower.includes('victim_address')) sectionTitle = 'Victim Address';
+          else if (keyLower.includes('victim')) sectionTitle = 'Victim Personal Info';
+          else if (keyLower.includes('occurrence') || keyLower.includes('area_of_crime')) sectionTitle = 'Occurrence Info';
+          else if (keyLower.includes('prop') || keyLower.includes('stolen') || keyLower.includes('recovered') || keyLower.includes('seizure') || keyLower.includes('malkhana')) sectionTitle = 'Property Stolen & Recovery Details (Full Particulars)';
+          else if (keyLower.includes('vehicle')) sectionTitle = 'Vehicle Details';
+          else if (keyLower.includes('io_') || keyLower.includes('officer_')) sectionTitle = 'IO Info';
+          else if (keyLower.includes('act_') || keyLower.includes('sections') || keyLower.includes('local_head')) sectionTitle = 'Acts & Sections (Act + Law Sections)';
+          else if (keyLower.includes('facts') || keyLower.includes('modus_operandi')) sectionTitle = 'FIR Contents';
+          else if (keyLower.includes('status') || keyLower.includes('disposal') || keyLower.includes('rc_no') || keyLower.includes('remarks')) sectionTitle = 'Investigation Details';
         }
-        
-        // Form Section Tagging
-        let section = 'General Registration Info';
-        const keyLower = f.key.toLowerCase();
-        if (keyLower.includes('complainant') || keyLower.includes('informant')) section = 'Complainant Details';
-        else if (keyLower.includes('accused') || keyLower.includes('suspect')) section = 'Accused & Suspect Details';
-        else if (keyLower.includes('victim')) section = 'Victim Details';
-        else if (keyLower.includes('occurrence') || keyLower.includes('place') || keyLower.includes('address')) section = 'Occurrence & Location Details';
-        else if (keyLower.includes('prop') || keyLower.includes('stolen') || keyLower.includes('recovered')) section = 'Property & Seizure Info';
-        else if (keyLower.includes('status') || keyLower.includes('date') || keyLower.includes('time')) section = 'Status & Dates';
 
-        const grpTitle = tables.length > 1 ? `[${tableTag}] ${section}` : section;
+        const grpTitle = tables.length > 1 ? `[${tableTag}] ${sectionTitle}` : sectionTitle;
         if (!groupMap.has(grpTitle)) groupMap.set(grpTitle, []);
+
         groupMap.get(grpTitle).push({
           value: `${t}.${f.key}`,
           label: f.label_en,
           badge: f.is_pii ? 'PII' : null,
-        });
-      }
-
-      for (const [groupKey, members] of groupMembers) {
-        const grpTitle = tables.length > 1 ? `[${tableTag}] Form Sections` : 'Form Sections';
-        if (!groupMap.has(grpTitle)) groupMap.set(grpTitle, []);
-        groupMap.get(grpTitle).push({
-          value: `${t}.__group__${groupKey}`,
-          label: groupLabelByKey.get(groupKey),
-          badge: members.some(m => m.isPii) ? 'PII' : null,
-          isGroup: true,
-          memberValues: members.map(m => m.value),
+          groupKey: f.group || null,
         });
       }
 
@@ -305,6 +339,7 @@ export default function CustomExcelBuilder() {
           value: `${t}.${f.key}`,
           label: f.label_en,
           badge: null,
+          groupKey: '_system',
         });
       }
     }
@@ -320,7 +355,31 @@ export default function CustomExcelBuilder() {
     return categorizedOptions.flatMap(g => g.fields);
   }, [categorizedOptions]);
 
-  const changeTable = (newTable) => { setTable(newTable); setJoin(null); setSelectedFields(new Set()); setFieldSearch(''); };
+  // Reactive Field Auto-Selection for Presets
+  useEffect(() => {
+    if (!pendingPreset || allFieldOptions.length === 0) return;
+
+    const matches = new Set();
+    allFieldOptions.forEach(opt => {
+      const valLower = opt.value.toLowerCase();
+      const lblLower = opt.label.toLowerCase();
+      if (pendingPreset.fieldKeywords.some(kw => valLower.includes(kw) || lblLower.includes(kw))) {
+        matches.add(opt.value);
+      }
+    });
+
+    if (matches.size > 0) {
+      setSelectedFields(matches);
+      toast.success(`Preset "${pendingPreset.title}" applied! (${matches.size} fields selected)`);
+    } else {
+      const allKeys = new Set(allFieldOptions.map(o => o.value));
+      setSelectedFields(allKeys);
+      toast.success(`Preset "${pendingPreset.title}" applied! (${allKeys.size} fields selected)`);
+    }
+    setPendingPreset(null);
+  }, [pendingPreset, allFieldOptions]);
+
+  const changeTable = (newTable) => { setTable(newTable); setJoin(null); setRowGrain('per_fir'); setSelectedFields(new Set()); setFieldSearch(''); };
   const changeJoin  = (newJoin)  => { setJoin(newJoin || null); setSelectedFields(new Set()); setFieldSearch(''); };
 
   const toggleField = (val) => setSelectedFields(prev => { const n = new Set(prev); n.has(val) ? n.delete(val) : n.add(val); return n; });
@@ -333,29 +392,20 @@ export default function CustomExcelBuilder() {
     });
   };
 
+  const selectAllFields = () => {
+    const all = new Set(allFieldOptions.map(o => o.value));
+    setSelectedFields(all);
+    toast.success(`Selected all ${all.size} available form fields!`);
+  };
+
   const clearSelectedFields = () => setSelectedFields(new Set());
 
   // Apply a Quick Preset
   const applyPreset = (preset) => {
     setTable(preset.table);
     setJoin(preset.join);
-
-    setTimeout(() => {
-      const matches = new Set();
-      allFieldOptions.forEach(opt => {
-        if (preset.fieldKeywords.some(kw => opt.value.toLowerCase().includes(kw) || opt.label.toLowerCase().includes(kw))) {
-          matches.add(opt.value);
-        }
-      });
-      if (matches.size > 0) {
-        setSelectedFields(matches);
-        toast.success(`Preset "${preset.title}" applied! (${matches.size} fields selected)`);
-      } else {
-        const first6 = new Set(allFieldOptions.slice(0, 8).map(o => o.value));
-        setSelectedFields(first6);
-        toast.success(`Preset "${preset.title}" applied!`);
-      }
-    }, 100);
+    if (preset.row_grain) setRowGrain(preset.row_grain);
+    setPendingPreset(preset);
   };
 
   const handleExport = async () => {
@@ -379,6 +429,7 @@ export default function CustomExcelBuilder() {
     const payload = {
       table,
       ...(join && { join }),
+      row_grain: rowGrain,
       fields,
       filters: conditions.length > 0 ? { logic: 'AND', conditions } : undefined,
       format: 'xlsx',
@@ -395,27 +446,38 @@ export default function CustomExcelBuilder() {
       const loadingToastId = toast.loading('Building Excel workbook & formatting multi-entity columns...');
 
       let attempts = 0;
+      let consecutiveErrors = 0;
       const iv = setInterval(async () => {
         attempts++;
         try {
           const sr = await api.get(`/reports/status/${jobId}`);
+          consecutiveErrors = 0;
           const status = sr.data?.data?.job?.status || sr.data?.data?.status;
           if (status === 'READY') {
             clearInterval(iv);
             toast.dismiss(loadingToastId);
-            toast.success('Excel workbook ready! Click Download below.');
+            toast.success('Excel workbook ready! Downloading file...');
             setJobState({ status: 'ready', jobId });
-          } else if (status === 'FAILED' || attempts > 40) {
+            triggerFileDownload(jobId);
+          } else if (status === 'FAILED') {
             clearInterval(iv);
             toast.dismiss(loadingToastId);
-            toast.error('Report generation failed.');
+            toast.error(sr.data?.data?.job?.error_message || 'Report generation failed on server.');
+            setJobState({ status: 'failed', jobId });
+          } else if (attempts >= 80) {
+            clearInterval(iv);
+            toast.dismiss(loadingToastId);
+            toast.error('Export timed out. Try refining date range or filters.');
             setJobState({ status: 'failed', jobId });
           }
         } catch (err) {
-          clearInterval(iv);
-          toast.dismiss(loadingToastId);
-          toast.error('Connection timeout while polling job status.');
-          setJobState({ status: 'failed', jobId });
+          consecutiveErrors++;
+          if (consecutiveErrors >= 5) {
+            clearInterval(iv);
+            toast.dismiss(loadingToastId);
+            toast.error('Connection lost while polling job status.');
+            setJobState({ status: 'failed', jobId });
+          }
         }
       }, 1500);
     } catch (err) {
@@ -430,8 +492,8 @@ export default function CustomExcelBuilder() {
     return `${d}${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]}${y}`;
   };
 
-  const handleDownload = async () => {
-    const { jobId } = jobState;
+  const triggerFileDownload = async (idToDownload) => {
+    const jobId = idToDownload || jobState.jobId;
     if (!jobId) return;
     try {
       const res = await api.get(`/reports/download/${jobId}`, { responseType: 'blob' });
@@ -440,16 +502,27 @@ export default function CustomExcelBuilder() {
       }));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `PHAROS_${table}${join ? `_${join}` : ''}_${fmtDate(dateFrom)}_to_${fmtDate(dateTo)}.xlsx`;
+      link.setAttribute('download', `PHAROS_${table}${join ? `_${join}` : ''}_${fmtDate(dateFrom)}_to_${fmtDate(dateTo)}.xlsx`);
       document.body.appendChild(link);
       link.click();
       setTimeout(() => { link.remove(); URL.revokeObjectURL(url); }, 500);
       toast.success('Excel file downloaded!');
-      setJobState({ status: 'idle', jobId: null });
     } catch (err) {
-      toast.error('Download failed: ' + (err.response?.data?.message || err.message));
+      let msg = err.message;
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const parsed = JSON.parse(text);
+          msg = parsed.message || msg;
+        } catch (_) {}
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      }
+      toast.error('Download failed: ' + msg);
     }
   };
+
+  const handleDownload = () => triggerFileDownload();
 
   const joinOptions = JOIN_OPTIONS[table] || [];
   const isExporting = jobState.status === 'pending';
@@ -483,8 +556,8 @@ export default function CustomExcelBuilder() {
             <span className="font-bold text-white block">Hierarchical Scope Authority: <span className="text-emerald-400 uppercase font-mono">{role}</span></span>
             <span className="text-slate-400 text-[11px]">
               {isDistrictOrHQ
-                ? 'District Authority Enabled — You can customize reports for your entire district or filter down to any specific station.'
-                : 'Police Station Authority — Reports are automatically scoped to your assigned Station.'}
+                ? 'District Authority Enabled — You can customize descriptive reports for your entire district or filter down to any specific station.'
+                : 'Police Station Authority — Descriptive reports are automatically scoped to your assigned Station.'}
             </span>
           </div>
         </div>
@@ -500,10 +573,10 @@ export default function CustomExcelBuilder() {
             <Sparkles size={15} className="text-amber-400" />
             <span>One-Click Multi-Entity &amp; Officer Presets</span>
           </h3>
-          <span className="text-[10px] text-slate-500 font-medium">Auto-configures tables, joins &amp; 360° dossier fields</span>
+          <span className="text-[10px] text-slate-500 font-medium">Auto-configures tables, joins &amp; descriptive dossier fields</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           {QUICK_PRESETS.map((preset) => {
             const Icon = preset.icon;
             const active = table === preset.table && join === preset.join;
@@ -512,7 +585,7 @@ export default function CustomExcelBuilder() {
                 key={preset.id}
                 type="button"
                 onClick={() => applyPreset(preset)}
-                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
                   active
                     ? 'bg-emerald-950/40 border-emerald-500/60 text-white shadow-lg shadow-emerald-950/30'
                     : 'bg-slate-950/70 border-slate-800/80 hover:border-slate-700 text-slate-300 hover:bg-slate-950'
@@ -541,7 +614,7 @@ export default function CustomExcelBuilder() {
           <span>Form-Matched Record Master &amp; Categorized Column Configurator</span>
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {/* Primary Table */}
           <div>
             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Primary Record Type</label>
@@ -553,6 +626,24 @@ export default function CustomExcelBuilder() {
               {Object.entries(TABLE_LABELS).map(([val, lbl]) => (
                 <option key={val} value={val}>{lbl}</option>
               ))}
+            </select>
+          </div>
+
+          {/* Row Grain Unit */}
+          <div>
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+              <span>Output Row Grain</span>
+              <span className="text-[9px] text-emerald-400 font-bold">Total Invariant</span>
+            </label>
+            <select
+              value={rowGrain}
+              onChange={e => setRowGrain(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 cursor-pointer shadow-inner"
+            >
+              <option value="per_fir">1 Row per FIR / Record (per_fir)</option>
+              <option value="per_accused">1 Row per Accused Person (per_accused)</option>
+              <option value="per_victim">1 Row per Victim Person (per_victim)</option>
+              <option value="per_property">1 Row per Property Item (per_property)</option>
             </select>
           </div>
 
@@ -577,15 +668,24 @@ export default function CustomExcelBuilder() {
           <div>
             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
               <span>Form-Matched Columns to Export</span>
-              {selectedFields.size > 0 && (
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={clearSelectedFields}
-                  className="text-[10px] text-rose-400 hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none p-0"
+                  onClick={selectAllFields}
+                  className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none p-0"
                 >
-                  <Trash2 size={10} /> Clear
+                  <CheckSquare size={10} /> Select All
                 </button>
-              )}
+                {selectedFields.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearSelectedFields}
+                    className="text-[10px] text-rose-400 hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none p-0"
+                  >
+                    <Trash2 size={10} /> Clear
+                  </button>
+                )}
+              </div>
             </label>
             <CategorizedFieldPicker
               categorizedOptions={categorizedOptions}

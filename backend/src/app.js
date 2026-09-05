@@ -38,6 +38,8 @@ import notificationsRouter from './modules/notifications/notifications.routes.js
 import dailyDiaryRouter from './modules/daily-diary/daily-diary.router.js';
 import phqDiaryRouter from './modules/phq-diary/phq-diary.router.js';
 import warehouseRouter from './modules/warehouse/warehouse.router.js';
+import reportBuilderRouter from './modules/report-builder/reportBuilder.router.js';
+import searchRouter from './modules/search/search.controller.js';
 import recordLinksRouter from './modules/record-links/record-links.router.js';
 import ioRouter from './modules/io/io.router.js';
 
@@ -171,6 +173,9 @@ app.use('/api/phq-diary', phqDiaryRouter);
 
 app.use('/api/v1/warehouse', warehouseRouter);
 app.use('/api/warehouse', warehouseRouter);
+
+app.use('/api/v1/search', searchRouter);
+app.use('/api/search', searchRouter);
 
 app.use('/api/v1/record-links', recordLinksRouter);
 app.use('/api/record-links',    recordLinksRouter);

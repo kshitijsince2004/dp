@@ -1,0 +1,166 @@
+{
+  "dbStats": [
+    {
+      "table": "records",
+      "count": 47943,
+      "status": "POPULATED"
+    },
+    {
+      "table": "fir_details",
+      "count": 29734,
+      "status": "POPULATED"
+    },
+    {
+      "table": "arrest_details",
+      "count": 17037,
+      "status": "POPULATED"
+    },
+    {
+      "table": "arrestee_details",
+      "count": 17032,
+      "status": "POPULATED"
+    },
+    {
+      "table": "persons",
+      "count": 93004,
+      "status": "POPULATED"
+    },
+    {
+      "table": "person_descriptions",
+      "count": 16,
+      "status": "POPULATED"
+    },
+    {
+      "table": "record_properties",
+      "count": 907,
+      "status": "POPULATED"
+    },
+    {
+      "table": "record_offences",
+      "count": 46782,
+      "status": "POPULATED"
+    },
+    {
+      "table": "record_links",
+      "count": 1,
+      "status": "POPULATED"
+    },
+    {
+      "table": "link_type_registry",
+      "count": 2,
+      "status": "POPULATED"
+    },
+    {
+      "table": "missing_details",
+      "count": 500,
+      "status": "POPULATED"
+    },
+    {
+      "table": "missing_person_details",
+      "count": 8,
+      "status": "POPULATED"
+    },
+    {
+      "table": "pcr_call_details",
+      "count": 418,
+      "status": "POPULATED"
+    },
+    {
+      "table": "uidb_details",
+      "count": 254,
+      "status": "POPULATED"
+    },
+    {
+      "table": "hierarchy_nodes",
+      "count": 349,
+      "status": "POPULATED"
+    },
+    {
+      "table": "locations",
+      "count": 2578,
+      "status": "POPULATED"
+    },
+    {
+      "table": "record_status_events",
+      "count": 4,
+      "status": "POPULATED"
+    },
+    {
+      "table": "workflow_transitions",
+      "count": 88,
+      "status": "POPULATED"
+    },
+    {
+      "table": "workflow_transitions_config",
+      "count": 20,
+      "status": "POPULATED"
+    },
+    {
+      "table": "compilation_records",
+      "count": 0,
+      "status": "EMPTY / STUB"
+    },
+    {
+      "table": "compilations",
+      "count": 3,
+      "status": "POPULATED"
+    },
+    {
+      "table": "fir_number_counters",
+      "count": 0,
+      "status": "EMPTY / STUB"
+    },
+    {
+      "table": "record_revisions",
+      "count": 243,
+      "status": "POPULATED"
+    },
+    {
+      "table": "users",
+      "count": 117,
+      "status": "POPULATED"
+    },
+    {
+      "table": "investigating_officers",
+      "count": 2,
+      "status": "POPULATED"
+    },
+    {
+      "table": "report_builder_saved",
+      "count": 10,
+      "status": "POPULATED"
+    },
+    {
+      "table": "report_builder_audit",
+      "count": 0,
+      "status": "EMPTY / STUB"
+    },
+    {
+      "table": "report_jobs",
+      "count": 547,
+      "status": "POPULATED"
+    }
+  ],
+  "nullChecks": {
+    "total_records": "47943",
+    "null_ps_id": "0",
+    "null_district_id": "0",
+    "null_record_date": "0",
+    "null_reg_date": "59"
+  },
+  "firNullChecks": {
+    "total_firs": "29734",
+    "null_local_head_id": "9",
+    "null_fir_date": "10"
+  },
+  "propNullChecks": {
+    "total_props": "907",
+    "null_estimated_value": "5",
+    "null_status": "0"
+  },
+  "systemTables": {
+    "report_builder_saved": 10,
+    "report_builder_audit": 0,
+    "report_jobs": 547
+  }
+}

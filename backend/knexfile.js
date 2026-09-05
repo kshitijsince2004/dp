@@ -2,11 +2,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-dotenv.config();
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const databaseUrl = process.env.DATABASE_URL || 'postgresql://pharos:pharos@localhost:5432/pharos_db';
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config();
+
+const databaseUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5435/pharos_db';
 
 const config = {
   client: 'pg',

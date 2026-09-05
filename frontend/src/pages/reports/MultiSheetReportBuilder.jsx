@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, Button, Input, Select, DatePicker, message, Progress, Spin, Space, Typography, Form, Row, Col, Alert } from 'antd';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { Plus, Trash, Download, Layers, Calendar, Table as TableIcon, CheckCircle2, ShieldAlert } from 'lucide-react';
 import dayjs from 'dayjs';
 import api from '../../utils/api.js';
@@ -106,7 +105,7 @@ export const MultiSheetReportBuilder = () => {
         format: 'EXCEL'
       };
 
-      const initRes = await axios.post('/api/v1/reports/generate', payload);
+      const initRes = await api.post('/reports/generate', payload);
       const jobId = initRes.data.data?.job?.id || initRes.data.data?.job_id;
 
       if (!jobId) throw new Error('Job ID missing from server response');
@@ -130,7 +129,7 @@ export const MultiSheetReportBuilder = () => {
         }
 
         try {
-          const checkRes = await axios.get(`/api/v1/reports/status/${jobId}`);
+          const checkRes = await api.get(`/reports/status/${jobId}`);
           const job = checkRes.data.data.job;
           log.debug('action:generate_report_poll_step', { jobId, attempt: attempts, status: job.status });
 
@@ -144,9 +143,22 @@ export const MultiSheetReportBuilder = () => {
             setExportProgress(100);
             log.info('action:generate_report_ready', { jobId, attempts });
 
-            // Download
-            window.open(`/api/v1/reports/download/${jobId}`, '_blank');
-            message.success('Excel Workbook compiled successfully!');
+            // Download using authenticated blob download
+            try {
+              const res = await api.get(`/reports/download/${jobId}`, { responseType: 'blob' });
+              const url = URL.createObjectURL(new Blob([res.data], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              }));
+              const link = document.createElement('a');
+              link.href = url;
+              link.setAttribute('download', `PHAROS_Report_${jobId}.xlsx`);
+              document.body.appendChild(link);
+              link.click();
+              setTimeout(() => { link.remove(); URL.revokeObjectURL(url); }, 500);
+              message.success('Excel Workbook compiled and downloaded successfully!');
+            } catch (dlErr) {
+              message.error('File download failed: ' + (dlErr.message || 'Error fetching file'));
+            }
 
             setTimeout(() => {
               setExporting(false);
@@ -295,7 +307,7 @@ export const MultiSheetReportBuilder = () => {
                           onChange={val => updateSheet(sheet.id, { record_type: val, field_keys: [] })}
                           style={{ width: '100%' }}
                         >
-                          <Option value="CASE">FIR Master (CASE)</option>
+                          <Option value="CASE">FIR Master (CASE)</Option>
                           <Option value="ARREST">Arrest Master (ARREST)</Option>
                           <Option value="PCR_CALL">PCR Calls (PCR_CALL)</Option>
                         </Select>

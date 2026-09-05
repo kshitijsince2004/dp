@@ -10,6 +10,8 @@ import { publish } from '../../events/eventBus.js';
 import { getLogger } from '../../utils/logger.js';
 import { toISO, toDMY } from '../../utils/dateFormat.js';
 
+const log = getLogger('reports.controller');
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../../../..');
@@ -616,12 +618,16 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
   );
 
   if (isDailyDiaryParallel) {
-    const { execSync } = await import('child_process');
+    const { execFileSync } = await import('child_process');
     const pythonPath = process.env.PYTHON_PATH || 'python';
-    const pyDir = path.resolve(projectRoot, 'python_worker').replace(/\\/g, '/');
-    const cmd = `"${pythonPath}" -c "import sys; sys.path.insert(0, '${pyDir}'); from generator import generate_report; generate_report('${jobId}')"`;
+    const pyDir = fs.existsSync(path.resolve(process.cwd(), 'python_worker'))
+      ? path.resolve(process.cwd(), 'python_worker')
+      : fs.existsSync(path.resolve(process.cwd(), '../python_worker'))
+        ? path.resolve(process.cwd(), '../python_worker')
+        : path.resolve('python_worker');
+    const pyCode = `import sys; sys.path.insert(0, r'${pyDir}'); from generator import generate_report; generate_report('${jobId}')`;
     log.info('generateReportInternal: executing Python daily-diary engine', { jobId, template_id });
-    execSync(cmd, { cwd: projectRoot });
+    execFileSync(pythonPath, ['-c', pyCode], { cwd: path.dirname(pyDir) });
     await db('report_jobs').where({ id: jobId }).update({
       status: 'READY',
       file_path: filePath,
