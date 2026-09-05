@@ -78,12 +78,15 @@ goto waitdb
 echo  [OK] Database port is ready.
 echo.
 
-echo [2/6] Verifying backend dependencies...
+echo [2/6] Verifying backend and frontend dependencies...
 cd /d %~dp0backend
+call npm install --no-audit --no-fund
+cd /d %~dp0frontend
 call npm install --no-audit --no-fund
 echo.
 
 echo [3/6] Running database migrations...
+cd /d %~dp0backend
 call npm run db:migrate
 if %ERRORLEVEL% neq 0 (
     echo  [Warning] Migration encountered an error. Attempting to proceed...
