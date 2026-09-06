@@ -4,12 +4,13 @@ import { log } from '../utils/logger.js';
 
 export function useUpdateRecord(module) {
   return useMutation({
-    mutationFn: async ({ id, data, persons, properties }) => {
-      log.debug('hook:update_record:start', { module, recordId: id, personsCount: persons?.length, propertiesCount: properties?.length });
+    mutationFn: async ({ id, data, persons, properties, offences }) => {
+      log.debug('hook:update_record:start', { module, recordId: id, personsCount: persons?.length, propertiesCount: properties?.length, offencesCount: offences?.length });
       const res = await api.put(`/records/${id}`, {
         data,
         ...(persons !== undefined && { persons }),
         ...(properties !== undefined && { properties }),
+        ...(offences !== undefined && { offences }),
       });
       log.info('hook:update_record:success', { module, recordId: id });
       return res.data.data;

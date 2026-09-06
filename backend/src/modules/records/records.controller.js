@@ -188,7 +188,7 @@ export const getStatusOptions = async (req, res) => {
 
   try {
     await verifyRecordAccess(id, req.user);
-    const result = await recordsService.getStatusOptions(id);
+    const result = await recordsService.getStatusOptions(id, req.user);
     log.debug('getStatusOptions: exit', { recordId: id });
     return res.status(200).json({ success: true, data: result });
   } catch (error) {

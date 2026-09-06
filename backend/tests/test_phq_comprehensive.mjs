@@ -38,7 +38,7 @@ test('AUD-05 — Standardized computeVariation & varPct Formatting', () => {
   assert.equal(varPct(80, 100), '-20.0%', 'varPct(80, 100) must return "-20.0%"');
 });
 
-test('AUD-06 — Monday Morning RAPE & POCSO Scope Guardrail', () => {
+test('AUD-07 — Monday Morning RAPE & POCSO Scope Guardrail', () => {
   const mmData = buildMondayMorningData([]);
   const rapeRow = mmData.find(r => r.code === 'RAPE');
   assert.ok(rapeRow, 'RAPE row should exist in Monday Morning data');
@@ -46,6 +46,26 @@ test('AUD-06 — Monday Morning RAPE & POCSO Scope Guardrail', () => {
 
   const regularRape = HEINOUS_ROWS.find(r => r.code === 'RAPE');
   assert.equal(regularRape.label, 'RAPE', 'Standard HEINOUS_ROWS label for RAPE must remain "RAPE"');
+});
+
+test('AUD-08 — District Record Editing & Workout Status Guardrail', async () => {
+  const districtUser = { id: 'usr-3', role: 'DISTRICT_OFFICER', district_id: 'DIST_NDD' };
+  const { updateDomainStatus } = await import('../src/modules/records/records.service.js');
+  
+  // Verify District user is blocked from directly updating is_worked_out
+  await assert.rejects(
+    async () => {
+      await updateDomainStatus('non-existent-id', districtUser, {
+        statusField: 'is_worked_out',
+        newValue: true,
+        effectiveDate: '2026-07-22'
+      }, '127.0.0.1');
+    },
+    (err) => {
+      return err.status === 403 && err.message.includes('District users cannot update workout status directly');
+    },
+    'District user direct workout status update must be rejected with HTTP 403'
+  );
 });
 
 test.after(async () => {

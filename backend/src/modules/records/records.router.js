@@ -11,7 +11,7 @@ router.get('/check-duplicate', authMiddleware, recordsController.checkDuplicate)
 router.get('/:id', authMiddleware, recordsController.getRecord);
 
 router.post('/', authMiddleware, allow('HC'), recordsController.create);
-router.put('/:id', authMiddleware, allow('HC'), recordsController.update);
+router.put('/:id', authMiddleware, allow('HC', 'SHO', 'DISTRICT_OFFICER', 'DISTRICT'), recordsController.update);
 router.delete('/:id', authMiddleware, allow('HC'), recordsController.deleteRecord);
 router.post('/:id/submit', authMiddleware, allow('HC'), recordsController.submit);
 router.put('/:id/submit', authMiddleware, allow('HC'), recordsController.submit);
@@ -24,15 +24,15 @@ router.post('/:id/send-back', authMiddleware, allow('SHO', 'DISTRICT_OFFICER', '
 
 // Domain status update (item 9) — distinct from workflow transitions above: case/missing/
 // uidb/PCR-call status progression + worked-out flip, each dated via record_status_events.
-router.patch('/:id/status', authMiddleware, allow('HC', 'SHO', 'DISTRICT_OFFICER'), recordsController.updateStatus);
+router.patch('/:id/status', authMiddleware, allow('HC', 'SHO', 'DISTRICT_OFFICER', 'DISTRICT'), recordsController.updateStatus);
 
 // Registry-driven status field/options catalog (WS8) — same role trio as the PATCH above;
 // GET /:id/status-options never collides with the bare GET /:id route (different segment
 // count), so no reordering is needed, but it's kept beside its PATCH sibling for readability.
-router.get('/:id/status-options', authMiddleware, allow('HC', 'SHO', 'DISTRICT_OFFICER'), recordsController.getStatusOptions);
+router.get('/:id/status-options', authMiddleware, allow('HC', 'SHO', 'DISTRICT_OFFICER', 'DISTRICT'), recordsController.getStatusOptions);
 
 // Support both standard override routes
-router.patch('/:id/case-head', authMiddleware, allow('DISTRICT_OFFICER'), recordsController.overrideHead);
-router.patch('/:id/override', authMiddleware, allow('DISTRICT_OFFICER'), recordsController.overrideHead);
+router.patch('/:id/case-head', authMiddleware, allow('DISTRICT_OFFICER', 'DISTRICT'), recordsController.overrideHead);
+router.patch('/:id/override', authMiddleware, allow('DISTRICT_OFFICER', 'DISTRICT'), recordsController.overrideHead);
 
 export default router;

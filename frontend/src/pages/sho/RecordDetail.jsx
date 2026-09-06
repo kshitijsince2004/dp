@@ -10,6 +10,7 @@ import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
 import LinkedRecordsPanel from '../../components/common/LinkedRecordsPanel.jsx';
 import StatusUpdateModal from '../../components/records/StatusUpdateModal.jsx';
+import { useUpdateRecord } from '../../hooks/useUpdateRecord.js';
 import { log } from '../../utils/logger.js';
 
 export default function RecordDetail() {
@@ -27,6 +28,7 @@ export default function RecordDetail() {
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
   const [sendBackComment, setSendBackComment] = useState('');
   const [selectedFields, setSelectedFields] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
   
   // DCP Override States
   const [overrideOpen, setOverrideOpen] = useState(false);
@@ -180,6 +182,28 @@ export default function RecordDetail() {
     });
   };
 
+  // Record Update Mutation
+  const updateMutation = useUpdateRecord(record?.record_type);
+
+  const handleRecordUpdateSave = async (formData, persons, properties, activeId) => {
+    try {
+      log.info('action:record_update_start', { recordId: id });
+      await updateMutation.mutateAsync({
+        id: id,
+        data: formData,
+        persons,
+        properties,
+        offences: formData?.offences || (formData?.act_name ? [{ act: formData.act_name, section: formData.sections }] : undefined)
+      });
+      toast.success('Record updated successfully');
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['records', id] });
+    } catch (err) {
+      log.error('action:record_update_failed', { recordId: id, err });
+      toast.error(err.response?.data?.message || 'Failed to update record');
+    }
+  };
+
   // Toggle field selection for send-back correction request
   const toggleField = (fieldKey) => {
     if (selectedFields.includes(fieldKey)) {
@@ -213,6 +237,11 @@ export default function RecordDetail() {
     (record.current_status === 'DISTRICT_REVIEW' && (user?.role === 'DISTRICT' || user?.role === 'DISTRICT_OFFICER'));
 
   const isDCP = user?.role === 'DISTRICT' || user?.role === 'DISTRICT_OFFICER';
+
+  const canEditRecord = 
+    ['DRAFT', 'SENT_BACK'].includes(record?.current_status) ||
+    (isDCP && record?.current_status === 'DISTRICT_REVIEW') ||
+    (user?.role === 'SHO' && record?.current_status === 'PENDING_SHO');
 
   // Domain status update is available to any role with record access (PS+), not gated to
   // the workflow-review roles above — it's the record's own progress tracking, not an
@@ -300,6 +329,20 @@ export default function RecordDetail() {
             </>
           )}
 
+          {canEditRecord && (
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-2 border-2 ${
+                isEditing
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-md'
+                  : 'bg-[var(--bg-page-main)] hover:bg-[var(--bg-page-main)]/80 text-[var(--text-main-theme)] border-[var(--border-card-theme)] hover:border-[var(--accent-color)]'
+              }`}
+            >
+              <Edit size={16} />
+              <span>{isEditing ? 'Cancel Edit' : 'Edit Record'}</span>
+            </button>
+          )}
+
           {isDCP && (
             <button
               onClick={() => { log.debug('action:override_modal_open', { recordId: id }); setOverrideOpen(true); }}
@@ -358,8 +401,12 @@ export default function RecordDetail() {
             initialValues={record}
             initialPersons={recordPayload?.persons || []}
             initialProperties={recordPayload?.properties || []}
-            readOnly={true}
-            onBack={() => navigate(-1)}
+            readOnly={!isEditing}
+            onSubmit={handleRecordUpdateSave}
+            onBack={() => {
+              if (isEditing) setIsEditing(false);
+              else navigate(-1);
+            }}
           />
         </div>
 
@@ -402,12 +449,18 @@ export default function RecordDetail() {
                     Worked Out: <strong>{record.data?.work_out === true || record.data?.work_out === 'true' ? 'Yes' : 'No'}</strong>
                     {record.data?.work_out_date ? ` (${record.data.work_out_date})` : ''}
                   </span>
-                  <button
-                    onClick={() => { log.debug('action:status_update_modal_open', { recordId: id, field: 'is_worked_out' }); setStatusModalField('is_worked_out'); setStatusModalOpen(true); }}
-                    className="text-xs sm:text-sm font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
-                  >
-                    Update
-                  </button>
+                  {isDCP ? (
+                    <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                      Evidence required from Station (Use Send Back)
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => { log.debug('action:status_update_modal_open', { recordId: id, field: 'is_worked_out' }); setStatusModalField('is_worked_out'); setStatusModalOpen(true); }}
+                      className="text-xs sm:text-sm font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
+                    >
+                      Update
+                    </button>
+                  )}
                 </div>
               )}
             </div>

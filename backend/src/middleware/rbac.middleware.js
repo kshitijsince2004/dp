@@ -58,7 +58,7 @@ export const enforceScope = (req, res, next) => {
       return res.status(403).json({ success: false, message: 'User is not bound to a Sub-Division' });
     }
     req.jurisdictionQuery.sub_div_id = sub_div_id;
-  } else if (role === 'DISTRICT_OFFICER') {
+  } else if (role === 'DISTRICT_OFFICER' || role === 'DISTRICT') {
     if (!district_id) {
       log.warn('enforceScope: rejected — user not bound to a District', { userId: req.user.id, role });
       return res.status(403).json({ success: false, message: 'User is not bound to a District' });
@@ -98,7 +98,7 @@ export const verifyRecordAccess = async (recordId, user) => {
       log.warn('verifyRecordAccess: denied — record outside sub-division jurisdiction', { recordId, userId: user.id, role, userSubDivId: sub_div_id, recordSubDivId: record.sub_div_id });
       throw new Error('Access denied: Record falls outside your sub-division jurisdiction');
     }
-  } else if (role === 'DISTRICT_OFFICER') {
+  } else if (role === 'DISTRICT_OFFICER' || role === 'DISTRICT') {
     if (record.district_id !== district_id) {
       log.warn('verifyRecordAccess: denied — record outside district jurisdiction', { recordId, userId: user.id, role, userDistrictId: district_id, recordDistrictId: record.district_id });
       throw new Error('Access denied: Record falls outside your district jurisdiction');

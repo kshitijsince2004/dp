@@ -1150,9 +1150,17 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
     if (!full) { log.warn('updateRecord: rejected — record not found (post-lock)', { recordId: id }); throw new Error('Record not found'); }
     const { record, detail: oldDetail, personRows: oldPersonRows, propertyRows: oldPropertyRows } = full;
 
-    if (!EDITABLE_STATUSES.includes(record.current_status)) {
-      log.warn('updateRecord: rejected — record status not editable', { recordId: id, currentStatus: record.current_status });
-      throw new Error('This record is locked. Only DRAFT or sent-back records can be edited.');
+    const roleUpper = (user?.role || '').toUpperCase();
+    const isDistrictRole = ['DISTRICT_OFFICER', 'DISTRICT'].includes(roleUpper);
+    const isShoRole = roleUpper === 'SHO';
+
+    const canEdit = EDITABLE_STATUSES.includes(record.current_status)
+      || (isDistrictRole && record.current_status === 'DISTRICT_REVIEW')
+      || (isShoRole && record.current_status === 'PENDING_SHO');
+
+    if (!canEdit) {
+      log.warn('updateRecord: rejected — record status not editable for role', { recordId: id, currentStatus: record.current_status, role: user.role });
+      throw new Error(`This record is currently in ${record.current_status} status and cannot be edited by role ${user.role}.`);
     }
 
     const recordType = record.record_type;
@@ -1170,6 +1178,15 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
     log.debug('updateRecord: split payload into typed shape', {
       recordId: id, recordType, personEntries: split.personEntries.length, propertyEntries: split.propertyEntries.length, offenceRows: split.offenceRows.length,
     });
+
+    if (isDistrictRole && 'is_worked_out' in split.detail) {
+      const oldVal = oldDetail?.is_worked_out;
+      const newVal = split.detail.is_worked_out;
+      if (newVal !== undefined && Boolean(newVal) !== Boolean(oldVal)) {
+        log.warn('updateRecord: rejected — district users cannot update workout status directly', { recordId: id });
+        throw Object.assign(new Error('District users cannot update workout status directly as evidence is required from the police station. Please send the record back to the station for workout status updates.'), { status: 403 });
+      }
+    }
 
     const statusChanges = await detectDetailStatusChanges(oldDetail, split.detail, detailTable);
 
@@ -1456,6 +1473,10 @@ const VALID_FIELDS = [...STATUS_FIELD_DEFS.map((d) => d.statusField), 'property_
 
 export const updateDomainStatus = async (id, user, { statusField, newValue, effectiveDate, comment, propertyId } = {}, ipAddress) => {
   log.debug('updateDomainStatus: enter', { recordId: id, statusField, newValue, propertyId, userId: user.id });
+  if (statusField === 'is_worked_out' && ['DISTRICT_OFFICER', 'DISTRICT'].includes((user?.role || '').toUpperCase())) {
+    log.warn('updateDomainStatus: rejected — district users cannot update workout status directly', { recordId: id });
+    throw Object.assign(new Error('District users cannot update workout status directly as evidence is required from the police station. Please send the record back to the station for workout status updates.'), { status: 403 });
+  }
   if (!VALID_FIELDS.includes(statusField)) { log.warn('updateDomainStatus: rejected — unknown status_field', { recordId: id, statusField }); throw Object.assign(new Error(`Unknown status_field "${statusField}"`), { status: 422 }); }
   if (!newValue) { log.warn('updateDomainStatus: rejected — missing new_value', { recordId: id, statusField }); throw Object.assign(new Error('new_value is required'), { status: 422 }); }
   const effDate = toISO(effectiveDate);
@@ -1556,9 +1577,12 @@ export const updateDomainStatus = async (id, user, { statusField, newValue, effe
  *     — never a second copy — so an officer can never be offered, on edit, a status value the
  *     intake form wouldn't have offered at creation, and vice versa.
  */
-export const getStatusOptions = async (id) => {
+export const getStatusOptions = async (id, user = null) => {
   const record = await db('records').where({ id }).first();
   if (!record) { const err = new Error('Record not found'); err.status = 404; throw err; }
+
+  const userRole = (user?.role || '').toUpperCase();
+  const isDistrictRole = ['DISTRICT_OFFICER', 'DISTRICT'].includes(userRole);
 
   const detailTable = mapper.DETAIL_TABLES[record.record_type];
   const detailRow = await db(detailTable).where({ record_id: id }).first();
@@ -1577,20 +1601,10 @@ export const getStatusOptions = async (id) => {
 
     let options;
     if (isBoolean) {
-      // is_worked_out is the one deliberate deviation from "options echo the source verbatim":
-      // the registry's work_out field carries string options 'Yes'/'No' (form display), but
-      // updateDomainStatus coerces newValue to a real boolean
-      // (`newValue === 'true' || newValue === true`) — echoing 'Yes' back verbatim would make a
-      // caller send the string 'Yes', which coerces to `false`. Values are true/false; labels
-      // stay Yes/No so the modal reads naturally.
       options = [{ value: true, label: 'Yes' }, { value: false, label: 'No' }];
     } else if (record.record_type === 'CASE') {
       options = (regField?.options || []).map((o) => ({ value: o.value, label: o.label_en, label_hi: o.label_hi }));
     } else {
-      // ARREST's vocabulary branches on the arrest's own basis (ruling 18): is_dd_based=false
-      // (under a case/FIR) uses the against-FIR list; true or unset (standalone Kalandra, or a
-      // pre-ruling-18 row where the discriminator was never answered) uses the Kalandra list —
-      // same fallback direction getFieldsForForm's caseType-absent case takes.
       const isAgainstFir = record.record_type === 'ARREST' ? detailRow?.is_dd_based === false : undefined;
       const raw = getStatusOptionsForType(record.record_type, { isAgainstFir }) || [];
       options = raw.map((o) => ({ value: o.value, label: o.label_en, label_hi: o.label_hi }));
@@ -1606,6 +1620,10 @@ export const getStatusOptions = async (id) => {
     };
     if (def.statusField === 'is_worked_out') {
       entry.notes = 'A Yes/true value requires effective_date — it is stamped as fir_details.worked_out_date in the same transaction (ruling 23a).';
+      if (isDistrictRole) {
+        entry.disabled = true;
+        entry.disabled_reason = 'Workout status can only be updated by the Police Station with physical evidence. Send record back for update.';
+      }
     }
     if (def.statusField === 'custody_status') {
       entry.notes = 'Maps to arrest_details.case_status (the literal arrest_details.custody_status column is dead/unused — see docs/new-db-integration/03-import.md deferrals). Option list depends on is_dd_based (ruling 18): ' +
