@@ -106,15 +106,33 @@ export function buildDateWindows(inputDate) {
   };
 }
 
+function normalizeParams(entityField, windows, trx) {
+  if (typeof entityField === 'object' && entityField !== null) {
+    return {
+      field: 'district_id',
+      windows: entityField,
+      trx: windows || db
+    };
+  }
+  return {
+    field: entityField === 'ps_id' ? 'ps_id' : 'district_id',
+    windows: windows,
+    trx: trx || db
+  };
+}
+
 /**
  * Fetch all FIR case counts grouped by district + local_head across all time windows.
  * One single conditional-aggregation query covering the broadest possible date range.
  *
  * Returns: Array<{ district_id, local_head_id, head_name, crime_category, [window]: count }>
  */
-export async function fetchCaseCounts(entityIds, entityField, windows, trx = db) {
+export async function fetchCaseCounts(entityIds, entityField, windows, trx) {
   if (!entityIds || entityIds.length === 0) return [];
-  const field = entityField === 'ps_id' ? 'ps_id' : 'district_id';
+  const normalized = normalizeParams(entityField, windows, trx);
+  const field = normalized.field;
+  windows = normalized.windows;
+  trx = normalized.trx;
 
   const { d, day_curr, day_prev, fn_curr, fn_prev, fn_corr,
           upto_curr, upto_prev, upto_prev2, week_curr, week_prev } = windows;
@@ -196,9 +214,12 @@ export async function fetchCaseCounts(entityIds, entityField, windows, trx = db)
 /**
  * Fetch arrest counts grouped by district + local_head across all time windows.
  */
-export async function fetchArrestCounts(entityIds, entityField, windows, trx = db) {
+export async function fetchArrestCounts(entityIds, entityField, windows, trx) {
   if (!entityIds || entityIds.length === 0) return [];
-  const field = entityField === 'ps_id' ? 'ps_id' : 'district_id';
+  const normalized = normalizeParams(entityField, windows, trx);
+  const field = normalized.field;
+  windows = normalized.windows;
+  trx = normalized.trx;
 
   const { d, day_curr, day_prev, fn_curr, fn_prev, fn_corr,
           upto_curr, upto_prev, upto_prev2, week_curr, week_prev } = windows;
@@ -270,9 +291,12 @@ export async function fetchArrestCounts(entityIds, entityField, windows, trx = d
  *
  * Returns: Array<{ district_id, drug_type_id, drug_type, total_kg_<window> }>
  */
-export async function fetchDrugRecovery(entityIds, entityField, windows, trx = db) {
+export async function fetchDrugRecovery(entityIds, entityField, windows, trx) {
   if (!entityIds || entityIds.length === 0) return [];
-  const field = entityField === 'ps_id' ? 'ps_id' : 'district_id';
+  const normalized = normalizeParams(entityField, windows, trx);
+  const field = normalized.field;
+  windows = normalized.windows;
+  trx = normalized.trx;
 
   const { d, day_curr, day_prev, fn_curr, fn_prev, fn_corr,
           upto_curr, upto_prev, upto_prev2, week_curr, week_prev } = windows;
@@ -406,9 +430,12 @@ export async function resolveChildrenNodes(childIds, trx = db) {
  * Correction 2: RAPE & POCSO merged query for Monday_Morning sheet.
  * Counts cases where local_head_id = 7 (RAPE) AND POCSO act (3039, 9993) is present in record_offences.
  */
-export async function fetchRapePocsoCounts(entityIds, entityField, windows, trx = db) {
+export async function fetchRapePocsoCounts(entityIds, entityField, windows, trx) {
   if (!entityIds || entityIds.length === 0) return [];
-  const field = entityField === 'ps_id' ? 'ps_id' : 'district_id';
+  const normalized = normalizeParams(entityField, windows, trx);
+  const field = normalized.field;
+  windows = normalized.windows;
+  trx = normalized.trx;
   const { d, week_curr, week_prev } = windows;
 
   const rows = await trx.raw(`
