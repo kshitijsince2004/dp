@@ -7,16 +7,8 @@ echo     PHAROS Application Startup Script
 echo ===================================================
 echo.
 
-:: ── Step 0: Free lingering node ports (3000 & 5173) ─────────────────────────
-echo [0/6] Cleaning up previous application port locks...
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING 2^>nul') do (
-    echo  Freeing port 3000 (PID %%a^)...
-    taskkill /f /pid %%a >nul 2>&1
-)
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :5173 ^| findstr LISTENING 2^>nul') do (
-    echo  Freeing port 5173 (PID %%a^)...
-    taskkill /f /pid %%a >nul 2>&1
-)
+:: ── Step 0: Skip port cleanup to prevent hijacking ─────────────────────────
+echo [0/6] Application port locks cleanup skipped...
 echo.
 
 :: ── Step 1: Ensure Docker daemon is reachable ──────────────────────────────
@@ -83,6 +75,11 @@ cd /d %~dp0backend
 call npm install --no-audit --no-fund
 echo.
 
+echo [2.5/6] Verifying frontend dependencies...
+cd /d %~dp0frontend
+call npm install --no-audit --no-fund
+echo.
+
 echo [3/6] Running database migrations...
 call npm run db:migrate
 if %ERRORLEVEL% neq 0 (
@@ -121,16 +118,13 @@ cd /d %~dp0
 echo.
 
 echo [6/6] Launching PHAROS Backend API...
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING 2^>nul') do (
-    taskkill /f /pid %%a >nul 2>&1
-)
 start "PHAROS Backend" cmd /k "cd /d %~dp0backend && npm run dev"
-echo  [OK] Backend launched on http://localhost:3000
+echo  [OK] Backend launched on http://localhost:5000
 echo.
 
 echo ===================================================
 echo  PHAROS is up and running!
-echo  Backend API: http://localhost:3000
+echo  Backend API: http://localhost:5000
 echo  Frontend UI: http://localhost:5173
 echo ===================================================
 ping 127.0.0.1 -n 6 >nul

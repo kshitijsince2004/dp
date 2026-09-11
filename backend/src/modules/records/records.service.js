@@ -704,9 +704,11 @@ function buildListSummary(r) {
       transferred_to_agency_category: r.transferred_to_agency_category,
       date_of_transfer: r.date_of_transfer,
       origin_ps_name: r.ps_name,
-      origin_district_name: r.district_name
+      origin_district_name: r.district_name,
+      sections: r.data?.sections || r.sections || null,
+      act_name: r.data?.act_name || r.act_name || null
     };
-    case 'ARREST': return { fir_no: r.arrest_fir_no, case_status: r.arrest_case_status, local_head: r.arrest_local_head, io_name: r.io_name };
+    case 'ARREST': return { fir_no: r.arrest_fir_no, case_status: r.arrest_case_status, local_head: r.arrest_local_head, io_name: r.io_name, sections: r.data?.sections || null, act_name: r.data?.act_name || null };
     case 'PCR_CALL': return { final_call_status: r.final_call_status, call_head: r.call_head, io_name: r.io_name };
     case 'MISSING': return { missing_status: r.missing_status, fir_no: r.missing_fir_no, io_name: r.io_name };
     case 'UIDB': return { uidb_status: r.uidb_status, uidb_no: r.uidb_no, local_head: r.uidb_local_head, io_name: r.io_name };

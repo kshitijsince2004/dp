@@ -3877,7 +3877,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"High School,Intermediate,Graduate,Illiterate,Dropout,Not Known\""
+              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
             ]
           }
         },
@@ -3903,7 +3903,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"General,OBC (Other Backward Class),SC (Scheduled Caste),ST (Scheduled Tribe),EWS (Economically Weaker Section),Others,Not Known / Not Disclosed\""
+              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
             ]
           }
         }
@@ -4469,7 +4469,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"General,OBC (Other Backward Class),SC (Scheduled Caste),ST (Scheduled Tribe),EWS (Economically Weaker Section),Others,Not Known / Not Disclosed\""
+              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
             ]
           }
         },
@@ -4482,7 +4482,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"High School,Intermediate,Graduate,Illiterate,Dropout,Not Known\""
+              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
             ]
           }
         },
@@ -4508,7 +4508,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"High School,Intermediate,Graduate,Illiterate,Dropout,Not Known\""
+              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
             ]
           }
         },
@@ -4534,7 +4534,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"General,OBC (Other Backward Class),SC (Scheduled Caste),ST (Scheduled Tribe),EWS (Economically Weaker Section),Others,Not Known / Not Disclosed\""
+              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
             ]
           }
         }
@@ -4986,7 +4986,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"High School,Intermediate,Graduate,Illiterate,Dropout,Not Known\""
+              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
             ]
           }
         },
@@ -5012,7 +5012,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"General,OBC (Other Backward Class),SC (Scheduled Caste),ST (Scheduled Tribe),EWS (Economically Weaker Section),Others,Not Known / Not Disclosed\""
+              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
             ]
           }
         }

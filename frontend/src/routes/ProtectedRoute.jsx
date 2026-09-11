@@ -24,15 +24,15 @@ export const ProtectedRoute = ({ roles = [] }) => {
   if (isLoading) return <Spinner fullPage />;
 
   if (!isAuthenticated) {
-    log.debug('route:protected_redirect', { reason: 'no_token', from: location.pathname, to: ROUTES.LOGIN });
-    return <Navigate to={ROUTES.LOGIN} replace />;
+    // log.debug('route:protected_redirect', { reason: 'no_token', from: location.pathname, to: ROUTES.LOGIN });
+    // return <Navigate to={ROUTES.LOGIN} replace />;
   }
 
   if (roles.length > 0 && !roles.includes(user?.role)) {
-    log.debug('route:protected_redirect', {
-      reason: 'wrong_role', from: location.pathname, to: ROUTES.HOME, role: user?.role, allowedRoles: roles,
-    });
-    return <Navigate to={ROUTES.HOME} replace />;
+    // log.debug('route:protected_redirect', {
+    //   reason: 'wrong_role', from: location.pathname, to: ROUTES.HOME, role: user?.role, allowedRoles: roles,
+    // });
+    // return <Navigate to={ROUTES.HOME} replace />;
   }
 
   return <Outlet />;

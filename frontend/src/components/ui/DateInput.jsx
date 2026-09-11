@@ -32,7 +32,16 @@ export default function DateInput({
       return;
     }
     const d = parseDMY(raw);
-    if (d) onChange(formatDMY(d));
+    if (d) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (d > today) {
+        onChange(formatDMY(today));
+        setText(formatDMY(today));
+      } else {
+        onChange(formatDMY(d));
+      }
+    }
     // incomplete/invalid text is left as-is for the user to keep editing
   };
 
@@ -97,6 +106,7 @@ export default function DateInput({
         tabIndex={-1}
         aria-hidden="true"
         disabled={disabled}
+        max={new Date().toISOString().split('T')[0]}
         className="absolute opacity-0 w-0 h-0 pointer-events-none"
         onChange={handleHiddenChange}
       />

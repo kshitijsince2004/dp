@@ -18,7 +18,7 @@ import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
 import SearchableSelect from './SearchableSelect.jsx';
 import DateInput from '../ui/DateInput.jsx';
-import { parseDMY, formatDMY } from '../../utils/dateFormat.js';
+import { parseDMY, formatDMY, parseAnyDate } from '../../utils/dateFormat.js';
 import ActsSectionsTable, { reMergeKnownActFragments } from './ActsSectionsTable.jsx';
 import { parseRules, getFieldError, checkFieldFormat, validateFieldPattern } from '../../utils/fieldValidation.js';
 import { log } from '../../utils/logger.js';
@@ -347,7 +347,7 @@ export default function DynamicForm({
     const filtered = unifiedCases.filter(c => {
       // Date exact match — both sides are dd/mm/yyyy
       const sDate = formatDMY(parseDMY(searchDate)) || searchDate;
-      const cDate = formatDMY(parseDMY(c.fir_date)) || c.fir_date;
+      const cDate = formatDMY(parseAnyDate(c.fir_date)) || c.fir_date;
       if (cDate !== sDate) return false;
 
       // Query (complainant name or FIR no) match
@@ -372,35 +372,7 @@ export default function DynamicForm({
     const queryPlaceholder = lang === 'hi' ? 'खोजने के लिए लिखें...' : 'Type to search...';
     const btnText = lang === 'hi' ? 'प्राथमिकी खोजें' : 'Search FIR';
 
-    const selectedFir = values.selected_fir;
-    const currentAct = values.act_name || 'IPC';
 
-    const currentSections = values.sections ? String(values.sections) : '';
-
-    // Parse sections list
-    const sectionsList = currentSections
-      ? currentSections.split(/[\/,]/).map(s => s.trim()).filter(Boolean)
-      : [];
-
-    const handleAddSection = () => {
-      const cleanSecs = newSectionVal.split(/[\/,]/).map(s => s.trim()).filter(Boolean);
-      if (!cleanSecs.length) return;
-      
-      const updatedList = [...sectionsList];
-      cleanSecs.forEach(sec => {
-        if (!updatedList.includes(sec)) {
-          updatedList.push(sec);
-        }
-      });
-      
-      handleChange('sections', updatedList.join(', '));
-      setNewSectionVal('');
-    };
-
-    const handleRemoveSection = (secToRemove) => {
-      const updatedList = sectionsList.filter(s => s !== secToRemove);
-      handleChange('sections', updatedList.join(', '));
-    };
 
     return (
       <div className="space-y-6">
@@ -506,12 +478,14 @@ export default function DynamicForm({
                       return (
                         <tr
                           key={row.fir_no}
-                          onClick={() => {
+                          onClick={async () => {
                             if (readOnly) return;
 
-                            // Find the full details from row or casesData
                             let actName = 'IPC';
                             let sections = row.sections && row.sections !== 'N/A' ? row.sections : '';
+                            let localHead = row.crime_head && row.crime_head !== 'N/A' ? row.crime_head : '';
+                            let majorHeads = '';
+                            let minorHeads = '';
                             let ioName = '';
                             let ioRank = '';
                             let ioPis = '';
@@ -525,14 +499,34 @@ export default function DynamicForm({
                                 return firNo === row.fir_no;
                               });
                               if (matched) {
-                                const cData = matched.data || {};
-                                actName = cData.act_name || 'IPC';
-                                sections = cData.sections || '';
-                                ioName = cData.io_name || '';
-                                ioRank = cData.io_rank || '';
-                                ioPis = cData.io_pis || '';
-                                ioMobile = cData.io_mobile || '';
-                                caseTypeVal = cData.case_type || matched.case_type || 'cctns(manual FIR)';
+                                try {
+                                  // Fetch full record details to get complete Acts & Sections
+                                  const res = await api.get(`/records/${matched.id}`);
+                                  const fullData = res.data?.data?.record?.data || matched.data || {};
+                                  
+                                  actName = fullData.act_name || matched.data?.act_name || 'IPC';
+                                  sections = fullData.sections || matched.data?.sections || '';
+                                  localHead = fullData.local_head || fullData.crime_head || matched.data?.local_head || matched.data?.crime_head || '';
+                                  majorHeads = fullData.major_heads || matched.data?.major_heads || '';
+                                  minorHeads = fullData.minor_heads || matched.data?.minor_heads || '';
+                                  ioName = fullData.io_name || matched.data?.io_name || '';
+                                  ioRank = fullData.io_rank || matched.data?.io_rank || '';
+                                  ioPis = fullData.io_pis || matched.data?.io_pis || '';
+                                  ioMobile = fullData.io_mobile || matched.data?.io_mobile || '';
+                                  caseTypeVal = fullData.case_type || matched.case_type || 'cctns(manual FIR)';
+                                } catch (err) {
+                                  console.error("Failed to fetch full record for FIR linkage", err);
+                                  // Fallback to list data
+                                  const cData = matched.data || {};
+                                  actName = cData.act_name || 'IPC';
+                                  sections = cData.sections || '';
+                                  localHead = cData.local_head || cData.crime_head || '';
+                                  ioName = cData.io_name || '';
+                                  ioRank = cData.io_rank || '';
+                                  ioPis = cData.io_pis || '';
+                                  ioMobile = cData.io_mobile || '';
+                                  caseTypeVal = cData.case_type || matched.case_type || 'cctns(manual FIR)';
+                                }
                               }
                             } else {
                               // It's a mock case
@@ -543,7 +537,20 @@ export default function DynamicForm({
                               ioPis = '28081234';
                               ioMobile = '9876543210';
                               caseTypeVal = 'cctns(manual FIR)';
+                              majorHeads = '';
+                              minorHeads = '';
                             }
+                            const majorsList = majorHeads ? majorHeads.split(',').map(s => s.trim()).filter(Boolean) : [];
+                            const minorsList = minorHeads ? minorHeads.split(',').map(s => s.trim()).filter(Boolean) : [];
+                            const maxLen = Math.max(majorsList.length, minorsList.length);
+                            const rowsToSet = [];
+                            for (let i = 0; i < maxLen; i++) {
+                              rowsToSet.push({
+                                majorHead: majorsList[i] || '',
+                                minorHead: minorsList[i] || ''
+                              });
+                            }
+                            setMajorMinorRows(rowsToSet);
 
                             // Directly update values
                             setValues(prev => ({
@@ -552,6 +559,10 @@ export default function DynamicForm({
                               linked_fir_dd_no: row.fir_no,
                               act_name: actName,
                               sections: sections,
+                              local_head: localHead,
+                              crime_head: localHead,
+                              major_heads: majorHeads,
+                              minor_heads: minorHeads,
                               io_name: ioName,
                               io_rank: ioRank,
                               io_pis: ioPis,
@@ -603,123 +614,7 @@ export default function DynamicForm({
           </div>
         )}
 
-        {/* Linked FIR Offence Details Card */}
-        {selectedFir && (
-          <div className="bg-white border border-slate-200 rounded-card overflow-hidden mt-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
-              <h3 className="text-sm font-bold text-slate-800 tracking-wide flex items-center gap-2 font-display">
-                <Bookmark size={16} className="text-[var(--accent-color)]" />
-                <span>
-                  {lang === 'hi' ? 'संबद्ध प्राथमिकी अपराध विवरण (संपादित करें)' : 'Linked FIR Offence Details (Edit)'}
-                </span>
-              </h3>
-            </div>
 
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Act Name Selection */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-700 tracking-wide">
-                    {lang === 'hi' ? 'अधिनियम का नाम *' : 'Act Name *'}
-                  </label>
-                  <SearchableSelect
-                    disabled={readOnly}
-                    value={currentAct}
-                    onChange={(val) => handleChange('act_name', val)}
-                    options={getFieldOptions(allSchemaFields, 'act_name')}
-                    lang={lang}
-                    className="w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all cursor-text"
-                    dropdownClassName="max-h-48 overflow-y-auto border-2 border-slate-200 rounded-xl bg-white shadow-xl text-left"
-                  />
-                </div>
-
-                {/* Act Name Sub-input if Other Act is selected */}
-                {currentAct === 'Other Act' && (
-                  <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
-                    <label className="text-xs font-bold text-slate-700 tracking-wide">
-                      {lang === 'hi' ? 'अधिनियम का नाम दर्ज करें' : 'Specify Act Name'}
-                    </label>
-                    <input
-                      type="text"
-                      disabled={readOnly}
-                      value={values.other_act_name || ''}
-                      onChange={(e) => handleChange('other_act_name', e.target.value)}
-                      placeholder={lang === 'hi' ? 'अधिनियम का नाम लिखें...' : 'Enter custom act...'}
-                      className="w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Sections Editor */}
-              <div className="flex flex-col gap-3">
-                <label className="text-xs font-bold text-slate-700 tracking-wide">
-                  {lang === 'hi' ? 'धारा संख्या(एँ) *' : 'Sections Code *'}
-                </label>
-
-                {/* Section Chips Container */}
-                <div className="flex flex-wrap gap-2 min-h-[44px] p-2 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl items-center">
-                  {sectionsList.length === 0 ? (
-                    <span className="text-xs text-slate-400 font-medium px-2 py-1">
-                      {lang === 'hi' ? 'कोई धारा जोड़ी नहीं गई है' : 'No sections added yet.'}
-                    </span>
-                  ) : (
-                    sectionsList.map((sec, idx) => (
-                      <span
-                        key={`${sec}-${idx}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 shadow-sm animate-in zoom-in-75 duration-200"
-                      >
-                        <span>{sec}</span>
-                        {!readOnly && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSection(sec)}
-                            className="p-0.5 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-md transition-colors cursor-pointer"
-                          >
-                            <X size={12} className="stroke-[2.5]" />
-                          </button>
-                        )}
-                      </span>
-                    ))
-                  )}
-                </div>
-
-                {/* Add Section Input Bar */}
-                {!readOnly && (
-                  <div className="flex items-center gap-2 max-w-sm mt-1">
-                    <input
-                      type="text"
-                      disabled={readOnly}
-                      value={newSectionVal}
-                      onChange={(e) => setNewSectionVal(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddSection();
-                        }
-                      }}
-                      placeholder={lang === 'hi' ? 'उदा. 379 या 34' : 'e.g. 379 or 34'}
-                      className="flex-1 bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2 rounded-xl outline-none focus:border-blue-600 transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddSection}
-                      className="px-4 py-2 bg-slate-800 text-white hover:bg-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
-                    >
-                      <Plus size={14} />
-                      <span>{lang === 'hi' ? 'जोड़ें' : 'Add'}</span>
-                    </button>
-                  </div>
-                )}
-                <span className="text-[10px] text-slate-400 font-medium leading-normal">
-                  {lang === 'hi'
-                    ? 'धारा दर्ज करें और Enter दबाएं या "जोड़ें" पर क्लिक करें।'
-                    : 'Type a section code and press Enter or click "Add" to update.'}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   };
@@ -4159,7 +4054,13 @@ return (
     </div>
     {(() => {
       const isEmptyVal = (v) => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
-      const missingRequired = Object.entries(errors).filter(([k]) => touched[k] && isEmptyVal(values[k]));
+      
+      const currentStepFieldKeys = new Set(activeSection?.fields?.map(f => f.field_key) || []);
+      if (activeSection?.section === 'general_info') {
+        currentStepFieldKeys.add('sections').add('act_name').add('crime_head').add('local_head').add('major_head').add('minor_head');
+      }
+      
+      const missingRequired = Object.entries(errors).filter(([k]) => touched[k] && isEmptyVal(values[k]) && currentStepFieldKeys.has(k));
       if (!missingRequired.length) return null;
       return (
         <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-5 text-sm sm:text-base text-red-700 space-y-2.5 shadow-sm">

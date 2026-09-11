@@ -153,6 +153,7 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
         <RangePicker
           onChange={handleDateRangeChange}
           value={filters.dateFrom && filters.dateTo ? [dayjs(filters.dateFrom, 'DD/MM/YYYY'), dayjs(filters.dateTo, 'DD/MM/YYYY')] : null}
+          disabledDate={(current) => current && current > dayjs().endOf('day')}
           className="rounded-control w-full sm:w-auto"
           format="DD/MM/YYYY"
         />

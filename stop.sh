@@ -2,7 +2,7 @@
 # stop.sh — Kill all running PHAROS processes cleanly.
 # Safe to run even if nothing is running.
 
-PORTS=(5000 5173 5174 5175 5176 5177 5178 5179 5180)
+PORTS=(3000 5000 5173 5174 5175 5176 5177 5178 5179 5180)
 
 echo "Stopping PHAROS processes..."
 
@@ -21,5 +21,9 @@ for PORT in "${PORTS[@]}"; do
     kill -9 $PIDS 2>/dev/null || true
   fi
 done
+
+echo "Stopping Docker containers..."
+docker compose down 2>/dev/null || true
+echo "  ✓ Docker containers stopped"
 
 echo "Done."

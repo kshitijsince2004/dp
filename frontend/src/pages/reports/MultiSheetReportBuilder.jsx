@@ -220,6 +220,7 @@ export const MultiSheetReportBuilder = () => {
                 value={dateRange}
                 onChange={val => setDateRange(val)}
                 format="DD/MM/YYYY"
+                disabledDate={(current) => current && current > dayjs().endOf('day')}
                 style={{ width: '100%', background: '#181f2a', borderColor: '#2d3748' }}
               />
             </div>
