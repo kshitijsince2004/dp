@@ -597,11 +597,11 @@
           "key": "case_status",
           "section": "Action Taken",
           "label": "Status",
-          "hint": "select: CHARGE SHEET, POLICE INVESTIGATION REPORT(PIR-JCL), UNTRACED, PENDING, CANCELLATION, QUASHED, CLOSURE REPORT, RELEASED U/S 189 BNSS, TRANSFER, SUPPLEMENTARY CHARGESHEET",
+          "hint": "select: CHARGE SHEET, POLICE INVESTIGATION REPORT(PIR-JCL), UNTRACED, PENDING, CANCELLATION, QUASHED, CLOSURE REPORT, RELEASED U/S 189 BNSS, TRANSFER",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"CHARGE SHEET,POLICE INVESTIGATION REPORT(PIR-JCL),UNTRACED,PENDING,CANCELLATION,QUASHED,CLOSURE REPORT,RELEASED U/S 189 BNSS,TRANSFER,SUPPLEMENTARY CHARGESHEET\""
+              "\"CHARGE SHEET,POLICE INVESTIGATION REPORT(PIR-JCL),UNTRACED,PENDING,CANCELLATION,QUASHED,CLOSURE REPORT,RELEASED U/S 189 BNSS,TRANSFER\""
             ]
           }
         },
@@ -703,7 +703,7 @@
           "col": 67,
           "key": "court_case_no",
           "section": "General Information",
-          "label": "Court Case No. (CC/CCMS)",
+          "label": "court_case_no",
           "hint": "text",
           "validation": null
         },
@@ -711,7 +711,7 @@
           "col": 68,
           "key": "court_disposal_date",
           "section": "General Information",
-          "label": "Court Disposal Date",
+          "label": "court_disposal_date",
           "hint": "date",
           "validation": null
         },
@@ -719,7 +719,7 @@
           "col": 69,
           "key": "court_disposal_type",
           "section": "General Information",
-          "label": "Court Disposal Status",
+          "label": "court_disposal_type",
           "hint": "select",
           "validation": null
         },
@@ -727,7 +727,7 @@
           "col": 70,
           "key": "court_name",
           "section": "General Information",
-          "label": "Court Name / Court No.",
+          "label": "court_name",
           "hint": "select",
           "validation": null
         },
@@ -767,7 +767,7 @@
           "col": 75,
           "key": "sent_to_court_date",
           "section": "General Information",
-          "label": "Date Sent to Court",
+          "label": "sent_to_court_date",
           "hint": "date",
           "validation": null
         },
@@ -3867,45 +3867,6 @@
           "label": "PIS No. of IO",
           "hint": "PIS number of a registered IO, e.g. 28080214",
           "validation": null
-        },
-        {
-          "col": 50,
-          "key": "education",
-          "section": "General Information",
-          "label": "education",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 51,
-          "key": "financial_status",
-          "section": "General Information",
-          "label": "financial_status",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 52,
-          "key": "social_category",
-          "section": "General Information",
-          "label": "social_category",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
-            ]
-          }
         }
       ],
       "row2Merges": [
@@ -4461,9 +4422,9 @@
         },
         {
           "col": 47,
-          "key": "mp_social_category",
-          "section": "Address Details",
-          "label": "mp_social_category",
+          "key": "complainant_social_category",
+          "section": "Complainant Personal Details",
+          "label": "complainant_social_category",
           "hint": "select",
           "validation": {
             "type": "list",
@@ -4474,9 +4435,9 @@
         },
         {
           "col": 48,
-          "key": "mp_education",
-          "section": "Address Details",
-          "label": "mp_education",
+          "key": "complainant_education",
+          "section": "Complainant Personal Details",
+          "label": "complainant_education",
           "hint": "select",
           "validation": {
             "type": "list",
@@ -4487,53 +4448,14 @@
         },
         {
           "col": 49,
-          "key": "mp_financial_status",
-          "section": "Address Details",
-          "label": "mp_financial_status",
+          "key": "complainant_financial_status",
+          "section": "Complainant Personal Details",
+          "label": "complainant_financial_status",
           "hint": "select",
           "validation": {
             "type": "list",
             "formulae": [
               "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 50,
-          "key": "education",
-          "section": "General Information",
-          "label": "education",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 51,
-          "key": "financial_status",
-          "section": "General Information",
-          "label": "financial_status",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 52,
-          "key": "social_category",
-          "section": "General Information",
-          "label": "social_category",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
             ]
           }
         }
@@ -4543,6 +4465,7 @@
         "AE2:AH2",
         "AI2:AQ2",
         "AS2:AT2",
+        "AU2:AW2",
         "G2:AD2"
       ]
     }

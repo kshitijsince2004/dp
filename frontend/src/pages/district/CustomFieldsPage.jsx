@@ -12,56 +12,9 @@ const ensureArray = (val) => (Array.isArray(val) ? val : []);
 const RECORD_TYPES = ['CASE', 'ARREST', 'PCR_CALL', 'MISSING', 'UIDB'];
 const FIELD_TYPES  = ['TEXT', 'TEXTAREA', 'NUMBER', 'DATE', 'DATETIME', 'SELECT', 'BOOLEAN'];
 
-const SECTION_LABELS = {
-  // Case sections
-  general_info: { en: 'General Information', hi: 'सामान्य जानकारी' },
-  incident_details: { en: 'Incident Details', hi: 'घटना का विवरण' },
-  offence_info: { en: 'Offence Information', hi: 'अपराध की जानकारी' },
-  occurrence_info: { en: 'Occurrence of Offence', hi: 'घटना का समय व प्रकार' },
-  complainant_personal_info: { en: 'Complainant (Personal)', hi: 'शिकायतकर्ता (व्यक्तिगत)' },
-  complainant_accused_info: { en: 'Complainant Details', hi: 'शिकायतकर्ता का विवरण' },
-  complainant_address: { en: 'Complainant Address', hi: 'शिकायतकर्ता का पता' },
-  brief_facts: { en: 'FIR Contents', hi: 'प्राथमिकी विवरण' },
-  victim_personal_info: { en: 'Victim (Personal)', hi: 'पीड़ित (व्यक्तिगत)' },
-  victim_address: { en: 'Victim Address', hi: 'पीड़ित का पता' },
-  accused_personal_info: { en: 'Accused (Personal)', hi: 'आरोपी (व्यक्तिगत)' },
-  accused_address: { en: 'Accused Address', hi: 'आरोपी का पता' },
-  property_details: { en: 'Property Details', hi: 'संपत्ति का विवरण' },
-  recovered_property: { en: 'Recovered Property', hi: 'बरामद संपत्ति' },
-  stolen_property: { en: 'Stolen Property', hi: 'चोरी हुई संपत्ति' },
-  action_taken: { en: 'Action Taken', hi: 'की गई कार्रवाई' },
-
-  // Arrest sections
-  arrest_details: { en: 'Arrest Details', hi: 'गिरफ्तारी का विवरण' },
-  arrested_personal_info: { en: 'Arrested (Personal)', hi: 'गिरफ्तार व्यक्ति (व्यक्तिगत)' },
-  arrested_address: { en: 'Arrested Address', hi: 'गिरफ्तार व्यक्ति का पता' },
-  arrestee_info: { en: 'Arrestee Details', hi: 'गिरफ्तार व्यक्ति का विवरण' },
-  custody_status: { en: 'Custody Status', hi: 'हिरासत की स्थिति' },
-  // intimation_details: { en: 'Intimation Details', hi: 'सूचना का विवरण' },
-  // intimation_address: { en: 'Intimation Address', hi: 'सूचना का पता' },
-
-  // UIDB sections
-  corpse_desc: { en: 'Deceased Description', hi: 'मृतक का विवरण' },
-  corpse_physical: { en: 'Deceased Physical Features', hi: 'मृतक की शारीरिक विशेषताएँ' },
-  inquest_details: { en: 'Inquest Details', hi: 'जांच विवरण' },
-  uidb_details: { en: 'UIDB Details', hi: 'UIDB विवरण' },
-
-  // Missing sections
-  person_details: { en: 'Missing Person Particulars', hi: 'लापता व्यक्ति का विवरण' },
-  missing_address: { en: 'Missing Address', hi: 'लापता होने का स्थान/पता' },
-  missing_physical: { en: 'Missing Physical Description', hi: 'लापता व्यक्ति का हुलिया' },
-  contacts_assigned: { en: 'Contacts Assigned', hi: 'संपर्क विवरण' },
-
-  // Common
-  investigation_officer: { en: 'Investigation Officer', hi: 'जांच अधिकारी' },
-  vehicle_details: { en: 'Vehicle Details', hi: 'वाहन का विवरण' },
-  financial_fraud: { en: 'Financial Fraud', hi: 'वित्तीय धोखाधड़ी' },
-  special_scheme: { en: 'Special Scheme', hi: 'विशेष योजना' },
-  procedure_slips: { en: 'Procedure Slips', hi: 'प्रक्रिया पर्ची' }
-};
-
-const getSectionLabel = (key, lang = 'en', fallbackObj = null) => {
-  const item = SECTION_LABELS[key];
+const getSectionLabel = (key, layout, lang = 'en', fallbackObj = null) => {
+  const labels = layout?.section_labels || {};
+  const item = labels[key];
   if (item) {
     return lang === 'hi' ? (item.hi || item.en) : item.en;
   }
@@ -125,15 +78,15 @@ export default function CustomFieldsPage() {
   }, []);
 
   // District-scoped fields — shown in the management table
-  const { data: fields = [], isLoading } = useQuery({
+  const { data: fieldsData = {}, isLoading } = useQuery({
     queryKey: ['district', 'fields', user?.district_id],
     queryFn: async () => {
       log.debug('data:load_start', { what: 'district_fields' });
       try {
         const res = await api.get('/fields');
-        const rows = res.data?.data?.fields || [];
-        log.debug('data:load_success', { what: 'district_fields', count: rows.length });
-        return rows;
+        const data = res.data?.data || {};
+        log.debug('data:load_success', { what: 'district_fields', count: data.fields?.length || 0 });
+        return data;
       } catch (err) {
         log.error('data:load_error', { what: 'district_fields', err });
         throw err;
@@ -142,6 +95,9 @@ export default function CustomFieldsPage() {
     staleTime: 60_000,
     enabled: !!user,
   });
+
+  const fields = fieldsData.fields || [];
+  const layout = fieldsData.layout || {};
 
   // Global fields — used only for section discovery in the modal
   const { data: globalFields = [] } = useQuery({
@@ -160,10 +116,36 @@ export default function CustomFieldsPage() {
 
   // Sections come from the global registry (primary) + existing district fields (secondary),
   // filtered to the record types currently selected in the form.
-  const knownSections = useMemo(() => {
+  const knownSectionsGroups = useMemo(() => {
+    // 1. Get exact core sections for the selected record types from the layout
+    const coreSectionKeys = new Set();
+    const coreSections = [];
+    form.applicable_record_types.forEach(rt => {
+      const order = layout?.section_order?.[rt] || [];
+      order.forEach(k => {
+        if (!coreSectionKeys.has(k)) {
+          coreSectionKeys.add(k);
+          coreSections.push({ key: k });
+        }
+      });
+    });
+
+    // 2. Identify all known core sections across ALL record types to filter them out of "custom" sections
+    const allKnownCoreKeys = new Set();
+    Object.values(layout?.section_order || {}).forEach(order => {
+      order.forEach(k => allKnownCoreKeys.add(k));
+    });
+
+    // 3. Find truly custom sections from existing fields
     const combined = [...globalFields, ...fields];
-    return sectionsFromFields(combined, form.applicable_record_types);
-  }, [globalFields, fields, form.applicable_record_types]);
+    const flatSections = sectionsFromFields(combined, form.applicable_record_types);
+    const customSections = flatSections.filter(s => !allKnownCoreKeys.has(s.key));
+
+    return {
+      core: coreSections,
+      custom: customSections
+    };
+  }, [globalFields, fields, form.applicable_record_types, layout]);
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const createMutation = useMutation({
@@ -357,7 +339,7 @@ export default function CustomFieldsPage() {
                       </span>
                     </td>
                     <td className="p-3.5 text-slate-500 text-[11px] font-medium">
-                      {getSectionLabel(f.section, i18n.language, { label_en: f.section_label_en, label_hi: f.section_label_hi })}
+                      {getSectionLabel(f.section, layout, i18n.language, { label_en: f.section_label_en, label_hi: f.section_label_hi })}
                     </td>
                     <td className="p-3.5">
                       <div className="flex flex-wrap gap-1">
@@ -499,14 +481,32 @@ export default function CustomFieldsPage() {
                       }}
                       className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] cursor-pointer">
                       <option value="">Choose a section</option>
-                      {knownSections.map((s) => (
-                        <option key={s.key} value={s.key}>
-                          {getSectionLabel(s.key, i18n.language, s) || s.key}
-                        </option>
-                      ))}
-                      {!form.isNewSection && form.section && !knownSections.find((s) => s.key === form.section) && (
+                      
+                      {knownSectionsGroups.core.length > 0 && (
+                        <optgroup label="Main Form Sections">
+                          {knownSectionsGroups.core.map((s) => (
+                            <option key={s.key} value={s.key}>
+                              {getSectionLabel(s.key, layout, i18n.language) || s.key}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+
+                      {knownSectionsGroups.custom.length > 0 && (
+                        <optgroup label="Other Existing Custom Sections">
+                          {knownSectionsGroups.custom.map((s) => (
+                            <option key={s.key} value={s.key}>
+                              {getSectionLabel(s.key, layout, i18n.language, s) || s.key}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+
+                      {!form.isNewSection && form.section && 
+                       !knownSectionsGroups.core.find((s) => s.key === form.section) && 
+                       !knownSectionsGroups.custom.find((s) => s.key === form.section) && (
                         <option value={form.section}>
-                          {getSectionLabel(form.section, i18n.language) || form.section}
+                          {getSectionLabel(form.section, layout, i18n.language) || form.section}
                         </option>
                       )}
                       <option value="__new__">+ Create new section…</option>
