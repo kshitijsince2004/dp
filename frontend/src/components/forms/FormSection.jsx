@@ -6,6 +6,18 @@ import ActsSectionsTable from './ActsSectionsTable.jsx';
 import { parseRules } from '../../utils/fieldValidation.js';
 import { log } from '../../utils/logger.js';
 
+export const KEYS_TO_SKIP = [
+  'sections',
+  'ipc_sections', 'excise_sections', 'arms_sections', 'gambling_sections', 'other_sections',
+  'ipc_major_head', 'excise_major_head', 'arms_major_head', 'gambling_major_head', 'other_major_head',
+  'theft_minor_head', 'murder_minor_head', 'hurt_minor_head', 'cheating_minor_head', 'robbery_minor_head',
+  'excise_minor_head', 'arms_minor_head', 'gambling_minor_head', 'other_minor_head',
+  'major_heads', 'minor_heads',
+  'heinous_offence',
+  'gd_date', 'gd_time', 'fir_date', 'fir_time', 'arrest_time',
+  'transfer_to', 'transferred_to_ps_id', 'transferred_to_ps', 'transferred_to_agency_id', 'transferred_to_agency', 'date_of_transfer'
+];
+
 const ACTS_OPTIONS = [
   { value: 'IPC', label_en: 'IPC', label_hi: 'आईपीसी (IPC)' },
   { value: 'Delhi Excise Act', label_en: 'Delhi Excise Act', label_hi: 'दिल्ली उत्पाद शुल्क अधिनियम' },
@@ -310,15 +322,52 @@ export function evaluateShowWhen(condition, values) {
   if (condition.and) {
     return condition.and.every(c => evaluateShowWhen(c, values));
   }
-  const { field: targetField, value: targetValue, operator } = condition;
+  const { field: targetField, value: targetValue, value_in, not_in, operator } = condition;
   if (!targetField) return true;
   const currentValue = values[targetField];
   if (operator === 'filled') {
     return currentValue !== undefined && currentValue !== null && String(currentValue).trim() !== '';
   }
-  return Array.isArray(targetValue)
-    ? targetValue.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase())
-    : String(currentValue || '').toLowerCase() === String(targetValue || '').toLowerCase();
+  const allowedValues = value_in || (Array.isArray(targetValue) ? targetValue : null);
+  if (allowedValues) {
+    return allowedValues.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
+  }
+  if (not_in) {
+    return !not_in.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
+  }
+  return String(currentValue || '').toLowerCase() === String(targetValue || '').toLowerCase();
+}
+
+/**
+ * evaluateDisabledWhen — mirrors evaluateShowWhen grammar but also supports
+ * an `or` operator (array of sub-conditions where ANY match = disabled).
+ * Returns true when the field SHOULD be disabled.
+ */
+export function evaluateDisabledWhen(condition, values) {
+  if (!condition) return false;
+  if (condition.or) {
+    return condition.or.some(c => evaluateDisabledWhen(c, values));
+  }
+  if (condition.and) {
+    return condition.and.every(c => evaluateDisabledWhen(c, values));
+  }
+  const { field: targetField, value: targetValue, value_in, not_in, operator } = condition;
+  if (!targetField) return false;
+  const currentValue = values[targetField];
+  if (operator === 'empty') {
+    return currentValue === undefined || currentValue === null || String(currentValue).trim() === '';
+  }
+  if (operator === 'filled') {
+    return currentValue !== undefined && currentValue !== null && String(currentValue).trim() !== '';
+  }
+  const allowedValues = value_in || (Array.isArray(targetValue) ? targetValue : null);
+  if (allowedValues) {
+    return allowedValues.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
+  }
+  if (not_in) {
+    return !not_in.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
+  }
+  return String(currentValue || '').toLowerCase() === String(targetValue || '').toLowerCase();
 }
 
 function RepeaterSection({
@@ -555,20 +604,8 @@ export default function FormSection({
 
           <div className={hideHeader ? "grid grid-cols-1 md:grid-cols-[260px_1fr] rounded-2xl overflow-hidden border-2 border-[#c7d8ea] shadow-sm" : "grid grid-cols-1 md:grid-cols-[260px_1fr] border-2 border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm"}>
             {(() => {
-              // Filter out keys we should skip
-              const keysToSkip = [
-                'sections',
-                'ipc_sections', 'excise_sections', 'arms_sections', 'gambling_sections', 'other_sections',
-                'ipc_major_head', 'excise_major_head', 'arms_major_head', 'gambling_major_head', 'other_major_head',
-                'theft_minor_head', 'murder_minor_head', 'hurt_minor_head', 'cheating_minor_head', 'robbery_minor_head',
-                'excise_minor_head', 'arms_minor_head', 'gambling_minor_head', 'other_minor_head',
-                'major_heads', 'minor_heads',
-                'heinous_offence',
-                'gd_date', 'gd_time', 'fir_date', 'fir_time', 'arrest_time'
-              ];
-
               const visibleFields = section.fields.filter(f => {
-                if (keysToSkip.includes(f.field_key)) return false;
+                if (KEYS_TO_SKIP.includes(f.field_key)) return false;
                 if (!evaluateShowWhen(f.show_when, values)) return false;
                 return true;
               });
@@ -581,6 +618,8 @@ export default function FormSection({
                 const isHighlighted = targetFields.includes(key);
                 const error = touched[key] ? errors[key] : null;
                 const isLast = index === visibleFields.length - 1;
+                const isDisabledByCondition = !readOnly && evaluateDisabledWhen(field.disabled_when, values);
+                const effectiveReadOnly = readOnly || isDisabledByCondition;
 
                 if (key === 'act_name') {
                   return (
@@ -614,6 +653,11 @@ export default function FormSection({
                           {lang === 'hi' ? 'संशोधन' : 'Fix'}
                         </span>
                       )}
+                      {isDisabledByCondition && (
+                        <span className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded ml-auto" title={lang === 'hi' ? 'वर्तमान स्थिति में अनुपलब्ध' : 'Not available in current status'}>
+                          🔒 {lang === 'hi' ? 'लॉक' : 'Locked'}
+                        </span>
+                      )}
                     </div>
 
                     {/* Right field cell */}
@@ -626,7 +670,7 @@ export default function FormSection({
                         onChange={handleChange}
                         onBlur={handleBlur}
                         error={error}
-                        readOnly={readOnly}
+                        readOnly={effectiveReadOnly}
                         lang={lang}
                         values={values}
                       />

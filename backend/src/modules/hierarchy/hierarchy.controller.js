@@ -32,9 +32,13 @@ const districtScopeIds = async (districtId) => {
 const withNameAlias = (n) => ({ ...n, name_en: n.name });
 
 export const getNodes = async (req, res) => {
-  const { type, districtId } = req.query;
+  const { type, districtId, for_transfer } = req.query;
   const role = req.user?.role;
-  log.debug('getNodes: enter', { type: type || null, districtId: districtId || null, role: role || null, userId: req.user?.id || null });
+  // for_transfer=true bypasses jurisdiction scoping: any authenticated user needs to see
+  // the full PS list when selecting a transfer destination (they are transferring TO another PS,
+  // not browsing their own jurisdiction).
+  const isForTransfer = for_transfer === 'true';
+  log.debug('getNodes: enter', { type: type || null, districtId: districtId || null, role: role || null, userId: req.user?.id || null, isForTransfer });
   try {
     let query = db('hierarchy_nodes').where({ is_active: true });
 
@@ -47,7 +51,11 @@ export const getNodes = async (req, res) => {
     // hierarchy nodes within their own jurisdiction, regardless of what
     // districtId (if any) was requested. HQ_ANALYST/HQ_ADMIN/SYSTEM_ADMIN
     // remain globally scoped and may optionally filter by districtId.
-    if (role === 'HC' || role === 'SHO') {
+    // Exception: for_transfer=true bypasses all scoping so the caller can pick
+    // any PS as a transfer destination.
+    if (isForTransfer) {
+      log.debug('getNodes: for_transfer bypass — no jurisdiction scope applied', { userId: req.user?.id, role });
+    } else if (role === 'HC' || role === 'SHO') {
       if (!req.user.ps_id) {
         log.warn('getNodes: HC/SHO caller has no ps_id, returning empty', { userId: req.user.id, role });
         return res.status(200).json({ status: 'success', success: true, data: [] });

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
+import RecordTypeBadge from '../../components/common/RecordTypeBadge.jsx';
 
 export default function NaturalLanguageSearchPanel() {
   const [queryInput, setQueryInput] = useState('');
@@ -253,9 +254,7 @@ export default function NaturalLanguageSearchPanel() {
                   <div key={item.id} className="p-4 bg-slate-950 border border-emerald-500/30 rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-white font-mono">{item.record_number}</span>
-                      <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-300 text-[10px] font-bold rounded">
-                        {item.record_type}
-                      </span>
+                      <RecordTypeBadge recordType={item.record_type} />
                     </div>
                     <p className="text-xs text-slate-300 font-semibold">{item.crime_head_name}</p>
                     <p className="text-[11px] text-slate-400">{item.ps_name} ({item.district_name})</p>
@@ -282,9 +281,7 @@ export default function NaturalLanguageSearchPanel() {
                   <div key={item.id} className="p-4 bg-slate-950 border border-indigo-500/30 rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-white font-mono">{item.record_number}</span>
-                      <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-300 text-[10px] font-bold rounded">
-                        {item.record_type}
-                      </span>
+                      <RecordTypeBadge recordType={item.record_type} />
                     </div>
                     <p className="text-xs text-slate-300 font-semibold">{item.crime_head_name}</p>
                     <p className="text-[11px] text-slate-400">{item.ps_name} ({item.district_name})</p>

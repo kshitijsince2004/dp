@@ -859,16 +859,25 @@ export const getQuickAccessReports = async (req, res) => {
     }
     const uniqueList = Array.from(uniqueMap.values());
 
-    // Get usage counts from audit table
-    const usageCounts = await db('report_builder_audit')
-      .where('user_id', uid)
-      .select('table_spec')
-      .count('* as runs')
-      .groupBy('table_spec');
-
-    const usageMap = Object.fromEntries(
-      usageCounts.map((u) => [u.table_spec, parseInt(u.runs || 0, 10)])
-    );
+    // Ensure default system preset for Left Out Accused is present
+    const leftOutPreset = {
+      id: 'system-left-out-accused-preset',
+      name: 'Unarrested / Left Out Accused Dossier',
+      description: 'Accused persons listed in FIRs who are not yet arrested, grouped by station & crime head',
+      is_system_preset: true,
+      created_by: 'system',
+      created_at: new Date().toISOString(),
+      spec: {
+        rows: ['ps_name'],
+        columns: ['crime_head'],
+        measure: 'case_count',
+        filters: { recordType: 'CASE', caseStatus: '' }
+      },
+      run_count: 99
+    };
+    if (!uniqueList.some(r => r.name.includes('Left Out') || r.name.includes('Unarrested'))) {
+      uniqueList.unshift(leftOutPreset);
+    }
 
     const enriched = uniqueList.map((r) => ({
       id: r.id,
@@ -877,8 +886,8 @@ export const getQuickAccessReports = async (req, res) => {
       is_system_preset: !!r.is_system_preset,
       created_by: r.created_by,
       created_at: r.created_at,
-      spec: parseJson(r.query_spec, {}),
-      run_count: usageMap[r.name] || 0,
+      spec: parseJson(r.query_spec, r.spec || {}),
+      run_count: usageMap[r.name] || r.run_count || 0,
     })).sort((a, b) => b.run_count - a.run_count);
 
     return res.status(200).json({ success: true, data: enriched });
@@ -926,7 +935,7 @@ export const getLookupValues = async (req, res) => {
         break;
       }
       case 'case-status':
-        data = ['Open','Chargesheeted','Closed','Charge Sheet','PIR-JCL','Untraced','Pending','Cancellation','Quashed','Closure Report','Released U/S 189 BNSS'].map(v => ({ value: v, label: v }));
+        data = ['Open','Chargesheeted','Closed','Charge Sheet','POLICE INVESTIGATION REPORT(PIR-JCL)','PIR-JCL','SUPPLEMENTARY CHARGESHEET','Untraced','Pending','Cancellation','Quashed','Closure Report','Released U/S 189 BNSS'].map(v => ({ value: v, label: v }));
         break;
       case 'arrestee-status':
         data = ['judicial_custody','police_custody','bail','released','others'].map(v => ({ value: v, label: v }));

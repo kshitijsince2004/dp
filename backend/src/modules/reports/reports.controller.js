@@ -906,13 +906,29 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
           }
         }
 
-        const cmd = `python "${scriptPath}" --date "${date}" --template "${templatePath}" --out "${filePath}" --host "${dbHost}" --port "${dbPort}" --dbname "${dbName}" --user "${dbUser}" --password "${dbPass}"`;
-
         log.debug('generateReportInternal: executing daily-status export script', {
           jobId, template_id, scriptPath, templatePath, date, outPath: filePath, dbHost, dbPort, dbName, dbUser, hasDbPass: !!dbPass,
         });
-        const { execSync } = await import('child_process');
-        execSync(cmd);
+        const { execFileSync } = await import('child_process');
+        const pythonExecutable = process.env.PYTHON_PATH || 'python';
+        const envWithPass = {
+          ...process.env,
+          PGHOST: dbHost,
+          PGPORT: String(dbPort),
+          PGDATABASE: dbName,
+          PGUSER: dbUser,
+          PGPASSWORD: dbPass || ''
+        };
+        execFileSync(pythonExecutable, [
+          scriptPath,
+          '--date', date,
+          '--template', templatePath,
+          '--out', filePath,
+          '--host', dbHost,
+          '--port', String(dbPort),
+          '--dbname', dbName,
+          '--user', dbUser
+        ], { env: envWithPass });
         log.info('generateReportInternal: daily-status export script completed', { jobId, filePath });
       } else {
         log.info('generateReportInternal: Master script not present, using ExcelJS fallback for daily-status', { jobId });

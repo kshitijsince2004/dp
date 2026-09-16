@@ -487,6 +487,20 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
             </div>
           </div>
         )}
+        {isCaseStatus && (value === 'SUPPLEMENTARY CHARGESHEET' || values?.case_status === 'SUPPLEMENTARY CHARGESHEET') && (
+          <div className="flex flex-col gap-1.5 mt-2 p-3 bg-blue-50/50 border border-blue-200 rounded-xl animate-in slide-in-from-top-1 duration-100">
+            <span className="text-xs font-bold text-[#0d2a4a]">
+              {lang === 'hi' ? 'लंबित जांच विवरण (पूरक आरोप पत्र):' : 'Pending Investigation Items (Supplementary Chargesheet):'}
+            </span>
+            <TextAreaField
+              id="field-supplementary_chargesheet_details"
+              disabled={readOnly}
+              value={values?.supplementary_chargesheet_details || ''}
+              onChange={(v) => handleFieldChange('supplementary_chargesheet_details', v)}
+              placeholder={lang === 'hi' ? 'पूरक आरोप पत्र में क्या जांच लंबित है लिखें...' : 'Specify what investigation items remain pending for the supplementary chargesheet...'}
+            />
+          </div>
+        )}
       </div>
     );
   }

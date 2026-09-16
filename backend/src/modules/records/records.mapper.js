@@ -653,7 +653,7 @@ async function splitPersons(trx, registry, recordType, data, personsInput) {
       continue;
     }
     const { person, location } = fieldsForRole(registry, recordType, role);
-    const built = await splitPersonEntry(trx, person, location, p.data || {});
+    const built = await splitPersonEntry(trx, person, location, p.data || p);
     entries.push({ role, ...built, sourceKind: 'repeater', sourceIndex: i, existingId: p.id || null });
     log.debug('splitPersons: built repeater entry', { recordType, role, sourceIndex: i, existingId: p.id || null });
   }
@@ -1031,6 +1031,10 @@ export async function recomposeRecord(trx, registry, recordType, {
   });
   const cols = await loadColumns(trx);
   const data = {};
+  if (spineRow?.uid) {
+    data.uid = spineRow.uid;
+    data.record_uid = spineRow.uid;
+  }
   const detailTable = DETAIL_TABLES[recordType];
 
   // flat scalar / per_type / extra / location(no-role) fields
@@ -1115,8 +1119,9 @@ export async function recomposeRecord(trx, registry, recordType, {
       if (!locId) continue;
       recomposeLocationFields(locationFields, slotKey, p.role, locationsById[locId], target);
     }
+    if (p.uid) target.uid = p.uid;
     if (REPEATER_ROLES.has(p.role)) {
-      persons.push({ id: p.id, person_type: ROLE_TO_PERSON_TYPE[p.role] || p.role, data: target });
+      persons.push({ id: p.id, uid: p.uid || null, person_type: ROLE_TO_PERSON_TYPE[p.role] || p.role, data: target });
     }
   }
 

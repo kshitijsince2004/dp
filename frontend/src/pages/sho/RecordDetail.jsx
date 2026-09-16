@@ -10,6 +10,7 @@ import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
 import LinkedRecordsPanel from '../../components/common/LinkedRecordsPanel.jsx';
 import StatusUpdateModal from '../../components/records/StatusUpdateModal.jsx';
+import RecordTypeBadge from '../../components/common/RecordTypeBadge.jsx';
 import { useUpdateRecord } from '../../hooks/useUpdateRecord.js';
 import { log } from '../../utils/logger.js';
 
@@ -294,9 +295,7 @@ export default function RecordDetail() {
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-main-theme)] flex items-center gap-2.5 font-display">
               <span>Record Registry Details</span>
-              <span className="text-xs sm:text-sm bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] text-[var(--text-main-theme)] px-3 py-1 rounded-lg uppercase font-mono font-bold tracking-wider">
-                {record.record_type}
-              </span>
+              <RecordTypeBadge recordType={record.record_type} />
             </h1>
             <p className="text-sm text-[var(--text-main-theme)] opacity-80 mt-1 font-semibold">
               Author: <strong className="text-[var(--text-main-theme)]">{record.created_by}</strong> · Created on: <span className="font-mono">{new Date(record.created_at).toLocaleString()}</span>
@@ -446,8 +445,8 @@ export default function RecordDetail() {
               {record.record_type === 'CASE' && (
                 <div className="flex items-center justify-between border-t border-[var(--border-card-theme)]/50 pt-2.5">
                   <span className="text-xs sm:text-sm font-semibold text-[var(--text-main-theme)] opacity-80">
-                    Worked Out: <strong>{record.data?.work_out === true || record.data?.work_out === 'true' ? 'Yes' : 'No'}</strong>
-                    {record.data?.work_out_date ? ` (${record.data.work_out_date})` : ''}
+                    Worked Out: <strong>{(record.data?.is_worked_out === true || record.data?.work_out === true || record.data?.is_worked_out === 'true' || record.data?.work_out === 'true') ? 'Yes' : 'No'}</strong>
+                    {(record.data?.worked_out_date || record.data?.work_out_date) ? ` (${record.data.worked_out_date || record.data.work_out_date})` : ''}
                   </span>
                   {isDCP ? (
                     <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
@@ -466,58 +465,93 @@ export default function RecordDetail() {
             </div>
           )}
 
+          {/* Supplementary Chargesheet Details Card */}
+          {record.record_type === 'CASE' && (record.data?.supplementary_chargesheet_details || String(record.data?.case_status || '').toUpperCase() === 'SUPPLEMENTARY CHARGESHEET') && (
+            <div className="theme-card border border-amber-500/40 bg-amber-500/10 backdrop-blur-md rounded-xl p-4 space-y-2 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-900 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="text-amber-700" />
+                  <span>Supplementary Chargesheet — Pending Investigation Items</span>
+                </span>
+                <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-amber-200 text-amber-900 border border-amber-300">
+                  Pending Items
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-main-theme)] font-semibold leading-relaxed bg-[var(--bg-page-main)]/60 p-3 rounded-lg border border-amber-200/50">
+                {record.data?.supplementary_chargesheet_details || 'Supplementary chargesheet filed — pending investigation items under completion.'}
+              </p>
+            </div>
+          )}
+
           {/* Court Details Card (Phase 3 Strategic Court Implementation) */}
           {record.record_type === 'CASE' && (
-            ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'CHARGESHEETED', 'CHALLAN'].includes(record.data?.case_status) ||
-            record.data?.sent_to_court_date
-          ) && (
-            <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-3.5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
-                  <Scale size={15} className="text-[var(--accent-color)]" />
-                  <span>Court & Judicial Status</span>
-                </h3>
-                {['SHO', 'DISTRICT_OFFICER', 'DISTRICT', 'SYSTEM_ADMIN'].includes(user?.role) && (
-                  <button
-                    onClick={() => { log.debug('action:status_update_modal_open', { recordId: id }); setStatusModalField(undefined); setStatusModalOpen(true); }}
-                    className="text-xs sm:text-sm font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
-                  >
-                    Update
-                  </button>
-                )}
-              </div>
+            (() => {
+              const CHARGESHEET_STATUS_LIST = ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'CHARGESHEETED', 'CHALLAN', 'SUPPLEMENTARY CHARGESHEET'];
+              const currentStatusUpper = String(record.data?.case_status || '').toUpperCase();
+              const isChargesheeted = CHARGESHEET_STATUS_LIST.includes(currentStatusUpper) || !!record.data?.sent_to_court_date;
 
-              <div className="space-y-2 text-xs sm:text-sm">
-                <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
-                  <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Sent to Court:</span>
-                  <span className="font-mono font-semibold">{record.data?.sent_to_court_date || '—'}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
-                  <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Court Case No:</span>
-                  <span className="font-mono font-semibold">{record.data?.court_case_no || '—'}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
-                  <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Court:</span>
-                  <span className="font-semibold">{record.data?.court_name || '—'}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
-                  <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Disposal Status:</span>
-                  <span className={`px-2 py-0.5 rounded font-bold text-xs ${
-                    record.data?.court_disposal_type === 'CONVICTED' ? 'bg-emerald-100 text-emerald-800' :
-                    record.data?.court_disposal_type === 'ACQUITTED' ? 'bg-amber-100 text-amber-800' :
-                    'bg-slate-100 text-slate-700'
-                  }`}>
-                    {record.data?.court_disposal_type || 'PENDING_TRIAL'}
-                  </span>
-                </div>
-                {record.data?.court_disposal_date && (
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Disposal Date:</span>
-                    <span className="font-mono font-semibold">{record.data.court_disposal_date}</span>
+              return (
+                <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-3.5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
+                      <Scale size={15} className="text-[var(--accent-color)]" />
+                      <span>Court & Judicial Status</span>
+                    </h3>
+                    {isChargesheeted ? (
+                      ['HC', 'SHO', 'DISTRICT_OFFICER', 'DISTRICT', 'SYSTEM_ADMIN'].includes(user?.role) && (
+                        <button
+                          onClick={() => { log.debug('action:status_update_modal_open', { recordId: id }); setStatusModalField('court_disposal_type'); setStatusModalOpen(true); }}
+                          className="text-xs sm:text-sm font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
+                        >
+                          Update
+                        </button>
+                      )
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
+                        <Lock size={12} /> Requires Chargesheet
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
+
+                  {!isChargesheeted ? (
+                    <p className="text-xs italic text-[var(--text-main-theme)] opacity-70 p-1">
+                      Court & Judicial Status tracking activates automatically once a Chargesheet or Supplementary Chargesheet is filed.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 text-xs sm:text-sm">
+                      <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
+                        <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Sent to Court:</span>
+                        <span className="font-mono font-semibold">{record.data?.sent_to_court_date || '—'}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
+                        <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Court Case No:</span>
+                        <span className="font-mono font-semibold">{record.data?.court_case_no || '—'}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
+                        <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Court:</span>
+                        <span className="font-semibold">{record.data?.court_name || '—'}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-[var(--border-card-theme)]/40">
+                        <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Disposal Status:</span>
+                        <span className={`px-2 py-0.5 rounded font-bold text-xs ${
+                          record.data?.court_disposal_type === 'CONVICTED' ? 'bg-emerald-100 text-emerald-800' :
+                          record.data?.court_disposal_type === 'ACQUITTED' ? 'bg-amber-100 text-amber-800' :
+                          'bg-slate-100 text-slate-700'
+                        }`}>
+                          {record.data?.court_disposal_type || 'PENDING_TRIAL'}
+                        </span>
+                      </div>
+                      {record.data?.court_disposal_date && (
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-[var(--text-main-theme)] opacity-75 font-medium">Disposal Date:</span>
+                          <span className="font-mono font-semibold">{record.data.court_disposal_date}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           )}
 
           {/* Workflow logs timeline */}
@@ -564,80 +598,143 @@ export default function RecordDetail() {
 
           {/* Diffs & Revisions logs */}
           <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-4 shadow-sm">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
-              <FileSpreadsheet size={16} className="text-[var(--accent-color)]" />
-              <span>Audit Trail & Field Revision Log</span>
-            </h3>
+            {(() => {
+              const editRevisions = revisions.filter((r) => r.change_type !== 'CREATE' && (r.revision_number > 1 || r.revision_number === undefined));
+              return (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
+                      <FileSpreadsheet size={16} className="text-[var(--accent-color)]" />
+                      <span>Audit Trail & Field Revision Log</span>
+                    </h3>
+                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] text-[var(--accent-color)]">
+                      {editRevisions.length} Revision{editRevisions.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
 
-            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-              {revisions.length === 0 ? (
-                <p className="text-[var(--text-main-theme)] opacity-65 italic p-2 text-xs sm:text-sm">No edit revisions logged yet.</p>
-              ) : (
-                revisions.map((rev, idx) => {
-                  const officerName = rev.user_fullname || rev.user_name || rev.changed_by_name || rev.username || rev.changed_by;
-                  const badgeNo = rev.changed_by_badge || rev.badge_no;
-                  const officerRole = rev.changed_by_role || rev.level;
-                  const dateStr = rev.changed_at ? new Date(rev.changed_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-                  const changes = Array.isArray(rev.field_changes) ? rev.field_changes : [];
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                    {revisions.length === 0 ? (
+                      <p className="text-[var(--text-main-theme)] opacity-65 italic p-2 text-xs sm:text-sm">No edit revisions logged yet.</p>
+                    ) : (
+                      revisions.slice().reverse().map((rev, idx) => {
+                        const isInitialFiling = rev.change_type === 'CREATE' || rev.revision_number === 1;
+                        const officerName = rev.user_fullname || rev.user_name || rev.changed_by_name || rev.username || (rev.changed_by ? `Officer (${String(rev.changed_by).slice(0, 8)})` : 'District / System Official');
+                        const badgeNo = rev.changed_by_badge || rev.badge_no;
+                        const officerRole = rev.changed_by_role || rev.level || rev.role || 'DISTRICT';
+                        const dateStr = rev.changed_at ? new Date(rev.changed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
+                        const changes = Array.isArray(rev.field_changes) ? rev.field_changes : [];
+                        const commentOrReason = rev.reason || rev.comment;
 
-                  return (
-                    <div key={idx} className="bg-[var(--bg-page-main)]/50 border border-[var(--border-card-theme)]/70 p-3.5 rounded-xl text-xs sm:text-sm space-y-2 shadow-xs">
-                      <div className="flex justify-between items-start border-b border-[var(--border-card-theme)]/50 pb-2 gap-2">
-                        <div>
-                          <div className="font-bold text-[var(--text-main-theme)] flex items-center gap-2">
-                            <span>{officerName}</span>
-                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] font-bold">
-                              {officerRole}
-                            </span>
-                          </div>
-                          {badgeNo && badgeNo !== '—' && (
-                            <p className="text-[11px] font-mono text-[var(--text-main-theme)] opacity-70 font-semibold mt-0.5">
-                              Badge #{badgeNo}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-[11px] font-mono font-semibold text-[var(--text-main-theme)] opacity-75">
-                            {dateStr}
-                          </span>
-                          <div className="text-[10px] text-[var(--accent-color)] font-bold font-mono">
-                            Rev #{rev.revision_number} · {rev.change_type}
-                          </div>
-                        </div>
-                      </div>
+                        const FIELD_LABELS = {
+                          fir_no: 'FIR Number',
+                          fir_date: 'FIR Date',
+                          case_status: 'Case Status',
+                          current_status: 'Workflow Status',
+                          current_level: 'Workflow Level',
+                          brief_facts: 'Brief Facts / Gist',
+                          local_head_id: 'Crime Head ID',
+                          local_head: 'Crime Head',
+                          crime_head: 'Crime Head Classification',
+                          is_worked_out: 'Worked Out Status',
+                          worked_out_date: 'Worked Out Date',
+                          io_id: 'Investigating Officer ID',
+                          io_name: 'Investigating Officer Name',
+                          custody_status: 'Custody Status',
+                          missing_status: 'Missing Status',
+                          uidb_status: 'UIDB Status',
+                          act_name: 'Act Name',
+                          sections: 'IPC/BNS Sections',
+                          property_status: 'Property Status',
+                          transferred_to_ps_id: 'Transferred to PS',
+                          transferred_to_agency_id: 'Transferred to Agency',
+                          sent_to_court_date: 'Sent to Court Date',
+                          court_case_no: 'Court Case Number',
+                          court_name: 'Court Name',
+                          court_disposal_type: 'Court Disposal Status',
+                          court_disposal_date: 'Court Disposal Date',
+                        };
 
-                      {rev.comment && (
-                        <p className="text-xs italic bg-[var(--bg-page-main)]/60 p-2 rounded-lg border border-[var(--border-card-theme)]/50 text-[var(--text-main-theme)] font-semibold">
-                          "{rev.comment}"
-                        </p>
-                      )}
+                        const formatVal = (v) => {
+                          if (v === null || v === undefined || v === '') return '(empty)';
+                          if (typeof v === 'boolean') return v ? 'TRUE / YES' : 'FALSE / NO';
+                          if (typeof v === 'object') return JSON.stringify(v);
+                          return String(v);
+                        };
 
-                      {changes.length > 0 && (
-                        <div className="space-y-1.5 mt-2">
-                          {changes.map((ch, cIdx) => (
-                            <div key={cIdx} className="bg-[var(--bg-page-main)]/90 p-2.5 rounded-lg border border-[var(--border-card-theme)] shadow-2xs space-y-1">
-                              <div className="text-[var(--accent-color)] font-bold text-xs flex items-center justify-between">
-                                <span>{ch.entity_label ? `${ch.entity_label} — ` : ''}{ch.label || ch.field_key || ch.field}</span>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] sm:text-xs text-[var(--text-main-theme)] font-semibold">
-                                <div className="truncate border-b sm:border-b-0 sm:border-r border-[var(--border-card-theme)]/60 pb-0.5 sm:pb-0 sm:pr-1">
-                                  <span className="opacity-60">Before:</span>{' '}
-                                  <span className="line-through text-red-600 font-bold">{String(ch.old_value ?? '(empty)')}</span>
+                        return (
+                          <div key={rev.id || idx} className="bg-[var(--bg-page-main)]/50 border border-[var(--border-card-theme)]/70 p-3.5 rounded-xl text-xs sm:text-sm space-y-2 shadow-xs">
+                            <div className="flex justify-between items-start border-b border-[var(--border-card-theme)]/50 pb-2 gap-2">
+                              <div>
+                                <div className="font-bold text-[var(--text-main-theme)] flex items-center gap-2 flex-wrap">
+                                  <span>{officerName}</span>
+                                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] font-bold text-[var(--accent-color)]">
+                                    {officerRole}
+                                  </span>
                                 </div>
-                                <div className="truncate sm:pl-1">
-                                  <span className="opacity-60">After:</span>{' '}
-                                  <span className="text-emerald-600 font-bold">{String(ch.new_value ?? '(empty)')}</span>
+                                {badgeNo && badgeNo !== '—' && (
+                                  <p className="text-[11px] font-mono text-[var(--text-main-theme)] opacity-70 font-semibold mt-0.5">
+                                    Badge #{badgeNo}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="text-[11px] font-mono font-semibold text-[var(--text-main-theme)] opacity-75 block">
+                                  {dateStr}
+                                </span>
+                                <div className="text-[10px] text-[var(--accent-color)] font-bold font-mono">
+                                  {isInitialFiling ? 'INITIAL INTAKE' : `Rev #${rev.revision_number} · ${rev.change_type}`}
                                 </div>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
+
+                            {commentOrReason && (
+                              <p className="text-xs italic bg-[var(--bg-page-main)]/80 p-2 rounded-lg border border-[var(--border-card-theme)]/50 text-[var(--text-main-theme)] font-semibold">
+                                "{commentOrReason}"
+                              </p>
+                            )}
+
+                            {isInitialFiling ? (
+                              <div className="text-xs text-[var(--text-main-theme)] opacity-75 italic font-semibold p-2 bg-[var(--bg-page-main)]/40 rounded-lg border border-dashed border-[var(--border-card-theme)]">
+                                Initial Record Filing — {changes.length} intake field{changes.length !== 1 ? 's' : ''} populated at creation.
+                              </div>
+                            ) : changes.length > 0 ? (
+                              <div className="space-y-1.5 mt-2">
+                                {changes.map((ch, cIdx) => {
+                                  const key = ch.field_key || ch.field || ch.field_name;
+                                  const label = ch.label || FIELD_LABELS[key] || key;
+                                  return (
+                                    <div key={cIdx} className="bg-[var(--bg-page-main)]/90 p-2.5 rounded-lg border border-[var(--border-card-theme)] shadow-2xs space-y-1">
+                                      <div className="text-[var(--accent-color)] font-bold text-xs flex items-center justify-between">
+                                        <span>{ch.entity_label ? `${ch.entity_label} — ` : ''}{label}</span>
+                                        {key && <span className="font-mono text-[10px] opacity-60">[{key}]</span>}
+                                      </div>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] sm:text-xs text-[var(--text-main-theme)] font-semibold">
+                                        <div className="truncate border-b sm:border-b-0 sm:border-r border-[var(--border-card-theme)]/60 pb-0.5 sm:pb-0 sm:pr-1">
+                                          <span className="opacity-60">Before:</span>{' '}
+                                          <span className="line-through text-red-600 font-bold">{formatVal(ch.old_value)}</span>
+                                        </div>
+                                        <div className="truncate sm:pl-1">
+                                          <span className="opacity-60">After:</span>{' '}
+                                          <span className="text-emerald-600 font-bold">{formatVal(ch.new_value)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-[var(--text-main-theme)] opacity-75 italic font-semibold p-1">
+                                Action completed: {rev.change_type}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>

@@ -326,12 +326,14 @@ export const getFieldsForForm = async (req, res) => {
           options = minorHeadOptionsByFieldKey[f.field_key];
         }
 
-        if (f.field_key === 'status') {
+        if (f.field_key === 'status' || f.field_key === 'case_status') {
           log.debug('getFieldsForForm: resolving status field options', { normalizedType, caseType });
           if (normalizedType === 'CASE') {
-            options = [
+            const dbOpts = parseJsonField(f.options);
+            options = (Array.isArray(dbOpts) && dbOpts.length > 0) ? dbOpts : [
               { value: 'CHARGE SHEET', label_en: 'Charge Sheet', label_hi: 'आरोप पत्र' },
               { value: 'POLICE INVESTIGATION REPORT(PIR-JCL)', label_en: 'Police Investigation Report (PIR-JCL)', label_hi: 'पुलिस जांच रिपोर्ट (PIR-JCL)' },
+              { value: 'SUPPLEMENTARY CHARGESHEET', label_en: 'Supplementary Chargesheet', label_hi: 'पूरक आरोप पत्र (Supplementary Chargesheet)' },
               { value: 'UNTRACED', label_en: 'Untraced', label_hi: 'लापता/सुराग नहीं' },
               { value: 'PENDING', label_en: 'Pending', label_hi: 'लंबित' },
               { value: 'CANCELLATION', label_en: 'Cancellation', label_hi: 'रद्दीकरण' },
@@ -452,9 +454,10 @@ export const getFieldsForForm = async (req, res) => {
           visible_to_levels: parseJsonField(f.visible_to_levels),
           editable_by_levels: parseJsonField(f.editable_by_levels),
           introduced_at_level: f.introduced_at_level,
-          readonly: f.readonly || false,
+          readonly: !!(f.readonly || f.field_key === 'uid' || f.field_key === 'person_uid' || f.field_key?.endsWith('_npr') || (f.field_key?.endsWith('_uid') && f.field_key !== 'uidb_no')),
           full_width: f.full_width || false,
           show_when: parseJsonField(f.show_when) || null,
+          disabled_when: parseJsonField(f.disabled_when) || null,
           depends_on: f.depends_on || null,
           options_source: f.options_source || null,
           section,

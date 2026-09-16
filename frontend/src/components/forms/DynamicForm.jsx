@@ -12,7 +12,7 @@ import { findNodeById } from '../../utils/hierarchyData.js';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../utils/api.js';
 
-import FormSection, { evaluateShowWhen } from './FormSection.jsx';
+import FormSection, { evaluateShowWhen, evaluateDisabledWhen } from './FormSection.jsx';
 import FormToolbar from './FormToolbar.jsx';
 import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
@@ -99,7 +99,7 @@ function syncPermAddress(next, prefix, key, val, extraFields = []) {
  * 'select_fir' is a synthetic step (see finalSchema) not present in the backend response.
  */
 const SECTION_KEY_ORDER = {
-  CASE: ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken'],
+  CASE: ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken', 'court_details'],
   ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
   UIDB: ['general_info', 'corpse_desc', 'corpse_physical', 'inquest_details', 'investigation_officer'],
   MISSING: ['general_info', 'person_details', 'missing_address', 'missing_physical', 'contacts_assigned', 'investigation_officer'],
@@ -874,7 +874,9 @@ export default function DynamicForm({
       const label = customLabel || (lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en);
       const rules = parseRules(f.validation_rules);
       const isRequired = !!rules.required || extraRequiredKeys.includes(key);
-      const isDisabled = forceReadOnly || readOnly || f.readonly === true || f.readonly === 'true';
+      const isUidKey = key.endsWith('_npr') || key.endsWith('_uid') || key === 'uid' || key === 'person_uid';
+      const isDisabled = forceReadOnly || readOnly || isUidKey || f.readonly === true || f.readonly === 'true';
+      const val = isUidKey ? (valuesObj[key] || 'AUTO_ASSIGNED_BY_SYSTEM') : valuesObj[key];
       return (
         <React.Fragment key={key}>
           <div className={`bg-[#dfeaf5] px-4 py-2 text-sm sm:text-base text-[#0d2a4a] flex items-center gap-1.5 border-r border-[#c7d8ea] ${isRequired ? 'font-bold' : 'font-medium'} ${!isLast ? 'border-b' : ''}`}>
@@ -884,7 +886,7 @@ export default function DynamicForm({
           <div className={`px-4 py-1.5 bg-white flex items-center min-h-[40px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <FieldRenderer
               field={f}
-              value={valuesObj[key]}
+              value={val}
               onChange={onFieldChange}
               readOnly={isDisabled}
               error={touchedObj?.[key] ? errorsObj?.[key] : null}
@@ -915,7 +917,7 @@ export default function DynamicForm({
           {/* Left Column - Personal Info */}
           <div className="space-y-3">
             <div className="grid grid-cols-[220px_1fr] border-2 border-[#7a9cc5] rounded-2xl overflow-hidden shadow-sm bg-white">
-              {field(`${prefix}_npr`, lang === 'hi' ? 'यूआईडी (UID)' : 'UID')}
+              {field(`${prefix}_npr`, lang === 'hi' ? 'यूआईडी (UID)' : 'UID', false, true)}
               {field(`${prefix}_first_name`, null, false, false, extraRequired)}
               {field(`${prefix}_middle_name`)}
               {cfg.hasNickname ? (
@@ -1976,19 +1978,26 @@ export default function DynamicForm({
       const isRequired = !!rules.required;
       const isLast = index === activeFields.length - 1;
       const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+      const isDisabledByCondition = !isDisabled && evaluateDisabledWhen(field.disabled_when, values);
+      const effectiveReadOnly = isDisabled || isDisabledByCondition;
 
       return (
         <React.Fragment key={key}>
           <div className={`bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base ${isRequired ? 'font-bold text-[#0d2a4a]' : 'font-semibold text-[#0d2a4a]'} flex items-center gap-2 min-h-[48px] border-r border-[#c7d8ea] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <span>{label}</span>
             {isRequired && <span className="text-red-500 font-bold">*</span>}
+            {isDisabledByCondition && (
+              <span className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded ml-auto" title={lang === 'hi' ? 'वर्तमान स्थिति में अनुपलब्ध' : 'Not available in current status'}>
+                🔒 {lang === 'hi' ? 'लॉक' : 'Locked'}
+              </span>
+            )}
           </div>
           <div className={`px-4 py-2 bg-white flex flex-col justify-center min-h-[48px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <FieldRenderer
               field={field}
               value={values[key]}
               onChange={handleChange}
-              readOnly={isDisabled}
+              readOnly={effectiveReadOnly}
               error={touched[key] ? errors[key] : null}
               lang={lang}
               values={values}
@@ -3198,6 +3207,20 @@ useEffect(() => {
   updatedSeed.gd_no = updatedSeed.gd_no || updatedSeed.linked_fir_dd_no || '';
   updatedSeed.linked_fir_dd_no = updatedSeed.linked_fir_dd_no || updatedSeed.gd_no || '';
 
+  // Default and enforce work_out rules for CASE: by default cases are not worked out,
+  // and cannot be worked out if case_status is PENDING or missing.
+  if (recordType === 'CASE') {
+    const caseStatusUpper = String(updatedSeed.case_status || '').toUpperCase().trim();
+    const PENDING_STATUSES = ['PENDING', 'PENDING_INVESTIGATION', 'UNDER_INVESTIGATION'];
+    if (!updatedSeed.case_status || PENDING_STATUSES.includes(caseStatusUpper) || caseStatusUpper.includes('PENDING')) {
+      updatedSeed.work_out = 'No';
+      updatedSeed.work_out_date = '';
+      updatedSeed.is_worked_out = false;
+    } else if (!updatedSeed.work_out) {
+      updatedSeed.work_out = 'No';
+    }
+  }
+
   // Synchronize local_head and crime_head
   updatedSeed.local_head = updatedSeed.local_head || updatedSeed.crime_head || '';
   updatedSeed.crime_head = updatedSeed.crime_head || updatedSeed.local_head || '';
@@ -3397,14 +3420,19 @@ const handleChange = useCallback((key, val) => {
   setValues((prev) => {
     const next = { ...prev, [key]: val };
 
-    if (COMPOSITE_KEYS.includes(key)) {
-      console.log('[PHAROS-DEBUG][handleChange] setValues updater ran — resulting composite snapshot:', {
-        gd_no: next.gd_no, gd_date: next.gd_date, gd_time: next.gd_time,
-        fir_no: next.fir_no, fir_date: next.fir_date, fir_time: next.fir_time,
-      });
+    // Reset work_out when case_status is changed to PENDING or empty
+    if (key === 'case_status') {
+      const upperVal = String(val || '').toUpperCase().trim();
+      const PENDING_STATUSES = ['PENDING', 'PENDING_INVESTIGATION', 'UNDER_INVESTIGATION'];
+      if (!val || PENDING_STATUSES.includes(upperVal) || upperVal.includes('PENDING')) {
+        next.work_out = 'No';
+        next.work_out_date = '';
+        next.is_worked_out = false;
+      }
     }
 
     // DOB, Age (Years) and Year of Birth interlinking
+
     if (key.endsWith('_dob')) {
       const prefix = key.substring(0, key.lastIndexOf('_dob'));
       if (val) {

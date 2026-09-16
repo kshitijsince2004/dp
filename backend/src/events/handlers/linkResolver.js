@@ -2,6 +2,7 @@ import * as eventBus from '../eventBus.js';
 import db from '../../config/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { getLogger } from '../../utils/logger.js';
+import { syncArrestedToCaseAccused } from '../../modules/records/records.service.js';
 
 const log = getLogger('linkResolver');
 
@@ -70,6 +71,10 @@ async function backfillOrphansForCase(caseRecord, fir) {
       log.info('backfillOrphansForCase: attempted CASE-to-orphan link (onConflict ignore, may be pre-existing)', {
         sourceRecordId: caseRecord.id, targetRecordId: cand.record_id, linkTypeCode: cfg.linkTypeCode,
       });
+
+      if (cfg.linkTypeCode === 'CASE_ARREST') {
+        await syncArrestedToCaseAccused(db, caseRecord.id, cand.record_id, { id: cand.created_by });
+      }
     }
   }
   log.debug('backfillOrphansForCase: exit', { recordId: caseRecord.id, firNo: fir.fir_no });
@@ -152,6 +157,10 @@ async function resolveAndLink(recordId) {
   log.info('resolveAndLink: attempted record-to-CASE link (onConflict ignore, may be pre-existing)', {
     sourceRecordId: match.record_id, targetRecordId: recordId, linkTypeCode: cfg.linkTypeCode,
   });
+
+  if (cfg.linkTypeCode === 'CASE_ARREST') {
+    await syncArrestedToCaseAccused(db, match.record_id, recordId, { id: record.created_by });
+  }
 }
 
 export async function init() {

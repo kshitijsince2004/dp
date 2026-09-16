@@ -106,7 +106,7 @@ export async function diaryCount(options = {}) {
     if (measure === 'WORKED_OUT') {
       query = query.where('fd.is_worked_out', true);
     } else if (measure === 'CHARGESHEETED') {
-      const challanVals = caseStatusMap.challan || ['CHARGESHEETED', 'CHALLAN', 'PIR_JCL'];
+      const challanVals = caseStatusMap.challan || ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'SUPPLEMENTARY CHARGESHEET'];
       query = query.whereIn('fd.case_status', challanVals);
     } else if (measure === 'CANCELLED') {
       const cancelledVals = caseStatusMap.cancelled || ['CANCELLED', 'CANCELLATION'];

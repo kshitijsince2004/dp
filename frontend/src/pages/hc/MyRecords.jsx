@@ -30,6 +30,9 @@ const itemVariants = {
   show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 95, damping: 14 } }
 };
 
+import RecordTypeBadge from '../../components/common/RecordTypeBadge';
+
+
 export default function MyRecords() {
   const { t, i18n } = useTranslation();
   const currentLng = i18n.language || 'en';
@@ -479,7 +482,10 @@ export default function MyRecords() {
                             />
                           </td>
                           <td className="p-4 font-mono font-bold text-[var(--accent-color)] text-sm sm:text-base group-hover:text-[var(--accent-color-hover)] transition-colors">
-                            {refId}
+                            <div className="flex flex-col gap-1">
+                              <span>{refId}</span>
+                              <RecordTypeBadge recordType={rec.record_type} />
+                            </div>
                           </td>
                           <td className="p-4 text-sm sm:text-base font-semibold text-[#1A202C]">
                             <div className="flex flex-col gap-0.5">

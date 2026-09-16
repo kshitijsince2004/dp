@@ -63,6 +63,7 @@ const FIELD_LABELS = {
   court_name: 'Court Name',
   court_disposal_type: 'Court Disposal Status',
   court_disposal_date: 'Court Disposal Date',
+  supplementary_chargesheet_details: 'Pending Supplementary Items',
 };
 
 const formatChanges = (rawChanges) => {
@@ -112,11 +113,17 @@ export const getRecordAudit = async (req, res) => {
       field_changes: formatChanges(r.field_changes),
     }));
 
-    log.info('getRecordAudit: 200', { recordId, revisionCount: formatted.length });
+    const actualRevisions = formatted.filter((r) => r.change_type !== 'CREATE' && (r.revision_number > 1 || r.revision_number === undefined));
+
+    log.info('getRecordAudit: 200', { recordId, totalEntries: formatted.length, revisionCount: actualRevisions.length });
     return res.status(200).json({
       status: 'success',
       success: true,
       data: formatted,
+      meta: {
+        total_entries: formatted.length,
+        revision_count: actualRevisions.length,
+      },
     });
   } catch (error) {
     const status = error.message.includes('Access denied') ? 403 : 500;
@@ -214,7 +221,7 @@ export const getAuditLogs = async (req, res) => {
     const page = parseInt(req.query.page || 1, 10);
     const limit = parseInt(req.query.limit || 50, 10);
     const offset = (page - 1) * limit;
-    const { action, search, from, to } = req.query;
+    const { action, search, from, to, revisions_only, exclude_create } = req.query;
 
     let query = db('record_revisions as rr')
       .select(
@@ -234,14 +241,17 @@ export const getAuditLogs = async (req, res) => {
         'u.role as operator_role',
         'u.username'
       )
-      .join('records as r', 'rr.record_id', 'r.id')
-      .join('users as u', 'rr.changed_by', 'u.id');
+      .leftJoin('records as r', 'rr.record_id', 'r.id')
+      .leftJoin('users as u', 'rr.changed_by', 'u.id');
 
     let countQuery = db('record_revisions as rr')
-      .join('records as r', 'rr.record_id', 'r.id')
-      .join('users as u', 'rr.changed_by', 'u.id');
+      .leftJoin('records as r', 'rr.record_id', 'r.id')
+      .leftJoin('users as u', 'rr.changed_by', 'u.id');
 
-    if (action && action !== 'ALL') {
+    if (action === 'REVISIONS' || revisions_only === 'true' || exclude_create === 'true') {
+      query = query.whereNot('rr.change_type', 'CREATE');
+      countQuery = countQuery.whereNot('rr.change_type', 'CREATE');
+    } else if (action && action !== 'ALL') {
       query = query.where('rr.change_type', action);
       countQuery = countQuery.where('rr.change_type', action);
     }

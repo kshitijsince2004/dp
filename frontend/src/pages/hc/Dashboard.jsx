@@ -54,7 +54,10 @@ const formatChange = (changePct, period) => {
   return `${sign}${changePct}% vs previous ${period}`;
 };
 
-const MATRIX_COLUMNS = ["FIR", "Arrest", "Kalandra", "UIDB", "Workout"];
+// Columns come from the API (/analytics/crime-head-matrix → data.columns).
+// Crime heads apply ONLY to FIR (CASE) and ARREST. UIDB, Kalandra, PCR, Missing excluded.
+// Fallback used only while data is loading.
+const MATRIX_COLUMNS_FALLBACK = ["FIR", "Arrest", "Worked Out"];
 
 const BREAKDOWN_CATEGORIES = [
   { key: "FIR", color: "#0EA5E9" },
@@ -452,7 +455,10 @@ export default function PSDashboard() {
           <div className="bg-white rounded-card p-4 border border-slate-200">
             <div className="text-label font-semibold text-[#0A1628]">Crime Head Breakdown</div>
             <div className="mt-3">
-              <CrimeHeadMatrixTable rows={crimeHeadMatrix.rows} columns={MATRIX_COLUMNS} />
+              <CrimeHeadMatrixTable
+                rows={crimeHeadMatrix.rows}
+                columns={crimeHeadMatrix.columns?.length ? crimeHeadMatrix.columns : MATRIX_COLUMNS_FALLBACK}
+              />
             </div>
           </div>
 

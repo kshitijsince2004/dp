@@ -416,7 +416,7 @@ export const REPORTABLE_FIELDS = {
     { key: 'vehicle_engine_no', label_en: 'Vehicle Engine No.', label_hi: 'Vehicle Engine No.', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'vehicle_details' },
 
     // ── Investigation Details group ──────────────────────────────────────
-    { key: 'status',              label_en: 'Case Status',          label_hi: 'मामले की स्थिति',       data_type: 'enum',    operators: ENUM_OPS, is_pii: false, is_db_col: false, options: ['Open','Chargesheeted','Closed','Charge Sheet','PIR-JCL','Untraced','Pending','Cancellation','Quashed','Closure Report','Released U/S 189 BNSS'], wh_col: 'case_status', group: 'investigation_details' },
+    { key: 'status',              label_en: 'Case Status',          label_hi: 'मामले की स्थिति',       data_type: 'enum',    operators: ENUM_OPS, is_pii: false, is_db_col: false, options: ['Open','Chargesheeted','Closed','Charge Sheet','POLICE INVESTIGATION REPORT(PIR-JCL)','PIR-JCL','SUPPLEMENTARY CHARGESHEET','Untraced','Pending','Cancellation','Quashed','Closure Report','RELEASED U/S 189 BNSS'], wh_col: 'case_status', group: 'investigation_details' },
     { key: 'disposal_type', label_en: 'Disposal Type', label_hi: 'Disposal Type', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'investigation_details' },
     { key: 'rc_no', label_en: 'RC No.', label_hi: 'RC No.', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'investigation_details' },
     { key: 'remarks',             label_en: 'Remarks',              label_hi: 'टिप्पणियां',             data_type: 'textarea',operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, wh_col: 'remarks', group: 'investigation_details' },
@@ -719,6 +719,14 @@ export function getFieldDef(table, key) {
 /**
  * Filter fields for a given user role — removes PII fields below pii_min_role threshold.
  */
-export function filterFieldsForRole(fields, userRole) {
-  return fields.filter(f => f.data_type !== 'boolean');
+export function filterFieldsForRole(fields, userRole = 'HC') {
+  const userRank = ROLE_ORDER.indexOf(userRole);
+  const effectiveRank = userRank >= 0 ? userRank : 0;
+
+  return fields.filter(f => {
+    if (!f.is_pii) return true;
+    const minRole = f.pii_min_role || 'DISTRICT_OFFICER';
+    const minRank = ROLE_ORDER.indexOf(minRole);
+    return effectiveRank >= minRank;
+  });
 }

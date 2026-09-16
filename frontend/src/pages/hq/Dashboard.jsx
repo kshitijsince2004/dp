@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Building, ShieldAlert, FileCheck, PhoneCall, Filter, ArrowUpRight, ArrowDownRight, Layers,
-  Clock3, CheckCircle2, ChevronRight, AlertCircle, MapPin
+  Clock3, CheckCircle2, ChevronRight, AlertCircle, MapPin, UserX
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -11,6 +11,7 @@ import api from '../../utils/api.js';
 import phqImage from '../../assets/phq.jpeg';
 import useAuthStore from '../../store/authStore.js';
 import SearchableSelect from '../../components/forms/SearchableSelect.jsx';
+import RecordTypeBadge from '../../components/common/RecordTypeBadge.jsx';
 import StatCard from '../../components/ui/StatCard.jsx';
 import { getCrimeHeadGroup } from '../../utils/crimeHeadGroups.js';
 import { log } from '../../utils/logger.js';
@@ -246,6 +247,7 @@ export default function HQDashboard() {
     { label: 'Delhi-wide FIR cases', value: (stats.cases_today || 0) , color: 'text-amber-500', icon: Building },
     { label: 'Total PCR emergency calls', value: (stats.pcr_today || 0) , color: 'text-blue-500', icon: PhoneCall },
     { label: 'Accused arrests processed', value: (stats.arrests_today || 0) , color: 'text-emerald-500', icon: FileCheck },
+    { label: 'Unarrested accused (Left Out)', value: (stats.left_out_accused || 0) , color: 'text-amber-500', icon: UserX },
   ];
 
   const activeFilterCount = [
@@ -315,7 +317,7 @@ export default function HQDashboard() {
         {/* ── Overview Stat Cards ── */}
         <div className="mt-8">
           <div className="mb-3 text-label font-semibold text-[#4A5568]">Operational Overview</div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {cards.map((card, idx) => (
               <StatCard
                 key={idx}
@@ -323,7 +325,7 @@ export default function HQDashboard() {
                 value={card.value}
                 icon={card.icon}
                 iconColor={card.color}
-                subtext="Delhi-wide · Last 30 days"
+                subtext="Delhi-wide"
               />
             ))}
           </div>
@@ -518,9 +520,7 @@ export default function HQDashboard() {
                         </td>
                         {/* Record type badge */}
                         <td className="px-5 py-4">
-                          <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-semibold ${tMeta.bg}`}>
-                            {tMeta.label}
-                          </span>
+                          <RecordTypeBadge recordType={rec.record_type} />
                         </td>
                         {/* Facts gist */}
                         <td className="max-w-[220px] px-5 py-4">

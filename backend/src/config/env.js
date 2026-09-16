@@ -14,15 +14,15 @@ const getEnv = (key, fallback = '') => process.env[key] ?? fallback;
 const NODE_ENV = getEnv('NODE_ENV', 'development');
 const isDev = NODE_ENV === 'development';
 
-// Dev/prod gate for the debug-logging pipe (logging-instrumentation-2026-07-22, foundation,
-// HANDOFF.md §3b). Defaults to `isDev` (on in development, off in prod) but is explicitly
-// overridable either way via process.env.DEBUG_LOGGING — e.g. set DEBUG_LOGGING=true against a
-// prod-like build to hand a tester a working client-log pipe deliberately, or DEBUG_LOGGING=false
-// in dev to quiet it. When off: `POST /api/logs/client` responds 204 and writes nothing; verbose
-// `debug`-level module logging is separately gated by the logger's own level (env.isDev), so it
-// is dropped regardless of this flag.
 const debugLoggingRaw = process.env.DEBUG_LOGGING;
 const DEBUG_LOGGING = debugLoggingRaw === undefined ? isDev : debugLoggingRaw === 'true';
+
+const jwtSecret = getEnv('JWT_SECRET', isDev ? 'pharos_jwt_secret_key_extremely_long_and_safe' : '');
+const jwtRefreshSecret = getEnv('JWT_REFRESH_SECRET', isDev ? 'pharos_jwt_refresh_secret_key_extremely_long_and_safe' : '');
+
+if (NODE_ENV === 'production' && (!jwtSecret || !jwtRefreshSecret)) {
+  throw new Error('FATAL SECURITY ERROR: JWT_SECRET and JWT_REFRESH_SECRET must be explicitly set in production environment variables.');
+}
 
 export const env = {
   NODE_ENV,
@@ -33,8 +33,8 @@ export const env = {
   DB_CLIENT: getEnv('DB_CLIENT', 'pg'),
   RABBITMQ_URL: getEnv('RABBITMQ_URL', 'amqp://pharos:pharos123@localhost:5672'),
   REDIS_URL: getEnv('REDIS_URL', 'redis://localhost:6379'),
-  JWT_SECRET: getEnv('JWT_SECRET', 'pharos_jwt_secret_key_extremely_long_and_safe'),
-  JWT_REFRESH_SECRET: getEnv('JWT_REFRESH_SECRET', 'pharos_jwt_refresh_secret_key_extremely_long_and_safe'),
+  JWT_SECRET: jwtSecret,
+  JWT_REFRESH_SECRET: jwtRefreshSecret,
   JWT_ACCESS_EXPIRES: getEnv('JWT_ACCESS_EXPIRES', '15m'),
   JWT_REFRESH_EXPIRES: getEnv('JWT_REFRESH_EXPIRES', '7d'),
   STARTUP_AUTOLOAD: getEnv('STARTUP_AUTOLOAD', 'true'),

@@ -2,6 +2,7 @@ import db from '../../config/db.js';
 import ExcelJS from 'exceljs';
 import { toDMY } from '../../utils/dateFormat.js';
 import { getLogger } from '../../utils/logger.js';
+import { comparePersons } from '../records/records.service.js';
 
 // Logging-instrumentation-2026-07-22 (B5): matches records.service.js style. Standard
 // granularity (not a hot path) — each handler logs entry (jurisdictionQuery + query params),
@@ -35,11 +36,15 @@ export const getSummary = async (req, res) => {
 
     const counts = await query.groupBy('record_type');
 
-    const data = { CASE: 0, ARREST: 0, PCR_CALL: 0, MISSING: 0, UIDB: 0 };
+    const data = { CASE: 0, ARREST: 0, PCR_CALL: 0, MISSING: 0, UIDB: 0, LEFT_OUT: 0, left_out_accused: 0 };
     counts.forEach(c => {
       const key = (c.record_type || '').toUpperCase();
       if (key in data) data[key] = parseInt(c.count, 10) || 0;
     });
+
+    const leftOutRes = await computeLeftOutAccused(jq, '1970-01-01', '2099-12-31');
+    data.LEFT_OUT = leftOutRes.count;
+    data.left_out_accused = leftOutRes.count;
 
     log.info('getSummary: exit', { jq, summary: data });
     return res.status(200).json({
@@ -194,7 +199,7 @@ export const getOverview = async (req, res) => {
     if (jq.sub_div_id) query = query.where('sub_div_id', jq.sub_div_id);
     const counts = await query.groupBy('record_type');
 
-    const data = { cases_today: 0, pcr_today: 0, arrests_today: 0, missing_today: 0, uidb_today: 0 };
+    const data = { cases_today: 0, pcr_today: 0, arrests_today: 0, missing_today: 0, uidb_today: 0, left_out_accused: 0 };
     counts.forEach(c => {
       const type = (c.record_type || '').toUpperCase();
       const count = parseInt(c.count, 10) || 0;
@@ -204,6 +209,10 @@ export const getOverview = async (req, res) => {
       else if (type === 'MISSING') data.missing_today = count;
       else if (type === 'UIDB') data.uidb_today = count;
     });
+
+    const leftOutRes = await computeLeftOutAccused(jq, '1970-01-01', '2099-12-31');
+    data.left_out_accused = leftOutRes.count;
+
     log.info('getOverview: exit', { jq, data });
     return res.status(200).json({ success: true, data });
   } catch (error) {
@@ -252,7 +261,7 @@ export const getByPs = async (req, res) => {
     rows.forEach(r => {
       const psId = r.ps_id;
       if (!countsMap[psId]) {
-        countsMap[psId] = { cases: 0, pcr: 0, arrests: 0 };
+        countsMap[psId] = { cases: 0, pcr: 0, arrests: 0, left_out: 0 };
       }
       const type = (r.record_type || '').toUpperCase();
       const count = parseInt(r.count, 10) || 0;
@@ -261,16 +270,25 @@ export const getByPs = async (req, res) => {
       else if (type === 'ARREST') countsMap[psId].arrests = count;
     });
 
+    // Compute left_out count per station
+    await Promise.all(stations.map(async (s) => {
+      const stationJq = { ...jq, ps_id: s.id };
+      const leftOutRes = await computeLeftOutAccused(stationJq, '1970-01-01', '2099-12-31');
+      if (!countsMap[s.id]) countsMap[s.id] = { cases: 0, pcr: 0, arrests: 0, left_out: 0 };
+      countsMap[s.id].left_out = leftOutRes.count;
+    }));
+
     // 4. Merge stations and counts
     const data = stations.map(s => {
-      const stats = countsMap[s.id] || { cases: 0, pcr: 0, arrests: 0 };
+      const stats = countsMap[s.id] || { cases: 0, pcr: 0, arrests: 0, left_out: 0 };
       return {
         id: s.id,
         station: s.name,
         station_hi: s.name,
         cases: stats.cases,
         pcr: stats.pcr,
-        arrests: stats.arrests
+        arrests: stats.arrests,
+        left_out: stats.left_out
       };
     });
 
@@ -638,7 +656,7 @@ const computeLeftOutAccused = async (jq, startDate, endDate, { heinousOnly = fal
     const accusedRows = await db('persons')
       .whereIn('record_id', caseIds)
       .andWhere('role', 'ACCUSED')
-      .select('record_id', 'name');
+      .select('id', 'record_id', 'name', 'relative_name', 'relation_type', 'age', 'dob', 'gender', 'mobile');
     if (accusedRows.length === 0) {
       log.debug('computeLeftOutAccused: no ACCUSED persons on in-range cases, exit early', { caseCount: cases.length });
       return { count: 0, list: [] };
@@ -657,29 +675,39 @@ const computeLeftOutAccused = async (jq, startDate, endDate, { heinousOnly = fal
     });
 
     const allArrestIds = [...new Set(links.map(l => l.arrest_id))];
-    const arrestedNamesByArrestId = new Map();
+    const arresteesByArrestId = new Map();
     if (allArrestIds.length > 0) {
       const arrestedRows = await db('persons')
         .whereIn('record_id', allArrestIds)
         .andWhere('role', 'ARRESTEE')
-        .select('record_id', 'name');
+        .select('id', 'record_id', 'name', 'relative_name', 'relation_type', 'age', 'dob', 'gender', 'mobile');
       arrestedRows.forEach(r => {
-        const name = normalizeName(r.name);
-        if (!arrestedNamesByArrestId.has(r.record_id)) arrestedNamesByArrestId.set(r.record_id, new Set());
-        arrestedNamesByArrestId.get(r.record_id).add(name);
+        if (!arresteesByArrestId.has(r.record_id)) arresteesByArrestId.set(r.record_id, []);
+        arresteesByArrestId.get(r.record_id).push(r);
       });
     }
 
     const leftOutList = [];
-    accusedRows.forEach(a => {
-      const accusedName = normalizeName(a.name);
-      if (!accusedName) return;
-      const arrestIds = arrestIdsByCaseId.get(a.record_id) || [];
-      const isArrested = arrestIds.some(aid => arrestedNamesByArrestId.get(aid)?.has(accusedName));
+    accusedRows.forEach(accused => {
+      if (!accused.name) return;
+      const arrestIds = arrestIdsByCaseId.get(accused.record_id) || [];
+      let isArrested = false;
+      for (const aid of arrestIds) {
+        const arrestees = arresteesByArrestId.get(aid) || [];
+        for (const arrestee of arrestees) {
+          const cmp = comparePersons(accused, arrestee);
+          if (cmp.isMatch) {
+            isArrested = true;
+            break;
+          }
+        }
+        if (isArrested) break;
+      }
+
       if (!isArrested) {
         leftOutList.push({
-          name: a.name || '',
-          fir_no: caseFirById.get(a.record_id) || null
+          name: accused.name || '',
+          fir_no: caseFirById.get(accused.record_id) || null
         });
       }
     });
@@ -1237,9 +1265,8 @@ export const getCrimeHeadMatrix = async (req, res) => {
       return new Map(rows.map(r => [r.crime_head, parseInt(r.count, 10) || 0]));
     };
 
-    const [firMap, uidbMap, standaloneArrestIds, linkedArrestByCaseHeadMap, workoutMap] = await Promise.all([
+    const [firMap, standaloneArrestIds, linkedArrestByCaseHeadMap, workoutMap] = await Promise.all([
       groupByCrimeHead('CASE', 'fir_details'),
-      groupByCrimeHead('UIDB', 'uidb_details'),
       getStandaloneArrestIds(jq, currentStart, currentEnd),
       groupLinkedArrestsByCaseCrimeHead(),
       groupWorkedOutByCrimeHead()
@@ -1257,28 +1284,26 @@ export const getCrimeHeadMatrix = async (req, res) => {
     }
 
     const crimeHeads = [...new Set([
-      ...firMap.keys(), ...uidbMap.keys(), ...kalandraMap.keys(),
+      ...firMap.keys(), ...kalandraMap.keys(),
       ...linkedArrestByCaseHeadMap.keys(), ...workoutMap.keys()
     ])].sort();
 
-    // PCR_CALL and MISSING record types have no crime-head classification at all, so they're
-    // excluded entirely rather than shown as an always-blank column.
+    // PCR_CALL, MISSING, and UIDB record types have no crime-head classification; excluded entirely.
+    // Kalandra (standalone arrest) figures are merged into the Arrest column (attributed via arrest_details).
     const rows = crimeHeads.map(head => {
       const linkedArrests = linkedArrestByCaseHeadMap.get(head) || 0;
       const kalandraArrests = kalandraMap.get(head) || 0;
       return {
         crime_head: head,
         FIR: firMap.get(head) || 0,
-        Arrest: linkedArrests + kalandraArrests, // total arrests: against-FIR + Kalandra combined
-        Kalandra: kalandraArrests,
-        UIDB: uidbMap.get(head) || 0,
-        Workout: workoutMap.get(head) || 0
+        Arrest: linkedArrests + kalandraArrests,
+        'Worked Out': workoutMap.get(head) || 0,
       };
     });
 
     return res.status(200).json({
       success: true,
-      data: { period: effectivePeriod, columns: ['FIR', 'Arrest', 'Kalandra', 'UIDB', 'Workout'], rows }
+      data: { period: effectivePeriod, columns: ['FIR', 'Arrest', 'Worked Out'], rows }
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

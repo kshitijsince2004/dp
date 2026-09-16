@@ -8,7 +8,7 @@ import {
 import {
   BarChart3, LineChart as LineIcon, PieChart as PieIcon,
   Calendar, FileText, Shield, Phone, Search, Activity,
-  TrendingUp, AlertCircle, Radio,
+  TrendingUp, AlertCircle, Radio, UserX,
 } from 'lucide-react';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
@@ -226,6 +226,7 @@ export default function AnalyticsDashboard() {
     { label: 'Arrests',         value: summary.ARREST,  icon: Shield,   color: 'text-emerald-500', sub: 'In workflow' },
     { label: 'PCR Calls',       value: summary.PCR,     icon: Phone,    color: 'text-blue-500',    sub: 'In workflow' },
     { label: 'Missing Persons', value: summary.MISSING, icon: Search,   color: 'text-violet-500',  sub: 'In workflow' },
+    { label: 'Left Out Accused', value: summary.left_out_accused || summary.LEFT_OUT || 0, icon: UserX, color: 'text-amber-500', sub: 'Pending Arrest' },
   ];
 
   // ── Shared panel section label ─────────────────────────────────────────────
@@ -316,13 +317,13 @@ export default function AnalyticsDashboard() {
         <div className="mt-8">
           <SectionLabel>Summary KPIs</SectionLabel>
           {summaryLoading ? (
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              {[...Array(4)].map((_, i) => (
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+              {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-28 animate-pulse rounded-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
               {kpiCards.map((card) => (
                 <StatCard
                   key={card.label}
@@ -546,6 +547,7 @@ export default function AnalyticsDashboard() {
                           <Bar dataKey="cases"   name="Cases"   fill="#D97706" radius={[4, 4, 0, 0]} />
                           <Bar dataKey="arrests" name="Arrests" fill="#059669" radius={[4, 4, 0, 0]} />
                           <Bar dataKey="pcr"     name="PCR"     fill="var(--accent-color)" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="left_out" name="Left Out" fill="#D97706" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>

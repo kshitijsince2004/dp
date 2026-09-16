@@ -55,3 +55,19 @@
 **Decision:** Option B  
 **Decided by:** Crime Branch  
 **Date:** 2026-08-27  
+
+---
+
+## D5 — Supplementary Chargesheet History Storage
+**Sheets affected:** Record Details, Audit Trail, STAT_40/41 (Court & Judicial Status).
+
+**Context:** `fir_details.supplementary_chargesheet_details` is a single TEXT column. A second supplementary chargesheet overwrites the first's text on the live record (recoverable via `record_revisions`, not visible on the main case view or in any report).
+
+Options:
+- **Option A:** Accept as a documented first-version limitation (matches how original court fields were added directly to `fir_details` as a stated compromise).
+- **Option B:** Build a proper dated `supplementary_chargesheets` table (`record_id`, `filed_date`, `details`, `filed_by`) supporting multiple entries.
+
+**Decision:** Option A  
+**Decided by:** Crime Branch / System Architect  
+**Date:** 2026-09-06  
+

@@ -19,6 +19,187 @@ import { redact } from '../../utils/redact.js';
 // is ambient via AsyncLocalStorage (utils/requestContext.js) — nothing here threads it manually.
 const log = getLogger('records.service');
 
+// ── Multi-Factor Person Comparison & Case-Arrest Sync Engine ──────────────────────────
+
+/**
+ * Multi-factor comparison engine comparing accused person record with arrested person record.
+ * Compares Name, Relative Name/Parentage, Age/DOB (tolerance max 3 yrs), Gender, Mobile, etc.
+ * Returns { isMatch: boolean, reason: string | null }
+ */
+export function comparePersons(personA, personB) {
+  if (!personA || !personB) return { isMatch: false, reason: 'Missing person data' };
+
+  const norm = (val) => (val || '').toString().toLowerCase().trim().replace(/\s+/g, ' ');
+
+  const nameA = norm(personA.name);
+  const nameB = norm(personB.name);
+
+  if (!nameA || !nameB) {
+    return { isMatch: false, reason: 'Name missing' };
+  }
+
+  // Tokenize names
+  const tokensA = nameA.split(' ').filter(Boolean);
+  const tokensB = nameB.split(' ').filter(Boolean);
+  const commonTokens = tokensA.filter((t) => tokensB.includes(t));
+
+  if (commonTokens.length === 0 && nameA !== nameB) {
+    return { isMatch: false, reason: `Names differ: "${nameA}" vs "${nameB}"` };
+  }
+
+  // 1. Father / Relative Name Conflict
+  const relA = norm(personA.relative_name || personA.father_name || personA.relativeName || personA.fatherName);
+  const relB = norm(personB.relative_name || personB.father_name || personB.relativeName || personB.fatherName);
+  if (relA && relB && relA !== relB) {
+    const relTokensA = relA.split(' ').filter(Boolean);
+    const relTokensB = relB.split(' ').filter(Boolean);
+    const firstNameA = relTokensA[0];
+    const firstNameB = relTokensB[0];
+    if (firstNameA && firstNameB && firstNameA !== firstNameB) {
+      return { isMatch: false, reason: `Father/Relative name conflict: "${relA}" vs "${relB}"` };
+    }
+    if (!relA.includes(relB) && !relB.includes(relA)) {
+      return { isMatch: false, reason: `Father/Relative name conflict: "${relA}" vs "${relB}"` };
+    }
+  }
+
+  // 2. Age / DOB Conflict (Tolerance: max 3 years)
+  const ageA = personA.age != null ? parseInt(personA.age, 10) : null;
+  const ageB = personB.age != null ? parseInt(personB.age, 10) : null;
+  if (ageA !== null && !isNaN(ageA) && ageA > 0 && ageB !== null && !isNaN(ageB) && ageB > 0) {
+    if (Math.abs(ageA - ageB) > 3) {
+      return { isMatch: false, reason: `Age conflict: ${ageA} vs ${ageB}` };
+    }
+  }
+
+  // 3. Gender Conflict
+  const genA = norm(personA.gender);
+  const genB = norm(personB.gender);
+  if (genA && genB && genA !== genB) {
+    return { isMatch: false, reason: `Gender conflict: "${genA}" vs "${genB}"` };
+  }
+
+  // 4. Mobile Number Conflict
+  const mobA = (personA.mobile_number || personA.mobile || '').toString().replace(/\D/g, '');
+  const mobB = (personB.mobile_number || personB.mobile || '').toString().replace(/\D/g, '');
+  if (mobA.length >= 10 && mobB.length >= 10 && mobA !== mobB) {
+    return { isMatch: false, reason: `Mobile number conflict: "${mobA}" vs "${mobB}"` };
+  }
+
+  return { isMatch: true, reason: null };
+}
+
+/**
+ * Checks if arrested persons on arrestRecordId match existing accused on caseRecordId.
+ * If hard conflict or no match is found, automatically appends the arrested person as a new ACCUSED on caseRecordId.
+ */
+export async function syncArrestedToCaseAccused(trx, caseRecordId, arrestRecordId, user = {}) {
+  log.debug('syncArrestedToCaseAccused: enter', { caseRecordId, arrestRecordId });
+  const caseAccusedList = await trx('persons')
+    .where({ record_id: caseRecordId, role: 'ACCUSED' })
+    .orderBy('sort_order', 'asc');
+
+  const arrestees = await trx('persons')
+    .where({ record_id: arrestRecordId, role: 'ARRESTEE' })
+    .orderBy('sort_order', 'asc');
+
+  if (!arrestees.length) {
+    log.debug('syncArrestedToCaseAccused: no arrestees found on arrest record', { arrestRecordId });
+    return;
+  }
+
+  for (const arrestee of arrestees) {
+    let matchedAccused = null;
+    for (const accused of caseAccusedList) {
+      const cmp = comparePersons(accused, arrestee);
+      if (cmp.isMatch) {
+        matchedAccused = accused;
+        log.info('syncArrestedToCaseAccused: matched arrestee to existing accused', {
+          caseRecordId, arrestRecordId, accusedId: accused.id, arresteeId: arrestee.id,
+        });
+        break;
+      }
+    }
+
+    if (!matchedAccused) {
+      const newAccusedId = uuidv4();
+      const sortOrder = caseAccusedList.length + 1;
+      const newAccusedRow = {
+        id: newAccusedId,
+        record_id: caseRecordId,
+        role: 'ACCUSED',
+        name: arrestee.name,
+        relative_name: arrestee.relative_name || null,
+        relation_type: arrestee.relation_type || null,
+        age: arrestee.age || null,
+        dob: arrestee.dob || null,
+        gender: arrestee.gender || null,
+        mobile: arrestee.mobile || arrestee.mobile_number || null,
+        present_location_id: arrestee.present_location_id || null,
+        perm_location_id: arrestee.perm_location_id || null,
+        extra: typeof arrestee.extra === 'string' ? arrestee.extra : JSON.stringify(arrestee.extra || {}),
+        sort_order: sortOrder,
+        created_at: trx.fn.now(),
+        updated_at: trx.fn.now(),
+      };
+      await trx('persons').insert(newAccusedRow);
+      caseAccusedList.push(newAccusedRow);
+      log.info('syncArrestedToCaseAccused: appended new ACCUSED person to CASE record due to conflict/non-match', {
+        caseRecordId, newAccusedId, name: arrestee.name,
+      });
+    }
+  }
+}
+
+/**
+ * Link ARREST record to CASE record via CASE_ARREST link and sync arrested person to accused list.
+ */
+export async function autoLinkArrestToCase(trx, arrestRecordId, psId, firNo, user = {}) {
+  if (!firNo) return null;
+  log.debug('autoLinkArrestToCase: enter', { arrestRecordId, psId, firNo });
+
+  const caseMatch = await trx('records')
+    .join('fir_details', 'records.id', 'fir_details.record_id')
+    .where('records.record_type', 'CASE')
+    .where('records.ps_id', psId)
+    .where('fir_details.fir_no', firNo)
+    .select('records.id as case_record_id')
+    .first();
+
+  if (!caseMatch) {
+    log.debug('autoLinkArrestToCase: no matching CASE record found', { psId, firNo });
+    return null;
+  }
+
+  const caseRecordId = caseMatch.case_record_id;
+  const linkType = await trx('link_type_registry').where({ code: 'CASE_ARREST', is_active: true }).first();
+  if (linkType) {
+    const existingLink = await trx('record_links')
+      .where({
+        source_record_id: caseRecordId,
+        target_record_id: arrestRecordId,
+        link_type_id: linkType.id,
+      })
+      .first();
+
+    if (!existingLink) {
+      await trx('record_links').insert({
+        id: uuidv4(),
+        source_record_id: caseRecordId,
+        target_record_id: arrestRecordId,
+        link_type_id: linkType.id,
+        metadata: JSON.stringify({ resolved_via: 'autoLinkArrestToCase', fir_no: firNo }),
+        created_by: user ? user.id : null,
+        created_at: trx.fn.now(),
+      });
+      log.info('autoLinkArrestToCase: created record_link CASE_ARREST', { caseRecordId, arrestRecordId });
+    }
+  }
+
+  await syncArrestedToCaseAccused(trx, caseRecordId, arrestRecordId, user);
+  return caseRecordId;
+}
+
 // ── shared write-path helpers (single write path, ARCHITECTURE.md §4.2) ─────────────────
 
 /** Insert a `locations` row (or return null for an empty block). Used on CREATE, where
@@ -54,9 +235,58 @@ async function upsertLocation(trx, existingId, cols) {
   return id;
 }
 
+// ── Person UID generation ─────────────────────────────────────────────────────────────
+const PERSON_UID_PREFIXES = {
+  COMPLAINANT: 'COMP', VICTIM: 'VICT', ACCUSED: 'ACSD', ARRESTED: 'ARST',
+  INFORMANT: 'INFO', MISSING: 'MISS', DECEASED: 'DCSD', CALLER: 'CALR',
+};
+
+async function generatePersonUid(trx, role) {
+  const prefix = PERSON_UID_PREFIXES[role] || 'PERS';
+  const year = new Date().getFullYear();
+  const pattern = `${prefix}-${year}-%`;
+  const maxRow = await trx('persons')
+    .where('uid', 'like', pattern)
+    .orderBy('uid', 'desc')
+    .select('uid')
+    .first();
+  let seq = 1;
+  if (maxRow?.uid) {
+    const lastPart = maxRow.uid.split('-').pop();
+    const maxSeq = parseInt(lastPart, 10);
+    if (!isNaN(maxSeq)) seq = maxSeq + 1;
+  }
+  return `${prefix}-${year}-${String(seq).padStart(6, '0')}`;
+}
+
+// ── Record UID generation ─────────────────────────────────────────────────────────────
+const RECORD_TYPE_PREFIXES = {
+  CASE: 'CASE', ARREST: 'ARST', MISSING: 'MISS', PCR_CALL: 'PCR', UIDB: 'UIDB',
+};
+
+async function generateRecordUid(trx, recordType, recordDate) {
+  const prefix = RECORD_TYPE_PREFIXES[recordType] || 'REC';
+  const year = recordDate ? new Date(recordDate).getFullYear() : new Date().getFullYear();
+  const safeYear = isNaN(year) ? new Date().getFullYear() : year;
+  const pattern = `${prefix}-${safeYear}-%`;
+  const maxRow = await trx('records')
+    .where('uid', 'like', pattern)
+    .orderBy('uid', 'desc')
+    .select('uid')
+    .first();
+  let seq = 1;
+  if (maxRow?.uid) {
+    const lastPart = maxRow.uid.split('-').pop();
+    const maxSeq = parseInt(lastPart, 10);
+    if (!isNaN(maxSeq)) seq = maxSeq + 1;
+  }
+  return `${prefix}-${safeYear}-${String(seq).padStart(6, '0')}`;
+}
+
 async function insertPersonEntry(trx, recordId, entry) {
   log.debug('insertPersonEntry: enter', { recordId, role: entry.role, sourceKind: entry.sourceKind, sourceIndex: entry.sourceIndex });
   const personId = uuidv4();
+  const personUid = await generatePersonUid(trx, entry.role);
   const locationIdBySlot = {};
   for (const [slot, cols] of Object.entries(entry.locations)) {
     locationIdBySlot[slot] = await insertLocation(trx, cols);
@@ -67,7 +297,7 @@ async function insertPersonEntry(trx, recordId, entry) {
     if (target?.table === 'persons') personCols[target.column] = locId;
   }
   await trx('persons').insert({
-    id: personId, record_id: recordId, role: entry.role, ...personCols,
+    id: personId, uid: personUid, record_id: recordId, role: entry.role, ...personCols,
     extra: JSON.stringify(entry.extra || {}), sort_order: entry.sourceIndex ?? 0,
   });
   log.debug('insertPersonEntry: wrote persons row', { recordId, personId, role: entry.role });
@@ -170,8 +400,9 @@ async function upsertPersons(trx, recordId, personEntries, oldPersonRows) {
       await trx('persons').where({ id: personId }).update(row);
       log.debug('upsertPersons: updated existing persons row', { recordId, personId, role: entry.role });
     } else {
-      await trx('persons').insert({ id: personId, record_id: recordId, ...row });
-      log.debug('upsertPersons: inserted new persons row', { recordId, personId, role: entry.role });
+      const personUid = await generatePersonUid(trx, entry.role);
+      await trx('persons').insert({ id: personId, uid: personUid, record_id: recordId, ...row });
+      log.debug('upsertPersons: inserted new persons row', { recordId, personId, uid: personUid, role: entry.role });
     }
 
     const subtypeTables = new Set([...Object.keys(entry.subtypes || {}), ...Object.keys(existing?.subtypes || {})]);
@@ -446,6 +677,12 @@ const STATUS_FIELD_DEFS = [
   { statusField: 'uidb_status', recordType: 'UIDB', column: 'uidb_status' },
   { statusField: 'final_call_status', recordType: 'PCR_CALL', column: 'final_call_status' },
   { statusField: 'is_worked_out', recordType: 'CASE', column: 'is_worked_out', valueType: 'boolean' },
+  { statusField: 'sent_to_court_date', recordType: 'CASE', column: 'sent_to_court_date' },
+  { statusField: 'court_case_no', recordType: 'CASE', column: 'court_case_no' },
+  { statusField: 'court_name', recordType: 'CASE', column: 'court_name' },
+  { statusField: 'court_disposal_type', recordType: 'CASE', column: 'court_disposal_type' },
+  { statusField: 'court_disposal_date', recordType: 'CASE', column: 'court_disposal_date' },
+  { statusField: 'supplementary_chargesheet_details', recordType: 'CASE', column: 'supplementary_chargesheet_details' },
 ];
 
 // Derived, not hand-duplicated: detailTable -> { column -> statusField }, used by
@@ -791,7 +1028,8 @@ export const listRecords = async (recordType, filters, jurisdictionQuery) => {
   if (filters.search) {
     const term = `%${filters.search}%`;
     query = query.where((b) => {
-      b.whereRaw('fir.fir_no ILIKE ?', [term])
+      b.whereRaw('records.uid ILIKE ?', [term])
+        .orWhereRaw('fir.fir_no ILIKE ?', [term])
         .orWhereRaw('arr.fir_no ILIKE ?', [term])
         .orWhereRaw('uidb.uidb_no ILIKE ?', [term])
         .orWhereExists(function () {
@@ -816,6 +1054,80 @@ export const listRecords = async (recordType, filters, jurisdictionQuery) => {
         .where('case_fir.fir_no', filters.linked_fir_no);
     });
   }
+
+  // Universal multi-factor field filters (allow filtering on any filled factor)
+  if (filters.is_worked_out !== undefined && filters.is_worked_out !== null && filters.is_worked_out !== '') {
+    const isW = filters.is_worked_out === true || filters.is_worked_out === 'true' || String(filters.is_worked_out).toUpperCase() === 'YES';
+    query = query.where('fir.is_worked_out', isW);
+  }
+
+  if (filters.work_out !== undefined && filters.work_out !== null && filters.work_out !== '') {
+    const isW = filters.work_out === true || filters.work_out === 'true' || String(filters.work_out).toUpperCase() === 'YES';
+    query = query.where('fir.is_worked_out', isW);
+  }
+
+  if (filters.case_status) {
+    query = query.where((b) => {
+      b.where('fir.case_status', filters.case_status)
+       .orWhere('arr.case_status', filters.case_status)
+       .orWhere('mis.missing_status', filters.case_status)
+       .orWhere('uidb.uidb_status', filters.case_status)
+       .orWhere('pcr.final_call_status', filters.case_status);
+    });
+  }
+
+  if (filters.disposal_type) {
+    query = query.where('fir.disposal_type', filters.disposal_type);
+  }
+
+  if (filters.rc_no) {
+    query = query.where('fir.rc_no', 'ILIKE', `%${filters.rc_no}%`);
+  }
+
+  if (filters.io_pis || filters.pis_no) {
+    const pisVal = filters.io_pis || filters.pis_no;
+    query = query.where((b) => {
+      b.where('fir.io_pis', 'ILIKE', `%${pisVal}%`)
+       .orWhere('io.pis_no', 'ILIKE', `%${pisVal}%`);
+    });
+  }
+
+  if (filters.io_name) {
+    query = query.where('io.name', 'ILIKE', `%${filters.io_name}%`);
+  }
+
+  if (filters.fir_no) {
+    query = query.where((b) => {
+      b.where('fir.fir_no', 'ILIKE', `%${filters.fir_no}%`)
+       .orWhere('arr.fir_no', 'ILIKE', `%${filters.fir_no}%`)
+       .orWhere('mis.fir_no', 'ILIKE', `%${filters.fir_no}%`);
+    });
+  }
+
+  if (filters.fir_year) {
+    query = query.where('fir.fir_year', filters.fir_year);
+  }
+
+  if (filters.act_name || filters.section_code) {
+    query = query.whereExists(function () {
+      let sub = this.select('*').from('record_acts_sections as ras')
+        .whereRaw('ras.record_id = records.id');
+      if (filters.act_name) sub = sub.where('ras.act_name', 'ILIKE', `%${filters.act_name}%`);
+      if (filters.section_code) sub = sub.where('ras.section_code', 'ILIKE', `%${filters.section_code}%`);
+    });
+  }
+
+  if (filters.person_name || filters.complainant_name || filters.victim_name || filters.accused_name) {
+    query = query.whereExists(function () {
+      let sub = this.select('*').from('persons')
+        .whereRaw('persons.record_id = records.id');
+      if (filters.person_name) sub = sub.where('persons.name', 'ILIKE', `%${filters.person_name}%`);
+      if (filters.complainant_name) sub = sub.where('persons.name', 'ILIKE', `%${filters.complainant_name}%`).where('persons.role', 'COMPLAINANT');
+      if (filters.victim_name) sub = sub.where('persons.name', 'ILIKE', `%${filters.victim_name}%`).where('persons.role', 'VICTIM');
+      if (filters.accused_name) sub = sub.where('persons.name', 'ILIKE', `%${filters.accused_name}%`).where('persons.role', 'ACCUSED');
+    });
+  }
+
 
   // C12 (2026-07-26): derived Kalandra / Arrest-against-FIR filter — GET /api/records?
   // record_type=ARREST&arrest_kind=KALANDRA|AGAINST_FIR. Omitted or any other value behaves
@@ -907,21 +1219,21 @@ export const getRecordDetails = async (id) => {
     // nothing already consuming it breaks — these are additive fields only.
     const revisions = await trx('record_revisions')
       .select('record_revisions.*', 'u.username', 'u.name as user_fullname', 'u.role as changed_by_role')
-      .join('users as u', 'record_revisions.changed_by', 'u.id')
+      .leftJoin('users as u', 'record_revisions.changed_by', 'u.id')
       .where('record_revisions.record_id', id)
       .orderBy('record_revisions.revision_number', 'asc');
     revisions.forEach((rev) => { rev.field_changes = typeof rev.field_changes === 'string' ? JSON.parse(rev.field_changes) : rev.field_changes; });
 
     const transitions = await trx('workflow_transitions')
       .select('workflow_transitions.*', 'u.username', 'u.name as performed_by_name', 'u.role as performed_by_role')
-      .join('users as u', 'workflow_transitions.performed_by', 'u.id')
+      .leftJoin('users as u', 'workflow_transitions.performed_by', 'u.id')
       .where('workflow_transitions.record_id', id)
       .orderBy('workflow_transitions.performed_at', 'asc');
     transitions.forEach((tr) => { tr.target_fields = typeof tr.target_fields === 'string' ? JSON.parse(tr.target_fields) : tr.target_fields; });
 
     const statusEvents = await trx('record_status_events')
       .select('record_status_events.*', 'u.username', 'u.name as changed_by_name', 'u.role as changed_by_role')
-      .join('users as u', 'record_status_events.changed_by', 'u.id')
+      .leftJoin('users as u', 'record_status_events.changed_by', 'u.id')
       .where('record_status_events.record_id', id)
       .orderBy('record_status_events.effective_date', 'desc');
 
@@ -987,8 +1299,10 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
     if (col) split.detail[col] = locId;
   }
 
+  const recordUid = await generateRecordUid(trx, recordType, normalizedRecordDate);
+
   await trx('records').insert({
-    id, record_type: recordType, ps_id: scope.ps_id, district_id: scope.district_id, sub_div_id: scope.sub_div_id || null,
+    id, uid: recordUid, record_type: recordType, ps_id: scope.ps_id, district_id: scope.district_id, sub_div_id: scope.sub_div_id || null,
     io_id: split.spine.io_id || null, current_status: status, current_level: level, record_date: normalizedRecordDate,
     created_by: user.id, updated_by: user.id,
     ...(importStamps ? {
@@ -1000,7 +1314,7 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
       imported_by: user.id,
     } : {}),
   });
-  log.info('insertRecordCore: wrote records row (spine)', { recordId: id, recordType, psId: scope.ps_id, districtId: scope.district_id, status });
+  log.info('insertRecordCore: wrote records row (spine)', { recordId: id, uid: recordUid, recordType, psId: scope.ps_id, districtId: scope.district_id, status });
 
   // C8 (2026-07-26, user ruling): stamp fir_details.fir_year on every CASE write, through this
   // one write path (both interactive create and import go through insertRecordCore) — see
@@ -1009,6 +1323,15 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
   // was always NULL and Postgres treats NULL as always-distinct, so the constraint never caught
   // a same-PS duplicate FIR.
   if (detailTable === 'fir_details') {
+    if (split.detail.is_worked_out === undefined || split.detail.is_worked_out === null) {
+      split.detail.is_worked_out = false;
+    }
+    const caseStatusUpper = String(split.detail.case_status || '').toUpperCase().trim();
+    const PENDING_STATUSES = ['PENDING', 'PENDING_INVESTIGATION', 'UNDER_INVESTIGATION'];
+    if (!split.detail.case_status || PENDING_STATUSES.includes(caseStatusUpper) || caseStatusUpper.includes('PENDING')) {
+      split.detail.is_worked_out = false;
+    }
+
     const firYear = deriveFirYear(split.detail.fir_no, split.detail.fir_date, normalizedRecordDate);
     if (firYear != null) split.detail.fir_year = firYear;
     log.debug('insertRecordCore: derived fir_year', { recordId: id, firNo: split.detail.fir_no, firDate: split.detail.fir_date, firYear });
@@ -1035,6 +1358,10 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
   }
 
   await replaceOffenceRows(trx, id, split.offenceRows);
+
+  if (recordType === 'ARREST' && split.detail.fir_no) {
+    await autoLinkArrestToCase(trx, id, scope.ps_id, split.detail.fir_no, user);
+  }
 
   await writeRevision(trx, {
     recordId: id, changeType, level, changedBy: user.id, ipAddress,
@@ -1214,8 +1541,22 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
       const firYear = deriveFirYear(mergedFirNo, mergedFirDate, record.record_date);
       if (firYear != null) split.detail.fir_year = firYear;
 
-      const currentCaseStatus = split.detail.case_status || oldDetail?.case_status;
-      if (currentCaseStatus && ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'CHARGESHEETED', 'CHALLAN'].includes(String(currentCaseStatus).toUpperCase())) {
+      const currentCaseStatus = 'case_status' in split.detail ? split.detail.case_status : oldDetail?.case_status;
+      const currentCaseStatusUpper = String(currentCaseStatus || '').toUpperCase().trim();
+      const PENDING_STATUSES = ['PENDING', 'PENDING_INVESTIGATION', 'UNDER_INVESTIGATION'];
+
+      if (split.detail.is_worked_out === true || split.detail.is_worked_out === 'true') {
+        if (!currentCaseStatus || PENDING_STATUSES.includes(currentCaseStatusUpper) || currentCaseStatusUpper.includes('PENDING')) {
+          log.warn('updateRecord: rejected — cannot mark worked out when case status is pending or missing', { recordId: id, currentCaseStatus });
+          throw Object.assign(new Error('A case cannot be marked as worked out if the case status is pending or missing.'), { status: 422 });
+        }
+      }
+
+      if (!currentCaseStatus || PENDING_STATUSES.includes(currentCaseStatusUpper) || currentCaseStatusUpper.includes('PENDING')) {
+        split.detail.is_worked_out = false;
+      }
+
+      if (currentCaseStatus && ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'CHARGESHEETED', 'CHALLAN'].includes(currentCaseStatusUpper)) {
         if (!split.detail.sent_to_court_date && !oldDetail?.sent_to_court_date) {
           split.detail.sent_to_court_date = new Date().toISOString().slice(0, 10);
         }
@@ -1275,6 +1616,13 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
 
     if (offences !== undefined || (data.act_name !== undefined || data.sections !== undefined)) {
       await replaceOffenceRows(trx, id, split.offenceRows);
+    }
+
+    if (recordType === 'ARREST') {
+      const firNo = split.detail.fir_no || oldDetail?.fir_no;
+      if (firNo) {
+        await autoLinkArrestToCase(trx, id, record.ps_id, firNo, user);
+      }
     }
 
     await trx('records').where({ id }).update({ updated_by: user.id, updated_at: trx.fn.now() });
@@ -1473,8 +1821,10 @@ export const overrideCaseHead = async (id, user, newHead, reason, ipAddress) => 
 // lives outside STATUS_FIELD_DEFS but is still a legal statusField for this endpoint.
 const VALID_FIELDS = [...STATUS_FIELD_DEFS.map((d) => d.statusField), 'property_status'];
 
-export const updateDomainStatus = async (id, user, { statusField, newValue, effectiveDate, comment, propertyId } = {}, ipAddress) => {
-  log.debug('updateDomainStatus: enter', { recordId: id, statusField, newValue, propertyId, userId: user.id });
+export const updateDomainStatus = async (id, user, options = {}, ipAddress) => {
+  const { statusField, newValue, effectiveDate, comment, propertyId } = options;
+  const opts = options.opts || options;
+  log.debug('updateDomainStatus: enter', { recordId: id, statusField, newValue, propertyId, userId: user?.id });
   if (statusField === 'is_worked_out' && ['DISTRICT_OFFICER', 'DISTRICT'].includes((user?.role || '').toUpperCase())) {
     log.warn('updateDomainStatus: rejected — district users cannot update workout status directly', { recordId: id });
     throw Object.assign(new Error('District users cannot update workout status directly as evidence is required from the police station. Please send the record back to the station for workout status updates.'), { status: 403 });
@@ -1515,15 +1865,71 @@ export const updateDomainStatus = async (id, user, { statusField, newValue, effe
           log.warn('updateDomainStatus: rejected — target column absent on detail row', { recordId: id, statusField, detailTable, column });
           throw Object.assign(new Error(`"${statusField}" does not apply to record type ${record.record_type}`), { status: 422 });
         }
+
+        const CHARGESHEET_STATUS_LIST = ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'SUPPLEMENTARY CHARGESHEET'];
+        const IS_COURT_FIELD = ['sent_to_court_date', 'court_case_no', 'court_name', 'court_disposal_type', 'court_disposal_date'].includes(statusField);
+        if (IS_COURT_FIELD && record.record_type === 'CASE') {
+          const currentCaseStatus = String(detailRow.case_status || '').toUpperCase();
+          if (!CHARGESHEET_STATUS_LIST.includes(currentCaseStatus)) {
+            log.warn('updateDomainStatus: rejected — court status requires chargesheet', { recordId: id, currentCaseStatus });
+            throw Object.assign(new Error('Court & Judicial Status cannot be updated until a Chargesheet or Supplementary Chargesheet has been filed for this case.'), { status: 422 });
+          }
+        }
+
+        if (statusField === 'is_worked_out') {
+          const userRole = (user?.role || '').toUpperCase();
+          const isDistrictRole = ['DISTRICT_OFFICER', 'DISTRICT', 'DISTRICT_ADMIN', 'DISTRICT_USER'].includes(userRole) || userRole.includes('DISTRICT');
+          if (isDistrictRole) {
+            log.warn('updateDomainStatus: rejected — district role cannot update workout status', { recordId: id, statusField, userRole });
+            throw Object.assign(new Error('Workout status can only be updated by the Police Station with physical evidence. Send record back for update.'), { status: 403 });
+          }
+
+          const currentCaseStatus = String(detailRow?.case_status || '').toUpperCase().trim();
+          const PENDING_STATUSES = ['PENDING', 'PENDING_INVESTIGATION', 'UNDER_INVESTIGATION'];
+          if ((newValue === true || newValue === 'true') && (!detailRow?.case_status || PENDING_STATUSES.includes(currentCaseStatus) || currentCaseStatus.includes('PENDING'))) {
+            log.warn('updateDomainStatus: rejected — cannot mark worked out when case status is pending or missing', { recordId: id, currentCaseStatus });
+            throw Object.assign(new Error('A case cannot be marked as worked out if the case status is pending or missing.'), { status: 422 });
+          }
+        }
         oldValue = detailRow[column];
         const coerced = statusField === 'is_worked_out' ? (newValue === 'true' || newValue === true) : newValue;
         const updatePayload = { [column]: coerced, updated_at: trx.fn.now() };
+
         if (statusField === 'is_worked_out' && coerced === true) updatePayload.worked_out_date = effDate;
-        if (statusField === 'case_status' && ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'CHARGESHEETED', 'CHALLAN'].includes(String(coerced).toUpperCase())) {
+
+        const coercedUpper = String(coerced).toUpperCase().trim();
+        if (statusField === 'case_status') {
+          const PENDING_STATUSES = ['PENDING', 'PENDING_INVESTIGATION', 'UNDER_INVESTIGATION'];
+          if (!coerced || PENDING_STATUSES.includes(coercedUpper) || coercedUpper.includes('PENDING')) {
+            updatePayload.is_worked_out = false;
+          }
+        }
+
+        if (statusField === 'case_status' && CHARGESHEET_STATUS_LIST.includes(coercedUpper)) {
           if (detailTable === 'fir_details' && !detailRow.sent_to_court_date) {
             updatePayload.sent_to_court_date = effDate || trx.fn.now();
           }
         }
+
+        // Support additional court/supplementary/transfer fields if passed in options payload
+        if (statusField === 'case_status' && coercedUpper === 'SUPPLEMENTARY CHARGESHEET') {
+          const suppDetails = opts.supplementary_chargesheet_details || opts.supplementaryDetails;
+          if (suppDetails) updatePayload.supplementary_chargesheet_details = suppDetails;
+        }
+
+        if (statusField === 'case_status' && (coercedUpper === 'TRANSFER' || coercedUpper === 'TRANSFERRED' || opts.transfer_to_type)) {
+          const tType = opts.transfer_to_type || opts.transferToType || (opts.transferred_to_ps_id ? 'PS' : (opts.transferred_to_agency_id ? 'AGENCY' : null));
+          if (tType) updatePayload.transfer_to_type = tType;
+          if (opts.transferred_to_ps_id) updatePayload.transferred_to_ps_id = opts.transferred_to_ps_id;
+          if (opts.transferred_to_agency_id) updatePayload.transferred_to_agency_id = opts.transferred_to_agency_id;
+          updatePayload.date_of_transfer = opts.date_of_transfer || effDate;
+        }
+
+        if (opts.court_case_no) updatePayload.court_case_no = opts.court_case_no;
+        if (opts.court_name) updatePayload.court_name = opts.court_name;
+        if (opts.court_disposal_date) updatePayload.court_disposal_date = opts.court_disposal_date;
+        if (opts.sent_to_court_date) updatePayload.sent_to_court_date = opts.sent_to_court_date;
+
         await trx(detailTable).where({ record_id: id }).update(updatePayload);
         log.info('updateDomainStatus: updated detail row status column', { recordId: id, detailTable, column, oldValue, newValue: coerced });
       }
@@ -1584,13 +1990,14 @@ export const getStatusOptions = async (id, user = null) => {
   if (!record) { const err = new Error('Record not found'); err.status = 404; throw err; }
 
   const userRole = (user?.role || '').toUpperCase();
-  const isDistrictRole = ['DISTRICT_OFFICER', 'DISTRICT'].includes(userRole);
+  const isDistrictRole = ['DISTRICT_OFFICER', 'DISTRICT', 'DISTRICT_ADMIN', 'DISTRICT_USER'].includes(userRole) || userRole.includes('DISTRICT');
 
   const detailTable = mapper.DETAIL_TABLES[record.record_type];
   const detailRow = await db(detailTable).where({ record_id: id }).first();
   const registry = await mapper.loadRegistry(db, record.record_type);
 
-  const applicableDefs = STATUS_FIELD_DEFS.filter((d) => d.recordType === record.record_type);
+  const STATUS_UPDATE_FIELDS = ['case_status', 'is_worked_out', 'court_disposal_type', 'custody_status', 'missing_status', 'uidb_status', 'final_call_status'];
+  const applicableDefs = STATUS_FIELD_DEFS.filter((d) => d.recordType === record.record_type && STATUS_UPDATE_FIELDS.includes(d.statusField));
 
   const fields = applicableDefs.map((def) => {
     const regField = registry.find((f) => {
@@ -1604,25 +2011,55 @@ export const getStatusOptions = async (id, user = null) => {
     let options;
     if (isBoolean) {
       options = [{ value: true, label: 'Yes' }, { value: false, label: 'No' }];
+    } else if (def.statusField === 'court_disposal_type') {
+      options = [
+        { value: 'PENDING_TRIAL', label: 'PENDING_TRIAL', label_en: 'Pending Trial', label_hi: 'मुकदमा लंबित (Pending Trial)' },
+        { value: 'CONVICTED', label: 'CONVICTED', label_en: 'Convicted', label_hi: 'दोषसिद्ध (Convicted)' },
+        { value: 'ACQUITTED', label: 'ACQUITTED', label_en: 'Acquitted', label_hi: 'दोषमुक्त (Acquitted)' },
+        { value: 'COMPOUNDED', label: 'COMPOUNDED', label_en: 'Compounded', label_hi: 'राजीनामा (Compounded)' },
+        { value: 'DISCHARGED', label: 'DISCHARGED', label_en: 'Discharged', label_hi: 'डिस्चार्ज (Discharged)' },
+      ];
     } else if (record.record_type === 'CASE') {
-      options = (regField?.options || []).map((o) => ({ value: o.value, label: o.label_en, label_hi: o.label_hi }));
+      options = (regField?.options || []).map((o) => ({ value: o.value, label: o.label_en || o.value, label_hi: o.label_hi }));
+      if (def.statusField === 'case_status') {
+        const hasSupp = options.some((o) => String(o.value).toUpperCase() === 'SUPPLEMENTARY CHARGESHEET');
+        if (!hasSupp) {
+          options.push({
+            value: 'SUPPLEMENTARY CHARGESHEET',
+            label: 'SUPPLEMENTARY CHARGESHEET',
+            label_en: 'SUPPLEMENTARY CHARGESHEET',
+            label_hi: 'पूरक आरोप पत्र (Supplementary Chargesheet)'
+          });
+        }
+      }
     } else {
       const isAgainstFir = record.record_type === 'ARREST' ? detailRow?.is_dd_based === false : undefined;
       const raw = getStatusOptionsForType(record.record_type, { isAgainstFir }) || [];
       options = raw.map((o) => ({ value: o.value, label: o.label_en, label_hi: o.label_hi }));
     }
 
+    const fieldLabel = def.statusField === 'court_disposal_type'
+      ? 'Court & Judicial Status'
+      : def.statusField === 'is_worked_out'
+        ? 'Workout Status'
+        : regField?.labels?.en || def.statusField;
+
     const entry = {
       status_field: def.statusField,
-      label: regField?.labels?.en || def.statusField,
-      current_value: isBoolean ? (rawCurrent === null || rawCurrent === undefined ? null : !!rawCurrent) : (rawCurrent ?? null),
+      label: fieldLabel,
+      current_value: isBoolean ? (rawCurrent === null || rawCurrent === undefined ? false : !!rawCurrent) : (rawCurrent ?? null),
       options,
       value_type: isBoolean ? 'boolean' : 'enum',
       requires_effective_date: true,
     };
     if (def.statusField === 'is_worked_out') {
       entry.notes = 'A Yes/true value requires effective_date — it is stamped as fir_details.worked_out_date in the same transaction (ruling 23a).';
-      if (isDistrictRole) {
+      const currentCaseStatus = String(detailRow?.case_status || '').toUpperCase().trim();
+      const PENDING_STATUSES = ['PENDING', 'PENDING_INVESTIGATION', 'UNDER_INVESTIGATION'];
+      if (!detailRow?.case_status || PENDING_STATUSES.includes(currentCaseStatus) || currentCaseStatus.includes('PENDING')) {
+        entry.disabled = true;
+        entry.disabled_reason = 'A case cannot be marked as worked out if the case status is pending or missing.';
+      } else if (isDistrictRole) {
         entry.disabled = true;
         entry.disabled_reason = 'Workout status can only be updated by the Police Station with physical evidence. Send record back for update.';
       }

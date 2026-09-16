@@ -101,6 +101,12 @@ export default function StationPerformanceTable({
                 Arrests {renderSortIcon("arrests")}
               </th>
               <th
+                onClick={() => handleSort("left_out")}
+                className="px-5 py-3 text-xs font-bold text-amber-400 uppercase tracking-wide cursor-pointer hover:bg-slate-800 transition-colors select-none text-right"
+              >
+                Left Out Accused {renderSortIcon("left_out")}
+              </th>
+              <th
                 onClick={() => handleSort("pcr")}
                 className="px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide cursor-pointer hover:bg-slate-800 transition-colors select-none text-right"
               >
@@ -135,7 +141,7 @@ export default function StationPerformanceTable({
           <tbody className="divide-y divide-[var(--border-light)]">
             {sortedStations.length === 0 ? (
               <tr>
-                <td colSpan={isHq ? 9 : 8} className="px-5 py-8 text-center text-sm text-slate-500">
+                <td colSpan={isHq ? 10 : 9} className="px-5 py-8 text-center text-sm text-slate-500">
                   No police station records match the current filters.
                 </td>
               </tr>
@@ -159,6 +165,9 @@ export default function StationPerformanceTable({
                   </td>
                   <td className="px-5 py-3.5 text-sm text-slate-600 font-bold text-right tabular-numbers">
                     {station.arrests}
+                  </td>
+                  <td className="px-5 py-3.5 text-sm text-amber-600 font-bold text-right tabular-numbers">
+                    {station.left_out || 0}
                   </td>
                   <td className="px-5 py-3.5 text-sm text-slate-600 font-bold text-right tabular-numbers">
                     {station.pcr}

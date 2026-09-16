@@ -597,11 +597,11 @@
           "key": "case_status",
           "section": "Action Taken",
           "label": "Status",
-          "hint": "select: CHARGE SHEET, POLICE INVESTIGATION REPORT(PIR-JCL), UNTRACED, PENDING, CANCELLATION, QUASHED, CLOSURE REPORT, RELEASED U/S 189 BNSS, TRANSFER",
+          "hint": "select: CHARGE SHEET, POLICE INVESTIGATION REPORT(PIR-JCL), UNTRACED, PENDING, CANCELLATION, QUASHED, CLOSURE REPORT, RELEASED U/S 189 BNSS, TRANSFER, SUPPLEMENTARY CHARGESHEET",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"CHARGE SHEET,POLICE INVESTIGATION REPORT(PIR-JCL),UNTRACED,PENDING,CANCELLATION,QUASHED,CLOSURE REPORT,RELEASED U/S 189 BNSS,TRANSFER\""
+              "\"CHARGE SHEET,POLICE INVESTIGATION REPORT(PIR-JCL),UNTRACED,PENDING,CANCELLATION,QUASHED,CLOSURE REPORT,RELEASED U/S 189 BNSS,TRANSFER,SUPPLEMENTARY CHARGESHEET\""
             ]
           }
         },
@@ -703,7 +703,7 @@
           "col": 67,
           "key": "court_case_no",
           "section": "General Information",
-          "label": "court_case_no",
+          "label": "Court Case No. (CC/CCMS)",
           "hint": "text",
           "validation": null
         },
@@ -711,7 +711,7 @@
           "col": 68,
           "key": "court_disposal_date",
           "section": "General Information",
-          "label": "court_disposal_date",
+          "label": "Court Disposal Date",
           "hint": "date",
           "validation": null
         },
@@ -719,7 +719,7 @@
           "col": 69,
           "key": "court_disposal_type",
           "section": "General Information",
-          "label": "court_disposal_type",
+          "label": "Court Disposal Status",
           "hint": "select",
           "validation": null
         },
@@ -727,7 +727,7 @@
           "col": 70,
           "key": "court_name",
           "section": "General Information",
-          "label": "court_name",
+          "label": "Court Name / Court No.",
           "hint": "select",
           "validation": null
         },
@@ -767,7 +767,7 @@
           "col": 75,
           "key": "sent_to_court_date",
           "section": "General Information",
-          "label": "sent_to_court_date",
+          "label": "Date Sent to Court",
           "hint": "date",
           "validation": null
         },
@@ -3913,7 +3913,6 @@
         "AD2:AM2",
         "AN2:AQ2",
         "AR2:AV2",
-        "AX2:AZ2",
         "E2:AC2"
       ]
     },
@@ -4544,8 +4543,6 @@
         "AE2:AH2",
         "AI2:AQ2",
         "AS2:AT2",
-        "AU2:AW2",
-        "AX2:AZ2",
         "G2:AD2"
       ]
     }

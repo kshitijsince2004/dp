@@ -1,10 +1,13 @@
 import React from "react";
 
-const DEFAULT_COLUMNS = ["FIR", "Arrest", "Kalandra", "UIDB", "Workout"];
+// Crime heads apply only to FIR (CASE) and ARREST record types.
+// UIDB, Kalandra, and MISSING have no crime-head classification.
+const DEFAULT_COLUMNS = ["FIR", "Arrest", "Worked Out"];
 
 // Crime-head x case-type matrix table — shared by the PS dashboard and the SHO/ACP
 // Analytics Console (same data shape from GET /analytics/crime-head-matrix).
 export default function CrimeHeadMatrixTable({ rows = [], columns = DEFAULT_COLUMNS }) {
+  const lastCol = columns[columns.length - 1];
   return (
     <div className="max-h-[360px] overflow-y-auto overflow-x-auto">
       <table className="w-full text-body border-collapse">
@@ -14,7 +17,7 @@ export default function CrimeHeadMatrixTable({ rows = [], columns = DEFAULT_COLU
             {columns.map((col) => (
               <th
                 key={col}
-                className={`sticky top-0 z-10 bg-slate-900 pb-2.5 pt-2 text-right font-bold uppercase tracking-wider text-label ${col === "Workout" ? "pr-2" : ""}`}
+                className={`sticky top-0 z-10 bg-slate-900 pb-2.5 pt-2 text-right font-bold uppercase tracking-wider text-label ${col === lastCol ? "pr-2" : ""}`}
               >
                 {col}
               </th>
@@ -41,7 +44,7 @@ export default function CrimeHeadMatrixTable({ rows = [], columns = DEFAULT_COLU
                       : row[col] === 0
                       ? "text-slate-300"
                       : "font-bold text-[#0A1628]"
-                  } ${col === "Workout" ? "pr-2" : ""}`}
+                  } ${col === lastCol ? "pr-2" : ""}`}
                 >
                   {row[col] === null || row[col] === undefined ? "—" : row[col]}
                 </td>

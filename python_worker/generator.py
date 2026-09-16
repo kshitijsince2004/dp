@@ -20,16 +20,17 @@ def load_local_template(template_id):
 
 def load_template(template_id, engine):
     with engine.connect() as conn:
-        row = conn.execute(
+        res = conn.execute(
             text("SELECT id, name, template_type, template_definition, record_types FROM report_templates WHERE id::text = :id OR code = :id"),
             {'id': str(template_id)}
-        ).fetchone()
+        )
+        row = res.mappings().fetchone()
 
     if not row:
         return None
 
-    raw_def = json.loads(row[3]) if isinstance(row[3], str) else (row[3] or {})
-    applicable = json.loads(row[4]) if isinstance(row[4], str) else (row[4] or ['CASE'])
+    raw_def = json.loads(row['template_definition']) if isinstance(row['template_definition'], str) else (row['template_definition'] or {})
+    applicable = json.loads(row['record_types']) if isinstance(row['record_types'], str) else (row['record_types'] or ['CASE'])
     record_type = applicable[0] if applicable else 'CASE'
 
     # DB templates store definition as {layout, header, sections[{fields}]}.
@@ -41,14 +42,14 @@ def load_template(template_id, engine):
         raw_def = {
             'filter_spec': {'record_type': record_type},
             'fixed_fields': fixed_fields,
-            'header': raw_def.get('header', {'title_en': row[1]}),
-            'template_type': row[2] or 'PROFORMA',
+            'header': raw_def.get('header', {'title_en': row['name']}),
+            'template_type': row['template_type'] or 'PROFORMA',
         }
 
     return {
-        'id': row[0],
-        'name_en': row[1],
-        'template_type': row[2] or 'PROFORMA',
+        'id': row['id'],
+        'name_en': row['name'],
+        'template_type': row['template_type'] or 'PROFORMA',
         'template_definition': raw_def,
     }
 

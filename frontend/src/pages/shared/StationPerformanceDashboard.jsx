@@ -246,11 +246,13 @@ export default function StationPerformanceDashboard() {
     let totalCases = 0;
     let totalArrests = 0;
     let totalPcr = 0;
+    let totalLeftOut = 0;
 
     finalStations.forEach((fs) => {
       totalCases += fs.cases;
       totalArrests += fs.arrests;
       totalPcr += fs.pcr;
+      totalLeftOut += (fs.left_out || 0);
     });
 
     const uniqueDistricts = new Set(finalStations.map((fs) => fs.district_name));
@@ -261,6 +263,7 @@ export default function StationPerformanceDashboard() {
       totalCases,
       totalArrests,
       totalPcr,
+      totalLeftOut,
     };
 
     return {
@@ -415,6 +418,7 @@ export default function StationPerformanceDashboard() {
                 { label: "Stations",  value: calculatedData.summary.totalStations,  color: "text-white",        bg: "bg-white/10",           border: "border-white/20" },
                 { label: "Cases",     value: calculatedData.summary.totalCases,     color: "text-amber-300",    bg: "bg-amber-500/15",       border: "border-amber-400/30" },
                 { label: "Arrests",   value: calculatedData.summary.totalArrests,   color: "text-emerald-300",  bg: "bg-emerald-500/15",     border: "border-emerald-400/30" },
+                { label: "Left Out",  value: calculatedData.summary.totalLeftOut || 0, color: "text-amber-400", bg: "bg-amber-500/20",     border: "border-amber-400/40" },
                 { label: "PCR Calls", value: calculatedData.summary.totalPcr,       color: "text-sky-300",      bg: "bg-sky-500/15",         border: "border-sky-400/30" },
               ].map((tile) => (
                 <div

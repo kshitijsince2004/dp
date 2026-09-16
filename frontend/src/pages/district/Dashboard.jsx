@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Shield, BookOpen, FileCheck, PhoneCall, TrendingUp, BarChart3, Radio, MapPin } from 'lucide-react';
+import { Shield, BookOpen, FileCheck, PhoneCall, TrendingUp, BarChart3, Radio, MapPin, UserX } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
@@ -26,9 +26,10 @@ const itemVariants = {
 };
 
 const METRIC_META = {
-  cases:   { color: '#cca43b', label: 'FIR Cases' },
-  pcr:     { color: '#0f52ba', label: 'PCR Calls' },
-  arrests: { color: '#16a34a', label: 'Arrests' },
+  cases:    { color: '#cca43b', label: 'FIR Cases' },
+  pcr:      { color: '#0f52ba', label: 'PCR Calls' },
+  arrests:  { color: '#16a34a', label: 'Arrests' },
+  left_out: { color: '#d97706', label: 'Left Out Accused' },
 };
 
 const CustomTooltip = ({ active, payload, label, activeMetric }) => {
@@ -105,6 +106,7 @@ export default function DistrictDashboard() {
     { label: 'Total FIR Cases Registered', value: stats.cases_today || 0, color: 'text-amber-600', icon: Shield,    change: '+12%', isUp: true  },
     { label: 'PCR Response Dispatches',     value: stats.pcr_today   || 0, color: 'text-blue-600',  icon: PhoneCall, change: '-4%',  isUp: false },
     { label: 'Accused Arrests Filed',       value: stats.arrests_today || 0, color: 'text-emerald-600', icon: FileCheck, change: '+8%', isUp: true },
+    { label: 'Left Out Accused (Unarrested)', value: stats.left_out_accused || 0, color: 'text-amber-600', icon: UserX, change: 'Pending Arrest', isUp: false },
   ];
 
   return (
@@ -173,7 +175,7 @@ export default function DistrictDashboard() {
         {/* ── Stats Cards ── */}
         <motion.div
           variants={containerVariants}
-          className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3"
+          className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-4"
         >
           {cards.map((card, idx) => (
             <motion.div key={idx} variants={itemVariants}>
@@ -182,9 +184,9 @@ export default function DistrictDashboard() {
                 value={card.value}
                 icon={card.icon}
                 iconColor={card.color}
-                trend={`${card.isUp ? '↑' : '↓'} ${card.change}`}
+                trend={card.change}
                 trendDirection={card.isUp ? 'up' : 'down'}
-                subtext="Last 30 days"
+                subtext="District-wide"
               />
             </motion.div>
           ))}
@@ -201,7 +203,7 @@ export default function DistrictDashboard() {
               <BarChart3 size={16} className="text-slate-400 shrink-0" />
               <div>
                 <h3 className="text-sm font-bold text-[#1A202C]">Station-wise Operational Volume</h3>
-                <p className="mt-0.5 text-meta text-[#718096]">Comparative FIR Cases · PCR Calls · Arrests across all stations</p>
+                <p className="mt-0.5 text-meta text-[#718096]">Comparative FIR Cases · PCR Calls · Arrests · Left Out Accused across all stations</p>
               </div>
             </div>
 
@@ -240,6 +242,17 @@ export default function DistrictDashboard() {
                 <span className={`h-2 w-2 rounded-full ${activeMetric === 'arrests' ? 'bg-[#059669]' : 'bg-slate-300'}`} />
                 <span>Arrests</span>
               </button>
+              <button
+                onClick={() => setActiveMetric('left_out')}
+                className={`flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-meta font-bold cursor-pointer ${
+                  activeMetric === 'left_out'
+                    ? 'border-[#D97706] bg-[#FFFBEB] text-[#D97706]'
+                    : 'border-slate-200 bg-white text-slate-400'
+                }`}
+              >
+                <span className={`h-2 w-2 rounded-full ${activeMetric === 'left_out' ? 'bg-[#D97706]' : 'bg-slate-300'}`} />
+                <span>Left Out Accused</span>
+              </button>
             </div>
           </div>
 
@@ -260,6 +273,10 @@ export default function DistrictDashboard() {
                     <linearGradient id="arrestsGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#16a34a" />
                       <stop offset="100%" stopColor="#16a34a" stopOpacity={0.7} />
+                    </linearGradient>
+                    <linearGradient id="left_outGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#d97706" />
+                      <stop offset="100%" stopColor="#d97706" stopOpacity={0.7} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />

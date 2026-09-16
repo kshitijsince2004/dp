@@ -8,6 +8,9 @@ import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
 import { log } from '../../utils/logger.js';
 
+import RecordTypeBadge from '../../components/common/RecordTypeBadge';
+
+
 export default function Queue() {
   const { t, i18n } = useTranslation();
   const currentLng = i18n.language || 'en';
@@ -360,7 +363,12 @@ export default function Queue() {
                               className="rounded border-[var(--border-card-theme)] accent-[var(--accent-color)] cursor-pointer w-4 h-4"
                             />
                           </td>
-                          <td className="p-4 font-mono font-bold text-[var(--text-main-theme)] text-sm sm:text-base">{refId}</td>
+                          <td className="p-4 font-mono font-bold text-[var(--text-main-theme)] text-sm sm:text-base">
+                            <div className="flex flex-col gap-1">
+                              <span>{refId}</span>
+                              <RecordTypeBadge recordType={rec.record_type} />
+                            </div>
+                          </td>
                           <td className="p-4 text-[var(--text-main-theme)] font-semibold text-sm sm:text-base">
                             <div className="flex flex-col gap-0.5">
                               <span>{rec.ps_name || 'Police Station'}</span>

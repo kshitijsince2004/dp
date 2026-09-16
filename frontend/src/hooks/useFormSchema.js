@@ -25,6 +25,14 @@ function normalizeField(f) {
   if (['gd_time', 'linked_fir_dd_time', 'arrest_time', 'arrival_time', 'missing_recovered_time', 'time_of_occurrence'].includes(norm.field_key)) {
     norm.field_type = 'TIME';
   }
+  if (
+    norm.field_key === 'uid' ||
+    norm.field_key === 'person_uid' ||
+    norm.field_key?.endsWith('_npr') ||
+    (norm.field_key?.endsWith('_uid') && norm.field_key !== 'uidb_no')
+  ) {
+    norm.readonly = true;
+  }
   return norm;
 }
 
@@ -58,6 +66,10 @@ export function useFormSchema(recordType, caseType) {
       // Accept flat sections array or wrapped { sections: [...] }
       const sections = Array.isArray(raw) ? raw : (raw.sections || []);
 
+const KEYS_TO_SKIP = new Set([
+  'transfer_to', 'transferred_to_ps_id', 'transferred_to_ps', 'transferred_to_agency_id', 'transferred_to_agency', 'date_of_transfer'
+]);
+
       // Normalize every field's validation key and add title fallback
       const normalized = sections.map((sec) => {
         const normSec = {
@@ -70,10 +82,10 @@ export function useFormSchema(recordType, caseType) {
             ...st,
             title_en: st.title_en || st.id || 'Details',
             title_hi: st.title_hi || st.title_en || st.id || 'विवरण',
-            fields: (st.fields || []).map(normalizeField),
+            fields: (st.fields || []).map(normalizeField).filter((f) => !KEYS_TO_SKIP.has(f.field_key)),
           }));
         } else {
-          normSec.fields = (sec.fields || []).map(normalizeField);
+          normSec.fields = (sec.fields || []).map(normalizeField).filter((f) => !KEYS_TO_SKIP.has(f.field_key));
         }
         return normSec;
       });

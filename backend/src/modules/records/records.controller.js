@@ -17,13 +17,14 @@ export const getRecords = async (req, res) => {
   // contract fixed in advance — UnifiedFilterStrip.jsx / MyRecords.jsx send `arrest_kind`,
   // never classify locally, per P4). Unrecognized/omitted values are intentionally passed
   // through unfiltered — listRecords only acts on the two known enum values.
-  const { status, dateFrom, dateTo, search, linked_case_id, linked_fir_no, localHead, local_head, arrest_kind, limit, offset } = req.query;
+  const { status, dateFrom, dateTo, search, linked_case_id, linked_fir_no, localHead, local_head, arrest_kind, limit, offset, ...extraFilters } = req.query;
   log.debug('getRecords: enter', { type, query: redact(req.query), userId: req.user?.id });
 
   try {
     const records = await recordsService.listRecords(
       type,
       {
+        ...extraFilters,
         status: status !== 'ALL' ? status : null,
         dateFrom: toISO(dateFrom) || dateFrom,
         dateTo: toISO(dateTo) || dateTo,
@@ -159,15 +160,23 @@ export const submit = async (req, res) => {
 
 export const updateStatus = async (req, res) => {
   const { id } = req.params;
-  const { status_field, new_value, effective_date, comment, property_id } = req.body;
+  const {
+    status_field, new_value, effective_date, comment, property_id,
+    supplementary_chargesheet_details, court_case_no, court_name, court_disposal_date, sent_to_court_date,
+    transfer_to_type, transferred_to_ps_id, transferred_to_agency_id, date_of_transfer,
+  } = req.body;
   const ipAddress = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
-  log.debug('updateStatus: enter', { recordId: id, statusField: status_field, newValue: new_value, propertyId: property_id, userId: req.user?.id });
+  log.debug('updateStatus: enter', { recordId: id, statusField: status_field, newValue: new_value, userId: req.user?.id });
 
   try {
     await verifyRecordAccess(id, req.user);
     const result = await recordsService.updateDomainStatus(
       id, req.user,
-      { statusField: status_field, newValue: new_value, effectiveDate: effective_date, comment, propertyId: property_id },
+      {
+        statusField: status_field, newValue: new_value, effectiveDate: effective_date, comment, propertyId: property_id,
+        supplementary_chargesheet_details, court_case_no, court_name, court_disposal_date, sent_to_court_date,
+        transfer_to_type, transferred_to_ps_id, transferred_to_agency_id, date_of_transfer,
+      },
       ipAddress
     );
     log.info('updateStatus: exit', { recordId: id, statusField: status_field, userId: req.user?.id });
