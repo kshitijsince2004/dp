@@ -362,6 +362,7 @@ export default function HQDashboard() {
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
                 className={FILTER_SELECT_CLASS}
+                max={new Date().toISOString().split('T')[0]}
               />
             </div>
 
@@ -372,6 +373,7 @@ export default function HQDashboard() {
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
                 className={FILTER_SELECT_CLASS}
+                max={new Date().toISOString().split('T')[0]}
               />
             </div>
 

@@ -7,6 +7,10 @@ echo     PHAROS Application Startup Script
 echo ===================================================
 echo.
 
+:: ── Step 0: Skip port cleanup to prevent hijacking ─────────────────────────
+echo [0/6] Application port locks cleanup skipped...
+echo.
+
 :: ── Step 1: Ensure Docker daemon is reachable ──────────────────────────────
 echo [1/6] Checking Docker Desktop status...
 docker info >nul 2>&1
@@ -75,6 +79,11 @@ cd /d %~dp0frontend
 call npm install --no-audit --no-fund
 echo.
 
+echo [2.5/6] Verifying frontend dependencies...
+cd /d %~dp0frontend
+call npm install --no-audit --no-fund
+echo.
+
 echo [3/6] Running database migrations...
 cd /d %~dp0backend
 call npm run db:migrate
@@ -115,12 +124,12 @@ echo.
 
 echo [6/6] Launching PHAROS Backend API...
 start "PHAROS Backend" cmd /k "cd /d %~dp0backend && npm run dev"
-echo  [OK] Backend launched on http://localhost:3000
+echo  [OK] Backend launched on http://localhost:5000
 echo.
 
 echo ===================================================
 echo  PHAROS is up and running!
-echo  Backend API: http://localhost:3000
+echo  Backend API: http://localhost:5000
 echo  Frontend UI: http://localhost:5173
 echo ===================================================
 ping 127.0.0.1 -n 6 >nul

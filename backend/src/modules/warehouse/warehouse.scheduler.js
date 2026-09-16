@@ -39,7 +39,7 @@ export async function executeScheduledSync() {
  * and WAREHOUSE_SYNC_ENABLED (defaults to true).
  */
 export function startWarehouseSync() {
-  const isEnabled = process.env.WAREHOUSE_SYNC_ENABLED !== 'false';
+  const isEnabled = process.env.WAREHOUSE_SYNC_ENABLED === 'true';
   if (!isEnabled) {
     logger.info('[Warehouse Scheduler] Background sync is disabled via WAREHOUSE_SYNC_ENABLED.');
     return;

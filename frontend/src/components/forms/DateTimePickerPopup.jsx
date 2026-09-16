@@ -42,13 +42,30 @@ export default function DateTimePickerPopup({
   // naturally do — e.g. clicking the input again after picking a date, or clicking away)
   // silently discarded the selection, the exact bug this fixes.
   const commitAndClose = () => {
-    const dd = String(day).padStart(2, '0');
-    const mm = String(month + 1).padStart(2, '0');
-    const hh = String(hour).padStart(2, '0');
-    const mi = String(minute).padStart(2, '0');
-    const formatted = `${dd}/${mm}/${year} ${hh}:${mi}`;
+    let finalYear = year;
+    let finalMonth = month;
+    let finalDay = day;
+    let finalHour = hour;
+    let finalMinute = minute;
+
+    const now = new Date();
+    const selectedDate = new Date(finalYear, finalMonth, finalDay, finalHour, finalMinute);
+
+    if (selectedDate > now) {
+      finalYear = now.getFullYear();
+      finalMonth = now.getMonth();
+      finalDay = now.getDate();
+      finalHour = now.getHours();
+      finalMinute = now.getMinutes();
+    }
+
+    const dd = String(finalDay).padStart(2, '0');
+    const mm = String(finalMonth + 1).padStart(2, '0');
+    const hh = String(finalHour).padStart(2, '0');
+    const mi = String(finalMinute).padStart(2, '0');
+    const formatted = `${dd}/${mm}/${finalYear} ${hh}:${mi}`;
     log.debug('form:datetime_commit', { formatted, placeholder });
-    onDone(formatted, `${dd}/${mm}/${year}`, `${hh}:${mi}`);
+    onDone(formatted, `${dd}/${mm}/${finalYear}`, `${hh}:${mi}`);
     setOpen(false);
   };
 
@@ -174,7 +191,7 @@ export default function DateTimePickerPopup({
               onChange={(e) => setYear(Number(e.target.value))}
               className="text-[11px] font-bold text-[#0d2a4a] border border-[#7a9cc5] rounded px-1.5 py-0.5 bg-white cursor-pointer outline-none font-display"
             >
-              {Array.from({ length: 21 }, (_, i) => 2015 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+              {Array.from({ length: new Date().getFullYear() - 2015 + 1 }, (_, i) => 2015 + i).map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
           <button type="button" onClick={handleNextMonth} className="p-0.5 rounded hover:bg-slate-100 text-[#0d2a4a] cursor-pointer bg-transparent border-none">

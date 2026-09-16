@@ -53,7 +53,7 @@ const PERSON_CONFIGS = [
   {
     prefix: 'complainant',
     section: 'complainant_personal_info',
-    record_types: ['CASE'],
+    record_types: ['CASE', 'MISSING'],
     storage_role: 'COMPLAINANT',
     repeater_entity: null,
     base_sort: 408.6,   // after complainant_qualification (408.5)
@@ -69,7 +69,7 @@ const PERSON_CONFIGS = [
     section: 'victim_personal_info',
     record_types: ['CASE'],
     storage_role: 'VICTIM',
-    repeater_entity: null,
+    repeater_entity: 'PERSON_VICTIM',
     base_sort: 468.6,   // after victim_qualification (468.5)
     labels: {
       social: { en: 'Victim Social Category', hi: 'पीड़ित सामाजिक श्रेणी' },
@@ -83,7 +83,7 @@ const PERSON_CONFIGS = [
     section: 'accused_personal_info',
     record_types: ['CASE'],
     storage_role: 'ACCUSED',
-    repeater_entity: null,
+    repeater_entity: 'PERSON_ACCUSED',
     base_sort: 438.6,   // after accused_qualification (438.5)
     labels: {
       social: { en: 'Accused Social Category', hi: 'आरोपी सामाजिक श्रेणी' },
@@ -201,6 +201,8 @@ export async function up(knex) {
     const existing = await knex('field_registry').where('field_key', row.field_key).first();
     if (!existing) {
       await knex('field_registry').insert(row);
+    } else {
+      await knex('field_registry').where('field_key', row.field_key).update(row);
     }
   }
 }

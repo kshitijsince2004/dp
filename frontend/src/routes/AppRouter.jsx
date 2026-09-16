@@ -67,8 +67,8 @@ function RoleRedirect() {
   const { user } = useAuthStore();
 
   if (!user) {
-    log.debug('route:redirect', { reason: 'no_user', to: '/login' });
-    return <Navigate to="/login" replace />;
+    // log.debug('route:redirect', { reason: 'no_user', to: '/login' });
+    return <Navigate to="/ps/dashboard" replace />;
   }
 
   const routes = {
