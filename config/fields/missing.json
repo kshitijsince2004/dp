@@ -1240,5 +1240,188 @@
   "readonly": false,
   "is_active": true,
   "scope_level": "global"
- }
+ },
+ {
+  "field_key": "accompanying_child_name",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Name of Child",
+   "hi": "बच्चे का नाम"
+  },
+  "section": "accompanying_children",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING_CHILD",
+   "column": "name"
+  },
+  "validation_rules": {
+   "required": true,
+   "pattern": "name"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+},
+ {
+  "field_key": "accompanying_child_age",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "NUMBER",
+  "labels": {
+   "en": "Age",
+   "hi": "उम्र"
+  },
+  "section": "accompanying_children",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING_CHILD",
+   "column": "age"
+  },
+  "validation_rules": {
+   "required": true,
+   "min": 0,
+   "max": 18
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 2,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+},
+ {
+  "field_key": "accompanying_child_gender",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Gender",
+   "hi": "लिंग"
+  },
+  "section": "accompanying_children",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING_CHILD",
+   "column": "gender"
+  },
+  "options": [
+   {
+    "value": "Male",
+    "label_en": "Male",
+    "label_hi": "पुरुष"
+   },
+   {
+    "value": "Female",
+    "label_en": "Female",
+    "label_hi": "महिला"
+   },
+   {
+    "value": "Transgender",
+    "label_en": "Transgender",
+    "label_hi": "ट्रांसजेंडर"
+   },
+   {
+    "value": "Unknown",
+    "label_en": "Unknown",
+    "label_hi": "अज्ञात"
+   }
+  ],
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 3,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+},
+ {
+  "field_key": "accompanying_child_relation",
+  "record_types": [
+   "MISSING"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Relation to Missing Person",
+   "hi": "लापता व्यक्ति से संबंध"
+  },
+  "section": "accompanying_children",
+  "storage": {
+   "entity": "person",
+   "role": "MISSING_CHILD",
+   "column": "relation_type"
+  },
+  "options": [
+   {
+    "value": "Son",
+    "label_en": "Son",
+    "label_hi": "बेटा"
+   },
+   {
+    "value": "Daughter",
+    "label_en": "Daughter",
+    "label_hi": "बेटी"
+   },
+   {
+    "value": "Sibling",
+    "label_en": "Sibling",
+    "label_hi": "भाई/बहन"
+   },
+   {
+    "value": "Other",
+    "label_en": "Other",
+    "label_hi": "अन्य"
+   }
+  ],
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 4,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+}
 ]

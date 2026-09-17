@@ -106,12 +106,18 @@ const KEYS_TO_SKIP = new Set([
       }
 
       log.info('hook:form_schema:fetch_success', { recordType, caseType, sectionsCount: normalized.length });
-      return normalized;
+      return { normalized, layout: res.data?.layout || null };
     },
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
     enabled: !!recordType,
-    staleTime: 0,
-    retry: 1,
   });
 
-  return { schema: schema || [], isLoading, isError, schemaError: error };
+  return { 
+    schema: schema?.normalized || [], 
+    layout: schema?.layout || null,
+    isLoading, 
+    isError, 
+    schemaError: error 
+  };
 }

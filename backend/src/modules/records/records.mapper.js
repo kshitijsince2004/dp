@@ -108,11 +108,11 @@ export const DETAIL_TABLES = {
 };
 
 export const PERSON_SUBTYPE_TABLES = ['arrestee_details', 'missing_person_details', 'person_descriptions'];
-const PERSON_ROLES = ['COMPLAINANT', 'ACCUSED', 'VICTIM', 'WITNESS', 'ARRESTEE', 'MISSING', 'DECEASED', 'INFORMANT', 'CALLER', 'IO'];
+const PERSON_ROLES = ['COMPLAINANT', 'ACCUSED', 'VICTIM', 'WITNESS', 'ARRESTEE', 'MISSING', 'DECEASED', 'INFORMANT', 'CALLER', 'IO', 'MISSING_CHILD'];
 // Roles that arrive as a repeater array (`persons[]`, one entry per participant) rather than
 // flat `data` keys — matches DynamicForm.jsx's REPEATER_SECTION_META (ARRESTED/VICTIM/ACCUSED
 // today; WITNESS has no UI yet but is schema-legal and routed the same way when it arrives).
-export const REPEATER_ROLES = new Set(['ARRESTEE', 'VICTIM', 'ACCUSED', 'WITNESS']);
+export const REPEATER_ROLES = new Set(['ARRESTEE', 'VICTIM', 'ACCUSED', 'WITNESS', 'MISSING_CHILD']);
 // Frontend person_type -> DB persons.role. Every other person_type value passes through
 // unchanged (already matches a role name, e.g. 'VICTIM', 'ACCUSED').
 const PERSON_TYPE_TO_ROLE = { ARRESTED: 'ARRESTEE' };

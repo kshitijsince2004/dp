@@ -7,6 +7,7 @@ import * as ioService from '../io/io.service.js';
 import { ACT_GROUP_CODES, MINOR_HEAD_MAJOR_CODES } from './classificationSources.config.js';
 import { getStatusOptionsForType } from './statusOptions.config.js';
 import { INDIA_STATES, DISTRICTS_BY_STATE } from '../../config/geoData.js';
+import { SECTION_KEY_ORDER, REPEATER_SECTION_META, SECTION_LABELS } from '../../config/formLayout.js';
 
 // Style anchor: records.service.js (HANDOFF.md §7). NOTE (2026-07-22 logging pass): this file
 // carries pre-existing, unrelated user edits (section/sort_order layout logic) — only logging was
@@ -762,6 +763,15 @@ export const getFieldsForForm = async (req, res) => {
           title_hi: 'जांच अधिकारी',
           is_repeater: false,
           fields: filteredFields.filter(f => f.section === 'investigation_officer' && !f.repeater_entity)
+        },
+        {
+          section: 'accompanying_children',
+          title_en: 'Accompanying Children',
+          title_hi: 'साथ में बच्चे',
+          is_repeater: true,
+          entity_type: 'person',
+          person_type: 'MISSING_CHILD',
+          fields: filteredFields.filter(f => f.section === 'accompanying_children' && !f.repeater_entity)
         }
       ];
     } else if (normalizedType === 'UIDB') {
@@ -902,7 +912,15 @@ export const getFieldsForForm = async (req, res) => {
     }
 
     log.info('getFieldsForForm: exit', { record_type, normalizedType, sectionCount: sections.length, fieldCount: filteredFields.length });
-    return res.status(200).json({ success: true, data: sections });
+    return res.status(200).json({
+      success: true,
+      data: sections,
+      layout: {
+        section_order: SECTION_KEY_ORDER[normalizedType] || [],
+        repeater_meta: REPEATER_SECTION_META,
+        section_labels: SECTION_LABELS,
+      }
+    });
   } catch (error) {
     log.error('getFieldsForForm: failed', { record_type, normalizedType, err: error });
     return res.status(500).json({ success: false, message: error.message });
@@ -968,7 +986,18 @@ export const listAllFields = async (req, res) => {
     });
 
     log.info('listAllFields: exit', { role, district_id, total: formatted.length });
-    return res.status(200).json({ success: true, data: { fields: formatted, total: formatted.length } });
+    return res.status(200).json({ 
+      success: true, 
+      data: { 
+        fields: formatted, 
+        total: formatted.length,
+        layout: {
+          section_order: SECTION_KEY_ORDER,
+          repeater_meta: REPEATER_SECTION_META,
+          section_labels: SECTION_LABELS,
+        }
+      } 
+    });
   } catch (error) {
     log.error('listAllFields: failed', { role, district_id, err: error });
     return res.status(500).json({ success: false, message: error.message });

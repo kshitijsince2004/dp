@@ -128,19 +128,20 @@ Police reporting standards require hundreds of domain-specific fields across dif
 ## 4. Metadata-Driven Dynamic Form Engine (`field_registry`)
 
 ### Decision
-Forms are rendered dynamically on the frontend using field definitions fetched from `GET /api/v1/fields/schema/:recordType`. The backend queries the `field_registry` table, attaching dynamic dropdown options (Acts, Sections, Minor Heads, Statuses) based on jurisdiction and record context.
+Forms are rendered dynamically on the frontend using field definitions and layout metadata fetched from `GET /api/v1/fields/schema/:recordType` and `GET /api/v1/fields`. The backend queries the `field_registry` table, attaches dynamic dropdown options (Acts, Sections, Minor Heads, Statuses), and injects a unified layout configuration (section ordering, labels, repeater metadata) from `backend/src/config/formLayout.js`.
 
 ### Context
-Different police stations and districts require customized fields, localized Hindi/English labels, conditional visibility (`show_when`, `disabled_when`), and level-based editability controls (`introduced_at_level`, `editable_by_levels`).
+Different police stations and districts require customized fields, localized Hindi/English labels, conditional visibility (`show_when`, `disabled_when`), and level-based editability controls (`introduced_at_level`, `editable_by_levels`). Section layouts and structures are defined globally but affect both record entry and district-level custom field management.
 
 ### Why
-- **Confirmed**: Enables dynamic form layout modification from administrative control panels without frontend code redeployments.
+- **Confirmed**: Enables dynamic form layout modification from administrative control panels without frontend code redeployments. Centralizing layout metadata in the backend prevents drift between frontend entry forms (`DynamicForm.jsx`) and administrative interfaces (`CustomFieldsPage.jsx`), ensuring a single source of truth.
 
 ### Alternatives
 - Hardcoded static React form components per record type.
+- Duplicating layout configuration constants in both frontend and backend.
 
 ### Tradeoffs
-- **Benefits**: Single dynamic form component ([`DynamicForm.jsx`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/components/forms/DynamicForm.jsx) and [`FieldRenderer.jsx`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/components/forms/FieldRenderer.jsx)) handles all 7 record types.
+- **Benefits**: Single dynamic form component ([`DynamicForm.jsx`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/components/forms/DynamicForm.jsx) and [`FieldRenderer.jsx`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/components/forms/FieldRenderer.jsx)) handles all 7 record types. Administrative screens can dynamically group custom fields.
 - **Limitations**: Complex schema resolution logic; requires careful handling of conditional validation rules and dependent selects.
 
 ### Relevant Code
@@ -350,6 +351,36 @@ Prevent duplicate entity entries and ensure clean record linkage across Case, Ar
 
 ### Constraints
 - Form fields labeled as UID or NPR must remain read-only with auto-generation in backend services.
+
+---
+
+## 11. Accompanying Missing Children (Hybrid Role Pattern)
+
+### Decision
+The `MISSING` record type models the primary missing subject as a pure singleton (`role = 'MISSING'`), while accompanying children are modeled as a repeater role (`role = 'MISSING_CHILD'`). 
+
+### Context
+When a mother and child go missing together, they share the same case details (FIR, IO, dates), but require distinct physical descriptions and person records.
+
+### Why
+- **Confirmed**: Making the primary `MISSING` person a repeater would fundamentally break downstream systems (ETL sync, PHQ dashboard `diaryCount`, and the B1 safety net) which assume a 1:1 relationship between a missing record and its primary missing person.
+- **Confirmed**: Introducing `MISSING_CHILD` as a first-class `REPEATER_ROLE` enables multiple accompanying children to have independent rows in `persons`, `missing_person_details`, and `person_descriptions` without disrupting the singleton behavior of the primary missing subject.
+
+### Alternatives
+- Converting `MISSING` to a repeater role (rejected due to 1:1 assumption breakage).
+- Storing children as a JSONB array under the main `missing_person_details` (rejected because they would not be searchable global person records).
+
+### Tradeoffs
+- **Benefits**: Perfect backward compatibility with the data warehouse (`sync.js`) and dashboard counts. Preserves the B1 safety net.
+- **Limitations**: A single record requires querying two distinct roles (`MISSING` and `MISSING_CHILD`) to fetch all missing individuals.
+
+### Relevant Code
+- `backend/src/modules/records/records.mapper.js` (`PERSON_ROLES`, `REPEATER_ROLES`)
+- `backend/src/config/formLayout.js` (`REPEATER_SECTION_META`)
+
+### Confidence
+- **Current Implementation**: Confirmed
+- **Historical Reasoning**: Confirmed
 
 ---
 

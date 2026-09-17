@@ -61,6 +61,32 @@ sequenceDiagram
 
 ---
 
+### 1.5 Configuration Synchronization Flow (Field Registry & Proformas)
+
+This flow explains how dynamic forms and report structures are managed via static config files instead of SQL migrations.
+
+#### Flowchart
+
+```mermaid
+flowchart TD
+    A[NPM Script / Autoload] -->|1. Run sync-config-core.mjs| B[sync-config-core.mjs]
+    B -->|2. Read config/fields/*.json| C[Config JSON Files]
+    C -->> B: JSON Field Definitions (e.g. missing.json)
+    B -->|3. Expand Placeholders| D[geoData.js]
+    B -->|4. Validate Storage Mapping| E[(PostgreSQL information_schema)]
+    B -->|5. Hash Checksum Comparison| F[(PostgreSQL field_registry Table)]
+    B -->|6. Upsert or Deactivate Fields| F
+```
+
+#### Execution Steps & Code Reference
+1. **Trigger**: Triggered manually via `npm run sync-config` or automatically on startup via `autoload.js`.
+2. **Read JSON Configs**: [`backend/scripts/lib/sync-config-core.mjs`](file:///d:/DPI/FIR/pharos-prototype/backend/scripts/lib/sync-config-core.mjs) reads files like `config/fields/missing.json`.
+3. **Validate & Expand**: Replaces `$NATIONALITY` and geo placeholders with options from `geoData.js`. Validates the `storage` configuration (table/column) against live `information_schema`.
+4. **Idempotent Upsert**: Computes a SHA-256 hash of each field. If the hash matches the DB, it does nothing. If it differs, it upserts the `field_registry` row. Fields missing from JSON are set to `is_active = false`.
+5. **Hybrid Roles (e.g., MISSING_CHILD)**: The sync script strictly validates storage entity roles against its hardcoded `ROLES` constant to prevent schema mismatches.
+
+---
+
 ### 2. Dynamic Form Schema Generation & Field Resolution Flow
 
 This flow describes how the frontend fetches dynamic form structures and renders controls based on record type and user context.
@@ -92,9 +118,10 @@ flowchart TD
 5. **Lookup & Gating Processing**:
    - Dynamically resolves option lookups (Acts, Sections, Minor Crime Heads, Statuses).
    - Marks system UID fields (`uid`, `person_uid`, `*_npr`, `*_uid`) as `readonly: true`.
+   - Attaches the global layout metadata (`section_order`, `repeater_meta`, `section_labels`) from `formLayout.js`.
 6. **Frontend Normalization & Rendering**:
-   - [`useFormSchema.js`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/hooks/useFormSchema.js) normalizes validation rules and field types.
-   - [`DynamicForm.jsx`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/components/forms/DynamicForm.jsx) organizes fields into tabs/sections and passes individual controls to [`FieldRenderer.jsx`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/components/forms/FieldRenderer.jsx).
+   - [`useFormSchema.js`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/hooks/useFormSchema.js) normalizes validation rules and exposes both `schema` and `layout`.
+   - [`DynamicForm.jsx`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/components/forms/DynamicForm.jsx) parses the layout to order sections, apply repeater logic, and passes individual controls to [`FieldRenderer.jsx`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/components/forms/FieldRenderer.jsx).
 
 ---
 

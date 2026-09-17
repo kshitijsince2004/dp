@@ -94,45 +94,8 @@ function syncPermAddress(next, prefix, key, val, extraFields = []) {
   }
 }
 
-/**
- * Wizard step order per record type, keyed by the backend's `section` value
- * 'select_fir' is a synthetic step (see finalSchema) not present in the backend response.
- */
-const SECTION_KEY_ORDER = {
-  CASE: ['acts_and_sections', 'occurrence_info', 'complainant_info', 'fir_contents', 'victim_info', 'accused_info', 'property_details', 'action_taken', 'court_details'],
-  ARREST: ['select_fir', 'general_info', 'arrested_info', 'property_details', 'investigation_officer'],
-  UIDB: ['general_info', 'corpse_desc', 'corpse_physical', 'inquest_details', 'investigation_officer'],
-  MISSING: ['general_info', 'person_details', 'missing_address', 'missing_physical', 'contacts_assigned', 'investigation_officer'],
-};
-
-// Repeater sections need is_repeater/entity_type/person_type so the person/property
-// add-edit-delete modals and the final-submit persons/properties builder can find them.
-// This is the FE's OWN canonical contract for these tokens and is deliberately used as an
-// override over whatever `/fields/form/:type` sends for entity_type/person_type (see
-// finalSchema below) — `fields.controller.js` sends `person_type: 'PERSON_VICTIM'` /
-// `'PERSON_ACCUSED'` (the `repeater_entity` convention) for CASE while ARRESTED already comes
-// bare, and the recomposed `persons[]` the backend hands back on load always uses the bare
-// role token (VICTIM/ACCUSED/ARRESTED — see records.mapper.js ROLE_TO_PERSON_TYPE). Before this
-// map was wired in, sourcing person_type straight from the schema response meant: (a) the
-// initialPersons seed-match (`p.person_type === section.person_type`) silently failed for CASE
-// victims/accused (bare token vs PERSON_-prefixed), so an edit's repeaterState never got seeded
-// for those sections; and (b) buildRepeaterPayload's submit sent `person_type: 'PERSON_VICTIM'`/
-// `'PERSON_ACCUSED'`, which the backend's PERSON_ROLES allowlist doesn't recognize and silently
-// drops (confirmed in tester logs: 53x PERSON_VICTIM + 40x PERSON_ACCUSED dropped on CASE) — the
-// second, independent root cause behind "can't add new victim/accused" (B1, 2026-07-23).
-const REPEATER_SECTION_META = {
-  property_details: { is_repeater: true, entity_type: 'property' },
-  arrested_info: { is_repeater: true, entity_type: 'person', person_type: 'ARRESTED' },
-  victim_info: { is_repeater: true, entity_type: 'person', person_type: 'VICTIM' },
-  accused_info: { is_repeater: true, entity_type: 'person', person_type: 'ACCUSED' },
-};
-
-/** Merge a schema section's own is_repeater/entity_type/person_type with the FE's canonical
- * REPEATER_SECTION_META override (by section key) when one exists, and always strip a stray
- * leading `PERSON_` prefix as a last-resort safety net for any section not in the map (mirrors
- * the backend's own `roleForPersonType`/fields.controller.js:856 stripping convention). */
-function resolveRepeaterMeta(section) {
-  const meta = REPEATER_SECTION_META[section.section];
+function resolveRepeaterMeta(section, layout) {
+  const meta = layout?.repeater_meta?.[section.section];
   const rawPersonType = meta?.person_type ?? section.person_type;
   return {
     is_repeater: meta?.is_repeater ?? section.is_repeater,
@@ -279,7 +242,7 @@ export default function DynamicForm({
     }
   };
   const themeClass = getThemeClass(user?.role);
-  const { schema, isLoading, isError, schemaError } = useFormSchema(recordType, caseType);
+  const { schema, layout, isLoading, isError, schemaError } = useFormSchema(recordType, caseType);
   const activeRecordIdRef = useRef(initialValues?.id || null);
 
   // Schema-load lifecycle (useFormSchema itself is already instrumented — this logs the
@@ -1012,6 +975,35 @@ export default function DynamicForm({
           </fieldset>
 
         </div>
+
+        {/* EXTRA FIELDS (District Custom Fields) */}
+        {(() => {
+          const KNOWN_KEYS = [
+            'npr', 'uid', 'person_uid', 'first_name', 'middle_name', 'last_name', 'nickname',
+            'gender', 'mobile_country_code', 'mobile', 'email', 'relation_type', 'relative_name',
+            'dob', 'age_year', 'age_month', 'birth_year', 'social_category', 'education', 'financial_status',
+            'scheme_of_arrest', 'complainant_same_as_victim', 'qualification'
+          ].map(k => `${prefix}_${k}`);
+          
+          const extraFields = allFields.filter(f => f.section === `${prefix}_personal_info` && !KNOWN_KEYS.includes(f.field_key));
+          
+          if (extraFields.length === 0) return null;
+          return (
+            <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm mt-3">
+              <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
+                {lang === 'hi' ? 'अतिरिक्त जानकारी' : 'Additional Information'}
+              </legend>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-1.5">
+                {extraFields.map(f => (
+                  <div key={f.field_key} className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
+                    {field(f.field_key, null, true)}
+                  </div>
+                ))}
+              </div>
+            </fieldset>
+          );
+        })()}
+
       </div>
     );
   }
@@ -1111,6 +1103,36 @@ export default function DynamicForm({
             </div>
           </div>
         </fieldset>
+
+        {/* EXTRA FIELDS (District Custom Fields) */}
+        {(() => {
+          const KNOWN_KEYS = [
+            'house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'present_address',
+            'country', 'state', 'district', 'police_station', 'pincode',
+            'perm_same',
+            'perm_house_no', 'perm_street', 'perm_colony', 'perm_city_town_village', 'perm_tehsil_block_mandal', 'perm_address',
+            'perm_country', 'perm_state', 'perm_district', 'perm_police_station', 'perm_pincode'
+          ].map(k => `${prefix}_${k}`);
+          
+          const extraFields = allFields.filter(f => f.section === `${prefix}_address` && !KNOWN_KEYS.includes(f.field_key));
+          
+          if (extraFields.length === 0) return null;
+          return (
+            <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm mt-3">
+              <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
+                {lang === 'hi' ? 'अतिरिक्त जानकारी' : 'Additional Information'}
+              </legend>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-1.5">
+                {extraFields.map(f => (
+                  <div key={f.field_key} className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
+                    {field(f.field_key, null, true)}
+                  </div>
+                ))}
+              </div>
+            </fieldset>
+          );
+        })()}
+
       </div>
     );
   }
@@ -2041,8 +2063,8 @@ export default function DynamicForm({
   const finalSchema = React.useMemo(() => {
     if (!schema || schema.length === 0) return [];
 
-    const order = SECTION_KEY_ORDER[recordType];
-    if (!order) return schema;
+    const order = layout?.section_order || [];
+    if (!order.length) return schema;
 
     const bySection = new Map(schema.map((sec) => [sec.section, sec]));
 
@@ -2075,7 +2097,7 @@ export default function DynamicForm({
           const hasRecordLevelProps = (initialProperties || []).some(p => !p.person_id);
           if (!hasRecordLevelProps) return null;
         }
-        const repeaterMeta = resolveRepeaterMeta(section);
+        const repeaterMeta = resolveRepeaterMeta(section, layout);
         return {
           section: key,
           title_en: section.title_en,
@@ -2096,11 +2118,11 @@ export default function DynamicForm({
       .filter((sec) => {
         if (orderSet.has(sec.section)) return false;
         const fields = sec.fields || [];
-        const hasCustomField = fields.some(f => f.created_by !== null && f.created_by !== undefined);
+        const hasCustomField = fields.length > 0;
         return hasCustomField;
       })
       .map((sec) => {
-        const repeaterMeta = resolveRepeaterMeta(sec);
+        const repeaterMeta = resolveRepeaterMeta(sec, layout);
         return {
           section: sec.section,
           title_en: sec.title_en,

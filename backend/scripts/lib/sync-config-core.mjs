@@ -53,7 +53,7 @@ const DETAIL_TABLES = {
   MISSING: 'missing_details', UIDB: 'uidb_details',
 };
 const PERSON_TABLES = ['persons', 'arrestee_details', 'missing_person_details', 'person_descriptions'];
-const ROLES = ['COMPLAINANT', 'ACCUSED', 'VICTIM', 'WITNESS', 'ARRESTEE', 'MISSING', 'DECEASED', 'INFORMANT', 'CALLER', 'IO'];
+const ROLES = ['COMPLAINANT', 'ACCUSED', 'VICTIM', 'WITNESS', 'ARRESTEE', 'MISSING', 'DECEASED', 'INFORMANT', 'CALLER', 'IO', 'MISSING_CHILD'];
 const SLOTS = ['occurrence', 'present', 'permanent', 'incident', 'found', 'missing', 'arrest'];
 
 async function loadColumns(db) {

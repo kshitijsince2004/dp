@@ -411,9 +411,6 @@ function RepeaterSection({
     <div className="bg-white border border-slate-200 rounded-card overflow-hidden">
       <div className="flex items-center justify-between bg-slate-50 border-b border-slate-200 px-6 py-4">
         <div className="flex items-center gap-3">
-          <span className="flex items-center justify-center w-7 h-7 rounded-md bg-[var(--accent-glow)] text-[var(--accent-color)] text-xs font-bold border border-[var(--accent-color)]/20">
-            {currentStep + 1}
-          </span>
           <h2 className="text-base font-bold text-slate-800 tracking-wide">
             {lang === 'hi' ? (section.title_hi || section.title_en) : section.title_en}
           </h2>
@@ -565,9 +562,6 @@ export default function FormSection({
       {!hideHeader && (
         <div className="flex items-center justify-between bg-[#f0f5fa] border-b-2 border-[#7a9cc5] px-6 py-3.5">
           <div className="flex items-center gap-3">
-            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#dfeaf5] text-[#0d2a4a] text-sm font-black border border-[#7a9cc5]/40">
-              {currentStep + 1}
-            </span>
             <h2 className="text-lg sm:text-xl font-bold text-[#0d2a4a] tracking-wide">
               {lang === 'hi'
                 ? (section.title_hi || section.title_en)

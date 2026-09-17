@@ -72,10 +72,8 @@ goto waitdb
 echo  [OK] Database service is ready.
 echo.
 
-echo [2/6] Verifying backend and frontend dependencies...
+echo [2/6] Verifying backend dependencies...
 cd /d %~dp0backend
-call npm install --no-audit --no-fund
-cd /d %~dp0frontend
 call npm install --no-audit --no-fund
 echo.
 
