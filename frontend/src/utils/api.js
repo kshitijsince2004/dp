@@ -1805,9 +1805,18 @@ const formSchemas = {
             { value: 'Natural', label_en: 'Natural', label_hi: 'प्राकृतिक' },
             { value: 'Suicide', label_en: 'Suicide', label_hi: 'आत्महत्या' },
             { value: 'Murder', label_en: 'Murder', label_hi: 'हत्या' },
-            { value: 'Unknown', label_en: 'Unknown', label_hi: 'अज्ञात' }
+            { value: 'Unknown', label_en: 'Unknown', label_hi: 'अज्ञात' },
+            { value: 'Other', label_en: 'Other', label_hi: 'अन्य' }
           ],
           validation_rules: { required: false }
+        },
+        {
+          field_key: 'cause_of_death_other',
+          field_type: 'TEXT',
+          label_en: 'Cause of Death (Specify)',
+          label_hi: 'मृत्यु का कारण (विवरण)',
+          validation_rules: { required: false },
+          show_when: { field: 'cause_of_death', value: 'Other' }
         },
         {
           field_key: 'deceased_relative_name',

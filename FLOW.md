@@ -267,3 +267,16 @@ flowchart TD
   - **Court Status Gating**: Blocking invalid status transitions and direct workout status updates in case management workflow.
   - **Worked-Out Fields Migration**: Database schema updates supporting structured worked-out tracking for cases.
   - **Unified Record Type Badges**: Frontend color-coding component ([`RecordTypeBadge.jsx`](file:///d:/DPI/FIR/pharos-prototype/frontend/src/components/common/RecordTypeBadge.jsx)) unifying visual badges across all 7 record types (`CASE`, `ARREST`, `UIDB`, `MISSING`, `PCR_CALL`, `LEFT_OUT`, `KALANDRA`).
+
+## Unidentified Dead Body (UIDB) Cause of Death "Other"
+
+In the UIDB registration form, users can specify the cause of death under the **Inquest Details** tab. If the user selects the **Other** option from the dropdown:
+- The UI uses the config-driven `show_when` field rule to dynamically reveal a new text input field labelled **Cause of Death (Specify)** (`cause_of_death_other`).
+- The user can type out the exact cause of death (e.g., "Electrocution") and save the record.
+- The value is stored in the `cause_of_death_other` column in `uidb_details` and is fully integrated into report building, import templates, and layout manifests.
+
+## Workflow Resubmission and Field Validation
+
+When a record is sent back (action: `SEND_BACK`), the reviewer specifies a list of fields requiring correction, which are stored in the `target_fields` column of `workflow_transitions`. When the user later attempts to resubmit the record (via `sent_back.submit`), the `requires_field_correction` config flag dictates that the resubmission is blocked unless all flagged fields have been demonstrably edited.
+
+This is enforced by `assertFieldsCorrected` in `workflow.engine.js`, which compares the flagged fields against the `field_changes` recorded in `record_revisions` since the time of the send-back. If any flagged field lacks a corresponding revision entry, the transition throws an error, and the user is prompted (via a UI toast) to fix the remaining fields.

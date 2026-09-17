@@ -1710,6 +1710,7 @@ export const transitionRecord = async (id, user, action, comment, targetFields, 
       const rule = await workflowEngine.getRule(trx, { fromStatus, action, recordType: record.record_type });
       workflowEngine.assertAllowed(rule, user);
       workflowEngine.assertComment(rule, comment);
+      await workflowEngine.assertFieldsCorrected(trx, rule, record);
       const { toStatus: targetStatus, toLevel: targetLevel } = await workflowEngine.resolveTarget(trx, rule, record);
       log.debug('transitionRecord: workflow rule resolved', { recordId: id, action, fromStatus, targetStatus, targetLevel });
 

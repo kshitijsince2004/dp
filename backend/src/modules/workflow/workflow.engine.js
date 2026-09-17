@@ -75,6 +75,44 @@ export function assertComment(rule, comment) {
 }
 
 /**
+ * When a transition's config row has requires_field_correction = true, block it unless
+ * every field_key the last SEND_BACK flagged (workflow_transitions.target_fields) shows
+ * up in at least one record_revisions.field_changes entry written since that send-back.
+ * No target_fields on the last send-back (reviewer gave only a comment, no specific
+ * fields) => nothing to enforce, allow it through.
+ */
+export async function assertFieldsCorrected(trx, rule, record) {
+  if (!rule.requires_field_correction) return;
+
+  const lastSendBack = await trx('workflow_transitions')
+    .where({ record_id: record.id, action: 'SEND_BACK' })
+    .orderBy('performed_at', 'desc')
+    .first();
+  if (!lastSendBack) return;
+
+  const targetFields = typeof lastSendBack.target_fields === 'string'
+    ? JSON.parse(lastSendBack.target_fields) : (lastSendBack.target_fields || []);
+  if (!targetFields.length) return;
+
+  const revisions = await trx('record_revisions')
+    .where({ record_id: record.id })
+    .andWhere('changed_at', '>', lastSendBack.performed_at)
+    .select('field_changes');
+
+  const changedKeys = new Set();
+  for (const rev of revisions) {
+    const changes = typeof rev.field_changes === 'string' ? JSON.parse(rev.field_changes) : (rev.field_changes || []);
+    for (const c of changes) changedKeys.add(c.field_key);
+  }
+
+  const missing = targetFields.filter((f) => !changedKeys.has(f));
+  if (missing.length > 0) {
+    log.warn('assertFieldsCorrected: rejected — flagged fields not corrected', { recordId: record.id, missing });
+    throw new Error(`Cannot resend to SHO — please correct the following field(s) flagged for correction: ${missing.join(', ')}`);
+  }
+}
+
+/**
  * Resolve the concrete target (status, level) for a rule against a record.
  * - to_status '@PRIOR' (transfer accept/reject) restores BOTH the status and
  *   the level captured by the ledger row that entered IN_TRANSFER.

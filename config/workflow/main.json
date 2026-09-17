@@ -16,6 +16,7 @@
  },
  {
   "code": "sent_back.submit",
+  "requires_field_correction": true,
   "record_type": "*",
   "from_status": "SENT_BACK",
   "action": "submit",

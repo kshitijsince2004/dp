@@ -393,6 +393,7 @@ export const uidbGeneralFields = [
 
   // --- Inquest Details (inquest_details) ---
   { field_key: 'cause_of_death', label_en: 'Cause of Death', label_hi: 'मौत का कारण', required: false, section: 'inquest_details' },
+  { field_key: 'cause_of_death_other', label_en: 'Cause of Death (Specify)', label_hi: 'मृत्यु का कारण (विवरण)', required: false, section: 'inquest_details' },
   { field_key: 'deceased_relative_name', label_en: 'Relative Name', label_hi: 'रिश्तेदार का नाम', required: false, section: 'inquest_details' },
   { field_key: 'deceased_relation_type', label_en: 'Relation with Deceased', label_hi: 'मृतक से संबंध', required: false, section: 'inquest_details' },
   { field_key: 'filed_by_acp_sdm', label_en: 'Inquest Filed by ACP / SDM', label_hi: 'एसीपी / एसडीएम द्वारा दायर पूछताछ', required: false, section: 'inquest_details' },

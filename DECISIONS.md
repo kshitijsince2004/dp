@@ -403,3 +403,55 @@ When a mother and child go missing together, they share the same case details (F
 - **Relevant Code**: [`backend/src/modules/reports/reports.controller.js`](file:///d:/DPI/FIR/pharos-prototype/backend/src/modules/reports/reports.controller.js)
 - **Why it matters**: Requires Python binaries and virtual environment dependencies (`pandas`, `openpyxl`, `SQLAlchemy`) to be correctly installed on host OS.
 - **Confidence**: Confirmed dependency constraint.
+
+## UIDB Cause of Death "Other" Pattern
+
+### Decision
+Added an "Other" option to the UIDB `cause_of_death` field which reveals a conditional text input (`cause_of_death_other`) via the standard `show_when` config-driven pattern.
+
+### Context
+When registering an unidentified dead body (UIDB), users occasionally encounter a cause of death not covered by standard options.
+
+### Why
+Using the established `show_when: { field: "cause_of_death", value: "Other" }` pattern ensures the UI automatically toggles the field without custom frontend logic, matching existing patterns like `other_status_reason` in arrest.json.
+
+### Alternatives
+- Hardcoding a React state toggle in `DynamicForm.jsx` (rejected: breaks metadata-driven schema design).
+- Creating a separate text area for all registrations (rejected: clutters UI).
+
+### Tradeoffs
+Requires coordinating updates across JSON config, DB migrations, import templates, layout manifests, and report builder to ensure the new field is fully integrated across all system modules.
+
+### Relevant Code
+- `config/fields/uidb.json`
+- `backend/migrations/20260917000001_add_cause_of_death_other.cjs`
+- `backend/src/modules/import/layout-manifests.js`
+
+### Confidence
+High. Follows exact precedents.
+
+## Workflow Resubmission Field Validation
+
+### Decision
+Added `requires_field_correction` to workflow configuration (specifically the `sent_back.submit` transition). When true, the transition is blocked unless every field flagged for correction in the last `SEND_BACK` action has a corresponding entry in `record_revisions.field_changes` recorded since that send-back.
+
+### Context
+When a reviewer (e.g., SHO or District Officer) sends a record back for correction, they specify target fields that need fixing. The system needs to ensure the user actually modifies those fields before resubmitting.
+
+### Why
+Using a data-driven config flag on the `sent_back.submit` row avoids hardcoding validation logic for specific statuses. By comparing the `workflow_transitions.target_fields` array of the last send-back against the `record_revisions.field_changes` array of subsequent edits, we leverage the existing audit trail instead of capturing new state.
+
+### Alternatives
+- Hardcoding the rule in `records.service.js` specifically for the `PENDING_SHO` resubmission (rejected: not extensible to other roles/transitions).
+- Storing a "corrected" status per field in a new database table (rejected: redundant, the `record_revisions` table already acts as a comprehensive edit ledger).
+
+### Tradeoffs
+Requires parsing stringified JSON arrays from historical audit records during the transition attempt. This is slightly slower but perfectly acceptable since resubmission events are low-frequency actions for any single record.
+
+### Relevant Code
+- `config/workflow/main.json`
+- `backend/src/modules/workflow/workflow.engine.js` (`assertFieldsCorrected`)
+- `backend/src/modules/records/records.service.js`
+
+### Confidence
+High. Config-driven and fully reuses the existing `record_revisions` audit mechanism.

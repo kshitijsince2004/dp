@@ -217,6 +217,7 @@ export async function syncConfig(db, log = console.log) {
     to_level: w.to_level ?? null,
     allowed_roles: JSON.stringify(w.allowed_roles || []),
     requires_comment: !!w.requires_comment,
+    requires_field_correction: !!w.requires_field_correction,
     sla_hours: w.sla_hours ?? null,
     is_active: w.is_active !== false,
   }));
