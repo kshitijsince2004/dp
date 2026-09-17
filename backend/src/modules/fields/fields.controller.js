@@ -536,13 +536,13 @@ export const getFieldsForForm = async (req, res) => {
               id: 'personal',
               title_en: 'Personal Information',
               title_hi: 'व्यक्तिगत जानकारी',
-              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_VICTIM' && f.section === 'victim_personal_info')
+              fields: filteredFields.filter(f => (f.repeater_entity === 'PERSON_VICTIM' || f.section === 'victim_personal_info') && f.section === 'victim_personal_info')
             },
             {
               id: 'address',
               title_en: 'Address',
               title_hi: 'पता',
-              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_VICTIM' && f.section === 'victim_address')
+              fields: filteredFields.filter(f => (f.repeater_entity === 'PERSON_VICTIM' || f.section === 'victim_address') && f.section === 'victim_address')
             }
           ]
         },
@@ -558,13 +558,13 @@ export const getFieldsForForm = async (req, res) => {
               id: 'personal',
               title_en: 'Personal Information',
               title_hi: 'व्यक्तिगत जानकारी',
-              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ACCUSED' && f.section === 'accused_personal_info')
+              fields: filteredFields.filter(f => (f.repeater_entity === 'PERSON_ACCUSED' || f.section === 'accused_personal_info') && f.section === 'accused_personal_info')
             },
             {
               id: 'address',
               title_en: 'Address',
               title_hi: 'पता',
-              fields: filteredFields.filter(f => f.repeater_entity === 'PERSON_ACCUSED' && f.section === 'accused_address')
+              fields: filteredFields.filter(f => (f.repeater_entity === 'PERSON_ACCUSED' || f.section === 'accused_address') && f.section === 'accused_address')
             }
           ]
         },

@@ -828,12 +828,16 @@ export default function DynamicForm({
   };
 
   function renderPersonPersonalInfoSubTab(prefix, allFields, valuesObj, onFieldChange, touchedObj, errorsObj, lang, readOnly) {
-    const cfg = PERSON_TAB_VARIANTS[prefix];
+    const cfg = PERSON_TAB_VARIANTS[prefix] || { hasNickname: true };
     const extraRequired = prefix === 'complainant' ? [] : [`${prefix}_first_name`, `${prefix}_gender`];
 
     const field = (key, customLabel = null, isLast = false, forceReadOnly = false, extraRequiredKeys = []) => {
-      const f = allFields.find((x) => x.field_key === key);
+      let f = allFields.find((x) => x.field_key === key);
+      if (!f && key.endsWith('_social_category')) f = allFields.find(x => x.field_key === 'social_category' || x.field_key === `${prefix}_social_category`);
+      if (!f && (key.endsWith('_education') || key.endsWith('_qualification'))) f = allFields.find(x => x.field_key === 'education' || x.field_key === `${prefix}_education` || x.field_key === `${prefix}_qualification`);
+      if (!f && key.endsWith('_financial_status')) f = allFields.find(x => x.field_key === 'financial_status' || x.field_key === `${prefix}_financial_status`);
       if (!f) return null;
+
       const label = customLabel || (lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en);
       const rules = parseRules(f.validation_rules);
       const isRequired = !!rules.required || extraRequiredKeys.includes(key);
@@ -842,13 +846,13 @@ export default function DynamicForm({
       const val = isUidKey ? (valuesObj[key] || 'AUTO_ASSIGNED_BY_SYSTEM') : valuesObj[key];
       return (
         <React.Fragment key={key}>
-          <div className={`bg-[#dfeaf5] px-4 py-2 text-sm sm:text-base text-[#0d2a4a] flex items-center gap-1.5 border-r border-[#c7d8ea] ${isRequired ? 'font-bold' : 'font-medium'} ${!isLast ? 'border-b' : ''}`}>
+          <div className={`bg-[#dfeaf5] px-3.5 py-1.5 text-xs sm:text-sm text-[#0d2a4a] flex items-center gap-1.5 border-r border-[#c7d8ea] ${isRequired ? 'font-bold' : 'font-medium'} ${!isLast ? 'border-b' : ''}`}>
             <span>{label}</span>
             {isRequired && <span className="text-red-500 font-bold">*</span>}
           </div>
-          <div className={`px-4 py-1.5 bg-white flex items-center min-h-[40px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <div className={`px-3 py-1 bg-white flex items-center min-h-[38px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <FieldRenderer
-              field={f}
+              field={{ ...f, field_key: key }}
               value={val}
               onChange={onFieldChange}
               readOnly={isDisabled}
@@ -861,25 +865,32 @@ export default function DynamicForm({
       );
     };
 
-    const rawField = (key, fallback) => (
-      <FieldRenderer
-        field={allFields.find((x) => x.field_key === key)}
-        value={valuesObj[key] ?? fallback}
-        onChange={onFieldChange}
-        readOnly={readOnly}
-        error={touchedObj?.[key] ? errorsObj?.[key] : null}
-        lang={lang}
-        values={valuesObj}
-      />
-    );
+    const rawField = (key, fallback) => {
+      let f = allFields.find((x) => x.field_key === key);
+      return (
+        <FieldRenderer
+          field={f ? { ...f, field_key: key } : { field_key: key, field_type: 'TEXT' }}
+          value={valuesObj[key] ?? fallback}
+          onChange={onFieldChange}
+          readOnly={readOnly}
+          error={touchedObj?.[key] ? errorsObj?.[key] : null}
+          lang={lang}
+          values={valuesObj}
+        />
+      );
+    };
 
     return (
       <div className="space-y-3">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Top 2-Column Section: Personal Identity (Left) and Contact Details (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
 
-          {/* Left Column - Personal Info */}
-          <div className="space-y-3">
-            <div className="grid grid-cols-[220px_1fr] border-2 border-[#7a9cc5] rounded-2xl overflow-hidden shadow-sm bg-white">
+          {/* Personal Identity Card */}
+          <fieldset className="border border-[#7a9cc5] rounded-xl p-3 bg-[#f0f4f8]/20 shadow-xs flex flex-col justify-start">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
+              {lang === 'hi' ? 'व्यक्तिगत पहचान' : 'Personal Identity'}
+            </legend>
+            <div className="grid grid-cols-[160px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs mt-1 bg-white">
               {field(`${prefix}_npr`, lang === 'hi' ? 'यूआईडी (UID)' : 'UID', false, true)}
               {field(`${prefix}_first_name`, null, false, false, extraRequired)}
               {field(`${prefix}_middle_name`)}
@@ -892,67 +903,63 @@ export default function DynamicForm({
                 field(`${prefix}_last_name`, null, true)
               )}
             </div>
-          </div>
+          </fieldset>
 
-          {/* Right Column - Gender, Marital Status, Mobile, Email, extra */}
-          <div className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm self-start">
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm">
+          {/* Contact & Gender Card */}
+          <fieldset className="border border-[#7a9cc5] rounded-xl p-3 bg-[#f0f4f8]/20 shadow-xs flex flex-col justify-start">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
+              {lang === 'hi' ? 'संपर्क एवं लिंग' : 'Contact & Details'}
+            </legend>
+            <div className="grid grid-cols-[160px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs mt-1 bg-white">
               {field(`${prefix}_gender`, null, false, false, extraRequired)}
 
               {/* Mobile number with country code */}
               <React.Fragment>
-                <div className="bg-[#dfeaf5] px-4 py-2 border-b border-r border-[#c7d8ea] text-sm sm:text-base font-medium text-[#0d2a4a] flex items-center gap-1.5">
+                <div className="bg-[#dfeaf5] px-3.5 py-1.5 border-b border-r border-[#c7d8ea] text-xs sm:text-sm font-medium text-[#0d2a4a] flex items-center gap-1.5">
                   <span>{lang === 'hi' ? 'मोबाइल नंबर' : 'Mobile No.'}</span>
                 </div>
-                <div className="px-4 py-1.5 bg-white border-b border-[#c7d8ea] flex gap-2 items-center min-h-[40px]">
+                <div className="px-3 py-1 bg-white border-b border-[#c7d8ea] flex gap-2 items-center min-h-[38px]">
                   <div className="w-20">{rawField(`${prefix}_mobile_country_code`, '+91')}</div>
                   <div className="flex-1">{rawField(`${prefix}_mobile`)}</div>
                 </div>
               </React.Fragment>
 
+              {field(`${prefix}_email`, null, !prefix.includes('arrest') && !cfg.extraContactField)}
               {prefix === 'arrested' && field('scheme_of_arrest', null, true)}
-
-              {cfg.extraContactField ? (
-                <React.Fragment>
-                  {field(`${prefix}_email`)}
-                  {field(cfg.extraContactField, null, true)}
-                </React.Fragment>
-              ) : (
-                field(`${prefix}_email`, null, true)
-              )}
+              {cfg.extraContactField && field(cfg.extraContactField, null, true)}
             </div>
-          </div>
+          </fieldset>
 
         </div>
 
-        {/* Bottom part */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Middle 2-Column Section: Relative Details (Left) and Age Details (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
 
-          {/* Relation Details */}
-          <div className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm self-start">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base tracking-wide">
+          {/* Relative Details Card */}
+          <fieldset className="border border-[#7a9cc5] rounded-xl p-3 bg-[#f0f4f8]/20 shadow-xs flex flex-col justify-start">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
               {lang === 'hi' ? 'रिश्तेदार का विवरण' : 'Relative Details'}
             </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm mt-2">
+            <div className="grid grid-cols-[160px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs mt-1 bg-white">
               {field(`${prefix}_relation_type`)}
               {field(`${prefix}_relative_name`, null, true)}
             </div>
-          </div>
+          </fieldset>
 
-          {/* Age Panel */}
-          <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base tracking-wide">
+          {/* Age Details Card */}
+          <fieldset className="border border-[#7a9cc5] rounded-xl p-3 bg-[#f0f4f8]/20 shadow-xs flex flex-col justify-start">
+            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
               {lang === 'hi' ? 'आयु विवरण' : 'Age Panel'}
             </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm mt-2">
+            <div className="grid grid-cols-[160px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs mt-1 bg-white">
               {field(`${prefix}_dob`)}
 
               {/* Age (Year / Month) */}
               <React.Fragment>
-                <div className="bg-[#dfeaf5] px-4 py-2 border-b border-r border-[#c7d8ea] text-sm sm:text-base font-medium text-[#0d2a4a] flex items-center gap-1.5">
+                <div className="bg-[#dfeaf5] px-3.5 py-1.5 border-b border-r border-[#c7d8ea] text-xs sm:text-sm font-medium text-[#0d2a4a] flex items-center gap-1.5">
                   <span>{lang === 'hi' ? 'आयु (वर्ष / महीने)' : 'Age (Year / Month)'}</span>
                 </div>
-                <div className="px-4 py-1.5 bg-white border-b border-[#c7d8ea] flex gap-2 min-h-[40px] items-center">
+                <div className="px-3 py-1 bg-white border-b border-[#c7d8ea] flex gap-2 min-h-[38px] items-center">
                   <div className="flex-1">{rawField(`${prefix}_age_year`)}</div>
                   <div className="flex-1">{rawField(`${prefix}_age_month`)}</div>
                 </div>
@@ -962,19 +969,25 @@ export default function DynamicForm({
             </div>
           </fieldset>
 
-          {/* Demographic & Socio-Economic Details */}
-          <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm col-span-1 lg:col-span-2">
-            <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base tracking-wide">
-              {lang === 'hi' ? 'सामाजिक एवं आर्थिक विवरण' : 'Demographic & Socio-Economic Details'}
-            </legend>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm mt-2">
-              {field(`${prefix}_social_category`, lang === 'hi' ? 'सामाजिक श्रेणी' : 'Social Category')}
-              {field(`${prefix}_education`, lang === 'hi' ? 'शिक्षा' : 'Education')}
+        </div>
+
+        {/* Bottom Section: Demographic & Socio-Economic Details */}
+        <fieldset className="border border-[#7a9cc5] rounded-xl p-3 bg-[#f0f4f8]/20 shadow-xs">
+          <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
+            {lang === 'hi' ? 'सामाजिक एवं आर्थिक विवरण' : 'Demographic & Socio-Economic Details'}
+          </legend>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-1 bg-transparent">
+            <div className="grid grid-cols-[140px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs bg-white">
+              {field(`${prefix}_social_category`, lang === 'hi' ? 'सामाजिक श्रेणी' : 'Social Category', true)}
+            </div>
+            <div className="grid grid-cols-[140px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs bg-white">
+              {field(`${prefix}_education`, lang === 'hi' ? 'शिक्षा' : 'Education', true) || field(`${prefix}_qualification`, lang === 'hi' ? 'शिक्षा' : 'Education', true)}
+            </div>
+            <div className="grid grid-cols-[140px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs bg-white">
               {field(`${prefix}_financial_status`, lang === 'hi' ? 'वित्तीय स्थिति' : 'Financial Status', true)}
             </div>
-          </fieldset>
-
-        </div>
+          </div>
+        </fieldset>
 
         {/* EXTRA FIELDS (District Custom Fields) */}
         {(() => {
@@ -989,13 +1002,13 @@ export default function DynamicForm({
           
           if (extraFields.length === 0) return null;
           return (
-            <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm mt-3">
+            <fieldset className="border border-[#7a9cc5] rounded-xl p-3 bg-[#f0f4f8]/20 shadow-xs mt-3">
               <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
                 {lang === 'hi' ? 'अतिरिक्त जानकारी' : 'Additional Information'}
               </legend>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-1.5">
                 {extraFields.map(f => (
-                  <div key={f.field_key} className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
+                  <div key={f.field_key} className="grid grid-cols-[160px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs self-start bg-white">
                     {field(f.field_key, null, true)}
                   </div>
                 ))}
@@ -1020,11 +1033,11 @@ export default function DynamicForm({
       const isDisabled = forceReadOnly || readOnly || f.readonly === true || f.readonly === 'true';
       return (
         <React.Fragment key={key}>
-          <div className={`bg-[#dfeaf5] px-4 py-2 text-sm sm:text-base text-[#0d2a4a] flex items-center gap-1.5 border-r border-[#c7d8ea] ${isRequired ? 'font-bold' : 'font-medium'} ${!isLast ? 'border-b' : ''}`}>
+          <div className={`bg-[#dfeaf5] px-3.5 py-1.5 text-xs sm:text-sm text-[#0d2a4a] flex items-center gap-1.5 border-r border-[#c7d8ea] ${isRequired ? 'font-bold' : 'font-medium'} ${!isLast ? 'border-b' : ''}`}>
             <span>{label}</span>
             {isRequired && <span className="text-red-500 font-bold">*</span>}
           </div>
-          <div className={`px-4 py-1.5 bg-white flex items-center min-h-[40px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
+          <div className={`px-3 py-1 bg-white flex items-center min-h-[38px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
             <FieldRenderer
               field={f}
               value={valuesObj[key]}
@@ -1043,20 +1056,20 @@ export default function DynamicForm({
       <div className="space-y-3">
 
         {/* PRESENT ADDRESS PANEL */}
-        <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm">
+        <fieldset className="border border-[#7a9cc5] rounded-xl p-3 bg-[#f0f4f8]/20 shadow-xs">
           <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
             {lang === 'hi' ? 'वर्तमान पता' : 'Present Address'}
           </legend>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-1.5">
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-1">
+            <div className="grid grid-cols-[160px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs self-start bg-white">
               {field(`${prefix}_house_no`)}
               {field(`${prefix}_street`)}
               {field(`${prefix}_colony`)}
               {field(`${prefix}_city_town_village`)}
               {field(`${prefix}_tehsil_block_mandal`, null, true)}
             </div>
-            <div className="grid grid-cols-[220px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
+            <div className="grid grid-cols-[160px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs self-start bg-white">
               {field(`${prefix}_country`)}
               {field(`${prefix}_state`)}
               {field(`${prefix}_district`)}
@@ -1067,13 +1080,13 @@ export default function DynamicForm({
         </fieldset>
 
         {/* PERMANENT ADDRESS PANEL */}
-        <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm">
+        <fieldset className="border border-[#7a9cc5] rounded-xl p-3 bg-[#f0f4f8]/20 shadow-xs">
           <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
             {lang === 'hi' ? 'स्थायी पता' : 'Permanent Address'}
           </legend>
 
           {/* Same as present toggle */}
-          <div className="bg-[#dfeaf5] border border-[#c7d8ea] px-3.5 py-1.5 flex items-center justify-between mb-2 text-xs sm:text-sm font-bold text-[#0d2a4a] rounded-xl shadow-sm">
+          <div className="bg-[#dfeaf5] border border-[#c7d8ea] px-3.5 py-1.5 flex items-center justify-between mb-2 text-xs sm:text-sm font-bold text-[#0d2a4a] rounded-lg shadow-xs">
             <span>{lang === 'hi' ? 'क्या स्थायी पता वर्तमान पते के समान है?' : 'Is Permanent Address same as Present Address?'}</span>
             <div className="w-32">
               <FieldRenderer
@@ -1086,15 +1099,15 @@ export default function DynamicForm({
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-            <div className="grid grid-cols-[240px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-1">
+            <div className="grid grid-cols-[160px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs self-start bg-white">
               {field(`${prefix}_perm_house_no`, null, false, isSame)}
               {field(`${prefix}_perm_street`, null, false, isSame)}
               {field(`${prefix}_perm_colony`, null, false, isSame)}
               {field(`${prefix}_perm_city_town_village`, null, false, isSame)}
               {field(`${prefix}_perm_tehsil_block_mandal`, null, true, isSame)}
             </div>
-            <div className="grid grid-cols-[240px_1fr] border border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm self-start">
+            <div className="grid grid-cols-[160px_1fr] border border-[#c7d8ea] rounded-lg overflow-hidden shadow-xs self-start bg-white">
               {field(`${prefix}_perm_country`, null, false, isSame)}
               {field(`${prefix}_perm_state`, null, false, isSame)}
               {field(`${prefix}_perm_district`, null, false, isSame)}
