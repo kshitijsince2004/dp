@@ -381,9 +381,8 @@
   },
   "section": "offence_info",
   "storage": {
-   "entity": "offence",
-   "column": "major_head_id",
-   "primary": true
+   "table": "$detail",
+   "column": "local_head_id"
   },
   "options": [
    {

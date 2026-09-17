@@ -87,7 +87,8 @@ export async function diaryCount(options = {}) {
     // Head filters
     if (headCodes && headCodes.length > 0) {
       if (headType === 'LOCAL') {
-        query = query.join('ref.local_heads as lh', 'lh.local_head_cd', 'fd.local_head_id')
+        const localHeadCol = recordType === 'ARREST' ? 'ad.local_head_id' : 'fd.local_head_id';
+        query = query.join('ref.local_heads as lh', 'lh.local_head_cd', localHeadCol)
                      .whereIn('lh.canonical_code', headCodes);
       } else if (headType === 'SECTION_GROUP') {
         let sections = [];
@@ -95,8 +96,9 @@ export async function diaryCount(options = {}) {
           if (sectionGroups[g]) sections = sections.concat(sectionGroups[g]);
         });
         if (sections.length > 0) {
-          query = query.join('records_sections as rs', 'rs.record_id', 'r.id')
-                       .join('ref.sections as sec', 'sec.section_cd', 'rs.section_id')
+          query = query.join('record_offences as ro', 'ro.record_id', 'r.id')
+                       .join('ref.sections as sec', 'sec.section_cd', 'ro.section_id')
+                       .where('ro.is_primary', true)
                        .whereIn('sec.section', sections);
         }
       }

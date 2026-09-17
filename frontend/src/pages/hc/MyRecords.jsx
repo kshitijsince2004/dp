@@ -339,37 +339,56 @@ export default function MyRecords() {
           />
         </motion.div>
 
-        {/* Bulk Actions Banner */}
+        {/* Fixed Floating Bulk Actions Bar */}
         {selectedIds.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md"
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.95 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white backdrop-blur-xl border border-slate-700/80 px-6 py-4 rounded-2xl shadow-2xl flex flex-wrap items-center justify-between gap-4 min-w-[320px] max-w-[90vw]"
           >
-            <div className="flex items-center gap-2 text-emerald-800 text-sm font-bold uppercase tracking-wider">
-              <span className="bg-emerald-500 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs tabular-nums font-extrabold shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="bg-emerald-500 text-slate-950 font-black rounded-full h-7 w-7 flex items-center justify-center text-xs tabular-nums shadow-md">
                 {selectedIds.length}
               </span>
-              <span>{t('actions.selectedRecords', 'Records Selected')}</span>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-slate-100 uppercase tracking-wider">
+                  {t('actions.selectedRecords', 'Records Selected')}
+                </span>
+                <span className="text-xs text-slate-400 font-medium">
+                  {t('actions.readyForBulkSubmit', 'Ready for batch submission to SHO')}
+                </span>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={handleBulkSubmit}
-              disabled={bulkLoading}
-              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl text-sm font-extrabold transition-all duration-200 hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:bg-slate-300 disabled:cursor-not-allowed uppercase tracking-wider border-none"
-            >
-              {bulkLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
-                  <span>{t('actions.submitting', 'Submitting...')}</span>
-                </>
-              ) : (
-                <>
-                  <Send size={16} />
-                  <span>{t('actions.sendAllToSHO', 'Send Selected to SHO')}</span>
-                </>
-              )}
-            </button>
+
+            <div className="flex items-center gap-3 ml-auto">
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="px-3.5 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-700 cursor-pointer"
+              >
+                {t('actions.clearSelection', 'Deselect All')}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBulkSubmit}
+                disabled={bulkLoading}
+                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2 cursor-pointer disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed uppercase tracking-wider border-none"
+              >
+                {bulkLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-950" />
+                    <span>{t('actions.submitting', 'Submitting...')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} className="stroke-[2.5]" />
+                    <span>{t('actions.sendAllToSHO', `Send ${selectedIds.length} Selected to SHO`)}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </motion.div>
         )}
 

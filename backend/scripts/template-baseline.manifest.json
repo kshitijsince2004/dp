@@ -3867,45 +3867,6 @@
           "label": "PIS No. of IO",
           "hint": "PIS number of a registered IO, e.g. 28080214",
           "validation": null
-        },
-        {
-          "col": 50,
-          "key": "education",
-          "section": "General Information",
-          "label": "education",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 51,
-          "key": "financial_status",
-          "section": "General Information",
-          "label": "financial_status",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 52,
-          "key": "social_category",
-          "section": "General Information",
-          "label": "social_category",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
-            ]
-          }
         }
       ],
       "row2Merges": [
@@ -4458,84 +4419,6 @@
               10
             ]
           }
-        },
-        {
-          "col": 47,
-          "key": "mp_social_category",
-          "section": "Address Details",
-          "label": "mp_social_category",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 48,
-          "key": "mp_education",
-          "section": "Address Details",
-          "label": "mp_education",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 49,
-          "key": "mp_financial_status",
-          "section": "Address Details",
-          "label": "mp_financial_status",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 50,
-          "key": "education",
-          "section": "General Information",
-          "label": "education",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 51,
-          "key": "financial_status",
-          "section": "General Information",
-          "label": "financial_status",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 52,
-          "key": "social_category",
-          "section": "General Information",
-          "label": "social_category",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
-            ]
-          }
         }
       ],
       "row2Merges": [
@@ -4983,7 +4866,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
+              "\"High School,Intermediate,Graduate,Illiterate,Dropout,Not Known\""
             ]
           }
         },
@@ -5009,7 +4892,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
+              "\"General,OBC (Other Backward Class),SC (Scheduled Caste),ST (Scheduled Tribe),EWS (Economically Weaker Section),Others,Not Known / Not Disclosed\""
             ]
           }
         }
