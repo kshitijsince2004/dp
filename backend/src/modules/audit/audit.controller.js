@@ -50,6 +50,7 @@ const FIELD_LABELS = {
   uidb_status: 'UIDB Status',
   deceased_name: 'Deceased Name',
   cause_of_death: 'Cause of Death',
+  cause_of_death_other: 'Cause of Death (Other)',
   act_name: 'Act Name',
   sections: 'IPC/BNS Sections',
   call_gist: 'PCR Call Gist',

@@ -420,9 +420,10 @@ export const getFieldsForForm = async (req, res) => {
           ].includes(f.field_key) || f.section === 'corpse_desc') {
             section = 'corpse_desc';
             sort_order = 20.0 + f.sort_order * 0.1;
-          } else if (['cause_of_death', 'deceased_relative_name', 'deceased_relation_type', 'filed_by_acp_sdm', 'filed_by_acp_sdm_date', 'informant_name', 'informant_relation', 'informant_mobile'].includes(f.field_key)) {
+          } else if (['cause_of_death', 'cause_of_death_other', 'deceased_relative_name', 'deceased_relation_type', 'filed_by_acp_sdm', 'filed_by_acp_sdm_date', 'informant_name', 'informant_relation', 'informant_mobile'].includes(f.field_key)) {
             section = 'inquest_details';
             if (f.field_key === 'cause_of_death') sort_order = 40.1;
+            else if (f.field_key === 'cause_of_death_other') sort_order = 40.15;
             else if (f.field_key === 'deceased_relative_name') sort_order = 40.2;
             else if (f.field_key === 'deceased_relation_type') sort_order = 40.3;
             else if (f.field_key === 'filed_by_acp_sdm') sort_order = 40.4;

@@ -604,6 +604,7 @@ export const REPORTABLE_FIELDS = {
 
     // ── Inquest Details group (5 new) ─────────────────────────────────────
     { key: 'cause_of_death', label_en: 'Cause of Death', label_hi: 'Cause of Death', data_type: 'textarea', operators: TEXTAREA_OPS, is_pii: false, is_db_col: false, group: 'inquest_details' },
+    { key: 'cause_of_death_other', label_en: 'Cause of Death (Other)', label_hi: 'Cause of Death (Other)', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'inquest_details' },
     { key: 'deceased_relative_name', label_en: 'Deceased Relative Name', label_hi: 'Deceased Relative Name', data_type: 'text', operators: TEXT_OPS, is_pii: true, pii_min_role: 'DISTRICT_OFFICER', is_db_col: false, group: 'inquest_details' },
     { key: 'deceased_relation_type', label_en: 'Deceased Relation Type', label_hi: 'Deceased Relation Type', data_type: 'text', operators: TEXT_OPS, is_pii: false, is_db_col: false, group: 'inquest_details' },
     { key: 'filed_by_acp_sdm', label_en: 'Filed by ACP/SDM', label_hi: 'Filed by ACP/SDM', data_type: 'enum', operators: ENUM_OPS, options: YES_NO_OPTIONS, is_pii: false, is_db_col: false, group: 'inquest_details' },

@@ -1059,6 +1059,11 @@
     "value": "Unknown",
     "label_en": "Unknown",
     "label_hi": "अज्ञात"
+   },
+   {
+    "value": "Other",
+    "label_en": "Other",
+    "label_hi": "अन्य"
    }
   ],
   "visible_to_levels": [
@@ -1071,6 +1076,40 @@
   ],
   "introduced_at_level": "PS",
   "sort_order": 70,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "cause_of_death_other",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Cause of Death (Specify)",
+   "hi": "मृत्यु का कारण (विवरण)"
+  },
+  "section": "inquest_details",
+  "storage": {
+   "table": "uidb_details",
+   "column": "cause_of_death_other"
+  },
+  "show_when": {
+   "field": "cause_of_death",
+   "value": "Other"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 70.5,
   "full_width": false,
   "readonly": false,
   "is_active": true,

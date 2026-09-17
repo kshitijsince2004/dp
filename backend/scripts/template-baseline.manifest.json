@@ -4400,6 +4400,54 @@
         },
         {
           "col": 45,
+          "key": "accompanying_child_name",
+          "section": "General Information",
+          "label": "Name of Child",
+          "hint": "[Required] text",
+          "validation": null
+        },
+        {
+          "col": 46,
+          "key": "accompanying_child_age",
+          "section": "General Information",
+          "label": "Age",
+          "hint": "[Required] number",
+          "validation": {
+            "type": "whole",
+            "formulae": [
+              0,
+              120
+            ]
+          }
+        },
+        {
+          "col": 47,
+          "key": "accompanying_child_gender",
+          "section": "General Information",
+          "label": "Gender",
+          "hint": "[Required] select: Male, Female, Transgender, Unknown",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Male,Female,Transgender,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 48,
+          "key": "accompanying_child_relation",
+          "section": "General Information",
+          "label": "Relation to Missing Person",
+          "hint": "[Required] select: Son, Daughter, Sibling, Other",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Son,Daughter,Sibling,Other\""
+            ]
+          }
+        },
+        {
+          "col": 49,
           "key": "missing_fir_no",
           "section": "General Information",
           "label": "FIR No.",
@@ -4407,7 +4455,7 @@
           "validation": null
         },
         {
-          "col": 46,
+          "col": 50,
           "key": "missing_fir_date",
           "section": "General Information",
           "label": "FIR Date",
@@ -4420,7 +4468,7 @@
             ]
         },
         {
-          "col": 47,
+          "col": 51,
           "key": "complainant_social_category",
           "section": "Complainant Personal Details",
           "label": "complainant_social_category",
@@ -4433,7 +4481,7 @@
           }
         },
         {
-          "col": 48,
+          "col": 52,
           "key": "complainant_education",
           "section": "Complainant Personal Details",
           "label": "complainant_education",
@@ -4446,7 +4494,7 @@
           }
         },
         {
-          "col": 49,
+          "col": 53,
           "key": "complainant_financial_status",
           "section": "Complainant Personal Details",
           "label": "complainant_financial_status",
@@ -4463,8 +4511,8 @@
         "A2:F2",
         "AE2:AH2",
         "AI2:AQ2",
-        "AS2:AT2",
-        "AU2:AW2",
+        "AS2:AX2",
+        "AY2:BA2",
         "G2:AD2"
       ]
     }
