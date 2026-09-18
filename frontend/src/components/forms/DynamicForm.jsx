@@ -1021,11 +1021,19 @@ export default function DynamicForm({
             'npr', 'uid', 'person_uid', 'first_name', 'middle_name', 'last_name', 'nickname',
             'gender', 'mobile_country_code', 'mobile', 'email', 'relation_type', 'relative_name',
             'dob', 'age_year', 'age_month', 'birth_year', 'social_category', 'education', 'financial_status',
-            'scheme_of_arrest', 'complainant_same_as_victim', 'qualification'
+            'qualification'
           ].map(k => `${prefix}_${k}`);
+          // These two are ALREADY fully-qualified field_keys in the registry (no per-prefix variant exists
+          // for either), so they must NOT be re-prefixed like the generic suffixes above. Re-prefixing them
+          // silently breaks their exclusion from the "Additional Information" catch-all below, which is what
+          // caused both to render a second time (complainant_same_as_victim in COMPLAINANT, scheme_of_arrest
+          // in ARRESTED) — see config/fields/case.json and config/fields/arrest.json.
+          const ALREADY_QUALIFIED_KNOWN_KEYS = ['scheme_of_arrest', 'complainant_same_as_victim'];
           
           const extraFields = allFields
-            .filter(f => f.section === `${prefix}_personal_info` && !KNOWN_KEYS.includes(f.field_key))
+            .filter(f => f.section === `${prefix}_personal_info`
+              && !KNOWN_KEYS.includes(f.field_key)
+              && !ALREADY_QUALIFIED_KNOWN_KEYS.includes(f.field_key))
             .filter(f => {
               if (!f.show_when) return true;
               const sw = f.show_when;
@@ -3785,6 +3793,16 @@ const handleNext = () => {
     gd_no: values.gd_no, gd_date: values.gd_date, gd_time: values.gd_time,
     fir_no: values.fir_no, fir_date: values.fir_date, fir_time: values.fir_time,
   });
+
+  // Complainant is the only step with two inline sub-tabs (Personal Info, Address) sharing one
+  // currentStep index. "Next Step" must walk Personal -> Address before it's allowed to advance
+  // the wizard past the whole Complainant section to FIR Contents.
+  if (finalSchema[currentStep]?.section === 'complainant_info' && complainantTab === 'personal') {
+    setComplainantTab('address');
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    return;
+  }
+
   log.debug('form:step_next_attempt', { currentStep, section: finalSchema[currentStep]?.section });
   const stepErrs = validateSection(currentStep);
   if (Object.keys(stepErrs).length > 0) {

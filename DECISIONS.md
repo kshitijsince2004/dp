@@ -546,3 +546,21 @@ High. The solution relies exclusively on the existing field configuration schema
 * **Tradeoffs**: Requires fetching the schema dynamically for the modal, but the hook is already used by the underlying form so the data is usually cached or readily available.
 * **Relevant Code**: `frontend/src/pages/sho/RecordDetail.jsx` (getSendBackFieldGroups) and `frontend/src/pages/hc/NewRecord.jsx` (getFieldLabel).
 * **Confidence**: High. The underlying storage (`target_fields`) remains strictly field keys, preserving compatibility with backend rules and HC-side highlights.
+
+### Duplicate Fields in Person Sub-Tabs
+* **Decision**: Separate `scheme_of_arrest` and `complainant_same_as_victim` from the generic suffix array in `renderPersonPersonalInfoSubTab`'s KNOWN_KEYS exclusion list, checking them unprefixed.
+* **Context**: These fields are already fully-qualified in the registry (`config/fields/case.json`, `config/fields/arrest.json`). Prefixing them dynamically generated non-existent keys (e.g., `complainant_complainant_same_as_victim`), causing them to bypass the exclusion check and incorrectly render a second time in the "Additional Information" fallback block.
+* **Why**: To prevent duplicate renders of "Is Complainant same as Victim?" in COMPLAINANT and "Scheme of Arrest" in ARRESTED.
+* **Alternatives**: Removing them from the catch-all, but this properly addresses the root cause of the prefixing mismatch.
+* **Tradeoffs**: None.
+* **Relevant Code**: `frontend/src/components/forms/DynamicForm.jsx` (`renderPersonPersonalInfoSubTab`).
+* **Confidence**: High. Exact root cause identified.
+
+### Complainant Step Navigation
+* **Decision**: Intercept "Next Step" in `handleNext` when on the Complainant step (which uses two inline sub-tabs) to switch from "Personal" to "Address" sub-tabs before actually advancing the global wizard step.
+* **Context**: Complainant is unique because its sub-tabs are inline rather than in a modal. Clicking "Next Step" while on Personal Info skipped the Address tab entirely and jumped straight to the next section (FIR Contents).
+* **Why**: To ensure users naturally flow through both sub-tabs of the Complainant section without being prematurely kicked to the next wizard step.
+* **Alternatives**: Adding a separate "Next" button inside the Complainant component.
+* **Tradeoffs**: Requires a specific conditional branch in the global `handleNext` function.
+* **Relevant Code**: `frontend/src/components/forms/DynamicForm.jsx` (`handleNext`).
+* **Confidence**: High. Leverages existing state (`complainantTab`) and maintains the existing `validateSection` behavior exactly.

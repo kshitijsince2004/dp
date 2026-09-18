@@ -302,3 +302,7 @@ In the Arrest registration form (Person Particulars), users select the scheme un
 - **Status Update**: The Status Update flow remains a separate, already-working modal (`PATCH /records/:id/status`) and is unaffected by this change.
 
 - **Send-Back Field Picker Update**: The field picker in the "Return for correction" modal (`RecordDetail.jsx`) now dynamically sources from the live form schema (`useFormSchema`) instead of the hardcoded mock schema. Checkboxes are grouped under their respective section and sub-tab headings using the exact labels the form displays. Custom and newly added fields appear automatically without needing manual list maintenance. Read-only fields are intentionally excluded from the picker as they cannot be corrected. The `target_fields` payload still stores raw field keys, ensuring that the backend resubmission-correction rules and HC-side field highlighting (`NewRecord.jsx`) are completely unaffected.
+
+- **DynamicForm Updates**:
+  - **Duplicate Field Fix**: `scheme_of_arrest` and `complainant_same_as_victim` are now correctly excluded from the "Additional Information" catch-all in `renderPersonPersonalInfoSubTab` without being re-prefixed, fixing the bug where they rendered twice in their respective tabs.
+  - **Complainant Navigation Fix**: The global "Next Step" button now correctly walks through the Complainant section's inline sub-tabs (Personal Info → Address) before advancing the wizard to FIR Contents, while preserving the existing full-section validation rules.
