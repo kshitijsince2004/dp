@@ -9,6 +9,7 @@ import DynamicForm from '../../components/forms/DynamicForm.jsx';
 import api from '../../utils/api.js';
 import { useCreateRecord } from '../../hooks/useCreateRecord.js';
 import { useUpdateRecord } from '../../hooks/useUpdateRecord.js';
+import { useFormSchema } from '../../hooks/useFormSchema.js';
 import { log } from '../../utils/logger.js';
 
 const pageVariants = {
@@ -27,7 +28,8 @@ const itemVariants = {
 };
 
 export default function NewRecord() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n?.language || 'en';
   const { type } = useParams();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
@@ -66,6 +68,24 @@ export default function NewRecord() {
 
   const createMutation = useCreateRecord(type);
   const updateMutation = useUpdateRecord(type || record?.record_type);
+
+  const { schema: liveSchema } = useFormSchema(type || record?.record_type, caseType);
+
+  const getFieldLabel = (key) => {
+    if (!liveSchema) return key;
+    for (const sec of liveSchema) {
+      if (sec.sub_tabs?.length) {
+        for (const st of sec.sub_tabs) {
+          const f = st.fields?.find(f => f.field_key === key);
+          if (f) return lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en;
+        }
+      } else {
+        const f = sec.fields?.find(f => f.field_key === key);
+        if (f) return lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en;
+      }
+    }
+    return key;
+  };
 
   const submitMutation = useMutation({
     mutationFn: async (id) => {
@@ -304,7 +324,7 @@ export default function NewRecord() {
                 <p className="text-[11px] text-slate-500 mt-1.5 font-semibold">
                   Fields to correct:{' '}
                   <span className="font-mono text-rose-600 bg-rose-100/60 px-2 py-0.5 rounded border border-rose-200/50">
-                    {sbDetails.target_fields.join(', ')}
+                    {sbDetails.target_fields.map(getFieldLabel).join(', ')}
                   </span>
                 </p>
               )}

@@ -537,3 +537,12 @@ For persons and properties (which use repeater UI grids), the frontend completel
 
 ### Confidence
 High. The solution relies exclusively on the existing field configuration schema.
+
+### Send-Back Field Picker Live Schema Integration
+* **Decision**: Source the "Return for correction" field picker from the live form schema (`useFormSchema`) instead of the hardcoded Mock Mode copy (`formSchemas`), group checkboxes by section/sub-tab, and exclude read-only fields.
+* **Context**: The previous implementation used a flat list derived from a stale mock file (`utils/api.js`), which led to an unusable undifferentiated list of checkboxes that missed newly added fields and all repeater sub-tabs.
+* **Why**: To ensure the reviewer sees the exact same fields and labels that are rendered on the live form, with clear grouping. Read-only fields are explicitly excluded because the HC cannot edit them, making them misleading options for correction.
+* **Alternatives**: Manually updating the mock schema and writing a custom grouper.
+* **Tradeoffs**: Requires fetching the schema dynamically for the modal, but the hook is already used by the underlying form so the data is usually cached or readily available.
+* **Relevant Code**: `frontend/src/pages/sho/RecordDetail.jsx` (getSendBackFieldGroups) and `frontend/src/pages/hc/NewRecord.jsx` (getFieldLabel).
+* **Confidence**: High. The underlying storage (`target_fields`) remains strictly field keys, preserving compatibility with backend rules and HC-side highlights.
