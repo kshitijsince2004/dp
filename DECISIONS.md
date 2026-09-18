@@ -455,3 +455,85 @@ Requires parsing stringified JSON arrays from historical audit records during th
 
 ### Confidence
 High. Config-driven and fully reuses the existing `record_revisions` audit mechanism.
+
+## Scheme of Arrest "Other" Pattern
+
+### Decision
+Added 4 new explicit options ("Special Drive", "Cyber Hawk", "Kawach", "General") and an "Other" option to the ARREST `scheme_of_arrest` field, which conditionally reveals a `scheme_of_arrest_other` text field via the `show_when` pattern. Additionally, updated `DynamicForm.jsx` to respect `show_when` visibility rules when rendering unlisted extra fields in the `arrested_personal_info` block.
+
+### Context
+When recording arrest particulars, the scheme under which the arrest was made needs to capture new specific initiatives or provide a fallback for unlisted schemes.
+
+### Why
+Using the config-driven `show_when: { field: "scheme_of_arrest", value: "Other" }` ensures consistency with the UIDB `cause_of_death_other` pattern. Validation was handled for free by existing logic in `records.service.js` and `saveArrestedEntry`, requiring only a `validation_rules: { required: true }` block in the config.
+
+### Alternatives
+- Custom validation logic in `records.service.js` (rejected: the generic `validateRequiredFields` handles `show_when` automatically).
+- Hardcoding the new field in the UI (rejected: `DynamicForm.jsx`'s `extraFields` map can support conditional rendering generically).
+
+### Tradeoffs
+Required a one-line structural change to `DynamicForm.jsx`'s `renderPersonPersonalInfoSubTab` to correctly filter `extraFields` against their `show_when` conditions, as this specific sub-tab was previously unconditionally rendering all unlisted fields in the section.
+
+### Relevant Code
+- `config/fields/arrest.json`
+- `backend/migrations/20260918000003_add_scheme_of_arrest_other.cjs`
+- `frontend/src/components/forms/DynamicForm.jsx`
+- `frontend/src/utils/api.js`
+
+### Confidence
+High. Mirrored the exact UIDB pattern and generalized the UI's conditional rendering capability.
+
+## ARREST UX and Vocabulary Fixes
+
+### Decision
+1. Removed the duplicate top-level "Custody Status" tab from the ARREST form structure.
+2. Added "Apprehension" as a standard custody status option across the registry, excel imports, and mock APIs.
+3. Removed a duplicate `nick_name` field definition from the ARREST field config.
+
+### Context
+Users reported a redundant top-level "CUSTODY STATUS" tab showing up alongside the existing modal-based "Custody Status" sub-tab, missing vocabulary for generic apprehensions, and two separate "Nickname" inputs on the Arrested Person modal.
+
+### Why
+1. The top-level Custody Status tab was an unintended artifact in `fields.controller.js` `sections.push` array. The correct location is the per-arrestee modal (since a single FIR can have multiple arrestees, each with their own custody status).
+2. "Apprehension" is a generic outcome needed for both against-FIR and kalandra arrests. We updated `statusOptions.config.js` and all dependent import configurations (`import-fields.config.js`, `template-builder.service.js`) to accept it.
+3. The duplicate nickname input was caused by a redundant `nick_name` config block in `arrest.json`, distinct from the correct `arrested_nickname`. Because it was not mapped in `DynamicForm.jsx`'s `KNOWN_KEYS`, the dynamic renderer mistakenly captured it as an "extra field" and rendered a second, out-of-place input. Removing the duplicate config block and syncing the registry permanently resolves the issue without hardcoded React hacks.
+
+### Alternatives
+- Hardcoding `nick_name` into `KNOWN_KEYS` (rejected: masks the underlying schema pollution instead of fixing it).
+
+### Relevant Code
+- `backend/src/modules/fields/fields.controller.js`
+- `backend/src/modules/fields/statusOptions.config.js`
+- `backend/src/modules/import/import-fields.config.js`
+- `backend/src/modules/import/template-builder.service.js`
+- `frontend/src/utils/api.js`
+- `config/fields/arrest.json`
+
+### Confidence
+High. The changes strictly target the reported issues with clean configuration drops and single-line array additions.
+
+## District-Level Review Write Permissions
+
+### Decision
+District review edits are now restricted specifically to **Acts & Sections, Major/Minor Head, and Local Head**. Any other field modifications made by District during a review will be rejected by the backend and visually locked in the frontend.
+
+### Context
+Previously, any district reviewer could technically edit any field using the generic `updateRecord` endpoint since the frontend just unlocked the entire form indiscriminately, and the backend didn't enforce specific role limitations beyond `is_worked_out`.
+
+### Why
+We finally wired up the pre-existing (and previously decorative) `editable_by_levels` array column in `field_registry`. 
+Instead of hardcoding field lists in the backend, we now loop over the registry definition on submit. If a field value changed but the user's role isn't explicitly in that field's `editable_by_levels` array, the save is rejected.
+For persons and properties (which use repeater UI grids), the frontend completely disables their 'Add' and 'Edit' triggers during District review so the arrays are never maliciously or accidentally manipulated, and the backend blocks the entire array if it changes.
+
+### Alternatives
+- Hardcoded lists in `records.service.js` (rejected: difficult to maintain, breaks data-driven schema paradigm).
+- New specific API for District (rejected: duplicates validation logic; `updateRecord` is designed to be the unified save handler).
+
+### Relevant Code
+- `backend/src/modules/records/records.mapper.js`
+- `backend/src/modules/records/records.service.js`
+- `config/fields/common.json`, `config/fields/case.json`
+- `frontend/src/components/forms/DynamicForm.jsx`
+
+### Confidence
+High. The solution relies exclusively on the existing field configuration schema.

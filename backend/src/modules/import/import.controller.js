@@ -131,7 +131,7 @@ const addSheetToWorkbook = (workbook, sheetName, fieldsList, allFields, lang, re
     if (['io_name', 'io_pis', 'io_rank', 'io_mobile'].includes(key)) {
       return lang === 'hi' ? 'जांच अधिकारी विवरण' : 'Investigating Officer Details';
     }
-    if (['nafis_prepared', 'dossier_prepared', 'search_slip_prepared', 'address_verified', 'verifying_officer_name', 'verifying_officer_rank', 'prev_involvement', 'bad_character', 'proclaimed_offender', 'status', 'scheme_of_arrest'].includes(key)) {
+    if (['nafis_prepared', 'dossier_prepared', 'search_slip_prepared', 'address_verified', 'verifying_officer_name', 'verifying_officer_rank', 'prev_involvement', 'bad_character', 'proclaimed_offender', 'status', 'scheme_of_arrest', 'scheme_of_arrest_other'].includes(key)) {
       return lang === 'hi' ? 'सत्यापन और पुलिस रिकॉर्ड' : 'Verification & Police Record';
     }
     if (['kin_name', 'kin_mobile', 'kin_relationship', 'photo_path'].includes(key)) {

@@ -344,6 +344,7 @@ export async function loadRegistry(trx, recordType) {
       options: parseJson(r.options, null),
       validation_rules: parseJson(r.validation_rules, null),
       show_when: parseJson(r.show_when, null),
+      editable_by_levels: parseJson(r.editable_by_levels, []),
     }))
     .filter((r) => r.record_types.includes(recordType));
   log.debug('loadRegistry: loaded active field_registry rows', { recordType, totalActive: rows.length, applicable: filtered.length });

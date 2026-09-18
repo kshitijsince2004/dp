@@ -101,6 +101,7 @@ export const ARREST_SYNONYMS = {
   "Arresting Officer Rank": "verifying_officer_rank",
   "Custody status": "status",
   "Scheme of arrest": "scheme_of_arrest",
+  "Scheme of arrest (Specify)": "scheme_of_arrest_other",
   "Property Description": "property_details",
   "Property Status (stolen/recovered/involved/seized)": "property_stolen_recovered",
   "Property Value in inr": "property_value",

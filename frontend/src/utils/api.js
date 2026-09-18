@@ -740,9 +740,22 @@ const formSchemas = {
             { value: 'Group Patrolling', label_en: 'Group Patrolling', label_hi: 'Group Patrolling' },
             { value: 'Anti-snatching', label_en: 'Anti-snatching', label_hi: 'Anti-snatching' },
             { value: 'By Prahari', label_en: 'By Prahari', label_hi: 'By Prahari' },
-            { value: 'By Eyes & Ears Scheme Members', label_en: 'By Eyes & Ears Scheme Members', label_hi: 'By Eyes & Ears Scheme Members' }
+            { value: 'By Eyes & Ears Scheme Members', label_en: 'By Eyes & Ears Scheme Members', label_hi: 'By Eyes & Ears Scheme Members' },
+            { value: 'Special Drive', label_en: 'Special Drive', label_hi: 'Special Drive' },
+            { value: 'Cyber Hawk', label_en: 'Cyber Hawk', label_hi: 'Cyber Hawk' },
+            { value: 'Kawach', label_en: 'Kawach', label_hi: 'Kawach' },
+            { value: 'General', label_en: 'General', label_hi: 'General' },
+            { value: 'Other', label_en: 'Other', label_hi: 'अन्य' }
           ],
           validation_rules: { required: false }
+        },
+        {
+          field_key: 'scheme_of_arrest_other',
+          field_type: 'TEXT',
+          label_en: 'Scheme of Arrest (Specify)',
+          label_hi: 'गिरफ्तारी की योजना (विवरण)',
+          validation_rules: { required: true },
+          show_when: { field: 'scheme_of_arrest', value: 'Other' }
         },
         { field_key: 'arrested_dob', field_type: 'DATE', label_en: 'Date of Birth', label_hi: 'जन्म तिथि', validation_rules: { required: false } },
         { field_key: 'arrested_age_year', field_type: 'NUMBER', label_en: 'Age (Years)', label_hi: 'आयु (वर्ष)', validation_rules: { required: false } },

@@ -797,7 +797,8 @@
       "HQ"
     ],
     "editable_by_levels": [
-      "PS"
+      "PS",
+    "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.1,
@@ -849,7 +850,8 @@
       "HQ"
     ],
     "editable_by_levels": [
-      "PS"
+      "PS",
+    "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.2,
@@ -901,7 +903,8 @@
       "HQ"
     ],
     "editable_by_levels": [
-      "PS"
+      "PS",
+    "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.3,
@@ -953,7 +956,8 @@
       "HQ"
     ],
     "editable_by_levels": [
-      "PS"
+      "PS",
+    "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.4,
@@ -988,7 +992,8 @@
       "HQ"
     ],
     "editable_by_levels": [
-      "PS"
+      "PS",
+    "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.5,

@@ -661,13 +661,7 @@ export const getFieldsForForm = async (req, res) => {
             }
           ]
         },
-        {
-          section: 'custody_status',
-          title_en: 'Custody Status',
-          title_hi: 'हिरासत की स्थिति',
-          is_repeater: false,
-          fields: filteredFields.filter(f => f.section === 'custody_status' && !f.repeater_entity)
-        },
+
         // {
         //   section: 'intimation_details',
         //   title_en: 'Intimation Details',

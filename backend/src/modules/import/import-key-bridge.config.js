@@ -121,6 +121,6 @@ export function getDropOnlyKeys(recordType) {
 // flat `data` (documented deviation, G6 — the schema doesn't prescribe which arrestee "owns"
 // a record-level fact when several are entered).
 export const ARREST_PERSON_SHEET_RECORD_LEVEL_KEYS = [
-  'nafis_prepared', 'dossier_prepared', 'status', 'scheme_of_arrest',
+  'nafis_prepared', 'dossier_prepared', 'status', 'scheme_of_arrest', 'scheme_of_arrest_other',
   'arresting_officer', 'arresting_officer_mobile', 'verifying_officer_rank',
 ];

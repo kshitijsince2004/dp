@@ -1496,7 +1496,7 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
     const detailTable = mapper.DETAIL_TABLES[recordType];
     const registry = await mapper.loadRegistry(trx, recordType);
 
-    const { data: oldFlatData } = await mapper.recomposeRecord(trx, registry, recordType, {
+    const { data: oldFlatData, persons: oldRecomposedPersons, properties: oldRecomposedProperties } = await mapper.recomposeRecord(trx, registry, recordType, {
       spineRow: record, detailRow: oldDetail, personRows: oldPersonRows, propertyRows: oldPropertyRows,
       offenceRows: full.offenceRows, locationsById: full.locationsById,
     });
@@ -1514,6 +1514,67 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
       if (newVal !== undefined && Boolean(newVal) !== Boolean(oldVal)) {
         log.warn('updateRecord: rejected — district users cannot update workout status directly', { recordId: id });
         throw Object.assign(new Error('District users cannot update workout status directly as evidence is required from the police station. Please send the record back to the station for workout status updates.'), { status: 403 });
+      }
+    }
+
+    if (isDistrictRole && record.current_status === 'DISTRICT_REVIEW') {
+      const disallowed = [];
+      for (const f of registry) {
+        if (!(f.field_key in data)) continue;
+        const oldVal = oldFlatData[f.field_key];
+        const newVal = data[f.field_key];
+        const changed = JSON.stringify(oldVal ?? null) !== JSON.stringify(newVal ?? null);
+        if (!changed) continue;
+        const allowedLevels = Array.isArray(f.editable_by_levels) ? f.editable_by_levels : [];
+        if (!allowedLevels.includes('DISTRICT')) {
+          disallowed.push(f.labels?.en || f.field_key);
+        }
+      }
+
+      let personsChanged = false;
+      if (persons !== undefined) {
+        if (persons.length !== (oldRecomposedPersons || []).length) {
+          personsChanged = true;
+        } else {
+          for (const pNew of persons) {
+            const pOld = (oldRecomposedPersons || []).find(p => p.id === pNew.id);
+            if (!pOld || pOld.person_type !== pNew.person_type) { personsChanged = true; break; }
+            for (const key of Object.keys(pNew.data || {})) {
+              if (JSON.stringify(pNew.data[key] ?? null) !== JSON.stringify(pOld.data?.[key] ?? null)) {
+                personsChanged = true; break;
+              }
+            }
+            if (personsChanged) break;
+          }
+        }
+      }
+
+      let propertiesChanged = false;
+      if (properties !== undefined) {
+        if (properties.length !== (oldRecomposedProperties || []).length) {
+          propertiesChanged = true;
+        } else {
+          for (const pNew of properties) {
+            const pOld = (oldRecomposedProperties || []).find(p => p.id === pNew.id);
+            if (!pOld) { propertiesChanged = true; break; }
+            const keys = new Set([...Object.keys(pNew), ...Object.keys(pOld)]);
+            for (const key of keys) {
+              if (key === 'id') continue;
+              if (JSON.stringify(pNew[key] ?? null) !== JSON.stringify(pOld[key] ?? null)) {
+                propertiesChanged = true; break;
+              }
+            }
+            if (propertiesChanged) break;
+          }
+        }
+      }
+
+      if (personsChanged) disallowed.push('Person / Arrestee / Victim / Accused details');
+      if (propertiesChanged) disallowed.push('Property / Recovered Item details');
+
+      if (disallowed.length > 0) {
+        log.warn('updateRecord: rejected — district review may only edit Acts/Sections, Major/Minor/Local Head', { recordId: id, disallowedFields: disallowed });
+        throw Object.assign(new Error(`During District review, you can only edit Acts & Sections, Major/Minor Head, and Local Head. The following change(s) are not allowed here — please Send Back for Correction instead: ${disallowed.join(', ')}.`), { status: 403 });
       }
     }
 
