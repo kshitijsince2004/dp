@@ -83,6 +83,7 @@ const SECTION_TITLES = {
   occurrence_address:        { en: 'Place of Occurrence Address',           hi: 'घटनास्थल का पता' },
   property_details:          { en: 'Property Details',                      hi: 'संपत्ति का विवरण' },
   occurrence_info:           { en: 'Occurrence Information',                 hi: 'घटना की जानकारी' },
+  court_details:             { en: 'Court Details',                          hi: 'अदालत का विवरण' },
   // intimation_details:        { en: 'Intimation Details',                     hi: 'सूचना विवरण' },
   // intimation_address:        { en: 'Intimation Address',                     hi: 'सूचना का पता' },
 };
@@ -583,6 +584,13 @@ export const getFieldsForForm = async (req, res) => {
           title_hi: 'की गई कार्रवाई',
           is_repeater: false,
           fields: filteredFields.filter(f => ['investigation_officer', 'investigation_details', 'action_taken'].includes(f.section) && !f.repeater_entity)
+        },
+        {
+          section: 'court_details',
+          title_en: 'Court Details',
+          title_hi: 'अदालत का विवरण',
+          is_repeater: false,
+          fields: filteredFields.filter(f => f.section === 'court_details' && !f.repeater_entity)
         }
       ];
     } else if (normalizedType === 'ARREST') {

@@ -19,9 +19,6 @@ function normalizeField(f) {
     validation_rules: f.validation_rules ?? f.validation ?? {},
     label_hi: f.label_hi || f.label_en,
   };
-  if (norm.field_key === 'beat_no') {
-    norm.field_type = 'NUMBER';
-  }
   if (['gd_time', 'linked_fir_dd_time', 'arrest_time', 'arrival_time', 'missing_recovered_time', 'time_of_occurrence'].includes(norm.field_key)) {
     norm.field_type = 'TIME';
   }

@@ -1948,7 +1948,7 @@ export const updateDomainStatus = async (id, user, options = {}, ipAddress) => {
         if (opts.court_case_no) updatePayload.court_case_no = opts.court_case_no;
         if (opts.court_name) updatePayload.court_name = opts.court_name;
         if (opts.court_disposal_date) updatePayload.court_disposal_date = opts.court_disposal_date;
-        if (opts.sent_to_court_date) updatePayload.sent_to_court_date = opts.sent_to_court_date;
+        if (opts.sent_to_court_date && !detailRow.sent_to_court_date) updatePayload.sent_to_court_date = opts.sent_to_court_date;
 
         await trx(detailTable).where({ record_id: id }).update(updatePayload);
         log.info('updateDomainStatus: updated detail row status column', { recordId: id, detailTable, column, oldValue, newValue: coerced });

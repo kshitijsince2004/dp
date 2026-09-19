@@ -693,12 +693,12 @@
     "record_types": [
       "CASE"
     ],
-    "field_type": "TEXT",
+    "field_type": "SELECT",
     "labels": {
       "en": "Beat No.",
       "hi": "बीट नंबर"
     },
-    "section": "general_info",
+    "section": "occurrence_info",
     "storage": {
       "table": "fir_details",
       "column": "beat_id"
@@ -712,7 +712,7 @@
       "PS"
     ],
     "introduced_at_level": "PS",
-    "sort_order": 6,
+    "sort_order": 4.3,
     "full_width": false,
     "readonly": false,
     "is_active": true,
@@ -5763,9 +5763,11 @@
   },
   {
     "field_key": "sent_to_court_date",
-    "label_en": "Date sent to court",
-    "label_hi": "न्यायालय भेजने की तिथि",
-    "field_type": "date",
+    "labels": {
+      "en": "Sent to Court Date",
+      "hi": "अदालत भेजने की तिथि"
+    },
+    "field_type": "DATE",
     "record_types": [
       "CASE"
     ],
@@ -5777,22 +5779,38 @@
       "field": "case_status",
       "value_in": [
         "CHARGE SHEET",
-        "POLICE INVESTIGATION REPORT(PIR-JCL)"
+        "POLICE INVESTIGATION REPORT(PIR-JCL)",
+        "SUPPLEMENTARY CHARGESHEET",
+        "CHARGESHEETED",
+        "CHALLAN"
       ]
     },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS",
+      "DISTRICT"
+    ],
     "editable_by_roles": [
+      "HC",
       "SHO",
       "DISTRICT_OFFICER",
       "SYSTEM_ADMIN"
     ],
     "section": "court_details",
+    "sort_order": 1,
     "is_active": true
   },
   {
     "field_key": "court_case_no",
-    "label_en": "Court case number",
-    "label_hi": "न्यायालय केस संख्या",
-    "field_type": "text",
+    "labels": {
+      "en": "Court Case Number",
+      "hi": "न्यायालय केस संख्या"
+    },
+    "field_type": "TEXT",
     "record_types": [
       "CASE"
     ],
@@ -5802,21 +5820,34 @@
     },
     "show_when": {
       "field": "sent_to_court_date",
-      "not_null": true
+      "operator": "filled"
     },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS",
+      "DISTRICT"
+    ],
     "editable_by_roles": [
+      "HC",
       "SHO",
       "DISTRICT_OFFICER",
       "SYSTEM_ADMIN"
     ],
     "section": "court_details",
+    "sort_order": 2,
     "is_active": true
   },
   {
     "field_key": "court_name",
-    "label_en": "Court name",
-    "label_hi": "न्यायालय का नाम",
-    "field_type": "select",
+    "labels": {
+      "en": "Court Name",
+      "hi": "न्यायालय का नाम"
+    },
+    "field_type": "SELECT",
     "record_types": [
       "CASE"
     ],
@@ -5827,46 +5858,65 @@
     "options": [
       {
         "value": "MM",
-        "label_en": "Metropolitan Magistrate (MM)"
+        "label_en": "Metropolitan Magistrate (MM)",
+        "label_hi": "मेट्रोपॉलिटन मजिस्ट्रेट (MM)"
       },
       {
         "value": "CMM",
-        "label_en": "Chief Metropolitan Magistrate (CMM)"
+        "label_en": "Chief Metropolitan Magistrate (CMM)",
+        "label_hi": "मुख्य मेट्रोपॉलिटन मजिस्ट्रेट (CMM)"
       },
       {
         "value": "ACMM",
-        "label_en": "Addl. Chief Metropolitan Magistrate (ACMM)"
+        "label_en": "Addl. Chief Metropolitan Magistrate (ACMM)",
+        "label_hi": "अतिरिक्त मुख्य मेट्रोपॉलिटन मजिस्ट्रेट (ACMM)"
       },
       {
         "value": "SESSION",
-        "label_en": "Sessions Court"
+        "label_en": "Sessions Court",
+        "label_hi": "सत्र न्यायालय (Sessions Court)"
       },
       {
         "value": "HC",
-        "label_en": "High Court"
+        "label_en": "High Court",
+        "label_hi": "उच्च न्यायालय (High Court)"
       },
       {
         "value": "OTHER",
-        "label_en": "Other"
+        "label_en": "Other",
+        "label_hi": "अन्य"
       }
     ],
     "show_when": {
       "field": "sent_to_court_date",
-      "not_null": true
+      "operator": "filled"
     },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS",
+      "DISTRICT"
+    ],
     "editable_by_roles": [
+      "HC",
       "SHO",
       "DISTRICT_OFFICER",
       "SYSTEM_ADMIN"
     ],
     "section": "court_details",
+    "sort_order": 3,
     "is_active": true
   },
   {
     "field_key": "court_disposal_type",
-    "label_en": "Court disposal",
-    "label_hi": "न्यायालय निपटान",
-    "field_type": "select",
+    "labels": {
+      "en": "Court Status / Disposal",
+      "hi": "न्यायालय स्थिति / निपटान"
+    },
+    "field_type": "SELECT",
     "record_types": [
       "CASE"
     ],
@@ -5876,43 +5926,61 @@
     },
     "options": [
       {
+        "value": "PENDING_TRIAL",
+        "label_en": "Pending Trial",
+        "label_hi": "विचाराधीन (Pending Trial)"
+      },
+      {
         "value": "CONVICTED",
-        "label_en": "Convicted"
+        "label_en": "Convicted",
+        "label_hi": "दोषसिद्ध (Convicted)"
       },
       {
         "value": "ACQUITTED",
-        "label_en": "Acquitted"
+        "label_en": "Acquitted",
+        "label_hi": "दोषमुक्त (Acquitted)"
       },
       {
         "value": "COMPOUNDED",
-        "label_en": "Compounded"
+        "label_en": "Compounded",
+        "label_hi": "समझौता (Compounded)"
       },
       {
         "value": "DISCHARGED",
-        "label_en": "Discharged"
-      },
-      {
-        "value": "PENDING_TRIAL",
-        "label_en": "Pending trial"
+        "label_en": "Discharged",
+        "label_hi": "उन्मोचित (Discharged)"
       }
     ],
     "show_when": {
       "field": "sent_to_court_date",
-      "not_null": true
+      "operator": "filled"
     },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS",
+      "DISTRICT"
+    ],
     "editable_by_roles": [
+      "HC",
       "SHO",
       "DISTRICT_OFFICER",
       "SYSTEM_ADMIN"
     ],
     "section": "court_details",
+    "sort_order": 4,
     "is_active": true
   },
   {
     "field_key": "court_disposal_date",
-    "label_en": "Date of court disposal",
-    "label_hi": "न्यायालय निपटान तिथि",
-    "field_type": "date",
+    "labels": {
+      "en": "Date of Court Disposal",
+      "hi": "न्यायालय निपटान तिथि"
+    },
+    "field_type": "DATE",
     "record_types": [
       "CASE"
     ],
@@ -5924,22 +5992,73 @@
       "field": "court_disposal_type",
       "not_in": [
         "PENDING_TRIAL",
-        null
+        null,
+        ""
       ]
     },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS",
+      "DISTRICT"
+    ],
     "editable_by_roles": [
+      "HC",
       "SHO",
       "DISTRICT_OFFICER",
       "SYSTEM_ADMIN"
     ],
     "section": "court_details",
+    "sort_order": 5,
+    "is_active": true
+  },
+  {
+    "field_key": "supplementary_chargesheet_details",
+    "labels": {
+      "en": "Supplementary Chargesheet Details",
+      "hi": "पूरक आरोप पत्र विवरण"
+    },
+    "field_type": "TEXTAREA",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "supplementary_chargesheet_details"
+    },
+    "show_when": {
+      "field": "case_status",
+      "value": "SUPPLEMENTARY CHARGESHEET"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS",
+      "DISTRICT"
+    ],
+    "editable_by_roles": [
+      "HC",
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "court_details",
+    "sort_order": 6,
     "is_active": true
   },
   {
     "field_key": "registered_on_direction",
-    "label_en": "Registered on Direction",
-    "label_hi": "निर्देश पर दर्ज",
-    "field_type": "boolean",
+    "labels": {
+      "en": "Registered on Direction",
+      "hi": "निर्देश पर दर्ज"
+    },
+    "field_type": "BOOLEAN",
     "record_types": [
       "CASE"
     ],
@@ -5947,6 +6066,14 @@
       "table": "fir_details",
       "column": "registered_on_direction"
     },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
     "editable_by_roles": [
       "HC",
       "SHO",
@@ -5954,13 +6081,16 @@
       "SYSTEM_ADMIN"
     ],
     "section": "general",
+    "sort_order": 510,
     "is_active": true
   },
   {
     "field_key": "direction_authority",
-    "label_en": "Direction Authority",
-    "label_hi": "निर्देश प्राधिकारी",
-    "field_type": "text",
+    "labels": {
+      "en": "Direction Authority",
+      "hi": "निर्देश प्राधिकारी"
+    },
+    "field_type": "TEXT",
     "record_types": [
       "CASE"
     ],
@@ -5972,6 +6102,14 @@
       "field": "registered_on_direction",
       "equals": true
     },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
     "editable_by_roles": [
       "HC",
       "SHO",
@@ -5979,6 +6117,7 @@
       "SYSTEM_ADMIN"
     ],
     "section": "general",
+    "sort_order": 511,
     "is_active": true
   },
   {
