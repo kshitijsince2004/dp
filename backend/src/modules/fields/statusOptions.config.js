@@ -39,6 +39,7 @@ export const STATUS_OPTIONS_BY_TYPE = {
       { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
       { value: '35(3) BNS Notice', label_en: '35(3) BNS Notice', label_hi: '35(3) BNS Notice' },
       { value: 'Apprehension', label_en: 'Apprehension', label_hi: 'Apprehension' },
+      { value: 'Formal Arrest', label_en: 'Formal Arrest', label_hi: 'औपचारिक गिरफ्तारी' },
     ],
     kalandra: [
       { value: 'JC', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
@@ -46,6 +47,7 @@ export const STATUS_OPTIONS_BY_TYPE = {
       { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
       { value: 'Fine', label_en: 'Fine', label_hi: 'Fine' },
       { value: 'Apprehension', label_en: 'Apprehension', label_hi: 'Apprehension' },
+      { value: 'Formal Arrest', label_en: 'Formal Arrest', label_hi: 'औपचारिक गिरफ्तारी' },
     ],
   },
   PCR_CALL: [

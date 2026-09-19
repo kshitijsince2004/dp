@@ -657,7 +657,7 @@ async function buildLiveLookups(recordType) {
     // Union of the interactive form's custody-status values (fields.controller.js status
     // dispatch: against_fir list + non-FIR list) — the template is one flat column, so it
     // must accept every value the form can store.
-    ARREST: ['JC', 'PC', 'Bail', 'Bound Down', 'Release', 'Lockup', '35(3) BNS Notice', 'Fine', 'Apprehension'],
+    ARREST: ['JC', 'PC', 'Bail', 'Bound Down', 'Release', 'Lockup', '35(3) BNS Notice', 'Fine', 'Apprehension', 'Formal Arrest'],
   };
   const statusOpts = (statusOptionsByType[recordType] || []).map(v => ({ value: v, label: v }));
 

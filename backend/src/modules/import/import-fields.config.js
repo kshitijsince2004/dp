@@ -309,7 +309,7 @@ export const kalandraActSectionFields = withFieldPatch(
 export const kalandraPersonFields = withFieldPatch(
   withFieldPatch(arrestPersonFields, 'linked_fir_dd_no', KALANDRA_PERSON_LINKED_PATCH),
   // Kalandra custody options differ from against-FIR arrests (no PC/Bail/Release/35(3))
-  'status', { options: ['JC', 'Bound Down', 'Lockup', 'Fine', 'Apprehension'] }
+  'status', { options: ['JC', 'Bound Down', 'Lockup', 'Fine', 'Apprehension', 'Formal Arrest'] }
 );
 
 // UIDB's "Act and Sections" sheet — mirrors caseActSectionFields/arrestActSectionFields.

@@ -957,7 +957,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 9,
@@ -1055,7 +1055,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 10,
@@ -1221,7 +1221,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 10.5,
@@ -1286,7 +1286,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11,
@@ -1321,7 +1321,8 @@
       "HQ"
     ],
     "editable_by_levels": [
-      "PS"
+      "PS",
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.1,
@@ -1353,7 +1354,8 @@
       "HQ"
     ],
     "editable_by_levels": [
-      "PS"
+      "PS",
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.2,
@@ -1462,7 +1464,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 12.1,
@@ -1517,7 +1519,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 12.2,
@@ -1567,7 +1569,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 12.3,
@@ -1617,7 +1619,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 12.4,
@@ -1655,7 +1657,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 12.5,
@@ -1751,7 +1753,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.1,
@@ -1806,7 +1808,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.2,
@@ -1861,7 +1863,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.3,
@@ -1916,7 +1918,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.4,
@@ -1971,7 +1973,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.5,
@@ -2009,7 +2011,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.6,
@@ -2064,7 +2066,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.6,
@@ -2102,7 +2104,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.7,
@@ -2152,7 +2154,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.7,
@@ -2202,7 +2204,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.8,
@@ -2240,7 +2242,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.8,
@@ -2295,7 +2297,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.9,
@@ -2333,7 +2335,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 13.9,
@@ -2388,7 +2390,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 14,
@@ -2438,7 +2440,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 14.1,
@@ -2488,7 +2490,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 14.2,
@@ -5366,24 +5368,852 @@
     ],
     "is_active": true
   },
-
-  {"field_key":"complainant_social_category","label_en":"Complainant Social Category","label_hi":"शिकायतकर्ता सामाजिक श्रेणी","field_type":"select","record_types":["CASE"],"section":"complainant_personal_info","storage":{"entity":"person","role":"COMPLAINANT","column":"social_category"},"options":[{"value":"SC","label_en":"Scheduled Caste (SC)","label_hi":"अनुसूचित जाति (SC)"},{"value":"ST","label_en":"Scheduled Tribe (ST)","label_hi":"अनुसूचित जनजाति (ST)"},{"value":"OBC","label_en":"Other Backward Class (OBC)","label_hi":"अन्य पिछड़ा वर्ग (OBC)"},{"value":"GEN","label_en":"General","label_hi":"सामान्य"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":408.6,"is_active":true},
-  {"field_key":"complainant_education","label_en":"Complainant Education","label_hi":"शिकायतकर्ता शिक्षा","field_type":"select","record_types":["CASE"],"section":"complainant_personal_info","storage":{"entity":"person","role":"COMPLAINANT","column":"education"},"options":[{"value":"ILLITERATE","label_en":"Illiterate","label_hi":"निरक्षर"},{"value":"SCHOOL_DROPOUT","label_en":"School Dropout","label_hi":"बीच में छोड़ा"},{"value":"UP_TO_10TH","label_en":"Up to 10th","label_hi":"10वीं तक"},{"value":"UP_TO_12TH","label_en":"Up to 12th","label_hi":"12वीं तक"},{"value":"GRADUATE","label_en":"Graduate","label_hi":"स्नातक"},{"value":"PROFESSIONAL","label_en":"Professional","label_hi":"व्यावसायिक"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":408.7,"is_active":true},
-  {"field_key":"complainant_financial_status","label_en":"Complainant Financial Status","label_hi":"शिकायतकर्ता वित्तीय स्थिति","field_type":"select","record_types":["CASE"],"section":"complainant_personal_info","storage":{"entity":"person","role":"COMPLAINANT","column":"financial_status"},"options":[{"value":"BPL","label_en":"Below Poverty Line (BPL)","label_hi":"गरीबी रेखा से नीचे (BPL)"},{"value":"LOWER","label_en":"Lower","label_hi":"निम्न"},{"value":"MIDDLE","label_en":"Middle","label_hi":"मध्यम"},{"value":"UPPER","label_en":"Upper","label_hi":"उच्च"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":408.8,"is_active":true},
-
-  {"field_key":"victim_social_category","label_en":"Victim Social Category","label_hi":"पीड़ित सामाजिक श्रेणी","field_type":"select","record_types":["CASE"],"section":"victim_personal_info","storage":{"entity":"person","role":"VICTIM","column":"social_category"},"options":[{"value":"SC","label_en":"Scheduled Caste (SC)","label_hi":"अनुसूचित जाति (SC)"},{"value":"ST","label_en":"Scheduled Tribe (ST)","label_hi":"अनुसूचित जनजाति (ST)"},{"value":"OBC","label_en":"Other Backward Class (OBC)","label_hi":"अन्य पिछड़ा वर्ग (OBC)"},{"value":"GEN","label_en":"General","label_hi":"सामान्य"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":468.6,"is_active":true},
-  {"field_key":"victim_education","label_en":"Victim Education","label_hi":"पीड़ित शिक्षा","field_type":"select","record_types":["CASE"],"section":"victim_personal_info","storage":{"entity":"person","role":"VICTIM","column":"education"},"options":[{"value":"ILLITERATE","label_en":"Illiterate","label_hi":"निरक्षर"},{"value":"SCHOOL_DROPOUT","label_en":"School Dropout","label_hi":"बीच में छोड़ा"},{"value":"UP_TO_10TH","label_en":"Up to 10th","label_hi":"10वीं तक"},{"value":"UP_TO_12TH","label_en":"Up to 12th","label_hi":"12वीं तक"},{"value":"GRADUATE","label_en":"Graduate","label_hi":"स्नातक"},{"value":"PROFESSIONAL","label_en":"Professional","label_hi":"व्यावसायिक"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":468.7,"is_active":true},
-  {"field_key":"victim_financial_status","label_en":"Victim Financial Status","label_hi":"पीड़ित वित्तीय स्थिति","field_type":"select","record_types":["CASE"],"section":"victim_personal_info","storage":{"entity":"person","role":"VICTIM","column":"financial_status"},"options":[{"value":"BPL","label_en":"Below Poverty Line (BPL)","label_hi":"गरीबी रेखा से नीचे (BPL)"},{"value":"LOWER","label_en":"Lower","label_hi":"निम्न"},{"value":"MIDDLE","label_en":"Middle","label_hi":"मध्यम"},{"value":"UPPER","label_en":"Upper","label_hi":"उच्च"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":468.8,"is_active":true},
-
-  {"field_key":"accused_social_category","label_en":"Accused Social Category","label_hi":"आरोपी सामाजिक श्रेणी","field_type":"select","record_types":["CASE"],"section":"accused_personal_info","storage":{"entity":"person","role":"ACCUSED","column":"social_category"},"options":[{"value":"SC","label_en":"Scheduled Caste (SC)","label_hi":"अनुसूचित जाति (SC)"},{"value":"ST","label_en":"Scheduled Tribe (ST)","label_hi":"अनुसूचित जनजाति (ST)"},{"value":"OBC","label_en":"Other Backward Class (OBC)","label_hi":"अन्य पिछड़ा वर्ग (OBC)"},{"value":"GEN","label_en":"General","label_hi":"सामान्य"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":438.6,"is_active":true},
-  {"field_key":"accused_education","label_en":"Accused Education","label_hi":"आरोपी शिक्षा","field_type":"select","record_types":["CASE"],"section":"accused_personal_info","storage":{"entity":"person","role":"ACCUSED","column":"education"},"options":[{"value":"ILLITERATE","label_en":"Illiterate","label_hi":"निरक्षर"},{"value":"SCHOOL_DROPOUT","label_en":"School Dropout","label_hi":"बीच में छोड़ा"},{"value":"UP_TO_10TH","label_en":"Up to 10th","label_hi":"10वीं तक"},{"value":"UP_TO_12TH","label_en":"Up to 12th","label_hi":"12वीं तक"},{"value":"GRADUATE","label_en":"Graduate","label_hi":"स्नातक"},{"value":"PROFESSIONAL","label_en":"Professional","label_hi":"व्यावसायिक"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":438.7,"is_active":true},
-  {"field_key":"accused_financial_status","label_en":"Accused Financial Status","label_hi":"आरोपी वित्तीय स्थिति","field_type":"select","record_types":["CASE"],"section":"accused_personal_info","storage":{"entity":"person","role":"ACCUSED","column":"financial_status"},"options":[{"value":"BPL","label_en":"Below Poverty Line (BPL)","label_hi":"गरीबी रेखा से नीचे (BPL)"},{"value":"LOWER","label_en":"Lower","label_hi":"निम्न"},{"value":"MIDDLE","label_en":"Middle","label_hi":"मध्यम"},{"value":"UPPER","label_en":"Upper","label_hi":"उच्च"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":438.8,"is_active":true},
-
-  {"field_key":"arrested_social_category","label_en":"Arrested Person Social Category","label_hi":"गिरफ्तार व्यक्ति सामाजिक श्रेणी","field_type":"select","record_types":["ARREST"],"section":"arrested_personal_info","storage":{"entity":"person","role":"ARRESTEE","column":"social_category"},"repeater_entity":"PERSON_ARRESTED","options":[{"value":"SC","label_en":"Scheduled Caste (SC)","label_hi":"अनुसूचित जाति (SC)"},{"value":"ST","label_en":"Scheduled Tribe (ST)","label_hi":"अनुसूचित जनजाति (ST)"},{"value":"OBC","label_en":"Other Backward Class (OBC)","label_hi":"अन्य पिछड़ा वर्ग (OBC)"},{"value":"GEN","label_en":"General","label_hi":"सामान्य"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":408.6,"is_active":true},
-  {"field_key":"arrested_education","label_en":"Arrested Person Education","label_hi":"गिरफ्तार व्यक्ति शिक्षा","field_type":"select","record_types":["ARREST"],"section":"arrested_personal_info","storage":{"entity":"person","role":"ARRESTEE","column":"education"},"repeater_entity":"PERSON_ARRESTED","options":[{"value":"ILLITERATE","label_en":"Illiterate","label_hi":"निरक्षर"},{"value":"SCHOOL_DROPOUT","label_en":"School Dropout","label_hi":"बीच में छोड़ा"},{"value":"UP_TO_10TH","label_en":"Up to 10th","label_hi":"10वीं तक"},{"value":"UP_TO_12TH","label_en":"Up to 12th","label_hi":"12वीं तक"},{"value":"GRADUATE","label_en":"Graduate","label_hi":"स्नातक"},{"value":"PROFESSIONAL","label_en":"Professional","label_hi":"व्यावसायिक"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":408.7,"is_active":true},
-  {"field_key":"arrested_financial_status","label_en":"Arrested Person Financial Status","label_hi":"गिरफ्तार व्यक्ति वित्तीय स्थिति","field_type":"select","record_types":["ARREST"],"section":"arrested_personal_info","storage":{"entity":"person","role":"ARRESTEE","column":"financial_status"},"repeater_entity":"PERSON_ARRESTED","options":[{"value":"BPL","label_en":"Below Poverty Line (BPL)","label_hi":"गरीबी रेखा से नीचे (BPL)"},{"value":"LOWER","label_en":"Lower","label_hi":"निम्न"},{"value":"MIDDLE","label_en":"Middle","label_hi":"मध्यम"},{"value":"UPPER","label_en":"Upper","label_hi":"उच्च"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":408.8,"is_active":true},
-
-  {"field_key":"mp_social_category","label_en":"Missing Person Social Category","label_hi":"लापता व्यक्ति सामाजिक श्रेणी","field_type":"select","record_types":["MISSING"],"section":"person_details","storage":{"entity":"person","role":"MISSING","column":"social_category"},"options":[{"value":"SC","label_en":"Scheduled Caste (SC)","label_hi":"अनुसूचित जाति (SC)"},{"value":"ST","label_en":"Scheduled Tribe (ST)","label_hi":"अनुसूचित जनजाति (ST)"},{"value":"OBC","label_en":"Other Backward Class (OBC)","label_hi":"अन्य पिछड़ा वर्ग (OBC)"},{"value":"GEN","label_en":"General","label_hi":"सामान्य"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":21.9,"is_active":true},
-  {"field_key":"mp_education","label_en":"Missing Person Education","label_hi":"लापता व्यक्ति शिक्षा","field_type":"select","record_types":["MISSING"],"section":"person_details","storage":{"entity":"person","role":"MISSING","column":"education"},"options":[{"value":"ILLITERATE","label_en":"Illiterate","label_hi":"निरक्षर"},{"value":"SCHOOL_DROPOUT","label_en":"School Dropout","label_hi":"बीच में छोड़ा"},{"value":"UP_TO_10TH","label_en":"Up to 10th","label_hi":"10वीं तक"},{"value":"UP_TO_12TH","label_en":"Up to 12th","label_hi":"12वीं तक"},{"value":"GRADUATE","label_en":"Graduate","label_hi":"स्नातक"},{"value":"PROFESSIONAL","label_en":"Professional","label_hi":"व्यावसायिक"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":22.0,"is_active":true},
-  {"field_key":"mp_financial_status","label_en":"Missing Person Financial Status","label_hi":"लापता व्यक्ति वित्तीय स्थिति","field_type":"select","record_types":["MISSING"],"section":"person_details","storage":{"entity":"person","role":"MISSING","column":"financial_status"},"options":[{"value":"BPL","label_en":"Below Poverty Line (BPL)","label_hi":"गरीबी रेखा से नीचे (BPL)"},{"value":"LOWER","label_en":"Lower","label_hi":"निम्न"},{"value":"MIDDLE","label_en":"Middle","label_hi":"मध्यम"},{"value":"UPPER","label_en":"Upper","label_hi":"उच्च"},{"value":"UNKNOWN","label_en":"Unknown","label_hi":"अज्ञात"}],"visible_to_levels":["PS","DISTRICT","HQ"],"editable_by_levels":["PS"],"introduced_at_level":"PS","sort_order":22.1,"is_active":true}
+  {
+    "field_key": "complainant_social_category",
+    "label_en": "Complainant Social Category",
+    "label_hi": "शिकायतकर्ता सामाजिक श्रेणी",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "social_category"
+    },
+    "options": [
+      {
+        "value": "SC",
+        "label_en": "Scheduled Caste (SC)",
+        "label_hi": "अनुसूचित जाति (SC)"
+      },
+      {
+        "value": "ST",
+        "label_en": "Scheduled Tribe (ST)",
+        "label_hi": "अनुसूचित जनजाति (ST)"
+      },
+      {
+        "value": "OBC",
+        "label_en": "Other Backward Class (OBC)",
+        "label_hi": "अन्य पिछड़ा वर्ग (OBC)"
+      },
+      {
+        "value": "GEN",
+        "label_en": "General",
+        "label_hi": "सामान्य"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 408.6,
+    "is_active": true
+  },
+  {
+    "field_key": "complainant_education",
+    "label_en": "Complainant Education",
+    "label_hi": "शिकायतकर्ता शिक्षा",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "education"
+    },
+    "options": [
+      {
+        "value": "ILLITERATE",
+        "label_en": "Illiterate",
+        "label_hi": "निरक्षर"
+      },
+      {
+        "value": "SCHOOL_DROPOUT",
+        "label_en": "School Dropout",
+        "label_hi": "बीच में छोड़ा"
+      },
+      {
+        "value": "UP_TO_10TH",
+        "label_en": "Up to 10th",
+        "label_hi": "10वीं तक"
+      },
+      {
+        "value": "UP_TO_12TH",
+        "label_en": "Up to 12th",
+        "label_hi": "12वीं तक"
+      },
+      {
+        "value": "GRADUATE",
+        "label_en": "Graduate",
+        "label_hi": "स्नातक"
+      },
+      {
+        "value": "PROFESSIONAL",
+        "label_en": "Professional",
+        "label_hi": "व्यावसायिक"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 408.7,
+    "is_active": true
+  },
+  {
+    "field_key": "complainant_financial_status",
+    "label_en": "Complainant Financial Status",
+    "label_hi": "शिकायतकर्ता वित्तीय स्थिति",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "financial_status"
+    },
+    "options": [
+      {
+        "value": "BPL",
+        "label_en": "Below Poverty Line (BPL)",
+        "label_hi": "गरीबी रेखा से नीचे (BPL)"
+      },
+      {
+        "value": "LOWER",
+        "label_en": "Lower",
+        "label_hi": "निम्न"
+      },
+      {
+        "value": "MIDDLE",
+        "label_en": "Middle",
+        "label_hi": "मध्यम"
+      },
+      {
+        "value": "UPPER",
+        "label_en": "Upper",
+        "label_hi": "उच्च"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 408.8,
+    "is_active": true
+  },
+  {
+    "field_key": "victim_social_category",
+    "label_en": "Victim Social Category",
+    "label_hi": "पीड़ित सामाजिक श्रेणी",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "social_category"
+    },
+    "options": [
+      {
+        "value": "SC",
+        "label_en": "Scheduled Caste (SC)",
+        "label_hi": "अनुसूचित जाति (SC)"
+      },
+      {
+        "value": "ST",
+        "label_en": "Scheduled Tribe (ST)",
+        "label_hi": "अनुसूचित जनजाति (ST)"
+      },
+      {
+        "value": "OBC",
+        "label_en": "Other Backward Class (OBC)",
+        "label_hi": "अन्य पिछड़ा वर्ग (OBC)"
+      },
+      {
+        "value": "GEN",
+        "label_en": "General",
+        "label_hi": "सामान्य"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 468.6,
+    "is_active": true
+  },
+  {
+    "field_key": "victim_education",
+    "label_en": "Victim Education",
+    "label_hi": "पीड़ित शिक्षा",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "education"
+    },
+    "options": [
+      {
+        "value": "ILLITERATE",
+        "label_en": "Illiterate",
+        "label_hi": "निरक्षर"
+      },
+      {
+        "value": "SCHOOL_DROPOUT",
+        "label_en": "School Dropout",
+        "label_hi": "बीच में छोड़ा"
+      },
+      {
+        "value": "UP_TO_10TH",
+        "label_en": "Up to 10th",
+        "label_hi": "10वीं तक"
+      },
+      {
+        "value": "UP_TO_12TH",
+        "label_en": "Up to 12th",
+        "label_hi": "12वीं तक"
+      },
+      {
+        "value": "GRADUATE",
+        "label_en": "Graduate",
+        "label_hi": "स्नातक"
+      },
+      {
+        "value": "PROFESSIONAL",
+        "label_en": "Professional",
+        "label_hi": "व्यावसायिक"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 468.7,
+    "is_active": true
+  },
+  {
+    "field_key": "victim_financial_status",
+    "label_en": "Victim Financial Status",
+    "label_hi": "पीड़ित वित्तीय स्थिति",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "financial_status"
+    },
+    "options": [
+      {
+        "value": "BPL",
+        "label_en": "Below Poverty Line (BPL)",
+        "label_hi": "गरीबी रेखा से नीचे (BPL)"
+      },
+      {
+        "value": "LOWER",
+        "label_en": "Lower",
+        "label_hi": "निम्न"
+      },
+      {
+        "value": "MIDDLE",
+        "label_en": "Middle",
+        "label_hi": "मध्यम"
+      },
+      {
+        "value": "UPPER",
+        "label_en": "Upper",
+        "label_hi": "उच्च"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 468.8,
+    "is_active": true
+  },
+  {
+    "field_key": "accused_social_category",
+    "label_en": "Accused Social Category",
+    "label_hi": "आरोपी सामाजिक श्रेणी",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "social_category"
+    },
+    "options": [
+      {
+        "value": "SC",
+        "label_en": "Scheduled Caste (SC)",
+        "label_hi": "अनुसूचित जाति (SC)"
+      },
+      {
+        "value": "ST",
+        "label_en": "Scheduled Tribe (ST)",
+        "label_hi": "अनुसूचित जनजाति (ST)"
+      },
+      {
+        "value": "OBC",
+        "label_en": "Other Backward Class (OBC)",
+        "label_hi": "अन्य पिछड़ा वर्ग (OBC)"
+      },
+      {
+        "value": "GEN",
+        "label_en": "General",
+        "label_hi": "सामान्य"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 438.6,
+    "is_active": true
+  },
+  {
+    "field_key": "accused_education",
+    "label_en": "Accused Education",
+    "label_hi": "आरोपी शिक्षा",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "education"
+    },
+    "options": [
+      {
+        "value": "ILLITERATE",
+        "label_en": "Illiterate",
+        "label_hi": "निरक्षर"
+      },
+      {
+        "value": "SCHOOL_DROPOUT",
+        "label_en": "School Dropout",
+        "label_hi": "बीच में छोड़ा"
+      },
+      {
+        "value": "UP_TO_10TH",
+        "label_en": "Up to 10th",
+        "label_hi": "10वीं तक"
+      },
+      {
+        "value": "UP_TO_12TH",
+        "label_en": "Up to 12th",
+        "label_hi": "12वीं तक"
+      },
+      {
+        "value": "GRADUATE",
+        "label_en": "Graduate",
+        "label_hi": "स्नातक"
+      },
+      {
+        "value": "PROFESSIONAL",
+        "label_en": "Professional",
+        "label_hi": "व्यावसायिक"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 438.7,
+    "is_active": true
+  },
+  {
+    "field_key": "accused_financial_status",
+    "label_en": "Accused Financial Status",
+    "label_hi": "आरोपी वित्तीय स्थिति",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "financial_status"
+    },
+    "options": [
+      {
+        "value": "BPL",
+        "label_en": "Below Poverty Line (BPL)",
+        "label_hi": "गरीबी रेखा से नीचे (BPL)"
+      },
+      {
+        "value": "LOWER",
+        "label_en": "Lower",
+        "label_hi": "निम्न"
+      },
+      {
+        "value": "MIDDLE",
+        "label_en": "Middle",
+        "label_hi": "मध्यम"
+      },
+      {
+        "value": "UPPER",
+        "label_en": "Upper",
+        "label_hi": "उच्च"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 438.8,
+    "is_active": true
+  },
+  {
+    "field_key": "arrested_social_category",
+    "label_en": "Arrested Person Social Category",
+    "label_hi": "गिरफ्तार व्यक्ति सामाजिक श्रेणी",
+    "field_type": "select",
+    "record_types": [
+      "ARREST"
+    ],
+    "section": "arrested_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ARRESTEE",
+      "column": "social_category"
+    },
+    "repeater_entity": "PERSON_ARRESTED",
+    "options": [
+      {
+        "value": "SC",
+        "label_en": "Scheduled Caste (SC)",
+        "label_hi": "अनुसूचित जाति (SC)"
+      },
+      {
+        "value": "ST",
+        "label_en": "Scheduled Tribe (ST)",
+        "label_hi": "अनुसूचित जनजाति (ST)"
+      },
+      {
+        "value": "OBC",
+        "label_en": "Other Backward Class (OBC)",
+        "label_hi": "अन्य पिछड़ा वर्ग (OBC)"
+      },
+      {
+        "value": "GEN",
+        "label_en": "General",
+        "label_hi": "सामान्य"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 408.6,
+    "is_active": true
+  },
+  {
+    "field_key": "arrested_education",
+    "label_en": "Arrested Person Education",
+    "label_hi": "गिरफ्तार व्यक्ति शिक्षा",
+    "field_type": "select",
+    "record_types": [
+      "ARREST"
+    ],
+    "section": "arrested_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ARRESTEE",
+      "column": "education"
+    },
+    "repeater_entity": "PERSON_ARRESTED",
+    "options": [
+      {
+        "value": "ILLITERATE",
+        "label_en": "Illiterate",
+        "label_hi": "निरक्षर"
+      },
+      {
+        "value": "SCHOOL_DROPOUT",
+        "label_en": "School Dropout",
+        "label_hi": "बीच में छोड़ा"
+      },
+      {
+        "value": "UP_TO_10TH",
+        "label_en": "Up to 10th",
+        "label_hi": "10वीं तक"
+      },
+      {
+        "value": "UP_TO_12TH",
+        "label_en": "Up to 12th",
+        "label_hi": "12वीं तक"
+      },
+      {
+        "value": "GRADUATE",
+        "label_en": "Graduate",
+        "label_hi": "स्नातक"
+      },
+      {
+        "value": "PROFESSIONAL",
+        "label_en": "Professional",
+        "label_hi": "व्यावसायिक"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 408.7,
+    "is_active": true
+  },
+  {
+    "field_key": "arrested_financial_status",
+    "label_en": "Arrested Person Financial Status",
+    "label_hi": "गिरफ्तार व्यक्ति वित्तीय स्थिति",
+    "field_type": "select",
+    "record_types": [
+      "ARREST"
+    ],
+    "section": "arrested_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ARRESTEE",
+      "column": "financial_status"
+    },
+    "repeater_entity": "PERSON_ARRESTED",
+    "options": [
+      {
+        "value": "BPL",
+        "label_en": "Below Poverty Line (BPL)",
+        "label_hi": "गरीबी रेखा से नीचे (BPL)"
+      },
+      {
+        "value": "LOWER",
+        "label_en": "Lower",
+        "label_hi": "निम्न"
+      },
+      {
+        "value": "MIDDLE",
+        "label_en": "Middle",
+        "label_hi": "मध्यम"
+      },
+      {
+        "value": "UPPER",
+        "label_en": "Upper",
+        "label_hi": "उच्च"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 408.8,
+    "is_active": true
+  },
+  {
+    "field_key": "mp_social_category",
+    "label_en": "Missing Person Social Category",
+    "label_hi": "लापता व्यक्ति सामाजिक श्रेणी",
+    "field_type": "select",
+    "record_types": [
+      "MISSING"
+    ],
+    "section": "person_details",
+    "storage": {
+      "entity": "person",
+      "role": "MISSING",
+      "column": "social_category"
+    },
+    "options": [
+      {
+        "value": "SC",
+        "label_en": "Scheduled Caste (SC)",
+        "label_hi": "अनुसूचित जाति (SC)"
+      },
+      {
+        "value": "ST",
+        "label_en": "Scheduled Tribe (ST)",
+        "label_hi": "अनुसूचित जनजाति (ST)"
+      },
+      {
+        "value": "OBC",
+        "label_en": "Other Backward Class (OBC)",
+        "label_hi": "अन्य पिछड़ा वर्ग (OBC)"
+      },
+      {
+        "value": "GEN",
+        "label_en": "General",
+        "label_hi": "सामान्य"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 21.9,
+    "is_active": true
+  },
+  {
+    "field_key": "mp_education",
+    "label_en": "Missing Person Education",
+    "label_hi": "लापता व्यक्ति शिक्षा",
+    "field_type": "select",
+    "record_types": [
+      "MISSING"
+    ],
+    "section": "person_details",
+    "storage": {
+      "entity": "person",
+      "role": "MISSING",
+      "column": "education"
+    },
+    "options": [
+      {
+        "value": "ILLITERATE",
+        "label_en": "Illiterate",
+        "label_hi": "निरक्षर"
+      },
+      {
+        "value": "SCHOOL_DROPOUT",
+        "label_en": "School Dropout",
+        "label_hi": "बीच में छोड़ा"
+      },
+      {
+        "value": "UP_TO_10TH",
+        "label_en": "Up to 10th",
+        "label_hi": "10वीं तक"
+      },
+      {
+        "value": "UP_TO_12TH",
+        "label_en": "Up to 12th",
+        "label_hi": "12वीं तक"
+      },
+      {
+        "value": "GRADUATE",
+        "label_en": "Graduate",
+        "label_hi": "स्नातक"
+      },
+      {
+        "value": "PROFESSIONAL",
+        "label_en": "Professional",
+        "label_hi": "व्यावसायिक"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 22,
+    "is_active": true
+  },
+  {
+    "field_key": "mp_financial_status",
+    "label_en": "Missing Person Financial Status",
+    "label_hi": "लापता व्यक्ति वित्तीय स्थिति",
+    "field_type": "select",
+    "record_types": [
+      "MISSING"
+    ],
+    "section": "person_details",
+    "storage": {
+      "entity": "person",
+      "role": "MISSING",
+      "column": "financial_status"
+    },
+    "options": [
+      {
+        "value": "BPL",
+        "label_en": "Below Poverty Line (BPL)",
+        "label_hi": "गरीबी रेखा से नीचे (BPL)"
+      },
+      {
+        "value": "LOWER",
+        "label_en": "Lower",
+        "label_hi": "निम्न"
+      },
+      {
+        "value": "MIDDLE",
+        "label_en": "Middle",
+        "label_hi": "मध्यम"
+      },
+      {
+        "value": "UPPER",
+        "label_en": "Upper",
+        "label_hi": "उच्च"
+      },
+      {
+        "value": "UNKNOWN",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 22.1,
+    "is_active": true
+  }
 ]

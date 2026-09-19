@@ -883,7 +883,7 @@ export default function DynamicForm({
                   <div className="flex items-center gap-4">
                     {getFieldOptions(sectionFields, radioField.field_key).map((opt) => (
                       <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700">
-                        <input type="radio" checked={values?.[radioField.field_key] === opt.value} onChange={() => handleChange(radioField.field_key, opt.value)} className="w-4 h-4 accent-[#0f52ba] cursor-pointer" />
+                        <input type="radio" disabled={readOnly || radioField.readonly === true || radioField.readonly === 'true' || !isFieldEditableForReview(radioField)} checked={values?.[radioField.field_key] === opt.value} onChange={() => handleChange(radioField.field_key, opt.value)} className="w-4 h-4 accent-[#0f52ba] cursor-pointer" />
                         {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
                       </label>
                     ))}
@@ -1643,7 +1643,7 @@ export default function DynamicForm({
                 if (field.field_key === 'prop_fire_arms_type') {
                   const fireArmsOpts = (armsLookupMap[row.property_major_category]?.fireArms || [])
                     .filter(f => String(f.parent_id) === String(row.property_minor_category));
-                  const isDisabled = readOnly || !row.property_minor_category;
+                  const isDisabled = readOnly || !row.property_minor_category || !isFieldEditableForReview(field);
                   return (
                     <div key={field.field_key} className={wrapCls}>
                       {labelEl}
@@ -1657,7 +1657,7 @@ export default function DynamicForm({
                 if (field.field_key === 'prop_arms_made') {
                   const subtypeOpts = (armsLookupMap[row.property_major_category]?.fireArmsSubtypes || [])
                     .filter(o => String(o.parent_id) === String(row.prop_fire_arms_type));
-                  const isDisabled = readOnly || !row.prop_fire_arms_type;
+                  const isDisabled = readOnly || !row.prop_fire_arms_type || !isFieldEditableForReview(field);
                   return (
                     <div key={field.field_key} className={wrapCls}>
                       {labelEl}
@@ -1685,7 +1685,7 @@ export default function DynamicForm({
                   return (
                     <div key={field.field_key} className={wrapCls}>
                       {labelEl}
-                      <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={readOnly} className={cls} options={opts} lang={lang} />
+                      <SearchableSelect value={fieldVal} onChange={val => handlePropertyRowChange(idx, field.field_key, val)} disabled={readOnly || !isFieldEditableForReview(field)} className={cls} options={opts} lang={lang} />
                     </div>
                   );
                 }
@@ -1693,14 +1693,14 @@ export default function DynamicForm({
                   return (
                     <div key={field.field_key} className={wrapCls}>
                       {labelEl}
-                      <textarea value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={readOnly} rows={2} className={`${cls} resize-none`} />
+                      <textarea value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={readOnly || !isFieldEditableForReview(field)} rows={2} className={`${cls} resize-none`} />
                     </div>
                   );
                 }
                 return (
                   <div key={field.field_key} className={wrapCls}>
                     {labelEl}
-                    <input type={field.field_type === 'NUMBER' ? 'number' : 'text'} value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={readOnly} className={cls} />
+                    <input type={field.field_type === 'NUMBER' ? 'number' : 'text'} value={fieldVal} onChange={e => handlePropertyRowChange(idx, field.field_key, e.target.value)} disabled={readOnly || !isFieldEditableForReview(field)} className={cls} />
                   </div>
                 );
               })}
@@ -1754,7 +1754,7 @@ export default function DynamicForm({
 
     const renderTypeCell = (row, idx) => {
       const opts = getMinorCategoryOptions(row.property_major_category);
-      const isDisabled = !row.property_major_category || readOnly;
+      const isDisabled = !row.property_major_category || readOnly || !isFieldEditableForReview(allFields.find(f => f.field_key === 'property_minor_category'));
 
       if (opts.length > 0) {
         return (
@@ -1833,7 +1833,7 @@ export default function DynamicForm({
                         <SearchableSelect
                           value={row.property_major_category || ''}
                           onChange={(val) => handlePropertyRowChange(idx, 'property_major_category', val)}
-                          disabled={readOnly}
+                          disabled={readOnly || !isFieldEditableForReview(allFields.find(f => f.field_key === 'property_major_category'))}
                           options={majorCategoryOptions}
                           lang={lang}
                           className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
@@ -1848,7 +1848,7 @@ export default function DynamicForm({
                         <SearchableSelect
                           value={row.property_stolen_recovered || 'Stolen'}
                           onChange={(val) => handlePropertyRowChange(idx, 'property_stolen_recovered', val)}
-                          disabled={readOnly}
+                          disabled={readOnly || !isFieldEditableForReview(allFields.find(f => f.field_key === 'property_stolen_recovered'))}
                           options={getFieldOptions(allFields, 'property_stolen_recovered')}
                           lang={lang}
                           className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold cursor-text"
@@ -1860,7 +1860,7 @@ export default function DynamicForm({
                           type="text"
                           value={row.property_details || ''}
                           onChange={(e) => handlePropertyRowChange(idx, 'property_details', e.target.value)}
-                          disabled={readOnly}
+                          disabled={readOnly || !isFieldEditableForReview(allFields.find(f => f.field_key === 'property_details'))}
                           placeholder={lang === 'hi' ? 'संपत्ति का विवरण दर्ज करें...' : 'Enter description details...'}
                           className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
                         />
@@ -1877,7 +1877,7 @@ export default function DynamicForm({
                           type="number"
                           value={effectivePropValue(row)}
                           onChange={(e) => handlePropertyRowChange(idx, 'prop_other_value', e.target.value)}
-                          disabled={readOnly}
+                          disabled={readOnly || !isFieldEditableForReview(allFields.find(f => f.field_key === 'prop_other_value'))}
                           placeholder={lang === 'hi' ? 'मूल्य दर्ज करें (INR में)' : 'Enter value in INR'}
                           className="w-full px-2 py-1 text-xs border border-[#c7d8ea] rounded bg-white focus:outline-none focus:border-[#0d2a4a] disabled:bg-slate-50 disabled:text-slate-400 font-semibold"
                         />
@@ -4273,6 +4273,7 @@ return (
             <FormSection
               section={activeSection}
               currentStep={currentStep}
+              isFieldEditableForReview={isFieldEditableForReview}
               totalSteps={finalSchema.length}
               values={values}
               errors={errors}

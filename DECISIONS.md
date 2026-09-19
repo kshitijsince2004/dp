@@ -590,3 +590,25 @@ High. The solution relies exclusively on the existing field configuration schema
   2. The field IS returned inside the official `general_info` fields array in the API response (verified via script against `GET /fields/form/MISSING`).
   3. MISSING uses the default `FormSection.jsx` component which loops over all fields, and `test_missing` is NOT in the `KEYS_TO_SKIP` exclusion list, nor does it fail `evaluateShowWhen`.
   *Conclusion*: The assumption that it was saved under a non-official custom section and failing `SECTION_KEY_ORDER` validation was incorrect. It is properly part of the real `general_info` section payload. (I am awaiting further instructions on this since the root cause diverges from the initial hypothesis).
+
+### Add "Formal Arrest" to ARREST Custody Status
+* **Decision**: Added "Formal Arrest" as an available option for ARREST's custody status, matching the pattern used for "Apprehension".
+* **Context**: The status column in `arrest_details` is an unrestricted text column, so no database migration is required. However, the vocabulary is defined in three separate places to keep the UI form, the edit dropdown, and the bulk-import validation in sync.
+* **Why**: To expose "Formal Arrest" as a valid status selection during arrest record creation, modification, and bulk Excel import.
+* **Alternatives**: None.
+* **Tradeoffs**: The vocabulary must be manually added to three separate arrays.
+* **Relevant Code**:
+  - `backend/src/modules/fields/statusOptions.config.js`
+  - `backend/src/modules/import/import-fields.config.js`
+  - `backend/src/modules/import/template-builder.service.js`
+* **Confidence**: High.
+
+### District Review Field Locks
+* **Decision**: Enforced the "nothing else" edit restriction strictly across all record types and tabs during District Review. Fixes included allowing derived Major/Minor Head fields through the backend gate, applying `isFieldEditableForReview` to Property Repeater inline fields, adding the check to the generic `FormSection` component, and adding a `disabled` prop to Occurrence Radio fields.
+* **Context**: District Review limits edits to Acts & Sections and Crime Heads. However, this rule was only checked in hand-written render functions. Gaps allowed district reviewers to edit properties (in ARREST/CASE), Occurrence radios, and completely bypassed locks in MISSING, UIDB, and PCR_CALL which use the fallback generic FormSection.
+* **Why**: To adhere exactly to the review protocol where any non-Act/Section modification requires a "Send Back".
+* **Alternatives**: None.
+* **Tradeoffs**: Missing and PCR Call forms are now ~100% locked during review (as intended). 
+* **Relevant Code**: `DynamicForm.jsx`, `FormSection.jsx`, `config/fields/common.json`, `config/fields/arrest.json`.
+* **Known follow-up**: `ActsSectionsTable` and `ActsAndSectionsManager` rely on a plain `readOnly` rather than a per-field `isFieldEditableForReview`. While harmless currently, this relies on their `editable_by_levels` never drifting.
+* **Confidence**: High.

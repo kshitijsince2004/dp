@@ -533,6 +533,7 @@ export default function FormSection({
   targetFields = [],
   lang = 'en',
   hideHeader = false,
+  isFieldEditableForReview = () => true,
   // Repeater props (only used when section.is_repeater === true)
   entries,
   onEntriesChange,
@@ -613,7 +614,7 @@ export default function FormSection({
                 const error = touched[key] ? errors[key] : null;
                 const isLast = index === visibleFields.length - 1;
                 const isDisabledByCondition = !readOnly && evaluateDisabledWhen(field.disabled_when, values);
-                const effectiveReadOnly = readOnly || isDisabledByCondition;
+                const effectiveReadOnly = readOnly || isDisabledByCondition || !isFieldEditableForReview(field);
 
                 if (key === 'act_name') {
                   return (
@@ -647,7 +648,7 @@ export default function FormSection({
                           {lang === 'hi' ? 'संशोधन' : 'Fix'}
                         </span>
                       )}
-                      {isDisabledByCondition && (
+                      {(isDisabledByCondition || !isFieldEditableForReview(field)) && (
                         <span className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded ml-auto" title={lang === 'hi' ? 'वर्तमान स्थिति में अनुपलब्ध' : 'Not available in current status'}>
                           🔒 {lang === 'hi' ? 'लॉक' : 'Locked'}
                         </span>
