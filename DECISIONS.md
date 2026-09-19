@@ -564,3 +564,29 @@ High. The solution relies exclusively on the existing field configuration schema
 * **Tradeoffs**: Requires a specific conditional branch in the global `handleNext` function.
 * **Relevant Code**: `frontend/src/components/forms/DynamicForm.jsx` (`handleNext`).
 * **Confidence**: High. Leverages existing state (`complainantTab`) and maintains the existing `validateSection` behavior exactly.
+
+### Custom Fields in CASE Tabs
+* **Decision**: Update backend filters for `acts_and_sections` and `fir_contents` to explicitly accept fields whose `section` matches the tab key, and add an "Additional Information" block to the hand-written `renderActsAndSectionsStep`.
+* **Context**: District admin custom fields assigned to "Acts & Sections" or "FIR Contents" were not appearing. The backend filters for these two specific CASE tabs were closed (allowlist only or excluding their own section key). Additionally, the frontend renderer for `acts_and_sections` lacked a loop to display unexpected fields.
+* **Why**: To ensure district custom fields mapped to these tabs render correctly, aligning their behavior with all other tabs in the application (which are self-inclusive).
+* **Alternatives**: Changing the admin UI to map custom fields to sub-sections, but that breaks the abstraction.
+* **Tradeoffs**: Requires a specific catch-all block in `DynamicForm.jsx` for `renderActsAndSectionsStep`.
+* **Relevant Code**: `backend/src/modules/fields/fields.controller.js` (`getFieldsForForm`), `frontend/src/components/forms/DynamicForm.jsx` (`renderActsAndSectionsStep`).
+* **Confidence**: High.
+* **Note/Follow-up**: The `unassignedFields` safety net logic checks `f.created_by !== null`, but `created_by` doesn't exist on `field_registry`. This causes a silent fallback collision where custom fields can overwrite official tabs in the frontend map. This requires a DB migration to add `created_by` and is deferred to a separate fix pass.
+
+### Custom Fields in ARREST General Info
+* **Decision**: Added an "Additional Information" fallback block to the hand-written `renderArrestGeneralInfoStep` in `DynamicForm.jsx`.
+* **Context**: Similar to the CASE `acts_and_sections` issue, the ARREST `general_info` tab's custom rendering logic did not include a loop to render generic custom fields, even though they were correctly included in the API response under `general_info`.
+* **Why**: To ensure district custom fields mapped to this tab render correctly while maintaining the custom layout for standard fields.
+* **Alternatives**: None.
+* **Tradeoffs**: Hand-written components require explicit fallback loops.
+* **Relevant Code**: `frontend/src/components/forms/DynamicForm.jsx` (`renderArrestGeneralInfoStep`).
+* **Confidence**: High.
+
+#### Follow-up: MISSING Custom Fields
+* **Investigation Note**: When investigating why the `test_missing` custom field does not render on the MISSING record type under the `general_info` section, step 0 verification confirmed:
+  1. The field IS saved with `section: 'general_info'` in the database.
+  2. The field IS returned inside the official `general_info` fields array in the API response (verified via script against `GET /fields/form/MISSING`).
+  3. MISSING uses the default `FormSection.jsx` component which loops over all fields, and `test_missing` is NOT in the `KEYS_TO_SKIP` exclusion list, nor does it fail `evaluateShowWhen`.
+  *Conclusion*: The assumption that it was saved under a non-official custom section and failing `SECTION_KEY_ORDER` validation was incorrect. It is properly part of the real `general_info` section payload. (I am awaiting further instructions on this since the root cause diverges from the initial hypothesis).

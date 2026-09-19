@@ -486,7 +486,7 @@ export const getFieldsForForm = async (req, res) => {
           title_hi: 'अधिनियम और धाराएं',
           is_repeater: false,
           fields: filteredFields.filter(f =>
-            ['general_info', 'incident_details', 'offence_info'].includes(f.section) &&
+            (['general_info', 'incident_details', 'offence_info'].includes(f.section) || f.section === 'acts_and_sections') &&
             !['occurrence_place', 'brief_facts'].includes(f.field_key) &&
             !f.repeater_entity
           )
@@ -523,7 +523,7 @@ export const getFieldsForForm = async (req, res) => {
           title_en: 'FIR Contents',
           title_hi: 'प्राथमिकी विवरण',
           is_repeater: false,
-          fields: filteredFields.filter(f => ['brief_facts', 'modus_operandi'].includes(f.field_key))
+          fields: filteredFields.filter(f => ['brief_facts', 'modus_operandi'].includes(f.field_key) || f.section === 'fir_contents')
         },
         {
           section: 'victim_info',

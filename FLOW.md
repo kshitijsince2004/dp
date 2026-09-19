@@ -306,3 +306,7 @@ In the Arrest registration form (Person Particulars), users select the scheme un
 - **DynamicForm Updates**:
   - **Duplicate Field Fix**: `scheme_of_arrest` and `complainant_same_as_victim` are now correctly excluded from the "Additional Information" catch-all in `renderPersonPersonalInfoSubTab` without being re-prefixed, fixing the bug where they rendered twice in their respective tabs.
   - **Complainant Navigation Fix**: The global "Next Step" button now correctly walks through the Complainant section's inline sub-tabs (Personal Info → Address) before advancing the wizard to FIR Contents, while preserving the existing full-section validation rules.
+
+- **Custom Field Rendering in CASE Tabs**: CASE's "Acts & Sections" and "FIR Contents" tabs now properly accept and render district-custom fields whose section is literally `acts_and_sections` or `fir_contents`. This was fixed by making their backend filters self-inclusive and adding an "Additional Information" fallback rendering block to `renderActsAndSectionsStep` in `DynamicForm.jsx`. (Note: A separate safety net collision issue related to a missing `created_by` column in `field_registry` was identified and documented for follow-up).
+
+- **Custom Field Rendering in ARREST Tabs**: The ARREST `general_info` tab now correctly renders district-custom fields. Similar to the CASE Acts & Sections fix, an "Additional Information" fallback rendering block was added to `renderArrestGeneralInfoStep` in `DynamicForm.jsx` to capture and display fields not explicitly laid out in the hand-written component.
