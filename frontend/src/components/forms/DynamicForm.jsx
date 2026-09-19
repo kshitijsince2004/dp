@@ -658,32 +658,6 @@ export default function DynamicForm({
           </React.Fragment>
         </div>
 
-        {(() => {
-          const KNOWN_KEYS = ['uid', 'district', 'police_station', 'status', 'submission_status', 'case_type', 'gd_no', 'act_name', 'sections', 'local_head', 'crime_head', 'major_heads', 'minor_heads', 'major_head', 'minor_head'];
-          const extraFields = allSchemaFields.filter(f => f.section === 'general_info' && !KNOWN_KEYS.includes(f.field_key));
-          if (extraFields.length === 0) return null;
-          return (
-            <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm mt-3 mb-3">
-              <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
-                {lang === 'hi' ? 'अतिरिक्त जानकारी' : 'Additional Information'}
-              </legend>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {extraFields.map((f) => (
-                  <FieldRenderer
-                    key={f.field_key}
-                    field={f}
-                    value={values[f.field_key]}
-                    onChange={handleChange}
-                    readOnly={readOnly || !isFieldEditableForReview(f)}
-                    error={touched[f.field_key] ? errors[f.field_key] : null}
-                    lang={lang}
-                    values={values}
-                  />
-                ))}
-              </div>
-            </fieldset>
-          );
-        })()}
 
         {/* Acts, Sections, Major/Minor, Local Head Panels */}
         <ActsSectionsTable {...actsSectionsProps} localHeadLayout={recordType === 'UIDB' ? 'hidden' : 'split'} />
@@ -802,7 +776,14 @@ export default function DynamicForm({
 
         {(() => {
           const KNOWN_KEYS = ['gd_no', 'case_type', 'fir_no', 'source_reference', 'act_name', 'sections', 'local_head', 'crime_head', 'major_heads', 'minor_heads', 'major_head', 'minor_head'];
-          const extraFields = allFields.filter(f => f.section === 'acts_and_sections' && !KNOWN_KEYS.includes(f.field_key));
+          const extraFields = allFields.filter(f => {
+            if (f.section !== 'acts_and_sections' || KNOWN_KEYS.includes(f.field_key)) return false;
+            if (!f.show_when) return true;
+            const sw = f.show_when;
+            const actual = values[sw.field];
+            if (Array.isArray(sw.value)) return sw.value.includes(actual);
+            return actual === sw.value;
+          });
           if (extraFields.length === 0) return null;
           return (
             <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm mt-3 mb-3">

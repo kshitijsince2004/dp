@@ -612,3 +612,14 @@ High. The solution relies exclusively on the existing field configuration schema
 * **Relevant Code**: `DynamicForm.jsx`, `FormSection.jsx`, `config/fields/common.json`, `config/fields/arrest.json`.
 * **Known follow-up**: `ActsSectionsTable` and `ActsAndSectionsManager` rely on a plain `readOnly` rather than a per-field `isFieldEditableForReview`. While harmless currently, this relies on their `editable_by_levels` never drifting.
 * **Confidence**: High.
+
+### Fix: Custom Fields in ARREST General Info
+* **Correction**: The initial `KNOWN_KEYS` list for the `renderArrestGeneralInfoStep` catch-all block was incomplete. Real fields like `fir_no`, `fir_date`, `gd_date`, `gd_time`, and `is_dd_based` were missing from the exclusion list, which caused them to leak into the "Additional Information" box alongside actual custom fields. The list has been corrected. Additionally, a `show_when` check was added to both the ARREST and CASE general_info/acts_and_sections catch-all blocks to properly respect conditional visibility rules for custom fields.
+
+### Remove ARREST General Info Custom Field Block
+* **Decision**: Removed the "Additional Information" catch-all block from `renderArrestGeneralInfoStep` entirely, overriding the previous attempt to fix its field exclusion list.
+* **Context**: This block was originally added to surface district-custom fields assigned to ARREST's `general_info` section. However, it was found to leak real fields (FIR Number, FIR Date, GD Date, GD Time, is-DD-based checkbox) alongside the intended custom fields.
+* **Why**: Explicit user decision to remove the block rather than maintain an increasingly complex and brittle `KNOWN_KEYS` exclusion list.
+* **Tradeoffs**: **Known limitation**: Any district-custom field created with record type `ARREST` and section "General Information" will no longer render anywhere on the ARREST form. This is an intended consequence and not a bug, unless a future request asks to reintroduce it correctly.
+* **Relevant Code**: `DynamicForm.jsx`
+* **Confidence**: High.
