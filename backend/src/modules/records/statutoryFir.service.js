@@ -12,6 +12,19 @@ export const TYPE_PREFIXES = {
 
 export const REGISTRATION_TYPES = ['MANUAL_CCTNS', 'E_THEFT', 'E_MVT', 'NCRP', 'ZERO_FIR'];
 
+export function normalizeRegistrationType(raw) {
+  if (!raw) return 'MANUAL_CCTNS';
+  const s = String(raw).trim().toLowerCase();
+  if (s.includes('cctns') || s.includes('manual')) return 'MANUAL_CCTNS';
+  if (s.includes('theft')) return 'E_THEFT';
+  if (s.includes('mvt') || s.includes('vehicle')) return 'E_MVT';
+  if (s.includes('ncrp') || s.includes('cyber')) return 'NCRP';
+  if (s.includes('zero')) return 'ZERO_FIR';
+  const u = String(raw).trim().toUpperCase();
+  if (REGISTRATION_TYPES.includes(u)) return u;
+  return 'MANUAL_CCTNS';
+}
+
 /**
  * Resolves jurisdiction and type prefix components for a given PS and registration type.
  * Returns { prefix8, typePrefix, districtCode, psCode, isAllowed, error }
@@ -20,9 +33,11 @@ export async function resolveJurisdictionPrefix(db, { psId, registrationType }) 
   if (!psId) {
     return { isAllowed: false, error: 'Police Station (ps_id) is required.' };
   }
-  if (!registrationType || !REGISTRATION_TYPES.includes(registrationType)) {
+  const normType = normalizeRegistrationType(registrationType);
+  if (!normType || !REGISTRATION_TYPES.includes(normType)) {
     return { isAllowed: false, error: `Invalid registration_type "${registrationType}". Allowed: ${REGISTRATION_TYPES.join(', ')}` };
   }
+  registrationType = normType;
 
   if (registrationType === 'MANUAL_CCTNS') {
     const manualRow = await db('ref.ps_manual_fir_codes')
