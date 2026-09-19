@@ -26,23 +26,11 @@ const RULES = [
   {
     name: 'fir_no',
     test: (key) => key === 'fir_no',
-    // Supports 14-digit statutory FIR format (08DDDPPSSYYNNNN / 08XXXPPSSYYNNNN)
-    // as well as backwards-compatible legacy format (e.g. 104/2026).
-    sanitize: (v) => {
-      if (!v) return '';
-      const str = String(v).trim();
-      if (str.includes('/')) {
-        const cleaned = str.replace(/[^\d/]/g, '');
-        const i = cleaned.indexOf('/');
-        if (i === -1) return cleaned;
-        return `${cleaned.slice(0, i)}/${cleaned.slice(i + 1).replace(/\//g, '').slice(0, 4)}`;
-      }
-      return digitsOnly(str).slice(0, 14);
-    },
-    pattern: /^(\d{14}|\d+\/\d{4})$/,
+    sanitize: (v) => digitsOnly(v).slice(0, 14),
+    pattern: /^\d{14}$/,
     message: {
-      en: 'FIR number must be a 14-digit statutory number (e.g. 08162010260001) or legacy format (e.g. 104/2026)',
-      hi: 'प्राथमिकी संख्या 14 अंकों की वैधानिक संख्या (जैसे 08162010260001) या लीगेसी प्रारूप (जैसे 104/2026) होनी चाहिए'
+      en: 'FIR number must be a 14-digit statutory number (e.g. 08162010260001)',
+      hi: 'प्राथमिकी संख्या 14 अंकों की वैधानिक संख्या (जैसे 08162010260001) होनी चाहिए'
     },
   },
   {
