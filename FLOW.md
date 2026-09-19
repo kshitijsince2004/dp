@@ -280,3 +280,33 @@ In the UIDB registration form, users can specify the cause of death under the **
 When a record is sent back (action: `SEND_BACK`), the reviewer specifies a list of fields requiring correction, which are stored in the `target_fields` column of `workflow_transitions`. When the user later attempts to resubmit the record (via `sent_back.submit`), the `requires_field_correction` config flag dictates that the resubmission is blocked unless all flagged fields have been demonstrably edited.
 
 This is enforced by `assertFieldsCorrected` in `workflow.engine.js`, which compares the flagged fields against the `field_changes` recorded in `record_revisions` since the time of the send-back. If any flagged field lacks a corresponding revision entry, the transition throws an error, and the user is prompted (via a UI toast) to fix the remaining fields.
+
+## Scheme of Arrest "Other"
+
+In the Arrest registration form (Person Particulars), users select the scheme under which an arrest was made.
+- Four new options ("Special Drive", "Cyber Hawk", "Kawach", "General") are available natively.
+- If the user selects the "Other" option, a `scheme_of_arrest_other` text field is dynamically revealed using the standard config-driven `show_when` visibility pattern.
+- In `DynamicForm.jsx`, the "Additional Information" block explicitly checks these `show_when` constraints so that unlisted fields are conditionally hidden until their dependencies are met, avoiding permanent display of the "Other" field.
+- Validation is handled automatically on both the frontend and backend by ignoring `required: true` validation rules for fields whose `show_when` condition is not met.
+
+## ARREST UX and Vocabulary Fixes
+
+- **Custody Status Routing**: The ARREST record no longer displays a redundant top-level "CUSTODY STATUS" tab. Custody status is strictly a property of individual arrestees and is correctly housed exclusively within the Arrested Person modal's sub-tabs.
+- **"Apprehension" Vocabulary**: A new generic custody status outcome of "Apprehension" has been added. This vocabulary is unified across `statusOptions.config.js` (for interactive use) and both `import-fields.config.js` and `template-builder.service.js` (for Excel bulk import compatibility).
+- **Arrested Nickname Field**: The Arrested Person modal correctly renders exactly one "Nickname/Alias" input field natively within its primary grid. A schema pollution bug that duplicated the `nick_name` key in the database registry (causing `DynamicForm.jsx` to render an unstyled, extra copy of the field) has been eliminated via `sync-config`.
+
+## District-Level Review Write Permissions
+
+- **Enforced Field Permissions**: District-level review edits are now restricted exclusively to Acts & Sections, Major/Minor Head, and Local Head. Any other field edits are blocked. This is enforced by wiring up the existing `field_registry.editable_by_levels` attribute in `records.service.js`'s `updateRecord` logic, replacing the need for hardcoded field arrays in the codebase.
+- **Repeater Block Restrictions**: District reviewers are strictly prevented from modifying persons (arrestee, victim, accused) or properties. The frontend completely disables all repeater add/edit/delete buttons during District review, and the backend blocks the save if any changes to those arrays bypass the frontend UI.
+- **Status Update**: The Status Update flow remains a separate, already-working modal (`PATCH /records/:id/status`) and is unaffected by this change.
+
+- **Send-Back Field Picker Update**: The field picker in the "Return for correction" modal (`RecordDetail.jsx`) now dynamically sources from the live form schema (`useFormSchema`) instead of the hardcoded mock schema. Checkboxes are grouped under their respective section and sub-tab headings using the exact labels the form displays. Custom and newly added fields appear automatically without needing manual list maintenance. Read-only fields are intentionally excluded from the picker as they cannot be corrected. The `target_fields` payload still stores raw field keys, ensuring that the backend resubmission-correction rules and HC-side field highlighting (`NewRecord.jsx`) are completely unaffected.
+
+- **DynamicForm Updates**:
+  - **Duplicate Field Fix**: `scheme_of_arrest` and `complainant_same_as_victim` are now correctly excluded from the "Additional Information" catch-all in `renderPersonPersonalInfoSubTab` without being re-prefixed, fixing the bug where they rendered twice in their respective tabs.
+  - **Complainant Navigation Fix**: The global "Next Step" button now correctly walks through the Complainant section's inline sub-tabs (Personal Info → Address) before advancing the wizard to FIR Contents, while preserving the existing full-section validation rules.
+
+- **Custom Field Rendering in CASE Tabs**: CASE's "Acts & Sections" and "FIR Contents" tabs now properly accept and render district-custom fields whose section is literally `acts_and_sections` or `fir_contents`. This was fixed by making their backend filters self-inclusive and adding an "Additional Information" fallback rendering block to `renderActsAndSectionsStep` in `DynamicForm.jsx`. (Note: A separate safety net collision issue related to a missing `created_by` column in `field_registry` was identified and documented for follow-up).
+
+- **Custom Field Rendering in ARREST Tabs**: The ARREST `general_info` tab now correctly renders district-custom fields. Similar to the CASE Acts & Sections fix, an "Additional Information" fallback rendering block was added to `renderArrestGeneralInfoStep` in `DynamicForm.jsx` to capture and display fields not explicitly laid out in the hand-written component.

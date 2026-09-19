@@ -38,12 +38,14 @@ export const STATUS_OPTIONS_BY_TYPE = {
       { value: 'Release', label_en: 'Release', label_hi: 'रिहा' },
       { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
       { value: '35(3) BNS Notice', label_en: '35(3) BNS Notice', label_hi: '35(3) BNS Notice' },
+      { value: 'Apprehension', label_en: 'Apprehension', label_hi: 'Apprehension' },
     ],
     kalandra: [
       { value: 'JC', label_en: 'Judicial Custody', label_hi: 'न्यायिक हिरासत' },
       { value: 'Bound Down', label_en: 'Bound Down', label_hi: 'Bound Down' },
       { value: 'Lockup', label_en: 'Lockup', label_hi: 'जेल' },
       { value: 'Fine', label_en: 'Fine', label_hi: 'Fine' },
+      { value: 'Apprehension', label_en: 'Apprehension', label_hi: 'Apprehension' },
     ],
   },
   PCR_CALL: [

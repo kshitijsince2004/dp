@@ -229,6 +229,12 @@ export default function DynamicForm({
   const navigate = useNavigate();
 
   const { user } = useAuthStore();
+  const isDistrictReviewEdit = ['DISTRICT_OFFICER', 'DISTRICT'].includes(user?.role) && initialValues?.current_status === 'DISTRICT_REVIEW';
+  const isFieldEditableForReview = (field) => {
+    if (!isDistrictReviewEdit) return true; // no restriction for anyone else, in any other status
+    const allowed = Array.isArray(field?.editable_by_levels) ? field.editable_by_levels : [];
+    return allowed.includes('DISTRICT');
+  };
   const getThemeClass = (role) => {
     switch (role) {
       case 'HC': return 'theme-hc-page';
@@ -610,15 +616,20 @@ export default function DynamicForm({
             </div>
             <div className="px-4 py-2 bg-white flex items-center border-b border-[#c7d8ea] min-h-[44px]">
               <div className="w-full max-w-md">
-                <FieldRenderer
-                  field={allSchemaFields.find(f => f.field_key === 'case_type')}
-                  value={values.case_type || ''}
-                  onChange={handleChange}
-                  readOnly={readOnly}
-                  error={touched.case_type ? errors.case_type : null}
-                  lang={lang}
-                  values={values}
-                />
+                {(() => {
+                  const caseTypeField = allSchemaFields.find(f => f.field_key === 'case_type');
+                  return (
+                    <FieldRenderer
+                      field={caseTypeField}
+                      value={values.case_type || ''}
+                      onChange={handleChange}
+                      readOnly={readOnly || !isFieldEditableForReview(caseTypeField)}
+                      error={touched.case_type ? errors.case_type : null}
+                      lang={lang}
+                      values={values}
+                    />
+                  );
+                })()}
               </div>
             </div>
           </React.Fragment>
@@ -630,17 +641,49 @@ export default function DynamicForm({
               {isFieldRequired('gd_no') && <span className="text-red-500 font-bold">{' *'}</span>}
             </div>
             <div className="px-4 py-2 bg-white flex items-center gap-3 min-h-[44px] relative">
-              <FieldRenderer
-                field={allSchemaFields.find(f => f.field_key === 'gd_no')}
-                value={values.gd_no}
-                handleChange={handleChange}
-                values={values}
-                readOnly={readOnly}
-                error={touched.gd_no ? errors.gd_no : null}
-              />
+              {(() => {
+                const gdNoField = allSchemaFields.find(f => f.field_key === 'gd_no');
+                return (
+                  <FieldRenderer
+                    field={gdNoField}
+                    value={values.gd_no}
+                    handleChange={handleChange}
+                    values={values}
+                    readOnly={readOnly || !isFieldEditableForReview(gdNoField)}
+                    error={touched.gd_no ? errors.gd_no : null}
+                  />
+                );
+              })()}
             </div>
           </React.Fragment>
         </div>
+
+        {(() => {
+          const KNOWN_KEYS = ['uid', 'district', 'police_station', 'status', 'submission_status', 'case_type', 'gd_no', 'act_name', 'sections', 'local_head', 'crime_head', 'major_heads', 'minor_heads', 'major_head', 'minor_head'];
+          const extraFields = allSchemaFields.filter(f => f.section === 'general_info' && !KNOWN_KEYS.includes(f.field_key));
+          if (extraFields.length === 0) return null;
+          return (
+            <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm mt-3 mb-3">
+              <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
+                {lang === 'hi' ? 'अतिरिक्त जानकारी' : 'Additional Information'}
+              </legend>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {extraFields.map((f) => (
+                  <FieldRenderer
+                    key={f.field_key}
+                    field={f}
+                    value={values[f.field_key]}
+                    onChange={handleChange}
+                    readOnly={readOnly || !isFieldEditableForReview(f)}
+                    error={touched[f.field_key] ? errors[f.field_key] : null}
+                    lang={lang}
+                    values={values}
+                  />
+                ))}
+              </div>
+            </fieldset>
+          );
+        })()}
 
         {/* Acts, Sections, Major/Minor, Local Head Panels */}
         <ActsSectionsTable {...actsSectionsProps} localHeadLayout={recordType === 'UIDB' ? 'hidden' : 'split'} />
@@ -664,14 +707,19 @@ export default function DynamicForm({
                 </td>
                 <td className="w-2/3 bg-white px-4 py-2" style={{ position: 'relative' }}>
                   <div className="flex items-center gap-3 w-full max-w-2xl">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'gd_no')}
-                      value={values.gd_no}
-                      handleChange={handleChange}
-                      values={values}
-                      readOnly={readOnly}
-                      error={touched.gd_no ? errors.gd_no : null}
-                    />
+                    {(() => {
+                      const gdNoField = allFields.find(f => f.field_key === 'gd_no');
+                      return (
+                        <FieldRenderer
+                          field={gdNoField}
+                          value={values.gd_no}
+                          handleChange={handleChange}
+                          values={values}
+                          readOnly={readOnly || !isFieldEditableForReview(gdNoField)}
+                          error={touched.gd_no ? errors.gd_no : null}
+                        />
+                      );
+                    })()}
                   </div>
                 </td>
               </tr>
@@ -683,15 +731,20 @@ export default function DynamicForm({
                 </td>
                 <td className="w-2/3 bg-white px-4 py-2">
                   <div className="w-full max-w-md">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'case_type')}
-                      value={values.case_type || ''}
-                      onChange={handleChange}
-                      readOnly={readOnly}
-                      error={touched.case_type ? errors.case_type : null}
-                      lang={lang}
-                      values={values}
-                    />
+                    {(() => {
+                      const caseTypeField = allFields.find(f => f.field_key === 'case_type');
+                      return (
+                        <FieldRenderer
+                          field={caseTypeField}
+                          value={values.case_type || ''}
+                          onChange={handleChange}
+                          readOnly={readOnly || !isFieldEditableForReview(caseTypeField)}
+                          error={touched.case_type ? errors.case_type : null}
+                          lang={lang}
+                          values={values}
+                        />
+                      );
+                    })()}
                   </div>
                 </td>
               </tr>
@@ -702,15 +755,20 @@ export default function DynamicForm({
                 </td>
                 <td className="w-2/3 bg-white px-4 py-2" style={{ position: 'relative' }}>
                   <div className="flex items-center gap-3 w-full max-w-2xl">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'fir_no')}
-                      value={values.fir_no}
-                      handleChange={handleChange}
-                      values={values}
-                      readOnly={readOnly}
-                      lang={lang}
-                      error={touched.fir_no ? errors.fir_no : null}
-                    />
+                    {(() => {
+                      const firNoField = allFields.find(f => f.field_key === 'fir_no');
+                      return (
+                        <FieldRenderer
+                          field={firNoField}
+                          value={values.fir_no}
+                          handleChange={handleChange}
+                          values={values}
+                          readOnly={readOnly || !isFieldEditableForReview(firNoField)}
+                          lang={lang}
+                          error={touched.fir_no ? errors.fir_no : null}
+                        />
+                      );
+                    })()}
                   </div>
                 </td>
               </tr>
@@ -721,21 +779,53 @@ export default function DynamicForm({
                 </td>
                 <td className="w-2/3 bg-white px-4 py-2">
                   <div className="w-full max-w-md">
-                    <FieldRenderer
-                      field={allFields.find(f => f.field_key === 'source_reference')}
-                      value={values.source_reference}
-                      handleChange={handleChange}
-                      values={values}
-                      readOnly={readOnly}
-                      lang={lang}
-                      error={touched.source_reference ? errors.source_reference : null}
-                    />
+                    {(() => {
+                      const sourceRefField = allFields.find(f => f.field_key === 'source_reference');
+                      return (
+                        <FieldRenderer
+                          field={sourceRefField}
+                          value={values.source_reference}
+                          handleChange={handleChange}
+                          values={values}
+                          readOnly={readOnly || !isFieldEditableForReview(sourceRefField)}
+                          lang={lang}
+                          error={touched.source_reference ? errors.source_reference : null}
+                        />
+                      );
+                    })()}
                   </div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        {(() => {
+          const KNOWN_KEYS = ['gd_no', 'case_type', 'fir_no', 'source_reference', 'act_name', 'sections', 'local_head', 'crime_head', 'major_heads', 'minor_heads', 'major_head', 'minor_head'];
+          const extraFields = allFields.filter(f => f.section === 'acts_and_sections' && !KNOWN_KEYS.includes(f.field_key));
+          if (extraFields.length === 0) return null;
+          return (
+            <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm mt-3 mb-3">
+              <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
+                {lang === 'hi' ? 'अतिरिक्त जानकारी' : 'Additional Information'}
+              </legend>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {extraFields.map((f) => (
+                  <FieldRenderer
+                    key={f.field_key}
+                    field={f}
+                    value={values[f.field_key]}
+                    onChange={handleChange}
+                    readOnly={readOnly || !isFieldEditableForReview(f)}
+                    error={touched[f.field_key] ? errors[f.field_key] : null}
+                    lang={lang}
+                    values={values}
+                  />
+                ))}
+              </div>
+            </fieldset>
+          );
+        })()}
 
         <ActsSectionsTable {...actsSectionsProps} localHeadLayout="split" />
       </div>
@@ -753,7 +843,7 @@ export default function DynamicForm({
       const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
       const rules = parseRules(field.validation_rules);
       const isRequired = !!rules.required;
-      const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+      const isDisabled = readOnly || field.readonly === true || field.readonly === 'true' || !isFieldEditableForReview(field);
       return (
         <React.Fragment key={key}>
           <div className={`bg-[#dfeaf5] px-4 py-2 text-sm sm:text-base text-[#0d2a4a] flex items-center gap-1.5 border-r border-[#c7d8ea] ${isRequired ? 'font-bold' : 'font-medium'} ${!isLast ? 'border-b' : ''}`}>
@@ -842,7 +932,7 @@ export default function DynamicForm({
       const rules = parseRules(f.validation_rules);
       const isRequired = !!rules.required || extraRequiredKeys.includes(key);
       const isUidKey = key.endsWith('_npr') || key.endsWith('_uid') || key === 'uid' || key === 'person_uid';
-      const isDisabled = forceReadOnly || readOnly || isUidKey || f.readonly === true || f.readonly === 'true';
+      const isDisabled = forceReadOnly || readOnly || isUidKey || f.readonly === true || f.readonly === 'true' || !isFieldEditableForReview(f);
       const val = isUidKey ? (valuesObj[key] || 'AUTO_ASSIGNED_BY_SYSTEM') : valuesObj[key];
       return (
         <React.Fragment key={key}>
@@ -866,13 +956,14 @@ export default function DynamicForm({
     };
 
     const rawField = (key, fallback) => {
-      let f = allFields.find((x) => x.field_key === key);
+      const fieldObj = allFields.find((x) => x.field_key === key);
+      const f = fieldObj ? { ...fieldObj, field_key: key } : { field_key: key, field_type: 'TEXT' };
       return (
         <FieldRenderer
-          field={f ? { ...f, field_key: key } : { field_key: key, field_type: 'TEXT' }}
+          field={f}
           value={valuesObj[key] ?? fallback}
           onChange={onFieldChange}
-          readOnly={readOnly}
+          readOnly={readOnly || !isFieldEditableForReview(fieldObj)}
           error={touchedObj?.[key] ? errorsObj?.[key] : null}
           lang={lang}
           values={valuesObj}
@@ -995,10 +1086,26 @@ export default function DynamicForm({
             'npr', 'uid', 'person_uid', 'first_name', 'middle_name', 'last_name', 'nickname',
             'gender', 'mobile_country_code', 'mobile', 'email', 'relation_type', 'relative_name',
             'dob', 'age_year', 'age_month', 'birth_year', 'social_category', 'education', 'financial_status',
-            'scheme_of_arrest', 'complainant_same_as_victim', 'qualification'
+            'qualification'
           ].map(k => `${prefix}_${k}`);
+          // These two are ALREADY fully-qualified field_keys in the registry (no per-prefix variant exists
+          // for either), so they must NOT be re-prefixed like the generic suffixes above. Re-prefixing them
+          // silently breaks their exclusion from the "Additional Information" catch-all below, which is what
+          // caused both to render a second time (complainant_same_as_victim in COMPLAINANT, scheme_of_arrest
+          // in ARRESTED) — see config/fields/case.json and config/fields/arrest.json.
+          const ALREADY_QUALIFIED_KNOWN_KEYS = ['scheme_of_arrest', 'complainant_same_as_victim'];
           
-          const extraFields = allFields.filter(f => f.section === `${prefix}_personal_info` && !KNOWN_KEYS.includes(f.field_key));
+          const extraFields = allFields
+            .filter(f => f.section === `${prefix}_personal_info`
+              && !KNOWN_KEYS.includes(f.field_key)
+              && !ALREADY_QUALIFIED_KNOWN_KEYS.includes(f.field_key))
+            .filter(f => {
+              if (!f.show_when) return true;
+              const sw = f.show_when;
+              const actual = valuesObj[sw.field];
+              if (Array.isArray(sw.value)) return sw.value.includes(actual);
+              return actual === sw.value;
+            });
           
           if (extraFields.length === 0) return null;
           return (
@@ -1030,7 +1137,7 @@ export default function DynamicForm({
       const label = customLabel || (lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en);
       const rules = parseRules(f.validation_rules);
       const isRequired = !!rules.required;
-      const isDisabled = forceReadOnly || readOnly || f.readonly === true || f.readonly === 'true';
+      const isDisabled = forceReadOnly || readOnly || f.readonly === true || f.readonly === 'true' || !isFieldEditableForReview(f);
       return (
         <React.Fragment key={key}>
           <div className={`bg-[#dfeaf5] px-3.5 py-1.5 text-xs sm:text-sm text-[#0d2a4a] flex items-center gap-1.5 border-r border-[#c7d8ea] ${isRequired ? 'font-bold' : 'font-medium'} ${!isLast ? 'border-b' : ''}`}>
@@ -1089,14 +1196,19 @@ export default function DynamicForm({
           <div className="bg-[#dfeaf5] border border-[#c7d8ea] px-3.5 py-1.5 flex items-center justify-between mb-2 text-xs sm:text-sm font-bold text-[#0d2a4a] rounded-lg shadow-xs">
             <span>{lang === 'hi' ? 'क्या स्थायी पता वर्तमान पते के समान है?' : 'Is Permanent Address same as Present Address?'}</span>
             <div className="w-32">
+              {(() => {
+                const fObj = allFields.find((x) => x.field_key === `${prefix}_perm_same`);
+                return (
               <FieldRenderer
-                field={allFields.find((x) => x.field_key === `${prefix}_perm_same`)}
+                field={fObj}
                 value={valuesObj[`${prefix}_perm_same`]}
                 onChange={onFieldChange}
-                readOnly={readOnly}
+                readOnly={readOnly || !isFieldEditableForReview(fObj)}
                 lang={lang}
                 values={valuesObj}
               />
+                );
+              })()}
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-1">
@@ -1186,6 +1298,7 @@ export default function DynamicForm({
           <button
             type="button"
             onClick={openVictimAddModal}
+            disabled={readOnly || isDistrictReviewEdit}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] transition-colors cursor-pointer"
           >
             <span className="text-base leading-none">+</span>
@@ -1221,6 +1334,7 @@ export default function DynamicForm({
                       <button
                         type="button"
                         onClick={() => openVictimEditModal(idx)}
+                        disabled={readOnly || isDistrictReviewEdit}
                         className="text-[#0d2a4a] hover:text-[#ea580c] font-bold mr-3 cursor-pointer underline transition-colors"
                       >
                         {lang === 'hi' ? 'संपादन' : 'Edit'}
@@ -1228,6 +1342,7 @@ export default function DynamicForm({
                       <button
                         type="button"
                         onClick={() => deleteVictimEntry(idx)}
+                        disabled={readOnly || isDistrictReviewEdit}
                         className="text-red-500 hover:text-red-700 font-bold cursor-pointer underline transition-colors"
                       >
                         {lang === 'hi' ? 'हटाएं' : 'Delete'}
@@ -1316,6 +1431,7 @@ export default function DynamicForm({
           <button
             type="button"
             onClick={openAccusedAddModal}
+            disabled={readOnly || isDistrictReviewEdit}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] transition-colors cursor-pointer"
           >
             <span className="text-base leading-none">+</span>
@@ -1351,6 +1467,7 @@ export default function DynamicForm({
                       <button
                         type="button"
                         onClick={() => openAccusedEditModal(idx)}
+                        disabled={readOnly || isDistrictReviewEdit}
                         className="text-[#0d2a4a] hover:text-[#ea580c] font-bold mr-3 cursor-pointer underline transition-colors"
                       >
                         {lang === 'hi' ? 'संपादन' : 'Edit'}
@@ -1358,6 +1475,7 @@ export default function DynamicForm({
                       <button
                         type="button"
                         onClick={() => deleteAccusedEntry(idx)}
+                        disabled={readOnly || isDistrictReviewEdit}
                         className="text-red-500 hover:text-red-700 font-bold cursor-pointer underline transition-colors"
                       >
                         {lang === 'hi' ? 'हटाएं' : 'Delete'}
@@ -1680,7 +1798,7 @@ export default function DynamicForm({
           <button
             type="button"
             onClick={addPropertyRow}
-            disabled={readOnly}
+            disabled={readOnly || isDistrictReviewEdit}
             className="px-4 py-1.5 bg-[#0d2a4a] hover:bg-[#16406d] text-white text-xs font-bold rounded transition-colors cursor-pointer disabled:bg-slate-300 disabled:cursor-not-allowed"
           >
             {lang === 'hi' ? 'नया जोड़ें' : 'Add New'}
@@ -1688,7 +1806,7 @@ export default function DynamicForm({
           <button
             type="button"
             onClick={clearAllProperties}
-            disabled={readOnly}
+            disabled={readOnly || isDistrictReviewEdit}
             className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded transition-colors cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
           >
             {lang === 'hi' ? 'सभी साफ़ करें' : 'Clear All'}
@@ -1780,7 +1898,7 @@ export default function DynamicForm({
                         <button
                           type="button"
                           onClick={() => deletePropertyRow(idx)}
-                          disabled={readOnly}
+                          disabled={readOnly || isDistrictReviewEdit}
                           className="text-red-500 hover:text-red-700 font-bold transition-colors cursor-pointer disabled:text-slate-300 disabled:cursor-not-allowed"
                         >
                           ✖
@@ -1852,7 +1970,7 @@ export default function DynamicForm({
               const rules = parseRules(field.validation_rules);
               const isRequired = !!rules.required;
               const isLast = idx === visibleFields.length - 1;
-              const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+              const isDisabled = readOnly || field.readonly === true || field.readonly === 'true' || !isFieldEditableForReview(field);
               return (
                 <React.Fragment key={key}>
                   <div className={`bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base ${isRequired ? 'font-bold text-[#0d2a4a]' : 'font-semibold text-[#0d2a4a]'} flex items-center gap-2 min-h-[48px] border-r border-[#c7d8ea] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
@@ -1903,6 +2021,7 @@ export default function DynamicForm({
           <button
             type="button"
             onClick={openArrestedAddModal}
+            disabled={readOnly || isDistrictReviewEdit}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] transition-colors cursor-pointer"
           >
             <span className="text-base leading-none">+</span>
@@ -1935,10 +2054,11 @@ export default function DynamicForm({
                     <td className="px-4 py-2.5 font-medium text-[#0d2a4a]">{getArrestedName(arr)}</td>
                     <td className="px-4 py-2.5 text-slate-700">{getArrestedAddress(arr)}</td>
                     <td className="px-4 py-2.5 text-center">
-                      <button type="button" onClick={() => openArrestedEditModal(idx)} className="text-[#0d2a4a] hover:text-[#ea580c] font-bold mr-3 cursor-pointer underline transition-colors">
+                      <button type="button" onClick={() => openArrestedEditModal(idx)}
+                        disabled={readOnly || isDistrictReviewEdit} className="text-[#0d2a4a] hover:text-[#ea580c] font-bold mr-3 cursor-pointer underline transition-colors">
                         {lang === 'hi' ? 'संपादन' : 'Edit'}
                       </button>
-                      <button type="button" onClick={() => deleteArrestedEntry(idx)} className="text-red-500 hover:text-red-700 font-bold cursor-pointer underline transition-colors">
+                      <button type="button" onClick={() => deleteArrestedEntry(idx)} disabled={readOnly || isDistrictReviewEdit} className="text-red-500 hover:text-red-700 font-bold cursor-pointer underline transition-colors">
                         {lang === 'hi' ? 'हटाएं' : 'Delete'}
                       </button>
                     </td>
@@ -2012,7 +2132,7 @@ export default function DynamicForm({
       const rules = parseRules(field.validation_rules);
       const isRequired = !!rules.required;
       const isLast = index === activeFields.length - 1;
-      const isDisabled = readOnly || field.readonly === true || field.readonly === 'true';
+      const isDisabled = readOnly || field.readonly === true || field.readonly === 'true' || !isFieldEditableForReview(field);
       const isDisabledByCondition = !isDisabled && evaluateDisabledWhen(field.disabled_when, values);
       const effectiveReadOnly = isDisabled || isDisabledByCondition;
 
@@ -3738,6 +3858,16 @@ const handleNext = () => {
     gd_no: values.gd_no, gd_date: values.gd_date, gd_time: values.gd_time,
     fir_no: values.fir_no, fir_date: values.fir_date, fir_time: values.fir_time,
   });
+
+  // Complainant is the only step with two inline sub-tabs (Personal Info, Address) sharing one
+  // currentStep index. "Next Step" must walk Personal -> Address before it's allowed to advance
+  // the wizard past the whole Complainant section to FIR Contents.
+  if (finalSchema[currentStep]?.section === 'complainant_info' && complainantTab === 'personal') {
+    setComplainantTab('address');
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    return;
+  }
+
   log.debug('form:step_next_attempt', { currentStep, section: finalSchema[currentStep]?.section });
   const stepErrs = validateSection(currentStep);
   if (Object.keys(stepErrs).length > 0) {

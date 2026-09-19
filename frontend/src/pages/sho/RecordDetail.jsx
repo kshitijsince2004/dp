@@ -5,17 +5,18 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, CheckSquare, X, Send, AlertTriangle, ShieldCheck, History, Edit, FileSpreadsheet, RefreshCw, Clock, Scale } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DynamicForm from '../../components/forms/DynamicForm.jsx';
-import { formSchemas } from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
 import LinkedRecordsPanel from '../../components/common/LinkedRecordsPanel.jsx';
 import StatusUpdateModal from '../../components/records/StatusUpdateModal.jsx';
 import RecordTypeBadge from '../../components/common/RecordTypeBadge.jsx';
 import { useUpdateRecord } from '../../hooks/useUpdateRecord.js';
+import { useFormSchema } from '../../hooks/useFormSchema.js';
 import { log } from '../../utils/logger.js';
 
 export default function RecordDetail() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n?.language || 'en';
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -70,6 +71,7 @@ export default function RecordDetail() {
   const transitions = recordPayload?.transitions || [];
   const revisions = recordPayload?.revisions || [];
   const linkedRecords = recordPayload?.linkedRecords || [];
+  const { schema: sendBackSchema } = useFormSchema(record?.record_type);
 
   const unlinkMutation = useMutation({
     mutationFn: async (linkId) => {
@@ -251,10 +253,36 @@ export default function RecordDetail() {
   const statusEvents = recordPayload?.status_events || [];
   const canUpdateStatus = ['HC', 'SHO', 'DISTRICT_OFFICER', 'DISTRICT'].includes(user?.role);
 
-  // Get field keys for multi-select checklist in send-back
-  const getAvailableFields = () => {
-    const schemas = formSchemas[record.record_type] || [];
-    return schemas.flatMap(sec => sec.fields);
+  // Field picker for the send-back modal. Sourced from the LIVE form schema (the same
+  // GET /fields/form/:recordType the form itself renders from) so every checkbox label is
+  // literally the label the officer sees, and newly added or custom fields appear without
+  // anyone hand-editing a list. Grouped by section (and sub-tab, where a section has them)
+  // because a flat list of ~100 physical-description fields is unusable.
+  const getSendBackFieldGroups = () => {
+    const groups = [];
+    const seen = new Set(); // dedupe across the WHOLE modal, see note below
+    const addGroup = (title, fields) => {
+      const clean = (fields || []).filter((f) => {
+        if (!f?.field_key || seen.has(f.field_key)) return false;
+        if (f.readonly) return false; // the HC cannot correct a read-only field
+        seen.add(f.field_key);
+        return true;
+      });
+      if (clean.length) groups.push({ title, fields: clean });
+    };
+
+    for (const sec of sendBackSchema || []) {
+      const secTitle = lang === 'hi' ? (sec.title_hi || sec.title_en) : sec.title_en;
+      if (sec.sub_tabs?.length) {
+        for (const st of sec.sub_tabs) {
+          const stTitle = lang === 'hi' ? (st.title_hi || st.title_en) : st.title_en;
+          addGroup(`${secTitle} › ${stTitle}`, st.fields);
+        }
+      } else {
+        addGroup(secTitle, sec.fields);
+      }
+    }
+    return groups;
   };
 
   const getThemeClass = () => {
@@ -742,7 +770,7 @@ export default function RecordDetail() {
       {/* ── SEND BACK CORRECTION MODAL ────────────────────────────────────────── */}
       {sendBackModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[var(--bg-card-theme)] border border-[var(--border-card-theme)] rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl text-[var(--text-main-theme)]">
+          <div className="bg-[var(--bg-card-theme)] border border-[var(--border-card-theme)] rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl text-[var(--text-main-theme)]">
             <div className="flex justify-between items-center bg-[var(--bg-page-main)] border-b border-[var(--border-card-theme)]/70 px-6 py-4">
               <h3 className="text-base font-bold text-[var(--text-main-theme)]">Return record for correction</h3>
               <button
@@ -756,26 +784,41 @@ export default function RecordDetail() {
             <div className="p-6 space-y-5">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">Select fields requiring correction (Optional):</label>
-                <div className="grid grid-cols-2 gap-2 max-h-[160px] overflow-y-auto bg-[var(--bg-page-main)]/50 p-3 rounded-xl border border-[var(--border-card-theme)]">
-                  {getAvailableFields().map((f) => (
-                    <button
-                      key={f.field_key}
-                      onClick={() => toggleField(f.field_key)}
-                      className={`text-left p-2 rounded-lg transition-all text-sm flex items-center gap-2 cursor-pointer ${
-                        selectedFields.includes(f.field_key)
-                          ? 'bg-amber-50 border border-amber-300 text-amber-700 font-semibold'
-                          : 'hover:bg-[var(--bg-page-main)] border border-transparent text-[var(--text-main-theme)] opacity-60 hover:opacity-100 hover:border-[var(--border-card-theme)]'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedFields.includes(f.field_key)}
-                        readOnly
-                        className="accent-amber-500"
-                      />
-                      <span className="truncate">{f.label_en}</span>
-                    </button>
-                  ))}
+                <div className="max-h-[50vh] overflow-y-auto bg-[var(--bg-page-main)]/50 p-3 rounded-xl border border-[var(--border-card-theme)] space-y-4">
+                  {getSendBackFieldGroups().length === 0 ? (
+                    <div className="text-sm text-[var(--text-main-theme)] opacity-50 italic py-2 text-center">
+                      {lang === 'hi' ? 'फ़ील्ड लोड हो रहे हैं...' : 'Loading fields...'}
+                    </div>
+                  ) : (
+                    getSendBackFieldGroups().map((group) => (
+                      <div key={group.title}>
+                        <div className="sticky top-0 z-10 bg-[var(--bg-page-main)] px-2 py-1.5 mb-1.5 rounded-md text-xs font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-70 border-b border-[var(--border-card-theme)]">
+                          {group.title}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {group.fields.map((f) => (
+                            <button
+                              key={f.field_key}
+                              onClick={() => toggleField(f.field_key)}
+                              className={`text-left p-2 rounded-lg transition-all text-sm flex items-center gap-2 cursor-pointer ${
+                                selectedFields.includes(f.field_key)
+                                  ? 'bg-amber-50 border border-amber-300 text-amber-700 font-semibold'
+                                  : 'hover:bg-[var(--bg-page-main)] border border-transparent text-[var(--text-main-theme)] opacity-60 hover:opacity-100 hover:border-[var(--border-card-theme)]'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedFields.includes(f.field_key)}
+                                readOnly
+                                className="accent-amber-500"
+                              />
+                              <span className="truncate">{lang === 'hi' ? (f.label_hi || f.label_en) : f.label_en}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 

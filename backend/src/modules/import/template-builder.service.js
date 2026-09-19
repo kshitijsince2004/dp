@@ -285,7 +285,7 @@ const getHint = (field) => {
 // Returns null to mean "carry forward the previous column's section" (used for temporal
 // fields, label-only columns, and anything that belongs with the block before it).
 const ADDR_TOKENS = ['house_no', 'street', 'colony', 'city_town_village', 'tehsil_block_mandal', 'country', 'state', 'district', 'police_station', 'pincode', 'present_address', 'landmark'];
-const PARTICULAR_KEYS = new Set(['nafis_prepared', 'dossier_prepared', 'prev_involvement', 'previous_involvement', 'bad_character', 'proclaimed_offender', 'verifying_officer_name', 'verifying_officer_rank', 'status', 'scheme_of_arrest', 'search_slip_prepared', 'address_verified', 'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path', 'arresting_officer', 'arresting_officer_mobile', 'listed_criminal']);
+const PARTICULAR_KEYS = new Set(['nafis_prepared', 'dossier_prepared', 'prev_involvement', 'previous_involvement', 'bad_character', 'proclaimed_offender', 'verifying_officer_name', 'verifying_officer_rank', 'status', 'scheme_of_arrest', 'scheme_of_arrest_other', 'search_slip_prepared', 'address_verified', 'kin_name', 'kin_mobile', 'kin_relationship', 'photo_path', 'arresting_officer', 'arresting_officer_mobile', 'listed_criminal']);
 
 const sectionLabelForKey = (key, recordType, isParentSheet) => {
   if (!key) return null; // carry forward (label-only column)
@@ -657,7 +657,7 @@ async function buildLiveLookups(recordType) {
     // Union of the interactive form's custody-status values (fields.controller.js status
     // dispatch: against_fir list + non-FIR list) — the template is one flat column, so it
     // must accept every value the form can store.
-    ARREST: ['JC', 'PC', 'Bail', 'Bound Down', 'Release', 'Lockup', '35(3) BNS Notice', 'Fine'],
+    ARREST: ['JC', 'PC', 'Bail', 'Bound Down', 'Release', 'Lockup', '35(3) BNS Notice', 'Fine', 'Apprehension'],
   };
   const statusOpts = (statusOptionsByType[recordType] || []).map(v => ({ value: v, label: v }));
 

@@ -455,3 +455,138 @@ Requires parsing stringified JSON arrays from historical audit records during th
 
 ### Confidence
 High. Config-driven and fully reuses the existing `record_revisions` audit mechanism.
+
+## Scheme of Arrest "Other" Pattern
+
+### Decision
+Added 4 new explicit options ("Special Drive", "Cyber Hawk", "Kawach", "General") and an "Other" option to the ARREST `scheme_of_arrest` field, which conditionally reveals a `scheme_of_arrest_other` text field via the `show_when` pattern. Additionally, updated `DynamicForm.jsx` to respect `show_when` visibility rules when rendering unlisted extra fields in the `arrested_personal_info` block.
+
+### Context
+When recording arrest particulars, the scheme under which the arrest was made needs to capture new specific initiatives or provide a fallback for unlisted schemes.
+
+### Why
+Using the config-driven `show_when: { field: "scheme_of_arrest", value: "Other" }` ensures consistency with the UIDB `cause_of_death_other` pattern. Validation was handled for free by existing logic in `records.service.js` and `saveArrestedEntry`, requiring only a `validation_rules: { required: true }` block in the config.
+
+### Alternatives
+- Custom validation logic in `records.service.js` (rejected: the generic `validateRequiredFields` handles `show_when` automatically).
+- Hardcoding the new field in the UI (rejected: `DynamicForm.jsx`'s `extraFields` map can support conditional rendering generically).
+
+### Tradeoffs
+Required a one-line structural change to `DynamicForm.jsx`'s `renderPersonPersonalInfoSubTab` to correctly filter `extraFields` against their `show_when` conditions, as this specific sub-tab was previously unconditionally rendering all unlisted fields in the section.
+
+### Relevant Code
+- `config/fields/arrest.json`
+- `backend/migrations/20260918000003_add_scheme_of_arrest_other.cjs`
+- `frontend/src/components/forms/DynamicForm.jsx`
+- `frontend/src/utils/api.js`
+
+### Confidence
+High. Mirrored the exact UIDB pattern and generalized the UI's conditional rendering capability.
+
+## ARREST UX and Vocabulary Fixes
+
+### Decision
+1. Removed the duplicate top-level "Custody Status" tab from the ARREST form structure.
+2. Added "Apprehension" as a standard custody status option across the registry, excel imports, and mock APIs.
+3. Removed a duplicate `nick_name` field definition from the ARREST field config.
+
+### Context
+Users reported a redundant top-level "CUSTODY STATUS" tab showing up alongside the existing modal-based "Custody Status" sub-tab, missing vocabulary for generic apprehensions, and two separate "Nickname" inputs on the Arrested Person modal.
+
+### Why
+1. The top-level Custody Status tab was an unintended artifact in `fields.controller.js` `sections.push` array. The correct location is the per-arrestee modal (since a single FIR can have multiple arrestees, each with their own custody status).
+2. "Apprehension" is a generic outcome needed for both against-FIR and kalandra arrests. We updated `statusOptions.config.js` and all dependent import configurations (`import-fields.config.js`, `template-builder.service.js`) to accept it.
+3. The duplicate nickname input was caused by a redundant `nick_name` config block in `arrest.json`, distinct from the correct `arrested_nickname`. Because it was not mapped in `DynamicForm.jsx`'s `KNOWN_KEYS`, the dynamic renderer mistakenly captured it as an "extra field" and rendered a second, out-of-place input. Removing the duplicate config block and syncing the registry permanently resolves the issue without hardcoded React hacks.
+
+### Alternatives
+- Hardcoding `nick_name` into `KNOWN_KEYS` (rejected: masks the underlying schema pollution instead of fixing it).
+
+### Relevant Code
+- `backend/src/modules/fields/fields.controller.js`
+- `backend/src/modules/fields/statusOptions.config.js`
+- `backend/src/modules/import/import-fields.config.js`
+- `backend/src/modules/import/template-builder.service.js`
+- `frontend/src/utils/api.js`
+- `config/fields/arrest.json`
+
+### Confidence
+High. The changes strictly target the reported issues with clean configuration drops and single-line array additions.
+
+## District-Level Review Write Permissions
+
+### Decision
+District review edits are now restricted specifically to **Acts & Sections, Major/Minor Head, and Local Head**. Any other field modifications made by District during a review will be rejected by the backend and visually locked in the frontend.
+
+### Context
+Previously, any district reviewer could technically edit any field using the generic `updateRecord` endpoint since the frontend just unlocked the entire form indiscriminately, and the backend didn't enforce specific role limitations beyond `is_worked_out`.
+
+### Why
+We finally wired up the pre-existing (and previously decorative) `editable_by_levels` array column in `field_registry`. 
+Instead of hardcoding field lists in the backend, we now loop over the registry definition on submit. If a field value changed but the user's role isn't explicitly in that field's `editable_by_levels` array, the save is rejected.
+For persons and properties (which use repeater UI grids), the frontend completely disables their 'Add' and 'Edit' triggers during District review so the arrays are never maliciously or accidentally manipulated, and the backend blocks the entire array if it changes.
+
+### Alternatives
+- Hardcoded lists in `records.service.js` (rejected: difficult to maintain, breaks data-driven schema paradigm).
+- New specific API for District (rejected: duplicates validation logic; `updateRecord` is designed to be the unified save handler).
+
+### Relevant Code
+- `backend/src/modules/records/records.mapper.js`
+- `backend/src/modules/records/records.service.js`
+- `config/fields/common.json`, `config/fields/case.json`
+- `frontend/src/components/forms/DynamicForm.jsx`
+
+### Confidence
+High. The solution relies exclusively on the existing field configuration schema.
+
+### Send-Back Field Picker Live Schema Integration
+* **Decision**: Source the "Return for correction" field picker from the live form schema (`useFormSchema`) instead of the hardcoded Mock Mode copy (`formSchemas`), group checkboxes by section/sub-tab, and exclude read-only fields.
+* **Context**: The previous implementation used a flat list derived from a stale mock file (`utils/api.js`), which led to an unusable undifferentiated list of checkboxes that missed newly added fields and all repeater sub-tabs.
+* **Why**: To ensure the reviewer sees the exact same fields and labels that are rendered on the live form, with clear grouping. Read-only fields are explicitly excluded because the HC cannot edit them, making them misleading options for correction.
+* **Alternatives**: Manually updating the mock schema and writing a custom grouper.
+* **Tradeoffs**: Requires fetching the schema dynamically for the modal, but the hook is already used by the underlying form so the data is usually cached or readily available.
+* **Relevant Code**: `frontend/src/pages/sho/RecordDetail.jsx` (getSendBackFieldGroups) and `frontend/src/pages/hc/NewRecord.jsx` (getFieldLabel).
+* **Confidence**: High. The underlying storage (`target_fields`) remains strictly field keys, preserving compatibility with backend rules and HC-side highlights.
+
+### Duplicate Fields in Person Sub-Tabs
+* **Decision**: Separate `scheme_of_arrest` and `complainant_same_as_victim` from the generic suffix array in `renderPersonPersonalInfoSubTab`'s KNOWN_KEYS exclusion list, checking them unprefixed.
+* **Context**: These fields are already fully-qualified in the registry (`config/fields/case.json`, `config/fields/arrest.json`). Prefixing them dynamically generated non-existent keys (e.g., `complainant_complainant_same_as_victim`), causing them to bypass the exclusion check and incorrectly render a second time in the "Additional Information" fallback block.
+* **Why**: To prevent duplicate renders of "Is Complainant same as Victim?" in COMPLAINANT and "Scheme of Arrest" in ARRESTED.
+* **Alternatives**: Removing them from the catch-all, but this properly addresses the root cause of the prefixing mismatch.
+* **Tradeoffs**: None.
+* **Relevant Code**: `frontend/src/components/forms/DynamicForm.jsx` (`renderPersonPersonalInfoSubTab`).
+* **Confidence**: High. Exact root cause identified.
+
+### Complainant Step Navigation
+* **Decision**: Intercept "Next Step" in `handleNext` when on the Complainant step (which uses two inline sub-tabs) to switch from "Personal" to "Address" sub-tabs before actually advancing the global wizard step.
+* **Context**: Complainant is unique because its sub-tabs are inline rather than in a modal. Clicking "Next Step" while on Personal Info skipped the Address tab entirely and jumped straight to the next section (FIR Contents).
+* **Why**: To ensure users naturally flow through both sub-tabs of the Complainant section without being prematurely kicked to the next wizard step.
+* **Alternatives**: Adding a separate "Next" button inside the Complainant component.
+* **Tradeoffs**: Requires a specific conditional branch in the global `handleNext` function.
+* **Relevant Code**: `frontend/src/components/forms/DynamicForm.jsx` (`handleNext`).
+* **Confidence**: High. Leverages existing state (`complainantTab`) and maintains the existing `validateSection` behavior exactly.
+
+### Custom Fields in CASE Tabs
+* **Decision**: Update backend filters for `acts_and_sections` and `fir_contents` to explicitly accept fields whose `section` matches the tab key, and add an "Additional Information" block to the hand-written `renderActsAndSectionsStep`.
+* **Context**: District admin custom fields assigned to "Acts & Sections" or "FIR Contents" were not appearing. The backend filters for these two specific CASE tabs were closed (allowlist only or excluding their own section key). Additionally, the frontend renderer for `acts_and_sections` lacked a loop to display unexpected fields.
+* **Why**: To ensure district custom fields mapped to these tabs render correctly, aligning their behavior with all other tabs in the application (which are self-inclusive).
+* **Alternatives**: Changing the admin UI to map custom fields to sub-sections, but that breaks the abstraction.
+* **Tradeoffs**: Requires a specific catch-all block in `DynamicForm.jsx` for `renderActsAndSectionsStep`.
+* **Relevant Code**: `backend/src/modules/fields/fields.controller.js` (`getFieldsForForm`), `frontend/src/components/forms/DynamicForm.jsx` (`renderActsAndSectionsStep`).
+* **Confidence**: High.
+* **Note/Follow-up**: The `unassignedFields` safety net logic checks `f.created_by !== null`, but `created_by` doesn't exist on `field_registry`. This causes a silent fallback collision where custom fields can overwrite official tabs in the frontend map. This requires a DB migration to add `created_by` and is deferred to a separate fix pass.
+
+### Custom Fields in ARREST General Info
+* **Decision**: Added an "Additional Information" fallback block to the hand-written `renderArrestGeneralInfoStep` in `DynamicForm.jsx`.
+* **Context**: Similar to the CASE `acts_and_sections` issue, the ARREST `general_info` tab's custom rendering logic did not include a loop to render generic custom fields, even though they were correctly included in the API response under `general_info`.
+* **Why**: To ensure district custom fields mapped to this tab render correctly while maintaining the custom layout for standard fields.
+* **Alternatives**: None.
+* **Tradeoffs**: Hand-written components require explicit fallback loops.
+* **Relevant Code**: `frontend/src/components/forms/DynamicForm.jsx` (`renderArrestGeneralInfoStep`).
+* **Confidence**: High.
+
+#### Follow-up: MISSING Custom Fields
+* **Investigation Note**: When investigating why the `test_missing` custom field does not render on the MISSING record type under the `general_info` section, step 0 verification confirmed:
+  1. The field IS saved with `section: 'general_info'` in the database.
+  2. The field IS returned inside the official `general_info` fields array in the API response (verified via script against `GET /fields/form/MISSING`).
+  3. MISSING uses the default `FormSection.jsx` component which loops over all fields, and `test_missing` is NOT in the `KEYS_TO_SKIP` exclusion list, nor does it fail `evaluateShowWhen`.
+  *Conclusion*: The assumption that it was saved under a non-official custom section and failing `SECTION_KEY_ORDER` validation was incorrect. It is properly part of the real `general_info` section payload. (I am awaiting further instructions on this since the root cause diverges from the initial hypothesis).

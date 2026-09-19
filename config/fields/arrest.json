@@ -1115,6 +1115,31 @@
     "value": "By Eyes & Ears Scheme Members",
     "label_en": "By Eyes & Ears Scheme Members",
     "label_hi": "By Eyes & Ears Scheme Members"
+   },
+   {
+    "value": "Special Drive",
+    "label_en": "Special Drive",
+    "label_hi": "Special Drive"
+   },
+   {
+    "value": "Cyber Hawk",
+    "label_en": "Cyber Hawk",
+    "label_hi": "Cyber Hawk"
+   },
+   {
+    "value": "Kawach",
+    "label_en": "Kawach",
+    "label_hi": "Kawach"
+   },
+   {
+    "value": "General",
+    "label_en": "General",
+    "label_hi": "General"
+   },
+   {
+    "value": "Other",
+    "label_en": "Other",
+    "label_hi": "अन्य"
    }
   ],
   "validation_rules": {
@@ -1131,6 +1156,47 @@
   "introduced_at_level": "PS",
   "repeater_entity": "PERSON_ARRESTED",
   "sort_order": 10.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "scheme_of_arrest_other",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Scheme of Arrest (Specify)",
+   "hi": "गिरफ्तारी की योजना (विवरण)"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "scheme_of_arrest_other"
+  },
+  "options": null,
+  "options_source": null,
+  "depends_on": null,
+  "show_when": {
+   "field": "scheme_of_arrest",
+   "value": "Other"
+  },
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 10.6,
   "full_width": false,
   "readonly": false,
   "is_active": true,
@@ -1929,41 +1995,6 @@
   "labels": {
    "en": "Arrested Person Nickname(s)",
    "hi": "गिरफ्तार व्यक्ति उपनाम"
-  },
-  "section": "arrested_personal_info",
-  "storage": {
-   "entity": "person",
-   "role": "ARRESTEE",
-   "column": "nick_names"
-  },
-  "visible_to_levels": [
-   "PS",
-   "DISTRICT",
-   "HQ"
-  ],
-  "editable_by_levels": [
-   "PS"
-  ],
-  "introduced_at_level": "PS",
-  "repeater_entity": "PERSON_ARRESTED",
-  "sort_order": 403.5,
-  "full_width": false,
-  "readonly": false,
-  "is_active": true,
-  "scope_level": "global",
-  "validation_rules": {
-   "pattern": "name"
-  }
- },
- {
-  "field_key": "nick_name",
-  "record_types": [
-   "ARREST"
-  ],
-  "field_type": "TEXT",
-  "labels": {
-   "en": "Nick Name",
-   "hi": "उपनाम"
   },
   "section": "arrested_personal_info",
   "storage": {
