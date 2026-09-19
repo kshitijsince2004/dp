@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { syncConfig } from '../../scripts/lib/sync-config-core.mjs';
 import { loadRef, computeRefSourceChecksum, REF_CHECKSUM_KEY } from '../../scripts/lib/load-ref-core.mjs';
+import { seedStatutoryFirCodes } from '../../scripts/seed-statutory-fir-codes.mjs';
 
 /**
  * Smart startup auto-load, run once at boot between connectDB() and
@@ -13,6 +14,7 @@ import { loadRef, computeRefSourceChecksum, REF_CHECKSUM_KEY } from '../../scrip
  *      files (Menu_Tables.xlsx, org/hierarchy.json, ps_codes.json, the
  *      heinous overlay) changed since the last successful load — tracked via
  *      system_meta.ref_source_checksum.
+ *   3. seedStatutoryFirCodes always to ensure ref.ps_*_codes are in sync.
  * Disable with STARTUP_AUTOLOAD=false. Any failure aborts startup loudly —
  * this runs before the HTTP server starts accepting traffic.
  */
@@ -24,8 +26,9 @@ export async function runStartupAutoload() {
 
   try {
     await syncConfig(db, (line) => logger.info(`[autoload:sync-config] ${line}`));
+    await seedStatutoryFirCodes(db);
   } catch (err) {
-    throw new Error(`[autoload] sync-config failed (is the DB migrated? run \`npm run db:migrate\`): ${err.message}`);
+    throw new Error(`[autoload] sync-config / seed-fir-codes failed (is the DB migrated? run \`npm run db:migrate\`): ${err.message}`);
   }
 
   let needsRefLoad = false;

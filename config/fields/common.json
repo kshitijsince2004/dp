@@ -61,6 +61,66 @@
     "scope_level": "global"
   },
   {
+    "field_key": "registration_type",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Registration Type",
+      "hi": "पंजीकरण प्रकार"
+    },
+    "section": "general_info",
+    "storage": {
+      "table": "fir_details",
+      "column": "registration_type"
+    },
+    "options": [
+      {
+        "value": "MANUAL_CCTNS",
+        "label_en": "Manual FIR (CCTNS)",
+        "label_hi": "मैनुअल प्राथमिकी (CCTNS)"
+      },
+      {
+        "value": "E_THEFT",
+        "label_en": "e-FIR (Theft)",
+        "label_hi": "ई-एफआईआर (चोरी)"
+      },
+      {
+        "value": "E_MVT",
+        "label_en": "e-FIR (Motor Vehicle Theft)",
+        "label_hi": "ई-एफआईआर (वाहन चोरी)"
+      },
+      {
+        "value": "NCRP",
+        "label_en": "NCRP (Cyber Crime)",
+        "label_hi": "एनसीआरपी (साइबर अपराध)"
+      },
+      {
+        "value": "ZERO_FIR",
+        "label_en": "Zero FIR",
+        "label_hi": "जीरो एफआईआर"
+      }
+    ],
+    "validation_rules": {
+      "required": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 0.9,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
     "field_key": "fir_no",
     "record_types": [
       "CASE",

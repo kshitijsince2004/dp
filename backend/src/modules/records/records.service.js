@@ -7,6 +7,7 @@ import { toISO } from '../../utils/dateFormat.js';
 import * as workflowEngine from '../workflow/workflow.engine.js';
 import * as mapper from './records.mapper.js';
 import { resolveMajorHead, resolveLocalHead, normalizeDate, deriveFirYear } from './records.normalize.js';
+import { generateAndValidateStatutoryFir, resolveJurisdictionPrefix, getAllowedRegistrationTypes, getNextFirSerial } from './statutoryFir.service.js';
 import { getStatusOptionsForType } from '../fields/statusOptions.config.js';
 import { getLogger } from '../../utils/logger.js';
 import { redact } from '../../utils/redact.js';
@@ -1332,9 +1333,27 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
       split.detail.is_worked_out = false;
     }
 
-    const firYear = deriveFirYear(split.detail.fir_no, split.detail.fir_date, normalizedRecordDate);
-    if (firYear != null) split.detail.fir_year = firYear;
-    log.debug('insertRecordCore: derived fir_year', { recordId: id, firNo: split.detail.fir_no, firDate: split.detail.fir_date, firYear });
+    const regType = split.detail.registration_type || data?.registration_type || 'MANUAL_CCTNS';
+    const statutoryRes = await generateAndValidateStatutoryFir(trx, {
+      psId: scope.ps_id,
+      registrationType: regType,
+      recordDate: normalizedRecordDate,
+      firDate: split.detail.fir_date,
+      requestedFirNo: split.detail.fir_no || data?.fir_no,
+      requestedSerial: data?.fir_seq || data?.serial,
+      userOverride: data?.user_override === true || data?.year_override === true,
+      isLegacy: !!importStamps?.isLegacy || opts.isLegacy === true,
+    });
+
+    split.detail.fir_no = statutoryRes.firNo;
+    split.detail.registration_type = statutoryRes.registrationType;
+    split.detail.fir_year = statutoryRes.firYear;
+    split.detail.fir_seq = statutoryRes.firSeq;
+    split.detail.fir_type_prefix = statutoryRes.firTypePrefix;
+    split.detail.fir_ps_code = statutoryRes.firPsCode;
+    split.detail.is_legacy_format = statutoryRes.isLegacyFormat;
+
+    log.debug('insertRecordCore: statutory FIR applied', { recordId: id, firNo: split.detail.fir_no, firYear: split.detail.fir_year, registrationType: split.detail.registration_type });
   }
 
   await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, scope.ps_id), ...split.detail, extra: JSON.stringify(split.detailExtra) });
@@ -2188,4 +2207,31 @@ export const deleteRecord = async (id, user) => {
     await writeAuditLog(trx, { recordId: id, action: 'DELETE', user });
   });
   await eventBus.publish('record.deleted', { record_id: id, performed_by: user.id });
+};
+
+export const resolveStatutoryPrefix = async ({ psId, registrationType, recordDate }) => {
+  const jur = await resolveJurisdictionPrefix(db, { psId, registrationType });
+  if (!jur.isAllowed) {
+    const err = new Error(jur.error);
+    err.status = 422;
+    throw err;
+  }
+
+  const dateObj = recordDate ? new Date(recordDate) : new Date();
+  const year4 = isNaN(dateObj.getFullYear()) ? new Date().getFullYear() : dateObj.getFullYear();
+  const year2 = String(year4).slice(-2);
+  const nextSerial = await getNextFirSerial(db, { psId, registrationType, year4 });
+  const sampleFirNo = `${jur.prefix8}${year2}${String(nextSerial).padStart(4, '0')}`;
+
+  return {
+    ...jur,
+    year4,
+    year2,
+    nextSerial,
+    sampleFirNo,
+  };
+};
+
+export const getAllowedStatutoryTypes = async (psId) => {
+  return getAllowedRegistrationTypes(db, psId);
 };

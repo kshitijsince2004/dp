@@ -8,6 +8,8 @@ const router = Router();
 router.get('/', authMiddleware, enforceScope, recordsController.getRecords);
 router.post('/search', authMiddleware, enforceScope, recordsController.searchRecords);
 router.get('/check-duplicate', authMiddleware, recordsController.checkDuplicate);
+router.get('/statutory-fir/prefix', authMiddleware, recordsController.getStatutoryFirPrefix);
+router.get('/statutory-fir/allowed-types', authMiddleware, recordsController.getAllowedStatutoryFirTypes);
 router.get('/:id', authMiddleware, recordsController.getRecord);
 
 router.post('/', authMiddleware, allow('HC'), recordsController.create);

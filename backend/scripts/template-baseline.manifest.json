@@ -597,11 +597,11 @@
           "key": "case_status",
           "section": "Action Taken",
           "label": "Status",
-          "hint": "select: CHARGE SHEET, POLICE INVESTIGATION REPORT(PIR-JCL), UNTRACED, PENDING, CANCELLATION, QUASHED, CLOSURE REPORT, RELEASED U/S 189 BNSS, TRANSFER",
+          "hint": "select: CHARGE SHEET, POLICE INVESTIGATION REPORT(PIR-JCL), UNTRACED, PENDING, CANCELLATION, QUASHED, CLOSURE REPORT, RELEASED U/S 189 BNSS, TRANSFER, SUPPLEMENTARY CHARGESHEET",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"CHARGE SHEET,POLICE INVESTIGATION REPORT(PIR-JCL),UNTRACED,PENDING,CANCELLATION,QUASHED,CLOSURE REPORT,RELEASED U/S 189 BNSS,TRANSFER\""
+              "\"CHARGE SHEET,POLICE INVESTIGATION REPORT(PIR-JCL),UNTRACED,PENDING,CANCELLATION,QUASHED,CLOSURE REPORT,RELEASED U/S 189 BNSS,TRANSFER,SUPPLEMENTARY CHARGESHEET\""
             ]
           }
         },
@@ -703,7 +703,7 @@
           "col": 67,
           "key": "court_case_no",
           "section": "General Information",
-          "label": "court_case_no",
+          "label": "Court Case No. (CC/CCMS)",
           "hint": "text",
           "validation": null
         },
@@ -711,7 +711,7 @@
           "col": 68,
           "key": "court_disposal_date",
           "section": "General Information",
-          "label": "court_disposal_date",
+          "label": "Court Disposal Date",
           "hint": "date",
           "validation": null
         },
@@ -719,7 +719,7 @@
           "col": 69,
           "key": "court_disposal_type",
           "section": "General Information",
-          "label": "court_disposal_type",
+          "label": "Court Disposal Status",
           "hint": "select",
           "validation": null
         },
@@ -727,7 +727,7 @@
           "col": 70,
           "key": "court_name",
           "section": "General Information",
-          "label": "court_name",
+          "label": "Court Name / Court No.",
           "hint": "select",
           "validation": null
         },
@@ -767,7 +767,7 @@
           "col": 75,
           "key": "sent_to_court_date",
           "section": "General Information",
-          "label": "sent_to_court_date",
+          "label": "Date Sent to Court",
           "hint": "date",
           "validation": null
         },
@@ -3809,16 +3809,24 @@
           "key": "cause_of_death",
           "section": "Inquest Details",
           "label": "Cause of Death",
-          "hint": "select: Accidental, Natural, Suicide, Drowning, Murder, Unknown",
+          "hint": "select: Accidental, Natural, Suicide, Drowning, Murder, Unknown, Other",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Accidental,Natural,Suicide,Drowning,Murder,Unknown\""
+              "\"Accidental,Natural,Suicide,Drowning,Murder,Unknown,Other\""
             ]
           }
         },
         {
           "col": 45,
+          "key": "cause_of_death_other",
+          "section": "Inquest Details",
+          "label": "Cause of Death (Specify)",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 46,
           "key": "deceased_relative_name",
           "section": "Inquest Details",
           "label": "Relative Name",
@@ -3826,7 +3834,7 @@
           "validation": null
         },
         {
-          "col": 46,
+          "col": 47,
           "key": "deceased_relation_type",
           "section": "Inquest Details",
           "label": "Relation with Deceased",
@@ -3839,7 +3847,7 @@
           }
         },
         {
-          "col": 47,
+          "col": 48,
           "key": "filed_by_acp_sdm",
           "section": "Inquest Details",
           "label": "Inquest Filed by ACP / SDM?",
@@ -3847,7 +3855,7 @@
           "validation": null
         },
         {
-          "col": 48,
+          "col": 49,
           "key": "filed_by_acp_sdm_date",
           "section": "Inquest Details",
           "label": "Date of Filed by ACP/SDM",
@@ -3861,7 +3869,7 @@
           }
         },
         {
-          "col": 49,
+          "col": 50,
           "key": "io_pis",
           "section": "IO Details",
           "label": "PIS No. of IO",
@@ -3873,7 +3881,7 @@
         "A2:D2",
         "AD2:AM2",
         "AN2:AQ2",
-        "AR2:AV2",
+        "AR2:AW2",
         "E2:AC2"
       ]
     },
@@ -4466,44 +4474,6 @@
               6,
               10
             ]
-        },
-        {
-          "col": 51,
-          "key": "complainant_social_category",
-          "section": "Complainant Personal Details",
-          "label": "complainant_social_category",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 52,
-          "key": "complainant_education",
-          "section": "Complainant Personal Details",
-          "label": "complainant_education",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 53,
-          "key": "complainant_financial_status",
-          "section": "Complainant Personal Details",
-          "label": "complainant_financial_status",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
-            ]
           }
         }
       ],
@@ -4512,7 +4482,6 @@
         "AE2:AH2",
         "AI2:AQ2",
         "AS2:AX2",
-        "AY2:BA2",
         "G2:AD2"
       ]
     }

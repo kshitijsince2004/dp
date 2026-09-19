@@ -414,3 +414,28 @@ export const searchRecords = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getStatutoryFirPrefix = async (req, res) => {
+  const { registration_type, hierarchy_node_id, ps_id } = req.query;
+  const nodeId = hierarchy_node_id || ps_id || req.user?.hierarchy_node_id || req.user?.ps_id;
+  try {
+    const prefixInfo = await recordsService.resolveStatutoryPrefix(registration_type, nodeId);
+    return res.status(200).json({ success: true, data: prefixInfo });
+  } catch (error) {
+    log.error('getStatutoryFirPrefix: failed', { query: req.query, err: error });
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const getAllowedStatutoryFirTypes = async (req, res) => {
+  const { hierarchy_node_id, ps_id } = req.query;
+  const nodeId = hierarchy_node_id || ps_id || req.user?.hierarchy_node_id || req.user?.ps_id;
+  try {
+    const types = await recordsService.getAllowedStatutoryTypes(nodeId);
+    return res.status(200).json({ success: true, data: types });
+  } catch (error) {
+    log.error('getAllowedStatutoryFirTypes: failed', { query: req.query, err: error });
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+

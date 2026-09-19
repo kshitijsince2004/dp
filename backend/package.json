@@ -18,7 +18,7 @@
     "audit:verify": "node scripts/verify-audit-chain.mjs",
     "seed:test-data": "node scripts/seed-test-data.js",
     "logs:clear": "node scripts/dev/clear-logs.mjs",
-    "test": "node tests/verify_formulas.mjs && node tests/test_phq_comprehensive.mjs"
+    "test": "node tests/verify_formulas.mjs && node tests/test_phq_comprehensive.mjs && node --test tests/08-statutory-fir-number.node.test.js"
   },
   "dependencies": {
     "amqplib": "^0.10.4",
