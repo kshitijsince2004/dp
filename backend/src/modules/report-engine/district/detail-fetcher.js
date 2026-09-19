@@ -6,8 +6,8 @@ function filterValidUuids(arr) {
   return (arr || []).filter(id => typeof id === 'string' && UUID_RE.test(id));
 }
 
-const ACCIDENT_CODES   = ['FATAL_ACCIDENT', 'SIMPLE_ACCIDENT', 'ACCIDENT'];
-const HEINOUS_CODES    = ['MURDER', 'ROBBERY', 'DACOITY', 'RAPE', 'POCSO', 'KIDNAPPING', 'KID_FOR_RANSOM'];
+const ACCIDENT_CODES       = ['FATAL_ACCIDENT', 'SIMPLE_ACCIDENT', 'ACCIDENT'];
+const D2_BRIEF_FACTS_CODES = ['MURDER', 'ROBBERY', 'DACOITY', 'RAPE', 'POCSO', 'KIDNAPPING', 'KID_FOR_RANSOM'];
 
 export async function fetchPsSubDivisionMap(psIds) {
   const validPsIds = filterValidUuids(psIds);
@@ -58,7 +58,7 @@ export async function fetchHeinousBriefFacts({ psIds, cutoffDate }) {
     .where('r.record_type', 'CASE')
     .whereIn('r.ps_id', validPsIds)
     .whereRaw('COALESCE(r.registration_date, r.record_date) = ?', [cutoffDate])
-    .whereIn('lh.canonical_code', HEINOUS_CODES)
+    .whereIn('lh.canonical_code', D2_BRIEF_FACTS_CODES)
     .select(
       'r.ps_id',
       'hn.name as ps_name',

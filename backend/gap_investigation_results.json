@@ -1,0 +1,235 @@
+{
+  "q1a_foreign_keys": [
+    {
+      "constraint_name": "record_offences_record_id_fkey",
+      "column_name": "record_id",
+      "foreign_table_schema": "public",
+      "foreign_table_name": "records",
+      "foreign_column_name": "id"
+    }
+  ],
+  "ref_acts_columns": [
+    {
+      "column_name": "act_cd",
+      "data_type": "integer"
+    },
+    {
+      "column_name": "act_long",
+      "data_type": "text"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    }
+  ],
+  "q1b_acts": [],
+  "q1b_local_heads": [
+    {
+      "local_head_cd": 102,
+      "local_head": "Delhi Excise Act"
+    },
+    {
+      "local_head_cd": 103,
+      "local_head": "Gambling Act"
+    }
+  ],
+  "q1c_matched_acts_in_ref": [
+    {
+      "act_cd": 4,
+      "act_long": "ARMS ACT, 1959"
+    },
+    {
+      "act_cd": 48,
+      "act_long": "NARCOTIC DRUGS AND PSYCHOTROPIC SUBSTANCES ACT, 1985"
+    },
+    {
+      "act_cd": 51,
+      "act_long": "P I T NARCOTIC DRUGS AND PHYSCHO. SUBS. ACT, 1988"
+    },
+    {
+      "act_cd": 68,
+      "act_long": "THE PUBLIC GAMBLING ACT, 1867"
+    },
+    {
+      "act_cd": 206,
+      "act_long": "MEDICINAL AND TOILET PREP.(EXCISE DUTIES) ACT,1955"
+    },
+    {
+      "act_cd": 438,
+      "act_long": "THE PUNJAB EXCISE ACT, 1914, 1 OF 1914"
+    },
+    {
+      "act_cd": 507,
+      "act_long": "MAHARASHTRA PREVENTION OF GAMBLING ACT, 1887"
+    },
+    {
+      "act_cd": 2118,
+      "act_long": "DELHI POLICE ACT 1978"
+    },
+    {
+      "act_cd": 2158,
+      "act_long": "INDIAN ARMS ACT, 1969"
+    },
+    {
+      "act_cd": 2583,
+      "act_long": "PUBLIC GAMBLING ACT, 1977"
+    },
+    {
+      "act_cd": 2612,
+      "act_long": "DELHI PUBLIC GAMBLING ACT, 1955"
+    },
+    {
+      "act_cd": 3032,
+      "act_long": "DELHI EXCISE ACT, 2009"
+    },
+    {
+      "act_cd": 3270,
+      "act_long": "DELHI EXCISE ACT, 2010"
+    },
+    {
+      "act_cd": 9994,
+      "act_long": "Arms (Amendment) Act 2019"
+    }
+  ],
+  "q1c_ro_data": [
+    {
+      "resolved_act_name": "ARMS ACT, 1959",
+      "act_id": 4,
+      "other_act_name": null,
+      "section_id": null,
+      "count": "82"
+    },
+    {
+      "resolved_act_name": "DELHI EXCISE ACT, 2009",
+      "act_id": 3032,
+      "other_act_name": null,
+      "section_id": null,
+      "count": "82"
+    },
+    {
+      "resolved_act_name": "DELHI POLICE ACT 1978",
+      "act_id": 2118,
+      "other_act_name": null,
+      "section_id": null,
+      "count": "82"
+    },
+    {
+      "resolved_act_name": "DELHI POLICE ACT 1978",
+      "act_id": 2118,
+      "other_act_name": null,
+      "section_id": "2118-66",
+      "count": "1"
+    },
+    {
+      "resolved_act_name": "DELHI PUBLIC GAMBLING ACT, 1955",
+      "act_id": 2612,
+      "other_act_name": null,
+      "section_id": null,
+      "count": "82"
+    },
+    {
+      "resolved_act_name": "NARCOTIC DRUGS AND PSYCHOTROPIC SUBSTANCES ACT, 1985",
+      "act_id": 48,
+      "other_act_name": null,
+      "section_id": null,
+      "count": "164"
+    }
+  ],
+  "q1c_all_acts_in_ro": [
+    {
+      "act_id": 4375,
+      "act_long": "THE BHARATIYA NYAYA SANHITA (BNS), 2023",
+      "other_act_name": null,
+      "count": "46186"
+    },
+    {
+      "act_id": 48,
+      "act_long": "NARCOTIC DRUGS AND PSYCHOTROPIC SUBSTANCES ACT, 1985",
+      "other_act_name": null,
+      "count": "164"
+    },
+    {
+      "act_id": 2118,
+      "act_long": "DELHI POLICE ACT 1978",
+      "other_act_name": null,
+      "count": "83"
+    },
+    {
+      "act_id": 3032,
+      "act_long": "DELHI EXCISE ACT, 2009",
+      "other_act_name": null,
+      "count": "82"
+    },
+    {
+      "act_id": 2612,
+      "act_long": "DELHI PUBLIC GAMBLING ACT, 1955",
+      "other_act_name": null,
+      "count": "82"
+    },
+    {
+      "act_id": 4,
+      "act_long": "ARMS ACT, 1959",
+      "other_act_name": null,
+      "count": "82"
+    },
+    {
+      "act_id": 2625,
+      "act_long": "INFORMATION TECHNOLOGY  ACT 2000",
+      "other_act_name": null,
+      "count": "82"
+    },
+    {
+      "act_id": 43,
+      "act_long": "IPC 1860",
+      "other_act_name": null,
+      "count": "45"
+    }
+  ],
+  "q1d_cheating_sections": [
+    {
+      "section_id": null,
+      "count": "1392"
+    }
+  ],
+  "q4_top_dates": [
+    {
+      "case_date": "2026-07-28T18:30:00.000Z",
+      "total_cases": "6670"
+    },
+    {
+      "case_date": "2026-07-27T18:30:00.000Z",
+      "total_cases": "5850"
+    },
+    {
+      "case_date": "2026-07-29T18:30:00.000Z",
+      "total_cases": "984"
+    },
+    {
+      "case_date": "2026-07-22T18:30:00.000Z",
+      "total_cases": "929"
+    },
+    {
+      "case_date": "2026-07-19T18:30:00.000Z",
+      "total_cases": "762"
+    }
+  ],
+  "test_date": "2026-07-28T18:30:00.000Z",
+  "q4_invariant_result": {
+    "heinous": "1739",
+    "non_heinous": "4931",
+    "acts": "0",
+    "total_registered": "6670"
+  },
+  "q4_all_time_invariant": {
+    "all_time_heinous": "8516",
+    "all_time_non_heinous": "20638",
+    "all_time_acts": "574",
+    "all_time_total_registered": "29828",
+    "cases_with_null_local_head": "100",
+    "cases_missing_fir_details": "0"
+  }
+}

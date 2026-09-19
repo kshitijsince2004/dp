@@ -1,5 +1,5 @@
 import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
-import { computeVariation, computeDetection, computeNotWorkedOut } from '../../shared/calc.js';
+import { varPct, detPct, computeNotWorkedOut } from '../../shared/calc.js';
 
 function formatDistrictTitle(name) {
   let s = (name || 'DISTRICT').trim();
@@ -140,13 +140,12 @@ export function renderDCsPChart(workbook, scope, calcData) {
   });
 
   function fmtRow(dayY, dayYWo, dayY1, dayY1Wo, repY, woY, repY1, woY1) {
-    const incDec = computeVariation(dayY, dayY1);
+    const incDec = varPct(dayY, dayY1);
     const nwY    = computeNotWorkedOut(repY, woY);
-    const solY   = computeDetection(woY, repY);
-    const solY1  = computeDetection(woY1, repY1);
+    const solY   = detPct(woY, repY);
+    const solY1  = detPct(woY1, repY1);
     const f  = v => v > 0 ? v : '-';
-    const fp = v => v !== null ? `${(v * 100).toFixed(1)}%` : '-';
-    return [f(dayY), f(dayYWo), f(dayY1), f(dayY1Wo), fp(incDec), f(repY), f(woY), f(nwY), fp(solY), f(repY1), f(woY1), fp(solY1)];
+    return [f(dayY), f(dayYWo), f(dayY1), f(dayY1Wo), incDec, f(repY), f(woY), f(nwY), solY, f(repY1), f(woY1), solY1];
   }
 
   ROWS.forEach(r => {

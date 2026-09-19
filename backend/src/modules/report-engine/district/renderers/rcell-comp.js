@@ -1,5 +1,5 @@
 import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
-import { computeVariation, computeDetection } from '../../shared/calc.js';
+import { varPct, detPct } from '../../shared/calc.js';
 
 function formatDistrictTitle(name) {
   let s = (name || 'DISTRICT').trim();
@@ -126,17 +126,17 @@ export function renderRcellComp(workbook, scope, calcData) {
       woY   = get(head.code, 'woY');
     }
 
-    const solPctY1 = computeDetection(woY1, repY1);
-    const solPctY  = computeDetection(woY, repY);
-    const varPct   = computeVariation(repY, repY1);
+    const solPctY1 = detPct(woY1, repY1);
+    const solPctY  = detPct(woY, repY);
+    const varPctVal = varPct(repY, repY1);
 
     const dRow = sheet.addRow([
       head.label,
       fmt(repY1), fmt(woY1),
-      fmtPct(solPctY1),
+      solPctY1,
       fmt(repY),  fmt(woY),
-      fmtPct(solPctY),
-      fmtPct(varPct),
+      solPctY,
+      varPctVal,
     ]);
 
     dRow.height = 20;

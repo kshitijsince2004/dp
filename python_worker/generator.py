@@ -631,11 +631,13 @@ DAILY_DIARY_PARALLEL_TEMPLATE_IDS = {
 TEMPLATE_TO_TABLE_NAMES = {
     'daily-diary': [
         'excel_1manual_fir', 'excel_2eburglary_cases', 'excel_3ehouse_theft_cases', 'excel_4eother_theft_cases',
-        'excel_5mvt_cases', 'excel_8arrested_kalandara', 'excel_9arrested_efir_theft', 'excel_7arrested_east_district',
-        'excel_10arrested_efir_mv_theft', 'excel_13arrested_24_hrs_list', 'excel_14pi_disposal_manual',
-        'excel_15pi_disposal_eproperty', 'excel_16pi_disposal_emvt', 'excel_18missing_persons', 'excel_19uidb',
-        'excel_20abandoned_persons', 'excel_21traced_persons', 'excel_25inquest_registered',
-        'excel_26inquest_acpsdm_disposal', 'excel_28fir_goswara_summary'
+        'excel_5mvt_cases', 'excel_6arrested_all_heads', 'excel_7arrested_east_district', 'excel_8arrested_kalandara',
+        'excel_9arrested_efir_theft', 'excel_10arrested_efir_mv_theft', 'excel_11proclaimed_offenders',
+        'excel_13arrested_24_hrs_list', 'excel_14pi_disposal_manual', 'excel_15pi_disposal_eproperty',
+        'excel_16pi_disposal_emvt', 'excel_18missing_persons', 'excel_19uidb', 'excel_20abandoned_persons',
+        'excel_21traced_persons', 'excel_22women_missing', 'excel_23children_missing',
+        'excel_25inquest_registered', 'excel_26inquest_acpsdm_disposal', 'excel_28fir_goswara_summary',
+        'excel_29arrest_count_summary'
     ],
     'dd-manual-fir': ['excel_1manual_fir'],
     'dd-eburglary-ehouse-theft-mvt': ['excel_2eburglary_cases', 'excel_3ehouse_theft_cases', 'excel_4eother_theft_cases', 'excel_5mvt_cases'],

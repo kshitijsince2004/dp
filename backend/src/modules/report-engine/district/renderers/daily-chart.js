@@ -29,11 +29,10 @@ function psAgg(psByCode, psByCodeY1, psByCodeWo, psByCodeY1Wo, psId, codes) {
 
 function fmt7(repY1, repY, woY1, woY) {
   const nwY  = computeNotWorkedOut(repY, woY);
-  const solY = computeDetection(woY, repY);
-  const varPct = computeVariation(repY, repY1);
+  const solY = detPct(woY, repY);
+  const varP = varPct(repY, repY1);
   const f = v => v > 0 ? v : '-';
-  const fp= v => v !== null ? `${(v * 100).toFixed(1)}%` : '-';
-  return [f(repY1), f(repY), f(woY1), f(woY), f(nwY), fp(solY), fp(varPct)];
+  return [f(repY1), f(repY), f(woY1), f(woY), f(nwY), solY, varP];
 }
 
 export function renderDailyChart(workbook, scope, calcData) {

@@ -628,6 +628,89 @@
         },
         {
           "col": 60,
+          "key": "registration_type",
+          "section": "General Information",
+          "label": "Registration Type",
+          "hint": "select: MANUAL_CCTNS, E_THEFT, E_MVT, NCRP, ZERO_FIR",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"MANUAL_CCTNS,E_THEFT,E_MVT,NCRP,ZERO_FIR\""
+            ]
+          }
+        },
+        {
+          "col": 61,
+          "key": "sent_to_court_date",
+          "section": "General Information",
+          "label": "Sent to Court Date",
+          "hint": "date (dd-mm-yyyy)",
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6,
+              10
+            ]
+          }
+        },
+        {
+          "col": 62,
+          "key": "court_case_no",
+          "section": "General Information",
+          "label": "Court Case Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 63,
+          "key": "court_name",
+          "section": "General Information",
+          "label": "Court Name",
+          "hint": "select: MM, CMM, ACMM, SESSION, HC, OTHER",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"MM,CMM,ACMM,SESSION,HC,OTHER\""
+            ]
+          }
+        },
+        {
+          "col": 64,
+          "key": "court_disposal_type",
+          "section": "General Information",
+          "label": "Court Status / Disposal",
+          "hint": "select: PENDING_TRIAL, CONVICTED, ACQUITTED, COMPOUNDED, DISCHARGED",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"PENDING_TRIAL,CONVICTED,ACQUITTED,COMPOUNDED,DISCHARGED\""
+            ]
+          }
+        },
+        {
+          "col": 65,
+          "key": "court_disposal_date",
+          "section": "General Information",
+          "label": "Date of Court Disposal",
+          "hint": "date (dd-mm-yyyy)",
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6,
+              10
+            ]
+          }
+        },
+        {
+          "col": 66,
+          "key": "supplementary_chargesheet_details",
+          "section": "General Information",
+          "label": "Supplementary Chargesheet Details",
+          "hint": "textarea",
+          "validation": null
+        },
+        {
+          "col": 67,
           "key": "transferred_to_ps_id",
           "section": "General Information",
           "label": "Transferred to Police Station",
@@ -635,7 +718,7 @@
           "validation": null
         },
         {
-          "col": 61,
+          "col": 68,
           "key": "work_out",
           "section": "General Information",
           "label": "WorkOut",
@@ -648,7 +731,7 @@
           }
         },
         {
-          "col": 62,
+          "col": 69,
           "key": "transferred_to_agency_id",
           "section": "General Information",
           "label": "Transferred to Agency",
@@ -656,7 +739,7 @@
           "validation": null
         },
         {
-          "col": 63,
+          "col": 70,
           "key": "work_out_date",
           "section": "General Information",
           "label": "WorkOut Date",
@@ -670,7 +753,7 @@
           }
         },
         {
-          "col": 64,
+          "col": 71,
           "key": "date_of_transfer",
           "section": "General Information",
           "label": "Date of Transfer",
@@ -684,7 +767,23 @@
           }
         },
         {
-          "col": 65,
+          "col": 72,
+          "key": "registered_on_direction",
+          "section": "General Information",
+          "label": "Registered on Direction",
+          "hint": "boolean",
+          "validation": null
+        },
+        {
+          "col": 73,
+          "key": "direction_authority",
+          "section": "General Information",
+          "label": "Direction Authority",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 74,
           "key": "burglary_mo_cd",
           "section": "General Information",
           "label": "burglary_mo_cd",
@@ -692,7 +791,7 @@
           "validation": null
         },
         {
-          "col": 66,
+          "col": 75,
           "key": "cheating_amount",
           "section": "General Information",
           "label": "cheating_amount",
@@ -700,47 +799,7 @@
           "validation": null
         },
         {
-          "col": 67,
-          "key": "court_case_no",
-          "section": "General Information",
-          "label": "Court Case No. (CC/CCMS)",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 68,
-          "key": "court_disposal_date",
-          "section": "General Information",
-          "label": "Court Disposal Date",
-          "hint": "date",
-          "validation": null
-        },
-        {
-          "col": 69,
-          "key": "court_disposal_type",
-          "section": "General Information",
-          "label": "Court Disposal Status",
-          "hint": "select",
-          "validation": null
-        },
-        {
-          "col": 70,
-          "key": "court_name",
-          "section": "General Information",
-          "label": "Court Name / Court No.",
-          "hint": "select",
-          "validation": null
-        },
-        {
-          "col": 71,
-          "key": "direction_authority",
-          "section": "General Information",
-          "label": "direction_authority",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 72,
+          "col": 76,
           "key": "education",
           "section": "General Information",
           "label": "education",
@@ -748,7 +807,7 @@
           "validation": null
         },
         {
-          "col": 73,
+          "col": 77,
           "key": "financial_status",
           "section": "General Information",
           "label": "financial_status",
@@ -756,43 +815,11 @@
           "validation": null
         },
         {
-          "col": 74,
-          "key": "registered_on_direction",
-          "section": "General Information",
-          "label": "registered_on_direction",
-          "hint": "boolean",
-          "validation": null
-        },
-        {
-          "col": 75,
-          "key": "sent_to_court_date",
-          "section": "General Information",
-          "label": "Date Sent to Court",
-          "hint": "date",
-          "validation": null
-        },
-        {
-          "col": 76,
+          "col": 78,
           "key": "social_category",
           "section": "General Information",
           "label": "social_category",
           "hint": "select",
-          "validation": null
-        },
-        {
-          "col": 77,
-          "key": null,
-          "section": "General Information",
-          "label": null,
-          "hint": null,
-          "validation": null
-        },
-        {
-          "col": 78,
-          "key": null,
-          "section": "General Information",
-          "label": null,
-          "hint": null,
           "validation": null
         },
         {
@@ -866,6 +893,22 @@
           "label": null,
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 88,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 89,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
@@ -873,7 +916,7 @@
         "AK2:AT2",
         "AU2:BC2",
         "BE2:BG2",
-        "BH2:CI2",
+        "BH2:CK2",
         "L2:Y2",
         "Z2:AJ2"
       ]
@@ -1067,7 +1110,7 @@
           "key": "victim_police_station",
           "section": "Victim Present Address",
           "label": "Victim Police Station",
-          "hint": "select (225 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
+          "hint": "select (226 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -4567,7 +4610,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$C$2:$C$226"
+              "'_Lookups'!$C$2:$C$227"
             ]
           }
         },
@@ -5325,7 +5368,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$I$2:$I$226"
+              "'_Lookups'!$I$2:$I$227"
             ]
           }
         },
@@ -5443,7 +5486,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$M$2:$M$226"
+              "'_Lookups'!$M$2:$M$227"
             ]
           }
         },

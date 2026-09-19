@@ -1,0 +1,6977 @@
+{
+  "MISSING": {
+    "accompanying_children": [
+      {
+        "key": "accompanying_child_name",
+        "label": "Name of Child",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING_CHILD",
+          "column": "name",
+          "entity": "person"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "accompanying_child_age",
+        "label": "Age",
+        "type": "NUMBER",
+        "storage": {
+          "role": "MISSING_CHILD",
+          "column": "age",
+          "entity": "person"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "accompanying_child_gender",
+        "label": "Gender",
+        "type": "SELECT",
+        "storage": {
+          "role": "MISSING_CHILD",
+          "column": "gender",
+          "entity": "person"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "accompanying_child_relation",
+        "label": "Relation to Missing Person",
+        "type": "SELECT",
+        "storage": {
+          "role": "MISSING_CHILD",
+          "column": "relation_type",
+          "entity": "person"
+        },
+        "required": true,
+        "repeater": null
+      }
+    ],
+    "contacts_assigned": [
+      {
+        "key": "informant_name",
+        "label": "Informant Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "INFORMANT",
+          "column": "name",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "informant_relation",
+        "label": "Relation with Deceased",
+        "type": "SELECT",
+        "storage": {
+          "role": "INFORMANT",
+          "column": "relation_to_subject",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "informant_mobile",
+        "label": "Informant Mobile",
+        "type": "NUMBER",
+        "storage": {
+          "role": "INFORMANT",
+          "column": "mobile",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "zipnet_no",
+        "label": "ZIPNET No.",
+        "type": "TEXT",
+        "storage": {
+          "table": "$detail",
+          "column": "zipnet_no"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "general_info": [
+      {
+        "key": "source",
+        "label": "Source of Information",
+        "type": "SELECT",
+        "storage": {
+          "table": "missing_details",
+          "column": "source"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gd_no",
+        "label": "GD Number",
+        "type": "TEXT",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_no"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "missing_type",
+        "label": "Missing / Found Type",
+        "type": "RADIO",
+        "storage": {
+          "table": "missing_details",
+          "column": "missing_type"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gd_date",
+        "label": "GD Date",
+        "type": "DATE",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_date"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "operator_name",
+        "label": "Operator Name to Whom MPS",
+        "type": "TEXT",
+        "storage": {
+          "table": "missing_details",
+          "column": "operator_name"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "case_registered",
+        "label": "FIR Registered?",
+        "type": "RADIO",
+        "storage": {
+          "table": "missing_details",
+          "column": "case_registered"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "missing_fir_no",
+        "label": "FIR No.",
+        "type": "TEXT",
+        "storage": {
+          "table": "missing_details",
+          "column": "fir_no"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "missing_fir_date",
+        "label": "FIR Date",
+        "type": "DATE",
+        "storage": {
+          "table": "missing_details",
+          "column": "fir_date"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "SELECT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "table": "uidb_details",
+              "column": "uidb_status"
+            },
+            "ARREST": {
+              "table": "arrest_details",
+              "column": "case_status"
+            },
+            "MISSING": {
+              "table": "missing_details",
+              "column": "missing_status"
+            },
+            "PCR_CALL": {
+              "table": "pcr_call_details",
+              "column": "final_call_status"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "investigation_officer": [
+      {
+        "key": "io_id",
+        "label": "Investigating Officer",
+        "type": "SELECT",
+        "storage": {
+          "table": "records",
+          "column": "io_id"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_name",
+        "label": "IO / Officer Name",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_rank",
+        "label": "IO Rank",
+        "type": "SELECT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_mobile",
+        "label": "IO Mobile No.",
+        "type": "NUMBER",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_pis",
+        "label": "PIS No. of IO",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "missing_address": [
+      {
+        "key": "mp_house_no",
+        "label": "Present House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "present",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_street",
+        "label": "Present Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "present",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_colony",
+        "label": "Present Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "present",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_city_town_village",
+        "label": "Present Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "present",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_state",
+        "label": "Present State",
+        "type": "SELECT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "present",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_district",
+        "label": "Present District",
+        "type": "SELECT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "present",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_pincode",
+        "label": "Present Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "present",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_address",
+        "label": "Present Full Address",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "MISSING",
+          "slot": "present",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_perm_same",
+        "label": "Is Permanent Address same as Present Address?",
+        "type": "SELECT",
+        "storage": {
+          "role": "MISSING",
+          "column": "perm_same_as_present",
+          "entity": "person"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "mp_perm_house_no",
+        "label": "Permanent House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "permanent",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_perm_street",
+        "label": "Permanent Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "permanent",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_perm_colony",
+        "label": "Permanent Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "permanent",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_perm_city_town_village",
+        "label": "Permanent Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "permanent",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_perm_state",
+        "label": "Permanent State",
+        "type": "SELECT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "permanent",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_perm_district",
+        "label": "Permanent District",
+        "type": "SELECT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "permanent",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "mp_perm_pincode",
+        "label": "Permanent Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "permanent",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "missing_address",
+        "label": "Full Permanent Address",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "MISSING",
+          "slot": "present",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "missing_physical": [
+      {
+        "key": "physical_description",
+        "label": "Physical Description",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "MISSING",
+          "column": "physical_description",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "height",
+        "label": "Height",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "height",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "height",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "built",
+        "label": "Built",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "built",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "built",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complexion",
+        "label": "Complexion",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "complexion",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "complexion",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "upper_dress_color",
+        "label": "Upper Dress Color",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "upper_dress_color",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "upper_dress_color",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "face",
+        "label": "Face",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "face",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "face",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "lower_dress_color",
+        "label": "Lower Dress Color",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "lower_dress_color",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "lower_dress_color",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "hair",
+        "label": "Hair",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "hair",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "hair",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "moustache",
+        "label": "Moustache",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "moustache",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "moustache",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "beard",
+        "label": "Beard",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "beard",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "beard",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "person_details": [
+      {
+        "key": "mp_known",
+        "label": "Is Missing Person Identified / Known?",
+        "type": "RADIO",
+        "storage": {
+          "role": "MISSING",
+          "column": "mp_known",
+          "entity": "person"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "missing_name",
+        "label": "Name of Missing Person",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "column": "name",
+          "entity": "person"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "age",
+        "label": "Age",
+        "type": "NUMBER",
+        "storage": {
+          "role": "MISSING",
+          "column": "age",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "missing_date",
+        "label": "Date Missing Since",
+        "type": "DATE",
+        "storage": {
+          "role": "MISSING",
+          "column": "missing_date",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "missing_place",
+        "label": "Last Seen Place",
+        "type": "TEXT",
+        "storage": {
+          "role": "MISSING",
+          "slot": "missing",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "Mental State",
+        "label": "Mental State",
+        "type": "RADIO",
+        "storage": {
+          "role": "MISSING",
+          "column": "mental_state",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "major_minor",
+        "label": "Major / Minor",
+        "type": "RADIO",
+        "storage": {
+          "role": "MISSING",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gender",
+        "label": "Gender",
+        "type": "SELECT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "gender",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "gender",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "missing_relation_type",
+        "label": "Relation Type",
+        "type": "SELECT",
+        "storage": {
+          "role": "MISSING",
+          "column": "relation_type",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ]
+  },
+  "CASE": {
+    "accused_address": [
+      {
+        "key": "accused_house_no",
+        "label": "Accused House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_street",
+        "label": "Accused Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_colony",
+        "label": "Accused Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_city_town_village",
+        "label": "Accused Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_tehsil_block_mandal",
+        "label": "Accused Tehsil / Block / Mandal",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "tehsil_block_mandal",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_present_address",
+        "label": "Accused Full Present Address",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_country",
+        "label": "Accused Nationality",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "country",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_state",
+        "label": "Accused State",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_district",
+        "label": "Accused District",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_police_station",
+        "label": "Accused Police Station",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "police_station",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_pincode",
+        "label": "Accused Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "present",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_same",
+        "label": "Is Permanent Address same as Present Address?",
+        "type": "BOOLEAN",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "perm_same_as_present",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_house_no",
+        "label": "Accused Permanent House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "permanent",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_street",
+        "label": "Accused Permanent Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "permanent",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_colony",
+        "label": "Accused Permanent Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "permanent",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_city_town_village",
+        "label": "Accused Permanent Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "permanent",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_tehsil_block_mandal",
+        "label": "Accused Permanent Tehsil / Block / Mandal",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "permanent",
+          "column": "tehsil_block_mandal",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_country",
+        "label": "Accused Permanent Nationality",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "permanent",
+          "column": "country",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_state",
+        "label": "Accused Permanent State",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "permanent",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_district",
+        "label": "Accused Permanent District",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "permanent",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_police_station",
+        "label": "Accused Permanent Police Station",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "permanent",
+          "column": "police_station",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_perm_pincode",
+        "label": "Accused Permanent Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "slot": "permanent",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      }
+    ],
+    "accused_personal_info": [
+      {
+        "key": "accused_npr",
+        "label": "Accused NPR No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_first_name",
+        "label": "Accused First Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "name",
+          "entity": "person",
+          "name_part": 1
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_middle_name",
+        "label": "Accused Middle Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "name",
+          "entity": "person",
+          "name_part": 2
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_last_name",
+        "label": "Accused Last Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "name",
+          "entity": "person",
+          "name_part": 3
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_nickname",
+        "label": "Accused Nickname(s)",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "nick_names",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_gender",
+        "label": "Accused Gender",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "gender",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_relation_type",
+        "label": "Accused Relation Type",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "relation_type",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_relative_name",
+        "label": "Accused Relative Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "relative_name",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_mobile_country_code",
+        "label": "Accused Mobile Country Code",
+        "type": "NUMBER",
+        "storage": {
+          "role": "ACCUSED",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_mobile",
+        "label": "Accused Mobile No.",
+        "type": "NUMBER",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "mobile",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_qualification",
+        "label": "Accused Qualification",
+        "type": "SELECT",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "qualification",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_social_category",
+        "label": "accused_social_category",
+        "type": "select",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "social_category",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_education",
+        "label": "accused_education",
+        "type": "select",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "education",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_financial_status",
+        "label": "accused_financial_status",
+        "type": "select",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "financial_status",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_dob",
+        "label": "Accused Date of Birth",
+        "type": "DATE",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "dob",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_age_year",
+        "label": "Accused Age (Years)",
+        "type": "NUMBER",
+        "storage": {
+          "role": "ACCUSED",
+          "column": "age",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      },
+      {
+        "key": "accused_birth_year",
+        "label": "Accused Year of Birth",
+        "type": "NUMBER",
+        "storage": {
+          "role": "ACCUSED",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ACCUSED"
+      }
+    ],
+    "complainant_address": [
+      {
+        "key": "complainant_house_no",
+        "label": "Complainant House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_street",
+        "label": "Complainant Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_colony",
+        "label": "Complainant Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_city_town_village",
+        "label": "Complainant Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_tehsil_block_mandal",
+        "label": "Complainant Tehsil / Block / Mandal",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "tehsil_block_mandal",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_present_address",
+        "label": "Complainant Full Present Address",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_country",
+        "label": "Complainant Nationality",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "country",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_state",
+        "label": "Complainant State",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_district",
+        "label": "Complainant District",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_police_station",
+        "label": "Complainant Police Station",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "police_station",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_pincode",
+        "label": "Complainant Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "present",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_same",
+        "label": "Is Permanent Address same as Present Address?",
+        "type": "BOOLEAN",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "perm_same_as_present",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_house_no",
+        "label": "Complainant Permanent House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "permanent",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_street",
+        "label": "Complainant Permanent Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "permanent",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_colony",
+        "label": "Complainant Permanent Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "permanent",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_city_town_village",
+        "label": "Complainant Permanent Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "permanent",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_tehsil_block_mandal",
+        "label": "Complainant Permanent Tehsil / Block / Mandal",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "permanent",
+          "column": "tehsil_block_mandal",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_country",
+        "label": "Complainant Permanent Nationality",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "permanent",
+          "column": "country",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_state",
+        "label": "Complainant Permanent State",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "permanent",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_district",
+        "label": "Complainant Permanent District",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "permanent",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_police_station",
+        "label": "Complainant Permanent Police Station",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "permanent",
+          "column": "police_station",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_perm_pincode",
+        "label": "Complainant Permanent Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "slot": "permanent",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "complainant_personal_info": [
+      {
+        "key": "complainant_npr",
+        "label": "Complainant NPR No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_first_name",
+        "label": "Complainant First Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "name",
+          "entity": "person",
+          "name_part": 1
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_middle_name",
+        "label": "Complainant Middle Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "name",
+          "entity": "person",
+          "name_part": 2
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_last_name",
+        "label": "Complainant Last Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "name",
+          "entity": "person",
+          "name_part": 3
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_nickname",
+        "label": "Complainant Nickname(s)",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "nick_names",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_gender",
+        "label": "Complainant Gender",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "gender",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_relation_type",
+        "label": "Complainant Relation Type",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "relation_type",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_relative_name",
+        "label": "Complainant Relative Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "relative_name",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_mobile_country_code",
+        "label": "Complainant Mobile Country Code",
+        "type": "NUMBER",
+        "storage": {
+          "role": "COMPLAINANT",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_mobile",
+        "label": "Complainant Mobile No.",
+        "type": "NUMBER",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "mobile",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_qualification",
+        "label": "Complainant Qualification",
+        "type": "SELECT",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "qualification",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_same_as_victim",
+        "label": "Is Complainant same as Victim?",
+        "type": "SELECT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_social_category",
+        "label": "complainant_social_category",
+        "type": "select",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "social_category",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_education",
+        "label": "complainant_education",
+        "type": "select",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "education",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_financial_status",
+        "label": "complainant_financial_status",
+        "type": "select",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "financial_status",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_dob",
+        "label": "Complainant Date of Birth",
+        "type": "DATE",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "dob",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_age_year",
+        "label": "Complainant Age (Years)",
+        "type": "NUMBER",
+        "storage": {
+          "role": "COMPLAINANT",
+          "column": "age",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complainant_birth_year",
+        "label": "Complainant Year of Birth",
+        "type": "NUMBER",
+        "storage": {
+          "role": "COMPLAINANT",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "court_details": [
+      {
+        "key": "sent_to_court_date",
+        "label": "Sent to Court Date",
+        "type": "DATE",
+        "storage": {
+          "table": "fir_details",
+          "column": "sent_to_court_date"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "court_case_no",
+        "label": "Court Case Number",
+        "type": "TEXT",
+        "storage": {
+          "table": "fir_details",
+          "column": "court_case_no"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "court_name",
+        "label": "Court Name",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "court_name"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "court_disposal_type",
+        "label": "Court Status / Disposal",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "court_disposal_type"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "court_disposal_date",
+        "label": "Date of Court Disposal",
+        "type": "DATE",
+        "storage": {
+          "table": "fir_details",
+          "column": "court_disposal_date"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "supplementary_chargesheet_details",
+        "label": "Supplementary Chargesheet Details",
+        "type": "TEXTAREA",
+        "storage": {
+          "table": "fir_details",
+          "column": "supplementary_chargesheet_details"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "general": [
+      {
+        "key": "registered_on_direction",
+        "label": "Registered on Direction",
+        "type": "BOOLEAN",
+        "storage": {
+          "table": "fir_details",
+          "column": "registered_on_direction"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "direction_authority",
+        "label": "Direction Authority",
+        "type": "TEXT",
+        "storage": {
+          "table": "fir_details",
+          "column": "direction_authority"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "burglary_mo_cd",
+        "label": "burglary_mo_cd",
+        "type": "select",
+        "storage": {
+          "table": "fir_details",
+          "column": "burglary_mo_cd"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "modus_operandi",
+        "label": "Modus Operandi (M.O. / Method of Crime)",
+        "type": "TEXTAREA",
+        "storage": {
+          "table": "fir_details",
+          "column": "modus_operandi"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "general_info": [
+      {
+        "key": "gd_time",
+        "label": "GD Time",
+        "type": "TIME",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_time"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "case_type",
+        "label": "Case Registration Type",
+        "type": "SELECT",
+        "storage": {
+          "table": "$detail",
+          "column": "case_type"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "registration_type",
+        "label": "Registration Type",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "registration_type"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "fir_no",
+        "label": "FIR Number",
+        "type": "TEXT",
+        "storage": {
+          "table": "$detail",
+          "column": "fir_no"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "fir_date",
+        "label": "FIR Date",
+        "type": "DATE",
+        "storage": {
+          "table": "$detail",
+          "column": "fir_date"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gd_no",
+        "label": "GD Number",
+        "type": "TEXT",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_no"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gd_date",
+        "label": "GD Date",
+        "type": "DATE",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_date"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "source_reference",
+        "label": "Source / Reference of Complaint",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "source_reference"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "beat_raw",
+        "label": "Beat (as entered, unresolved)",
+        "type": "TEXT",
+        "storage": "extra",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "is_important",
+        "label": "Mark as Important Case",
+        "type": "BOOLEAN",
+        "storage": {
+          "table": "fir_details",
+          "column": "is_important"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "incident_details": [
+      {
+        "key": "occurrence_place",
+        "label": "Place of Occurrence",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "local_head",
+        "label": "Local Head (Crime)",
+        "type": "SELECT",
+        "storage": {
+          "table": "$detail",
+          "column": "local_head_id"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "local_head_raw",
+        "label": "Local Head (as entered, unresolved)",
+        "type": "TEXT",
+        "storage": "extra",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "act_name",
+        "label": "Act / Law Name",
+        "type": "SELECT",
+        "storage": {
+          "column": "act_id",
+          "entity": "offence"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "other_act_name",
+        "label": "Specify Act Name",
+        "type": "TEXT",
+        "storage": {
+          "column": "other_act_name",
+          "entity": "offence",
+          "act_group": "other"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "sections",
+        "label": "Sections",
+        "type": "TEXT",
+        "storage": {
+          "column": "section_id",
+          "entity": "offence"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "ipc_sections",
+        "label": "Sections (IPC)",
+        "type": "SELECT",
+        "storage": {
+          "column": "section_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "major_heads",
+        "label": "Major Head(s)",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_sections",
+        "label": "Sections (Excise Act)",
+        "type": "SELECT",
+        "storage": {
+          "column": "section_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "minor_heads",
+        "label": "Minor Head(s)",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_sections",
+        "label": "Sections (Arms Act)",
+        "type": "SELECT",
+        "storage": {
+          "column": "section_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "heinous_offence",
+        "label": "Heinous Offence",
+        "type": "RADIO",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_sections",
+        "label": "Sections (Gambling Act)",
+        "type": "SELECT",
+        "storage": {
+          "column": "section_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "other_sections",
+        "label": "Sections (Other Act)",
+        "type": "TEXT",
+        "storage": {
+          "column": "section_id",
+          "entity": "offence",
+          "act_group": "other"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "brief_facts",
+        "label": "Brief Facts of the Case",
+        "type": "TEXTAREA",
+        "storage": {
+          "table": "fir_details",
+          "column": "brief_facts"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "ipc_major_head",
+        "label": "Major Head (IPC)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_major_head",
+        "label": "Major Head (Excise)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_major_head",
+        "label": "Major Head (Arms)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_major_head",
+        "label": "Major Head (Gambling)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "other_major_head",
+        "label": "Major Head (Other)",
+        "type": "TEXT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "other"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "theft_minor_head",
+        "label": "Minor Head (Theft)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "murder_minor_head",
+        "label": "Minor Head (Murder)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "hurt_minor_head",
+        "label": "Minor Head (Hurt)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "cheating_minor_head",
+        "label": "Minor Head (Cheating)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "robbery_minor_head",
+        "label": "Minor Head (Robbery)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_minor_head",
+        "label": "Minor Head (Excise)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_possession_minor_head",
+        "label": "Minor Head (Excise - Possession)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_minor_head",
+        "label": "Minor Head (Arms)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_sale_minor_head",
+        "label": "Minor Head (Excise - Sale)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_smuggling_minor_head",
+        "label": "Minor Head (Excise - Smuggling)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_minor_head",
+        "label": "Minor Head (Gambling)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_possession_minor_head",
+        "label": "Minor Head (Arms - Possession)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "other_minor_head",
+        "label": "Minor Head (Other)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "other"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_use_minor_head",
+        "label": "Minor Head (Arms - Use)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_house_minor_head",
+        "label": "Minor Head (Gambling - House)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_public_minor_head",
+        "label": "Minor Head (Gambling - Public)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "investigation_details": [
+      {
+        "key": "disposal_type",
+        "label": "Disposal Type",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "disposal_type"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "rc_no",
+        "label": "RC No.",
+        "type": "TEXT",
+        "storage": {
+          "table": "fir_details",
+          "column": "rc_no"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "investigation_officer": [
+      {
+        "key": "io_id",
+        "label": "Investigating Officer",
+        "type": "SELECT",
+        "storage": {
+          "table": "records",
+          "column": "io_id"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_name",
+        "label": "IO / Officer Name",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_rank",
+        "label": "IO Rank",
+        "type": "SELECT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_mobile",
+        "label": "IO Mobile No.",
+        "type": "NUMBER",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_pis",
+        "label": "PIS No. of IO",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "case_status",
+        "label": "Status",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "case_status"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "transfer_to",
+        "label": "Transfer To",
+        "type": "RADIO",
+        "storage": {
+          "table": "fir_details",
+          "column": "transfer_to_type"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "transferred_to_ps_id",
+        "label": "Transferred to Police Station",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "transferred_to_ps_id"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "work_out",
+        "label": "WorkOut",
+        "type": "RADIO",
+        "storage": {
+          "table": "fir_details",
+          "column": "is_worked_out"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "transferred_to_agency_id",
+        "label": "Transferred to Agency",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "transferred_to_agency_id"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "work_out_date",
+        "label": "WorkOut Date",
+        "type": "DATE",
+        "storage": {
+          "table": "fir_details",
+          "column": "worked_out_date"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "date_of_transfer",
+        "label": "Date of Transfer",
+        "type": "DATE",
+        "storage": {
+          "table": "fir_details",
+          "column": "date_of_transfer"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "occurrence_info": [
+      {
+        "key": "occurrence_time_type",
+        "label": "Is Time of Occurrence",
+        "type": "RADIO",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_from_date_time",
+        "label": "From Date / Time",
+        "type": "DATETIME",
+        "storage": {
+          "table": "fir_details",
+          "column": "occurrence_from_datetime"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_to_date_time",
+        "label": "To Date / Time",
+        "type": "DATETIME",
+        "storage": {
+          "table": "fir_details",
+          "column": "occurrence_to_datetime"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "info_received_at_ps_date_time",
+        "label": "Information received at P.S.",
+        "type": "DATETIME",
+        "storage": {
+          "table": "fir_details",
+          "column": "info_received_at_ps"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "organised_crime",
+        "label": "Organised Crime",
+        "type": "RADIO",
+        "storage": {
+          "table": "fir_details",
+          "column": "organised_crime"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_house_no",
+        "label": "Place of Occurrence House No.",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_street",
+        "label": "Place of Occurrence Street",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_colony",
+        "label": "Place of Occurrence Colony",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_city_town_village",
+        "label": "Place of Occurrence Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_tehsil_block_mandal",
+        "label": "Place of Occurrence Tehsil / Block / Mandal",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "tehsil_block_mandal",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_landmark",
+        "label": "Place of Occurrence Landmark",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "landmark",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_district",
+        "label": "Place of Occurrence District",
+        "type": "SELECT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_police_station",
+        "label": "Place of Occurrence Police Station",
+        "type": "SELECT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "police_station",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_pincode",
+        "label": "Place of Occurrence Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_latitude",
+        "label": "Place of Occurrence Latitude",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "latitude",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "occurrence_longitude",
+        "label": "Place of Occurrence Longitude",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "longitude",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "beat_no",
+        "label": "Beat No.",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "beat_id"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "property": [
+      {
+        "key": "cheating_amount",
+        "label": "cheating_amount",
+        "type": "number",
+        "storage": {
+          "table": "fir_details",
+          "column": "cheating_amount"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "property_details": [
+      {
+        "key": "property_phone_number",
+        "label": "Phone Number",
+        "type": "TEXT",
+        "storage": {
+          "column": "phone_number",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "phone_make",
+        "label": "Phone Make / Brand",
+        "type": "TEXT",
+        "storage": {
+          "column": "phone_make",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "phone_model",
+        "label": "Phone Model",
+        "type": "TEXT",
+        "storage": {
+          "column": "phone_model",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "phone_imei",
+        "label": "IMEI Number",
+        "type": "TEXT",
+        "storage": {
+          "column": "phone_imei",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "phone_color",
+        "label": "Phone Color",
+        "type": "TEXT",
+        "storage": {
+          "column": "phone_color",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "phone_status",
+        "label": "Phone Recovery Status",
+        "type": "SELECT",
+        "storage": {
+          "column": "status",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "property_major_category",
+        "label": "Property Major Category",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_category_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "property_minor_category",
+        "label": "Property Minor Category",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_category_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "property_details",
+        "label": "Property Details / Description",
+        "type": "TEXTAREA",
+        "storage": {
+          "column": "details",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "property_stolen_recovered",
+        "label": "Property Stolen / Recovered",
+        "type": "SELECT",
+        "storage": {
+          "column": "status",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_fire_arms_type",
+        "label": "Type of Arm",
+        "type": "SELECT",
+        "storage": {
+          "column": "fire_arm_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_vehicle_no",
+        "label": "Vehicle Registration No.",
+        "type": "TEXT",
+        "storage": {
+          "column": "vehicle_no",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_made",
+        "label": "Subtype of Arm",
+        "type": "SELECT",
+        "storage": {
+          "column": "arms_subtype_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_vehicle_type",
+        "label": "Vehicle Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "automobile_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_cd_24h",
+        "label": "1st CD Uploaded Within 24 Hours",
+        "type": "SELECT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_cctv",
+        "label": "CCTV Footage Collected",
+        "type": "SELECT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_other_subtype",
+        "label": "Property Subtype",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_category_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_type",
+        "label": "Weapon Type",
+        "type": "SELECT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_cash_amount",
+        "label": "Amount (₹)",
+        "type": "NUMBER",
+        "storage": {
+          "column": "estimated_value",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_doc_type",
+        "label": "Document Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "document_type_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_drug_type",
+        "label": "Drug / Substance Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "drug_type_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_elec_device_type",
+        "label": "Device Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "electric_good_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_gold_item_type",
+        "label": "Item Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "jewelry_type_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_other_desc",
+        "label": "Item Description",
+        "type": "TEXTAREA",
+        "storage": {
+          "column": "details",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_make",
+        "label": "Make / Manufacturer",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_cash_currency",
+        "label": "Currency Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "currency_type_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_doc_number",
+        "label": "Document Number",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_drug_quantity",
+        "label": "Quantity",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_elec_brand",
+        "label": "Make / Brand",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_gold_material",
+        "label": "Material",
+        "type": "SELECT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_other_value",
+        "label": "Estimated Value (₹)",
+        "type": "NUMBER",
+        "storage": {
+          "column": "estimated_value",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_serial",
+        "label": "Serial Number",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_cash_denomination",
+        "label": "Denomination Details",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_doc_holder",
+        "label": "Document Holder Name",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_drug_unit",
+        "label": "Unit",
+        "type": "SELECT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_elec_model",
+        "label": "Model",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_gold_weight",
+        "label": "Weight (grams)",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_ammo_count",
+        "label": "Ammunition Count",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_doc_issuing_auth",
+        "label": "Issuing Authority",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_drug_value",
+        "label": "Estimated Street Value (₹)",
+        "type": "NUMBER",
+        "storage": {
+          "column": "estimated_value",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_elec_serial",
+        "label": "Serial Number",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_gold_value",
+        "label": "Estimated Value (₹)",
+        "type": "NUMBER",
+        "storage": {
+          "column": "estimated_value",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_license",
+        "label": "License Number",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_elec_value",
+        "label": "Estimated Value (₹)",
+        "type": "NUMBER",
+        "storage": {
+          "column": "estimated_value",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      }
+    ],
+    "vehicle_details": [
+      {
+        "key": "vehicle_no",
+        "label": "Vehicle Registration No.",
+        "type": "TEXT",
+        "storage": {
+          "group": "vehicle",
+          "column": "vehicle_no",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "vehicle_type",
+        "label": "Vehicle Type",
+        "type": "SELECT",
+        "storage": {
+          "group": "vehicle",
+          "column": "automobile_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "vehicle_make",
+        "label": "Vehicle Make / Manufacturer",
+        "type": "TEXT",
+        "storage": {
+          "group": "vehicle",
+          "column": "vehicle_make",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "vehicle_model",
+        "label": "Vehicle Model",
+        "type": "TEXT",
+        "storage": {
+          "group": "vehicle",
+          "column": "vehicle_model",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "vehicle_color",
+        "label": "Vehicle Color",
+        "type": "TEXT",
+        "storage": {
+          "group": "vehicle",
+          "column": "vehicle_color",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "vehicle_chassis_no",
+        "label": "Chassis Number",
+        "type": "TEXT",
+        "storage": {
+          "group": "vehicle",
+          "column": "vehicle_chassis_no",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "vehicle_engine_no",
+        "label": "Engine Number",
+        "type": "TEXT",
+        "storage": {
+          "group": "vehicle",
+          "column": "vehicle_engine_no",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "cd_uploaded_24h",
+        "label": "1st CD Uploaded Within 24 Hours",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "cd_uploaded_24h"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "footage_collected",
+        "label": "CCTV Footage Collected",
+        "type": "SELECT",
+        "storage": {
+          "table": "fir_details",
+          "column": "footage_collected"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "victim_address": [
+      {
+        "key": "victim_house_no",
+        "label": "Victim House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_street",
+        "label": "Victim Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_colony",
+        "label": "Victim Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_city_town_village",
+        "label": "Victim Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_tehsil_block_mandal",
+        "label": "Victim Tehsil / Block / Mandal",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "tehsil_block_mandal",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_present_address",
+        "label": "Victim Full Present Address",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_country",
+        "label": "Victim Nationality",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "country",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_state",
+        "label": "Victim State",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_district",
+        "label": "Victim District",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_police_station",
+        "label": "Victim Police Station",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "police_station",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_pincode",
+        "label": "Victim Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "present",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_same",
+        "label": "Is Permanent Address same as Present Address?",
+        "type": "BOOLEAN",
+        "storage": {
+          "role": "VICTIM",
+          "column": "perm_same_as_present",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_house_no",
+        "label": "Victim Permanent House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "permanent",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_street",
+        "label": "Victim Permanent Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "permanent",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_colony",
+        "label": "Victim Permanent Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "permanent",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_city_town_village",
+        "label": "Victim Permanent Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "permanent",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_tehsil_block_mandal",
+        "label": "Victim Permanent Tehsil / Block / Mandal",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "permanent",
+          "column": "tehsil_block_mandal",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_country",
+        "label": "Victim Permanent Nationality",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "permanent",
+          "column": "country",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_state",
+        "label": "Victim Permanent State",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "permanent",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_district",
+        "label": "Victim Permanent District",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "permanent",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_police_station",
+        "label": "Victim Permanent Police Station",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "permanent",
+          "column": "police_station",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_perm_pincode",
+        "label": "Victim Permanent Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "slot": "permanent",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      }
+    ],
+    "victim_personal_info": [
+      {
+        "key": "victim_npr",
+        "label": "Victim NPR No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_first_name",
+        "label": "Victim First Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "column": "name",
+          "entity": "person",
+          "name_part": 1
+        },
+        "required": true,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_middle_name",
+        "label": "Victim Middle Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "column": "name",
+          "entity": "person",
+          "name_part": 2
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_last_name",
+        "label": "Victim Last Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "column": "name",
+          "entity": "person",
+          "name_part": 3
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_nickname",
+        "label": "Victim Nickname(s)",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "column": "nick_names",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_gender",
+        "label": "Victim Gender",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "column": "gender",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_relation_type",
+        "label": "Victim Relation Type",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "column": "relation_type",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_relative_name",
+        "label": "Victim Relative Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "VICTIM",
+          "column": "relative_name",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_mobile_country_code",
+        "label": "Victim Mobile Country Code",
+        "type": "NUMBER",
+        "storage": {
+          "role": "VICTIM",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_mobile",
+        "label": "Victim Mobile No.",
+        "type": "NUMBER",
+        "storage": {
+          "role": "VICTIM",
+          "column": "mobile",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_qualification",
+        "label": "Victim Qualification",
+        "type": "SELECT",
+        "storage": {
+          "role": "VICTIM",
+          "column": "qualification",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_social_category",
+        "label": "victim_social_category",
+        "type": "select",
+        "storage": {
+          "role": "VICTIM",
+          "column": "social_category",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_education",
+        "label": "victim_education",
+        "type": "select",
+        "storage": {
+          "role": "VICTIM",
+          "column": "education",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_financial_status",
+        "label": "victim_financial_status",
+        "type": "select",
+        "storage": {
+          "role": "VICTIM",
+          "column": "financial_status",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_dob",
+        "label": "Victim Date of Birth",
+        "type": "DATE",
+        "storage": {
+          "role": "VICTIM",
+          "column": "dob",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_age_year",
+        "label": "Victim Age (Years)",
+        "type": "NUMBER",
+        "storage": {
+          "role": "VICTIM",
+          "column": "age",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      },
+      {
+        "key": "victim_birth_year",
+        "label": "Victim Year of Birth",
+        "type": "NUMBER",
+        "storage": {
+          "role": "VICTIM",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_VICTIM"
+      }
+    ],
+    "General": [
+      {
+        "key": "education",
+        "label": "education",
+        "type": "select",
+        "storage": {
+          "table": "persons",
+          "column": "education"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "financial_status",
+        "label": "financial_status",
+        "type": "select",
+        "storage": {
+          "table": "persons",
+          "column": "financial_status"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "social_category",
+        "label": "social_category",
+        "type": "select",
+        "storage": {
+          "table": "persons",
+          "column": "social_category"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ]
+  },
+  "ARREST": {
+    "arrest_details": [
+      {
+        "key": "arrest_date",
+        "label": "Date & Time of Arrest",
+        "type": "DATE",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "arrest_date",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrest_time",
+        "label": "Time Of Arrest",
+        "type": "TIME",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "arrest_time",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrest_place",
+        "label": "Place of Arrest",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "arrest",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrest_street",
+        "label": "Street of Arrest",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "arrest",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrest_colony",
+        "label": "Colony of Arrest",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "arrest",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrest_district",
+        "label": "District of Arrest",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "arrest",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrest_landmark",
+        "label": "Landmark of Arrest",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "arrest",
+          "column": "landmark",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      }
+    ],
+    "arrested_address": [
+      {
+        "key": "arrested_house_no",
+        "label": "Arrested Person House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_street",
+        "label": "Arrested Person Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_colony",
+        "label": "Arrested Person Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_city_town_village",
+        "label": "Arrested Person Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_tehsil_block_mandal",
+        "label": "Arrested Person Tehsil / Block / Mandal",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "tehsil_block_mandal",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_present_address",
+        "label": "Arrested Person Full Present Address",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_country",
+        "label": "Arrested Person Nationality",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "country",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_state",
+        "label": "Arrested Person State",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_district",
+        "label": "Arrested Person District",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_police_station",
+        "label": "Arrested Person Police Station",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "police_station",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_pincode",
+        "label": "Arrested Person Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "present",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_same",
+        "label": "Is Permanent Address same as Present Address?",
+        "type": "BOOLEAN",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "perm_same_as_present",
+          "entity": "person"
+        },
+        "required": true,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_address",
+        "label": "Full Permanent Address",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arrested_perm_house_no",
+        "label": "Arrested Person Permanent House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_street",
+        "label": "Arrested Person Permanent Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_colony",
+        "label": "Arrested Person Permanent Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_city_town_village",
+        "label": "Arrested Person Permanent Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_tehsil_block_mandal",
+        "label": "Arrested Person Permanent Tehsil / Block / Mandal",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "tehsil_block_mandal",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_country",
+        "label": "Arrested Person Permanent Nationality",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "country",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_state",
+        "label": "Arrested Person Permanent State",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_district",
+        "label": "Arrested Person Permanent District",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_police_station",
+        "label": "Arrested Person Permanent Police Station",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "police_station",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_perm_pincode",
+        "label": "Arrested Person Permanent Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "slot": "permanent",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      }
+    ],
+    "arrested_personal_info": [
+      {
+        "key": "scheme_of_arrest",
+        "label": "Scheme of Arrest",
+        "type": "SELECT",
+        "storage": {
+          "table": "arrest_details",
+          "column": "scheme_of_arrest"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_npr",
+        "label": "Arrested Person NPR No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_first_name",
+        "label": "Arrested Person First Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "name",
+          "entity": "person",
+          "name_part": 1
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_middle_name",
+        "label": "Arrested Person Middle Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "name",
+          "entity": "person",
+          "name_part": 2
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_last_name",
+        "label": "Arrested Person Last Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "name",
+          "entity": "person",
+          "name_part": 3
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_nickname",
+        "label": "Arrested Person Nickname(s)",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "nick_names",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "nick_name",
+        "label": "Nick Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "nick_names",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_gender",
+        "label": "Arrested Person Gender",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "gender",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_relation_type",
+        "label": "Arrested Person Relation Type",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "relation_type",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_relative_name",
+        "label": "Arrested Person Relative Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "relative_name",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_mobile_country_code",
+        "label": "Arrested Person Mobile Country Code",
+        "type": "NUMBER",
+        "storage": {
+          "role": "ARRESTEE",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_mobile",
+        "label": "Arrested Person Mobile No.",
+        "type": "NUMBER",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "mobile",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_qualification",
+        "label": "Arrested Person Qualification",
+        "type": "SELECT",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "qualification",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_social_category",
+        "label": "arrested_social_category",
+        "type": "select",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "social_category",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_education",
+        "label": "arrested_education",
+        "type": "select",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "education",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_financial_status",
+        "label": "arrested_financial_status",
+        "type": "select",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "financial_status",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_dob",
+        "label": "Arrested Person Date of Birth",
+        "type": "DATE",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "dob",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_age_year",
+        "label": "Arrested Person Age (Years)",
+        "type": "NUMBER",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "age",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arrested_birth_year",
+        "label": "Arrested Person Year of Birth",
+        "type": "NUMBER",
+        "storage": {
+          "role": "ARRESTEE",
+          "extra": true,
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      }
+    ],
+    "arrestee_info": [
+      {
+        "key": "nafis_prepared",
+        "label": "NAFIS Prepared",
+        "type": "RADIO",
+        "storage": {
+          "table": "arrest_details",
+          "column": "nafis_prepared"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "dossier_prepared",
+        "label": "Dossier Prepared",
+        "type": "RADIO",
+        "storage": {
+          "table": "arrest_details",
+          "column": "dossier_prepared"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "prev_involvement",
+        "label": "Prev. Involvement (Y/N)",
+        "type": "RADIO",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "prev_involvement",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "proclaimed_offender",
+        "label": "Proclaimed Offender (PO)",
+        "type": "RADIO",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "is_po",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "listed_criminal",
+        "label": "Listed Criminal / Bad Character (BC)",
+        "type": "RADIO",
+        "storage": {
+          "role": "ARRESTEE",
+          "column": "is_bc",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arresting_officer",
+        "label": "Arresting Officer",
+        "type": "TEXT",
+        "storage": {
+          "table": "arrest_details",
+          "column": "arresting_officer_name"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "arresting_officer_mobile",
+        "label": "Contact of Arresting Officer",
+        "type": "TEXT",
+        "storage": {
+          "table": "arrest_details",
+          "column": "arresting_officer_mobile"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      },
+      {
+        "key": "verifying_officer_rank",
+        "label": "Arresting Officer Rank",
+        "type": "SELECT",
+        "storage": {
+          "table": "arrest_details",
+          "column": "arresting_officer_rank"
+        },
+        "required": false,
+        "repeater": "PERSON_ARRESTED"
+      }
+    ],
+    "custody_status": [
+      {
+        "key": "other_status_reason",
+        "label": "Other Status Reason",
+        "type": "SELECT",
+        "storage": {
+          "table": "arrest_details",
+          "column": "other_status_reason"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "recovery",
+        "label": "Recovery",
+        "type": "TEXTAREA",
+        "storage": {
+          "table": "arrest_details",
+          "column": "recovery"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "general_info": [
+      {
+        "key": "gd_time",
+        "label": "GD Time",
+        "type": "TIME",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_time"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "case_type",
+        "label": "Case Registration Type",
+        "type": "SELECT",
+        "storage": {
+          "table": "$detail",
+          "column": "case_type"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "is_dd_based",
+        "label": "DD/GD-Based Arrest (Kalandra)",
+        "type": "BOOLEAN",
+        "storage": {
+          "table": "arrest_details",
+          "column": "is_dd_based"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "fir_no",
+        "label": "FIR Number",
+        "type": "TEXT",
+        "storage": {
+          "table": "$detail",
+          "column": "fir_no"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "fir_date",
+        "label": "FIR Date",
+        "type": "DATE",
+        "storage": {
+          "table": "$detail",
+          "column": "fir_date"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gd_no",
+        "label": "GD Number",
+        "type": "TEXT",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_no"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gd_date",
+        "label": "GD Date",
+        "type": "DATE",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_date"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "SELECT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "table": "uidb_details",
+              "column": "uidb_status"
+            },
+            "ARREST": {
+              "table": "arrest_details",
+              "column": "case_status"
+            },
+            "MISSING": {
+              "table": "missing_details",
+              "column": "missing_status"
+            },
+            "PCR_CALL": {
+              "table": "pcr_call_details",
+              "column": "final_call_status"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "incident_details": [
+      {
+        "key": "local_head",
+        "label": "Local Head (Crime)",
+        "type": "SELECT",
+        "storage": {
+          "table": "$detail",
+          "column": "local_head_id"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "local_head_raw",
+        "label": "Local Head (as entered, unresolved)",
+        "type": "TEXT",
+        "storage": "extra",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "act_name",
+        "label": "Act / Law Name",
+        "type": "SELECT",
+        "storage": {
+          "column": "act_id",
+          "entity": "offence"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "other_act_name",
+        "label": "Specify Act Name",
+        "type": "TEXT",
+        "storage": {
+          "column": "other_act_name",
+          "entity": "offence",
+          "act_group": "other"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "sections",
+        "label": "Sections",
+        "type": "TEXT",
+        "storage": {
+          "column": "section_id",
+          "entity": "offence"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "major_heads",
+        "label": "Major Head(s)",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "minor_heads",
+        "label": "Minor Head(s)",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "heinous_offence",
+        "label": "Heinous Offence",
+        "type": "RADIO",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "ipc_major_head",
+        "label": "Major Head (IPC)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_major_head",
+        "label": "Major Head (Excise)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_major_head",
+        "label": "Major Head (Arms)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_major_head",
+        "label": "Major Head (Gambling)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "other_major_head",
+        "label": "Major Head (Other)",
+        "type": "TEXT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "other"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "theft_minor_head",
+        "label": "Minor Head (Theft)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "murder_minor_head",
+        "label": "Minor Head (Murder)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "hurt_minor_head",
+        "label": "Minor Head (Hurt)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "cheating_minor_head",
+        "label": "Minor Head (Cheating)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "robbery_minor_head",
+        "label": "Minor Head (Robbery)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_minor_head",
+        "label": "Minor Head (Excise)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_possession_minor_head",
+        "label": "Minor Head (Excise - Possession)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_minor_head",
+        "label": "Minor Head (Arms)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_sale_minor_head",
+        "label": "Minor Head (Excise - Sale)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_smuggling_minor_head",
+        "label": "Minor Head (Excise - Smuggling)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_minor_head",
+        "label": "Minor Head (Gambling)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_possession_minor_head",
+        "label": "Minor Head (Arms - Possession)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "other_minor_head",
+        "label": "Minor Head (Other)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "other"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_use_minor_head",
+        "label": "Minor Head (Arms - Use)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_house_minor_head",
+        "label": "Minor Head (Gambling - House)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_public_minor_head",
+        "label": "Minor Head (Gambling - Public)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "investigation_officer": [
+      {
+        "key": "io_id",
+        "label": "Investigating Officer",
+        "type": "SELECT",
+        "storage": {
+          "table": "records",
+          "column": "io_id"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_name",
+        "label": "IO / Officer Name",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_rank",
+        "label": "IO Rank",
+        "type": "SELECT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_mobile",
+        "label": "IO Mobile No.",
+        "type": "NUMBER",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_pis",
+        "label": "PIS No. of IO",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "offence_info": [
+      {
+        "key": "crime_head",
+        "label": "Crime Head",
+        "type": "SELECT",
+        "storage": {
+          "table": "$detail",
+          "column": "local_head_id"
+        },
+        "required": true,
+        "repeater": null
+      }
+    ],
+    "property_details": [
+      {
+        "key": "property_phone_number",
+        "label": "Phone Number",
+        "type": "TEXT",
+        "storage": {
+          "column": "phone_number",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "phone_make",
+        "label": "Phone Make / Brand",
+        "type": "TEXT",
+        "storage": {
+          "column": "phone_make",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "phone_model",
+        "label": "Phone Model",
+        "type": "TEXT",
+        "storage": {
+          "column": "phone_model",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "phone_imei",
+        "label": "IMEI Number",
+        "type": "TEXT",
+        "storage": {
+          "column": "phone_imei",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "phone_color",
+        "label": "Phone Color",
+        "type": "TEXT",
+        "storage": {
+          "column": "phone_color",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "phone_status",
+        "label": "Phone Recovery Status",
+        "type": "SELECT",
+        "storage": {
+          "column": "status",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "property_major_category",
+        "label": "Property Major Category",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_category_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "property_minor_category",
+        "label": "Property Minor Category",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_category_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "property_details",
+        "label": "Property Details / Description",
+        "type": "TEXTAREA",
+        "storage": {
+          "column": "details",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "property_stolen_recovered",
+        "label": "Property Stolen / Recovered",
+        "type": "SELECT",
+        "storage": {
+          "column": "status",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_fire_arms_type",
+        "label": "Type of Arm",
+        "type": "SELECT",
+        "storage": {
+          "column": "fire_arm_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_vehicle_no",
+        "label": "Vehicle Registration No.",
+        "type": "TEXT",
+        "storage": {
+          "column": "vehicle_no",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_made",
+        "label": "Subtype of Arm",
+        "type": "SELECT",
+        "storage": {
+          "column": "arms_subtype_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_vehicle_type",
+        "label": "Vehicle Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "automobile_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_cd_24h",
+        "label": "1st CD Uploaded Within 24 Hours",
+        "type": "SELECT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_cctv",
+        "label": "CCTV Footage Collected",
+        "type": "SELECT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_other_subtype",
+        "label": "Property Subtype",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_category_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_type",
+        "label": "Weapon Type",
+        "type": "SELECT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_cash_amount",
+        "label": "Amount (₹)",
+        "type": "NUMBER",
+        "storage": {
+          "column": "estimated_value",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_doc_type",
+        "label": "Document Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "document_type_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_drug_type",
+        "label": "Drug / Substance Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "drug_type_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_elec_device_type",
+        "label": "Device Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "electric_good_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_gold_item_type",
+        "label": "Item Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "jewelry_type_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_other_desc",
+        "label": "Item Description",
+        "type": "TEXTAREA",
+        "storage": {
+          "column": "details",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_make",
+        "label": "Make / Manufacturer",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_cash_currency",
+        "label": "Currency Type",
+        "type": "SELECT",
+        "storage": {
+          "column": "currency_type_id",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_doc_number",
+        "label": "Document Number",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_drug_quantity",
+        "label": "Quantity",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_elec_brand",
+        "label": "Make / Brand",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_gold_material",
+        "label": "Material",
+        "type": "SELECT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_other_value",
+        "label": "Estimated Value (₹)",
+        "type": "NUMBER",
+        "storage": {
+          "column": "estimated_value",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_serial",
+        "label": "Serial Number",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_cash_denomination",
+        "label": "Denomination Details",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_doc_holder",
+        "label": "Document Holder Name",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_drug_unit",
+        "label": "Unit",
+        "type": "SELECT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_elec_model",
+        "label": "Model",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_gold_weight",
+        "label": "Weight (grams)",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_ammo_count",
+        "label": "Ammunition Count",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_doc_issuing_auth",
+        "label": "Issuing Authority",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_drug_value",
+        "label": "Estimated Street Value (₹)",
+        "type": "NUMBER",
+        "storage": {
+          "column": "estimated_value",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_elec_serial",
+        "label": "Serial Number",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_gold_value",
+        "label": "Estimated Value (₹)",
+        "type": "NUMBER",
+        "storage": {
+          "column": "estimated_value",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_arms_license",
+        "label": "License Number",
+        "type": "TEXT",
+        "storage": {
+          "extra": true,
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      },
+      {
+        "key": "prop_elec_value",
+        "label": "Estimated Value (₹)",
+        "type": "NUMBER",
+        "storage": {
+          "column": "estimated_value",
+          "entity": "property"
+        },
+        "required": false,
+        "repeater": "PROPERTY"
+      }
+    ],
+    "General": [
+      {
+        "key": "education",
+        "label": "education",
+        "type": "select",
+        "storage": {
+          "table": "persons",
+          "column": "education"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "financial_status",
+        "label": "financial_status",
+        "type": "select",
+        "storage": {
+          "table": "persons",
+          "column": "financial_status"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "social_category",
+        "label": "social_category",
+        "type": "select",
+        "storage": {
+          "table": "persons",
+          "column": "social_category"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ]
+  },
+  "PCR_CALL": {
+    "complaint_details": [
+      {
+        "key": "call_head",
+        "label": "Call Category (Head)",
+        "type": "SELECT",
+        "storage": {
+          "table": "pcr_call_details",
+          "column": "call_head"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "call_gist",
+        "label": "PCR Call Gist",
+        "type": "TEXTAREA",
+        "storage": {
+          "table": "pcr_call_details",
+          "column": "call_gist"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "general_info": [
+      {
+        "key": "gd_no",
+        "label": "GD Number",
+        "type": "TEXT",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_no"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "SELECT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "table": "uidb_details",
+              "column": "uidb_status"
+            },
+            "ARREST": {
+              "table": "arrest_details",
+              "column": "case_status"
+            },
+            "MISSING": {
+              "table": "missing_details",
+              "column": "missing_status"
+            },
+            "PCR_CALL": {
+              "table": "pcr_call_details",
+              "column": "final_call_status"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "incident_details": [
+      {
+        "key": "occurrence_place",
+        "label": "Place of Occurrence",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "latitude",
+        "label": "Latitude",
+        "type": "TEXT",
+        "storage": {
+          "slot": "incident",
+          "column": "latitude",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "longitude",
+        "label": "Longitude",
+        "type": "TEXT",
+        "storage": {
+          "slot": "incident",
+          "column": "longitude",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arrival_time",
+        "label": "Arrival Time",
+        "type": "TIME",
+        "storage": {
+          "table": "pcr_call_details",
+          "column": "arrival_time"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "informant_contact": [
+      {
+        "key": "pcr_no",
+        "label": "PCR Number",
+        "type": "TEXT",
+        "storage": {
+          "table": "pcr_call_details",
+          "column": "pcr_no"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "caller_name",
+        "label": "Caller Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "CALLER",
+          "column": "name",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "caller_mobile",
+        "label": "Caller Mobile",
+        "type": "NUMBER",
+        "storage": {
+          "role": "CALLER",
+          "column": "mobile",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "investigation_officer": [
+      {
+        "key": "io_id",
+        "label": "Investigating Officer",
+        "type": "SELECT",
+        "storage": {
+          "table": "records",
+          "column": "io_id"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_name",
+        "label": "IO / Officer Name",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_rank",
+        "label": "IO Rank",
+        "type": "SELECT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_mobile",
+        "label": "IO Mobile No.",
+        "type": "NUMBER",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_pis",
+        "label": "PIS No. of IO",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "occurrence_info": [
+      {
+        "key": "occurrence_landmark",
+        "label": "Place of Occurrence Landmark",
+        "type": "TEXT",
+        "storage": {
+          "slot": "occurrence",
+          "column": "landmark",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ]
+  },
+  "UIDB": {
+    "contacts_assigned": [
+      {
+        "key": "informant_name",
+        "label": "Informant Name",
+        "type": "TEXT",
+        "storage": {
+          "role": "INFORMANT",
+          "column": "name",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "informant_relation",
+        "label": "Relation with Deceased",
+        "type": "SELECT",
+        "storage": {
+          "role": "INFORMANT",
+          "column": "relation_to_subject",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "informant_mobile",
+        "label": "Informant Mobile",
+        "type": "NUMBER",
+        "storage": {
+          "role": "INFORMANT",
+          "column": "mobile",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "zipnet_no",
+        "label": "ZIPNET No.",
+        "type": "TEXT",
+        "storage": {
+          "table": "$detail",
+          "column": "zipnet_no"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "corpse_desc": [
+      {
+        "key": "identified",
+        "label": "Body Identified",
+        "type": "RADIO",
+        "storage": {
+          "table": "uidb_details",
+          "column": "identified"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "deceased_name",
+        "label": "Name of Deceased",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "column": "name",
+          "entity": "person"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "deceased_house_no",
+        "label": "Deceased Present House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "present",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_street",
+        "label": "Deceased Present Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "present",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_colony",
+        "label": "Deceased Present Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "present",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_city_town_village",
+        "label": "Deceased Present Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "present",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_state",
+        "label": "Deceased Present State",
+        "type": "SELECT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "present",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_district",
+        "label": "Deceased Present District",
+        "type": "SELECT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "present",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_pincode",
+        "label": "Deceased Present Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "present",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_address",
+        "label": "Deceased Full Present Address",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "present",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_perm_same",
+        "label": "Is Permanent Address same as Present Address?",
+        "type": "RADIO",
+        "storage": {
+          "role": "DECEASED",
+          "column": "perm_same_as_present",
+          "entity": "person"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "deceased_perm_house_no",
+        "label": "Deceased Permanent House No.",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "permanent",
+          "column": "house_no",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_perm_street",
+        "label": "Deceased Permanent Street",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "permanent",
+          "column": "street",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_perm_colony",
+        "label": "Deceased Permanent Colony",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "permanent",
+          "column": "colony",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_perm_city_town_village",
+        "label": "Deceased Permanent Village / City / Town",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "permanent",
+          "column": "city_town_village",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_perm_state",
+        "label": "Deceased Permanent State",
+        "type": "SELECT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "permanent",
+          "column": "state",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_perm_district",
+        "label": "Deceased Permanent District",
+        "type": "SELECT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "permanent",
+          "column": "district",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_perm_pincode",
+        "label": "Deceased Permanent Pin Code",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "permanent",
+          "column": "pincode",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_perm_address",
+        "label": "Deceased Full Permanent Address",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "DECEASED",
+          "slot": "permanent",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "found_date",
+        "label": "Date Body Found",
+        "type": "DATE",
+        "storage": {
+          "table": "uidb_details",
+          "column": "found_date"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "found_place",
+        "label": "Place Body Found",
+        "type": "TEXT",
+        "storage": {
+          "slot": "found",
+          "column": "full_address",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "found_time",
+        "label": "Time Body Found",
+        "type": "TIME",
+        "storage": {
+          "table": "uidb_details",
+          "column": "found_time"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "found_latitude",
+        "label": "Place Body Found Latitude",
+        "type": "TEXT",
+        "storage": {
+          "slot": "found",
+          "column": "latitude",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "found_longitude",
+        "label": "Place Body Found Longitude",
+        "type": "TEXT",
+        "storage": {
+          "slot": "found",
+          "column": "longitude",
+          "entity": "location"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "approx_age",
+        "label": "Approximate Age",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "column": "age_range",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "identification_marks",
+        "label": "Identification Marks",
+        "type": "TEXT",
+        "storage": {
+          "role": "DECEASED",
+          "column": "identification_marks",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "corpse_physical": [
+      {
+        "key": "description",
+        "label": "Physical Description",
+        "type": "TEXTAREA",
+        "storage": {
+          "role": "DECEASED",
+          "column": "physical_description",
+          "entity": "person"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "general_info": [
+      {
+        "key": "gd_no",
+        "label": "GD Number",
+        "type": "TEXT",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_no"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gd_date",
+        "label": "GD Date",
+        "type": "DATE",
+        "storage": {
+          "table": "$detail",
+          "column": "gd_date"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "SELECT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "table": "uidb_details",
+              "column": "uidb_status"
+            },
+            "ARREST": {
+              "table": "arrest_details",
+              "column": "case_status"
+            },
+            "MISSING": {
+              "table": "missing_details",
+              "column": "missing_status"
+            },
+            "PCR_CALL": {
+              "table": "pcr_call_details",
+              "column": "final_call_status"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "incident_details": [
+      {
+        "key": "local_head_raw",
+        "label": "Local Head (as entered, unresolved)",
+        "type": "TEXT",
+        "storage": "extra",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "act_name",
+        "label": "Act / Law Name",
+        "type": "SELECT",
+        "storage": {
+          "column": "act_id",
+          "entity": "offence"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "sections",
+        "label": "Sections",
+        "type": "TEXT",
+        "storage": {
+          "column": "section_id",
+          "entity": "offence"
+        },
+        "required": true,
+        "repeater": null
+      },
+      {
+        "key": "major_heads",
+        "label": "Major Head(s)",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "minor_heads",
+        "label": "Minor Head(s)",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "heinous_offence",
+        "label": "Heinous Offence",
+        "type": "RADIO",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "ipc_major_head",
+        "label": "Major Head (IPC)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_major_head",
+        "label": "Major Head (Excise)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_major_head",
+        "label": "Major Head (Arms)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_major_head",
+        "label": "Major Head (Gambling)",
+        "type": "SELECT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "other_major_head",
+        "label": "Major Head (Other)",
+        "type": "TEXT",
+        "storage": {
+          "column": "major_head_id",
+          "entity": "offence",
+          "act_group": "other"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "theft_minor_head",
+        "label": "Minor Head (Theft)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "murder_minor_head",
+        "label": "Minor Head (Murder)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "hurt_minor_head",
+        "label": "Minor Head (Hurt)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "cheating_minor_head",
+        "label": "Minor Head (Cheating)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "robbery_minor_head",
+        "label": "Minor Head (Robbery)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "ipc"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_minor_head",
+        "label": "Minor Head (Excise)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_possession_minor_head",
+        "label": "Minor Head (Excise - Possession)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_minor_head",
+        "label": "Minor Head (Arms)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_sale_minor_head",
+        "label": "Minor Head (Excise - Sale)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "excise_smuggling_minor_head",
+        "label": "Minor Head (Excise - Smuggling)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "excise"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_minor_head",
+        "label": "Minor Head (Gambling)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_possession_minor_head",
+        "label": "Minor Head (Arms - Possession)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "other_minor_head",
+        "label": "Minor Head (Other)",
+        "type": "TEXT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "other"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "arms_use_minor_head",
+        "label": "Minor Head (Arms - Use)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "arms"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_house_minor_head",
+        "label": "Minor Head (Gambling - House)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "gambling_public_minor_head",
+        "label": "Minor Head (Gambling - Public)",
+        "type": "SELECT",
+        "storage": {
+          "column": "minor_head_id",
+          "entity": "offence",
+          "act_group": "gambling"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "inquest_details": [
+      {
+        "key": "cause_of_death",
+        "label": "Cause of Death",
+        "type": "SELECT",
+        "storage": {
+          "table": "uidb_details",
+          "column": "cause_of_death"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "cause_of_death_other",
+        "label": "Cause of Death (Specify)",
+        "type": "TEXT",
+        "storage": {
+          "table": "uidb_details",
+          "column": "cause_of_death_other"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_relative_name",
+        "label": "Relative Name",
+        "type": "TEXT",
+        "storage": {
+          "table": "uidb_details",
+          "column": "deceased_relative_name"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "deceased_relation_type",
+        "label": "Relation with Deceased",
+        "type": "SELECT",
+        "storage": {
+          "table": "uidb_details",
+          "column": "deceased_relation_type"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "filed_by_acp_sdm",
+        "label": "Inquest Filed by ACP / SDM?",
+        "type": "BOOLEAN",
+        "storage": {
+          "table": "uidb_details",
+          "column": "filed_by_acp_sdm"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "filed_by_acp_sdm_date",
+        "label": "Date of Filed by ACP/SDM",
+        "type": "DATE",
+        "storage": {
+          "table": "uidb_details",
+          "column": "filed_by_acp_sdm_date"
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "investigation_officer": [
+      {
+        "key": "io_id",
+        "label": "Investigating Officer",
+        "type": "SELECT",
+        "storage": {
+          "table": "records",
+          "column": "io_id"
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_name",
+        "label": "IO / Officer Name",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_rank",
+        "label": "IO Rank",
+        "type": "SELECT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_mobile",
+        "label": "IO Mobile No.",
+        "type": "NUMBER",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "io_pis",
+        "label": "PIS No. of IO",
+        "type": "TEXT",
+        "storage": "ui_only",
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "missing_physical": [
+      {
+        "key": "height",
+        "label": "Height",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "height",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "height",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "built",
+        "label": "Built",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "built",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "built",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "complexion",
+        "label": "Complexion",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "complexion",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "complexion",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "upper_dress_color",
+        "label": "Upper Dress Color",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "upper_dress_color",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "upper_dress_color",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "face",
+        "label": "Face",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "face",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "face",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "lower_dress_color",
+        "label": "Lower Dress Color",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "lower_dress_color",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "lower_dress_color",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "hair",
+        "label": "Hair",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "hair",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "hair",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "moustache",
+        "label": "Moustache",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "moustache",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "moustache",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      },
+      {
+        "key": "beard",
+        "label": "Beard",
+        "type": "TEXT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "beard",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "beard",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      }
+    ],
+    "person_details": [
+      {
+        "key": "gender",
+        "label": "Gender",
+        "type": "SELECT",
+        "storage": {
+          "per_type": {
+            "UIDB": {
+              "role": "DECEASED",
+              "column": "gender",
+              "entity": "person"
+            },
+            "MISSING": {
+              "role": "MISSING",
+              "column": "gender",
+              "entity": "person"
+            }
+          }
+        },
+        "required": false,
+        "repeater": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "task1_query_result": [
+    {
+      "local_head_cd": 101,
+      "local_head": "Arms Act",
+      "canonical_code": "ARMS_ACT",
+      "crime_category": "OTHER"
+    },
+    {
+      "local_head_cd": 102,
+      "local_head": "Delhi Excise Act",
+      "canonical_code": "EXCISE_ACT",
+      "crime_category": "OTHER"
+    },
+    {
+      "local_head_cd": 103,
+      "local_head": "Gambling Act",
+      "canonical_code": "GAMBLING_ACT",
+      "crime_category": "OTHER"
+    },
+    {
+      "local_head_cd": 105,
+      "local_head": "Narcotics Drugs & Psychotropic Substances Act",
+      "canonical_code": "NDPS_ACT",
+      "crime_category": "OTHER"
+    },
+    {
+      "local_head_cd": 205,
+      "local_head": "POCSO Act 2012",
+      "canonical_code": "POCSO",
+      "crime_category": "OTHER"
+    },
+    {
+      "local_head_cd": 214,
+      "local_head": "Punjab Excise Act 1914",
+      "canonical_code": "EXCISE_ACT",
+      "crime_category": "OTHER"
+    }
+  ],
+  "task2a_query_result": [
+    {
+      "local_head_cd": 101,
+      "local_head": "Arms Act",
+      "canonical_code": "ARMS_ACT",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 102,
+      "local_head": "Delhi Excise Act",
+      "canonical_code": "EXCISE_ACT",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 103,
+      "local_head": "Gambling Act",
+      "canonical_code": "GAMBLING_ACT",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 104,
+      "local_head": "Immoral Traffic(Prev.) Act, 1956 (SIT Act Renamed)",
+      "canonical_code": "IMMORAL_TRAFFIC_PREV_ACT_1956_SIT_ACT_RENAMED_",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 105,
+      "local_head": "Narcotics Drugs & Psychotropic Substances Act",
+      "canonical_code": "NDPS_ACT",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 205,
+      "local_head": "POCSO Act 2012",
+      "canonical_code": "POCSO",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    }
+  ],
+  "task2_range_100_110": [
+    {
+      "local_head_cd": 101,
+      "local_head": "Arms Act",
+      "canonical_code": "ARMS_ACT",
+      "crime_category": "OTHER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 102,
+      "local_head": "Delhi Excise Act",
+      "canonical_code": "EXCISE_ACT",
+      "crime_category": "OTHER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 103,
+      "local_head": "Gambling Act",
+      "canonical_code": "GAMBLING_ACT",
+      "crime_category": "OTHER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 104,
+      "local_head": "Immoral Traffic(Prev.) Act, 1956 (SIT Act Renamed)",
+      "canonical_code": "IMMORAL_TRAFFIC_PREV_ACT_1956_SIT_ACT_RENAMED_",
+      "crime_category": "OTHER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 105,
+      "local_head": "Narcotics Drugs & Psychotropic Substances Act",
+      "canonical_code": "NDPS_ACT",
+      "crime_category": "OTHER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 106,
+      "local_head": "Copyright Act",
+      "canonical_code": "COPYRIGHT_ACT",
+      "crime_category": "OTHER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 107,
+      "local_head": "Trade & Merchandise Marks Act, 1958",
+      "canonical_code": "TRADE_MERCHANDISE_MARKS_ACT_1958",
+      "crime_category": "OTHER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 108,
+      "local_head": "Protection of Civil Right Act- 1995",
+      "canonical_code": "PROTECTION_OF_CIVIL_RIGHT_ACT_1995",
+      "crime_category": "OTHER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 109,
+      "local_head": "Explosive Act- 1884",
+      "canonical_code": "EXPLOSIVE_ACT_1884",
+      "crime_category": "OTHER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    },
+    {
+      "local_head_cd": 110,
+      "local_head": "Explosive Substances Act- 1908",
+      "canonical_code": "EXPLOSIVE_SUBSTANCES_ACT_1908",
+      "crime_category": "OTHER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-08-18T06:55:51.243Z"
+    }
+  ]
+}
