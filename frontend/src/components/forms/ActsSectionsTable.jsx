@@ -86,8 +86,10 @@ export default function ActsSectionsTable({
   const [actDropdownOpen, setActDropdownOpen] = useState(false);
 
   useEffect(() => {
-    setActSearchInput(newAct || '');
-  }, [newAct]);
+    if (!actDropdownOpen) {
+      setActSearchInput(newAct || '');
+    }
+  }, [newAct, actDropdownOpen]);
 
   const knownActLabelsLower = new Set(actsSectionsRegistry.map((item) => item.act.trim().toLowerCase()));
   const rawActs = values.act_name ? String(values.act_name).split(',').map((s) => s.trim()).filter(Boolean) : [];
@@ -394,7 +396,7 @@ export default function ActsSectionsTable({
                       onChange={(e) => {
                         setActSearchInput(e.target.value);
                         setActDropdownOpen(true);
-                        if (e.target.value !== newAct) {
+                        if (e.target.value === '') {
                           setNewAct('');
                           setNewSection('');
                         }
@@ -420,6 +422,7 @@ export default function ActsSectionsTable({
                           filteredActs.map((item) => (
                             <div
                               key={item.act}
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => {
                                 setNewAct(item.act);
                                 setActSearchInput(item.act);

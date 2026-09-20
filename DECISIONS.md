@@ -623,3 +623,61 @@ High. The solution relies exclusively on the existing field configuration schema
 * **Tradeoffs**: **Known limitation**: Any district-custom field created with record type `ARREST` and section "General Information" will no longer render anywhere on the ARREST form. This is an intended consequence and not a bug, unless a future request asks to reintroduce it correctly.
 * **Relevant Code**: `DynamicForm.jsx`
 * **Confidence**: High.
+
+### CASE Occurrence Information Validation and UI
+* **Decision**: Added cross-field validation to ensure `occurrence_to_date_time` cannot be before `occurrence_from_date_time`. The check was added to both `validateSection` (to block step progression/saving) and `handleChange` (for reactive real-time feedback).
+* **Decision**: Deactivated the `occurrence_time_type` field (`is_active: false` in `case.json`) since it is redundant when both From/To date-time fields are populated.
+* **Context**: `occurrence_time_type` was a `ui_only` field and was never persisted or included in bulk imports. Deactivating it slims down the UI without any data loss.
+* **Tradeoffs**: A picker-level restriction (`minDateTime`) was not implemented in `DateTimePickerPopup.jsx` because it would require invasive changes to the calendar-day and time-slider rendering logic. The robust reactive validation block is used instead.
+* **Relevant Code**: `config/fields/case.json`, `DynamicForm.jsx`
+
+### Fix Delhi Police Districts in Person Addresses
+* **Decision**: Switched person address District and Police Station dropdowns to use the real Delhi Police District → PS map (`DISTRICTS_AND_STATIONS`) when the selected state is Delhi.
+* **Context**: Previously, person addresses used a generic all-India civil district list for Delhi, and a single unfiltered alphabetical list of all ~190 Delhi police stations. This mismatched the event location UX and allowed invalid district-PS combinations.
+* **Backward Compatibility**: A database check was run to see how many existing records had `state = 'Delhi'` in any person address. Exactly 1 record was found. Because the impact was near-zero, no data normalization script was required for the legacy string values. The old `ALL_DELHI_PS` constant was removed as dead code.
+* **Relevant Code**: `FieldRenderer.jsx`
+
+### Modal Footer Next/Save Pattern
+* **Decision**: Updated Victim, Accused, and Arrested modal footers to show a "Next" button that advances to the next sub-tab, and only show "Save" when the user reaches the final sub-tab.
+* **Context**: The Complainant modal already used this pattern. The other three person modals had hardcoded "Save" buttons that persisted across all sub-tabs, which was inconsistent and confusing. The new logic is fully dynamic based on the backend-driven `getSectionSubTabs()` list.
+* **Relevant Code**: `DynamicForm.jsx`
+
+### Normalize DOB to Age Calculation Across All Person Types
+* **Decision**: Standardized the DOB to Age (Years, Months) and Year of Birth calculation so that Complainant, Victim, Accused, and Arrested all use the exact same `diffMs` formula.
+* **Context**: Previously, only Victim and Accused calculated `age_month`. Arrested used a calendar-exact year check and left month blank. Complainant used a crude subtraction (current year - birth year) and also left month blank. I elected to fully normalize Arrested to use the `diffMs` approximation for year as well, ensuring 100% uniformity across all four person models.
+* **Relevant Code**: `DynamicForm.jsx` (`handleArrestedDobChange` and the generic `_dob` handler in `handleChange`).
+
+### Add "Post Graduate" to Education Options
+* **Decision**: Added "POST_GRADUATE" ("Post Graduate" / "स्नातकोत्तर") to the education dropdown options across all seven person-role configurations in `common.json` (generic `education`, Complainant, Victim, Accused, Arrested, and Missing Person), positioned logically between Graduate and Professional.
+* **Decision**: Mirrored the addition in `backend/src/modules/import/import-fields.config.js` to keep the bulk-import Excel template's dropdown perfectly synchronized with the UI form's dropdown options.
+* **Context**: This is purely a dictionary/vocabulary change. Since education fields use unrestricted text storage across all tables, no database migration was needed. The change was applied using `npm run sync-config` to update the `field_registry`.
+
+### Add Missing Age Month Fields to Config
+* **Decision**: Added four new fields to the field registry config (`complainant_age_month`, `victim_age_month`, `accused_age_month`, and `arrested_age_month`) stored via `{ entity: "person", role: "...", extra: true }`. They are set to `min: 0, max: 11` and positioned immediately after their respective `_age_year` field.
+* **Context**: While the UI (`DynamicForm.jsx`) was coded to render the second "Age (Months)" input in the Age Panel for all persons, it failed to render because the fields never actually existed in the database registry (`field_registry`). Without a row in the registry, `rawField` aborted rendering entirely. Adding them via config automatically lights up the existing UI code. Because they are mapped to the `extra` JSONB column, no database schema migration was necessary.
+* **Relevant Code**: `config/fields/case.json`, `config/fields/arrest.json`
+
+### Command Center Breadcrumb Routing
+* **Decision**: Made the 'Command Center' breadcrumb in PoliceNavbar.jsx role-aware, directing PS and HC roles straight to /ps/dashboard instead of the generic /dashboard.
+* **Context**: The /dashboard route redirects PS/HC to /records (via RoleRedirect in AppRouter.jsx), skipping their dedicated dashboard page. The sidebar link correctly routes to /ps/dashboard, but the hardcoded top breadcrumb did not.
+* **Why**: To align the breadcrumb's behavior with the sidebar's existing correct link for PS/HC, while preserving the generic /dashboard redirect logic for all other roles (who do not have a dedicated ps/dashboard equivalent).
+* **Relevant Code**: rontend/src/components/layout/PoliceNavbar.jsx
+
+### SearchableSelect Cross-Device Click Reliability
+* **Decision**: SearchableSelect option selection logic was moved from onMouseDown to onClick.
+* **Context**: A trackpad tap-to-click gesture was not reliably registering as a selection due to how OS/browser combinations synthesize mousedown vs click events when preventDefault() is involved. 
+* **Why**: The click event is guaranteed to fire consistently across physical mouse clicks, trackpad taps, and touchscreen taps. The onMouseDown handler was retained solely to call e.preventDefault(), which prevents the search input field from losing focus and prematurely closing the dropdown mid-interaction.
+* **Note**: This is a shared component, so this fix automatically applies to every searchable dropdown in the application (including Acts & Sections, Major/Minor Heads, and standard Select fields).
+* **Relevant Code**: frontend/src/components/forms/SearchableSelect.jsx
+
+### Acts & Sections Search Input Fix
+* **Decision**: Stopped clearing the selected Act (and its dependent Sections dropdown) on every unmatching keystroke in the ActsSectionsTable.jsx 'Add Acts & Section' modal.
+* **Context**: The onChange handler was aggressively resetting the selected newAct the instant the user typed something that didn't exactly match the current selection, which prematurely disabled and emptied the Sections dropdown even if the user was just typing a valid search string to find a new Act.
+* **Why**: The field should only change its actual selection when the user clicks a suggestion, or deliberately clears the field entirely. The user's keystrokes should only filter the dropdown list. To avoid stranding unselected text if the user clicks away, the actSearchInput is cleanly reset to the current newAct when the dropdown closes (!actDropdownOpen), sidestepping any stale closure issues with the onBlur timeout.
+* **Relevant Code**: frontend/src/components/forms/ActsSectionsTable.jsx
+
+### Act Suggestion Click Race Condition Fix
+* **Decision**: Added `onMouseDown={(e) => e.preventDefault()}` to the Act suggestion dropdown options in `ActsSectionsTable.jsx`.
+* **Context**: Clicking or tapping an Act suggestion could fail to select it and blank the search field instead. This was a focus/blur race condition where a trackpad tap's click event could arrive after the input's 200ms blur-close timer had already unmounted the dropdown list, causing the selection to be lost. The recently added `useEffect` would then correctly (but unexpectedly) re-sync the input to the empty `newAct`, blanking the field.
+* **Why**: Preventing the option's mousedown from blurring the input entirely removes the race condition. The blur timer never starts, so the dropdown stays open until the click event successfully fires and closes it explicitly. This matches the cross-device input reliability pattern already used in `SearchableSelect.jsx`.
+* **Relevant Code**: frontend/src/components/forms/ActsSectionsTable.jsx

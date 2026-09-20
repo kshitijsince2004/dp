@@ -190,11 +190,11 @@
           "key": "complainant_education",
           "section": "Complainant Personal Details",
           "label": "Complainant Education",
-          "hint": "select: ILLITERATE, SCHOOL_DROPOUT, UP_TO_10TH, UP_TO_12TH, GRADUATE, PROFESSIONAL, UNKNOWN",
+          "hint": "select: ILLITERATE, SCHOOL_DROPOUT, UP_TO_10TH, UP_TO_12TH, GRADUATE, POST_GRADUATE, PROFESSIONAL, UNKNOWN",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,PROFESSIONAL,UNKNOWN\""
+              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,POST_GRADUATE,PROFESSIONAL,UNKNOWN\""
             ]
           }
         },
@@ -628,6 +628,14 @@
         },
         {
           "col": 60,
+          "key": "complainant_age_month",
+          "section": "Complainant Personal Details",
+          "label": "Complainant Age (Months)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 61,
           "key": "transferred_to_ps_id",
           "section": "General Information",
           "label": "Transferred to Police Station",
@@ -635,7 +643,7 @@
           "validation": null
         },
         {
-          "col": 61,
+          "col": 62,
           "key": "work_out",
           "section": "General Information",
           "label": "WorkOut",
@@ -648,7 +656,7 @@
           }
         },
         {
-          "col": 62,
+          "col": 63,
           "key": "transferred_to_agency_id",
           "section": "General Information",
           "label": "Transferred to Agency",
@@ -656,7 +664,7 @@
           "validation": null
         },
         {
-          "col": 63,
+          "col": 64,
           "key": "work_out_date",
           "section": "General Information",
           "label": "WorkOut Date",
@@ -670,7 +678,7 @@
           }
         },
         {
-          "col": 64,
+          "col": 65,
           "key": "date_of_transfer",
           "section": "General Information",
           "label": "Date of Transfer",
@@ -684,7 +692,7 @@
           }
         },
         {
-          "col": 65,
+          "col": 66,
           "key": "burglary_mo_cd",
           "section": "General Information",
           "label": "burglary_mo_cd",
@@ -692,7 +700,7 @@
           "validation": null
         },
         {
-          "col": 66,
+          "col": 67,
           "key": "cheating_amount",
           "section": "General Information",
           "label": "cheating_amount",
@@ -700,7 +708,7 @@
           "validation": null
         },
         {
-          "col": 67,
+          "col": 68,
           "key": "court_case_no",
           "section": "General Information",
           "label": "court_case_no",
@@ -708,7 +716,7 @@
           "validation": null
         },
         {
-          "col": 68,
+          "col": 69,
           "key": "court_disposal_date",
           "section": "General Information",
           "label": "court_disposal_date",
@@ -716,7 +724,7 @@
           "validation": null
         },
         {
-          "col": 69,
+          "col": 70,
           "key": "court_disposal_type",
           "section": "General Information",
           "label": "court_disposal_type",
@@ -724,7 +732,7 @@
           "validation": null
         },
         {
-          "col": 70,
+          "col": 71,
           "key": "court_name",
           "section": "General Information",
           "label": "court_name",
@@ -732,7 +740,7 @@
           "validation": null
         },
         {
-          "col": 71,
+          "col": 72,
           "key": "direction_authority",
           "section": "General Information",
           "label": "direction_authority",
@@ -740,7 +748,7 @@
           "validation": null
         },
         {
-          "col": 72,
+          "col": 73,
           "key": "education",
           "section": "General Information",
           "label": "education",
@@ -748,7 +756,7 @@
           "validation": null
         },
         {
-          "col": 73,
+          "col": 74,
           "key": "financial_status",
           "section": "General Information",
           "label": "financial_status",
@@ -756,7 +764,7 @@
           "validation": null
         },
         {
-          "col": 74,
+          "col": 75,
           "key": "registered_on_direction",
           "section": "General Information",
           "label": "registered_on_direction",
@@ -764,7 +772,7 @@
           "validation": null
         },
         {
-          "col": 75,
+          "col": 76,
           "key": "sent_to_court_date",
           "section": "General Information",
           "label": "sent_to_court_date",
@@ -772,19 +780,11 @@
           "validation": null
         },
         {
-          "col": 76,
+          "col": 77,
           "key": "social_category",
           "section": "General Information",
           "label": "social_category",
           "hint": "select",
-          "validation": null
-        },
-        {
-          "col": 77,
-          "key": null,
-          "section": "General Information",
-          "label": null,
-          "hint": null,
           "validation": null
         },
         {
@@ -866,6 +866,14 @@
           "label": null,
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 88,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
@@ -873,7 +881,7 @@
         "AK2:AT2",
         "AU2:BC2",
         "BE2:BG2",
-        "BH2:CI2",
+        "BI2:CJ2",
         "L2:Y2",
         "Z2:AJ2"
       ]
@@ -1232,10 +1240,10 @@
         },
         {
           "col": 36,
-          "key": null,
+          "key": "victim_age_month",
           "section": "Victim Personal Details",
-          "label": null,
-          "hint": null,
+          "label": "Victim Age (Months)",
+          "hint": "number",
           "validation": null
         },
         {
@@ -1269,10 +1277,18 @@
           "label": null,
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 41,
+          "key": null,
+          "section": "Victim Personal Details",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
-        "AG2:AN2",
+        "AG2:AO2",
         "B2:K2",
         "L2:V2",
         "W2:AF2"
@@ -1419,11 +1435,11 @@
           "key": "accused_education",
           "section": "Accused Personal Details",
           "label": "Accused Education",
-          "hint": "select: ILLITERATE, SCHOOL_DROPOUT, UP_TO_10TH, UP_TO_12TH, GRADUATE, PROFESSIONAL, UNKNOWN",
+          "hint": "select: ILLITERATE, SCHOOL_DROPOUT, UP_TO_10TH, UP_TO_12TH, GRADUATE, POST_GRADUATE, PROFESSIONAL, UNKNOWN",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,PROFESSIONAL,UNKNOWN\""
+              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,POST_GRADUATE,PROFESSIONAL,UNKNOWN\""
             ]
           }
         },
@@ -1728,16 +1744,16 @@
         },
         {
           "col": 37,
-          "key": null,
-          "section": "Accused Permanent Address",
-          "label": null,
-          "hint": null,
+          "key": "accused_age_month",
+          "section": "Accused Personal Details",
+          "label": "Accused Age (Months)",
+          "hint": "number",
           "validation": null
         },
         {
           "col": 38,
           "key": null,
-          "section": "Accused Permanent Address",
+          "section": "Accused Personal Details",
           "label": null,
           "hint": null,
           "validation": null
@@ -1745,7 +1761,7 @@
         {
           "col": 39,
           "key": null,
-          "section": "Accused Permanent Address",
+          "section": "Accused Personal Details",
           "label": null,
           "hint": null,
           "validation": null
@@ -1753,14 +1769,23 @@
         {
           "col": 40,
           "key": null,
-          "section": "Accused Permanent Address",
+          "section": "Accused Personal Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 41,
+          "key": null,
+          "section": "Accused Personal Details",
           "label": null,
           "hint": null,
           "validation": null
         }
       ],
       "row2Merges": [
-        "AA2:AN2",
+        "AA2:AJ2",
+        "AK2:AO2",
         "B2:O2",
         "P2:Z2"
       ]
@@ -2522,11 +2547,11 @@
           "key": "arrested_education",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Education",
-          "hint": "select: ILLITERATE, SCHOOL_DROPOUT, UP_TO_10TH, UP_TO_12TH, GRADUATE, PROFESSIONAL, UNKNOWN",
+          "hint": "select: ILLITERATE, SCHOOL_DROPOUT, UP_TO_10TH, UP_TO_12TH, GRADUATE, POST_GRADUATE, PROFESSIONAL, UNKNOWN",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,PROFESSIONAL,UNKNOWN\""
+              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,POST_GRADUATE,PROFESSIONAL,UNKNOWN\""
             ]
           }
         },
@@ -2915,11 +2940,11 @@
           "key": "status",
           "section": "Particular Details",
           "label": "Custody status",
-          "hint": "select: JC, PC, Bail, Bound Down, Release, Lockup, 35(3) BNS Notice, Fine, Apprehension",
+          "hint": "select: JC, PC, Bail, Bound Down, Release, Lockup, 35(3) BNS Notice, Fine, Apprehension, Formal Arrest",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"JC,PC,Bail,Bound Down,Release,Lockup,35(3) BNS Notice,Fine,Apprehension\""
+              "\"JC,PC,Bail,Bound Down,Release,Lockup,35(3) BNS Notice,Fine,Apprehension,Formal Arrest\""
             ]
           }
         },
@@ -2959,16 +2984,16 @@
         },
         {
           "col": 55,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
+          "key": "arrested_age_month",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Age (Months)",
+          "hint": "number",
           "validation": null
         },
         {
           "col": 56,
           "key": null,
-          "section": "Particular Details",
+          "section": "Arrested Person Personal Details",
           "label": null,
           "hint": null,
           "validation": null
@@ -2976,7 +3001,7 @@
         {
           "col": 57,
           "key": null,
-          "section": "Particular Details",
+          "section": "Arrested Person Personal Details",
           "label": null,
           "hint": null,
           "validation": null
@@ -2984,7 +3009,7 @@
         {
           "col": 58,
           "key": null,
-          "section": "Particular Details",
+          "section": "Arrested Person Personal Details",
           "label": null,
           "hint": null,
           "validation": null
@@ -2992,7 +3017,7 @@
         {
           "col": 59,
           "key": null,
-          "section": "Particular Details",
+          "section": "Arrested Person Personal Details",
           "label": null,
           "hint": null,
           "validation": null
@@ -3000,7 +3025,15 @@
         {
           "col": 60,
           "key": null,
-          "section": "Particular Details",
+          "section": "Arrested Person Personal Details",
+          "label": null,
+          "hint": null,
+          "validation": null
+        },
+        {
+          "col": 61,
+          "key": null,
+          "section": "Arrested Person Personal Details",
           "label": null,
           "hint": null,
           "validation": null
@@ -3008,8 +3041,9 @@
       ],
       "row2Merges": [
         "AH2:AQ2",
-        "AR2:BH2",
+        "AR2:BB2",
         "B2:H2",
+        "BC2:BI2",
         "I2:V2",
         "W2:AG2"
       ]
@@ -3883,6 +3917,19 @@
           "label": "PIS No. of IO",
           "hint": "PIS number of a registered IO, e.g. 28080214",
           "validation": null
+        },
+        {
+          "col": 51,
+          "key": "education",
+          "section": "General Information",
+          "label": "education",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Post Graduate,Professional,Unknown\""
+            ]
+          }
         }
       ],
       "row2Merges": [
@@ -4486,6 +4533,19 @@
         },
         {
           "col": 51,
+          "key": "mp_education",
+          "section": "Address Details",
+          "label": "mp_education",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Post Graduate,Professional,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 52,
           "key": "complainant_social_category",
           "section": "Complainant Personal Details",
           "label": "complainant_social_category",
@@ -4494,19 +4554,6 @@
             "type": "list",
             "formulae": [
               "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 52,
-          "key": "complainant_education",
-          "section": "Complainant Personal Details",
-          "label": "complainant_education",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
             ]
           }
         },
@@ -4522,6 +4569,19 @@
               "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
             ]
           }
+        },
+        {
+          "col": 54,
+          "key": "education",
+          "section": "General Information",
+          "label": "education",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Post Graduate,Professional,Unknown\""
+            ]
+          }
         }
       ],
       "row2Merges": [
@@ -4529,7 +4589,7 @@
         "AE2:AH2",
         "AI2:AQ2",
         "AS2:AX2",
-        "AY2:BA2",
+        "AZ2:BA2",
         "G2:AD2"
       ]
     }
@@ -4971,6 +5031,14 @@
         },
         {
           "col": 43,
+          "key": "arrested_age_month",
+          "section": "Arrested Person Personal Details",
+          "label": "Arrested Person Age (Months)",
+          "hint": "number",
+          "validation": null
+        },
+        {
+          "col": 44,
           "key": "education",
           "section": "General Information",
           "label": "education",
@@ -4978,12 +5046,12 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Professional,Unknown\""
+              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Post Graduate,Professional,Unknown\""
             ]
           }
         },
         {
-          "col": 44,
+          "col": 45,
           "key": "financial_status",
           "section": "General Information",
           "label": "financial_status",
@@ -4996,7 +5064,7 @@
           }
         },
         {
-          "col": 45,
+          "col": 46,
           "key": "social_category",
           "section": "General Information",
           "label": "social_category",
@@ -5011,7 +5079,8 @@
       ],
       "row2Merges": [
         "A2:G2",
-        "AQ2:AS2",
+        "AP2:AQ2",
+        "AR2:AT2",
         "J2:AO2"
       ]
     },
@@ -5226,7 +5295,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,PROFESSIONAL,UNKNOWN\""
+              "\"ILLITERATE,SCHOOL_DROPOUT,UP_TO_10TH,UP_TO_12TH,GRADUATE,POST_GRADUATE,PROFESSIONAL,UNKNOWN\""
             ]
           }
         },
@@ -5611,7 +5680,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"JC,Bound Down,Lockup,Fine,Apprehension\""
+              "\"JC,Bound Down,Lockup,Fine,Apprehension,Formal Arrest\""
             ]
           }
         },

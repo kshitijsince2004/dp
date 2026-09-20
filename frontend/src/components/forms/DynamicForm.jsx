@@ -1359,13 +1359,28 @@ export default function DynamicForm({
 
               {/* Modal Footer */}
               <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
-                <button
-                  type="button"
-                  onClick={saveVictimEntry}
-                  className="px-6 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] cursor-pointer transition-colors"
-                >
-                  {lang === 'hi' ? 'सहेजें' : 'Save'}
-                </button>
+                {(() => {
+                  const subTabs = getSectionSubTabs('victim_info');
+                  const activeIdx = subTabs.findIndex(t => t.id === victimSubTab);
+                  const isLastSubTab = subTabs.length === 0 || activeIdx === subTabs.length - 1;
+                  return isLastSubTab ? (
+                    <button
+                      type="button"
+                      onClick={saveVictimEntry}
+                      className="px-6 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] cursor-pointer transition-colors"
+                    >
+                      {lang === 'hi' ? 'सहेजें' : 'Save'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setVictimSubTab(subTabs[activeIdx + 1]?.id)}
+                      className="px-6 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] cursor-pointer transition-colors"
+                    >
+                      {lang === 'hi' ? 'अगला' : 'Next'}
+                    </button>
+                  );
+                })()}
                 <button
                   type="button"
                   onClick={() => setIsVictimModalOpen(false)}
@@ -1492,13 +1507,28 @@ export default function DynamicForm({
 
               {/* Modal Footer */}
               <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
-                <button
-                  type="button"
-                  onClick={saveAccusedEntry}
-                  className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors"
-                >
-                  {lang === 'hi' ? 'सहेजें' : 'Save'}
-                </button>
+                {(() => {
+                  const subTabs = getSectionSubTabs('accused_info');
+                  const activeIdx = subTabs.findIndex(t => t.id === accusedSubTab);
+                  const isLastSubTab = subTabs.length === 0 || activeIdx === subTabs.length - 1;
+                  return isLastSubTab ? (
+                    <button
+                      type="button"
+                      onClick={saveAccusedEntry}
+                      className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors"
+                    >
+                      {lang === 'hi' ? 'सहेजें' : 'Save'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setAccusedSubTab(subTabs[activeIdx + 1]?.id)}
+                      className="px-6 py-2 bg-[#0d2a4a] text-white text-xs font-bold rounded hover:bg-[#16406d] cursor-pointer transition-colors"
+                    >
+                      {lang === 'hi' ? 'अगला' : 'Next'}
+                    </button>
+                  );
+                })()}
                 <button
                   type="button"
                   onClick={() => setIsAccusedModalOpen(false)}
@@ -2063,9 +2093,20 @@ export default function DynamicForm({
 
               {/* Footer */}
               <div className="flex justify-end gap-3 px-5 py-3 border-t border-slate-200 bg-slate-50">
-                <button type="button" onClick={saveArrestedEntry} className="px-6 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] cursor-pointer transition-colors">
-                  {lang === 'hi' ? 'सहेजें' : 'Save'}
-                </button>
+                {(() => {
+                  const subTabs = getSectionSubTabs('arrested_info');
+                  const activeIdx = subTabs.findIndex(t => t.id === arrestedSubTab);
+                  const isLastSubTab = subTabs.length === 0 || activeIdx === subTabs.length - 1;
+                  return isLastSubTab ? (
+                    <button type="button" onClick={saveArrestedEntry} className="px-6 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] cursor-pointer transition-colors">
+                      {lang === 'hi' ? 'सहेजें' : 'Save'}
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => setArrestedSubTab(subTabs[activeIdx + 1]?.id)} className="px-6 py-2 bg-[#0d2a4a] text-white text-sm font-bold rounded-lg hover:bg-[#16406d] cursor-pointer transition-colors">
+                      {lang === 'hi' ? 'अगला' : 'Next'}
+                    </button>
+                  );
+                })()}
                 <button type="button" onClick={() => setIsArrestedModalOpen(false)} className="px-6 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-300 cursor-pointer transition-colors">
                   {lang === 'hi' ? 'बंद करें' : 'Close'}
                 </button>
@@ -2741,14 +2782,10 @@ export default function DynamicForm({
     const next = { ...currentTemp, arrested_dob: dobVal };
     const dobDate = parseDMY(dobVal);
     if (dobDate && !isNaN(dobDate.getTime())) {
-      const today = new Date();
-      let age = today.getFullYear() - dobDate.getFullYear();
-      const m = today.getMonth() - dobDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
-        age--;
-      }
-      next.arrested_age_year = age >= 0 ? age : '';
+      const diffMs = Date.now() - dobDate.getTime();
       next.arrested_birth_year = dobDate.getFullYear();
+      next.arrested_age_year = Math.max(0, Math.floor(diffMs / (365.25 * 24 * 60 * 60 * 1000)));
+      next.arrested_age_month = Math.max(0, Math.floor((diffMs % (365.25 * 24 * 60 * 60 * 1000)) / (30.43 * 24 * 60 * 60 * 1000)));
     }
     return next;
   };
@@ -3506,6 +3543,26 @@ const validateSection = useCallback((stepIdx, currentValues = values) => {
     const err = getFieldError(field, val, lang);
     if (err) errs[field.field_key] = err;
   });
+
+  // Cross-field validation for occurrence date/times (CASE only)
+  if (currentValues.occurrence_from_date_time && currentValues.occurrence_to_date_time) {
+    const parseDt = (str) => {
+      const [dPart, tPart] = (str || '').split(' ');
+      if (!dPart || !tPart) return 0;
+      const [dd, mm, yyyy] = dPart.split('/');
+      const [HH, MM] = tPart.split(':');
+      if (!dd || !mm || !yyyy || !HH || !MM) return 0;
+      return new Date(`${yyyy}-${mm}-${dd}T${HH}:${MM}:00`).getTime();
+    };
+    const fromMs = parseDt(currentValues.occurrence_from_date_time);
+    const toMs = parseDt(currentValues.occurrence_to_date_time);
+    if (fromMs > 0 && toMs > 0 && toMs < fromMs) {
+      errs.occurrence_to_date_time = lang === 'hi' 
+        ? 'से दिनांक/समय के बाद का टू दिनांक/समय होना चाहिए' 
+        : 'To Date/Time cannot be before From Date/Time';
+    }
+  }
+
   if (Object.keys(errs).length > 0) {
     log.warn('form:validation_fail', { step: stepIdx, section: section.section, errorKeys: Object.keys(errs) });
   } else {
@@ -3563,14 +3620,15 @@ const handleChange = useCallback((key, val) => {
       if (val) {
         const dobDate = parseDMY(val);
         if (dobDate && !isNaN(dobDate.getTime())) {
-          const birthYear = dobDate.getFullYear();
-          const currentYear = new Date().getFullYear();
-          next[`${prefix}_birth_year`] = birthYear;
-          next[`${prefix}_age_year`] = Math.max(0, currentYear - birthYear);
+          const diffMs = Date.now() - dobDate.getTime();
+          next[`${prefix}_birth_year`] = dobDate.getFullYear();
+          next[`${prefix}_age_year`] = Math.max(0, Math.floor(diffMs / (365.25 * 24 * 60 * 60 * 1000)));
+          next[`${prefix}_age_month`] = Math.max(0, Math.floor((diffMs % (365.25 * 24 * 60 * 60 * 1000)) / (30.43 * 24 * 60 * 60 * 1000)));
         }
       } else {
         next[`${prefix}_birth_year`] = '';
         next[`${prefix}_age_year`] = '';
+        next[`${prefix}_age_month`] = '';
       }
     } else if (key.endsWith('_birth_year')) {
       const prefix = key.substring(0, key.lastIndexOf('_birth_year'));
@@ -3614,11 +3672,39 @@ const handleChange = useCallback((key, val) => {
     const liveFieldDef = fieldsByKey[key];
     const liveErr = liveFieldDef ? getFieldError(liveFieldDef, val, lang) : null;
     setErrors((e) => {
+      let nextErrs = { ...e };
       if (!liveErr) {
-        if (!e[key]) return e;
-        const n = { ...e }; delete n[key]; return n;
+        delete nextErrs[key];
+      } else {
+        nextErrs[key] = liveErr;
       }
-      return e[key] === liveErr ? e : { ...e, [key]: liveErr };
+      
+      // Cross-field validation for occurrence_from/to
+      if (key === 'occurrence_from_date_time' || key === 'occurrence_to_date_time') {
+        const fromStr = key === 'occurrence_from_date_time' ? val : next.occurrence_from_date_time;
+        const toStr = key === 'occurrence_to_date_time' ? val : next.occurrence_to_date_time;
+        
+        if (fromStr && toStr) {
+          const parseDt = (str) => {
+            const [dPart, tPart] = (str || '').split(' ');
+            if (!dPart || !tPart) return 0;
+            const [dd, mm, yyyy] = dPart.split('/');
+            const [HH, MM] = tPart.split(':');
+            if (!dd || !mm || !yyyy || !HH || !MM) return 0;
+            return new Date(`${yyyy}-${mm}-${dd}T${HH}:${MM}:00`).getTime();
+          };
+          const fromMs = parseDt(fromStr);
+          const toMs = parseDt(toStr);
+          if (fromMs > 0 && toMs > 0 && toMs < fromMs) {
+            nextErrs.occurrence_to_date_time = lang === 'hi' 
+              ? 'से दिनांक/समय के बाद का टू दिनांक/समय होना चाहिए' 
+              : 'To Date/Time cannot be before From Date/Time';
+          } else if (nextErrs.occurrence_to_date_time === 'To Date/Time cannot be before From Date/Time' || nextErrs.occurrence_to_date_time === 'से दिनांक/समय के बाद का टू दिनांक/समय होना चाहिए') {
+             delete nextErrs.occurrence_to_date_time;
+          }
+        }
+      }
+      return nextErrs;
     });
     // Auto-save using custom hook (2 seconds debounce)
     triggerAutosave(next, activeRecordIdRef.current);
@@ -3632,14 +3718,15 @@ const handleChange = useCallback((key, val) => {
     if (val) {
       const dobDate = parseDMY(val);
       if (dobDate && !isNaN(dobDate.getTime())) {
-        const birthYear = dobDate.getFullYear();
-        const currentYear = new Date().getFullYear();
-        next[`${prefix}_birth_year`] = birthYear;
-        next[`${prefix}_age_year`] = Math.max(0, currentYear - birthYear);
+        const diffMs = Date.now() - dobDate.getTime();
+        next[`${prefix}_birth_year`] = dobDate.getFullYear();
+        next[`${prefix}_age_year`] = Math.max(0, Math.floor(diffMs / (365.25 * 24 * 60 * 60 * 1000)));
+        next[`${prefix}_age_month`] = Math.max(0, Math.floor((diffMs % (365.25 * 24 * 60 * 60 * 1000)) / (30.43 * 24 * 60 * 60 * 1000)));
       }
     } else {
       next[`${prefix}_birth_year`] = '';
       next[`${prefix}_age_year`] = '';
+      next[`${prefix}_age_month`] = '';
     }
   } else if (key.endsWith('_birth_year')) {
     const prefix = key.substring(0, key.lastIndexOf('_birth_year'));

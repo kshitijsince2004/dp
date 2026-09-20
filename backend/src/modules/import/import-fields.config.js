@@ -61,7 +61,7 @@ const getPersonFieldsList = (prefix, labelPrefixEn, labelPrefixHi) => {
     { field_key: `${prefix}_nickname`, label_en: `${labelPrefixEn} Alias`, label_hi: `${labelPrefixHi} उपनाम`, required: false, hint: 'Nickname or alias' },
     { field_key: `${prefix}_gender`, label_en: `${labelPrefixEn} Gender`, label_hi: `${labelPrefixHi} लिंग`, required: false, options: ['Male', 'Female', 'Transgender', 'Unknown'] },
     { field_key: `${prefix}_social_category`, label_en: `${labelPrefixEn} Social Category`, label_hi: `${labelPrefixHi} सामाजिक श्रेणी`, required: false, options: ['SC', 'ST', 'OBC', 'GEN', 'UNKNOWN'] },
-    { field_key: `${prefix}_education`, label_en: `${labelPrefixEn} Education`, label_hi: `${labelPrefixHi} शिक्षा`, required: false, options: ['ILLITERATE', 'SCHOOL_DROPOUT', 'UP_TO_10TH', 'UP_TO_12TH', 'GRADUATE', 'PROFESSIONAL', 'UNKNOWN'] },
+    { field_key: `${prefix}_education`, label_en: `${labelPrefixEn} Education`, label_hi: `${labelPrefixHi} शिक्षा`, required: false, options: ['ILLITERATE', 'SCHOOL_DROPOUT', 'UP_TO_10TH', 'UP_TO_12TH', 'GRADUATE', 'POST_GRADUATE', 'PROFESSIONAL', 'UNKNOWN'] },
     { field_key: `${prefix}_financial_status`, label_en: `${labelPrefixEn} Financial Status`, label_hi: `${labelPrefixHi} वित्तीय स्थिति`, required: false, options: ['BPL', 'LOWER', 'MIDDLE', 'UPPER', 'UNKNOWN'] },
     { field_key: `${prefix}_relation_type`, label_en: `${labelPrefixEn} Relation Type`, label_hi: `${labelPrefixHi} संबंध का प्रकार`, required: false, options: ['Father', 'Mother', 'Husband', 'Wife', 'Guardian', 'Other'] },
     { field_key: `${prefix}_relative_name`, label_en: `${labelPrefixEn} Relative Name`, label_hi: `${labelPrefixHi} रिश्तेदार का नाम`, required: false, hint: 'Father\'s or Husband\'s Name' },

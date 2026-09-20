@@ -5319,6 +5319,10 @@
         "label_en": "Graduate"
       },
       {
+        "value": "POST_GRADUATE",
+        "label_en": "Post Graduate"
+      },
+      {
         "value": "PROFESSIONAL",
         "label_en": "Professional"
       },
@@ -5460,6 +5464,11 @@
         "value": "GRADUATE",
         "label_en": "Graduate",
         "label_hi": "स्नातक"
+      },
+      {
+        "value": "POST_GRADUATE",
+        "label_en": "Post Graduate",
+        "label_hi": "स्नातकोत्तर"
       },
       {
         "value": "PROFESSIONAL",
@@ -5631,6 +5640,11 @@
         "label_hi": "स्नातक"
       },
       {
+        "value": "POST_GRADUATE",
+        "label_en": "Post Graduate",
+        "label_hi": "स्नातकोत्तर"
+      },
+      {
         "value": "PROFESSIONAL",
         "label_en": "Professional",
         "label_hi": "व्यावसायिक"
@@ -5651,7 +5665,8 @@
     ],
     "introduced_at_level": "PS",
     "sort_order": 468.7,
-    "is_active": true
+    "is_active": true,
+    "repeater_entity": "PERSON_VICTIM"
   },
   {
     "field_key": "victim_financial_status",
@@ -5800,6 +5815,11 @@
         "label_hi": "स्नातक"
       },
       {
+        "value": "POST_GRADUATE",
+        "label_en": "Post Graduate",
+        "label_hi": "स्नातकोत्तर"
+      },
+      {
         "value": "PROFESSIONAL",
         "label_en": "Professional",
         "label_hi": "व्यावसायिक"
@@ -5820,7 +5840,8 @@
     ],
     "introduced_at_level": "PS",
     "sort_order": 438.7,
-    "is_active": true
+    "is_active": true,
+    "repeater_entity": "PERSON_ACCUSED"
   },
   {
     "field_key": "accused_financial_status",
@@ -5969,6 +5990,11 @@
         "value": "GRADUATE",
         "label_en": "Graduate",
         "label_hi": "स्नातक"
+      },
+      {
+        "value": "POST_GRADUATE",
+        "label_en": "Post Graduate",
+        "label_hi": "स्नातकोत्तर"
       },
       {
         "value": "PROFESSIONAL",
@@ -6139,6 +6165,11 @@
         "value": "GRADUATE",
         "label_en": "Graduate",
         "label_hi": "स्नातक"
+      },
+      {
+        "value": "POST_GRADUATE",
+        "label_en": "Post Graduate",
+        "label_hi": "स्नातकोत्तर"
       },
       {
         "value": "PROFESSIONAL",

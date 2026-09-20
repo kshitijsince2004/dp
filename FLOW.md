@@ -318,3 +318,15 @@ In the Arrest registration form (Person Particulars), users select the scheme un
 - **District Review Locks Fixed**: End-to-end audit fixed 4 distinct gaps in district-level field edits. `common.json` and `arrest.json` were patched to include `DISTRICT` for plural/summary Crime Head fields (fixing the blocking backend rejection). Property Repeater fields now respect `isFieldEditableForReview`. The generic `FormSection` now correctly respects this closure, resulting in complete lockdown for `MISSING` and `PCR_CALL` record types. Occurrence Radio inputs received a missing `disabled` binding.
 
 - **ARREST Form Update**: Removed the "Additional Information" block from the ARREST General Information tab entirely. This intentionally removes the rendering path for any general_info-scoped ARREST custom fields.
+
+- **CASE Occurrence Panel**: Added validation to block "To Date/Time" from being earlier than "From Date/Time".
+- **CASE Occurrence Panel**: Removed the redundant "Is Time of Occurrence" (Known/Unknown) radio question by deactivating it in the schema.
+
+- **Person Addresses**: District and Police Station fields now filter correctly using the Delhi Police map when State is Delhi.
+- **Person Modals**: Victim, Accused, and Arrested modals now use a "Next" button to progress through sub-tabs, showing "Save" only on the last tab.
+
+- **Age Panel Calculations**: Normalized the Date of Birth to Age computation so that Age Year, Age Month, and Year of Birth are calculated identically for Complainant, Victim, Accused, and Arrested person types.
+
+- **Education Vocabulary**: Added "Post Graduate" to the dropdown options for all Education fields (Complainant, Victim, Accused, Arrested, Missing Person, and generic) and to the bulk-import template to prevent form vs. Excel drift.
+
+- **Age Panel Fields**: Defined missing `_age_month` fields in the schema registry (`complainant`, `victim`, `accused`, `arrested`) so that the "Age in Months" input box actually renders next to the "Age in Years" input box, completing the Age Panel UI.

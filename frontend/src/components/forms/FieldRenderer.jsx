@@ -21,7 +21,6 @@ import { sanitizeFieldValue } from '../../utils/fieldValidation.js';
 // template's flat OPT_POLICE_STATION list). Person DISTRICT uses admin names that don't key into
 // the police-district map, so a flat Delhi-wide list is the correct dual-mode dropdown.
 const DELHI_STATE = 'Delhi';
-const ALL_DELHI_PS = Array.from(new Set(Object.values(DISTRICTS_AND_STATIONS).flat())).sort((a, b) => a.localeCompare(b));
 // Delhi-scoped EVENT police-station fields (place of occurrence / arrest / the record's own PS) —
 // these keep the district-filtered Delhi list; everything else *_police_station is a person address.
 const EVENT_PS_KEYS = new Set(['occurrence_police_station', 'arrest_police_station', 'police_station']);
@@ -148,7 +147,10 @@ function FieldRendererCore({
     } else {
       const stateVal = values[`${prefix}_state`];
       if (stateVal === DELHI_STATE) {
-        options = ALL_DELHI_PS.map(ps => ({ value: ps, label_en: ps, label_hi: ps }));
+        const districtVal = values[`${prefix}_district`];
+        options = (districtVal && DISTRICTS_AND_STATIONS[districtVal])
+          ? DISTRICTS_AND_STATIONS[districtVal].map(ps => ({ value: ps, label_en: ps, label_hi: ps }))
+          : [];
       } else {
         forcePsFreeText = true; // non-Delhi (or state not yet chosen) → free-type any PS
       }
@@ -162,9 +164,14 @@ function FieldRendererCore({
   if (isAddressDistrict && values && stateDistrictMap?.districtsByState) {
     const prefix = key.slice(0, -'_district'.length);
     const stateVal = values[`${prefix}_state`];
-    const stateDistricts = stateVal && stateDistrictMap.districtsByState[stateVal];
-    if (stateDistricts) {
-      options = stateDistricts.map(d => ({ value: d, label_en: d, label_hi: d }));
+    
+    if (stateVal === DELHI_STATE) {
+      options = Object.keys(DISTRICTS_AND_STATIONS).map(d => ({ value: d, label_en: d, label_hi: d }));
+    } else {
+      const stateDistricts = stateVal && stateDistrictMap.districtsByState[stateVal];
+      if (stateDistricts) {
+        options = stateDistricts.map(d => ({ value: d, label_en: d, label_hi: d }));
+      }
     }
   }
 

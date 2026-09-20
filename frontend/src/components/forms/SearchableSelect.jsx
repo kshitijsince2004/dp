@@ -115,8 +115,8 @@ export default function SearchableSelect({
           return (
             <div
               key={opt.value}
-              onMouseDown={(e) => {
-                e.preventDefault();
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
                 if (multiple) {
                   let nextValues;
                   if (isChecked) {

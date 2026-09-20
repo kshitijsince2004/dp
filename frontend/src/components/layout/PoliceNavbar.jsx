@@ -101,7 +101,9 @@ export default function PoliceNavbar({
   // Compute breadcrumbs dynamically from current pathname
   const getBreadcrumbs = () => {
     const path = location.pathname;
-    const crumbs = [{ label: t('nav.hq') || "Command Center", to: "/dashboard" }];
+    const roleUpper = user?.role?.toUpperCase();
+    const homePath = (roleUpper === 'PS' || roleUpper === 'HC') ? '/ps/dashboard' : '/dashboard';
+    const crumbs = [{ label: t('nav.hq') || "Command Center", to: homePath }];
     if (path === "/dashboard" || path === "/dashboard/") {
       crumbs.push({ label: t('nav.dashboard') || "Dashboard", to: "/dashboard" });
     } else if (path.includes("/records")) {

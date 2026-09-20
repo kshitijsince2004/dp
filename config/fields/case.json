@@ -38,7 +38,7 @@
     "sort_order": 1,
     "full_width": false,
     "readonly": false,
-    "is_active": true,
+    "is_active": false,
     "scope_level": "global"
   },
   {
@@ -798,7 +798,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.1,
@@ -851,7 +851,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.2,
@@ -904,7 +904,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.3,
@@ -957,7 +957,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.4,
@@ -993,7 +993,7 @@
     ],
     "editable_by_levels": [
       "PS",
-    "DISTRICT"
+      "DISTRICT"
     ],
     "introduced_at_level": "PS",
     "sort_order": 11.5,
@@ -2022,6 +2022,42 @@
     ],
     "introduced_at_level": "PS",
     "sort_order": 410,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_age_month",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Complainant Age (Months)",
+      "hi": "शिकायतकर्ता आयु (महीने)"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "extra": true
+    },
+    "validation_rules": {
+      "required": false,
+      "min": 0,
+      "max": 11
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 411,
     "full_width": false,
     "readonly": false,
     "is_active": true,
@@ -3302,6 +3338,43 @@
     "introduced_at_level": "PS",
     "repeater_entity": "PERSON_ACCUSED",
     "sort_order": 440,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_age_month",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Accused Age (Months)",
+      "hi": "अभियुक्त आयु (महीने)"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "extra": true
+    },
+    "validation_rules": {
+      "required": false,
+      "min": 0,
+      "max": 11
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 441,
     "full_width": false,
     "readonly": false,
     "is_active": true,
@@ -4605,6 +4678,43 @@
     "introduced_at_level": "PS",
     "repeater_entity": "PERSON_VICTIM",
     "sort_order": 470,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_age_month",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Victim Age (Months)",
+      "hi": "पीड़ित आयु (महीने)"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "extra": true
+    },
+    "validation_rules": {
+      "required": false,
+      "min": 0,
+      "max": 11
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 471,
     "full_width": false,
     "readonly": false,
     "is_active": true,

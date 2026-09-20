@@ -2378,6 +2378,43 @@
     "scope_level": "global"
   },
   {
+    "field_key": "arrested_age_month",
+    "record_types": [
+      "ARREST"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Arrested Person Age (Months)",
+      "hi": "गिरफ्तार व्यक्ति आयु (महीने)"
+    },
+    "section": "arrested_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ARRESTEE",
+      "extra": true
+    },
+    "validation_rules": {
+      "required": false,
+      "min": 0,
+      "max": 11
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ARRESTED",
+    "sort_order": 411,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
     "field_key": "arrested_birth_year",
     "record_types": [
       "ARREST"
