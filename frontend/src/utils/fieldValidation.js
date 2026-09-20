@@ -24,6 +24,11 @@ const RULES = [
     sanitize: (v) => digitsOnly(v).slice(0, 15),
   },
   {
+    name: 'rc_no',
+    test: (key) => key === 'rc_no',
+    sanitize: (v) => digitsOnly(v),
+  },
+  {
     name: 'fir_no',
     test: (key) => key === 'fir_no',
     // "104/2026" — digits, a single slash, then the year. The number before the slash

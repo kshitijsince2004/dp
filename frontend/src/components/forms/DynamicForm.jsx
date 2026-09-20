@@ -932,14 +932,14 @@ export default function DynamicForm({
       );
     };
 
-    const rawField = (key, fallback) => {
+    const rawField = (key, fallback, forceReadOnly = false) => {
       const fieldObj = allFields.find((x) => x.field_key === key);
       return (
       <FieldRenderer
         field={fieldObj}
         value={valuesObj[key] ?? fallback}
         onChange={onFieldChange}
-        readOnly={readOnly || !isFieldEditableForReview(fieldObj)}
+        readOnly={forceReadOnly || readOnly || !isFieldEditableForReview(fieldObj)}
         error={touchedObj?.[key] ? errorsObj?.[key] : null}
         lang={lang}
         values={valuesObj}
@@ -1027,12 +1027,12 @@ export default function DynamicForm({
                   <span>{lang === 'hi' ? 'आयु (वर्ष / महीने)' : 'Age (Year / Month)'}</span>
                 </div>
                 <div className="px-4 py-1.5 bg-white border-b border-[#c7d8ea] flex gap-2 min-h-[40px] items-center">
-                  <div className="flex-1">{rawField(`${prefix}_age_year`)}</div>
-                  <div className="flex-1">{rawField(`${prefix}_age_month`)}</div>
+                  <div className="flex-1">{rawField(`${prefix}_age_year`, undefined, true)}</div>
+                  <div className="flex-1">{rawField(`${prefix}_age_month`, undefined, true)}</div>
                 </div>
               </React.Fragment>
 
-              {field(`${prefix}_birth_year`, null, true)}
+              {field(`${prefix}_birth_year`, null, true, true)}
             </div>
           </fieldset>
 
@@ -2604,6 +2604,15 @@ export default function DynamicForm({
         }
       }
 
+      if (key === 'victim_birth_year') {
+        const birthYear = parseInt(val, 10);
+        if (!isNaN(birthYear)) {
+          next.victim_age_year = Math.max(0, new Date().getFullYear() - birthYear);
+        } else {
+          next.victim_age_year = '';
+        }
+      }
+
       // Address copying and auto-sync
       syncPermAddress(next, 'victim', key, val);
 
@@ -2672,6 +2681,15 @@ export default function DynamicForm({
           next.accused_birth_year = new Date().getFullYear() - num;
         } else {
           next.accused_birth_year = '';
+        }
+      }
+
+      if (key === 'accused_birth_year') {
+        const birthYear = parseInt(val, 10);
+        if (!isNaN(birthYear)) {
+          next.accused_age_year = Math.max(0, new Date().getFullYear() - birthYear);
+        } else {
+          next.accused_age_year = '';
         }
       }
 
@@ -2797,8 +2815,20 @@ export default function DynamicForm({
       if (!isNaN(ageNum)) {
         const today = new Date();
         next.arrested_birth_year = today.getFullYear() - ageNum;
-        next.arrested_dob = '';
       }
+    }
+    return next;
+  };
+
+  const handleArrestedBirthYearChange = (birthYearVal, currentTemp) => {
+    const next = { ...currentTemp, arrested_birth_year: birthYearVal };
+    if (birthYearVal !== '') {
+      const birthYear = parseInt(birthYearVal, 10);
+      if (!isNaN(birthYear)) {
+        next.arrested_age_year = Math.max(0, new Date().getFullYear() - birthYear);
+      }
+    } else {
+      next.arrested_age_year = '';
     }
     return next;
   };
@@ -2813,6 +2843,10 @@ export default function DynamicForm({
 
       if (key === 'arrested_age_year') {
         next = handleArrestedAgeChange(val, next);
+      }
+
+      if (key === 'arrested_birth_year') {
+        next = handleArrestedBirthYearChange(val, next);
       }
 
       syncPermAddress(next, 'arrested', key, val);

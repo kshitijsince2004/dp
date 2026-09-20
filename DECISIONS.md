@@ -681,3 +681,21 @@ High. The solution relies exclusively on the existing field configuration schema
 * **Context**: Clicking or tapping an Act suggestion could fail to select it and blank the search field instead. This was a focus/blur race condition where a trackpad tap's click event could arrive after the input's 200ms blur-close timer had already unmounted the dropdown list, causing the selection to be lost. The recently added `useEffect` would then correctly (but unexpectedly) re-sync the input to the empty `newAct`, blanking the field.
 * **Why**: Preventing the option's mousedown from blurring the input entirely removes the race condition. The blur timer never starts, so the dropdown stays open until the click event successfully fires and closes it explicitly. This matches the cross-device input reliability pattern already used in `SearchableSelect.jsx`.
 * **Relevant Code**: frontend/src/components/forms/ActsSectionsTable.jsx
+
+### Age Panel Synchronization
+* **Decision**: Standardized Age (Year) and Year of Birth linking across all four person types (Complainant, Victim, Accused, Arrested) so they sync in both directions.
+* **Context**: Previously, only Complainant fully synchronized edits between Year of Birth and Age (Year). Victim and Accused correctly derived Birth Year from Age, but failed to derive Age from Birth Year. Arrested had a bug where editing Age actively cleared out the Date of Birth field.
+* **Why**: Age (Year) and Year of Birth carry identical information, so they must stay perfectly in sync regardless of which one the user edits. Date of Birth is intentionally never auto-filled or auto-cleared by these fields because the exact day cannot be recovered from just an age. Age (Month) remains a one-way display value with no reverse effect.
+* **Relevant Code**: `frontend/src/components/forms/DynamicForm.jsx` (handlers for Victim, Accused, Arrested).
+
+### Age Panel Synchronization Update
+* **Decision**: Age (Year), Age (Month), and Year of Birth in the Age Panel are now read-only, computed fields for every person type (Complainant, Victim, Accused, Arrested). Date of Birth is the single source of truth.
+* **Context**: Previously, the other three fields were independently editable, which allowed them to become out of sync with the actual Date of Birth on file if edited directly.
+* **Why**: By making Date of Birth the sole editable field, editing it recalculates all three fields automatically. This removes the disconnected way of changing a person's age/birth year that bypassed the Date of Birth. If only an approximate age is known for a case (without an exact Date of Birth), it cannot be recorded via these fields anymore; this is a known and accepted trade-off to enforce data consistency.
+* **Relevant Code**: `frontend/src/components/forms/DynamicForm.jsx` (Age Panel JSX and `rawField` definition).
+
+### RC No. Input Filtering
+* **Decision**: The RC No. field (`rc_no`, under CASE → Action Taken) now strictly accepts digits only during input.
+* **Context**: The field was previously unfiltered because it lacked a rule in the frontend's keystroke-filtering layer. Letters or symbols could be typed into the field and were not rejected.
+* **Why**: RC numbers are purely numeric in practice. Rather than relying on backend validation (which doesn't exist for these ID fields because they are used in ILIKE queries), we strip non-digit characters as they are typed, following the exact same pattern already established for GD No. (`gd_no`).
+* **Relevant Code**: `frontend/src/utils/fieldValidation.js`
