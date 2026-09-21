@@ -81,6 +81,7 @@ export default function ActsSectionsTable({
   localHeadLayout = 'split',
   primaryActIndex = 0,
   onPrimaryChange,
+  showActsPanel = true,
 }) {
   const [actSearchInput, setActSearchInput] = useState('');
   const [actDropdownOpen, setActDropdownOpen] = useState(false);
@@ -270,10 +271,11 @@ export default function ActsSectionsTable({
     <>
       <div className="flex flex-col md:flex-row gap-3">
         {/* Left: Acts & Sections */}
-        <fieldset className="flex-1 border-2 border-[#7a9cc5] rounded-2xl p-3.5 bg-[#f0f4f8]/20 shadow-sm flex flex-col">
-          <legend className="text-[#0d2a4a] text-xs sm:text-sm font-black px-2.5 uppercase tracking-wide">
-            Acts &amp; Sections
-          </legend>
+        {showActsPanel && (
+          <fieldset className="flex-1 border-2 border-[#7a9cc5] rounded-2xl p-3.5 bg-[#f0f4f8]/20 shadow-sm flex flex-col">
+            <legend className="text-[#0d2a4a] text-xs sm:text-sm font-black px-2.5 uppercase tracking-wide">
+              Acts &amp; Sections
+            </legend>
 
           <div className="flex items-center justify-between mb-2">
             <span className="text-[#0d2a4a] text-xs font-bold opacity-75">Registered List</span>
@@ -347,6 +349,7 @@ export default function ActsSectionsTable({
             </table>
           </div>
         </fieldset>
+        )}
 
         {/* Right: Unified Major/Minor & Local Head */}
         <fieldset className="flex-1 border-2 border-[#7a9cc5] rounded-2xl p-3.5 bg-[#f0f4f8]/20 shadow-sm flex flex-col justify-between">

@@ -699,3 +699,51 @@ High. The solution relies exclusively on the existing field configuration schema
 * **Context**: The field was previously unfiltered because it lacked a rule in the frontend's keystroke-filtering layer. Letters or symbols could be typed into the field and were not rejected.
 * **Why**: RC numbers are purely numeric in practice. Rather than relying on backend validation (which doesn't exist for these ID fields because they are used in ILIKE queries), we strip non-digit characters as they are typed, following the exact same pattern already established for GD No. (`gd_no`).
 * **Relevant Code**: `frontend/src/utils/fieldValidation.js`
+
+### SHO Approval Desk: Sortable & Filterable Record Date
+* **Decision**: The Record Date column in the SHO Approval queue is now filterable (via a date picker icon) and sortable (by clicking the label). Both actions operate purely client-side on the already-loaded queue.
+* **Context**: The queue relies on a full-fetch without pagination. Sorting and filtering logic (e.g. by record type or 'SENT_BACK' priority) already lived in the frontend.
+* **Why**: The user recommended a dedicated Filter icon for date selection instead of a double-click on the header, to avoid hidden features, click-timing latency, and clear-state ambiguity. When date sorting is active, it overrides the default 'SENT_BACK' priority ordering, allowing all records to flow into chronological order (though sent-back records retain their rose highlight).
+* **Relevant Code**: `frontend/src/pages/sho/Queue.jsx`
+
+### UIDB & MISSING: General Information Panel Adjustments
+* **Decision**: 
+  1. The "Acts & Sections" panel (left side) is now hidden on UIDB records, while keeping the "Major / Minor Head" panel (right side) fully visible.
+  2. The synthetic 'district' and 'police_station' fields in the MISSING and UIDB General Information tabs have been converted from read-only text fields to fully cascading, editable dropdowns.
+* **Context**: 
+  1. For UIDB, the `act_name` field triggered the joint `ActsSectionsTable` component. Removing `act_name` entirely from UIDB would have accidentally hidden the Major/Minor head panel because those fields are skipped in the main loop and only render through that combined component.
+  2. District and Police Station were injected at runtime via `SYSTEM_FIELDS` in `useFormSchema.js` as read-only TEXT fields, which is why they didn't exist in the JSON configs.
+* **Why**: 
+  1. Unidentified Body records don't need Acts & Sections, but still require Major/Minor Head classification. Hiding just the left panel preserves the data model and avoids side effects.
+  2. Bringing MISSING and UIDB forms in line with the established Delhi district→station cascading logic (like Occurrence PS on CASE) makes them properly interactive. The existing `EVENT_PS_KEYS` check was updated to also match the bare `police_station` key.
+* **Relevant Code**: `frontend/src/components/forms/ActsSectionsTable.jsx`, `frontend/src/components/forms/FormSection.jsx`, `frontend/src/hooks/useFormSchema.js`, `frontend/src/components/forms/FieldRenderer.jsx`
+
+### SHO Queue: Date Filter Picker
+* **Decision**: Swapped the `DateField` component in the Queue filter popover for a plain, native `<input type="date">`.
+* **Context**: The filter popover lives inside a table header, within an `overflow-x-auto` container. `DateField` leverages a zero-size, absolute-positioned hidden `input` to anchor the native OS calendar, which works fine in normal forms but breaks (calendar closes on month navigation, lost anchor) when deeply nested in this scrolled table header context.
+* **Why**: Switching to a visible `<input type="date">` removes the hidden-anchor hack and allows the browser to properly anchor the calendar dropdown natively without losing its positioning context.
+* **Relevant Code**: `frontend/src/pages/sho/Queue.jsx`
+
+### UIDB: Full Removal of Major/Minor Head Panel
+* **Decision**: Skipped rendering the `act_name` slot entirely for UIDB records, which in turn removes both the Acts & Sections panel and the Major/Minor Head panel from the General Information tab.
+* **Context**: The Major/Minor Head panel shared the `ActsSectionsTable` component with Acts & Sections, which was previously only partially hidden for UIDB. Since both `major_heads` and `minor_heads` are configured as not-required (`validation_rules: { required: false }`), dropping their UI inputs does not break validation or block record submission.
+* **Why**: Unidentified body records do not require crime categorization via Major/Minor Heads. While the backend configuration remains unchanged (the fields technically still belong to the record type), hiding the entire combined component provides a cleaner, more accurate UI.
+* **Relevant Code**: `frontend/src/components/forms/FormSection.jsx`
+
+### SHO Queue: Portaled React Date Picker
+* **Decision**: Replaced the native `<input type="date">` in the SHO Queue filter with a custom, React-driven Date Picker (Month/Year dropdowns + Day grid) portaled directly to `document.body`.
+* **Context**: The native OS date picker widget proved unreliable and couldn't complete the month-to-day selection flow inside the cramped, horizontally-scrolling table header popover. The new picker reuses the exact position-fixed, portal-to-body strategy already proven successful in `DateTimePickerPopup.jsx` for breaking out of `overflow: hidden` / scrolled containers.
+* **Why**: By rendering completely outside the table's DOM hierarchy (`createPortal`) and positioning itself via `getBoundingClientRect()`, the picker becomes completely immune to the table's scrolling and clipping rules. Clicking a day immediately applies the filter and closes the picker without a separate "Done" step. Future dates are disabled.
+* **Relevant Code**: `frontend/src/pages/sho/Queue.jsx`
+
+### UIDB: Investigating Officer Tab Sort Order
+* **Decision**: Added `io_id` to the custom in-memory sort remapping for UIDB's Investigating Officer tab, giving it `sort_order = 50.0`.
+* **Context**: The backend dynamically clusters four IO fields (`io_name`, `io_rank`, `io_pis`, `io_mobile`) into the 50.1–50.4 range specifically for UIDB records to override their default registry orders and keep them grouped logically. The dropdown field (`io_id`) was omitted from this explicit list, leaving it to inherit its default `499` sort order from the registry, which erroneously pushed it to the bottom of the tab.
+* **Why**: By injecting `io_id` into the explicit remap block at `50.0`, it correctly sorts to the very top of the IO tab, directly above the IO Name field. This is purely an in-memory runtime correction that doesn't affect the raw database configurations or other record types.
+* **Relevant Code**: `backend/src/modules/fields/fields.controller.js`
+
+### Investigating Officer: Auto-Fill and Read-Only Lock
+* **Decision**: Selecting an IO in the `io_id` dropdown now automatically populates the four related fields (`io_name`, `io_rank`, `io_pis`, `io_mobile`) from the officer's master record. Concurrently, a bug in the generic form renderer that ignored `readonly: true` configs was fixed.
+* **Context**: The IO section was designed to pull data from a curated roster (Investigating Officers page) rather than accepting free-text entry. However, the `io_id` dropdown's `onChange` handler didn't cascade the selected officer's details into the form state. Additionally, `FormSection.jsx` failed to evaluate the `readonly` flag in the field registry, leaving the explicitly read-only fields open to manual typing.
+* **Why**: (a) In `fields.controller.js`, `name` was added to the lookup payload. (b) In `FieldRenderer.jsx`, an `isIoId` check intercepts the selection and pushes the officer's details to the form's `values` state. (c) In `FormSection.jsx`, `field.readonly === true || field.readonly === 'true'` is now respected, properly locking the auto-filled fields and preventing manual overrides.
+* **Relevant Code**: `backend/src/modules/fields/fields.controller.js`, `frontend/src/components/forms/FieldRenderer.jsx`, `frontend/src/components/forms/FormSection.jsx`

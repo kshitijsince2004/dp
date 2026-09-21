@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ClipboardList, Filter, Eye, ArrowRight, ShieldCheck } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
@@ -10,6 +11,13 @@ import { log } from '../../utils/logger.js';
 
 import RecordTypeBadge from '../../components/common/RecordTypeBadge';
 
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+const getRecordDate = (r) => {
+  if (!r) return '';
+  return r.record_date || r.registration_date || r.created_at || r.data?.record_date || '';
+};
 
 export default function Queue() {
   const { t, i18n } = useTranslation();
@@ -19,6 +27,14 @@ export default function Queue() {
   const [activeTab, setActiveTab] = useState('ALL');
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [dateSortDir, setDateSortDir] = useState(null); // null | 'asc' | 'desc'
+  const [dateFilter, setDateFilter] = useState('');     // '' | 'YYYY-MM-DD'
+  const [showDateFilterPicker, setShowDateFilterPicker] = useState(false);
+  const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+  const [dateFilterPopupStyle, setDateFilterPopupStyle] = useState({});
+  const dateFilterTriggerRef = useRef(null);
+  const dateFilterPopupRef = useRef(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -142,11 +158,83 @@ export default function Queue() {
     },
   });
 
+  const toggleDateFilterPicker = () => {
+    if (!showDateFilterPicker) {
+      if (dateFilter) {
+        const [y, m] = dateFilter.split('-');
+        setPickerYear(Number(y));
+        setPickerMonth(Number(m) - 1);
+      } else {
+        const now = new Date();
+        setPickerYear(now.getFullYear());
+        setPickerMonth(now.getMonth());
+      }
+    }
+    setShowDateFilterPicker((v) => !v);
+  };
+
+  useEffect(() => {
+    if (!showDateFilterPicker) return;
+    const handleClickOutside = (e) => {
+      if (
+        dateFilterPopupRef.current && !dateFilterPopupRef.current.contains(e.target) &&
+        dateFilterTriggerRef.current && !dateFilterTriggerRef.current.contains(e.target)
+      ) {
+        setShowDateFilterPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDateFilterPicker]);
+
+  useEffect(() => {
+    if (!showDateFilterPicker || !dateFilterTriggerRef.current) return;
+    const update = () => {
+      const rect = dateFilterTriggerRef.current.getBoundingClientRect();
+      const popupWidth = 230;
+      const popupHeight = 300;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUpward = spaceBelow < popupHeight && rect.top > popupHeight;
+      setDateFilterPopupStyle({
+        position: 'fixed',
+        left: Math.min(rect.left, window.innerWidth - popupWidth - 8),
+        zIndex: 9999,
+        ...(openUpward ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
+      });
+    };
+    update();
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [showDateFilterPicker]);
+
+  const todayIso = new Date().toISOString().split('T')[0];
+  const pickDay = (d) => {
+    const iso = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    if (iso > todayIso) return;
+    setDateFilter(iso);
+    setShowDateFilterPicker(false);
+  };
+
   const countFor = (tab) => tab === 'ALL' ? queue.length : queue.filter(r => r.record_type === tab).length;
 
-  // Filter queue records based on type and sort 'SENT_BACK' / 'SENT_BACK_HC' to the top
+  // Filter queue records based on type and date filter, then sort
   const filteredQueue = (activeTab === 'ALL' ? queue : queue.filter(r => r.record_type === activeTab))
+    .filter((r) => {
+      if (!dateFilter) return true;
+      const recDate = getRecordDate(r);
+      return typeof recDate === 'string' && recDate.slice(0, 10) === dateFilter;
+    })
     .sort((a, b) => {
+      if (dateSortDir) {
+        const aDate = (getRecordDate(a) || '').slice(0, 10);
+        const bDate = (getRecordDate(b) || '').slice(0, 10);
+        return dateSortDir === 'asc' ? aDate.localeCompare(bDate) : bDate.localeCompare(aDate);
+      }
+      // Default order: SENT_BACK / SENT_BACK_HC first
       const aIsSentBack = a.current_status === 'SENT_BACK_HC' || a.current_status === 'SENT_BACK';
       const bIsSentBack = b.current_status === 'SENT_BACK_HC' || b.current_status === 'SENT_BACK';
       if (aIsSentBack && !bIsSentBack) return -1;
@@ -300,7 +388,97 @@ export default function Queue() {
                         {t('common.referenceId', 'Ref ID / Number')}
                       </th>
                       <th className="p-4 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)]">Police Station</th>
-                      <th className="p-4 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)]">Record Date</th>
+                      <th className="p-4 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)]">
+                        <div ref={dateFilterTriggerRef} className="flex items-center gap-1.5 relative">
+                          <button
+                            type="button"
+                            className="flex items-center gap-1 cursor-pointer hover:text-[var(--accent-color)] bg-transparent border-none p-0 uppercase tracking-wider font-bold font-inherit text-inherit"
+                            onClick={() => {
+                              setDateSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+                              log.debug('action:queue_date_sort_toggle', { dir: dateSortDir === 'asc' ? 'desc' : 'asc' });
+                            }}
+                            title="Sort by Record Date"
+                          >
+                            Record Date
+                            {dateSortDir === 'asc' && <span aria-hidden>↑</span>}
+                            {dateSortDir === 'desc' && <span aria-hidden>↓</span>}
+                          </button>
+                          <button
+                            type="button"
+                            className={`p-1 rounded bg-transparent border-none cursor-pointer ${dateFilter ? 'text-[var(--accent-color)]' : 'text-[var(--text-main-theme)]/50'} hover:text-[var(--accent-color)]`}
+                            onClick={toggleDateFilterPicker}
+                            title="Filter by Record Date"
+                          >
+                            <Filter size={14} />
+                          </button>
+                          {dateFilter && (
+                            <button
+                              type="button"
+                              className="bg-transparent border-none cursor-pointer p-0 text-[var(--text-main-theme)]/50 hover:text-red-500 text-xs font-bold"
+                              onClick={() => { setDateFilter(''); setShowDateFilterPicker(false); }}
+                              title="Clear date filter"
+                            >
+                              ✕
+                            </button>
+                          )}
+                          {showDateFilterPicker && createPortal(
+                            <div
+                              ref={dateFilterPopupRef}
+                              className="bg-white border-2 border-[var(--border-card-theme)] rounded-xl p-3 shadow-2xl normal-case font-normal text-slate-800 select-none"
+                              style={{ width: 230, ...dateFilterPopupStyle }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <select
+                                  value={pickerMonth}
+                                  onChange={(e) => setPickerMonth(Number(e.target.value))}
+                                  className="flex-1 text-[12px] font-bold text-[#0d2a4a] border border-slate-300 rounded px-1.5 py-1 bg-white cursor-pointer outline-none"
+                                >
+                                  {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                                </select>
+                                <select
+                                  value={pickerYear}
+                                  onChange={(e) => setPickerYear(Number(e.target.value))}
+                                  className="text-[12px] font-bold text-[#0d2a4a] border border-slate-300 rounded px-1.5 py-1 bg-white cursor-pointer outline-none"
+                                >
+                                  {Array.from({ length: new Date().getFullYear() - 2015 + 1 }, (_, i) => 2015 + i).map((y) => (
+                                    <option key={y} value={y}>{y}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="grid grid-cols-7 gap-0 text-center mb-1">
+                                {DAY_LABELS.map((d) => <span key={d} className="text-[10px] font-bold text-slate-500 py-0.5">{d}</span>)}
+                              </div>
+                              <div className="grid grid-cols-7 gap-0 text-center">
+                                {Array.from({ length: new Date(pickerYear, pickerMonth, 1).getDay() }, (_, i) => <span key={`b-${i}`} />)}
+                                {Array.from({ length: new Date(pickerYear, pickerMonth + 1, 0).getDate() }, (_, i) => i + 1).map((d) => {
+                                  const iso = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                                  const isFuture = iso > todayIso;
+                                  const isSelected = iso === dateFilter;
+                                  return (
+                                    <button
+                                      key={d}
+                                      type="button"
+                                      disabled={isFuture}
+                                      onClick={() => pickDay(d)}
+                                      className={`text-[11px] py-1 rounded border-none transition-colors ${
+                                        isFuture
+                                          ? 'text-slate-300 cursor-not-allowed bg-transparent'
+                                          : isSelected
+                                            ? 'bg-[var(--accent-color)] text-white font-bold cursor-pointer'
+                                            : 'bg-transparent text-slate-700 hover:bg-blue-50 cursor-pointer'
+                                      }`}
+                                    >
+                                      {d}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>,
+                            document.body
+                          )}
+                        </div>
+                      </th>
                       <th className="p-4 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)]">Gist</th>
                       <th className="p-4 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)]">Current Status</th>
                       <th className="p-4 pr-6 text-sm sm:text-base font-bold uppercase tracking-wider text-[var(--text-main-theme)] text-right">Review Action</th>
@@ -339,7 +517,7 @@ export default function Queue() {
                         rec.uidb_local_head ||
                         'No description logged';
 
-                      const recDate = rec.record_date || rec.registration_date || rec.created_at || rec.data?.record_date || 'N/A';
+                      const recDate = getRecordDate(rec) || 'N/A';
                       const isSentBack = rec.current_status === 'SENT_BACK_HC' || rec.current_status === 'SENT_BACK';
 
                       return (

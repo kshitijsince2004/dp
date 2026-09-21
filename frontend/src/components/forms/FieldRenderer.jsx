@@ -137,7 +137,7 @@ function FieldRendererCore({
   // can be anywhere in India). Delhi-scoped EVENT PS fields (occurrence/arrest/record PS) keep the
   // district-filtered Delhi list. `forcePsFreeText` flips the SELECT render to a text input below.
   let forcePsFreeText = false;
-  if (key.endsWith('_police_station') && values) {
+  if ((key.endsWith('_police_station') || key === 'police_station') && values) {
     const prefix = key.substring(0, key.lastIndexOf('_police_station'));
     if (EVENT_PS_KEYS.has(key)) {
       const districtVal = values[`${prefix}_district`] || values.district;
@@ -368,6 +368,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
   if (type === 'SELECT' || type === 'DROPDOWN') {
     const isCaseStatus = key === 'case_status';
     const isTransferSelected = value === 'TRANSFER';
+    const isIoId = key === 'io_id';
 
     return (
       <div className="flex flex-col gap-2 w-full">
@@ -384,6 +385,13 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
               handleFieldChange('transferred_to_agency_id', '');
               handleFieldChange('transferred_to_agency', '');
               handleFieldChange('date_of_transfer', '');
+            }
+            if (isIoId) {
+              const opt = options.find((o) => String(o.value) === String(v));
+              handleFieldChange('io_name', opt?.name || '');
+              handleFieldChange('io_rank', opt?.rank || '');
+              handleFieldChange('io_pis', opt?.pis_no || '');
+              handleFieldChange('io_mobile', opt?.mobile || '');
             }
           }}
           status={status}

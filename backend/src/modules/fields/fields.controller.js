@@ -431,9 +431,10 @@ export const getFieldsForForm = async (req, res) => {
             else if (f.field_key === 'informant_name') sort_order = 40.6;
             else if (f.field_key === 'informant_relation') sort_order = 40.7;
             else if (f.field_key === 'informant_mobile') sort_order = 40.8;
-          } else if (['io_name', 'io_rank', 'io_pis', 'io_mobile'].includes(f.field_key)) {
+          } else if (['io_id', 'io_name', 'io_rank', 'io_pis', 'io_mobile'].includes(f.field_key)) {
             section = 'investigation_officer';
-            if (f.field_key === 'io_name') sort_order = 50.1;
+            if (f.field_key === 'io_id') sort_order = 50.0;
+            else if (f.field_key === 'io_name') sort_order = 50.1;
             else if (f.field_key === 'io_rank') sort_order = 50.2;
             else if (f.field_key === 'io_pis') sort_order = 50.3;
             else if (f.field_key === 'io_mobile') sort_order = 50.4;
@@ -1567,7 +1568,7 @@ export const listInvestigatingOfficersLookup = async (req, res) => {
     const data = rows.map((r) => ({
       value: r.id,
       label: [r.name, r.rank, r.pis_no].filter(Boolean).join(' — '),
-      rank: r.rank, pis_no: r.pis_no, mobile: r.mobile,
+      name: r.name, rank: r.rank, pis_no: r.pis_no, mobile: r.mobile,
     }));
     return res.status(200).json({ success: true, data });
   } catch (error) {

@@ -614,13 +614,14 @@ export default function FormSection({
                 const error = touched[key] ? errors[key] : null;
                 const isLast = index === visibleFields.length - 1;
                 const isDisabledByCondition = !readOnly && evaluateDisabledWhen(field.disabled_when, values);
-                const effectiveReadOnly = readOnly || isDisabledByCondition || !isFieldEditableForReview(field);
+                const effectiveReadOnly = readOnly || isDisabledByCondition || field.readonly === true || field.readonly === 'true' || !isFieldEditableForReview(field);
 
                 if (key === 'act_name') {
+                  if (recordType === 'UIDB') return null;
                   return (
                     <div key="acts-manager-block" className="col-span-1 md:col-span-2 p-3 border-b border-[#c7d8ea] overflow-visible bg-white">
                       {actsSectionsProps ? (
-                        <ActsSectionsTable {...actsSectionsProps} localHeadLayout={recordType === 'UIDB' ? 'hidden' : 'combined'} />
+                        <ActsSectionsTable {...actsSectionsProps} localHeadLayout={recordType === 'UIDB' ? 'hidden' : 'combined'} showActsPanel={recordType !== 'UIDB'} />
                       ) : (
                         <ActsAndSectionsManager
                           values={values}

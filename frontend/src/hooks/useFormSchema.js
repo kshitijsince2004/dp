@@ -4,8 +4,39 @@ import { log } from '../utils/logger.js';
 
 const SYSTEM_FIELDS = [
   { field_key: 'uid',              field_type: 'TEXT', label_en: 'Record UID',        label_hi: 'रिकॉर्ड यूआईडी (UID)',          readonly: true, validation_rules: { required: false } },
-  { field_key: 'district',         field_type: 'TEXT', label_en: 'District',           label_hi: 'जिला',                           readonly: true, validation_rules: { required: false } },
-  { field_key: 'police_station',   field_type: 'TEXT', label_en: 'Police Station',     label_hi: 'पुलिस थाना',                     readonly: true, validation_rules: { required: false } },
+  { 
+    field_key: 'district', 
+    field_type: 'SELECT', 
+    label_en: 'District', 
+    label_hi: 'जिला', 
+    readonly: false, 
+    options: [
+      { "value": "South District (SD)", "label_en": "South District (SD)", "label_hi": "South District (SD)" },
+      { "value": "South East District (SED)", "label_en": "South East District (SED)", "label_hi": "South East District (SED)" },
+      { "value": "New Delhi District (NDD)", "label_en": "New Delhi District (NDD)", "label_hi": "New Delhi District (NDD)" },
+      { "value": "South West District (SWD)", "label_en": "South West District (SWD)", "label_hi": "South West District (SWD)" },
+      { "value": "West District (WD)", "label_en": "West District (WD)", "label_hi": "West District (WD)" },
+      { "value": "Outer District (OD)", "label_en": "Outer District (OD)", "label_hi": "Outer District (OD)" },
+      { "value": "Dwarka District (DW)", "label_en": "Dwarka District (DW)", "label_hi": "Dwarka District (DW)" },
+      { "value": "North West District (NWD)", "label_en": "North West District (NWD)", "label_hi": "North West District (NWD)" },
+      { "value": "Rohini District (RND)", "label_en": "Rohini District (RND)", "label_hi": "Rohini District (RND)" },
+      { "value": "Outer North District (OND)", "label_en": "Outer North District (OND)", "label_hi": "Outer North District (OND)" },
+      { "value": "Central District (CD)", "label_en": "Central District (CD)", "label_hi": "Central District (CD)" },
+      { "value": "North District (ND)", "label_en": "North District (ND)", "label_hi": "North District (ND)" },
+      { "value": "East District (ED)", "label_en": "East District (ED)", "label_hi": "East District (ED)" },
+      { "value": "North East District (NED)", "label_en": "North East District (NED)", "label_hi": "North East District (NED)" },
+      { "value": "Shahdara District (SHD)", "label_en": "Shahdara District (SHD)", "label_hi": "Shahdara District (SHD)" }
+    ],
+    validation_rules: { required: false } 
+  },
+  { 
+    field_key: 'police_station', 
+    field_type: 'SELECT', 
+    label_en: 'Police Station', 
+    label_hi: 'पुलिस थाना', 
+    readonly: false, 
+    validation_rules: { required: false } 
+  },
   { field_key: 'submission_status',field_type: 'TEXT', label_en: 'Submission Status',  label_hi: 'जमा करने की स्थिति',             readonly: true, validation_rules: { required: false } },
 ];
 
