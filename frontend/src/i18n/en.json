@@ -35,12 +35,19 @@
   "status": {
     "DRAFT": "Draft",
     "PENDING_SHO": "Pending SHO Review",
-    "DISTRICT_REVIEW": "DCP Review",
+    "DISTRICT_REVIEW": "Forwarded (District Review)",
+    "FORWARDED": "Forwarded to District",
+    "FORWARDED_DISTRICT": "Forwarded to District",
+    "RETURNED_DISTRICT": "Returned by District",
+    "SENT_BACK_DISTRICT": "Returned by District",
+    "SENT_BACK": "Returned for Correction",
+    "SENT_BACK_HC": "Sent Back to HC",
+    "ACP_REVIEW": "ACP Review",
+    "JCP_REVIEW": "JCP Review",
+    "SCP_REVIEW": "Special CP Review",
     "COMPILED": "Compiled",
     "HQ_RECEIVED": "HQ Received",
-    "ARCHIVED": "Sealed & Archived",
-    "SENT_BACK": "Returned for Correction",
-    "SENT_BACK_HC": "Returned to HC"
+    "ARCHIVED": "Sealed & Archived"
   },
   "recordTypes": {
     "CASE": "Cases (FIR) Master",

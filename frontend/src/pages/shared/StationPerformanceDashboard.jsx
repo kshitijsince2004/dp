@@ -55,12 +55,14 @@ export default function StationPerformanceDashboard() {
         // Load hierarchy nodes, raw records and pre-aggregated PS stats in parallel
         const [nodesRes, recordsRes, psStatsRes] = await Promise.all([
           api.get("/hierarchy/nodes"),
-          api.get("/records?limit=200"),
+          api.get("/records", { params: { limit: 200 } }),
           api.get("/analytics/by-ps").catch(() => ({ data: { data: [] } })), // non-fatal
         ]);
 
-        setNodes(nodesRes.data.data || []);
-        setRecords(recordsRes.data.data?.cases || recordsRes.data.data || []);
+        const rawRecs = recordsRes.data?.data;
+        const recList = rawRecs?.cases || rawRecs?.records || rawRecs?.queue || (Array.isArray(rawRecs) ? rawRecs : (Array.isArray(recordsRes.data) ? recordsRes.data : []));
+        setNodes(nodesRes.data?.data || []);
+        setRecords(Array.isArray(recList) ? recList : []);
         // Store station-level stats from the analytics endpoint
         setPsStats(psStatsRes.data?.data || []);
         log.debug('data:load_success', { what: 'station_performance_data' });

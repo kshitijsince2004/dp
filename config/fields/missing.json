@@ -463,7 +463,7 @@
   "sort_order": 2.18,
   "full_width": true,
   "readonly": false,
-  "is_active": true,
+  "is_active": false,
   "scope_level": "global"
  },
  {
@@ -853,8 +853,8 @@
   ],
   "field_type": "DATE",
   "labels": {
-   "en": "Date Missing Since",
-   "hi": "लापता होने की तिथि"
+   "en": "Date of Missing/Found",
+   "hi": "लापता/प्राप्त होने की तिथि"
   },
   "section": "person_details",
   "storage": {
@@ -887,8 +887,8 @@
   ],
   "field_type": "TEXT",
   "labels": {
-   "en": "Last Seen Place",
-   "hi": "अंतिम बार देखा गया स्थान"
+   "en": "Last Seen/Found Place",
+   "hi": "अंतिम बार देखा गया/प्राप्त स्थान"
   },
   "section": "person_details",
   "storage": {
@@ -1275,7 +1275,7 @@
   "readonly": false,
   "is_active": true,
   "scope_level": "global"
-},
+ },
  {
   "field_key": "accompanying_child_age",
   "record_types": [
@@ -1311,7 +1311,7 @@
   "readonly": false,
   "is_active": true,
   "scope_level": "global"
-},
+ },
  {
   "field_key": "accompanying_child_gender",
   "record_types": [
@@ -1367,7 +1367,7 @@
   "readonly": false,
   "is_active": true,
   "scope_level": "global"
-},
+ },
  {
   "field_key": "accompanying_child_relation",
   "record_types": [
@@ -1423,5 +1423,5 @@
   "readonly": false,
   "is_active": true,
   "scope_level": "global"
-}
+ }
 ]

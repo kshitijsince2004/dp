@@ -5,6 +5,7 @@ import api from '../../utils/api.js';
 import { log } from '../../utils/logger.js';
 
 import DateTimePickerPopup from './DateTimePickerPopup.jsx';
+import StatutoryFirField   from './StatutoryFirField.jsx';
 import TextField     from './TextField.jsx';
 import TextAreaField from './TextAreaField.jsx';
 import NumberField   from './NumberField.jsx';
@@ -92,6 +93,20 @@ function FieldRendererCore({
     staleTime: 5 * 60_000,
   });
 
+  const isRegistrationType = fieldKey === 'registration_type';
+  const hierarchyNodeId = values?.hierarchy_node_id || values?.ps_id;
+  const { data: allowedTypesData } = useQuery({
+    queryKey: ['allowedStatutoryFirTypes', hierarchyNodeId],
+    queryFn: async () => {
+      const res = await api.get('/records/statutory-fir/allowed-types', {
+        params: { hierarchy_node_id: hierarchyNodeId || undefined },
+      });
+      return res.data?.data || null;
+    },
+    enabled: isRegistrationType,
+    staleTime: 60_000,
+  });
+
   if (!field) return null;
   const key     = field.field_key;
   // Composite Number+Date(+Time) widgets (gd_no/fir_no/arrest_date, below) render their own
@@ -175,6 +190,11 @@ function FieldRendererCore({
     }
   }
 
+  // Statutory registration type options filtering (e.g. Pragati Maidan Metro exclusion)
+  if (isRegistrationType && allowedTypesData?.allowedTypes) {
+    options = options.filter(opt => allowedTypesData.allowedTypes.includes(opt.value));
+  }
+
   const handleFieldChange = (k, v) => {
     log.debug('form:field_change', { fieldKey: k, fieldType: type, routedTo: handleChange ? 'handleChange' : 'onChange' });
     if (handleChange) {
@@ -235,19 +255,16 @@ function FieldRendererCore({
 
   if (key === 'fir_no') {
     return (
-      <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <div className={`flex-1 ${compositeCellBox}`}>
-          <input
-            type="text"
-            disabled={readOnly}
-            value={values?.fir_no || ''}
-            onChange={(e) => handleFieldChange('fir_no', sanitizeFieldValue(field, e.target.value))}
-            placeholder={lang === 'hi' ? 'प्राथमिकी (FIR) संख्या' : 'FIR Number'}
-            className={`w-full bg-transparent border-0 text-sm px-3.5 py-2.5 outline-none placeholder:text-slate-400 ${disabledClass}`}
-          />
-        </div>
-        {compositeDateTimeCell('fir_date', 'fir_time', 'w-full sm:w-[220px]')}
-      </div>
+      <StatutoryFirField
+        value={values?.fir_no || ''}
+        onChange={(val) => handleFieldChange('fir_no', sanitizeFieldValue(field, val))}
+        readOnly={readOnly}
+        lang={lang}
+        values={values}
+        handleFieldChange={handleFieldChange}
+        compositeDateTimeCell={compositeDateTimeCell}
+        disabledClass={disabledClass}
+      />
     );
   }
 

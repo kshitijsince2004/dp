@@ -479,7 +479,7 @@ export default function CustomExcelBuilder() {
             setJobState({ status: 'failed', jobId });
           }
         }
-      }, 1500);
+      }, 500);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to initialize export.');
       setJobState({ status: 'idle', jobId: null });

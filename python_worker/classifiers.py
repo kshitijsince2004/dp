@@ -28,10 +28,14 @@ def is_mvt(d):
 
 def is_other_theft(d):
     code = _code(d)
-    if code == 'OTHER_THEFT':
+    if code in ('OTHER_THEFT', 'SERVANT_THEFT'):
         return True
     h = _head(d)
-    return 'theft' in h and not is_house_theft(d) and not is_mvt(d) and 'mobile' not in h
+    if is_house_theft(d) or is_mvt(d) or is_burglary(d):
+        return False
+    if 'theft' in h:
+        return True
+    return any(k in h for k in ('bag lifting', 'pick pocket', 'pickpocket', 'cycle theft', 'cattle theft', 'luggage theft', 'mobile phone', 'stereo theft', 'electricity theft'))
 
 def is_electronic_case(d):
     ss = (d.get('source_system') or '').upper()
@@ -74,12 +78,16 @@ def is_preventive_arrest(d):
 
 def is_financial_fraud_arrest(d):
     code = _code(d)
-    if code in ('CHEATING', 'CRIMINAL_BREACH_OF_TRUST'):
+    if code in ('CHEATING', 'FORGERY', 'CYBER_CRIME', 'CRIMINAL_BREACH_OF_TRUST'):
         return True
     h = _head(d)
-    if any(k in h for k in ('fraud', 'cyber', 'cheating')):
+    s = _sec(d)
+    a = _act(d)
+    if any(k in h for k in ('fraud', 'cyber', 'cheat', 'forgery', 'counterfeit', 'breach of trust')):
         return True
-    return '420' in _sec(d)
+    if 'it act' in a or 'information technology' in a:
+        return True
+    return any(k in s for k in ('420', '406', '467', '468', '471', '318', '316', '336', '338', '340'))
 
 def is_disposed(d):
     status = (d.get('status') or d.get('case_status') or '').lower()

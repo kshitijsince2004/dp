@@ -56,6 +56,8 @@ export async function renderStat20(workbook, scope, calcData) {
       'p.is_minor',
       'p.social_category',
       'p.financial_status',
+      'p.extra as p_extra',
+      'ad.extra as ad_extra',
       'ard.is_bc',
       'ard.prev_involvement_count',
       'l.state'
@@ -73,9 +75,20 @@ export async function renderStat20(workbook, scope, calcData) {
           delhi: 0, outsideDelhi: 0
         };
       }
+      const pEx = (typeof row.p_extra === 'object' && row.p_extra) ? row.p_extra : {};
+      const adEx = (typeof row.ad_extra === 'object' && row.ad_extra) ? row.ad_extra : {};
+      const isBc = Boolean(
+        row.is_bc || pEx.is_bc || pEx.bad_character || pEx.listed_criminal || pEx.whether_accused_is_bc_or_not ||
+        adEx.is_bc || adEx.bad_character || adEx.listed_criminal || adEx.whether_accused_is_bc_or_not
+      );
+      const prevInv = Number(
+        row.prev_involvement_count ?? pEx.prev_involvement_count ?? (pEx.prev_involvement ? 1 : 0) ??
+        adEx.prev_involvement_count ?? (adEx.prev_involvement ? 1 : 0) ?? 0
+      );
+
       const entry = map[c];
-      if (row.is_bc) entry.bc++;
-      if (Number(row.prev_involvement_count || 0) > 0) entry.prevInv++;
+      if (isBc) entry.bc++;
+      if (prevInv > 0) entry.prevInv++;
 
       const edu = (row.education || '').toUpperCase();
       if (edu === 'ILLITERATE') entry.illiterate++;

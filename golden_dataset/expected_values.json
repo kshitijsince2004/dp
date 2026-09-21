@@ -1,0 +1,100 @@
+{
+  "version": "PHAROS_V1_GOLDEN",
+  "description": "Hand-authored ground truth expected values for Phase 2 correctness harness",
+  "expected_heinous_heads_individual": {
+    "MURDER": { "canonical_code": "MURDER", "reported": 2, "worked_out": 1, "crime_category": "HEINOUS" },
+    "ATT_TO_MURDER": { "canonical_code": "ATT_TO_MURDER", "reported": 1, "worked_out": 0, "crime_category": "HEINOUS" },
+    "DACOITY": { "canonical_code": "DACOITY", "reported": 1, "worked_out": 0, "crime_category": "HEINOUS" },
+    "ROBBERY": { "canonical_code": "ROBBERY", "reported": 1, "worked_out": 1, "crime_category": "HEINOUS" },
+    "RAPE": { "canonical_code": "RAPE", "reported": 1, "worked_out": 0, "crime_category": "HEINOUS" },
+    "RIOT": { "canonical_code": "RIOT", "reported": 1, "worked_out": 0, "crime_category": "HEINOUS" },
+    "KID_FOR_RANSOM": { "canonical_code": "KID_FOR_RANSOM", "reported": 1, "worked_out": 1, "crime_category": "HEINOUS" }
+  },
+  "expected_layer1_aggregations": {
+    "sept_2026_hq_all": {
+      "description": "Aggregation for Sept 2029 HQ level across all golden records in Sept 2029 period",
+      "grand_total_reported": 18,
+      "heinous_reported": 8,
+      "heinous_worked_out": 3,
+      "non_heinous_reported": 4,
+      "non_heinous_worked_out": 2,
+      "act_reported": 6,
+      "act_worked_out": 1
+    },
+    "sept_2026_hq_efir": {
+      "description": "E-FIR channel aggregation (E_THEFT + E_MVT)",
+      "non_heinous_reported": 2,
+      "non_heinous_worked_out": 0,
+      "heinous_reported": 0
+    },
+    "sept_2026_bns_111": {
+      "description": "BNS 111 Organized Crime classification",
+      "canonical_code": "ORGANIZED_CRIME_BNS_111",
+      "crime_category": "OTHER",
+      "reported_count": 2,
+      "worked_out_count": 0,
+      "heinous_reported": 0,
+      "non_heinous_reported": 0,
+      "act_reported": 2
+    },
+    "sept_2026_bns_113": {
+      "description": "BNS 113 Terrorist Acts classification",
+      "canonical_code": "TERRORIST_ACTS_BNS_113",
+      "crime_category": "OTHER",
+      "reported_count": 2,
+      "worked_out_count": 0,
+      "heinous_reported": 0,
+      "non_heinous_reported": 0,
+      "act_reported": 2
+    }
+  },
+  "expected_jurisdiction_rollups": {
+    "ps_1_total": {
+      "description": "PS 1 (District 1) subtotals in Sept 2029 period",
+      "grand_total": { "reported": 15, "worked_out": 3 },
+      "heinous": { "reported": 8, "worked_out": 3 },
+      "non_heinous": { "reported": 2, "worked_out": 0 },
+      "act": { "reported": 5, "worked_out": 0 }
+    },
+    "ps_2_total": {
+      "description": "PS 2 (District 2) subtotals in Sept 2029 period",
+      "grand_total": { "reported": 3, "worked_out": 3 },
+      "heinous": { "reported": 0, "worked_out": 0 },
+      "non_heinous": { "reported": 2, "worked_out": 2 },
+      "act": { "reported": 1, "worked_out": 1 }
+    },
+    "district_1_total": {
+      "description": "District 1 subtotals in Sept 2029 period",
+      "grand_total": { "reported": 15, "worked_out": 3 },
+      "heinous": { "reported": 8, "worked_out": 3 },
+      "non_heinous": { "reported": 2, "worked_out": 0 },
+      "act": { "reported": 5, "worked_out": 0 }
+    },
+    "district_2_total": {
+      "description": "District 2 subtotals in Sept 2029 period",
+      "grand_total": { "reported": 3, "worked_out": 3 },
+      "heinous": { "reported": 0, "worked_out": 0 },
+      "non_heinous": { "reported": 2, "worked_out": 2 },
+      "act": { "reported": 1, "worked_out": 1 }
+    },
+    "hq_total": {
+      "description": "HQ level subtotals in Sept 2029 period",
+      "grand_total": { "reported": 18, "worked_out": 6 },
+      "heinous": { "reported": 8, "worked_out": 3 },
+      "non_heinous": { "reported": 4, "worked_out": 2 },
+      "act": { "reported": 6, "worked_out": 1 }
+    }
+  },
+  "expected_layer2_formulas": {
+    "person_display_json_string": "Manoj Kumar @Mannu, 35, S/O Shakuntla Devi R/O 236, Jahangirpuri, Delhi",
+    "person_display_multi_alias": "Manoj Kumar @Mannu / Bunty, 35, S/O Shakuntla Devi",
+    "address_compile_full_mode_preference": "24-B Present, New Avenue, Civil Lines, Kotwali, Near Gate 2, North",
+    "custody_status_normalization": "Notice 35(1) BNSS",
+    "missing_status_normalization": "TRACED",
+    "uidb_status_unidentified": "UNIDENTIFIED",
+    "uidb_status_pending": "PENDING",
+    "accused_history_all": "PI/PO/BC",
+    "accused_history_none": "",
+    "compute_variation_inf": "+∞"
+  }
+}

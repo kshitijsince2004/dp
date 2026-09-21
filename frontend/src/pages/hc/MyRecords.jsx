@@ -2,7 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { FileText, Plus, FileEdit, Trash2, Send, Filter, Eye, AlertCircle, RefreshCw } from 'lucide-react';
+import { 
+  FileText, Plus, FileEdit, Trash2, Send, Filter, Eye, 
+  AlertCircle, RefreshCw, ArrowUpRight, RotateCcw, Clock, 
+  CheckCircle2, Layers, ShieldCheck
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
@@ -13,7 +17,7 @@ import StatusUpdateModal from '../../components/records/StatusUpdateModal.jsx';
 import { formatRecordRef, formatGist } from '../../utils/recordRef.js';
 import { getStatusConfig } from '../../utils/statusConfig.js';
 import { log } from '../../utils/logger.js';
-
+import RecordTypeBadge from '../../components/common/RecordTypeBadge';
 
 const pageVariants = {
   hidden: { opacity: 0 },
@@ -30,9 +34,6 @@ const itemVariants = {
   show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 95, damping: 14 } }
 };
 
-import RecordTypeBadge from '../../components/common/RecordTypeBadge';
-
-
 export default function MyRecords() {
   const { t, i18n } = useTranslation();
   const currentLng = i18n.language || 'en';
@@ -41,15 +42,15 @@ export default function MyRecords() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
+  const isUserSHO = user?.role === 'SHO';
+  const isUserHC = user?.role === 'HC';
+
   const tableRef = useRef(null);
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  // Domain status update modal (WS9) — lets an HC update a record's own progress
-  // (case_status/is_worked_out/custody_status/etc) straight from the records desk without
-  // navigating into the full detail view. Vocabulary/fields come entirely from the modal's
-  // own GET /records/:id/status-options call — nothing hardcoded here.
+  // Domain status update modal (WS9)
   const [statusModalRecordId, setStatusModalRecordId] = useState(null);
 
   useEffect(() => {
@@ -69,18 +70,37 @@ export default function MyRecords() {
   const { data: allRecords = [] } = useQuery({
     queryKey: ['all-records-stats'],
     queryFn: async () => {
-      const res = await api.get('/records?limit=200');
-      const payload = res.data.data;
-      if (payload?.cases) return payload.cases;
-      if (payload?.queue) return payload.queue;
-      if (Array.isArray(payload)) return payload;
-      return [];
+      const res = await api.get('/records', { params: { limit: 'all' } });
+      const payload = res.data?.data;
+      const rows = payload?.cases || payload?.records || payload?.queue || (Array.isArray(payload) ? payload : (Array.isArray(res.data) ? res.data : []));
+      return Array.isArray(rows) ? rows : [];
     },
   });
 
   const safeAllRecords = Array.isArray(allRecords) ? allRecords : [];
-  const sentBackCount = safeAllRecords.filter(r => r.current_status === 'SENT_BACK' || r.current_status === 'SENT_BACK_HC').length;
-  const draftCount = safeAllRecords.filter(r => r.current_status === 'DRAFT').length;
+  const getRecordStatus = (r) => r.current_status || r.status || r.workflow_status || '';
+
+  const isForwarded = (r) => {
+    const s = getRecordStatus(r);
+    return ['DISTRICT_REVIEW', 'JCP_REVIEW', 'SCP_REVIEW', 'HQ_RECEIVED', 'COMPILED', 'ARCHIVED', 'SUBMITTED', 'SHO_REVIEWED', 'ACP_REVIEW'].includes(s);
+  };
+  const isReturnedByDistrict = (r) => {
+    const s = getRecordStatus(r);
+    return (s === 'SENT_BACK' || s === 'SENT_BACK_HC') && (r.last_transition_from_level === 'DISTRICT' || r.last_transition_by_role === 'DISTRICT_OFFICER');
+  };
+  const isSentBackToHc = (r) => {
+    const s = getRecordStatus(r);
+    return (s === 'SENT_BACK' || s === 'SENT_BACK_HC') && (r.last_transition_from_level === 'PS' || !r.last_transition_from_level || r.last_transition_role === 'SHO');
+  };
+  const isPendingSho = (r) => getRecordStatus(r) === 'PENDING_SHO';
+  const isDraft = (r) => getRecordStatus(r) === 'DRAFT';
+
+  const totalCount = safeAllRecords.length;
+  const forwardedCount = safeAllRecords.filter(isForwarded).length;
+  const returnedByDistrictCount = safeAllRecords.filter(isReturnedByDistrict).length;
+  const sentBackToHcCount = safeAllRecords.filter(isSentBackToHc).length;
+  const pendingShoCount = safeAllRecords.filter(isPendingSho).length;
+  const draftCount = safeAllRecords.filter(isDraft).length;
 
   const [filters, setFilters] = useState({
     type: 'ALL',
@@ -96,20 +116,15 @@ export default function MyRecords() {
     setSelectedIds([]);
   }, [filters]);
 
-
-  // Fetch all records
+  // Fetch filtered records
   const { data: rawRecords = [], isLoading } = useQuery({
     queryKey: ['records', filters],
     queryFn: async () => {
       const params = {};
       if (filters.type) params.type = filters.type;
       if (filters.arrestKind) params.arrest_kind = filters.arrestKind;
-      if (filters.status) {
-        if (filters.status === 'SENT_BACK_HC') {
-          params.status = ['SENT_BACK_HC', 'SENT_BACK'];
-        } else {
-          params.status = filters.status;
-        }
+      if (filters.status && filters.status !== 'ALL') {
+        params.status = filters.status;
       }
       if (filters.dateFrom) params.dateFrom = filters.dateFrom;
       if (filters.dateTo) params.dateTo = filters.dateTo;
@@ -139,7 +154,7 @@ export default function MyRecords() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success(t('actions.submitSuccess', 'Record submitted to SHO successfully'));
+      toast.success(t('actions.submitSuccess', 'Record submitted successfully'));
       queryClient.invalidateQueries({ queryKey: ['records'] });
       queryClient.invalidateQueries({ queryKey: ['all-records-stats'] });
     },
@@ -155,7 +170,7 @@ export default function MyRecords() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success(t('actions.deleteSuccess', 'Local draft deleted successfully'));
+      toast.success(t('actions.deleteSuccess', 'Draft deleted successfully'));
       queryClient.invalidateQueries({ queryKey: ['records'] });
       queryClient.invalidateQueries({ queryKey: ['all-records-stats'] });
     },
@@ -164,19 +179,53 @@ export default function MyRecords() {
     },
   });
 
-  // Sort 'SENT_BACK' and 'SENT_BACK_HC' records to the very top, maintaining original order for other records
+  // Sort priorities: Returned/Sent Back first, then Pending SHO, then Drafts, then rest
   const filteredRecords = [...records].sort((a, b) => {
-    const aIsSentBack = a.current_status === 'SENT_BACK_HC' || a.current_status === 'SENT_BACK';
-    const bIsSentBack = b.current_status === 'SENT_BACK_HC' || b.current_status === 'SENT_BACK';
-    if (aIsSentBack && !bIsSentBack) return -1;
-    if (!aIsSentBack && bIsSentBack) return 1;
+    const aIsReturned = a.current_status === 'SENT_BACK' || a.current_status === 'SENT_BACK_HC';
+    const bIsReturned = b.current_status === 'SENT_BACK' || b.current_status === 'SENT_BACK_HC';
+    if (aIsReturned && !bIsReturned) return -1;
+    if (!aIsReturned && bIsReturned) return 1;
+
+    const aIsPending = a.current_status === 'PENDING_SHO';
+    const bIsPending = b.current_status === 'PENDING_SHO';
+    if (aIsPending && !bIsPending) return -1;
+    if (!aIsPending && bIsPending) return 1;
+
     return 0;
   });
 
-  const submittableRecords = filteredRecords.filter(r => {
-    const isSentBack = r.current_status === 'SENT_BACK_HC' || r.current_status === 'SENT_BACK';
-    return r.current_status === 'DRAFT' || isSentBack;
-  });
+  // Edit / Submit permission rules
+  const canEditRecord = (rec) => {
+    if (isUserSHO) {
+      // SHO can only edit records when pushed from HC for SHO approval (PENDING_SHO) OR returned by District for correction
+      if (rec.current_status === 'PENDING_SHO') return true;
+      if (rec.current_status === 'SENT_BACK' || rec.current_status === 'SENT_BACK_HC') {
+        return rec.last_transition_from_level === 'DISTRICT' || rec.last_transition_by_role === 'DISTRICT_OFFICER';
+      }
+      return false;
+    }
+    if (isUserHC) {
+      // HC can edit drafts or records returned to HC
+      return rec.current_status === 'DRAFT' || rec.current_status === 'SENT_BACK' || rec.current_status === 'SENT_BACK_HC';
+    }
+    return false;
+  };
+
+  const canSubmitRecord = (rec) => {
+    if (isUserHC) {
+      return rec.current_status === 'DRAFT' || rec.current_status === 'SENT_BACK' || rec.current_status === 'SENT_BACK_HC';
+    }
+    if (isUserSHO) {
+      if (rec.current_status === 'PENDING_SHO') return true;
+      if (rec.current_status === 'SENT_BACK' || rec.current_status === 'SENT_BACK_HC') {
+        return rec.last_transition_from_level === 'DISTRICT' || rec.last_transition_by_role === 'DISTRICT_OFFICER';
+      }
+      return false;
+    }
+    return false;
+  };
+
+  const submittableRecords = filteredRecords.filter(canSubmitRecord);
 
   const isAllSelected = submittableRecords.length > 0 && submittableRecords.every(r => selectedIds.includes(r.id));
 
@@ -198,7 +247,7 @@ export default function MyRecords() {
 
   const handleBulkSubmit = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(t('actions.confirmBulkSubmit', `Confirm submission of all ${selectedIds.length} selected records to the SHO? This locks the records.`))) {
+    if (!window.confirm(t('actions.confirmBulkSubmit', `Confirm submission of all ${selectedIds.length} selected records? This locks the records.`))) {
       return;
     }
     
@@ -232,72 +281,155 @@ export default function MyRecords() {
     queryClient.invalidateQueries({ queryKey: ['all-records-stats'] });
   };
 
-  // Render Status Badge
-  const renderStatusBadge = (status) => {
-    const badges = {
-      DRAFT: 'bg-slate-100 text-slate-600 border-slate-200/80',
-      PENDING_SHO: 'bg-amber-50 text-amber-700 border-amber-200/60',
-      ACP_REVIEW: 'bg-purple-50 text-purple-700 border-purple-200/60',
-      DISTRICT_REVIEW: 'bg-blue-50 text-blue-700 border-blue-200/60',
-      SENT_BACK: 'bg-rose-50 text-rose-700 border-rose-200/60',
-      SENT_BACK_HC: 'bg-rose-50 text-rose-700 border-rose-200/60',
-      COMPILED: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
-    };
-    const dotColors = {
-      DRAFT: 'bg-slate-400',
-      PENDING_SHO: 'bg-amber-500',
-      ACP_REVIEW: 'bg-purple-500',
-      DISTRICT_REVIEW: 'bg-blue-500',
-      SENT_BACK: 'bg-rose-500',
-      SENT_BACK_HC: 'bg-rose-500',
-      COMPILED: 'bg-emerald-500',
-    };
+  // Render Status Badge with rich lifecycle context
+  const renderStatusBadge = (rec) => {
+    const status = rec.current_status || rec.status || 'DRAFT';
+    
+    // 1. Returned / Sent Back
+    if (status === 'SENT_BACK' || status === 'SENT_BACK_HC') {
+      const isFromDistrict = rec.last_transition_from_level === 'DISTRICT' || rec.last_transition_by_role === 'DISTRICT_OFFICER';
+      if (isFromDistrict) {
+        return (
+          <div className="flex flex-col gap-1 items-start">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-rose-100 text-rose-800 border-rose-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping" />
+              ↩ {t('status.RETURNED_DISTRICT', 'Returned by District')}
+            </span>
+            {rec.last_transition_comment && (
+              <span className="text-[11px] text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-200/80 max-w-[260px] truncate" title={rec.last_transition_comment}>
+                District Note: {rec.last_transition_comment}
+              </span>
+            )}
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex flex-col gap-1 items-start">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-amber-100 text-amber-900 border-amber-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+            ↩ {t('status.SENT_BACK_HC', 'Sent Back to HC')}
+          </span>
+          {rec.last_transition_comment && (
+            <span className="text-[11px] text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80 max-w-[260px] truncate" title={rec.last_transition_comment}>
+              SHO Note: {rec.last_transition_comment}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    // 2. Forwarded to District / Higher
+    if (status === 'DISTRICT_REVIEW') {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-blue-50 text-blue-700 border-blue-200/80">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          ↗ {t('status.DISTRICT_REVIEW', 'Forwarded (District Review)')}
+        </span>
+      );
+    }
+
+    if (['JCP_REVIEW', 'SCP_REVIEW', 'HQ_RECEIVED', 'COMPILED', 'ARCHIVED'].includes(status)) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-emerald-50 text-emerald-800 border-emerald-200/80">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+          ✓ {t(`status.${status}`, status)}
+        </span>
+      );
+    }
+
+    // 3. Pending SHO
+    if (status === 'PENDING_SHO') {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-amber-50 text-amber-700 border-amber-200/80">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+          ⏱ {t('status.PENDING_SHO', 'Pending SHO Review')}
+        </span>
+      );
+    }
+
+    // 4. Draft or Default
     return (
-      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm ${badges[status] || badges.DRAFT}`}>
-        <span className={`w-1.5 h-1.5 rounded-full ${dotColors[status] || dotColors.DRAFT}`} />
-        {t(`status.${status}`, status)}
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-slate-100 text-slate-600 border-slate-200/80">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+        {t(`status.${status}`, status || 'Draft')}
       </span>
     );
   };
 
+  const workflowQuickTabs = isUserSHO ? [
+    { key: 'ALL', label: t('status.ALL', 'All Station Records'), count: totalCount, icon: Layers, color: 'border-slate-400 text-white' },
+    { key: 'PENDING_SHO', label: t('status.PENDING_SHO', 'Pending SHO Review'), count: pendingShoCount, icon: Clock, color: 'border-amber-300 text-amber-100' },
+    { key: 'FORWARDED', label: t('status.FORWARDED', 'Forwarded to District'), count: forwardedCount, icon: ArrowUpRight, color: 'border-blue-400 text-blue-200' },
+    { key: 'RETURNED_DISTRICT', label: t('status.RETURNED_DISTRICT', 'Returned by District'), count: returnedByDistrictCount, icon: AlertCircle, color: 'border-rose-400 text-rose-200' },
+    { key: 'SENT_BACK_HC', label: t('status.SENT_BACK_HC', 'Sent Back to HC'), count: sentBackToHcCount, icon: RotateCcw, color: 'border-amber-400 text-amber-200' }
+  ] : [
+    { key: 'ALL', label: t('status.ALL', 'All My Records'), count: totalCount, icon: Layers, color: 'border-slate-400 text-white' },
+    { key: 'DRAFT', label: t('status.DRAFT', 'Drafts'), count: draftCount, icon: FileEdit, color: 'border-sky-400 text-sky-200' },
+    { key: 'PENDING_SHO', label: t('status.PENDING_SHO', 'Submitted to SHO'), count: pendingShoCount, icon: Clock, color: 'border-amber-300 text-amber-100' },
+    { key: 'FORWARDED', label: t('status.FORWARDED', 'Forwarded to District'), count: forwardedCount, icon: ArrowUpRight, color: 'border-blue-400 text-blue-200' },
+    { key: 'SENT_BACK_HC', label: t('status.SENT_BACK_HC', 'Returned for Correction'), count: (sentBackToHcCount + returnedByDistrictCount), icon: RotateCcw, color: 'border-amber-400 text-amber-200' }
+  ];
+
   return (
     /* ── Full-page background matching Dashboard's deep navy gradient ── */
     <div className="min-h-screen theme-hc-page page-bg">
-      <div className="hero-banner-gradient px-8 pt-8 pb-16 relative overflow-hidden shadow-xl">
+      <div className="hero-banner-gradient px-4 sm:px-8 pt-8 pb-16 relative overflow-hidden shadow-xl">
         <div className="absolute -top-10 -right-10 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="w-full max-w-[1920px] mx-auto relative z-10 flex flex-col md:flex-row justify-between items-start gap-6">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center gap-3 m-0 font-display tracking-tight">
-              {t('nav.records', 'My Records Desk')}
-            </h1>
-            <p className="text-base text-white/80 font-medium m-0">
-              {t('common.recordsSubtitle', 'Manage and submit your daily diary entries.')}
-            </p>
+        <div className="w-full max-w-[1920px] mx-auto relative z-10 flex flex-col gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col gap-1.5">
+              <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center gap-3 m-0 font-display tracking-tight">
+                {t('nav.records', 'Station Records Desk')}
+              </h1>
+              <p className="text-base text-white/85 font-medium m-0">
+                {isUserSHO 
+                  ? t('common.shoRecordsSubtitle', 'Complete station lifecycle view: forwarded cases, district returns, HC revisions, and pending reviews.')
+                  : t('common.recordsSubtitle', 'Manage and submit your daily diary entries.')}
+              </p>
+            </div>
+
+            <div className="text-right">
+              <p className="text-xl sm:text-2xl font-bold text-white/95 m-0 font-display">
+                {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
+              </p>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white/80 bg-white/10 px-3 py-1 rounded-full border border-white/20 mt-1">
+                <ShieldCheck size={14} className="text-emerald-300" />
+                {t(`roles.${user?.role}`, user?.role)} • {user?.ps_name || 'Police Station'}
+              </span>
+            </div>
           </div>
 
-          <div className="flex flex-col items-end gap-3 md:flex-shrink-0 w-full md:w-auto">
-            <p className="text-2xl font-bold text-white/95 m-0 text-right font-display">
-              Welcome back, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
-            </p>
-            <div className="flex flex-wrap gap-3 justify-end w-full bg-transparent">
-            {/* Sent Back Box */}
-            <div className="rounded-2xl bg-red-600/30 border border-red-400/50 backdrop-blur-md px-5 py-3 min-w-[110px] text-center transition-all duration-200 hover:scale-105 hover:bg-white/20 shadow-sm">
-              <div className="text-3xl font-black text-red-200 tabular-nums">{sentBackCount}</div>
-              <div className="text-xs text-red-100/90 mt-1 font-bold uppercase tracking-wider">
-                {t('status.SENT_BACK_LABEL', 'Returned')}
-              </div>
-            </div>
-
-            {/* Drafts Box */}
-            <div className="rounded-2xl bg-sky-500/20 border border-sky-400/40 backdrop-blur-md px-5 py-3 min-w-[110px] text-center transition-all duration-200 hover:scale-105 hover:bg-white/20 shadow-sm">
-              <div className="text-3xl font-black text-sky-300 tabular-nums">{draftCount}</div>
-              <div className="text-xs text-sky-100/90 mt-1 font-bold uppercase tracking-wider">
-                {t('status.DRAFT', 'Draft')}
-              </div>
-            </div>
-            </div>
+          {/* ── Interactive Lifecycle Stat Cards ── */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
+            {workflowQuickTabs.map(tab => {
+              const Icon = tab.icon;
+              const isActive = filters.status === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setFilters(prev => ({ ...prev, status: tab.key }))}
+                  className={`rounded-2xl p-3.5 text-left transition-all duration-200 cursor-pointer backdrop-blur-md border flex flex-col justify-between gap-2 shadow-sm hover:scale-[1.03] ${
+                    isActive 
+                      ? 'bg-white/25 border-white shadow-lg ring-2 ring-white/60' 
+                      : 'bg-white/10 border-white/20 hover:bg-white/15'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-white/90">
+                      {tab.label}
+                    </span>
+                    <Icon size={16} className={tab.color} />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-white tabular-nums">
+                    {tab.count}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -315,7 +447,10 @@ export default function MyRecords() {
           <UnifiedFilterStrip
             filters={filters}
             onFilterChange={setFilters}
-            allowedStatuses={['ALL', 'DRAFT', 'PENDING_SHO', 'ACP_REVIEW', 'DISTRICT_REVIEW', 'SENT_BACK_HC', 'COMPILED']}
+            allowedStatuses={isUserSHO 
+              ? ['ALL', 'PENDING_SHO', 'FORWARDED', 'RETURNED_DISTRICT', 'SENT_BACK_HC', 'COMPILED']
+              : ['ALL', 'DRAFT', 'PENDING_SHO', 'FORWARDED', 'SENT_BACK_HC', 'COMPILED']
+            }
           />
         </motion.div>
 
@@ -339,37 +474,56 @@ export default function MyRecords() {
           />
         </motion.div>
 
-        {/* Bulk Actions Banner */}
+        {/* Fixed Floating Bulk Actions Bar */}
         {selectedIds.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md"
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.95 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white backdrop-blur-xl border border-slate-700/80 px-6 py-4 rounded-2xl shadow-2xl flex flex-wrap items-center justify-between gap-4 min-w-[320px] max-w-[90vw]"
           >
-            <div className="flex items-center gap-2 text-emerald-800 text-sm font-bold uppercase tracking-wider">
-              <span className="bg-emerald-500 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs tabular-nums font-extrabold shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="bg-emerald-500 text-slate-950 font-black rounded-full h-7 w-7 flex items-center justify-center text-xs tabular-nums shadow-md">
                 {selectedIds.length}
               </span>
-              <span>{t('actions.selectedRecords', 'Records Selected')}</span>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-slate-100 uppercase tracking-wider">
+                  {t('actions.selectedRecords', 'Records Selected')}
+                </span>
+                <span className="text-xs text-slate-400 font-medium">
+                  {t('actions.readyForBulkSubmit', 'Ready for batch submission')}
+                </span>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={handleBulkSubmit}
-              disabled={bulkLoading}
-              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl text-sm font-extrabold transition-all duration-200 hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:bg-slate-300 disabled:cursor-not-allowed uppercase tracking-wider border-none"
-            >
-              {bulkLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
-                  <span>{t('actions.submitting', 'Submitting...')}</span>
-                </>
-              ) : (
-                <>
-                  <Send size={16} />
-                  <span>{t('actions.sendAllToSHO', 'Send Selected to SHO')}</span>
-                </>
-              )}
-            </button>
+
+            <div className="flex items-center gap-3 ml-auto">
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="px-3.5 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-700 cursor-pointer"
+              >
+                {t('actions.clearSelection', 'Deselect All')}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBulkSubmit}
+                disabled={bulkLoading}
+                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2 cursor-pointer disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed uppercase tracking-wider border-none"
+              >
+                {bulkLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-950" />
+                    <span>{t('actions.submitting', 'Submitting...')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} className="stroke-[2.5]" />
+                    <span>{t('actions.sendAllToSHO', `Submit ${selectedIds.length} Selected`)}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </motion.div>
         )}
 
@@ -391,11 +545,22 @@ export default function MyRecords() {
                 <FileText size={32} className="text-[var(--accent-color)]" />
               </div>
               <p className="text-lg font-bold text-[#1A202C]">
-                {t('common.noRecords', 'No Daily Log Entries Found')}
+                {t('common.noRecords', 'No Station Records Found for Selected Filter')}
               </p>
               <p className="text-base text-[#718096] mt-1 font-medium">
-                {t('common.noRecordsDetail', 'Select a creation form above to enter your daily general diary records.')}
+                {filters.status !== 'ALL' 
+                  ? `There are currently no records matching "${filters.status}". Switch to "All Records" to view full repository.` 
+                  : t('common.noRecordsDetail', 'Enter daily general diary records or import legacy data.')}
               </p>
+              {filters.status !== 'ALL' && (
+                <button
+                  type="button"
+                  onClick={() => setFilters(prev => ({ ...prev, status: 'ALL' }))}
+                  className="mt-4 px-4 py-2 bg-[var(--accent-color)] text-white text-sm font-bold rounded-xl shadow hover:bg-[var(--accent-color-hover)] transition-colors cursor-pointer"
+                >
+                  View All Records
+                </button>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -420,7 +585,7 @@ export default function MyRecords() {
                       <th className="p-4">{t('common.recordDate', 'Record Date')}</th>
                       <th className="p-4">{t('common.details', 'Gist')}</th>
                       <th className="p-4">{t('common.status', 'Status')}</th>
-                      <th className="p-4 pr-6 text-right">{t('common.actions', 'Console Operations')}</th>
+                      <th className="p-4 pr-6 text-right">{t('common.actions', 'Operations')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E2E8F0] text-[#1A202C]">
@@ -459,7 +624,9 @@ export default function MyRecords() {
 
                       const recDate = rec.record_date || rec.registration_date || rec.created_at || rec.data?.record_date || 'N/A';
                       const isSentBack = rec.current_status === 'SENT_BACK_HC' || rec.current_status === 'SENT_BACK';
-                      const isEditable = rec.current_status === 'DRAFT' || isSentBack;
+                      const isDistrictReturned = isSentBack && (rec.last_transition_from_level === 'DISTRICT' || rec.last_transition_by_role === 'DISTRICT_OFFICER');
+                      const rowEditable = canEditRecord(rec);
+                      const rowSubmittable = canSubmitRecord(rec);
 
                       return (
                         <motion.tr
@@ -467,17 +634,22 @@ export default function MyRecords() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.02, duration: 0.3 }}
-                          className={`transition-colors duration-150 group ${isSentBack
-                              ? 'bg-rose-50/80 hover:bg-rose-100/70'
+                          className={`transition-colors duration-150 group ${
+                            isDistrictReturned
+                              ? 'bg-rose-50/90 hover:bg-rose-100/80 border-l-4 border-l-rose-500'
+                              : isSentBack
+                              ? 'bg-amber-50/70 hover:bg-amber-100/70 border-l-4 border-l-amber-500'
+                              : rec.current_status === 'PENDING_SHO'
+                              ? 'bg-amber-50/30 hover:bg-amber-100/40'
                               : 'hover:bg-[var(--accent-glow)]'
-                            }`}
+                          }`}
                         >
                           <td className="p-4 pl-6 text-center w-12">
                             <input
                               type="checkbox"
                               checked={selectedIds.includes(rec.id)}
                               onChange={(e) => handleSelectRow(rec.id, e.target.checked)}
-                              disabled={!isEditable}
+                              disabled={!rowSubmittable}
                               className="rounded border-slate-300 text-[var(--accent-color)] focus:ring-[var(--accent-color)] h-4 w-4 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                             />
                           </td>
@@ -505,7 +677,7 @@ export default function MyRecords() {
                           </td>
                           <td className="p-4">
                             <div className="flex flex-col gap-1.5 items-start">
-                              {renderStatusBadge(rec.current_status)}
+                              {renderStatusBadge(rec)}
                               {(rec.case_status === 'TRANSFER' || rec.data?.case_status === 'TRANSFER') && (
                                 <>
                                   {/* Transfer to PS */}
@@ -553,6 +725,18 @@ export default function MyRecords() {
                               <Eye size={16} />
                             </button>
 
+                            {/* SHO Quick Review & Approve / Send Back Action on Pending SHO */}
+                            {isUserSHO && rec.current_status === 'PENDING_SHO' && (
+                              <button
+                                onClick={() => navigate(`/sho/approval`)}
+                                className="bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white px-3 py-2 rounded-xl transition-colors duration-200 inline-flex items-center gap-1.5 text-xs font-bold cursor-pointer border border-emerald-300 hover:border-emerald-600 shadow-xs"
+                                title="Open Approval Desk to Review, Edit, or Return to HC"
+                              >
+                                <CheckCircle2 size={15} />
+                                <span>Review & Approve</span>
+                              </button>
+                            )}
+
                             {/* Update Status Action (WS9) */}
                             <button
                               onClick={() => setStatusModalRecordId(rec.id)}
@@ -563,33 +747,33 @@ export default function MyRecords() {
                             </button>
 
                             {/* Edit Action */}
-                            {isEditable && (
+                            {rowEditable && (
                               <button
                                 onClick={() => navigate(`/records/new/${rec.record_type}?edit=${rec.id}`)}
                                 className="bg-amber-50 hover:bg-[#cca43b] text-amber-700 hover:text-white p-2.5 rounded-xl transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-amber-200 hover:border-[#cca43b] shadow-xs"
-                                title="Edit Record"
+                                title="Edit Full Record"
                               >
                                 <FileEdit size={16} />
                               </button>
                             )}
 
                             {/* Submit Action */}
-                            {isEditable && (
+                            {rowSubmittable && (
                               <button
                                 onClick={() => {
-                                  if (window.confirm(t('actions.confirmSubmit', 'Confirm submission to SHO? This locks the record.'))) {
+                                  if (window.confirm(t('actions.confirmSubmit', 'Confirm submission? This locks the record.'))) {
                                     submitMutation.mutate(rec.id);
                                   }
                                 }}
                                 className="bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white p-2.5 rounded-xl transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-emerald-200 hover:border-emerald-600 shadow-xs"
-                                title="Submit to SHO"
+                                title="Submit Record"
                               >
                                 <Send size={16} />
                               </button>
                             )}
 
-                            {/* Delete Action */}
-                            {rec.current_status === 'DRAFT' && (
+                            {/* Delete Draft Action (only for HC on unsubmitted drafts) */}
+                            {isUserHC && rec.current_status === 'DRAFT' && (
                               <button
                                 onClick={() => {
                                   if (window.confirm(t('actions.confirmDelete', 'Delete this draft record forever?'))) {

@@ -16,6 +16,10 @@ import StatCard from '../../components/ui/StatCard.jsx';
 import CrimeHeadMatrixTable from '../../components/common/CrimeHeadMatrixTable.jsx';
 import CaseStatusBarChart from '../../components/common/CaseStatusBarChart.jsx';
 import CrimeHeadCategoryBarChart from '../../components/common/CrimeHeadCategoryBarChart.jsx';
+import PropertyRecoveryCard from '../../components/analytics/PropertyRecoveryCard.jsx';
+import InvestigationDisposalCard from '../../components/analytics/InvestigationDisposalCard.jsx';
+import CommunitySafetyCard from '../../components/analytics/CommunitySafetyCard.jsx';
+import BeatPreventiveCard from '../../components/analytics/BeatPreventiveCard.jsx';
 import { log } from '../../utils/logger.js';
 
 // ── Shared chart tooltip style ────────────────────────────────────────────────
@@ -178,6 +182,39 @@ export default function AnalyticsDashboard() {
     },
   });
 
+  // ── 4. Specialized Operational Command Queries ────────────────────────────
+  const { data: propertyRecoveryData = {}, isLoading: propertyLoading } = useQuery({
+    queryKey: ['analytics', 'property-recovery', periodParam],
+    queryFn: async () => {
+      const res = await api.get('/analytics/property-recovery', { params: { period: periodParam } });
+      return res.data?.data ?? {};
+    },
+  });
+
+  const { data: investigationData = {}, isLoading: investigationLoading } = useQuery({
+    queryKey: ['analytics', 'investigation-disposal', periodParam],
+    queryFn: async () => {
+      const res = await api.get('/analytics/investigation-disposal', { params: { period: periodParam } });
+      return res.data?.data ?? {};
+    },
+  });
+
+  const { data: communityData = {}, isLoading: communityLoading } = useQuery({
+    queryKey: ['analytics', 'community-safety', periodParam],
+    queryFn: async () => {
+      const res = await api.get('/analytics/community-safety', { params: { period: periodParam } });
+      return res.data?.data ?? {};
+    },
+  });
+
+  const { data: beatData = {}, isLoading: beatLoading } = useQuery({
+    queryKey: ['analytics', 'beat-preventive', periodParam],
+    queryFn: async () => {
+      const res = await api.get('/analytics/beat-preventive', { params: { period: periodParam } });
+      return res.data?.data ?? {};
+    },
+  });
+
   const trendData = trendPoints.map((point) => ({
     name: point.label,
     cases: point.breakdown?.FIR ?? 0,
@@ -222,11 +259,11 @@ export default function AnalyticsDashboard() {
   });
 
   const kpiCards = [
-    { label: 'Cases (FIR)',     value: summary.CASES,   icon: FileText, color: 'text-amber-500',   sub: 'Submitted & above' },
-    { label: 'Arrests',         value: summary.ARREST,  icon: Shield,   color: 'text-emerald-500', sub: 'In workflow' },
-    { label: 'PCR Calls',       value: summary.PCR,     icon: Phone,    color: 'text-blue-500',    sub: 'In workflow' },
-    { label: 'Missing Persons', value: summary.MISSING, icon: Search,   color: 'text-violet-500',  sub: 'In workflow' },
-    { label: 'Left Out Accused', value: summary.left_out_accused || summary.LEFT_OUT || 0, icon: UserX, color: 'text-amber-500', sub: 'Pending Arrest' },
+    { label: 'Cases (FIR)',     value: summary.CASE ?? summary.CASES ?? 0,   icon: FileText, color: 'text-amber-500',   sub: 'Submitted & above' },
+    { label: 'Arrests',         value: summary.ARREST ?? summary.ARRESTS ?? 0,  icon: Shield,   color: 'text-emerald-500', sub: 'In workflow' },
+    { label: 'PCR Calls',       value: summary.PCR_CALL ?? summary.PCR ?? summary.PCR_CALLS ?? 0, icon: Phone, color: 'text-blue-500', sub: 'In workflow' },
+    { label: 'Missing Persons', value: summary.MISSING ?? 0, icon: Search,   color: 'text-violet-500',  sub: 'In workflow' },
+    { label: 'Left Out Accused', value: summary.left_out_accused ?? summary.LEFT_OUT ?? 0, icon: UserX, color: 'text-amber-500', sub: 'Pending Arrest' },
   ];
 
   // ── Shared panel section label ─────────────────────────────────────────────
@@ -413,6 +450,17 @@ export default function AnalyticsDashboard() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ── Specialized Operational Command Domains ── */}
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <PropertyRecoveryCard data={propertyRecoveryData} isLoading={propertyLoading} />
+          <InvestigationDisposalCard data={investigationData} isLoading={investigationLoading} />
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <CommunitySafetyCard data={communityData} isLoading={communityLoading} />
+          <BeatPreventiveCard data={beatData} isLoading={beatLoading} />
         </div>
 
         {/* ── Bottom Row: Status + Station Bar ── */}

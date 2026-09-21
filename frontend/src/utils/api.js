@@ -1176,8 +1176,8 @@ const formSchemas = {
           validation_rules: { required: false },
           show_when: { field: 'missing_relative_name', operator: 'filled' }
         },
-        { field_key: 'missing_place', field_type: 'TEXT', label_en: 'Last Seen Place', label_hi: 'अंतिम बार देखा गया स्थान', validation_rules: { required: true } },
-        { field_key: 'missing_date', field_type: 'DATE', label_en: 'Date Missing Since', label_hi: 'लापता होने की तिथि', validation_rules: { required: true } },
+        { field_key: 'missing_place', field_type: 'TEXT', label_en: 'Last Seen/Found Place', label_hi: 'अंतिम बार देखा गया/प्राप्त स्थान', validation_rules: { required: true } },
+        { field_key: 'missing_date', field_type: 'DATE', label_en: 'Date of Missing/Found', label_hi: 'लापता/प्राप्त होने की तिथि', validation_rules: { required: true } },
         { field_key: 'missing_recovered_time', field_type: 'TIME', label_en: 'Time Missing / Recovered', label_hi: 'लापता होने / बरामद होने का समय', validation_rules: { required: false } },
         {
           field_key: 'Mental State',
@@ -1262,15 +1262,6 @@ const formSchemas = {
           label_en: 'Present Pin Code',
           label_hi: 'वर्तमान पिन कोड',
           validation_rules: { required: false },
-          show_when: { field: 'mp_known', value: true }
-        },
-        {
-          field_key: 'mp_address',
-          field_type: 'TEXTAREA',
-          label_en: 'Present Full Address',
-          label_hi: 'लापता व्यक्ति का वर्तमान पता (विस्तृत)',
-          validation_rules: { required: false },
-          full_width: true,
           show_when: { field: 'mp_known', value: true }
         },
         {
@@ -1880,6 +1871,17 @@ const formSchemas = {
           validation_rules: { required: false },
           show_when: { field: 'filed_by_acp_sdm', value: ['SDM', 'ACP'] }
         },
+        {
+          field_key: 'inquest_status',
+          field_type: 'SELECT',
+          label_en: 'Inquest Status',
+          label_hi: 'जांच स्थिति (Inquest Status)',
+          options: [
+            { value: 'Disposal', label_en: 'Disposal', label_hi: 'निपटान (Disposal)' },
+            { value: 'Closure', label_en: 'Closure', label_hi: 'समाप्ति (Closure)' }
+          ],
+          validation_rules: { required: false }
+        },
         { field_key: 'informant_name', field_type: 'TEXT', label_en: 'Informant Name', label_hi: 'सूचना प्रदाता का नाम', validation_rules: { required: false } },
         {
           field_key: 'informant_relation',
@@ -1935,7 +1937,8 @@ api.interceptors.request.use(
 
     // Return custom mock responses
     const method = config.method.toUpperCase();
-    const url = config.url;
+    const rawUrl = config.url || '';
+    const url = rawUrl.split('?')[0];
 
     // Simulate error triggers if debug switcher requests it
     if (debugMode.startsWith('error_')) {

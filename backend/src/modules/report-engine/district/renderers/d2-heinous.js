@@ -1,11 +1,11 @@
-﻿import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 
 export function renderD2Heinous(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('D-2 Heinous Brief Fact');
+  let sheet = workbook.getWorksheet('D-2 Heinous Brief Fact') || workbook.addWorksheet('D-2 Heinous Brief Fact');
   const districtName = (scope.self_name || 'DISTRICT').toUpperCase();
   const cutoffDate = calcData.cutoff_date || '';
 
-  sheet.mergeCells('A1:N1');
+  safeMerge(sheet, 'A1:N1');
   const t1 = sheet.getCell('A1');
   t1.value = `D-2 HEINOUS BRIEF FACTS STATEMENT — ${districtName} DISTRICT (${cutoffDate})`;
   t1.font = FONTS.TITLE;
@@ -28,21 +28,22 @@ export function renderD2Heinous(workbook, scope, calcData) {
     sheet.addRow(['-', 'Nil heinous cases reported today', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-']);
   } else {
     heinousList.forEach((item, idx) => {
+      const isWO = item.is_worked_out === true ? 'W/O' : (item.is_worked_out === false ? 'Pending' : '-');
       const dRow = sheet.addRow([
         idx + 1,
         item.ps_name || '-',
         item.fir_no || '-',
-        'IPC / BNS',
-        'Place of occurrence',
-        item.registration_date || '-',
-        '-',
-        'IO Name',
+        item.sections || '-',
+        item.occurrence_place || '-',
+        item.time_of_occurrence || item.registration_date || '-',
+        item.beat_no || '-',
+        item.io_name || '-',
         item.brief_facts || 'N/A',
-        'Stolen / Recovery details',
-        'W/O',
-        'Accused Name & Address',
-        'Nil',
-        'Heinous'
+        item.stolen_property || '-',
+        isWO,
+        item.accused_details || 'Not identified / Unknown',
+        item.yet_to_be_arrested || 'Nil',
+        item.crime_head || 'Heinous'
       ]);
 
       dRow.height = 24;

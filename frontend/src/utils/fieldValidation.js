@@ -36,18 +36,12 @@ const RULES = [
   {
     name: 'fir_no',
     test: (key) => key === 'fir_no',
-    // "104/2026" — digits, a single slash, then the year. The number before the slash
-    // is deliberately uncapped (station FIR numbers vary in length); only the year
-    // after the slash is capped, at 4 digits. Extra slashes collapse into the year
-    // segment instead of being silently dropped.
-    sanitize: (v) => {
-      const cleaned = v.replace(/[^\d/]/g, '');
-      const i = cleaned.indexOf('/');
-      if (i === -1) return cleaned;
-      return `${cleaned.slice(0, i)}/${cleaned.slice(i + 1).replace(/\//g, '').slice(0, 4)}`;
+    sanitize: (v) => digitsOnly(v).slice(0, 14),
+    pattern: /^\d{14}$/,
+    message: {
+      en: 'FIR number must be a 14-digit statutory number (e.g. 08162010260001)',
+      hi: 'प्राथमिकी संख्या 14 अंकों की वैधानिक संख्या (जैसे 08162010260001) होनी चाहिए'
     },
-    pattern: /^\d+\/\d{4}$/,
-    message: { en: 'FIR number must be in the format Number/Year, e.g. 104/2026', hi: 'प्राथमिकी संख्या Number/Year प्रारूप में होनी चाहिए, जैसे 104/2026' },
   },
   {
     name: 'mobile_country_code',

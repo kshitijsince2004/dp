@@ -16,4 +16,11 @@ load_dotenv()
 
 db_url = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5435/pharos_db')
 print(f"[WorkerDB] Connecting to PostgreSQL database...")
-engine = create_engine(db_url, pool_pre_ping=True)
+engine = create_engine(
+    db_url,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+    pool_recycle=300,
+    connect_args={"connect_timeout": 30}
+)

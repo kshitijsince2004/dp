@@ -1,5 +1,5 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
-import { computeVariation, computeDetection, computeNotWorkedOut } from '../../shared/calc.js';
+import { PALETTE, FONTS, HEINOUS_CANONICAL_CODES, ACT_CANONICAL_CODES, safeMerge } from '../../shared/canonical-codes.js';
+import { varPct, detPct, computeNotWorkedOut } from '../../shared/calc.js';
 
 // Canonical-code mapped heads for D1/N-1,2,3 Resolution view
 const HEADS = [
@@ -11,8 +11,6 @@ const HEADS = [
   { name: 'Kid.For Ransom',   code: 'KID_FOR_RANSOM',isHeinous: true },
   { name: 'Rape',             code: 'RAPE',          isHeinous: true },
   { name: 'TOTAL HEINOUS',    isTotal: true, group: 'heinous' },
-  { name: 'Organised Crime',  code: 'ORGANISED' },
-  { name: 'Terrorist Crime',  code: 'TERRORIST' },
   { name: 'Snatching',        code: 'SNATCHING' },
   { name: 'Burglary',         code: 'BURGLARY' },
   { name: 'Extortion',        code: 'EXTORTION' },
@@ -37,16 +35,18 @@ const HEADS = [
   { name: 'Gambling Act',     code: 'GAMBLING_ACT', isAct: true },
   { name: 'NDPS Act',         code: 'NDPS_ACT', isAct: true },
   { name: 'POCSO Act',        code: 'POCSO', isAct: true },
+  { name: 'Organised Crime (BNS 111)', code: 'ORGANISED_CRIME', isAct: true },
+  { name: 'Terrorist Acts (BNS 113)',  code: 'TERRORIST_ACT',  isAct: true },
   { name: 'Other Act',        code: 'OTHER_ACT', isAct: true },
   { name: 'TOTAL ACT',        isTotal: true, group: 'act' },
   { name: 'GRAND TOTAL',      isTotal: true, group: 'grand' },
 ];
 
-const HEINOUS = new Set(['DACOITY','MURDER','ATT_TO_MURDER','ROBBERY','RIOT','KID_FOR_RANSOM','RAPE']);
-const ACT     = new Set(['ARMS_ACT','EXCISE_ACT','GAMBLING_ACT','NDPS_ACT','POCSO','OTHER_ACT']);
+const HEINOUS = new Set(HEINOUS_CANONICAL_CODES);
+const ACT     = new Set(ACT_CANONICAL_CODES);
 
 export function renderD1Resolution(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet(' D1,N-1,2,3 Res');
+  let sheet = workbook.getWorksheet(' D1,N-1,2,3 Res') || workbook.getWorksheet('D1,N-1,2,3 Res') || workbook.addWorksheet(' D1,N-1,2,3 Res');
   const districtName = (scope.self_name || 'DISTRICT').toUpperCase();
   const yearNum = calcData.yearNum || 2026;
   const yearPrev = yearNum - 1;
@@ -67,7 +67,7 @@ export function renderD1Resolution(workbook, scope, calcData) {
     });
   });
 
-  sheet.mergeCells('A1:AA1');
+  safeMerge(sheet, 'A1:AA1');
   const t1 = sheet.getCell('A1');
   t1.value = `DAILY DIARY ${districtName} DISTRICT — RESOLUTION VIEW (Jt CP/CR Office)`;
   t1.font = FONTS.TITLE;
@@ -89,19 +89,18 @@ export function renderD1Resolution(workbook, scope, calcData) {
   });
 
   function fmtRow(h, dayY, dayYWo, dayY1, dayY1Wo, repY, woY, repY1, woY1) {
-    const incDec = computeVariation(dayY, dayY1);
+    const incDec = varPct(dayY, dayY1);
     const nwY  = computeNotWorkedOut(repY, woY);
-    const solY = computeDetection(woY, repY);
-    const solY1= computeDetection(woY1, repY1);
+    const solY = detPct(woY, repY);
+    const solY1= detPct(woY1, repY1);
     const f  = v => v > 0 ? v : '-';
-    const fp = v => v !== null ? `${(v * 100).toFixed(1)}%` : '-';
     // Jt CP columns (subdivisions) — not tracked separately, use same upto-date values
     return [
       h,
       f(dayY), f(dayYWo), f(dayY1), f(dayY1Wo),
-      fp(incDec),
-      f(repY), f(woY), f(nwY), fp(solY),
-      f(repY1), f(woY1), fp(solY1),
+      incDec,
+      f(repY), f(woY), f(nwY), solY,
+      f(repY1), f(woY1), solY1,
       f(repY), f(woY), f(repY1), f(woY1),
     ];
   }

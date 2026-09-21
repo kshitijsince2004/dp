@@ -55,12 +55,13 @@ export default function PoliceSidebar({ isCollapsed, setIsCollapsed }) {
     // ── Reviewer / SHO Desk ───────────────────────────────────────────────────
     if (role === 'SHO') {
       items.push(
-        { id: "analytics",     label: t('nav.analytics',    'Analytics Console'), icon: BarChart3,    to: "/analytics" },
-        { id: "queue",         label: t('nav.queue',        'Approval Desk'),     icon: ClipboardList, to: "/queue" },
-        { id: "compile",       label: t('nav.compile',      'Compile Records'),   icon: FileSpreadsheet, to: "/compile" },
-        { id: "io-management", label: t('nav.ioManagement', 'Investigating Officers'), icon: Fingerprint, to: "/sho/investigating-officers" },
-        { id: "sho-users",     label: t('nav.shoUsers',     'My Station Users'),  icon: Users,        to: "/admin/users" },
-        { id: "person-search", label: t('nav.personSearch', 'Person Search'),     icon: Search,       to: "/person-search" }
+        { id: "analytics",     label: t('nav.analytics',       'Analytics Console'),        icon: BarChart3,     to: "/analytics" },
+        { id: "records",       label: t('nav.records',         'My Records'),               icon: ClipboardList, to: "/records" },
+        { id: "queue",         label: t('nav.queue',           'Approval Desk'),            icon: ShieldAlert,   to: "/queue" },
+        { id: "compile",       label: t('nav.compile',         'Compile Records'),          icon: FileSpreadsheet, to: "/compile" },
+        { id: "io-management", label: t('nav.ioManagement',   'Investigating Officers'),   icon: Fingerprint,   to: "/sho/investigating-officers" },
+        { id: "sho-users",     label: t('nav.shoUsers',        'My Station Users'),         icon: Users,         to: "/admin/users" },
+        { id: "person-search", label: t('nav.personSearch',    'Person Search'),            icon: Search,        to: "/person-search" }
       );
     }
 

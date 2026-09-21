@@ -2,15 +2,17 @@ import { buildDateWindows, fetchCaseCounts, fetchArrestCounts, fetchDrugRecovery
 import { buildManualyData, buildDrugData, buildArrestData, buildDistrictMatrix, buildMondayMorningData } from './phq-diary.calc.js';
 import { buildWorkbook } from './phq-diary.excel.js';
 import { resolveScope } from '../reports/engine/scopeResolver.js';
+import { renderPHQDiaryHtml, convertHtmlToPdf } from '../report-engine/shared/report-html-renderer.js';
 import db from '../../config/db.js';
 
 /**
  * @param {string} date           - YYYY-MM-DD diary date
  * @param {string} scope          - SCOPE_GROUP name, range code, district code/UUID or PS code/UUID
  * @param {Array<string>} selectedSheets - optional sheets subset to include
- * @returns {Buffer}              - xlsx file bytes
+ * @param {string} format         - 'EXCEL' | 'PDF'
+ * @returns {Buffer}              - xlsx or pdf file bytes
  */
-export async function generate(date, scope = 'ALL_DELHI_TOTAL', selectedSheets = []) {
+export async function generate(date, scope = 'ALL_DELHI_TOTAL', selectedSheets = [], format = 'EXCEL') {
   const windows = buildDateWindows(date);
 
   // 1. Resolve hierarchy scope details (and perform authorization if requested via Controller)
@@ -54,6 +56,11 @@ export async function generate(date, scope = 'ALL_DELHI_TOTAL', selectedSheets =
       code: c.code || c.id,
       label: c.name
     }));
+  }
+
+  if (String(format).toUpperCase() === 'PDF') {
+    const html = renderPHQDiaryHtml(date, scopeData, allDelhi, selectedSheets);
+    return await convertHtmlToPdf(html);
   }
 
   // 6. Build the Excel workbook

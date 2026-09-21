@@ -56,12 +56,14 @@ export const NON_HEINOUS_ROWS = [
 
 // ─── LSL (Local & Special Laws) rows ────────────────────────────────────────
 export const LSL_ROWS = [
-  { code: 'ARMS_ACT',     label: 'ARMS ACT',     canonicalCode: 'ARMS_ACT', matchPattern: /arms\s*act/i },
-  { code: 'EXCISE_ACT',   label: 'EXCISE ACT',   canonicalCode: 'EXCISE_ACT', matchPattern: /excise/i },
-  { code: 'NDPS_ACT',     label: 'NDPS ACT',     canonicalCode: 'NDPS_ACT', matchPattern: /ndps|narcotic\s*drugs/i },
-  { code: 'GAMBLING_ACT', label: 'GAMBLING ACT', canonicalCode: 'GAMBLING_ACT', matchPattern: /gambling/i },
-  { code: 'POCSO_ACT',    label: 'POCSO ACT',    canonicalCode: 'POCSO', matchPattern: /pocso|protection\s*of\s*children/i },
-  { code: 'OTHER_ACT',    label: 'OTHER ACT',    canonicalCode: 'OTHER_ACT', isCatchAll: true },
+  { code: 'ARMS_ACT',        label: 'ARMS ACT',                  canonicalCode: 'ARMS_ACT', matchPattern: /arms\s*act/i },
+  { code: 'EXCISE_ACT',      label: 'EXCISE ACT',                canonicalCode: 'EXCISE_ACT', matchPattern: /excise/i },
+  { code: 'NDPS_ACT',        label: 'NDPS ACT',                  canonicalCode: 'NDPS_ACT', matchPattern: /ndps|narcotic\s*drugs/i },
+  { code: 'GAMBLING_ACT',    label: 'GAMBLING ACT',              canonicalCode: 'GAMBLING_ACT', matchPattern: /gambling/i },
+  { code: 'POCSO_ACT',       label: 'POCSO ACT',                 canonicalCode: 'POCSO', matchPattern: /pocso|protection\s*of\s*children/i },
+  { code: 'ORGANISED_CRIME', label: 'ORGANISED CRIME (BNS 111)', canonicalCode: 'ORGANISED_CRIME', matchPattern: /organi[sz]ed\s*crime/i },
+  { code: 'TERRORIST_ACT',   label: 'TERRORIST ACTS (BNS 113)',  canonicalCode: 'TERRORIST_ACT', matchPattern: /terrorist\s*act/i },
+  { code: 'OTHER_ACT',       label: 'OTHER ACT',                 canonicalCode: 'OTHER_ACT', isCatchAll: true },
 ];
 
 // All IPC + LSL rows in order (used for catch-all computation)

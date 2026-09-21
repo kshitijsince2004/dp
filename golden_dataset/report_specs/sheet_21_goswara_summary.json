@@ -1,0 +1,82 @@
+{
+  "sheet_id": "sheet_21_goswara_summary",
+  "title": "FIR Goswara Summary (Daily Diary Sheet 21)",
+  "row_grain": "single_jurisdiction_summary",
+  "jurisdiction_scope": "PS",
+  "time_period_type": "custom_range",
+  "date_column_convention": "COALESCE_REGISTRATION_FIR_RECORD",
+  "strip_row_5_annotation": true,
+  "rows": [
+    { "id": "ps_gulabi_bagh", "label": "PS Gulabi Bagh", "ps_id": "00a4e267-e8fa-4d76-9fb9-7718ed8605ce" },
+    { "id": "ps_cyber_crime", "label": "PS Cyber Crime", "ps_id": "ffb388dd-f5f3-4234-a1ef-e99aa5826e44" },
+    {
+      "id": "district_total",
+      "label": "District North-West Total",
+      "type": "jurisdiction_total",
+      "sum_row_ids": ["ps_gulabi_bagh", "ps_cyber_crime"]
+    }
+  ],
+  "columns": [
+    {
+      "id": "jurisdiction",
+      "header": "Police Station / District",
+      "source": "row_label"
+    },
+    {
+      "id": "manual_fir",
+      "header": "Total Manual CCTNS FIRs",
+      "source": "layer1_aggregation",
+      "metric": "channel_count",
+      "channel": "MANUAL_CCTNS"
+    },
+    {
+      "id": "theft_efir",
+      "header": "Theft E-FIRs",
+      "source": "layer1_aggregation",
+      "metric": "channel_count",
+      "channel": "E_THEFT"
+    },
+    {
+      "id": "house_theft_efir",
+      "header": "House Theft E-FIRs",
+      "source": "layer1_aggregation",
+      "metric": "channel_count",
+      "channel": "E_HOUSE_THEFT"
+    },
+    {
+      "id": "burglary_efir",
+      "header": "Burglary E-FIRs",
+      "source": "layer1_aggregation",
+      "metric": "channel_count",
+      "channel": "E_BURGLARY"
+    },
+    {
+      "id": "mvt_motor_vehicle_theft",
+      "header": "MVT (Motor Vehicle Theft) E-FIRs",
+      "source": "layer1_aggregation",
+      "metric": "channel_count",
+      "channel": "E_MVT"
+    },
+    {
+      "id": "ncrp_fir",
+      "header": "NCRP FIRs",
+      "source": "layer1_aggregation",
+      "metric": "channel_count",
+      "channel": "NCRP"
+    },
+    {
+      "id": "zero_fir",
+      "header": "Zero FIRs",
+      "source": "layer1_aggregation",
+      "metric": "channel_count",
+      "channel": "ZERO_FIR"
+    },
+    {
+      "id": "total",
+      "header": "Total FIRs",
+      "source": "layer2_formula",
+      "function": "sum_columns",
+      "inputs": ["manual_fir", "theft_efir", "house_theft_efir", "burglary_efir", "mvt_motor_vehicle_theft", "ncrp_fir", "zero_fir"]
+    }
+  ]
+}

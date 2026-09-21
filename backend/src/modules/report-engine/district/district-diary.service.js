@@ -1,4 +1,11 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import ExcelJS from 'exceljs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import db from '../../../config/db.js';
 import { resolveScope } from '../shared/scope.js';
 import { buildDateWindows } from '../shared/date-windows.js';
@@ -28,8 +35,9 @@ import { renderD9KalArrests } from './renderers/d9-kal-arrests.js';
 import { renderPcrCalls } from './renderers/pcr-calls.js';
 import { renderD10_66dp } from './renderers/d10-66dp.js';
 import { renderD13_66dp } from './renderers/d13-66dp.js';
+import { renderDistrictDiaryHtml, convertHtmlToPdf } from '../shared/report-html-renderer.js';
 
-export async function generateDistrictDiary(districtNodeId, cutoffDate, selectedSheets = []) {
+export async function generateDistrictDiary(districtNodeId, cutoffDate, selectedSheets = [], format = 'EXCEL') {
   const scope = await resolveScope(districtNodeId || 'DIST_NDD');
   const dates = buildDateWindows(cutoffDate);
   const psIds = scope.children_ids || [];
@@ -41,15 +49,14 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
     ? await db('records')
         .whereIn('ps_id', psIds)
         .where('record_type', 'CASE')
-        .whereRaw("COALESCE(registration_date, record_date) <= ?", [dates.cutoff])
-        .select(db.raw("MAX(COALESCE(registration_date, record_date)) as max_d"))
+        .where('record_date', '<=', dates.cutoff)
+        .max('record_date as max_d')
         .first()
     : null;
   const effectiveCutoff = effectiveCutoffRow?.max_d
     ? String(effectiveCutoffRow.max_d).slice(0, 10)
     : dates.cutoff;
 
-  // Fetch counts & detail records (parallel for performance)
   const [
     dayCaseCounts,
     dayY1Counts,
@@ -62,6 +69,7 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
     efirCounts,
     pcrCounts,
     subDivMap,
+    uptoLastDayY1Counts,
   ] = await Promise.all([
     fetchDistrictCaseCounts({ psIds, fromDate: effectiveCutoff, toDate: effectiveCutoff }),
     fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoffLY,  toDate: dates.cutoffLY }),
@@ -74,16 +82,28 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
     fetchDistrictCaseCounts({ psIds, fromDate: effectiveCutoff, toDate: effectiveCutoff, sourceSystems: ['E_THEFT', 'E_MVT', 'NCRP'] }),
     fetchDistrictPcrCallCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff }),
     fetchPsSubDivisionMap(psIds),
+    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.yesterdayLY || dates.cutoffLY }),
   ]);
 
-  const [accidentList, heinousList, fullFirList, firArrestsList, kalArrestsList, morningData] = await Promise.all([
+  const [accidentList, heinousList, fullFirList, firArrestsList, kalArrestsList] = await Promise.all([
     fetchAccidentCases({ psIds, cutoffDate: effectiveCutoff }),
     fetchHeinousBriefFacts({ psIds, cutoffDate: effectiveCutoff }),
     fetchFullFirListing({ psIds, cutoffDate: effectiveCutoff }),
     fetchArrestsByCaseType({ psIds, cutoffDate: effectiveCutoff, caseType: 'FIR' }),
     fetchArrestsByCaseType({ psIds, cutoffDate: effectiveCutoff, caseType: 'KALANDAR' }),
-    fetchMorningData(psIds, { ...dates, cutoff: effectiveCutoff }),
   ]);
+
+  const morningData = buildMorningData(psIds, {
+    dayY1: dayY1Counts,
+    dayY1Wo: dayY1WoCounts,
+    dayY: dayCaseCounts,
+    dayYWo: dayYWoCounts,
+    uptoY1: uptoY1Counts,
+    uptoY1Wo: uptoY1WoCounts,
+    uptoY: uptoYCounts,
+    uptoYWo: uptoYWoCounts,
+    uptoLastDayY1: uptoLastDayY1Counts,
+  });
 
   // Aggregate rows into a map keyed by canonical_code (district totals)
   function distSumByCode(rows) {
@@ -165,9 +185,14 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
     psDayByCode,
   };
 
+  const templatePath = path.resolve(__dirname, 'District diary.xlsx');
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'PHAROS Intelligence System';
-  workbook.created = new Date();
+  if (fs.existsSync(templatePath)) {
+    await workbook.xlsx.readFile(templatePath);
+  } else {
+    workbook.creator = 'PHAROS Intelligence System';
+    workbook.created = new Date();
+  }
 
   const sheetRenderers = [
     { key: 'A1', name: 'Rcell DD', fn: renderRcellDD },
@@ -201,42 +226,35 @@ export async function generateDistrictDiary(districtNodeId, cutoffDate, selected
     }
   });
 
+  if (String(format).toUpperCase() === 'PDF') {
+    const html = renderDistrictDiaryHtml(scope, calcData, selectedSheets);
+    return await convertHtmlToPdf(html);
+  }
+
   const buffer = await workbook.xlsx.writeBuffer();
   return buffer;
 }
 
-async function fetchMorningData(psIds, dates) {
+function buildMorningData(psIds, counts) {
   const MORNING_CODES = ['MV_THEFT', 'SNATCHING', 'BURGLARY', 'HOUSE_THEFT', 'OTHER_THEFT'];
 
   const find = (rows, psId, code) =>
-    Number(rows.find(r => r.ps_id === psId && r.canonical_code === code)?.cnt || 0);
-
-  const [dayY1, dayY1Wo, dayY, dayYWo, uptoY1, uptoY1Wo, uptoY, uptoYWo, uptoLastDayY1] = await Promise.all([
-    fetchDistrictCaseCounts({ psIds, fromDate: dates.yesterdayLY || dates.cutoffLY, toDate: dates.yesterdayLY || dates.cutoffLY }),
-    fetchDistrictCaseCounts({ psIds, fromDate: dates.yesterdayLY || dates.cutoffLY, toDate: dates.yesterdayLY || dates.cutoffLY, isWorkedOut: true }),
-    fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoff, toDate: dates.cutoff }),
-    fetchDistrictCaseCounts({ psIds, fromDate: dates.cutoff, toDate: dates.cutoff, isWorkedOut: true }),
-    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.cutoffLY }),
-    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.cutoffLY, isWorkedOut: true }),
-    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff }),
-    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1Curr, toDate: dates.cutoff, isWorkedOut: true }),
-    fetchDistrictCaseCounts({ psIds, fromDate: dates.jan1LY, toDate: dates.yesterdayLY || dates.cutoffLY })
-  ]);
+    Number((rows || []).find(r => r.ps_id === psId && r.canonical_code === code)?.cnt || 0);
 
   const morningData = {};
   MORNING_CODES.forEach(code => {
     morningData[code] = {};
     psIds.forEach(psId => {
       morningData[code][psId] = {
-        dayY1:        find(dayY1,        psId, code),
-        dayY1Wo:      find(dayY1Wo,      psId, code),
-        dayY:         find(dayY,         psId, code),
-        dayYWo:       find(dayYWo,       psId, code),
-        uptoY1:       find(uptoY1,       psId, code),
-        uptoY1Wo:     find(uptoY1Wo,     psId, code),
-        uptoY:        find(uptoY,        psId, code),
-        uptoYWo:      find(uptoYWo,      psId, code),
-        uptoLastDayY1:find(uptoLastDayY1,psId, code),
+        dayY1:        find(counts.dayY1,        psId, code),
+        dayY1Wo:      find(counts.dayY1Wo,      psId, code),
+        dayY:         find(counts.dayY,         psId, code),
+        dayYWo:       find(counts.dayYWo,       psId, code),
+        uptoY1:       find(counts.uptoY1,       psId, code),
+        uptoY1Wo:     find(counts.uptoY1Wo,     psId, code),
+        uptoY:        find(counts.uptoY,        psId, code),
+        uptoYWo:      find(counts.uptoYWo,      psId, code),
+        uptoLastDayY1:find(counts.uptoLastDayY1,psId, code),
       };
     });
   });

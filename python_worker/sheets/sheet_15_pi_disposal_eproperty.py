@@ -23,6 +23,6 @@ def map_row(r, idx):
         'fir_no': d.get('fir_no') or '',
         'date': fmt_date(d.get('fir_date') or r.get('record_date')),
         'us': d.get('sections') or '',
-        'rc': d.get('rc_no') or 'RC-1',
-        'challan_untrace_cancel': d.get('disposal_type') or 'Challan',
+        'rc': d.get('rc_no') or '',
+        'challan_untrace_cancel': d.get('disposal_type') or d.get('disposal_type_other') or d.get('disposal') or '',
     }

@@ -46,15 +46,12 @@ async function backfillOrphansForCase(caseRecord, fir) {
       .select('d.record_id', 'd.fir_date', 'r.created_by');
     log.debug('backfillOrphansForCase: found candidates', { recordId: caseRecord.id, targetType: type, firNo: fir.fir_no, candidateCount: candidates.length });
 
+    const caseYear = fir.fir_year || (fir.fir_date ? new Date(fir.fir_date).getFullYear() : null);
     for (const cand of candidates) {
-      // Same fir_year-disjunct leniency as the forward direction (mirrored): only require
-      // equality when BOTH sides carry a year. fir_details.fir_year is allocator-assigned
-      // and NULL on every row today (allocator not built — see Deferrals), so this is a
-      // no-op in practice until then, not dead code.
-      if (fir.fir_year != null && cand.fir_date) {
+      if (caseYear != null && cand.fir_date) {
         const candYear = new Date(cand.fir_date).getFullYear();
-        if (candYear !== fir.fir_year) {
-          log.debug('backfillOrphansForCase: skipped candidate — fir_year mismatch', { recordId: caseRecord.id, candidateRecordId: cand.record_id, firYear: fir.fir_year, candYear });
+        if (candYear !== caseYear) {
+          log.debug('backfillOrphansForCase: skipped candidate — year mismatch', { recordId: caseRecord.id, candidateRecordId: cand.record_id, caseYear, candYear });
           continue;
         }
       }
@@ -121,17 +118,19 @@ async function resolveAndLink(recordId) {
     return;
   }
 
-  // `fir_details.fir_year` is allocator-assigned (ARCHITECTURE.md §6.2 FIR number
-  // counter) — that allocator isn't built yet (deferred with the transfers module, per
-  // this integration's handoff), so fir_year is NULL on every CASE record right now.
-  // Resolving strictly on the full (ps_id, fir_year, fir_no) business key would never
-  // match anything until the allocator lands. Scope by (ps_id, fir_no) — the only two
-  // components actually populated today — and additionally require fir_year equality
-  // ONLY when the CASE side has one set (a future-proofing no-op today, real disambiguation
-  // once the allocator starts populating it).
-  let caseFir = db('fir_details').where({ ps_id: record.ps_id, fir_no: detail.fir_no });
-  const firYear = detail.fir_date ? new Date(detail.fir_date).getFullYear() : null;
-  if (firYear) caseFir = caseFir.andWhere((b) => b.whereNull('fir_year').orWhere('fir_year', firYear));
+  // Strict year scoping: match ps_id, fir_no, and require matching year derived from fir_date/record_date
+  let caseFir = db('fir_details as fd')
+    .join('records as r', 'r.id', 'fd.record_id')
+    .where({ 'r.ps_id': record.ps_id, 'fd.fir_no': detail.fir_no })
+    .select('fd.*');
+
+  const detailYear = detail.fir_date ? new Date(detail.fir_date).getFullYear() : null;
+  if (detailYear != null) {
+    caseFir = caseFir.andWhere((b) => {
+      b.where('fd.fir_year', detailYear)
+       .orWhere(db.raw("EXTRACT(YEAR FROM COALESCE(fd.fir_date, r.record_date)) = ?", [detailYear]));
+    });
+  }
   const match = await caseFir.first();
   if (!match) {
     log.debug('resolveAndLink: no CASE match yet', { recordId, recordType: record.record_type, firNo: detail.fir_no, psId: record.ps_id });

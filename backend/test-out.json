@@ -1,0 +1,1657 @@
+{
+  "q1a": [
+    {
+      "local_head_cd": 30,
+      "local_head": "Fatal Accident",
+      "crime_category": "NON_HEINOUS",
+      "canonical_code": "FATAL_ACCIDENT"
+    },
+    {
+      "local_head_cd": 31,
+      "local_head": "M.O. Women",
+      "crime_category": "NON_HEINOUS",
+      "canonical_code": "MO_WOMEN"
+    },
+    {
+      "local_head_cd": 32,
+      "local_head": "Flesh Trade",
+      "crime_category": "NON_HEINOUS",
+      "canonical_code": "FLESH_TRADE"
+    },
+    {
+      "local_head_cd": 33,
+      "local_head": "Culpable Homicide not Amounting to Murder",
+      "crime_category": "NON_HEINOUS",
+      "canonical_code": "CULPABLE_HOMICIDE_NOT_AMOUNTING_TO_MURDER"
+    },
+    {
+      "local_head_cd": 34,
+      "local_head": "Att. to Culpable Homicide not Amounting to Murder",
+      "crime_category": "NON_HEINOUS",
+      "canonical_code": "ATT_TO_CULPABLE_HOMICIDE_NOT_AMOUNTING_TO_MURDER"
+    },
+    {
+      "local_head_cd": 35,
+      "local_head": "Tresspass",
+      "crime_category": "NON_HEINOUS",
+      "canonical_code": "TRESSPASS"
+    },
+    {
+      "local_head_cd": 38,
+      "local_head": "Cheating",
+      "crime_category": "NON_HEINOUS",
+      "canonical_code": "CHEATING"
+    },
+    {
+      "local_head_cd": 39,
+      "local_head": "Forgery",
+      "crime_category": "NON_HEINOUS",
+      "canonical_code": "FORGERY"
+    },
+    {
+      "local_head_cd": 110,
+      "local_head": "Explosive Substances Act- 1908",
+      "crime_category": "OTHER",
+      "canonical_code": "EXPLOSIVE_SUBSTANCES_ACT_1908"
+    },
+    {
+      "local_head_cd": 111,
+      "local_head": "Child Labour Act-1986",
+      "crime_category": "OTHER",
+      "canonical_code": "CHILD_LABOUR_ACT_1986"
+    },
+    {
+      "local_head_cd": 112,
+      "local_head": "Foreigners Act-1946",
+      "crime_category": "OTHER",
+      "canonical_code": "FOREIGNERS_ACT_1946"
+    },
+    {
+      "local_head_cd": 113,
+      "local_head": "Dowry Prohibition Act-1961",
+      "crime_category": "OTHER",
+      "canonical_code": "DOWRY_PROHIBITION_ACT_1961"
+    },
+    {
+      "local_head_cd": 114,
+      "local_head": "Essential Commodities Act-1955",
+      "crime_category": "OTHER",
+      "canonical_code": "ESSENTIAL_COMMODITIES_ACT_1955"
+    },
+    {
+      "local_head_cd": 115,
+      "local_head": "Essential services maintenance Act-1981",
+      "crime_category": "OTHER",
+      "canonical_code": "ESSENTIAL_SERVICES_MAINTENANCE_ACT_1981"
+    }
+  ],
+  "q1a_cheating_heads": [
+    {
+      "local_head_cd": 38,
+      "local_head": "Cheating",
+      "crime_category": "NON_HEINOUS",
+      "canonical_code": "CHEATING"
+    },
+    {
+      "local_head_cd": 39,
+      "local_head": "Forgery",
+      "crime_category": "NON_HEINOUS",
+      "canonical_code": "FORGERY"
+    }
+  ],
+  "person_record_links_table": [],
+  "records_columns": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "record_type",
+      "data_type": "character varying",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "ps_id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "district_id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "sub_div_id",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "io_id",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "original_ps_id",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "current_status",
+      "data_type": "character varying",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "current_level",
+      "data_type": "character varying",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "record_date",
+      "data_type": "date",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "is_frozen",
+      "data_type": "boolean",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "is_legacy",
+      "data_type": "boolean",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "source_system",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "legacy_ref",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "imported_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "imported_by",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "updated_by",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "import_batch_id",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "registration_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "uid",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    }
+  ],
+  "persons_columns": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "record_id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "role",
+      "data_type": "character varying",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "name",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "relative_name",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "relation_type",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "gender",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "age",
+      "data_type": "smallint",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "dob",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "is_minor",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "nick_names",
+      "data_type": "jsonb",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "mobile",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "qualification",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "present_location_id",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "perm_location_id",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "perm_same_as_present",
+      "data_type": "boolean",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "relation_to_subject",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "sort_order",
+      "data_type": "integer",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "extra",
+      "data_type": "jsonb",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "social_category",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "education",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "financial_status",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "uid",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    }
+  ],
+  "fir_details_columns": [
+    {
+      "column_name": "record_id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "ps_id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "fir_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "fir_year",
+      "data_type": "smallint",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "original_fir_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "original_fir_year",
+      "data_type": "smallint",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "fir_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "gd_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "gd_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "gd_time",
+      "data_type": "time without time zone",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "case_type",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "source_reference",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "beat_id",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "is_important",
+      "data_type": "boolean",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "case_status",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "is_worked_out",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "worked_out_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "local_head_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "brief_facts",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "occurrence_location_id",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "occurrence_from_datetime",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "occurrence_to_datetime",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "info_received_at_ps",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "organised_crime",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "cd_uploaded_24h",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "footage_collected",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "rc_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "disposal_type",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "extra",
+      "data_type": "jsonb",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "transfer_to_type",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "transferred_to_ps_id",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "transferred_to_agency_id",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "date_of_transfer",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "registered_on_direction",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "direction_authority",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "cheating_amount",
+      "data_type": "numeric",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "modus_operandi",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "burglary_mo_cd",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "sent_to_court_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "court_case_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "court_name",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "court_disposal_type",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "court_disposal_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "supplementary_chargesheet_details",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "registration_type",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "fir_seq",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "fir_type_prefix",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "fir_ps_code",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "is_legacy_format",
+      "data_type": "boolean",
+      "is_nullable": "NO"
+    }
+  ],
+  "record_properties_columns": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "record_id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "person_id",
+      "data_type": "uuid",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "major_category_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "minor_category_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "details",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "uid",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "estimated_value",
+      "data_type": "numeric",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "automobile_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "fire_arm_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "arms_subtype_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "arms_made_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "jewelry_type_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "currency_type_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "document_type_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "drug_type_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "electric_good_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "explosive_type_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "cultural_property_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "phone_number",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "phone_make",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "phone_model",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "phone_imei",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "phone_color",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "vehicle_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "vehicle_make",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "vehicle_model",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "vehicle_color",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "vehicle_chassis_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "vehicle_engine_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "sort_order",
+      "data_type": "integer",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "extra",
+      "data_type": "jsonb",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "quantity",
+      "data_type": "numeric",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "unit_cd",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "recovery_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "recovery_agency",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    }
+  ],
+  "ref_property_tables": [
+    {
+      "table_schema": "ref",
+      "table_name": "property_categories"
+    },
+    {
+      "table_schema": "ref",
+      "table_name": "other_property_items"
+    },
+    {
+      "table_schema": "ref",
+      "table_name": "cultural_properties"
+    }
+  ],
+  "ref_property_categories_rows": [
+    {
+      "parent_cd": 4,
+      "parent_srno": 28,
+      "code_type": "ARMS AND AMMUNITION",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 8,
+      "parent_srno": 32,
+      "code_type": "COIN AND CURRENCY",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 9,
+      "parent_srno": 33,
+      "code_type": "AUTOMOBILES AND OTHERS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 10,
+      "parent_srno": 34,
+      "code_type": "CULTURAL PROPERTY",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 11,
+      "parent_srno": 35,
+      "code_type": "DOCUMENTS AND VALUABLE SECURITIES",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 12,
+      "parent_srno": 36,
+      "code_type": "DRUGS/NARCOTIC DRUGS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 13,
+      "parent_srno": 37,
+      "code_type": "ELECTRICAL AND ELECTRONIC GOODS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 14,
+      "parent_srno": 38,
+      "code_type": "EXPLOSIVES",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 17,
+      "parent_srno": 41,
+      "code_type": "JEWELLERY",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 0,
+      "parent_srno": 50,
+      "code_type": "OTHERS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 1,
+      "parent_srno": 25,
+      "code_type": "AGRICULTURE PRODUCTS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 2,
+      "parent_srno": 26,
+      "code_type": "ANIMALS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 3,
+      "parent_srno": 27,
+      "code_type": "ANIMALS - HIDE/SKIN/REMAINS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 5,
+      "parent_srno": 29,
+      "code_type": "BIRDS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 6,
+      "parent_srno": 30,
+      "code_type": "BUILDING AND BUILDING MATERIALS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 7,
+      "parent_srno": 31,
+      "code_type": "CHEMICALS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 15,
+      "parent_srno": 39,
+      "code_type": "FOREST PRODUCTS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 16,
+      "parent_srno": 40,
+      "code_type": "HOUSEHOLD ARTICLES",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 18,
+      "parent_srno": 42,
+      "code_type": "MACHINERY-INSTRUMENTS/ACCESSORIES",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 19,
+      "parent_srno": 43,
+      "code_type": "MARINE/RIVER PRODUCTS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    }
+  ],
+  "arrest_details_columns": [
+    {
+      "column_name": "record_id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "gd_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "gd_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "gd_time",
+      "data_type": "time without time zone",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "case_type",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "case_status",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "fir_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "fir_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "is_dd_based",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "local_head_id",
+      "data_type": "integer",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "beat_id",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "intimation_datetime",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "intimated_relative_name",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "intimated_relative_relation",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "intimation_mode",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "nafis_prepared",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "dossier_prepared",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "arresting_officer_name",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "arresting_officer_mobile",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "arresting_officer_rank",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "custody_status",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "other_status_reason",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "recovery",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "seizure_desc",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "scheme_of_arrest",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "integrated_pi",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "group_patrolling",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "cycle_patrolling",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "by_antisnatching_team",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "by_prahari",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "by_eyes_ears_scheme_members",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "extra",
+      "data_type": "jsonb",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "reason_for_detention",
+      "data_type": "text",
+      "is_nullable": "YES"
+    }
+  ],
+  "disposal_columns": [
+    {
+      "table_schema": "public",
+      "table_name": "fir_details",
+      "column_name": "court_disposal_date",
+      "data_type": "date"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fir_details",
+      "column_name": "court_disposal_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fir_details",
+      "column_name": "disposal_type",
+      "data_type": "character varying"
+    }
+  ],
+  "missing_details_columns": [
+    {
+      "column_name": "record_id",
+      "data_type": "uuid",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "gd_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "gd_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "missing_type",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "missing_status",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "operator_name",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "source",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "zipnet_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "case_registered",
+      "data_type": "boolean",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "fir_no",
+      "data_type": "character varying",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "fir_date",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "remarks",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "extra",
+      "data_type": "jsonb",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO"
+    }
+  ],
+  "major_heads_table_exists": [
+    {
+      "table_schema": "ref",
+      "table_name": "major_heads"
+    }
+  ],
+  "major_heads_columns": [
+    {
+      "column_name": "major_head_code",
+      "data_type": "integer"
+    },
+    {
+      "column_name": "major_head",
+      "data_type": "character varying"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    }
+  ],
+  "major_heads_first_60": [
+    {
+      "major_head_code": 1,
+      "major_head": "ABDUCTION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 2,
+      "major_head": "ADULTERATION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 3,
+      "major_head": "AFFRAY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 4,
+      "major_head": "ARSON",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 5,
+      "major_head": "ASSAULT",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 6,
+      "major_head": "ATTEMPT TO CULPABLE HOMICIDE NOT AMOUNTING TO MURDER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 7,
+      "major_head": "ATTEMPT TO MURDER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 8,
+      "major_head": "CHEATING",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 9,
+      "major_head": "COMMUNAL / RELIGION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 10,
+      "major_head": "CORRUPTION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 11,
+      "major_head": "COUNTERFEITING OF COINS, CURRENCY AND GOVT. STAMPS",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 12,
+      "major_head": "CRIMINAL BREACH OF TRUST",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 13,
+      "major_head": "CRIMINAL CONSPIRACY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 14,
+      "major_head": "CRIMINAL INTIMIDATION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 15,
+      "major_head": "CRIMINAL MISAPPROPRIATION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 16,
+      "major_head": "CRIMINAL TRESPASS",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 17,
+      "major_head": "CRUELTY BY HUSBAND OR HUSBAND S RELATIVE(S)",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 18,
+      "major_head": "CULPABLE HOMICIDE NOT AMOUNTING TO MURDER",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 19,
+      "major_head": "DACOITY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 20,
+      "major_head": "DEATHS-DOWRY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 21,
+      "major_head": "DEATHS-DUE TO RASHNESS/NEGLIGENCE",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 22,
+      "major_head": "DEATHS-MISCARRIAGE",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 23,
+      "major_head": "DEFENCE FORCES OFFENCES RELATING TO",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 25,
+      "major_head": "ESCAPE FROM LAWFUL CUSTODY AND RESISTANCE",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 26,
+      "major_head": "EXTORTION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 27,
+      "major_head": "FALSE EVIDENCE",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 28,
+      "major_head": "FORGERY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 29,
+      "major_head": "HARBOURING OFFENDERS",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 30,
+      "major_head": "HOUSE BREAKING/BURGLARY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 31,
+      "major_head": "HURT",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 32,
+      "major_head": "IMPERSONATION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 33,
+      "major_head": "KIDNAPPING AND ABDUCTION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 34,
+      "major_head": "MISCHIEF",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 35,
+      "major_head": "MOLESTATION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 36,
+      "major_head": "MURDER (HOMICIDE)",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 37,
+      "major_head": "POISONING-PROFESSIONAL",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 38,
+      "major_head": "PORNOGRAPHY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 39,
+      "major_head": "PUBLIC JUSTICE",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 40,
+      "major_head": "PUBLIC NUISANCE",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 41,
+      "major_head": "PUBLIC SAFETY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 42,
+      "major_head": "PUBLIC SERVANTS-OFFENCES AGAINST",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 43,
+      "major_head": "PUBLIC SERVANTS-OFFENCES BY (EXCEPT CORRUPTION)",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 44,
+      "major_head": "RAPE",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 45,
+      "major_head": "RASH AND NEGLIGENT ACT",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 46,
+      "major_head": "RECEIVING OF STOLEN PROPERTY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 47,
+      "major_head": "RIOTING (UNLAWFUL ASSEMBLY)",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 48,
+      "major_head": "ROBBERY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 49,
+      "major_head": "SEDITION",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 50,
+      "major_head": "SEXUAL HARASSMENT (EVE TEASING)",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 51,
+      "major_head": "STATE-OFFENCES AGAINST (Incl. Sabotage)",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 52,
+      "major_head": "SLAVERY",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 53,
+      "major_head": "SUICIDE",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 54,
+      "major_head": "THEFT",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 55,
+      "major_head": "THUGGEE",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 56,
+      "major_head": "UNNATURAL SEX",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 57,
+      "major_head": "WEIGHT AND MEASURE-FALSE",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 58,
+      "major_head": "WRONGFUL RESTRAINT/CONFINEMENT",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 59,
+      "major_head": "SECURITY FOR GOOD BEHAVIOUR",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 60,
+      "major_head": "ANTIQUES (CULTURAL PROPERTY)",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "major_head_code": 61,
+      "major_head": "ARMS",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    }
+  ]
+}

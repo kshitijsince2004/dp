@@ -1,7 +1,7 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 
 export function renderMorningDiary(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('Morning-Daily Diary');
+  let sheet = workbook.getWorksheet('Morning-Daily Diary') || workbook.getWorksheet('Morning-Daily Diary ') || workbook.addWorksheet('Morning-Daily Diary');
   const children = scope.children_ids || [];
   const displayNames = scope.display_names || {};
   const yearNum = calcData.yearNum || 2026;
@@ -21,7 +21,7 @@ export function renderMorningDiary(workbook, scope, calcData) {
     // Row 1: Section Banner
     const r1 = sheet.addRow([sec.name]);
     r1.height = 26;
-    sheet.mergeCells(`A${startRow}:N${startRow}`);
+    safeMerge(sheet, `A${startRow}:N${startRow}`);
     const secCell = sheet.getCell(`A${startRow}`);
     secCell.font = FONTS.HEADER;
     secCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.LIGHT_ORANGE } };
@@ -43,20 +43,20 @@ export function renderMorningDiary(workbook, scope, calcData) {
     r4.height = 22;
 
     // Perform Merges
-    sheet.mergeCells(`A${r2RowIdx}:A${r4RowIdx}`); // Police Station
-    sheet.mergeCells(`B${r2RowIdx}:E${r2RowIdx}`); // During Day
-    sheet.mergeCells(`F${r2RowIdx}:I${r2RowIdx}`); // UP to Date
-    sheet.mergeCells(`J${r2RowIdx}:J${r4RowIdx}`); // Not Work Out-24
-    sheet.mergeCells(`K${r2RowIdx}:L${r2RowIdx}`); // Solved %
-    sheet.mergeCells(`M${r2RowIdx}:N${r2RowIdx}`); // Upto Last Day
+    safeMerge(sheet, `A${r2RowIdx}:A${r4RowIdx}`); // Police Station
+    safeMerge(sheet, `B${r2RowIdx}:E${r2RowIdx}`); // During Day
+    safeMerge(sheet, `F${r2RowIdx}:I${r2RowIdx}`); // UP to Date
+    safeMerge(sheet, `J${r2RowIdx}:J${r4RowIdx}`); // Not Work Out-24
+    safeMerge(sheet, `K${r2RowIdx}:L${r2RowIdx}`); // Solved %
+    safeMerge(sheet, `M${r2RowIdx}:N${r2RowIdx}`); // Upto Last Day
 
-    sheet.mergeCells(`B${r3RowIdx}:C${r3RowIdx}`); // 2025 During Day
-    sheet.mergeCells(`D${r3RowIdx}:E${r3RowIdx}`); // 2026 During Day
-    sheet.mergeCells(`F${r3RowIdx}:G${r3RowIdx}`); // 2025 UP to Date
-    sheet.mergeCells(`H${r3RowIdx}:I${r3RowIdx}`); // 2026 UP to Date
-    sheet.mergeCells(`K${r3RowIdx}:K${r4RowIdx}`); // 2025 Solved %
-    sheet.mergeCells(`L${r3RowIdx}:L${r4RowIdx}`); // 2026 Solved %
-    sheet.mergeCells(`N${r3RowIdx}:N${r4RowIdx}`); // 2025 Upto Last Day Rep
+    safeMerge(sheet, `B${r3RowIdx}:C${r3RowIdx}`); // 2025 During Day
+    safeMerge(sheet, `D${r3RowIdx}:E${r3RowIdx}`); // 2026 During Day
+    safeMerge(sheet, `F${r3RowIdx}:G${r3RowIdx}`); // 2025 UP to Date
+    safeMerge(sheet, `H${r3RowIdx}:I${r3RowIdx}`); // 2026 UP to Date
+    safeMerge(sheet, `K${r3RowIdx}:K${r4RowIdx}`); // 2025 Solved %
+    safeMerge(sheet, `L${r3RowIdx}:L${r4RowIdx}`); // 2026 Solved %
+    safeMerge(sheet, `N${r3RowIdx}:N${r4RowIdx}`); // 2025 Upto Last Day Rep
 
     [r2, r3, r4].forEach(row => {
       row.eachCell(c => {

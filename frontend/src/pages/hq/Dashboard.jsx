@@ -126,8 +126,9 @@ export default function HQDashboard() {
     queryFn: async () => {
       log.debug('data:load_start', { what: 'activity_feed_records' });
       try {
-        const res = await api.get('/records?limit=200');
-        const rows = res.data?.data?.cases || res.data?.data || res.data || [];
+        const res = await api.get('/records', { params: { limit: 200 } });
+        const payload = res.data?.data;
+        const rows = payload?.cases || payload?.records || payload?.queue || (Array.isArray(payload) ? payload : (Array.isArray(res.data) ? res.data : []));
         log.debug('data:load_success', { what: 'activity_feed_records', count: Array.isArray(rows) ? rows.length : 0 });
         return Array.isArray(rows) ? rows : [];
       } catch (err) {

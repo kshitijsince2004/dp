@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   ResponsiveContainer,
@@ -16,6 +17,10 @@ import useAuthStore from "../../store/authStore.js";
 import StatCard from "../../components/ui/StatCard.jsx";
 import CrimeHeadMatrixTable from "../../components/common/CrimeHeadMatrixTable.jsx";
 import CaseStatusBarChart from "../../components/common/CaseStatusBarChart.jsx";
+import PropertyRecoveryCard from "../../components/analytics/PropertyRecoveryCard.jsx";
+import InvestigationDisposalCard from "../../components/analytics/InvestigationDisposalCard.jsx";
+import CommunitySafetyCard from "../../components/analytics/CommunitySafetyCard.jsx";
+import BeatPreventiveCard from "../../components/analytics/BeatPreventiveCard.jsx";
 import {
   FileText,
   ShieldCheck,
@@ -24,6 +29,8 @@ import {
   Fingerprint,
   User,
   Clock3,
+  ExternalLink,
+  ChevronRight,
 } from "lucide-react";
 
 const PERIODS = ["Day", "Week", "Month", "Year"];
@@ -57,7 +64,7 @@ const formatChange = (changePct, period) => {
 // Columns come from the API (/analytics/crime-head-matrix → data.columns).
 // Crime heads apply ONLY to FIR (CASE) and ARREST. UIDB, Kalandra, PCR, Missing excluded.
 // Fallback used only while data is loading.
-const MATRIX_COLUMNS_FALLBACK = ["FIR", "Arrest", "Worked Out"];
+const MATRIX_COLUMNS_FALLBACK = ["FIR", "Arrest", "Worked Out", "Clearance Rate"];
 
 const BREAKDOWN_CATEGORIES = [
   { key: "FIR", color: "#0EA5E9" },
@@ -83,45 +90,59 @@ function ArrestTrendTooltip({ active, payload, label, hoveredSeries }) {
     const kalandraArrests = breakdown.Kalandra ?? 0;
     const firArrests = Math.max(totalArrests - kalandraArrests, 0);
     return (
-      <div className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2.5 text-[10px] font-bold shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <div className="text-[#6B7280] mb-1.5">{label}</div>
+      <div className="rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-3 text-[11px] font-bold shadow-lg">
+        <div className="text-[#6B7280] mb-2 font-extrabold border-b border-slate-100 pb-1">{label} — Arrest Breakdown</div>
         <div className="flex items-center justify-between gap-4 text-[#0A1628] pb-1.5 mb-1.5 border-b border-slate-100">
           <span className="flex items-center gap-1.5"><Dot color="#10B981" />Total Arrests</span>
-          <span>{totalArrests.toLocaleString()}</span>
+          <span className="font-extrabold">{totalArrests.toLocaleString()}</span>
         </div>
-        <div className="flex items-center justify-between gap-4 text-slate-500 py-0.5">
-          <span className="flex items-center gap-1.5"><Dot color="#0EA5E9" />Arrest in FIR</span>
-          <span>{firArrests.toLocaleString()}</span>
+        <div className="flex items-center justify-between gap-4 text-slate-600 py-0.5">
+          <span className="flex items-center gap-1.5"><Dot color="#0EA5E9" />Arrests in Criminal Cases (FIR)</span>
+          <span className="tabular-nums">{firArrests.toLocaleString()}</span>
         </div>
-        <div className="flex items-center justify-between gap-4 text-slate-500 py-0.5">
-          <span className="flex items-center gap-1.5"><Dot color="#8B5CF6" />Arrest in Kalandra</span>
-          <span>{kalandraArrests.toLocaleString()}</span>
+        <div className="flex items-center justify-between gap-4 text-slate-600 py-0.5">
+          <span className="flex items-center gap-1.5"><Dot color="#8B5CF6" />Preventive Custody (Kalandra)</span>
+          <span className="tabular-nums">{kalandraArrests.toLocaleString()}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2.5 text-[10px] font-bold shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
-      <div className="text-[#6B7280] mb-1.5">{label}</div>
+    <div className="rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-3 text-[11px] font-bold shadow-lg">
+      <div className="text-[#6B7280] mb-2 font-extrabold border-b border-slate-100 pb-1">{label} — Workload & Incident Volume</div>
       <div className="flex items-center justify-between gap-4 text-[#0A1628] pb-1.5 mb-1.5 border-b border-slate-100">
-        <span className="flex items-center gap-1.5"><Dot color="#3B82F6" />Total (all case types)</span>
-        <span>{(point.total_value ?? 0).toLocaleString()}</span>
+        <span className="flex items-center gap-1.5"><Dot color="#3B82F6" />Total Volume</span>
+        <span className="font-extrabold">{(point.total_value ?? 0).toLocaleString()}</span>
       </div>
-      {BREAKDOWN_CATEGORIES.map((c) => (
-        <div key={c.key} className="flex items-center justify-between gap-4 text-slate-500 py-0.5">
-          <span className="flex items-center gap-1.5">
-            <Dot color={c.color} />
-            {c.key}
-          </span>
-          <span>{(breakdown[c.key] ?? 0).toLocaleString()}</span>
-        </div>
-      ))}
+      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 mt-1">Criminal & Preventive</div>
+      <div className="flex items-center justify-between gap-4 text-slate-600 py-0.5">
+        <span className="flex items-center gap-1.5"><Dot color="#0EA5E9" />FIR (Criminal Cases)</span>
+        <span className="tabular-nums">{(breakdown.FIR ?? 0).toLocaleString()}</span>
+      </div>
+      <div className="flex items-center justify-between gap-4 text-slate-600 py-0.5">
+        <span className="flex items-center gap-1.5"><Dot color="#8B5CF6" />Kalandra (Preventive Actions)</span>
+        <span className="tabular-nums">{(breakdown.Kalandra ?? 0).toLocaleString()}</span>
+      </div>
+      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 mt-1.5 border-t border-slate-100 pt-1">Citizen Services & Inquests</div>
+      <div className="flex items-center justify-between gap-4 text-slate-600 py-0.5">
+        <span className="flex items-center gap-1.5"><Dot color="#F59E0B" />PCR Emergency Calls</span>
+        <span className="tabular-nums">{(breakdown.PCR ?? 0).toLocaleString()}</span>
+      </div>
+      <div className="flex items-center justify-between gap-4 text-slate-600 py-0.5">
+        <span className="flex items-center gap-1.5"><Dot color="#EF4444" />Missing Persons Inquiries</span>
+        <span className="tabular-nums">{(breakdown.Missing ?? 0).toLocaleString()}</span>
+      </div>
+      <div className="flex items-center justify-between gap-4 text-slate-600 py-0.5">
+        <span className="flex items-center gap-1.5"><Dot color="#14B8A6" />UIDB Inquests</span>
+        <span className="tabular-nums">{(breakdown.UIDB ?? 0).toLocaleString()}</span>
+      </div>
     </div>
   );
 }
 
 export default function PSDashboard() {
+  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const currentLng = i18n.language || 'en';
   const { user } = useAuthStore();
@@ -132,6 +153,10 @@ export default function PSDashboard() {
   const [arrestTrendData, setArrestTrendData] = useState([]);
   const [crimeHeadMatrix, setCrimeHeadMatrix] = useState({ columns: [], rows: [] });
   const [caseStatusRows, setCaseStatusRows] = useState([]);
+  const [propertyRecoveryData, setPropertyRecoveryData] = useState({});
+  const [investigationData, setInvestigationData] = useState({});
+  const [communityData, setCommunityData] = useState({});
+  const [beatData, setBeatData] = useState({});
   const [hoveredSeries, setHoveredSeries] = useState(null);
   const arrestChartWrapRef = useRef(null);
 
@@ -142,77 +167,50 @@ export default function PSDashboard() {
 
   useEffect(() => {
     let cancelled = false;
+    const periodParam = activePeriod.toLowerCase();
     log.debug('data:load_start', { what: 'ps_dashboard_summary', period: activePeriod });
-    api
-      .get("/analytics/ps-dashboard-v2", { params: { period: activePeriod.toLowerCase() } })
-      .then((res) => {
+
+    setIsLoading(true);
+    Promise.all([
+      api.get("/analytics/ps-dashboard-v2", { params: { period: periodParam } }),
+      api.get("/analytics/arrest-trend-breakdown", { params: { period: periodParam } }),
+      api.get("/analytics/crime-head-matrix", { params: { period: periodParam } }),
+      api.get("/analytics/case-status-breakdown", { params: { period: periodParam } }),
+      api.get("/analytics/property-recovery", { params: { period: periodParam } }).catch(() => ({ data: { data: {} } })),
+      api.get("/analytics/investigation-disposal", { params: { period: periodParam } }).catch(() => ({ data: { data: {} } })),
+      api.get("/analytics/community-safety", { params: { period: periodParam } }).catch(() => ({ data: { data: {} } })),
+      api.get("/analytics/beat-preventive", { params: { period: periodParam } }).catch(() => ({ data: { data: {} } })),
+    ])
+      .then(([resSummary, resTrend, resMatrix, resStatus, resProp, resInv, resComm, resBeat]) => {
         if (cancelled) return;
-        const data = res.data?.data;
-        log.debug('data:load_success', { what: 'ps_dashboard_summary', period: activePeriod });
-        setSummary(data || null);
+        const sumData = resSummary.data?.data;
+        setSummary(sumData || null);
         setLeftOutAccused(
-          (data?.leftout_heinous_list || []).map((a) => ({
+          (sumData?.leftout_heinous_list || []).map((a) => ({
+            id: a.id,
+            record_id: a.record_id || a.case_id,
             name: a.name,
-            note: `Linked FIR No.-${a.fir_no || ""}`,
+            fir_no: a.fir_no,
+            age: a.age,
+            gender: a.gender,
+            note: a.fir_no ? `Linked FIR No.-${a.fir_no}` : "Heinous offense suspect",
           }))
         );
+        setArrestTrendData(resTrend.data?.data?.points || []);
+        setCrimeHeadMatrix(resMatrix.data?.data || { columns: [], rows: [] });
+        setCaseStatusRows(resStatus.data?.data?.rows || []);
+        setPropertyRecoveryData(resProp.data?.data || {});
+        setInvestigationData(resInv.data?.data || {});
+        setCommunityData(resComm.data?.data || {});
+        setBeatData(resBeat.data?.data || {});
       })
       .catch((err) => {
         if (cancelled) return;
-        log.error('data:load_error', { what: 'ps_dashboard_summary', period: activePeriod, err });
-        setSummary(null);
-        setLeftOutAccused([]);
+        log.error('data:load_error', { what: 'dashboard_data', err });
       })
       .finally(() => {
         if (cancelled) return;
         setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [activePeriod]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const periodParam = activePeriod.toLowerCase();
-
-    log.debug('data:load_start', { what: 'arrest_trend_breakdown', period: periodParam });
-    api
-      .get("/analytics/arrest-trend-breakdown", { params: { period: periodParam } })
-      .then((res) => {
-        if (cancelled) return;
-        log.debug('data:load_success', { what: 'arrest_trend_breakdown' });
-        setArrestTrendData(res.data?.data?.points || []);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        log.error('data:load_error', { what: 'arrest_trend_breakdown', err });
-        setArrestTrendData([]);
-      });
-
-    log.debug('data:load_start', { what: 'crime_head_matrix', period: periodParam });
-    api
-      .get("/analytics/crime-head-matrix", { params: { period: periodParam } })
-      .then((res) => {
-        if (cancelled) return;
-        log.debug('data:load_success', { what: 'crime_head_matrix' });
-        setCrimeHeadMatrix(res.data?.data || { columns: [], rows: [] });
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        log.error('data:load_error', { what: 'crime_head_matrix', err });
-        setCrimeHeadMatrix({ columns: [], rows: [] });
-      });
-
-    api
-      .get("/analytics/case-status-breakdown", { params: { period: periodParam } })
-      .then((res) => {
-        if (cancelled) return;
-        setCaseStatusRows(res.data?.data?.rows || []);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setCaseStatusRows([]);
       });
 
     return () => {
@@ -222,17 +220,6 @@ export default function PSDashboard() {
 
   const currentPeriod = activePeriod.toLowerCase();
   const statCards = STAT_CARD_META.map((meta) => {
-    if (meta.deferred) {
-      return {
-        label: meta.label,
-        value: "—",
-        change: "Not yet available",
-        icon: meta.icon,
-        isUp: null,
-        ...ACCENT_STYLES.muted,
-      };
-    }
-
     const data = summary?.[meta.key] || {};
     const count = data.count ?? 0;
     const changePct = data.change_pct ?? 0;
@@ -335,7 +322,7 @@ export default function PSDashboard() {
       {/* Main Content Container */}
       <div className="w-full max-w-[1920px] mx-auto px-6 sm:px-10 lg:px-12 py-6 space-y-6">
 
-        {/* Key metrics strip — pulled out of the hero so 8 cards have room to breathe */}
+        {/* Key metrics strip */}
         <div>
           <div className="text-label font-semibold text-[#0A1628] mb-3">Key Metrics</div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -354,24 +341,25 @@ export default function PSDashboard() {
         </div>
 
         {/* Arrest chart + Left Out Accused panel */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
           <div className="bg-white rounded-card p-4 border border-slate-200">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <div className="text-label font-semibold text-[#0A1628]">Arrest &amp; Case Volume Trend</div>
+                <div className="text-xs text-slate-400 font-medium">Temporal distribution of criminal enforcement &amp; citizen services</div>
               </div>
               <div className="flex items-center gap-3 text-meta font-semibold text-slate-500">
                 <span className="flex items-center gap-1.5">
                   <Dot color="#10B981" />
-                  Arrest
+                  Arrests (FIR &amp; Kalandra)
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Dot color="#3B82F6" />
-                  Total (all case types)
+                  Total Workload Volume
                 </span>
               </div>
             </div>
-            <div ref={arrestChartWrapRef} className="mt-2 h-[200px] w-full">
+            <div ref={arrestChartWrapRef} className="mt-2 h-[220px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={arrestTrendData}
@@ -429,20 +417,56 @@ export default function PSDashboard() {
 
           <div className="bg-white rounded-card p-4 border border-slate-200 flex flex-col justify-between">
             <div>
-              <div className="text-label font-semibold text-[#0A1628]">
-                Left Out Accused
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-label font-semibold text-[#0A1628]">
+                    Left Out Accused
+                  </div>
+                  <div className="text-meta font-semibold text-slate-400 mt-0.5">(Heinous cases only)</div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
+                  {leftOutAccused.length} Pending
+                </span>
               </div>
-              <div className="text-meta font-semibold text-slate-400 mt-0.5">(Heinous cases only)</div>
-              <div className="mt-4 space-y-3.5">
+              <div className="mt-4 space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
                 {leftOutAccused.length === 0 && (
-                  <div className="text-meta text-slate-400 font-semibold">No left out accused in heinous cases.</div>
+                  <div className="text-meta text-slate-400 font-semibold py-4 text-center">No left out accused in heinous cases.</div>
                 )}
                 {leftOutAccused.map((accused) => (
-                  <div key={accused.name} className="border-b border-slate-100 pb-2.5 last:border-0 last:pb-0">
-                    <div className="text-body font-bold text-slate-800">
-                      {accused.name}
+                  <div
+                    key={accused.id || accused.name}
+                    onClick={() => {
+                      if (accused.record_id) {
+                        log.debug('navigation:left_out_case', { record_id: accused.record_id, fir_no: accused.fir_no });
+                        navigate(`/records/${accused.record_id}`);
+                      }
+                    }}
+                    className={`border border-slate-100 p-2.5 rounded-lg transition-all ${
+                      accused.record_id
+                        ? "cursor-pointer hover:bg-amber-50/80 hover:border-amber-300 shadow-2xs hover:shadow-xs"
+                        : "bg-slate-50/60"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        <UserX className="w-3.5 h-3.5 text-rose-500" />
+                        <span>{accused.name}</span>
+                      </div>
+                      {accused.fir_no && (
+                        <span className="text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 flex items-center gap-1">
+                          <span>FIR {accused.fir_no}</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </span>
+                      )}
                     </div>
-                    <div className="mt-1 text-meta text-slate-400 font-semibold leading-relaxed">{accused.note}</div>
+                    <div className="mt-1 text-[11px] text-slate-500 font-medium flex items-center justify-between">
+                      <span>{accused.note}</span>
+                      {accused.record_id && (
+                        <span className="text-[10px] text-blue-600 font-bold hover:underline flex items-center">
+                          View Case <ChevronRight className="w-3 h-3" />
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -450,11 +474,27 @@ export default function PSDashboard() {
           </div>
         </div>
 
+        {/* Specialized Operational Cards Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <PropertyRecoveryCard data={propertyRecoveryData} />
+          <InvestigationDisposalCard data={investigationData} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <CommunitySafetyCard data={communityData} />
+          <BeatPreventiveCard data={beatData} />
+        </div>
+
         {/* Crime-head matrix + Case Status chart */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.6fr_1fr]">
           <div className="bg-white rounded-card p-4 border border-slate-200">
-            <div className="text-label font-semibold text-[#0A1628]">Crime Head Breakdown</div>
-            <div className="mt-3">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="text-label font-semibold text-[#0A1628]">Crime Head Breakdown &amp; Clearance Rate</div>
+                <div className="text-xs text-slate-400">Reported FIRs, Arrests &amp; Workout efficiency per crime head</div>
+              </div>
+            </div>
+            <div className="mt-2">
               <CrimeHeadMatrixTable
                 rows={crimeHeadMatrix.rows}
                 columns={crimeHeadMatrix.columns?.length ? crimeHeadMatrix.columns : MATRIX_COLUMNS_FALLBACK}
@@ -463,7 +503,8 @@ export default function PSDashboard() {
           </div>
 
           <div className="bg-white rounded-card p-4 border border-slate-200">
-            <div className="text-label font-semibold text-[#0A1628]">Case Status</div>
+            <div className="text-label font-semibold text-[#0A1628]">Case Status Distribution</div>
+            <div className="text-xs text-slate-400 mb-2">Active investigations vs Final reports filed</div>
             <div className="mt-2">
               <CaseStatusBarChart data={caseStatusRows} />
             </div>

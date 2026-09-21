@@ -1,37 +1,31 @@
-from formatters import format_person, _arrested_parent
+from formatters import (
+    format_arrestee_person,
+    format_compiled_address,
+    format_custody_status,
+    format_recovery,
+    format_io,
+    _arrested_parent,
+)
 
 NUM = 7
 TABLE_NAME = 'excel_7arrested_east_district'
 LABEL = 'Arrested - District'
-# 10 columns — matches the "Arrested - District" sheet in the reference template
-# (Daily_Diary_16Jul2026_AllStations.xlsx, row 4). The previous 15-column list
-# left five unlabeled columns spilling past the template header.
-COLUMNS = ['sn', 'fir_no', 'us', 'accused_details', 'name_of_io', 'pcjcbail',
-           'prev_involvement_no_of_cases', 'recovery', 'whether_accused_is_bc_or_not', 'arrest_scheme']
+COLUMNS = [
+    'sn', 'fir_no', 'us', 'accused_details', 'name_of_io', 'pcjcbail',
+    'prev_involvement_no_of_cases', 'recovery', 'whether_accused_is_bc_or_not', 'arrest_scheme'
+]
 COLUMN_LABELS = {
     'sn': 'S.N.',
-    'us': 'U/S (Act + Section)',
-    'accused_details': 'Accused (Name / Age / S/O / R/O Address)',
-    'name_of_io': 'Name of IO (Rank / Name / PIS No.)',
-    'pcjcbail': 'Status of Arrested Person',
+    'fir_no': 'FIR No.',
+    'us': 'U/S(Act+section)',
+    'accused_details': 'Accused (Name / Age / S/O / Address)',
+    'name_of_io': 'Name of IO',
+    'pcjcbail': 'custody status (unique for every person arrested in a case/record)',
     'prev_involvement_no_of_cases': 'Prev. Involvement (Y/N)',
-    'recovery': 'Recovery (Property Recovered from Accused)',
-    'whether_accused_is_bc_or_not': 'Accused BC (Y/N)',
-    'arrest_scheme': 'Arrest Scheme',
+    'recovery': 'Details of the propert Recovered from arrested person',
+    'whether_accused_is_bc_or_not': 'Accused BC(Y/N)',
+    'arrest_scheme': 'Arrest Scheme(Integrated PI, group patrolling, cycle patrolling, anti-snatching team, PRAHARI, Eyes&Ears Member)',
 }
-
-_SCHEME_FIELDS = [
-    ('integrated_pi', 'Integrated PI'),
-    ('group_patrolling', 'Group Patrolling'),
-    ('cycle_patrolling', 'Cycle Patrolling'),
-    ('by_antisnatching_team', 'Anti-Snatching Team'),
-    ('by_prahari', 'Prahari'),
-    ('by_eyes_ears_scheme_members', 'Eyes & Ears Member'),
-]
-
-
-def _yes(v):
-    return str(v).strip().lower() in ('yes', 'y', 'true', '1')
 
 
 def filter_records(classified):
@@ -40,20 +34,26 @@ def filter_records(classified):
 
 def map_row(r, idx):
     d = r['data']
-    schemes = [label for key, label in _SCHEME_FIELDS if _yes(d.get(key))]
+    scheme = d.get('scheme_of_arrest') or d.get('arrest_scheme') or d.get('scheme_of_arrest_other') or ''
+
+    pi_val = 'Y' if bool(d.get('prev_involvement') or d.get('prev_involvement_no_of_cases') or d.get('previous_involvement') or d.get('pi_flag')) else 'N'
+    bc_val = 'Y' if bool(d.get('bad_character') or d.get('whether_accused_is_bc_or_not') or d.get('bc_flag') or d.get('is_bc')) else 'N'
+
     return {
         'sn': idx + 1,
         'fir_no': d.get('linked_fir_dd_no') or d.get('fir_no') or '',
         'us': d.get('sections') or '',
-        'accused_details': format_person(
-            d.get('arrested_name'), d.get('age'),
+        'accused_details': format_arrestee_person(
+            d.get('arrested_name'),
+            d.get('age'),
             _arrested_parent(d),
-            d.get('arrested_address'), d,
+            format_compiled_address(d.get('arrested_address') or d),
+            d,
         ),
-        'name_of_io': d.get('io_name') or d.get('arresting_officer_name') or '',
-        'pcjcbail': d.get('status') or '',
-        'prev_involvement_no_of_cases': d.get('prev_involvement') or '0',
-        'recovery': d.get('recovery') or 'No',
-        'whether_accused_is_bc_or_not': d.get('bad_character') or 'No',
-        'arrest_scheme': ', '.join(schemes) if schemes else '—',
+        'name_of_io': format_io(d.get('io_name') or d.get('arresting_officer_name'), d.get('io_rank'), d.get('io_pis')),
+        'pcjcbail': format_custody_status(d.get('status') or d.get('custody_status')),
+        'prev_involvement_no_of_cases': pi_val,
+        'recovery': format_recovery(d.get('recovery') or d.get('recovered_property') or d.get('stolen_properties')) or '',
+        'whether_accused_is_bc_or_not': bc_val,
+        'arrest_scheme': scheme,
     }

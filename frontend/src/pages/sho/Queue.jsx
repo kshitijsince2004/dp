@@ -317,29 +317,48 @@ export default function Queue() {
           })}
         </div>
 
-        {/* Bulk Action Strip */}
+        {/* Fixed Floating Bulk Action Bar */}
         {selectedIds.length > 0 && (
-          <div className="mt-4 theme-card bg-white rounded-card border border-[var(--border-card-theme)] p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-[var(--text-main-theme)]">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500 text-xs font-bold text-white">
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white backdrop-blur-xl border border-slate-700/80 px-6 py-4 rounded-2xl shadow-2xl flex flex-wrap items-center justify-between gap-4 min-w-[340px] max-w-[90vw] animate-in fade-in slide-in-from-bottom-5 duration-300">
+            <div className="flex items-center gap-3">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-xs font-black text-slate-950 shadow-md">
                 {selectedIds.length}
               </span>
-              <span>{selectedIds.length} record{selectedIds.length > 1 ? 's' : ''} selected</span>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-slate-100 uppercase tracking-wider">
+                  {selectedIds.length} record{selectedIds.length > 1 ? 's' : ''} selected
+                </span>
+                <span className="text-xs text-slate-400 font-medium">
+                  Batch review &amp; escalation for station queue
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-3 ml-auto">
               <button
-                onClick={handleBulkReject}
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="px-3 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-700 cursor-pointer"
+              >
+                Deselect All
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBulkDecline}
                 disabled={bulkLoading}
-                className="bg-red-55/10 hover:bg-red-500 text-red-650 hover:text-white border border-red-200 hover:border-red-500 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer disabled:opacity-50"
+                className="bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 hover:border-rose-600 px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
               >
                 Send Back for Correction
               </button>
+
               <button
+                type="button"
                 onClick={handleBulkApprove}
                 disabled={bulkLoading}
-                className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer border-none shadow-sm hover:shadow-md disabled:opacity-50"
+                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2 cursor-pointer disabled:bg-slate-700 disabled:text-slate-500 border-none"
               >
-                Approve &amp; Forward to ACP
+                Approve &amp; Forward to District
               </button>
             </div>
           </div>

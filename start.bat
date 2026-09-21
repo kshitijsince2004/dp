@@ -7,8 +7,15 @@ echo     PHAROS Application Startup Script
 echo ===================================================
 echo.
 
-:: ── Step 0: Skip port cleanup to prevent hijacking ─────────────────────────
-echo [0/6] Application port locks cleanup skipped...
+:: ── Step 0: Clean stale node processes on app ports ────────────────────────
+echo [0/6] Cleaning stale port locks (3000, 5173)...
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING') do (
+    taskkill /F /PID %%a >nul 2>&1
+)
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :5173 ^| findstr LISTENING') do (
+    taskkill /F /PID %%a >nul 2>&1
+)
+echo  [OK] Port locks cleared.
 echo.
 
 :: ── Step 1: Ensure Docker daemon is reachable ──────────────────────────────
@@ -122,12 +129,12 @@ echo.
 
 echo [6/6] Launching PHAROS Backend API...
 start "PHAROS Backend" cmd /k "cd /d %~dp0backend && npm run dev"
-echo  [OK] Backend launched on http://localhost:5000
+echo  [OK] Backend launched on http://localhost:3000
 echo.
 
 echo ===================================================
 echo  PHAROS is up and running!
-echo  Backend API: http://localhost:5000
+echo  Backend API: http://localhost:3000
 echo  Frontend UI: http://localhost:5173
 echo ===================================================
 ping 127.0.0.1 -n 6 >nul

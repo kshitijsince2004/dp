@@ -433,10 +433,11 @@ export const downloadImportTemplate = async (req, res) => {
       log.debug('downloadImportTemplate: building generic single-sheet template (fully registry-driven)', { recordType, lang });
       let fields = allFields.filter(f => {
         try {
-          const types = typeof f.applicable_record_types === 'string'
-            ? JSON.parse(f.applicable_record_types)
-            : f.applicable_record_types;
-          return Array.isArray(types) && types.map(t => t.toUpperCase()).includes(recordType);
+          const rawTypes = f.record_types || f.applicable_record_types || [];
+          const types = typeof rawTypes === 'string'
+            ? JSON.parse(rawTypes)
+            : rawTypes;
+          return Array.isArray(types) && types.map(t => String(t).toUpperCase()).includes(recordType);
         } catch (e) {
           return false;
         }
@@ -521,20 +522,19 @@ export const validateImportBatch = async (req, res) => {
   // trusted — P5.4). DISTRICT_OFFICER: always legacy, exactly one target PS, and that PS MUST
   // resolve to the caller's own district — the actual district-membership enforcement the
   // plan flagged as missing pre-Integration-3.
-  let targetPsId;
-  if (req.user.role === 'HC') {
+  if (req.user.role === 'HC' || req.user.role === 'SHO' || req.user.role === 'PS') {
     if (isLegacy) {
-      log.warn('validateImportBatch: rejected — HC cannot import legacy data', { userId: req.user.id });
+      log.warn('validateImportBatch: rejected — station role cannot import legacy data', { userId: req.user.id });
       try { fs.unlinkSync(req.file.path); } catch (_) {}
-      return res.status(403).json({ success: false, message: 'Operators (HC) cannot import legacy data' });
+      return res.status(403).json({ success: false, message: 'Station officers cannot import legacy data' });
     }
     if (ps_id && ps_id !== req.user.ps_id) {
-      log.warn('validateImportBatch: rejected — HC targeting a different PS than their own', { userId: req.user.id, ownPsId: req.user.ps_id, requestedPsId: ps_id });
+      log.warn('validateImportBatch: rejected — station officer targeting a different PS than their own', { userId: req.user.id, ownPsId: req.user.ps_id, requestedPsId: ps_id });
       try { fs.unlinkSync(req.file.path); } catch (_) {}
-      return res.status(403).json({ success: false, message: 'Operators are restricted to importing for their assigned Station only' });
+      return res.status(403).json({ success: false, message: 'Station officers are restricted to importing for their assigned Station only' });
     }
     targetPsId = req.user.ps_id;
-    log.debug('validateImportBatch: role branch — HC, own PS', { userId: req.user.id, targetPsId });
+    log.debug('validateImportBatch: role branch — station officer, own PS', { userId: req.user.id, targetPsId });
   } else if (req.user.role === 'DISTRICT_OFFICER') {
     if (!isLegacy) {
       log.warn('validateImportBatch: rejected — DISTRICT_OFFICER may only import legacy data', { userId: req.user.id });

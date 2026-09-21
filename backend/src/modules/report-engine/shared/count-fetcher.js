@@ -15,7 +15,7 @@ export async function fetchDistrictCaseCounts({ psIds, fromDate, toDate, sourceS
     .leftJoin('ref.local_heads as lh', 'lh.local_head_cd', 'fd.local_head_id')
     .where('r.record_type', 'CASE')
     .whereIn('r.ps_id', validPsIds)
-    .whereRaw('COALESCE(r.registration_date, r.record_date) BETWEEN ? AND ?', [fromDate, toDate]);
+    .whereBetween('r.record_date', [fromDate, toDate]);
 
   if (sourceSystems && sourceSystems.length > 0) {
     query = query.whereIn('r.source_system', sourceSystems);
@@ -43,7 +43,7 @@ export async function fetchDistrictArrestCounts({ psIds, fromDate, toDate, caseT
     .join('arrest_details as ad', 'ad.record_id', 'r.id')
     .where('r.record_type', 'ARREST')
     .whereIn('r.ps_id', validPsIds)
-    .whereRaw('COALESCE(r.registration_date, r.record_date) BETWEEN ? AND ?', [fromDate, toDate]);
+    .whereBetween('r.record_date', [fromDate, toDate]);
 
   if (caseType) {
     query = query.where('ad.case_type', caseType);
@@ -61,7 +61,7 @@ export async function fetchDistrictPcrCallCounts({ psIds, fromDate, toDate }) {
   return await db('records as r')
     .where('r.record_type', 'PCR_CALL')
     .whereIn('r.ps_id', validPsIds)
-    .whereRaw('COALESCE(r.registration_date, r.record_date) BETWEEN ? AND ?', [fromDate, toDate])
+    .whereBetween('r.record_date', [fromDate, toDate])
     .select('r.ps_id', db.raw('COUNT(*)::int as cnt'))
     .groupBy('r.ps_id');
 }

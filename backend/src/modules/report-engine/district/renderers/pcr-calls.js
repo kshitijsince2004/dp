@@ -1,13 +1,13 @@
-﻿import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 
 export function renderPcrCalls(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('Upto PCR calls 25-26');
+  let sheet = workbook.getWorksheet('Upto PCR calls 25-26') || workbook.addWorksheet('Upto PCR calls 25-26');
   const districtName = (scope.self_name || 'DISTRICT').toUpperCase();
   const children = scope.children_ids || [];
   const displayNames = scope.display_names || {};
   const yearNum = calcData.yearNum || 2026;
 
-  sheet.mergeCells('A1:G1');
+  safeMerge(sheet, 'A1:G1');
   const t1 = sheet.getCell('A1');
   t1.value = `COMPARATIVE PCR CALL STATEMENT OF ${districtName} DISTRICT UPTO DATE (${yearNum - 1} & ${yearNum})`;
   t1.font = FONTS.TITLE;

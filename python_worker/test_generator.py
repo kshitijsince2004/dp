@@ -38,24 +38,33 @@ def setup_mock_data():
     file_path_predefined = os.path.abspath("./test_generated_predefined.xlsx")
 
     with engine.begin() as conn:
+        u_res = conn.execute(text("SELECT id FROM users LIMIT 1")).fetchone()
+        user_id = str(u_res[0]) if u_res else 'bf5af8de-2e04-40ed-928e-6a0b02916fc2'
+
         conn.execute(text("""
             INSERT INTO report_jobs (id, template_id, custom_definition, filters, format, status, file_path, created_by, created_at, updated_at)
-            VALUES (:id, NULL, :def, :filters, 'EXCEL', 'PENDING', :file_path, 'bf5af8de-2e04-40ed-928e-6a0b02916fc2', :now, :now)
+            VALUES (:id, NULL, :def, :filters, 'EXCEL', 'PENDING', :file_path, :created_by, :now, :now)
         """), {
             'id': job_id_custom,
             'def': json.dumps(custom_definition),
             'filters': json.dumps(filters),
             'file_path': file_path_custom,
+            'created_by': user_id,
             'now': datetime.now().isoformat()
         })
 
+        t_res = conn.execute(text("SELECT id FROM report_templates LIMIT 1")).fetchone()
+        tmpl_uuid = str(t_res[0]) if t_res else None
+
         conn.execute(text("""
             INSERT INTO report_jobs (id, template_id, custom_definition, filters, format, status, file_path, created_by, created_at, updated_at)
-            VALUES (:id, '7b26c164-5379-416a-8605-9a1656caf0ae', NULL, :filters, 'EXCEL', 'PENDING', :file_path, 'bf5af8de-2e04-40ed-928e-6a0b02916fc2', :now, :now)
+            VALUES (:id, :tmpl_id, NULL, :filters, 'EXCEL', 'PENDING', :file_path, :created_by, :now, :now)
         """), {
             'id': job_id_predefined,
+            'tmpl_id': tmpl_uuid,
             'filters': json.dumps(filters),
             'file_path': file_path_predefined,
+            'created_by': user_id,
             'now': datetime.now().isoformat()
         })
 

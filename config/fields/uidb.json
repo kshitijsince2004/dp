@@ -1306,5 +1306,51 @@
   "readonly": false,
   "is_active": true,
   "scope_level": "global"
+ },
+ {
+  "field_key": "inquest_status",
+  "record_types": [
+   "UIDB"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Inquest Status",
+   "hi": "जांच स्थिति (Inquest Status)"
+  },
+  "section": "inquest_details",
+  "storage": {
+   "entity": "uidb_details",
+   "column": "inquest_status",
+   "table": "uidb_details"
+  },
+  "options": [
+   {
+    "value": "Disposal",
+    "label_en": "Disposal",
+    "label_hi": "निपटान (Disposal)"
+   },
+   {
+    "value": "Closure",
+    "label_en": "Closure",
+    "label_hi": "समाप्ति (Closure)"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 71.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
  }
 ]

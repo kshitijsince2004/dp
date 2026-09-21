@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/records-preview', authMiddleware, enforceScope, dailyDiaryController.getPreview);
 
 // Export/compile Excel workbook
-router.get('/export', authMiddleware, enforceScope, dailyDiaryController.exportExcel);
+router.get('/export', authMiddleware, enforceScope, dailyDiaryController.exportDailyDiary);
 
 // Section 7 Option A: Get all reports data
 router.get('/data', authMiddleware, enforceScope, dailyDiaryController.getDataAll);

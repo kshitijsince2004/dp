@@ -1,5 +1,14 @@
 from classifiers import is_electronic_case
-from formatters import format_person, format_person_no_age, format_occurrence, format_io, _complainant_parent, _arrested_parent
+from formatters import (
+    format_person_no_age,
+    format_arrestee_person,
+    format_occurrence,
+    format_compiled_address,
+    format_io,
+    format_multi_items,
+    _complainant_parent,
+    _arrested_parent,
+)
 
 NUM = 1
 TABLE_NAME = 'excel_1manual_fir'
@@ -18,7 +27,6 @@ MANUAL_FIR_COLUMNS = [
 ]
 
 COLUMNS = [key for key, _ in MANUAL_FIR_COLUMNS]
-
 COLUMN_LABELS = {key: label for key, label in MANUAL_FIR_COLUMNS}
 
 
@@ -29,7 +37,6 @@ def filter_records(classified):
 def map_row(r, idx):
     d = r['data']
 
-    # Occurrence: combine date + time; support from-to range if end fields are present.
     occ_datetime = format_occurrence(
         r.get('record_date') or d.get('gd_date') or d.get('fir_date') or d.get('occurrence_date'),
         d.get('gd_time') or d.get('time_of_occurrence') or d.get('occurrence_time'),
@@ -41,6 +48,32 @@ def map_row(r, idx):
     sec = d.get('sections') or d.get('under_section') or ''
     us_str = f"{act} u/s {sec}".strip() if act and sec else (sec or act or '')
 
+    # Arrested persons (support multiple arrestees formatted per Part 3 strategy)
+    arrestees_raw = d.get('arrestees') or d.get('arrested_persons') or []
+    if isinstance(arrestees_raw, list) and len(arrestees_raw) > 0:
+        formatted_list = []
+        for arr in arrestees_raw:
+            if isinstance(arr, dict):
+                formatted_list.append(format_arrestee_person(
+                    arr.get('name') or arr.get('arrested_name'),
+                    arr.get('age'),
+                    _arrested_parent(arr),
+                    format_compiled_address(arr.get('address') or arr),
+                    arr
+                ))
+            elif isinstance(arr, str) and arr.strip():
+                formatted_list.append(arr.strip())
+        arrested_str = format_multi_items(formatted_list)
+    else:
+        single = format_arrestee_person(
+            d.get('arrested_person') or d.get('accused_name'),
+            d.get('accused_age') or d.get('age'),
+            _arrested_parent(d),
+            format_compiled_address(d.get('accused_address') or d),
+            d,
+        )
+        arrested_str = single or d.get('arrested_person') or d.get('accused_name') or ''
+
     return {
         'ps': r.get('ps_name') or '',
         'fir_no': d.get('fir_no') or '',
@@ -48,22 +81,16 @@ def map_row(r, idx):
         'complainant_details': format_person_no_age(
             d.get('complainant_name'),
             _complainant_parent(d),
-            d.get('complainant_address'),
+            format_compiled_address(d.get('complainant_address') or d),
             d,
         ),
         'time_of_occurrence': occ_datetime,
-        'place_of_occurrence': d.get('occurrence_place') or d.get('place_of_occurrence') or '',
-        'gist': d.get('brief_facts') or '',
-        'arrested_details': format_person(
-            d.get('arrested_person') or d.get('accused_name'),
-            d.get('accused_age'),
-            _arrested_parent(d),
-            d.get('accused_address'),
-            d,
-        ) or d.get('arrested_person') or d.get('accused_name') or 'None',
+        'place_of_occurrence': format_compiled_address(d.get('occurrence_place') or d),
+        'gist': d.get('brief_facts') or d.get('gist') or '',
+        'arrested_details': arrested_str,
         'io_details': format_io(
             d.get('io_name'),
             d.get('io_rank') or d.get('rank_of_io'),
             d.get('io_pis'),
-        ) or d.get('io_name') or '',
+        ),
     }

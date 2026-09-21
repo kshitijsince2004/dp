@@ -1,5 +1,5 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
-import { computeVariation, computeDetection, computeNotWorkedOut } from '../../shared/calc.js';
+import { PALETTE, FONTS, HEINOUS_CANONICAL_CODES, ACT_CANONICAL_CODES, safeMerge } from '../../shared/canonical-codes.js';
+import { varPct, detPct, computeNotWorkedOut } from '../../shared/calc.js';
 
 function formatDistrictTitle(name) {
   let s = (name || 'DISTRICT').trim();
@@ -7,8 +7,8 @@ function formatDistrictTitle(name) {
   return `${s.toUpperCase()} DISTRICT`;
 }
 
-const HEINOUS_CODES    = ['DACOITY','MURDER','ATT_TO_MURDER','ROBBERY','RIOT','KID_FOR_RANSOM','RAPE'];
-const ACT_CODES        = ['ARMS_ACT','EXCISE_ACT','GAMBLING_ACT','NDPS_ACT','POCSO','OTHER_ACT'];
+const HEINOUS_CODES    = HEINOUS_CANONICAL_CODES;
+const ACT_CODES        = ACT_CANONICAL_CODES;
 const NON_HEINOUS_CODES = [
   'EXTORTION','SNATCHING','HURT','BURGLARY','HOUSE_THEFT','MV_THEFT',
   'SERVANT_THEFT','OTHER_THEFT','MO_WOMEN','EVE_TEASING','KIDNAPPING',
@@ -29,15 +29,14 @@ function psAgg(psByCode, psByCodeY1, psByCodeWo, psByCodeY1Wo, psId, codes) {
 
 function fmt7(repY1, repY, woY1, woY) {
   const nwY  = computeNotWorkedOut(repY, woY);
-  const solY = computeDetection(woY, repY);
-  const varPct = computeVariation(repY, repY1);
+  const solY = detPct(woY, repY);
+  const varP = varPct(repY, repY1);
   const f = v => v > 0 ? v : '-';
-  const fp= v => v !== null ? `${(v * 100).toFixed(1)}%` : '-';
-  return [f(repY1), f(repY), f(woY1), f(woY), f(nwY), fp(solY), fp(varPct)];
+  return [f(repY1), f(repY), f(woY1), f(woY), f(nwY), solY, varP];
 }
 
 export function renderDailyChart(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('Daily Chart, Heinous, IPC');
+  let sheet = workbook.getWorksheet('Daily Chart, Heinous, IPC') || workbook.addWorksheet('Daily Chart, Heinous, IPC');
   const distTitle = formatDistrictTitle(scope.self_name);
   const children = scope.children_ids || [];
   const displayNames = scope.display_names || {};
@@ -46,7 +45,7 @@ export function renderDailyChart(workbook, scope, calcData) {
   const { psByCode = {}, psByCodeY1 = {}, psByCodeWo = {}, psByCodeY1Wo = {} } = calcData;
 
   // Title Row 1
-  sheet.mergeCells('A1:AC1');
+  safeMerge(sheet, 'A1:AC1');
   const t1 = sheet.getCell('A1');
   t1.value = `CRIME CHART (HEINOUS, OTHER BNS & TOTAL BNS) — ${distTitle}`;
   t1.font = FONTS.TITLE;
@@ -68,15 +67,15 @@ export function renderDailyChart(workbook, scope, calcData) {
   ]);
   r4.height = 22;
 
-  sheet.mergeCells('A2:A4');
-  sheet.mergeCells('B2:H2');
-  sheet.mergeCells('I2:O2');
-  sheet.mergeCells('P2:V2');
-  sheet.mergeCells('W2:AC2');
-  sheet.mergeCells('B3:H3');
-  sheet.mergeCells('I3:O3');
-  sheet.mergeCells('P3:V3');
-  sheet.mergeCells('W3:AC3');
+  safeMerge(sheet, 'A2:A4');
+  safeMerge(sheet, 'B2:H2');
+  safeMerge(sheet, 'I2:O2');
+  safeMerge(sheet, 'P2:V2');
+  safeMerge(sheet, 'W2:AC2');
+  safeMerge(sheet, 'B3:H3');
+  safeMerge(sheet, 'I3:O3');
+  safeMerge(sheet, 'P3:V3');
+  safeMerge(sheet, 'W3:AC3');
 
   [r2, r3, r4].forEach(row => {
     row.eachCell(c => {
