@@ -149,6 +149,17 @@ export async function generateAndValidateStatutoryFir(trx, {
   const reqStr = requestedFirNo ? String(requestedFirNo).trim() : '';
   const isReqLegacy = isLegacy || (reqStr.length > 0 && (reqStr.includes('/') || reqStr.length !== 14));
   if (isReqLegacy && reqStr && !/^\d{14}$/.test(reqStr)) {
+    const existingDuplicateLegacy = await trx('fir_details')
+      .whereRaw('LOWER(TRIM(fir_no)) = LOWER(TRIM(?))', [reqStr])
+      .first();
+
+    if (existingDuplicateLegacy) {
+      log.warn('generateAndValidateStatutoryFir: rejected — duplicate legacy fir_no', { requestedFirNo: reqStr });
+      const err = new Error(`Duplicate FIR Number detected: "${reqStr}" is already registered as an FIR record.`);
+      err.status = 409;
+      throw err;
+    }
+
     const safeYear = firDate ? new Date(firDate).getFullYear() : (recordDate ? new Date(recordDate).getFullYear() : new Date().getFullYear());
     return {
       firNo: reqStr,
@@ -222,11 +233,11 @@ export async function generateAndValidateStatutoryFir(trx, {
 
   // 3. Global Uniqueness Check
   const existingDuplicate = await trx('fir_details')
-    .where({ fir_no: finalFirNo })
+    .whereRaw('LOWER(TRIM(fir_no)) = LOWER(TRIM(?))', [finalFirNo])
     .first();
 
   if (existingDuplicate) {
-    const err = new Error(`Duplicate FIR Number detected: "${finalFirNo}" is already registered.`);
+    const err = new Error(`Duplicate FIR Number detected: "${finalFirNo}" is already registered as an FIR record.`);
     err.status = 409;
     throw err;
   }

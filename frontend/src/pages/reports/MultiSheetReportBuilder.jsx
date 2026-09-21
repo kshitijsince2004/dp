@@ -170,7 +170,7 @@ export const MultiSheetReportBuilder = () => {
           console.error(pollErr);
           log.error('action:generate_report_poll_error', { jobId, err: pollErr });
         }
-      }, 2000);
+      }, 500);
 
     } catch (err) {
       console.error(err);

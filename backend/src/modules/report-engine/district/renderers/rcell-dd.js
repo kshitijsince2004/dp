@@ -1,4 +1,4 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 
 function formatJurisdictionTitle(scope) {
   const name = (scope.self_name || 'JURISDICTION').trim();
@@ -47,14 +47,14 @@ const ALL_HEADS = [...IPC_HEADS, ...ACT_HEADS];
 
 export function renderRcellDD(workbook, scope, calcData) {
   const jurTitle = formatJurisdictionTitle(scope);
-  const sheet = workbook.addWorksheet(`Rcell DD ${jurTitle.replace(' DISTRICT', '')}`);
+  let sheet = workbook.worksheets.find(w => w.name.startsWith('Rcell DD')) || workbook.addWorksheet(`Rcell DD ${jurTitle.replace(' DISTRICT', '')}`);
   const children = scope.children_ids || [];
   const displayNames = scope.display_names || {};
   const yearNum = calcData.yearNum || 2026;
   const psDayByCode = calcData.psDayByCode || {};
 
   // Title
-  sheet.mergeCells('A1:B1');
+  safeMerge(sheet, 'A1:B1');
   const titleCell = sheet.getCell('A1');
   titleCell.value = `Rcell Crime Diary ${yearNum}`;
   titleCell.font = FONTS.TITLE;

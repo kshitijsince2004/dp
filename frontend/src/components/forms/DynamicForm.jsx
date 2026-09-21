@@ -17,11 +17,13 @@ import FormToolbar from './FormToolbar.jsx';
 import FormAutosave from './FormAutosave.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
 import SearchableSelect from './SearchableSelect.jsx';
+import DateField from './DateField.jsx';
 import DateInput from '../ui/DateInput.jsx';
 import { parseDMY, formatDMY, parseAnyDate } from '../../utils/dateFormat.js';
 import ActsSectionsTable, { reMergeKnownActFragments } from './ActsSectionsTable.jsx';
 import { parseRules, getFieldError, checkFieldFormat, validateFieldPattern } from '../../utils/fieldValidation.js';
 import { log } from '../../utils/logger.js';
+import { mapCaseTypeToRegistrationType } from './StatutoryFirField.jsx';
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 function getFieldOptions(fieldsArr, key) {
   const field = fieldsArr.find((f) => f.field_key === key);
@@ -276,7 +278,7 @@ export default function DynamicForm({
     queryKey: ['records', 'cases-list'],
     queryFn: async () => {
       try {
-        const res = await api.get('/records');
+        const res = await api.get('/records?type=CASE&limit=1000');
         const payload = res.data?.data;
         let cases = [];
         if (payload?.cases) cases = payload.cases;
@@ -305,7 +307,7 @@ export default function DynamicForm({
       fir_no: c.data?.fir_no || c.fir_no || `FIR No. ${c.id}`,
       fir_date: c.data?.fir_date || c.fir_date || c.record_date,
       complainant_name: c.data?.complainant_name || c.complainant_name || 'N/A',
-      police_station: c.data?.police_station || c.police_station || 'Unknown',
+      police_station: c.data?.police_station || c.ps_name || c.police_station || 'Unknown',
       crime_head: c.data?.local_head || c.data?.crime_head || c.local_head || c.crime_head || 'N/A',
       sections: c.data?.sections || c.sections || 'N/A',
       isBackend: true
@@ -323,7 +325,27 @@ export default function DynamicForm({
       if (searchQuery) {
         const q = searchQuery.toLowerCase().trim();
         const matchesComplainant = c.complainant_name ? c.complainant_name.toLowerCase().includes(q) : false;
-        const matchesFirNo = c.fir_no ? c.fir_no.toLowerCase().includes(q) : false;
+        let matchesFirNo = false;
+        if (c.fir_no) {
+          const rawFir = String(c.fir_no).toLowerCase().trim();
+          if (rawFir.includes(q)) {
+            matchesFirNo = true;
+          } else {
+            // Intelligent numeric match for 14-digit statutory and legacy slash patterns
+            const queryNums = q.match(/\d+/g);
+            const firNums = rawFir.match(/\d+/g);
+            if (queryNums && firNums) {
+              const querySeq = parseInt(queryNums[0], 10);
+              if (rawFir.length === 14 && /^\d{14}$/.test(rawFir)) {
+                const statutorySeq = parseInt(rawFir.slice(10, 14), 10);
+                if (statutorySeq === querySeq) matchesFirNo = true;
+              }
+              if (firNums.some(fn => parseInt(fn, 10) === querySeq)) {
+                matchesFirNo = true;
+              }
+            }
+          }
+        }
         if (!matchesComplainant && !matchesFirNo) return false;
       }
       return true;
@@ -536,7 +558,8 @@ export default function DynamicForm({
                               io_rank: ioRank,
                               io_pis: ioPis,
                               io_mobile: ioMobile,
-                              case_type: caseTypeVal
+                              case_type: caseTypeVal,
+                              registration_type: mapCaseTypeToRegistrationType(caseTypeVal),
                             }));
                           }}
                           className={`group cursor-pointer hover:bg-slate-50/80 transition-all ${isSelected
@@ -610,15 +633,16 @@ export default function DynamicForm({
           {renderReadOnlyRow(fieldLabel('submission_status') || (lang === 'hi' ? 'प्रस्तुति स्थिति' : 'Submission Status'), values.status || 'DRAFT')}
 
           {/* Case Type field */}
-          <React.Fragment>
-            <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-b border-r border-[#c7d8ea] min-h-[44px]">
-              {fieldLabel('case_type') || (lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE')}
-            </div>
-            <div className="px-4 py-2 bg-white flex items-center border-b border-[#c7d8ea] min-h-[44px]">
-              <div className="w-full max-w-md">
-                {(() => {
-                  const caseTypeField = allSchemaFields.find(f => f.field_key === 'case_type');
-                  return (
+          {(() => {
+            const caseTypeField = allSchemaFields.find(f => f.field_key === 'case_type');
+            if (!caseTypeField) return null;
+            return (
+              <React.Fragment>
+                <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-b border-r border-[#c7d8ea] min-h-[44px]">
+                  {fieldLabel('case_type') || (lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE')}
+                </div>
+                <div className="px-4 py-2 bg-white flex items-center border-b border-[#c7d8ea] min-h-[44px]">
+                  <div className="w-full max-w-md">
                     <FieldRenderer
                       field={caseTypeField}
                       value={values.case_type || ''}
@@ -628,22 +652,23 @@ export default function DynamicForm({
                       lang={lang}
                       values={values}
                     />
-                  );
-                })()}
-              </div>
-            </div>
-          </React.Fragment>
+                  </div>
+                </div>
+              </React.Fragment>
+            );
+          })()}
 
           {/* GD Number, Date & Time */}
-          <React.Fragment>
-            <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-r border-[#c7d8ea] min-h-[44px]">
-              {(fieldLabel('gd_no') || (lang === 'hi' ? 'जीडी नंबर, दिनांक और समय' : 'GD Number, Date & Time'))}
-              {isFieldRequired('gd_no') && <span className="text-red-500 font-bold">{' *'}</span>}
-            </div>
-            <div className="px-4 py-2 bg-white flex items-center gap-3 min-h-[44px] relative">
-              {(() => {
-                const gdNoField = allSchemaFields.find(f => f.field_key === 'gd_no');
-                return (
+          {(() => {
+            const gdNoField = allSchemaFields.find(f => f.field_key === 'gd_no');
+            if (!gdNoField) return null;
+            return (
+              <React.Fragment>
+                <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-r border-[#c7d8ea] min-h-[44px]">
+                  {(fieldLabel('gd_no') || (lang === 'hi' ? 'जीडी नंबर, दिनांक और समय' : 'GD Number, Date & Time'))}
+                  {isFieldRequired('gd_no') && <span className="text-red-500 font-bold">{' *'}</span>}
+                </div>
+                <div className="px-4 py-2 bg-white flex items-center gap-3 min-h-[44px] relative">
                   <FieldRenderer
                     field={gdNoField}
                     value={values.gd_no}
@@ -652,38 +677,35 @@ export default function DynamicForm({
                     readOnly={readOnly || !isFieldEditableForReview(gdNoField)}
                     error={touched.gd_no ? errors.gd_no : null}
                   />
-                );
-              })()}
-            </div>
-          </React.Fragment>
-        </div>
+                </div>
+              </React.Fragment>
+            );
+          })()}
 
-        {(() => {
-          const KNOWN_KEYS = ['uid', 'district', 'police_station', 'status', 'submission_status', 'case_type', 'gd_no', 'act_name', 'sections', 'local_head', 'crime_head', 'major_heads', 'minor_heads', 'major_head', 'minor_head'];
-          const extraFields = allSchemaFields.filter(f => f.section === 'general_info' && !KNOWN_KEYS.includes(f.field_key));
-          if (extraFields.length === 0) return null;
-          return (
-            <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm mt-3 mb-3">
-              <legend className="px-2 text-[#0d2a4a] font-bold uppercase text-xs sm:text-sm tracking-wide">
-                {lang === 'hi' ? 'अतिरिक्त जानकारी' : 'Additional Information'}
-              </legend>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {extraFields.map((f) => (
+          {/* FIR Number, Date & Time */}
+          {(() => {
+            const firNoField = allSchemaFields.find(f => f.field_key === 'fir_no');
+            if (!firNoField) return null;
+            return (
+              <React.Fragment>
+                <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-t border-r border-[#c7d8ea] min-h-[44px]">
+                  {(fieldLabel('fir_no') || (lang === 'hi' ? 'एफआईआर नंबर, दिनांक और समय' : 'FIR Number, Date & Time'))}
+                  {isFieldRequired('fir_no') && <span className="text-red-500 font-bold">{' *'}</span>}
+                </div>
+                <div className="px-4 py-2 bg-white flex items-center gap-3 min-h-[44px] border-t border-[#c7d8ea] relative">
                   <FieldRenderer
-                    key={f.field_key}
-                    field={f}
-                    value={values[f.field_key]}
-                    onChange={handleChange}
-                    readOnly={readOnly || !isFieldEditableForReview(f)}
-                    error={touched[f.field_key] ? errors[f.field_key] : null}
-                    lang={lang}
+                    field={firNoField}
+                    value={values.fir_no}
+                    handleChange={handleChange}
                     values={values}
+                    readOnly={readOnly || !isFieldEditableForReview(firNoField)}
+                    error={touched.fir_no ? errors.fir_no : null}
                   />
-                ))}
-              </div>
-            </fieldset>
-          );
-        })()}
+                </div>
+              </React.Fragment>
+            );
+          })()}
+        </div>
 
         {/* Acts, Sections, Major/Minor, Local Head Panels */}
         <ActsSectionsTable {...actsSectionsProps} localHeadLayout={recordType === 'UIDB' ? 'hidden' : 'split'} />
@@ -801,8 +823,12 @@ export default function DynamicForm({
         </div>
 
         {(() => {
-          const KNOWN_KEYS = ['gd_no', 'case_type', 'fir_no', 'source_reference', 'act_name', 'sections', 'local_head', 'crime_head', 'major_heads', 'minor_heads', 'major_head', 'minor_head'];
-          const extraFields = allFields.filter(f => f.section === 'acts_and_sections' && !KNOWN_KEYS.includes(f.field_key));
+          const KNOWN_KEYS = [
+            'gd_no', 'gd_date', 'gd_time', 'case_type', 'fir_no', 'fir_date', 'fir_time', 'is_dd_based',
+            'source_reference', 'act_name', 'sections', 'local_head', 'crime_head',
+            'major_heads', 'minor_heads', 'major_head', 'minor_head'
+          ];
+          const extraFields = allFields.filter(f => f.section === 'acts_and_sections' && !KNOWN_KEYS.includes(f.field_key) && !f.repeater_entity);
           if (extraFields.length === 0) return null;
           return (
             <fieldset className="border-2 border-[#7a9cc5] rounded-2xl p-3 bg-[#f0f4f8]/20 shadow-sm mt-3 mb-3">
@@ -2110,63 +2136,164 @@ export default function DynamicForm({
 
 
   const renderActionTakenStep = () => {
-    const actionTakenFields = finalSchema.find(s => s.section === 'action_taken')?.fields || [];
+    const actionTakenSec = schema?.find(s => s.section === 'action_taken') || finalSchema?.find(s => s.section === 'action_taken');
+    const subTabs = actionTakenSec?.sub_tabs || [];
+    
+    // Split fields by sub-tab or section
+    const allActionFields = actionTakenSec?.fields || [];
+    const caseStatusTab = subTabs.find(t => t.id === 'case_status');
+    const courtStatusTab = subTabs.find(t => t.id === 'court_status');
+    
+    const caseStatusFields = caseStatusTab?.fields || allActionFields.filter(f => f.section !== 'court_details');
+    const courtStatusFields = courtStatusTab?.fields || allActionFields.filter(f => f.section === 'court_details');
 
     const evalActionCond = (cond, vals) => {
       if (!cond) return true;
-      const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
-      if (parsed.and) return parsed.and.every(c => evalActionCond(c, vals));
-      const { field: tf, value: tv, operator } = parsed;
-      const cv = vals[tf];
-      if (operator === 'filled') return cv !== undefined && cv !== null && String(cv).trim() !== '';
-      return Array.isArray(tv)
-        ? tv.map(v => String(v || '').toLowerCase()).includes(String(cv || '').toLowerCase())
-        : String(cv || '').toLowerCase() === String(tv || '').toLowerCase();
+      try {
+        const parsed = typeof cond === 'string' ? JSON.parse(cond) : cond;
+        if (parsed.and) return parsed.and.every(c => evalActionCond(c, vals));
+        const { field: tf, value: tv, operator } = parsed;
+        const cv = vals[tf];
+        if (operator === 'filled') return cv !== undefined && cv !== null && String(cv).trim() !== '';
+        return Array.isArray(tv)
+          ? tv.map(v => String(v || '').toLowerCase()).includes(String(cv || '').toLowerCase())
+          : String(cv || '').toLowerCase() === String(tv || '').toLowerCase();
+      } catch (e) {
+        return true;
+      }
     };
 
-    const activeFields = actionTakenFields.filter(f => evalActionCond(f.show_when, values));
+    const CHARGESHEET_OR_JCL_STATUSES = [
+      'CHARGE SHEET',
+      'CHARGESHEET',
+      'SUPPLEMENTARY CHARGESHEET',
+      'POLICE INVESTIGATION REPORT(PIR-JCL)',
+      'POLICE INVESTIGATION REPORT (PIR-JCL)',
+      'PIR-JCL',
+      'JCL',
+      'CHARGESHEETED',
+      'CHALLAN'
+    ];
 
-    const renderFieldWithLabel = (field, index) => {
-      const key = field.field_key;
-      const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
-      const rules = parseRules(field.validation_rules);
-      const isRequired = !!rules.required;
-      const isLast = index === activeFields.length - 1;
-      const isDisabled = readOnly || field.readonly === true || field.readonly === 'true' || !isFieldEditableForReview(field);
-      const isDisabledByCondition = !isDisabled && evaluateDisabledWhen(field.disabled_when, values);
-      const effectiveReadOnly = isDisabled || isDisabledByCondition;
+    const currentStatusUpper = String(values.case_status || values.status || '').toUpperCase().trim();
+    const isChargesheetOrJcl = Boolean(
+      CHARGESHEET_OR_JCL_STATUSES.some(st => currentStatusUpper === st || currentStatusUpper.includes(st) || currentStatusUpper.includes('JCL') || currentStatusUpper.includes('CHARGE SHEET'))
+    );
+    const isJcl = Boolean(
+      currentStatusUpper.includes('JCL') || currentStatusUpper.includes('PIR')
+    );
 
+    const renderFieldGrid = (fieldsList) => {
+      const visible = fieldsList.filter(f => evalActionCond(f.show_when, values));
       return (
-        <React.Fragment key={key}>
-          <div className={`bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base ${isRequired ? 'font-bold text-[#0d2a4a]' : 'font-semibold text-[#0d2a4a]'} flex items-center gap-2 min-h-[48px] border-r border-[#c7d8ea] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-            <span>{label}</span>
-            {isRequired && <span className="text-red-500 font-bold">*</span>}
-            {isDisabledByCondition && (
-              <span className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded ml-auto" title={lang === 'hi' ? 'वर्तमान स्थिति में अनुपलब्ध' : 'Not available in current status'}>
-                🔒 {lang === 'hi' ? 'लॉक' : 'Locked'}
-              </span>
-            )}
-          </div>
-          <div className={`px-4 py-2 bg-white flex flex-col justify-center min-h-[48px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''}`}>
-            <FieldRenderer
-              field={field}
-              value={values[key]}
-              onChange={handleChange}
-              readOnly={effectiveReadOnly}
-              error={touched[key] ? errors[key] : null}
-              lang={lang}
-              values={values}
-            />
-          </div>
-        </React.Fragment>
+        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] border-2 border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm bg-white">
+          {visible.map((field, index) => {
+            const key = field.field_key;
+            const label = lang === 'hi' ? (field.label_hi || field.label_en) : field.label_en;
+            const rules = parseRules(field.validation_rules);
+            const isRequired = !!rules.required;
+            const isLast = index === visible.length - 1;
+            const isDisabled = readOnly || field.readonly === true || field.readonly === 'true' || !isFieldEditableForReview(field);
+            const isDisabledByCondition = !isDisabled && evaluateDisabledWhen(field.disabled_when, values);
+            const effectiveReadOnly = isDisabled || isDisabledByCondition;
+            const isCaseStatusField = (key === 'case_status' || key === 'status');
+            const showChargesheetDateRow = isCaseStatusField && isChargesheetOrJcl && actionTakenTab === 'case_status';
+
+            return (
+              <React.Fragment key={key}>
+                <div className={`bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base ${isRequired ? 'font-bold text-[#0d2a4a]' : 'font-semibold text-[#0d2a4a]'} flex items-center gap-2 min-h-[48px] border-r border-[#c7d8ea] ${!isLast || showChargesheetDateRow ? 'border-b border-[#c7d8ea]' : ''}`}>
+                  <span>{label}</span>
+                  {isRequired && <span className="text-red-500 font-bold">*</span>}
+                  {isDisabledByCondition && (
+                    <span className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded ml-auto" title={lang === 'hi' ? 'वर्तमान स्थिति में अनुपलब्ध' : 'Not available in current status'}>
+                      🔒 {lang === 'hi' ? 'लॉक' : 'Locked'}
+                    </span>
+                  )}
+                </div>
+                <div className={`px-4 py-2 bg-white flex flex-col justify-center min-h-[48px] ${!isLast || showChargesheetDateRow ? 'border-b border-[#c7d8ea]' : ''}`}>
+                  <FieldRenderer
+                    field={field}
+                    value={values[key]}
+                    onChange={handleChange}
+                    readOnly={effectiveReadOnly}
+                    error={touched[key] ? errors[key] : null}
+                    lang={lang}
+                    values={values}
+                  />
+                </div>
+                {showChargesheetDateRow && (
+                  <React.Fragment key="chargesheet_date_row">
+                    <div className={`bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center gap-2 min-h-[48px] border-r border-[#c7d8ea] ${!isLast ? 'border-b border-[#c7d8ea]' : ''} animate-in fade-in duration-200`}>
+                      <span>
+                        {lang === 'hi'
+                          ? (isJcl ? 'जेसीएल / पीआईआर दिनांक / अदालत भेजने की तिथि' : 'आरोप पत्र दिनांक / अदालत भेजने की तिथि')
+                          : (isJcl ? 'JCL / PIR Date / Sent to Court Date' : 'Chargesheet Date / Sent to Court Date')}
+                      </span>
+                      <span className="text-red-500 font-bold">*</span>
+                    </div>
+                    <div className={`px-4 py-2 bg-white flex flex-col justify-center min-h-[48px] ${!isLast ? 'border-b border-[#c7d8ea]' : ''} animate-in fade-in duration-200`}>
+                      <div className="w-full max-w-sm">
+                        <DateField
+                          id="field-date_of_chargesheet"
+                          disabled={readOnly}
+                          value={values.date_of_chargesheet || values.sent_to_court_date || values.chargesheet_date || ''}
+                          onChange={(v) => {
+                            handleChange('date_of_chargesheet', v);
+                            handleChange('chargesheet_date', v);
+                            handleChange('sent_to_court_date', v);
+                          }}
+                          placeholder={lang === 'hi' ? 'दिनांक चुनें (DD/MM/YYYY)' : 'Select Date (DD/MM/YYYY)'}
+                        />
+                      </div>
+                    </div>
+                  </React.Fragment>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
       );
     };
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] border-2 border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm">
-          {activeFields.map((field, idx) => renderFieldWithLabel(field, idx))}
+        {/* Division Sub-Tabs Bar */}
+        <div className="flex gap-2 border-b-2 border-[#7a9cc5] pb-0 bg-slate-100/50 p-1.5 rounded-t">
+          <button
+            type="button"
+            onClick={() => setActionTakenTab('case_status')}
+            className={`px-5 py-2.5 text-sm sm:text-base font-bold border border-b-0 border-[#7a9cc5] rounded-t-lg cursor-pointer transition-colors shadow-sm ${actionTakenTab === 'case_status'
+              ? 'bg-[#ea580c] text-white shadow-md'
+              : 'bg-[#0d2a4a] text-white hover:bg-[#16406d]'
+            }`}
+          >
+            {lang === 'hi' ? 'केस स्थिति' : 'Case Status'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActionTakenTab('court_status')}
+            className={`px-5 py-2.5 text-sm sm:text-base font-bold border border-b-0 border-[#7a9cc5] rounded-t-lg cursor-pointer transition-colors shadow-sm ${actionTakenTab === 'court_status'
+              ? 'bg-[#ea580c] text-white shadow-md'
+              : 'bg-[#0d2a4a] text-white hover:bg-[#16406d]'
+            }`}
+          >
+            {lang === 'hi' ? 'कोर्ट स्थिति' : 'Court Status'}
+          </button>
         </div>
+
+        {/* Division 1: Case Status */}
+        {actionTakenTab === 'case_status' && (
+          <div className="space-y-4 p-2 border border-t-0 border-[#7a9cc5] rounded-b bg-transparent">
+            {renderFieldGrid(caseStatusFields)}
+          </div>
+        )}
+
+        {/* Division 2: Court Status */}
+        {actionTakenTab === 'court_status' && (
+          <div className="space-y-4 p-2 border border-t-0 border-[#7a9cc5] rounded-b bg-transparent">
+            {renderFieldGrid(courtStatusFields)}
+          </div>
+        )}
       </div>
     );
   };
@@ -2975,6 +3102,7 @@ const getLocalHeadOptions = useCallback(() => {
 }, [allSchemaFields]);
 
 const [complainantTab, setComplainantTab] = useState('personal');
+const [actionTakenTab, setActionTakenTab] = useState('case_status');
 
 useEffect(() => {
   let active = true;
@@ -3299,8 +3427,9 @@ useEffect(() => {
   // record, permanently blocking Next. Removed — DateTimePickerPopup already
   // defaults to "now" when opened with no value, so today's date/time is still one
   // click away without pre-seeding state behind the user's back.
-  if (!initialValues?.id && recordType === 'CASE' && !seed.case_type) {
-    seed.case_type = 'cctns(manual FIR)';
+  if (!initialValues?.id && recordType === 'CASE') {
+    if (!seed.case_type) seed.case_type = 'cctns(manual FIR)';
+    if (!seed.registration_type) seed.registration_type = mapCaseTypeToRegistrationType(seed.case_type);
   }
 
   // Resolve station and district dynamically based on record metadata or active user node
@@ -3362,6 +3491,16 @@ useEffect(() => {
   updatedSeed.gd_no = updatedSeed.gd_no || updatedSeed.linked_fir_dd_no || '';
   updatedSeed.linked_fir_dd_no = updatedSeed.linked_fir_dd_no || updatedSeed.gd_no || '';
 
+  // Synchronize case_type & registration_type
+  if (updatedSeed.case_type || updatedSeed.registration_type) {
+    if (!updatedSeed.registration_type && updatedSeed.case_type) {
+      updatedSeed.registration_type = mapCaseTypeToRegistrationType(updatedSeed.case_type);
+    }
+    if (!updatedSeed.case_type && updatedSeed.registration_type) {
+      updatedSeed.case_type = updatedSeed.registration_type;
+    }
+  }
+
   // Default and enforce work_out rules for CASE: by default cases are not worked out,
   // and cannot be worked out if case_status is PENDING or missing.
   if (recordType === 'CASE') {
@@ -3407,10 +3546,12 @@ useEffect(() => {
   // Backfill crime_head (primary offence head) for drafts saved before the
   // add/delete-row handlers started writing it — it's derived from the first
   // Major Head row, and without it ARREST's required-field check can't pass.
-  if (!updatedSeed.crime_head) {
-    const firstMajor = String(updatedSeed.major_heads || updatedSeed.major_head || '')
-      .split(',').map(s => s.trim()).filter(Boolean)[0];
-    if (firstMajor) updatedSeed.crime_head = firstMajor;
+  // Synchronize date_of_chargesheet, chargesheet_date, and sent_to_court_date
+  const courtOrCsDate = updatedSeed.sent_to_court_date || updatedSeed.date_of_chargesheet || updatedSeed.chargesheet_date || '';
+  if (courtOrCsDate) {
+    updatedSeed.sent_to_court_date = courtOrCsDate;
+    updatedSeed.date_of_chargesheet = courtOrCsDate;
+    updatedSeed.chargesheet_date = courtOrCsDate;
   }
 
   console.log('[PHAROS-DEBUG][seed-effect] setValues() about to run — final composite snapshot being written into form state:', {
@@ -3575,6 +3716,16 @@ const handleChange = useCallback((key, val) => {
   setValues((prev) => {
     const next = { ...prev, [key]: val };
 
+    // Synchronize case_type & registration_type
+    if (key === 'case_type') {
+      next.registration_type = mapCaseTypeToRegistrationType(val);
+    } else if (key === 'registration_type') {
+      next.registration_type = val;
+      if (!next.case_type) {
+        next.case_type = val;
+      }
+    }
+
     // Reset work_out when case_status is changed to PENDING or empty
     if (key === 'case_status') {
       const upperVal = String(val || '').toUpperCase().trim();
@@ -3628,6 +3779,17 @@ const handleChange = useCallback((key, val) => {
 
     if (next.time_of_occurrence !== undefined) {
       next.occurrence_time = next.time_of_occurrence;
+    }
+
+    // Ensure date of chargesheet and date of case sent to court are identical
+    if (key === 'date_of_chargesheet' || key === 'chargesheet_date') {
+      next.date_of_chargesheet = val;
+      next.chargesheet_date = val;
+      next.sent_to_court_date = val;
+    } else if (key === 'sent_to_court_date') {
+      next.sent_to_court_date = val;
+      next.date_of_chargesheet = val;
+      next.chargesheet_date = val;
     }
 
     syncPermAddress(next, 'arrested', key, val, [{ from: 'present_address', to: 'address' }]);
@@ -3925,6 +4087,7 @@ const handleNext = () => {
         io_pis: prev.io_pis || autofilled.io_pis || '',
         io_mobile: prev.io_mobile || autofilled.io_mobile || '',
         case_type: prev.case_type || autofilled.case_type || 'cctns(manual FIR)',
+        registration_type: prev.registration_type || mapCaseTypeToRegistrationType(prev.case_type || autofilled.case_type || 'cctns(manual FIR)'),
       }));
     }
   }
@@ -4188,7 +4351,7 @@ const isLastStep = currentStep === finalSchema.length - 1;
 
 const SECTION_RENDERERS = {
   select_fir: renderFirSearchStep,
-  ...(recordType === 'CASE' || recordType === 'ARREST' ? { general_info: renderArrestGeneralInfoStep } : {}),
+  general_info: renderArrestGeneralInfoStep,
   acts_and_sections: renderActsAndSectionsStep,
   occurrence_info: renderOccurrenceStep,
   complainant_info: renderComplainantStep,

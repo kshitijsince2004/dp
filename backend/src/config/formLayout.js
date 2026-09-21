@@ -7,8 +7,7 @@ export const SECTION_KEY_ORDER = {
     'victim_info',
     'accused_info',
     'property_details',
-    'action_taken',
-    'court_details'
+    'action_taken'
   ],
   ARREST: [
     'select_fir',

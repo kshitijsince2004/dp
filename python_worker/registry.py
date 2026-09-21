@@ -43,7 +43,7 @@ def map_all_sheets(classified, active_tables=None):
             else:
                 rows = sheet['filter'](classified)
                 result[sheet['table_name']] = [
-                    sheet['map_row'](r, i) for i, r in enumerate(rows)
+                    sheet['map_row'](r, i) for i, r in enumerate(rows[:1000])
                 ]
         except Exception as exc:
             print(f"[Registry] Sheet '{sheet['table_name']}' error: {exc}")

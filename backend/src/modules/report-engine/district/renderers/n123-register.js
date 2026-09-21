@@ -1,4 +1,4 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 
 const HEADS = [
   { label: 'Dacoity',           code: 'DACOITY',       isHeinous: true },
@@ -9,8 +9,6 @@ const HEADS = [
   { label: 'Kid.For Ransom',    code: 'KID_FOR_RANSOM',isHeinous: true },
   { label: 'Rape',              code: 'RAPE',          isHeinous: true },
   { label: 'TOTAL HEINOUS',     isTotal: true, group: 'heinous' },
-  { label: 'Organised Crime',   code: 'ORGANISED' },
-  { label: 'Terrorist Crime',   code: 'TERRORIST' },
   { label: 'Snatching',         code: 'SNATCHING' },
   { label: 'Burglary',          code: 'BURGLARY' },
   { label: 'Extortion',         code: 'EXTORTION' },
@@ -32,6 +30,8 @@ const HEADS = [
   { label: 'Gambling Act',      code: 'GAMBLING_ACT', isAct: true },
   { label: 'NDPS Act',          code: 'NDPS_ACT', isAct: true },
   { label: 'POCSO Act',         code: 'POCSO', isAct: true },
+  { label: 'Organised Crime (BNS 111)', code: 'ORGANISED_CRIME', isAct: true },
+  { label: 'Terrorist Acts (BNS 113)',  code: 'TERRORIST_ACT',  isAct: true },
   { label: 'Other Act',         code: 'OTHER_ACT', isAct: true },
   { label: 'TOTAL ACT',         isTotal: true, group: 'act' },
   { label: 'GRAND TOTAL',       isTotal: true, group: 'grand' },
@@ -61,14 +61,14 @@ function buildPsSums(psByCode, psByCodeWo, psId) {
 }
 
 export function renderN123Register(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('N-1,N-2,N-3 ');
+  let sheet = workbook.getWorksheet('N-1,N-2,N-3 ') || workbook.getWorksheet('N-1,N-2,N-3') || workbook.addWorksheet('N-1,N-2,N-3 ');
   const districtName = (scope.self_name || 'DISTRICT').toUpperCase();
   const children = scope.children_ids || [];
   const displayNames = scope.display_names || {};
   const psByCode   = calcData.psByCode   || {};
   const psByCodeWo = calcData.psByCodeWo || {};
 
-  sheet.mergeCells('A1:AC1');
+  safeMerge(sheet, 'A1:AC1');
   const t1 = sheet.getCell('A1');
   t1.value = `Daily ${districtName} District Crime`;
   t1.font = FONTS.N123_SUBDIV;

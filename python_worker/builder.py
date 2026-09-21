@@ -137,13 +137,12 @@ def build_workbook(sheets_data, sheets, file_path, date=''):
 
                 if rows:
                     for row_offset, row_dict in enumerate(rows, start=1):
-                        row_values = [row_dict.get(k, '') for k in col_keys]
-                        ws.append(row_values)
                         actual_row = header_row_idx + row_offset
                         ws.row_dimensions[actual_row].height = 18
                         use_zebra = (row_offset % 2 == 0)
-                        for ci, val in enumerate(row_values, start=1):
-                            cell = ws.cell(row=actual_row, column=ci)
+                        for ci, k in enumerate(col_keys, start=1):
+                            val = row_dict.get(k, '')
+                            cell = ws.cell(row=actual_row, column=ci, value=val)
                             cell.font = _DATA_FONT
                             cell.alignment = _DATA_ALIGN
                             cell.border = _THIN_BORDER
@@ -160,7 +159,10 @@ def build_workbook(sheets_data, sheets, file_path, date=''):
                 if 'Date:' in cur_val or 'Period:' in cur_val:
                     ws.cell(row=2, column=1).value = f"Date: {date}"
 
-            # Clear template sample data rows (row 5 downwards)
+            # Clear template sample data rows and stale row_dimensions (row 5 downwards)
+            for rk in list(ws.row_dimensions.keys()):
+                if rk > 4:
+                    del ws.row_dimensions[rk]
             if ws.max_row > 4:
                 ws.delete_rows(5, ws.max_row - 4)
 
@@ -168,13 +170,12 @@ def build_workbook(sheets_data, sheets, file_path, date=''):
 
             if rows:
                 for row_offset, row_dict in enumerate(rows, start=1):
-                    row_values = [row_dict.get(k, '') for k in col_keys]
-                    ws.append(row_values)
                     actual_row = header_row_idx + row_offset
                     ws.row_dimensions[actual_row].height = 18
                     use_zebra = (row_offset % 2 == 0)
-                    for ci, val in enumerate(row_values, start=1):
-                        cell = ws.cell(row=actual_row, column=ci)
+                    for ci, k in enumerate(col_keys, start=1):
+                        val = row_dict.get(k, '')
+                        cell = ws.cell(row=actual_row, column=ci, value=val)
                         cell.font = _DATA_FONT
                         cell.alignment = _DATA_ALIGN
                         cell.border = _THIN_BORDER

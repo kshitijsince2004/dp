@@ -153,7 +153,7 @@ export const AppRouter = () => (
             {/* Bulk import: HC/DISTRICT_OFFICER are the only roles the backend lets validate/
                 confirm/list batches (import.router.js allow('HC','DISTRICT_OFFICER'));
                 SYSTEM_ADMIN kept for admin visibility/debugging parity with other admin pages. */}
-            <Route element={<ProtectedRoute roles={['HC', 'DISTRICT_OFFICER', 'SYSTEM_ADMIN']} />}>
+            <Route element={<ProtectedRoute roles={['HC', 'PS', 'SHO', 'DISTRICT_OFFICER', 'SYSTEM_ADMIN']} />}>
               <Route path="/admin/legacy" element={<LegacyDataPage />} />
             </Route>
 

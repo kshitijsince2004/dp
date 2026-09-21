@@ -36,7 +36,8 @@ export const getRecords = async (req, res) => {
         limit,
         offset
       },
-      req.jurisdictionQuery
+      req.jurisdictionQuery,
+      req.user
     );
     const maskedRecords = await maskRecordDataBatch(records, req.user);
     log.info('getRecords: exit', { type, resultCount: maskedRecords.length, userId: req.user?.id });
@@ -107,9 +108,14 @@ export const create = async (req, res) => {
     log.info('create: exit', { recordId: record.id, record_type, userId: req.user?.id });
     return res.status(201).json({ success: true, data: record });
   } catch (error) {
-    const status = error.status || 500;
+    let status = error.status || 500;
+    let message = error.message;
+    if (error.code === '23505') {
+      status = 409;
+      message = `FIR Number '${data?.fir_no || 'specified'}' is already registered as an FIR record. Duplicate FIR numbers are not allowed.`;
+    }
     log.error('create: failed', { record_type, userId: req.user?.id, status, err: error });
-    return res.status(status).json({ success: false, message: error.message });
+    return res.status(status).json({ success: false, message });
   }
 };
 
@@ -135,9 +141,14 @@ export const update = async (req, res) => {
     log.info('update: exit', { recordId: id, userId: req.user?.id });
     return res.status(200).json({ success: true, data: record });
   } catch (error) {
-    const status = error.message.includes('Access denied') ? 403 : (error.status || 500);
+    let status = error.message.includes('Access denied') ? 403 : (error.status || 500);
+    let message = error.message;
+    if (error.code === '23505') {
+      status = 409;
+      message = `FIR Number '${data?.fir_no || 'specified'}' is already registered as an FIR record. Duplicate FIR numbers are not allowed.`;
+    }
     log.error('update: failed', { recordId: id, userId: req.user?.id, status, err: error });
-    return res.status(status).json({ success: false, message: error.message });
+    return res.status(status).json({ success: false, message });
   }
 };
 

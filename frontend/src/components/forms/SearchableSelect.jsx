@@ -47,9 +47,12 @@ export default function SearchableSelect({
       ? getSelectedLabels().join(', ')
       : selected
         ? getLabel(selected)
-        : '';
+        : (value !== null && value !== undefined ? String(value) : '');
 
   const closeDropdown = () => {
+    if (!multiple && search.trim() && !selected) {
+      onChange(search.trim());
+    }
     setOpen(false);
     setSearch('');
   };
@@ -152,6 +155,38 @@ export default function SearchableSelect({
     </div>
   );
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      if (open) {
+        if (filtered.length > 0) {
+          e.preventDefault();
+          const targetOpt = filtered[0];
+          if (multiple) {
+            const isChecked = selectedValues.some((v) => String(v) === String(targetOpt.value));
+            let nextValues;
+            if (isChecked) {
+              nextValues = selectedValues.filter((v) => String(v) !== String(targetOpt.value));
+            } else {
+              nextValues = [...selectedValues, targetOpt.value];
+            }
+            onChange(Array.isArray(value) ? nextValues : nextValues.join(', '));
+          } else {
+            onChange(targetOpt.value);
+            setOpen(false);
+            setSearch('');
+          }
+        } else if (search.trim()) {
+          e.preventDefault();
+          onChange(search.trim());
+          setOpen(false);
+          setSearch('');
+        }
+      }
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
   const wrapperLayoutClass = className
     ? className.split(' ').filter(c => c.startsWith('flex') || c.startsWith('w-') || c.startsWith('h-') || c.startsWith('col-') || c.startsWith('grow') || c.startsWith('shrink')).join(' ')
     : 'w-full';
@@ -171,9 +206,20 @@ export default function SearchableSelect({
         disabled={disabled}
         value={displayValue}
         onChange={(e) => {
-          setSearch(e.target.value);
+          const text = e.target.value;
+          setSearch(text);
           setOpen(true);
+          if (!multiple && text.trim()) {
+            const exactMatch = options.find((o) =>
+              String(o.value).toUpperCase() === text.trim().toUpperCase() ||
+              String(getLabel(o)).toUpperCase() === text.trim().toUpperCase()
+            );
+            if (exactMatch) {
+              onChange(exactMatch.value);
+            }
+          }
         }}
+        onKeyDown={handleKeyDown}
         onFocus={() => setOpen(true)}
         onClick={() => setOpen(true)}
         placeholder={placeholder || (lang === 'hi' ? 'विकल्प चुनें' : 'select an option')}

@@ -276,7 +276,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
   const { data: stations = [] } = useQuery({
     queryKey: ['hierarchy', 'stations'],
     queryFn: async () => {
-      const res = await api.get('/hierarchy/nodes?type=PS');
+      const res = await api.get('/hierarchy/nodes', { params: { type: 'PS' } });
       return res.data?.data || [];
     },
     enabled: !isHC,
@@ -771,7 +771,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function LegacyDataPage() {
   const { user } = useAuthStore();
-  const isHC = user?.role === 'HC';
+  const isHC = user?.role === 'HC' || user?.role === 'PS' || user?.role === 'SHO';
   const isDistrictOfficer = user?.role === 'DISTRICT_OFFICER';
   const canImport = isHC || isDistrictOfficer;
   const [activeTab, setActiveTab] = useState(canImport ? 'bulk_import' : 'batches');

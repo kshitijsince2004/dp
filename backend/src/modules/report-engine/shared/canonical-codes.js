@@ -1,3 +1,26 @@
+// Standard 7 Heinous crime canonical codes
+export const HEINOUS_CANONICAL_CODES = [
+  'DACOITY',
+  'MURDER',
+  'ATT_TO_MURDER',
+  'ROBBERY',
+  'RIOT',
+  'KID_FOR_RANSOM',
+  'RAPE',
+];
+
+// Standard Act canonical codes
+export const ACT_CANONICAL_CODES = [
+  'ARMS_ACT',
+  'EXCISE_ACT',
+  'GAMBLING_ACT',
+  'NDPS_ACT',
+  'POCSO',
+  'ORGANISED_CRIME',
+  'TERRORIST_ACT',
+  'OTHER_ACT',
+];
+
 // E-FIR Split — used by A5, A6, B1, B3
 export const EFIR_SPLIT = {
   BURGLARY:    { ps_source: 'MANUAL', efir_source: ['E_THEFT'],        heads: [12,13,209,210] },
@@ -83,3 +106,11 @@ export const FONTS = {
   EFIR_DATA:       { name: 'Calibri', size: 20, bold: true },
   D8_TITLE:        { name: 'Calibri', size: 26, bold: true },
 };
+
+export function safeMerge(sheet, range) {
+  try {
+    sheet.mergeCells(range);
+  } catch (e) {
+    // Ignore if already merged
+  }
+}

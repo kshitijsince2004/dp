@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, CheckSquare, X, Send, AlertTriangle, ShieldCheck, History, Edit, FileSpreadsheet, RefreshCw, Clock, Scale } from 'lucide-react';
+import { ArrowLeft, CheckSquare, X, Send, AlertTriangle, ShieldCheck, History, Edit, FileSpreadsheet, RefreshCw, Clock, Scale, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DynamicForm from '../../components/forms/DynamicForm.jsx';
 import useAuthStore from '../../store/authStore.js';
@@ -242,7 +242,7 @@ export default function RecordDetail() {
   const isDCP = user?.role === 'DISTRICT' || user?.role === 'DISTRICT_OFFICER';
 
   const canEditRecord = 
-    ['DRAFT', 'SENT_BACK'].includes(record?.current_status) ||
+    (['DRAFT', 'SENT_BACK', 'SENT_BACK_HC'].includes(record?.current_status) && ['HC', 'PS', 'SHO'].includes(user?.role)) ||
     (isDCP && record?.current_status === 'DISTRICT_REVIEW') ||
     (user?.role === 'SHO' && record?.current_status === 'PENDING_SHO');
 
@@ -336,19 +336,42 @@ export default function RecordDetail() {
           {isPendingReview && (
             <>
               <button
-                onClick={() => { log.debug('action:send_back_modal_open', { recordId: id }); setSendBackModalOpen(true); }}
-                className="bg-red-55/10 hover:bg-red-500 text-red-600 hover:text-white border-2 border-red-200/50 hover:border-red-500 px-5 py-2.5 rounded-control text-sm font-bold transition-colors cursor-pointer"
+                onClick={() => {
+                  if (isEditing) {
+                    toast.error('Please submit and save your edits first before sending back.');
+                    return;
+                  }
+                  log.debug('action:send_back_modal_open', { recordId: id });
+                  setSendBackModalOpen(true);
+                }}
+                disabled={isEditing}
+                title={isEditing ? 'Please submit your edits first' : ''}
+                className={`px-5 py-2.5 rounded-control text-sm font-bold transition-colors ${
+                  isEditing
+                    ? 'bg-slate-100 text-slate-400 border-2 border-slate-200 cursor-not-allowed opacity-60'
+                    : 'bg-red-55/10 hover:bg-red-500 text-red-600 hover:text-white border-2 border-red-200/50 hover:border-red-500 cursor-pointer'
+                }`}
               >
                 {t('actions.sendBack', 'Send Back')}
               </button>
               <button
                 onClick={() => {
+                  if (isEditing) {
+                    toast.error('Please submit and save your edits before approving and escalating.');
+                    return;
+                  }
                   log.debug('action:approve_click', { recordId: id });
                   if (window.confirm('Confirm approval and escalation of this record?')) {
                     approveMutation.mutate();
                   }
                 }}
-                className="bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-2 shadow-md shadow-[var(--accent-glow)] border-none active:scale-95"
+                disabled={isEditing}
+                title={isEditing ? 'Please submit your edits to save the record before approving & escalating' : ''}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 border-none ${
+                  isEditing
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none opacity-60'
+                    : 'bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white cursor-pointer active:scale-95 shadow-md shadow-[var(--accent-glow)]'
+                }`}
               >
                 <ShieldCheck size={16} />
                 <span>{t('actions.approve', 'Approve & Escalate')}</span>
@@ -381,6 +404,23 @@ export default function RecordDetail() {
           )}
         </div>
       </div>
+
+      {/* Active Edit Mode Notice Banner */}
+      {isEditing && (
+        <div className="rounded-2xl p-4 border transition-all duration-200 shadow-sm flex items-center gap-3.5 bg-amber-50/90 border-amber-300 text-amber-950 animate-in fade-in duration-200">
+          <div className="p-2.5 bg-amber-100 text-amber-800 rounded-xl shrink-0 shadow-xs">
+            <AlertTriangle size={20} />
+          </div>
+          <div className="flex-1">
+            <p className="text-xs sm:text-sm font-extrabold text-amber-950 m-0">
+              Editing Record Active
+            </p>
+            <p className="text-xs sm:text-sm text-amber-900/90 font-medium m-0 mt-0.5">
+              You are currently editing this record. Please submit your changes using the form below so the record returns to a saved state. <strong>Approve &amp; Escalate</strong> will then be unlocked.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Transfer Information Banner */}
       {record.data?.case_status === 'TRANSFER' && (
@@ -627,138 +667,216 @@ export default function RecordDetail() {
           {/* Diffs & Revisions logs */}
           <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-4 shadow-sm">
             {(() => {
-              const editRevisions = revisions.filter((r) => r.change_type !== 'CREATE' && (r.revision_number > 1 || r.revision_number === undefined));
+              // ── Separate CREATE from edits ──────────────────────────────────────
+              const createRevision = revisions.find((r) => r.change_type === 'CREATE' || r.revision_number === 1);
+              const editRevisions  = revisions.filter((r) => r.change_type !== 'CREATE' && (r.revision_number > 1 || r.revision_number === undefined));
+
+              // ── System-internal keys that must NEVER appear as field-change rows ──
+              // These are workflow-plumbing fields, UUID identifiers, or backend-computed
+              // keys that carry no meaning to a human reviewer.
+              const HIDDEN_KEYS = new Set([
+                'uid',                  // raw UUID — display code shown elsewhere
+                'submission_status',    // workflow plumbing
+                'current_status',       // workflow plumbing
+                'current_level',        // workflow plumbing
+                'linked_fir_dd_no',     // auto-linked GD reference, not user-edited
+                'work_out_date',        // alias of worked_out_date
+                'created_at',
+                'updated_at',
+                'created_by',
+                'updated_by',
+                'ps_id',
+                'node_id',
+              ]);
+
+              // ── Normalise a value for equality comparison ────────────────────────
+              // null / undefined / '' / false / 0 all mean "effectively empty / unset"
+              // for the purpose of deciding whether a field really changed.
+              const isEmpty = (v) =>
+                v === null || v === undefined || v === '' || v === false || v === 0;
+
+              const normStr = (v) => {
+                if (isEmpty(v)) return '__EMPTY__';
+                if (typeof v === 'object') return JSON.stringify(v);
+                return String(v).trim();
+              };
+
+              // ── Human-readable labels ────────────────────────────────────────────
+              const FIELD_LABELS = {
+                fir_no: 'FIR Number', fir_date: 'FIR Date', case_status: 'Case Status',
+                brief_facts: 'Brief Facts / Gist', local_head_id: 'Crime Head ID',
+                local_head: 'Crime Head', crime_head: 'Crime Head Classification',
+                is_worked_out: 'Worked Out Status', worked_out_date: 'Worked Out Date',
+                io_id: 'Investigating Officer ID', io_name: 'Investigating Officer',
+                custody_status: 'Custody Status', missing_status: 'Missing Status',
+                uidb_status: 'UIDB Status', act_name: 'Act Name', sections: 'IPC/BNS Sections',
+                property_status: 'Property Status', transferred_to_ps_id: 'Transferred to PS',
+                transferred_to_agency_id: 'Transferred to Agency',
+                sent_to_court_date: 'Sent to Court Date', court_case_no: 'Court Case Number',
+                court_name: 'Court Name', court_disposal_type: 'Court Disposal Status',
+                court_disposal_date: 'Court Disposal Date', fir_type: 'FIR Type',
+                complaint_mode: 'Complaint Mode', complainant_name: 'Complainant Name',
+                date_time_of_occurrence: 'Date/Time of Occurrence',
+                place_of_occurrence: 'Place of Occurrence',
+              };
+
+              const formatVal = (v) => {
+                if (isEmpty(v)) return '—';
+                if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+                if (typeof v === 'object') return JSON.stringify(v);
+                return String(v);
+              };
+
+              const officerMeta = (rev) => ({
+                name:   rev.user_fullname || rev.user_name || rev.changed_by_name || rev.username || (rev.changed_by ? `Officer (${String(rev.changed_by).slice(0, 8)})` : 'System'),
+                badge:  rev.changed_by_badge || rev.badge_no,
+                role:   rev.changed_by_role || rev.level || rev.role || '',
+                date:   rev.changed_at ? new Date(rev.changed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—',
+              });
+
+              // Count displayable update revisions (some may be fully hidden after filtering)
+              const visibleEditRevisions = editRevisions.filter((rev) => {
+                const raw = Array.isArray(rev.field_changes) ? rev.field_changes : [];
+                const real = raw.filter((ch) => {
+                  const key = ch.field_key || ch.field || ch.field_name;
+                  if (HIDDEN_KEYS.has(key)) return false;
+                  return normStr(ch.old_value) !== normStr(ch.new_value);
+                });
+                return real.length > 0 || rev.reason || rev.comment;
+              });
+
               return (
                 <>
+                  {/* Header */}
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
                       <FileSpreadsheet size={16} className="text-[var(--accent-color)]" />
-                      <span>Audit Trail & Field Revision Log</span>
+                      <span>Audit Trail &amp; Field Revision Log</span>
                     </h3>
                     <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] text-[var(--accent-color)]">
-                      {editRevisions.length} Revision{editRevisions.length !== 1 ? 's' : ''}
+                      {visibleEditRevisions.length} Revision{visibleEditRevisions.length !== 1 ? 's' : ''}
                     </span>
                   </div>
 
-                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-                    {revisions.length === 0 ? (
-                      <p className="text-[var(--text-main-theme)] opacity-65 italic p-2 text-xs sm:text-sm">No edit revisions logged yet.</p>
-                    ) : (
-                      revisions.slice().reverse().map((rev, idx) => {
-                        const isInitialFiling = rev.change_type === 'CREATE' || rev.revision_number === 1;
-                        const officerName = rev.user_fullname || rev.user_name || rev.changed_by_name || rev.username || (rev.changed_by ? `Officer (${String(rev.changed_by).slice(0, 8)})` : 'District / System Official');
-                        const badgeNo = rev.changed_by_badge || rev.badge_no;
-                        const officerRole = rev.changed_by_role || rev.level || rev.role || 'DISTRICT';
-                        const dateStr = rev.changed_at ? new Date(rev.changed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
-                        const changes = Array.isArray(rev.field_changes) ? rev.field_changes : [];
-                        const commentOrReason = rev.reason || rev.comment;
+                  <div className="space-y-3 max-h-[540px] overflow-y-auto pr-1">
 
-                        const FIELD_LABELS = {
-                          fir_no: 'FIR Number',
-                          fir_date: 'FIR Date',
-                          case_status: 'Case Status',
-                          current_status: 'Workflow Status',
-                          current_level: 'Workflow Level',
-                          brief_facts: 'Brief Facts / Gist',
-                          local_head_id: 'Crime Head ID',
-                          local_head: 'Crime Head',
-                          crime_head: 'Crime Head Classification',
-                          is_worked_out: 'Worked Out Status',
-                          worked_out_date: 'Worked Out Date',
-                          io_id: 'Investigating Officer ID',
-                          io_name: 'Investigating Officer Name',
-                          custody_status: 'Custody Status',
-                          missing_status: 'Missing Status',
-                          uidb_status: 'UIDB Status',
-                          act_name: 'Act Name',
-                          sections: 'IPC/BNS Sections',
-                          property_status: 'Property Status',
-                          transferred_to_ps_id: 'Transferred to PS',
-                          transferred_to_agency_id: 'Transferred to Agency',
-                          sent_to_court_date: 'Sent to Court Date',
-                          court_case_no: 'Court Case Number',
-                          court_name: 'Court Name',
-                          court_disposal_type: 'Court Disposal Status',
-                          court_disposal_date: 'Court Disposal Date',
-                        };
+                    {/* ── CREATE / Initial Filing summary banner (always first) ── */}
+                    {createRevision && (() => {
+                      const m = officerMeta(createRevision);
+                      const intakeFields = Array.isArray(createRevision.field_changes) ? createRevision.field_changes.length : 0;
+                      return (
+                        <div className="flex items-start gap-3 bg-[var(--bg-page-main)]/40 border border-dashed border-[var(--accent-color)]/40 rounded-xl p-3.5">
+                          <div className="mt-0.5 shrink-0 w-7 h-7 rounded-full bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/30 flex items-center justify-center">
+                            <FileSpreadsheet size={13} className="text-[var(--accent-color)]" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-xs text-[var(--text-main-theme)]">{m.name}</span>
+                              {m.role && (
+                                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] font-bold text-[var(--accent-color)]">
+                                  {m.role}
+                                </span>
+                              )}
+                              {m.badge && m.badge !== '—' && (
+                                <span className="text-[10px] font-mono text-[var(--text-main-theme)] opacity-60">Badge #{m.badge}</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-[var(--text-main-theme)] opacity-80 mt-1 font-semibold">
+                              Initial record filed with <span className="text-[var(--accent-color)] font-bold">{intakeFields} field{intakeFields !== 1 ? 's' : ''}</span> populated and submitted.
+                            </p>
+                            <p className="text-[11px] font-mono text-[var(--text-main-theme)] opacity-55 mt-0.5">{m.date}</p>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
-                        const formatVal = (v) => {
-                          if (v === null || v === undefined || v === '') return '(empty)';
-                          if (typeof v === 'boolean') return v ? 'TRUE / YES' : 'FALSE / NO';
-                          if (typeof v === 'object') return JSON.stringify(v);
-                          return String(v);
-                        };
+                    {/* ── No CREATE and no edits yet ── */}
+                    {!createRevision && visibleEditRevisions.length === 0 && (
+                      <p className="text-[var(--text-main-theme)] opacity-55 italic p-2 text-xs">No revisions logged yet.</p>
+                    )}
 
-                        return (
-                          <div key={rev.id || idx} className="bg-[var(--bg-page-main)]/50 border border-[var(--border-card-theme)]/70 p-3.5 rounded-xl text-xs sm:text-sm space-y-2 shadow-xs">
-                            <div className="flex justify-between items-start border-b border-[var(--border-card-theme)]/50 pb-2 gap-2">
-                              <div>
-                                <div className="font-bold text-[var(--text-main-theme)] flex items-center gap-2 flex-wrap">
-                                  <span>{officerName}</span>
+                    {/* ── Edit revision cards ── */}
+                    {editRevisions.slice().reverse().map((rev, idx) => {
+                      const m = officerMeta(rev);
+                      const rawChanges = Array.isArray(rev.field_changes) ? rev.field_changes : [];
+
+                      // Apply both filters: hidden keys AND normalised-empty equality
+                      const changes = rawChanges.filter((ch) => {
+                        const key = ch.field_key || ch.field || ch.field_name;
+                        if (HIDDEN_KEYS.has(key)) return false;
+                        return normStr(ch.old_value) !== normStr(ch.new_value);
+                      });
+
+                      const commentOrReason = rev.reason || rev.comment;
+
+                      // Skip revision cards that produce zero displayable field rows
+                      // and have no reason/comment — these are system-plumbing-only writes
+                      if (changes.length === 0 && !commentOrReason) return null;
+
+                      return (
+                        <div key={rev.id || idx} className="bg-[var(--bg-page-main)]/50 border border-[var(--border-card-theme)]/70 p-3.5 rounded-xl text-xs sm:text-sm space-y-2 shadow-xs">
+                          {/* Rev header */}
+                          <div className="flex justify-between items-start border-b border-[var(--border-card-theme)]/50 pb-2 gap-2">
+                            <div>
+                              <div className="font-bold text-[var(--text-main-theme)] flex items-center gap-2 flex-wrap">
+                                <span>{m.name}</span>
+                                {m.role && (
                                   <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] font-bold text-[var(--accent-color)]">
-                                    {officerRole}
+                                    {m.role}
                                   </span>
-                                </div>
-                                {badgeNo && badgeNo !== '—' && (
-                                  <p className="text-[11px] font-mono text-[var(--text-main-theme)] opacity-70 font-semibold mt-0.5">
-                                    Badge #{badgeNo}
-                                  </p>
                                 )}
                               </div>
-                              <div className="text-right shrink-0">
-                                <span className="text-[11px] font-mono font-semibold text-[var(--text-main-theme)] opacity-75 block">
-                                  {dateStr}
-                                </span>
-                                <div className="text-[10px] text-[var(--accent-color)] font-bold font-mono">
-                                  {isInitialFiling ? 'INITIAL INTAKE' : `Rev #${rev.revision_number} · ${rev.change_type}`}
-                                </div>
-                              </div>
+                              {m.badge && m.badge !== '—' && (
+                                <p className="text-[11px] font-mono text-[var(--text-main-theme)] opacity-60 mt-0.5">Badge #{m.badge}</p>
+                              )}
                             </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-[11px] font-mono font-semibold text-[var(--text-main-theme)] opacity-70 block">{m.date}</span>
+                              <div className="text-[10px] text-[var(--accent-color)] font-bold font-mono">Rev #{rev.revision_number} · {rev.change_type}</div>
+                            </div>
+                          </div>
 
-                            {commentOrReason && (
-                              <p className="text-xs italic bg-[var(--bg-page-main)]/80 p-2 rounded-lg border border-[var(--border-card-theme)]/50 text-[var(--text-main-theme)] font-semibold">
-                                "{commentOrReason}"
-                              </p>
-                            )}
+                          {/* Reason / comment */}
+                          {commentOrReason && (
+                            <p className="text-xs italic bg-[var(--bg-page-main)]/80 p-2 rounded-lg border border-[var(--border-card-theme)]/50 text-[var(--text-main-theme)] font-semibold">
+                              "{commentOrReason}"
+                            </p>
+                          )}
 
-                            {isInitialFiling ? (
-                              <div className="text-xs text-[var(--text-main-theme)] opacity-75 italic font-semibold p-2 bg-[var(--bg-page-main)]/40 rounded-lg border border-dashed border-[var(--border-card-theme)]">
-                                Initial Record Filing — {changes.length} intake field{changes.length !== 1 ? 's' : ''} populated at creation.
-                              </div>
-                            ) : changes.length > 0 ? (
-                              <div className="space-y-1.5 mt-2">
-                                {changes.map((ch, cIdx) => {
-                                  const key = ch.field_key || ch.field || ch.field_name;
-                                  const label = ch.label || FIELD_LABELS[key] || key;
-                                  return (
-                                    <div key={cIdx} className="bg-[var(--bg-page-main)]/90 p-2.5 rounded-lg border border-[var(--border-card-theme)] shadow-2xs space-y-1">
-                                      <div className="text-[var(--accent-color)] font-bold text-xs flex items-center justify-between">
-                                        <span>{ch.entity_label ? `${ch.entity_label} — ` : ''}{label}</span>
-                                        {key && <span className="font-mono text-[10px] opacity-60">[{key}]</span>}
+                          {/* Field change rows */}
+                          {changes.length > 0 ? (
+                            <div className="space-y-1.5 mt-1.5">
+                              {changes.map((ch, cIdx) => {
+                                const key = ch.field_key || ch.field || ch.field_name;
+                                const label = ch.label || FIELD_LABELS[key] || key;
+                                return (
+                                  <div key={cIdx} className="bg-[var(--bg-page-main)]/90 p-2.5 rounded-lg border border-[var(--border-card-theme)] space-y-1">
+                                    <div className="text-[var(--accent-color)] font-bold text-xs flex items-center justify-between gap-2">
+                                      <span>{ch.entity_label ? `${ch.entity_label} — ` : ''}{label}</span>
+                                      <span className="font-mono text-[10px] opacity-50 shrink-0">[{key}]</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 text-[11px] text-[var(--text-main-theme)]">
+                                      <div className="truncate">
+                                        <span className="opacity-50 mr-1">Before:</span>
+                                        <span className="line-through text-red-500 font-semibold">{formatVal(ch.old_value)}</span>
                                       </div>
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] sm:text-xs text-[var(--text-main-theme)] font-semibold">
-                                        <div className="truncate border-b sm:border-b-0 sm:border-r border-[var(--border-card-theme)]/60 pb-0.5 sm:pb-0 sm:pr-1">
-                                          <span className="opacity-60">Before:</span>{' '}
-                                          <span className="line-through text-red-600 font-bold">{formatVal(ch.old_value)}</span>
-                                        </div>
-                                        <div className="truncate sm:pl-1">
-                                          <span className="opacity-60">After:</span>{' '}
-                                          <span className="text-emerald-600 font-bold">{formatVal(ch.new_value)}</span>
-                                        </div>
+                                      <div className="truncate">
+                                        <span className="opacity-50 mr-1">After:</span>
+                                        <span className="text-emerald-600 font-semibold">{formatVal(ch.new_value)}</span>
                                       </div>
                                     </div>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <div className="text-xs text-[var(--text-main-theme)] opacity-75 italic font-semibold p-1">
-                                Action completed: {rev.change_type}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })
-                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-[var(--text-main-theme)] opacity-60 italic p-1">
+                              Workflow action: {rev.change_type}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               );
@@ -766,6 +884,8 @@ export default function RecordDetail() {
           </div>
         </div>
       </div>
+
+
 
       {/* ── SEND BACK CORRECTION MODAL ────────────────────────────────────────── */}
       {sendBackModalOpen && (
@@ -870,7 +990,7 @@ export default function RecordDetail() {
               <div className="space-y-2">
                 <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">Current Classification:</label>
                 <div className="bg-[var(--bg-page-main)]/50 p-3 rounded-xl border border-[var(--border-card-theme)] text-sm text-[var(--text-main-theme)] font-mono">
-                  {record.data.local_head || record.data.crime_head || 'Not Classified'}
+                  {record.data?.local_head || record.data?.crime_head || 'Not Classified'}
                 </div>
               </div>
 

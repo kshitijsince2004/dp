@@ -166,7 +166,7 @@ export default function CompilationUI() {
   const availableDiaries = DIARIES.filter(d => d.levels.includes(userLevel));
 
   const today = formatDMY(new Date());
-  const defaultFromDate = '01/01/2025';
+  const defaultFromDate = today;
   const [dateFrom, setDateFrom] = useState(defaultFromDate);
   const [dateTo, setDateTo]   = useState(today);
   const [exporting, setExporting] = useState(false);
@@ -266,7 +266,7 @@ export default function CompilationUI() {
     queryFn: async () => {
       log.debug('data:load_start', { what: 'hierarchy_ps', userLevel });
       try {
-        const res = await api.get('/hierarchy/nodes?type=PS');
+        const res = await api.get('/hierarchy/nodes', { params: { type: 'PS' } });
         const list = (res.data?.data?.nodes || res.data?.data || []).map(n => ({
           id: n.id || n._id,
           name: n.name_en || n.name || n.ps_name,
@@ -542,18 +542,18 @@ export default function CompilationUI() {
             else if (status === 'FAILED') {
               clearInterval(iv);
               reject(new Error('Export failed on server'));
-            } else if (attempts > 120) {
+            } else if (attempts > 360) {
               clearInterval(iv);
               reject(new Error('Export timed out after 3 minutes'));
             }
           } catch (e) {
             log.warn('action:export_poll_retry', { jobId, attempt: attempts, err: e.message });
-            if (attempts > 120) {
+            if (attempts > 360) {
               clearInterval(iv);
               reject(e);
             }
           }
-        }, 1500);
+        }, 500);
       });
     } catch (err) {
       toast.dismiss(loadingToastId);

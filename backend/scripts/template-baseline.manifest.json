@@ -1110,7 +1110,7 @@
           "key": "victim_police_station",
           "section": "Victim Present Address",
           "label": "Victim Police Station",
-          "hint": "select (226 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
+          "hint": "select (225 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -2958,11 +2958,11 @@
           "key": "status",
           "section": "Particular Details",
           "label": "Custody status",
-          "hint": "select: JC, PC, Bail, Bound Down, Release, Lockup, 35(3) BNS Notice, Fine",
+          "hint": "select: JC, PC, Bail, Bound Down, Release, Lockup, 35(3) BNS Notice, Fine, Apprehension",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"JC,PC,Bail,Bound Down,Release,Lockup,35(3) BNS Notice,Fine\""
+              "\"JC,PC,Bail,Bound Down,Release,Lockup,35(3) BNS Notice,Fine,Apprehension\""
             ]
           }
         },
@@ -2971,16 +2971,24 @@
           "key": "scheme_of_arrest",
           "section": "Particular Details",
           "label": "Scheme of arrest",
-          "hint": "select: Integrated Pride, Group Patrolling, Anti-snatching, By Prahari, By Eyes & Ears Scheme Members",
+          "hint": "select: Integrated Pride, Group Patrolling, Cycle Patrolling, Anti-snatching Team, By Prahari, By Eyes & Ears Scheme Members, Special Drive, Cyber Hawk, Kawach, General, Other",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Integrated Pride,Group Patrolling,Anti-snatching,By Prahari,By Eyes & Ears Scheme Members\""
+              "\"Integrated Pride,Group Patrolling,Cycle Patrolling,Anti-snatching Team,By Prahari,By Eyes & Ears Scheme Members,Special Drive,Cyber Hawk,Kawach,General,Other\""
             ]
           }
         },
         {
           "col": 53,
+          "key": "scheme_of_arrest_other",
+          "section": "Particular Details",
+          "label": "Scheme of Arrest (Specify)",
+          "hint": "[Required] text",
+          "validation": null
+        },
+        {
+          "col": 54,
           "key": "listed_criminal",
           "section": "Particular Details",
           "label": "Listed Criminal / Bad Character (BC)",
@@ -2991,14 +2999,6 @@
               "\"Yes,No\""
             ]
           }
-        },
-        {
-          "col": 54,
-          "key": null,
-          "section": "Particular Details",
-          "label": null,
-          "hint": null,
-          "validation": null
         },
         {
           "col": 55,
@@ -3039,11 +3039,19 @@
           "label": null,
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 60,
+          "key": null,
+          "section": "Particular Details",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
         "AH2:AQ2",
-        "AR2:BG2",
+        "AR2:BH2",
         "B2:H2",
         "I2:V2",
         "W2:AG2"
@@ -3918,6 +3926,19 @@
           "label": "PIS No. of IO",
           "hint": "PIS number of a registered IO, e.g. 28080214",
           "validation": null
+        },
+        {
+          "col": 51,
+          "key": "inquest_status",
+          "section": "Inquest Details",
+          "label": "Inquest Status",
+          "hint": "select: Disposal, Closure",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Disposal,Closure\""
+            ]
+          }
         }
       ],
       "row2Merges": [
@@ -4288,7 +4309,7 @@
           "col": 27,
           "key": "missing_date",
           "section": "Address Details",
-          "label": "Date Missing Since",
+          "label": "Date of Missing/Found",
           "hint": "date (dd-mm-yyyy)",
           "validation": {
             "type": "textLength",
@@ -4302,7 +4323,7 @@
           "col": 28,
           "key": "missing_place",
           "section": "Address Details",
-          "label": "Last Seen Place",
+          "label": "Last Seen/Found Place",
           "hint": "text",
           "validation": null
         },
@@ -4610,7 +4631,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$C$2:$C$227"
+              "'_Lookups'!$C$2:$C$226"
             ]
           }
         },
@@ -4624,6 +4645,14 @@
         },
         {
           "col": 9,
+          "key": "scheme_of_arrest_other",
+          "section": "Verification & Police Record",
+          "label": "Scheme of Arrest (Specify)",
+          "hint": "[Required] text",
+          "validation": null
+        },
+        {
+          "col": 10,
           "key": "listed_criminal",
           "section": "General Information",
           "label": "Listed Criminal / Bad Character (BC)",
@@ -4636,7 +4665,7 @@
           }
         },
         {
-          "col": 10,
+          "col": 11,
           "key": "prop_vehicle_no",
           "section": "General Information",
           "label": "Vehicle Registration No.",
@@ -4644,7 +4673,7 @@
           "validation": null
         },
         {
-          "col": 11,
+          "col": 12,
           "key": "prop_vehicle_type",
           "section": "General Information",
           "label": "Vehicle Type",
@@ -4657,7 +4686,7 @@
           }
         },
         {
-          "col": 12,
+          "col": 13,
           "key": "prop_cd_24h",
           "section": "General Information",
           "label": "1st CD Uploaded Within 24 Hours",
@@ -4670,7 +4699,7 @@
           }
         },
         {
-          "col": 13,
+          "col": 14,
           "key": "prop_cctv",
           "section": "General Information",
           "label": "CCTV Footage Collected",
@@ -4683,7 +4712,7 @@
           }
         },
         {
-          "col": 14,
+          "col": 15,
           "key": "prop_arms_type",
           "section": "General Information",
           "label": "Weapon Type",
@@ -4696,7 +4725,7 @@
           }
         },
         {
-          "col": 15,
+          "col": 16,
           "key": "prop_cash_amount",
           "section": "General Information",
           "label": "Amount (₹)",
@@ -4704,7 +4733,7 @@
           "validation": null
         },
         {
-          "col": 16,
+          "col": 17,
           "key": "prop_doc_type",
           "section": "General Information",
           "label": "Document Type",
@@ -4717,7 +4746,7 @@
           }
         },
         {
-          "col": 17,
+          "col": 18,
           "key": "prop_drug_type",
           "section": "General Information",
           "label": "Drug / Substance Type",
@@ -4730,7 +4759,7 @@
           }
         },
         {
-          "col": 18,
+          "col": 19,
           "key": "prop_elec_device_type",
           "section": "General Information",
           "label": "Device Type",
@@ -4743,7 +4772,7 @@
           }
         },
         {
-          "col": 19,
+          "col": 20,
           "key": "prop_gold_item_type",
           "section": "General Information",
           "label": "Item Type",
@@ -4756,7 +4785,7 @@
           }
         },
         {
-          "col": 20,
+          "col": 21,
           "key": "prop_other_desc",
           "section": "General Information",
           "label": "Item Description",
@@ -4764,7 +4793,7 @@
           "validation": null
         },
         {
-          "col": 21,
+          "col": 22,
           "key": "prop_arms_make",
           "section": "General Information",
           "label": "Make / Manufacturer",
@@ -4772,7 +4801,7 @@
           "validation": null
         },
         {
-          "col": 22,
+          "col": 23,
           "key": "prop_cash_currency",
           "section": "General Information",
           "label": "Currency Type",
@@ -4785,7 +4814,7 @@
           }
         },
         {
-          "col": 23,
+          "col": 24,
           "key": "prop_doc_number",
           "section": "General Information",
           "label": "Document Number",
@@ -4793,7 +4822,7 @@
           "validation": null
         },
         {
-          "col": 24,
+          "col": 25,
           "key": "prop_drug_quantity",
           "section": "General Information",
           "label": "Quantity",
@@ -4801,7 +4830,7 @@
           "validation": null
         },
         {
-          "col": 25,
+          "col": 26,
           "key": "prop_elec_brand",
           "section": "General Information",
           "label": "Make / Brand",
@@ -4809,7 +4838,7 @@
           "validation": null
         },
         {
-          "col": 26,
+          "col": 27,
           "key": "prop_gold_material",
           "section": "General Information",
           "label": "Material",
@@ -4822,7 +4851,7 @@
           }
         },
         {
-          "col": 27,
+          "col": 28,
           "key": "prop_other_value",
           "section": "General Information",
           "label": "Estimated Value (₹)",
@@ -4835,7 +4864,7 @@
           }
         },
         {
-          "col": 28,
+          "col": 29,
           "key": "prop_arms_serial",
           "section": "General Information",
           "label": "Serial Number",
@@ -4843,7 +4872,7 @@
           "validation": null
         },
         {
-          "col": 29,
+          "col": 30,
           "key": "prop_cash_denomination",
           "section": "General Information",
           "label": "Denomination Details",
@@ -4851,7 +4880,7 @@
           "validation": null
         },
         {
-          "col": 30,
+          "col": 31,
           "key": "prop_doc_holder",
           "section": "General Information",
           "label": "Document Holder Name",
@@ -4859,7 +4888,7 @@
           "validation": null
         },
         {
-          "col": 31,
+          "col": 32,
           "key": "prop_drug_unit",
           "section": "General Information",
           "label": "Unit",
@@ -4872,7 +4901,7 @@
           }
         },
         {
-          "col": 32,
+          "col": 33,
           "key": "prop_elec_model",
           "section": "General Information",
           "label": "Model",
@@ -4880,7 +4909,7 @@
           "validation": null
         },
         {
-          "col": 33,
+          "col": 34,
           "key": "prop_gold_weight",
           "section": "General Information",
           "label": "Weight (grams)",
@@ -4888,7 +4917,7 @@
           "validation": null
         },
         {
-          "col": 34,
+          "col": 35,
           "key": "prop_arms_ammo_count",
           "section": "General Information",
           "label": "Ammunition Count",
@@ -4896,7 +4925,7 @@
           "validation": null
         },
         {
-          "col": 35,
+          "col": 36,
           "key": "prop_doc_issuing_auth",
           "section": "General Information",
           "label": "Issuing Authority",
@@ -4904,7 +4933,7 @@
           "validation": null
         },
         {
-          "col": 36,
+          "col": 37,
           "key": "prop_drug_value",
           "section": "General Information",
           "label": "Estimated Street Value (₹)",
@@ -4912,7 +4941,7 @@
           "validation": null
         },
         {
-          "col": 37,
+          "col": 38,
           "key": "prop_elec_serial",
           "section": "General Information",
           "label": "Serial Number",
@@ -4920,7 +4949,7 @@
           "validation": null
         },
         {
-          "col": 38,
+          "col": 39,
           "key": "prop_gold_value",
           "section": "General Information",
           "label": "Estimated Value (₹)",
@@ -4928,7 +4957,7 @@
           "validation": null
         },
         {
-          "col": 39,
+          "col": 40,
           "key": "prop_arms_license",
           "section": "General Information",
           "label": "License Number",
@@ -4936,7 +4965,7 @@
           "validation": null
         },
         {
-          "col": 40,
+          "col": 41,
           "key": "prop_elec_value",
           "section": "General Information",
           "label": "Estimated Value (₹)",
@@ -4944,7 +4973,7 @@
           "validation": null
         },
         {
-          "col": 41,
+          "col": 42,
           "key": "arrested_qualification",
           "section": "Arrested Person Personal Details",
           "label": "Arrested Person Qualification",
@@ -4957,7 +4986,7 @@
           }
         },
         {
-          "col": 42,
+          "col": 43,
           "key": "education",
           "section": "General Information",
           "label": "education",
@@ -4970,7 +4999,7 @@
           }
         },
         {
-          "col": 43,
+          "col": 44,
           "key": "financial_status",
           "section": "General Information",
           "label": "financial_status",
@@ -4983,7 +5012,7 @@
           }
         },
         {
-          "col": 44,
+          "col": 45,
           "key": "social_category",
           "section": "General Information",
           "label": "social_category",
@@ -4998,8 +5027,8 @@
       ],
       "row2Merges": [
         "A2:G2",
-        "AP2:AR2",
-        "I2:AN2"
+        "AQ2:AS2",
+        "J2:AO2"
       ]
     },
     "Act and Sections": {
@@ -5368,7 +5397,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$I$2:$I$227"
+              "'_Lookups'!$I$2:$I$226"
             ]
           }
         },
@@ -5486,7 +5515,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$M$2:$M$227"
+              "'_Lookups'!$M$2:$M$226"
             ]
           }
         },
@@ -5598,7 +5627,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "\"JC,Bound Down,Lockup,Fine\""
+              "\"JC,Bound Down,Lockup,Fine,Apprehension\""
             ]
           }
         },
@@ -5607,11 +5636,11 @@
           "key": "scheme_of_arrest",
           "section": "Verification & Police Record",
           "label": "Scheme of Arrest",
-          "hint": "select: Integrated Pride, Group Patrolling, Anti-snatching, By Prahari, By Eyes & Ears Scheme Members",
+          "hint": "select: Integrated Pride, Group Patrolling, Cycle Patrolling, Anti-snatching Team, By Prahari, By Eyes & Ears Scheme Members, Special Drive, Cyber Hawk, Kawach, General, Other",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Integrated Pride,Group Patrolling,Anti-snatching,By Prahari,By Eyes & Ears Scheme Members\""
+              "\"Integrated Pride / Picket,Group Patrolling,Cycle Patrolling,Anti-Snatching Team,By Prahari Scheme,By Eyes & Ears Scheme Members,Special Drive,Cyber Hawk,Kawach,General,Other (Specify below)\""
             ]
           }
         }

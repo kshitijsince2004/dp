@@ -1,4 +1,4 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 
 function formatDistrictTitle(name) {
   let s = (name || 'DISTRICT').trim();
@@ -7,12 +7,12 @@ function formatDistrictTitle(name) {
 }
 
 export function renderG22Daily(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('G-22 Daily Crime');
+  let sheet = workbook.getWorksheet('G-22 Daily Crime') || workbook.addWorksheet('G-22 Daily Crime');
   const distTitle = formatDistrictTitle(scope.self_name);
   const dbc = calcData.distByCode || {};
   const g = code => { const v = dbc[code]?.dayY || 0; return v > 0 ? v : '-'; };
 
-  sheet.mergeCells('A1:Z1');
+  safeMerge(sheet, 'A1:Z1');
   const t1 = sheet.getCell('A1');
   t1.value = `Daily Crime ${distTitle}`;
   t1.font = FONTS.TITLE;
@@ -82,17 +82,18 @@ export function renderG22Daily(workbook, scope, calcData) {
   sheet.addRow([]);
 
   // Quadrant 4: Acts + Grand Total
-  const r10 = sheet.addRow(['District', 'Arms', 'Excise', 'Gambling', 'NDPS', 'Elect.', 'DPDP', 'Other Act', 'TOTAL ACT', 'GRAND TOTAL']);
+  const r10 = sheet.addRow(['District', 'Arms', 'Excise', 'Gambling', 'NDPS', 'Organised (111)', 'Terrorist (113)', 'Elect.', 'DPDP', 'Other Act', 'TOTAL ACT', 'GRAND TOTAL']);
   r10.font = FONTS.HEADER;
   r10.eachCell(c => c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.LIGHT_ORANGE } });
 
-  const actCodes = ['ARMS_ACT','EXCISE_ACT','GAMBLING_ACT','NDPS_ACT','POCSO','ELECT_ACT','DPDP_ACT','OTHER_ACT'];
+  const actCodes = ['ARMS_ACT','EXCISE_ACT','GAMBLING_ACT','NDPS_ACT','POCSO','ORGANISED_CRIME','TERRORIST_ACT','ELECT_ACT','DPDP_ACT','OTHER_ACT'];
   const totalAct = actCodes.reduce((s, c) => s + (dbc[c]?.dayY || 0), 0);
   const grandTotal = Object.keys(dbc).reduce((s, c) => s + (dbc[c]?.dayY || 0), 0);
 
   const d4 = sheet.addRow([
     distTitle,
     g('ARMS_ACT'), g('EXCISE_ACT'), g('GAMBLING_ACT'), g('NDPS_ACT'),
+    g('ORGANISED_CRIME'), g('TERRORIST_ACT'),
     g('ELECT_ACT'), g('DPDP_ACT'), g('OTHER_ACT'),
     totalAct > 0 ? totalAct : '-',
     grandTotal > 0 ? grandTotal : '-',

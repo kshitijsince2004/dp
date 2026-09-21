@@ -1,10 +1,10 @@
-﻿import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 
 export function renderD9FirArrests(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('D-9 FIR Arrests ');
+  let sheet = workbook.getWorksheet('D-9 FIR Arrests ') || workbook.getWorksheet('D-9 FIR Arrests') || workbook.addWorksheet('D-9 FIR Arrests ');
   const districtName = (scope.self_name || 'DISTRICT').toUpperCase();
 
-  sheet.mergeCells('A1:M1');
+  safeMerge(sheet, 'A1:M1');
   const t1 = sheet.getCell('A1');
   t1.value = `DAILY MORNING DIARY REGARDING PERSONS ARRESTED IN FIR, ${districtName} DISTRICT`;
   t1.font = FONTS.TITLE;
@@ -41,7 +41,7 @@ export function renderD9FirArrests(workbook, scope, calcData) {
 
   Object.keys(groups).forEach(sdName => {
     const sdRow = sheet.addRow([`SUB DIVISION - ${sdName}`]);
-    sheet.mergeCells(`A${sdRow.number}:M${sdRow.number}`);
+    safeMerge(sheet, `A${sdRow.number}:M${sdRow.number}`);
     const sdCell = sheet.getCell(`A${sdRow.number}`);
     sdCell.font = FONTS.HEADER;
     sdCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.LIGHT_GREEN } };
@@ -52,6 +52,11 @@ export function renderD9FirArrests(workbook, scope, calcData) {
       const firRef = item.fir_no
         ? `${item.fir_no} dt ${item.registration_date || ''}`
         : '-';
+      const poBcParts = [];
+      if (item.is_po === 'Yes' || item.is_po === true) poBcParts.push('PO');
+      if (item.is_bc === 'Yes' || item.is_bc === true) poBcParts.push('BC');
+      const poBcVal = poBcParts.length > 0 ? poBcParts.join('/') : 'No';
+
       const dRow = sheet.addRow([
         idx + 1,
         item.ps_name || '-',
@@ -63,7 +68,7 @@ export function renderD9FirArrests(workbook, scope, calcData) {
         item.sections || '-',
         item.io_name || '-',
         item.prev_involvement ?? 0,
-        item.is_po || 'No',
+        poBcVal,
         item.arrest_address || '-',
         item.custody_status || 'J/C'
       ]);

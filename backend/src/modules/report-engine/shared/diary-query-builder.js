@@ -289,9 +289,19 @@ export async function diaryKalandraCount(options = {}) {
       query = query.whereExists(function() {
         this.select(1)
             .from('persons as p')
-            .join('arrestee_details as ard', 'ard.person_id', 'p.id')
+            .leftJoin('arrestee_details as ard', 'ard.person_id', 'p.id')
             .whereRaw('p.record_id = r.id')
-            .andWhere('ard.is_bc', isBc);
+            .andWhere(function() {
+              if (isBc) {
+                this.where('ard.is_bc', true)
+                  .orWhereRaw("COALESCE(p.extra->>'is_bc', p.extra->>'bad_character', p.extra->>'listed_criminal', ad.extra->>'is_bc', ad.extra->>'bad_character', ad.extra->>'listed_criminal') IN ('true', '1', 't', 'yes', 'Yes')");
+              } else {
+                this.where(function() {
+                  this.where('ard.is_bc', false)
+                    .orWhereNull('ard.is_bc');
+                }).andWhereRaw("COALESCE(p.extra->>'is_bc', p.extra->>'bad_character', p.extra->>'listed_criminal', ad.extra->>'is_bc', ad.extra->>'bad_character', ad.extra->>'listed_criminal') NOT IN ('true', '1', 't', 'yes', 'Yes')");
+              }
+            });
       });
     }
 

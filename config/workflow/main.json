@@ -8,7 +8,8 @@
   "from_level": "PS",
   "to_level": "PS",
   "allowed_roles": [
-   "HC"
+   "HC",
+   "PS"
   ],
   "requires_comment": false,
   "sla_hours": 24,
@@ -24,7 +25,8 @@
   "from_level": "PS",
   "to_level": "PS",
   "allowed_roles": [
-   "HC"
+   "HC",
+   "PS"
   ],
   "requires_comment": false,
   "sla_hours": null,

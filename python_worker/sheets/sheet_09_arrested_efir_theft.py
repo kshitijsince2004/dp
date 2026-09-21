@@ -1,12 +1,27 @@
-from formatters import format_person, _arrested_parent
+from formatters import (
+    format_arrestee_person,
+    format_compiled_address,
+    format_custody_status,
+    format_accused_history,
+    format_recovery,
+    format_io,
+    _arrested_parent,
+)
 
 NUM = 9
 TABLE_NAME = 'excel_9arrested_efir_theft'
 LABEL = 'Arrested - E-FIR Theft'
-COLUMNS = ['sn', 'fir_no', 'us', 'accused_details', 'name_of_io', 'pcjcbail', 'prev_involvement_no_of_cases_head', 'recovery', 'whether_accused_is_bc_or_not', 'group_rolling', 'cycle_patrolling', 'by_antisnatching_team', 'by_prahari', 'by_eyes_ears_scheme_members']
+COLUMNS = ['sn', 'fir_no', 'us', 'accused_details', 'name_of_io', 'pcjcbail', 'accused_history', 'recovery', 'arrest_scheme']
 COLUMN_LABELS = {
-    'prev_involvement_no_of_cases_head': 'Prev. Involvement (No. of Cases) Head',
-    'group_rolling': 'Group Rolling',
+    'sn': 'S.N.',
+    'fir_no': 'FIR No.',
+    'us': 'U/S (Act + Section)',
+    'accused_details': 'Accused (Name / Age / S/O / R/O Address)',
+    'name_of_io': 'Name of IO (Rank / Name / PIS No.)',
+    'pcjcbail': 'Custody Status (PC / JC / Bail)',
+    'accused_history': 'Accused History (BC / PO / Prev. Cases)',
+    'recovery': 'Recovery(Details of property recovered)',
+    'arrest_scheme': 'Arrest Scheme (Patrolling / Prahari / Anti-Snatching)',
 }
 
 
@@ -20,23 +35,21 @@ def filter_records(classified):
 
 def map_row(r, idx):
     d = r['data']
+    scheme = d.get('scheme_of_arrest') or d.get('arrest_scheme') or d.get('scheme_of_arrest_other') or ''
     return {
         'sn': idx + 1,
         'fir_no': d.get('linked_fir_dd_no') or d.get('fir_no') or '',
         'us': d.get('sections') or '',
-        'accused_details': format_person(
-            d.get('arrested_name'), d.get('age'),
+        'accused_details': format_arrestee_person(
+            d.get('arrested_name'),
+            d.get('age'),
             _arrested_parent(d),
-            d.get('arrested_address'), d,
+            format_compiled_address(d.get('arrested_address') or d),
+            d,
         ),
-        'name_of_io': d.get('io_name') or '',
-        'pcjcbail': d.get('status') or '',
-        'prev_involvement_no_of_cases_head': d.get('prev_involvement_head') or '0',
-        'recovery': d.get('recovery') or 'No',
-        'whether_accused_is_bc_or_not': d.get('bad_character') or 'No',
-        'group_rolling': d.get('group_rolling') or 'No',
-        'cycle_patrolling': d.get('cycle_patrolling') or 'No',
-        'by_antisnatching_team': d.get('by_antisnatching_team') or 'No',
-        'by_prahari': d.get('by_prahari') or 'No',
-        'by_eyes_ears_scheme_members': d.get('by_eyes_ears_scheme_members') or 'No',
+        'name_of_io': format_io(d.get('io_name'), d.get('io_rank'), d.get('io_pis')),
+        'pcjcbail': format_custody_status(d.get('status') or d.get('custody_status')),
+        'accused_history': format_accused_history(d),
+        'recovery': format_recovery(d.get('recovery') or d.get('recovered_property') or d.get('stolen_properties')),
+        'arrest_scheme': scheme,
     }

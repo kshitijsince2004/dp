@@ -1,4 +1,4 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 
 function formatDistrictTitle(name) {
   let s = (name || 'DISTRICT').trim();
@@ -7,7 +7,7 @@ function formatDistrictTitle(name) {
 }
 
 export function renderAccident(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('Accident Cases');
+  let sheet = workbook.getWorksheet('Accident Cases') || workbook.addWorksheet('Accident Cases');
   const distTitle = formatDistrictTitle(scope.self_name);
   const yearNum = calcData.yearNum || 2026;
   const yearPrev = yearNum - 1;
@@ -22,7 +22,7 @@ export function renderAccident(workbook, scope, calcData) {
   const fatalUptoY1= dbc['FATAL_ACCIDENT']?.repY1  || 0;
 
   // Title
-  sheet.mergeCells('A1:G1');
+  safeMerge(sheet, 'A1:G1');
   const t1 = sheet.getCell('A1');
   t1.value = `ACCIDENT CASES STATEMENT — ${distTitle}`;
   t1.font = FONTS.TITLE;
@@ -34,9 +34,9 @@ export function renderAccident(workbook, scope, calcData) {
   const r3 = sheet.addRow(['', 'Today', `Upto Date ${yearNum}`, `Upto Date ${yearPrev}`, 'Today', `Upto Date ${yearNum}`, `Upto Date ${yearPrev}`]);
   r3.height = 22;
 
-  sheet.mergeCells('A2:A3');
-  sheet.mergeCells('B2:D2');
-  sheet.mergeCells('E2:G2');
+  safeMerge(sheet, 'A2:A3');
+  safeMerge(sheet, 'B2:D2');
+  safeMerge(sheet, 'E2:G2');
 
   [r2, r3].forEach(row => {
     row.eachCell(c => {
@@ -64,7 +64,7 @@ export function renderAccident(workbook, scope, calcData) {
 
   // Brief Facts section
   const bfRow = sheet.rowCount + 1;
-  sheet.mergeCells(`A${bfRow}:G${bfRow}`);
+  safeMerge(sheet, `A${bfRow}:G${bfRow}`);
   const bfHead = sheet.getCell(`A${bfRow}`);
   bfHead.value = `Brief facts of all fatal cases in ${distTitle}:`;
   bfHead.font = FONTS.SUBTITLE;

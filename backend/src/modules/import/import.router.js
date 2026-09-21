@@ -100,12 +100,12 @@ const upload = multer({
 // Every route explicitly scoped — P5.5 (default-deny), no endpoint left un-gated. HQ_ANALYST
 // (read-only role, no import capability) removed from /validate — it was there pre-
 // Integration-3 by oversight, not design.
-router.get('/template/:record_type', allow('HC', 'SHO', 'DISTRICT_OFFICER', 'SYSTEM_ADMIN'), importController.downloadImportTemplate);
-router.post('/validate', allow('HC', 'DISTRICT_OFFICER'), upload.single('file'), importController.validateImportBatch);
-router.post('/confirm/:batchId', allow('HC', 'DISTRICT_OFFICER'), importController.confirmImportBatch);
-router.post('/batches/:batchId/cancel', allow('HC', 'DISTRICT_OFFICER'), importController.cancelImportBatch);
-router.get('/batches', allow('HC', 'DISTRICT_OFFICER'), importController.listBatches);
-router.get('/batches/:batchId', allow('HC', 'DISTRICT_OFFICER'), importController.getBatchDetail);
+router.get('/template/:record_type', allow('HC', 'SHO', 'PS', 'DISTRICT_OFFICER', 'SYSTEM_ADMIN'), importController.downloadImportTemplate);
+router.post('/validate', allow('HC', 'SHO', 'PS', 'DISTRICT_OFFICER'), upload.single('file'), importController.validateImportBatch);
+router.post('/confirm/:batchId', allow('HC', 'SHO', 'PS', 'DISTRICT_OFFICER'), importController.confirmImportBatch);
+router.post('/batches/:batchId/cancel', allow('HC', 'SHO', 'PS', 'DISTRICT_OFFICER'), importController.cancelImportBatch);
+router.get('/batches', allow('HC', 'SHO', 'PS', 'DISTRICT_OFFICER'), importController.listBatches);
+router.get('/batches/:batchId', allow('HC', 'SHO', 'PS', 'DISTRICT_OFFICER'), importController.getBatchDetail);
 
 // Multer surfaces oversize/malformed-multipart failures via next(err) with a MulterError
 // (LIMIT_FILE_SIZE etc.) — left uncaught, app.js's global handler reports these as 500s,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, CheckCircle2, Lock, Info } from 'lucide-react';
 import api from '../../utils/api.js';
@@ -56,6 +56,8 @@ export default function StatutoryFirField({
   const isManual = prefixData?.districtCode != null;
   const currentYear2Digit = String(new Date().getFullYear()).slice(-2);
 
+  const lastEmittedRef = useRef('');
+
   // Internal state for YY (2 digits) and Serial (4 digits)
   const [yearSegment, setYearSegment] = useState(() => {
     if (value && /^\d{14}$/.test(value)) {
@@ -71,33 +73,37 @@ export default function StatutoryFirField({
     return '';
   });
 
-  // Sync state if external value changes (e.g. record load)
+  // Sync state ONLY if external value changes (e.g. record load/reset)
   useEffect(() => {
-    if (value && /^\d{14}$/.test(value)) {
+    if (value && value !== lastEmittedRef.current && /^\d{14}$/.test(value)) {
       setYearSegment(value.slice(8, 10));
       setSerialSegment(value.slice(10, 14));
+      lastEmittedRef.current = value;
     }
   }, [value]);
 
   // Propagate assembled 14-digit value whenever prefix, year, or serial changes
-  const commitStatutoryFir = (pfx, yr, ser) => {
+  const commitStatutoryFir = (pfx, yr, ser, pad = false) => {
     if (!pfx) return;
     const cleanYr = (yr || currentYear2Digit).replace(/\D/g, '').slice(0, 2).padStart(2, '0');
     const cleanSer = (ser || '').replace(/\D/g, '').slice(0, 4);
     
-    if (cleanSer) {
+    let full;
+    if (pad && cleanSer) {
       const paddedSer = cleanSer.padStart(4, '0');
-      const full14 = `${pfx}${cleanYr}${paddedSer}`;
-      onChange(full14);
+      full = `${pfx}${cleanYr}${paddedSer}`;
     } else {
-      onChange(`${pfx}${cleanYr}${cleanSer}`);
+      full = `${pfx}${cleanYr}${cleanSer}`;
     }
+    
+    lastEmittedRef.current = full;
+    onChange(full);
   };
 
   // Recommit when prefixData updates or registration type changes
   useEffect(() => {
     if (statutoryPrefix) {
-      commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, serialSegment);
+      commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, serialSegment, false);
     }
   }, [statutoryPrefix, registrationType]);
 
@@ -105,7 +111,7 @@ export default function StatutoryFirField({
     const raw = e.target.value.replace(/\D/g, '').slice(0, 2);
     setYearSegment(raw);
     if (statutoryPrefix) {
-      commitStatutoryFir(statutoryPrefix, raw, serialSegment);
+      commitStatutoryFir(statutoryPrefix, raw, serialSegment, false);
     }
   };
 
@@ -118,7 +124,7 @@ export default function StatutoryFirField({
     }
     setYearSegment(clean);
     if (statutoryPrefix) {
-      commitStatutoryFir(statutoryPrefix, clean, serialSegment);
+      commitStatutoryFir(statutoryPrefix, clean, serialSegment, true);
     }
   };
 
@@ -126,7 +132,7 @@ export default function StatutoryFirField({
     const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
     setSerialSegment(raw);
     if (statutoryPrefix) {
-      commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, raw);
+      commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, raw, false);
     }
   };
 
@@ -135,7 +141,7 @@ export default function StatutoryFirField({
       const padded = serialSegment.padStart(4, '0');
       setSerialSegment(padded);
       if (statutoryPrefix) {
-        commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, padded);
+        commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, padded, true);
       }
     }
   };

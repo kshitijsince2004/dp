@@ -1,4 +1,4 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 import { varPct, detPct, computeNotWorkedOut } from '../../shared/calc.js';
 
 function formatDistrictTitle(name) {
@@ -73,7 +73,7 @@ const HEINOUS_CODES = new Set(['DACOITY','MURDER','ATT_TO_MURDER','ROBBERY','RIO
 const ACT_CODES = new Set(['ARMS_ACT','EXCISE_ACT','GAMBLING_ACT','NDPS_ACT','ELECT_ACT','DPDP_ACT','POCSO','IT_ACT','COPYRIGHT_ACT','OTHER_ACT']);
 
 export function renderDCsPChart(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('DCsP- Crime Chart');
+  let sheet = workbook.getWorksheet('DCsP- Crime Chart') || workbook.getWorksheet('DCsP- Crime Chart ') || workbook.addWorksheet('DCsP- Crime Chart');
   const distTitle = formatDistrictTitle(scope.self_name);
   const yearNum = calcData.yearNum || 2026;
   const yearPrev = yearNum - 1;
@@ -97,7 +97,7 @@ export function renderDCsPChart(workbook, scope, calcData) {
   });
 
   // Title Row 1
-  sheet.mergeCells('A1:M1');
+  safeMerge(sheet, 'A1:M1');
   const titleCell = sheet.getCell('A1');
   titleCell.value = `DCsP CRIME CHART — ${distTitle}`;
   titleCell.font = FONTS.TITLE;
@@ -123,12 +123,12 @@ export function renderDCsPChart(workbook, scope, calcData) {
   ]);
   r3.height = 22;
 
-  sheet.mergeCells('A2:A3');
-  sheet.mergeCells('B2:C2');
-  sheet.mergeCells('D2:E2');
-  sheet.mergeCells('F2:F3');
-  sheet.mergeCells('G2:J2');
-  sheet.mergeCells('K2:M2');
+  safeMerge(sheet, 'A2:A3');
+  safeMerge(sheet, 'B2:C2');
+  safeMerge(sheet, 'D2:E2');
+  safeMerge(sheet, 'F2:F3');
+  safeMerge(sheet, 'G2:J2');
+  safeMerge(sheet, 'K2:M2');
 
   [r2, r3].forEach(row => {
     row.eachCell(c => {

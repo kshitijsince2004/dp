@@ -1,13 +1,13 @@
-﻿import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 
 export function renderD10_66dp(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('D10 Action of 66 DP Act');
+  let sheet = workbook.getWorksheet('D10 Action of 66 DP Act') || workbook.getWorksheet('D10 Action of 66 DP Act ') || workbook.addWorksheet('D10 Action of 66 DP Act');
   const districtName = (scope.self_name || 'DISTRICT').toUpperCase();
   const children = scope.children_ids || [];
   const displayNames = scope.display_names || {};
   const yearNum = calcData.yearNum || 2026;
 
-  sheet.mergeCells('A1:K1');
+  safeMerge(sheet, 'A1:K1');
   const t1 = sheet.getCell('A1');
   t1.value = `STATEMENT REGARDING ACTION U/S 66 DP ACT IN ${districtName} DISTRICT (${yearNum})`;
   t1.font = FONTS.TITLE;

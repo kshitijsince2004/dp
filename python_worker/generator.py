@@ -114,8 +114,10 @@ def query_records(definition, user_filters, engine):
     data_filter = filter_spec.get('data_filter', {})
     field_keys = definition.get('fixed_fields', [])
 
-    date_from = parse_date(user_filters.get('date_from') or user_filters.get('from_date')) or date(2020, 1, 1)
-    date_to = parse_date(user_filters.get('date_to') or user_filters.get('to_date')) or date(2030, 1, 1)
+    raw_date_from = user_filters.get('date_from') or user_filters.get('from_date') or user_filters.get('date') or user_filters.get('dateFrom') or user_filters.get('startDate')
+    raw_date_to = user_filters.get('date_to') or user_filters.get('to_date') or user_filters.get('dateTo') or user_filters.get('endDate')
+    date_from = parse_date(raw_date_from) or date(2020, 1, 1)
+    date_to = parse_date(raw_date_to) or (date_from if raw_date_from else date(2030, 1, 1))
     ps_id = user_filters.get('ps_id') or user_filters.get('psId')
     district_id = user_filters.get('district_id') or user_filters.get('districtId')
 
@@ -400,27 +402,33 @@ def query_linked_records(definition, user_filters, engine):
         coalesce = f"COALESCE({jf('c.data', 'fir_no')}, {jf('a.data', 'linked_fir_dd_no')})"
         sql = f"""
             SELECT
-              {jf('a.data', 'arrested_name')}    AS arrested_name,
-              {jf('a.data', 'parents_name')}     AS parents_name,
-              {jf('a.data', 'arrested_address')} AS arrested_address,
-              {jf('a.data', 'age_gender')}       AS age_gender,
-              {coalesce}                          AS fir_dd_no,
-              {jf('a.data', 'arrest_date')}      AS arrest_date,
-              {jf('a.data', 'sections')}         AS sections,
-              hn.name                             AS ps_name,
-              {jf('a.data', 'io_name')}          AS io_name,
-              {jf('a.data', 'io_rank')}          AS io_rank,
-              {jf('a.data', 'io_mobile')}        AS io_mobile,
-              {jf('a.data', 'status')}           AS status
+              COALESCE(pa.name, '')                       AS arrested_name,
+              COALESCE(pa.father_name, pa.relative_name, '') AS parents_name,
+              COALESCE(loc_a.full_address, '')            AS arrested_address,
+              COALESCE(CONCAT_WS('/', pa.age, pa.gender), '') AS age_gender,
+              COALESCE(fd.fir_no, ad.fir_no, ad.gd_no, '') AS fir_dd_no,
+              ad.arrest_datetime                          AS arrest_date,
+              ad.act_sections                             AS sections,
+              hn.name                                     AS ps_name,
+              COALESCE(io_a.name, ad.arresting_officer_name, '') AS io_name,
+              COALESCE(io_a.rank, ad.arresting_officer_rank, '') AS io_rank,
+              COALESCE(io_a.mobile, '')                   AS io_mobile,
+              ad.case_status                              AS status
             FROM records a
             JOIN hierarchy_nodes hn ON hn.id = a.ps_id
+            LEFT JOIN arrest_details ad ON ad.record_id = a.id
+            LEFT JOIN locations loc_a ON loc_a.id = ad.arrest_location_id
+            LEFT JOIN investigating_officers io_a ON io_a.id = a.io_id
+            LEFT JOIN persons pa ON pa.record_id = a.id AND pa.role = 'ARRESTEE'
             LEFT JOIN record_links rl
               ON rl.target_record_id = a.id
             LEFT JOIN link_type_registry ltr
               ON ltr.id = rl.link_type_id AND ltr.code = :link_code
             LEFT JOIN records c ON c.id = rl.source_record_id
-            WHERE a.record_type = 'ARREST'
-              AND a.record_date BETWEEN :date_from AND :date_to
+            LEFT JOIN fir_details fd ON fd.record_id = c.id
+            WHERE a.record_type IN ('ARREST', 'ARRESTS')
+              AND COALESCE(a.registration_date, ad.arrest_datetime::date, a.record_date) BETWEEN :date_from AND :date_to
+              AND a.current_status != 'DELETED'
         """
         if user_filters.get('ps_id') or user_filters.get('psId'):
             sql += " AND a.ps_id = :ps_id"
@@ -428,36 +436,45 @@ def query_linked_records(definition, user_filters, engine):
         elif user_filters.get('district_id') or user_filters.get('districtId'):
             sql += " AND a.district_id = :district_id"
             params['district_id'] = user_filters.get('district_id') or user_filters.get('districtId')
-        sql += " ORDER BY a.record_date DESC"
+        sql += " ORDER BY COALESCE(a.registration_date, ad.arrest_datetime::date, a.record_date) DESC"
 
     else:
         # CASE primary, LEFT JOIN to linked ARRESTed persons
         sql = f"""
             SELECT
-              hn.name                                      AS ps_name,
-              {jf('c.data', 'fir_no')}                    AS fir_no,
-              {jf('c.data', 'sections')}                  AS sections,
-              {jf('c.data', 'complainant_name')}          AS complainant_name,
-              {jf('c.data', 'complainant_parent_name')}   AS complainant_parent_name,
-              {jf('c.data', 'complainant_address')}       AS complainant_address,
-              {jf('c.data', 'time_of_occurrence')}        AS time_of_occurrence,
-              {jf('c.data', 'occurrence_place')}          AS occurrence_place,
-              {jf('c.data', 'occurrence_date')}           AS occurrence_date,
-              {jf('c.data', 'brief_facts')}               AS brief_facts,
-              {jf('a.data', 'arrested_name')}             AS arrested_name,
-              {jf('a.data', 'parents_name')}              AS parents_name,
-              {jf('a.data', 'arrested_address')}          AS arrested_address,
-              {jf('a.data', 'age_gender')}                AS age_gender,
-              {jf('c.data', 'io_name')}                   AS io_name
+              hn.name                                     AS ps_name,
+              COALESCE(fd.fir_no, '')                     AS fir_no,
+              COALESCE(fd.act_sections, '')               AS sections,
+              COALESCE(pc.name, '')                       AS complainant_name,
+              COALESCE(pc.father_name, pc.relative_name, '') AS complainant_parent_name,
+              COALESCE(loc_c.full_address, '')            AS complainant_address,
+              COALESCE(fd.occurrence_from_datetime::text, '') AS time_of_occurrence,
+              COALESCE(loc_occ.full_address, '')          AS occurrence_place,
+              fd.occurrence_from_datetime                 AS occurrence_date,
+              COALESCE(fd.brief_facts, '')                AS brief_facts,
+              COALESCE(pa.name, '')                       AS arrested_name,
+              COALESCE(pa.father_name, pa.relative_name, '') AS parents_name,
+              COALESCE(loc_a.full_address, '')            AS arrested_address,
+              COALESCE(CONCAT_WS('/', pa.age, pa.gender), '') AS age_gender,
+              COALESCE(io_c.name, '')                     AS io_name
             FROM records c
             JOIN hierarchy_nodes hn ON hn.id = c.ps_id
+            LEFT JOIN fir_details fd ON fd.record_id = c.id
+            LEFT JOIN locations loc_occ ON loc_occ.id = fd.occurrence_location_id
+            LEFT JOIN investigating_officers io_c ON io_c.id = c.io_id
+            LEFT JOIN persons pc ON pc.record_id = c.id AND pc.role = 'COMPLAINANT'
+            LEFT JOIN locations loc_c ON loc_c.id = pc.address_id
             LEFT JOIN record_links rl
               ON rl.source_record_id = c.id
             LEFT JOIN link_type_registry ltr
               ON ltr.id = rl.link_type_id AND ltr.code = :link_code
             LEFT JOIN records a ON a.id = rl.target_record_id
-            WHERE c.record_type = 'CASE'
-              AND c.record_date BETWEEN :date_from AND :date_to
+            LEFT JOIN arrest_details ad ON ad.record_id = a.id
+            LEFT JOIN persons pa ON pa.record_id = a.id AND pa.role = 'ARRESTEE'
+            LEFT JOIN locations loc_a ON loc_a.id = ad.arrest_location_id
+            WHERE c.record_type IN ('CASE', 'CASES')
+              AND COALESCE(c.registration_date, fd.fir_date, c.record_date) BETWEEN :date_from AND :date_to
+              AND c.current_status != 'DELETED'
         """
         if user_filters.get('ps_id') or user_filters.get('psId'):
             sql += " AND c.ps_id = :ps_id"
@@ -465,7 +482,7 @@ def query_linked_records(definition, user_filters, engine):
         elif user_filters.get('district_id') or user_filters.get('districtId'):
             sql += " AND c.district_id = :district_id"
             params['district_id'] = user_filters.get('district_id') or user_filters.get('districtId')
-        sql += " ORDER BY c.record_date DESC"
+        sql += " ORDER BY COALESCE(c.registration_date, fd.fir_date, c.record_date) DESC"
 
     with engine.connect() as conn:
         df = pd.read_sql(text(sql), conn, params=params)
@@ -620,18 +637,19 @@ def render_pdf(df, definition, filters, file_path):
 
 DAILY_DIARY_PARALLEL_TEMPLATE_IDS = {
     'daily-diary', 'dd-manual-fir', 'dd-eburglary-ehouse-theft-mvt',
-    'dd-arrested-all-heads', 'dd-arrested-east-district', 'dd-arrested-kalandara',
+    'dd-arrested-east-district', 'dd-arrested-kalandara',
     'dd-arrested-efir-theft', 'dd-arrested-efir-mv-theft', 'dd-proclaimed-offenders',
     'dd-arrested-24hrs', 'dd-missing-uidb', 'dd-women-children-missing',
     'dd-preventive-action', 'dd-inquest-registered', 'dd-important-cases',
     'dd-fir-goswara-summary', 'dd-financial-fraud-arrest', 'dd-ndps-action',
+    'dd-arrest-count-summary',
 }
 
 # Maps each template ID to the subset of table_names it covers (None = all sheets)
 TEMPLATE_TO_TABLE_NAMES = {
     'daily-diary': [
         'excel_1manual_fir', 'excel_2eburglary_cases', 'excel_3ehouse_theft_cases', 'excel_4eother_theft_cases',
-        'excel_5mvt_cases', 'excel_6arrested_all_heads', 'excel_7arrested_east_district', 'excel_8arrested_kalandara',
+        'excel_5mvt_cases', 'excel_7arrested_east_district', 'excel_8arrested_kalandara',
         'excel_9arrested_efir_theft', 'excel_10arrested_efir_mv_theft', 'excel_11proclaimed_offenders',
         'excel_13arrested_24_hrs_list', 'excel_14pi_disposal_manual', 'excel_15pi_disposal_eproperty',
         'excel_16pi_disposal_emvt', 'excel_18missing_persons', 'excel_19uidb', 'excel_20abandoned_persons',
@@ -641,7 +659,6 @@ TEMPLATE_TO_TABLE_NAMES = {
     ],
     'dd-manual-fir': ['excel_1manual_fir'],
     'dd-eburglary-ehouse-theft-mvt': ['excel_2eburglary_cases', 'excel_3ehouse_theft_cases', 'excel_4eother_theft_cases', 'excel_5mvt_cases'],
-    'dd-arrested-all-heads': ['excel_6arrested_all_heads'],
     'dd-arrested-east-district': ['excel_7arrested_east_district'],
     'dd-arrested-kalandara': ['excel_8arrested_kalandara'],
     'dd-arrested-efir-theft': ['excel_9arrested_efir_theft'],
@@ -656,6 +673,7 @@ TEMPLATE_TO_TABLE_NAMES = {
     'dd-fir-goswara-summary': ['excel_28fir_goswara_summary'],
     'dd-financial-fraud-arrest': [],
     'dd-ndps-action': [],
+    'dd-arrest-count-summary': ['excel_29arrest_count_summary'],
 }
 
 from registry import map_all_sheets, SHEETS as REGISTRY_SHEETS
@@ -664,45 +682,65 @@ from builder import build_workbook
 
 def _fetch_records(filters):
     """Query records + hierarchy join for daily-diary generation."""
-    # date/date_to may arrive as dd/mm/yyyy or yyyy-mm-dd depending on caller;
-    # record_date is a native DATE column so parse into a real date object.
-    date = parse_date(filters.get('date'))
-    date_to = parse_date(filters.get('date_to') or filters.get('dateTo')) or date
+    raw_date = (
+        filters.get('date') or filters.get('date_from') or filters.get('from_date') or
+        filters.get('startDate') or filters.get('from') or filters.get('cutoffDate')
+    )
+    raw_date_to = (
+        filters.get('date_to') or filters.get('dateTo') or filters.get('to_date') or
+        filters.get('endDate') or filters.get('to')
+    )
+
+    date_from_val = parse_date(raw_date)
+    date_to_val = parse_date(raw_date_to)
+
+    if not date_from_val and not date_to_val:
+        date_from_val = date(2020, 1, 1)
+        date_to_val = date(2030, 1, 1)
+    elif not date_from_val:
+        date_from_val = date_to_val
+    elif not date_to_val:
+        date_to_val = date_from_val
+
     ps_id = filters.get('ps_id') or filters.get('psId')
     district_id = filters.get('district_id') or filters.get('districtId')
     sub_div_id = filters.get('sub_div_id') or filters.get('subDivId')
 
-    # Daily diary is date-based, not workflow-status-based.
-    # Include all records for the date; DRAFT records are still police activity that happened.
-    conditions = ["r.record_date BETWEEN :date_from AND :date_to"]
-    params = {'date_from': date, 'date_to': date_to}
+    conditions = ["COALESCE(r.registration_date, f.fir_date, r.record_date) BETWEEN :date_from AND :date_to", "r.current_status != 'DELETED'"]
+    params = {'date_from': date_from_val, 'date_to': date_to_val}
 
     if ps_id:
         if isinstance(ps_id, list):
             placeholders = ', '.join(f':ps_{i}' for i in range(len(ps_id)))
-            conditions.append(f'r.ps_id IN ({placeholders})')
+            conditions.append(f'(r.ps_id IN ({placeholders}) OR ps.code IN ({placeholders}) OR ps.name IN ({placeholders}))')
             for i, p in enumerate(ps_id):
                 params[f'ps_{i}'] = str(p)
         elif isinstance(ps_id, str) and ',' in ps_id:
             ps_list = [p.strip() for p in ps_id.split(',')]
             placeholders = ', '.join(f':ps_{i}' for i in range(len(ps_list)))
-            conditions.append(f'r.ps_id IN ({placeholders})')
+            conditions.append(f'(r.ps_id IN ({placeholders}) OR ps.code IN ({placeholders}) OR ps.name IN ({placeholders}))')
             for i, p in enumerate(ps_list):
                 params[f'ps_{i}'] = p
         else:
-            ps_str = str(ps_id)
-            if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', ps_str, re.I):
+            ps_str = str(ps_id).strip()
+            if ps_str.upper() in ('ALL', 'ALL_STATIONS', 'ALL_DELHI_TOTAL', 'ALL_DELHI'):
+                pass
+            elif re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', ps_str, re.I):
                 conditions.append('r.ps_id = :ps_id')
+                params['ps_id'] = ps_str
             else:
-                conditions.append('ps.code = :ps_id')
-            params['ps_id'] = ps_str
+                conditions.append('(ps.code = :ps_id OR ps.name = :ps_id OR LOWER(ps.name) = LOWER(:ps_id))')
+                params['ps_id'] = ps_str
     elif district_id:
-        dist_str = str(district_id)
-        if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', dist_str, re.I):
+        dist_str = str(district_id).strip()
+        if dist_str.upper() in ('ALL', 'ALL_DISTRICTS'):
+            pass
+        elif re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', dist_str, re.I):
             conditions.append('r.district_id = :district_id')
+            params['district_id'] = dist_str
         else:
-            conditions.append('dist.code = :district_id')
-        params['district_id'] = dist_str
+            conditions.append('(dist.code = :district_id OR dist.name = :district_id OR LOWER(dist.name) = LOWER(:district_id))')
+            params['district_id'] = dist_str
     elif sub_div_id:
         conditions.append('r.sub_div_id = :sub_div_id')
         params['sub_div_id'] = str(sub_div_id)
@@ -713,12 +751,13 @@ def _fetch_records(filters):
                ps.name   AS ps_name,
                ps.code   AS ps_code,
                dist.name AS district_name,
-               dist.code    AS district_code
+               dist.code AS district_code
         FROM records r
+        LEFT JOIN fir_details f        ON r.id          = f.record_id
         LEFT JOIN hierarchy_nodes ps   ON r.ps_id       = ps.id
         LEFT JOIN hierarchy_nodes dist ON r.district_id = dist.id
         WHERE {where}
-        ORDER BY r.created_at ASC
+        ORDER BY COALESCE(r.registration_date, f.fir_date, r.record_date) DESC, r.created_at DESC
     """
 
     with engine.connect() as conn:
@@ -728,14 +767,7 @@ def _fetch_records(filters):
     records = []
     for row in rows:
         r = dict(row)
-        raw_data = r.get('data')
-        if isinstance(raw_data, str):
-            try:
-                r['data'] = json.loads(raw_data)
-            except Exception:
-                r['data'] = {}
-        elif raw_data is None:
-            r['data'] = {}
+        r['data'] = {}
         records.append(r)
 
     _enrich_records(records)
@@ -748,10 +780,13 @@ def _enrich_records(records):
         return records
 
     all_ids    = [str(r['id']) for r in records]
-    case_ids   = [str(r['id']) for r in records if r.get('record_type') == 'CASE']
-    arrest_ids = [str(r['id']) for r in records if r.get('record_type') == 'ARREST']
-    missing_ids= [str(r['id']) for r in records if r.get('record_type') == 'MISSING']
-    uidb_ids   = [str(r['id']) for r in records if r.get('record_type') == 'UIDB']
+    case_ids   = [str(r['id']) for r in records if r.get('record_type') in ('CASE', 'CASES')]
+    arrest_ids = [str(r['id']) for r in records if r.get('record_type') in ('ARREST', 'ARRESTS')]
+    missing_ids= [str(r['id']) for r in records if r.get('record_type') in ('MISSING', 'MISSINGS')]
+    uidb_ids   = [str(r['id']) for r in records if r.get('record_type') in ('UIDB', 'UIDBS')]
+
+    # Process details for all records via _q batching
+    display_ids = all_ids
 
     idx = {str(r['id']): r for r in records}
 
@@ -759,293 +794,389 @@ def _enrich_records(records):
     def pm(lst):   return {f'p{i}': v for i, v in enumerate(lst)}
     def yn(v):     return 'Yes' if v else 'No'
 
+    import time
     def _q(sql, ids):
-        return conn.execute(text(sql.replace('__PH__', ph(ids))), pm(ids)).mappings().all()
+        if not ids:
+            return []
+        all_rows = []
+        batch_size = 5000
+        for i in range(0, len(ids), batch_size):
+            batch = ids[i:i + batch_size]
+            for attempt in range(3):
+                try:
+                    with engine.connect() as conn:
+                        rows = conn.execute(text(sql.replace('__PH__', ph(batch))), pm(batch)).mappings().all()
+                        all_rows.extend(rows)
+                        break
+                except Exception as ex:
+                    if attempt == 2:
+                        raise ex
+                    time.sleep(0.3)
+        return all_rows
 
-    with engine.connect() as conn:
+    # 1. CASE — fir_details + local_head + occurrence location
+    if case_ids:
+        for row in _q("""
+            SELECT fd.record_id,
+                   fd.fir_no, fd.fir_date, fd.gd_no, fd.gd_date, fd.gd_time,
+                   fd.brief_facts, fd.case_status, fd.disposal_type, fd.is_worked_out,
+                   fd.occurrence_from_datetime, fd.occurrence_to_datetime,
+                   lh.local_head, lh.canonical_code,
+                   COALESCE(NULLIF(TRIM(loc.full_address),''),
+                            NULLIF(TRIM(CONCAT_WS(', ', NULLIF(loc.house_no,''),
+                                   NULLIF(loc.street,''), NULLIF(loc.colony,''),
+                                   NULLIF(loc.city_town_village,''))), '')) AS occ_place
+            FROM fir_details fd
+            LEFT JOIN ref.local_heads lh ON lh.local_head_cd = fd.local_head_id
+            LEFT JOIN locations loc ON loc.id = fd.occurrence_location_id
+            WHERE fd.record_id IN (__PH__)
+        """, case_ids):
+            r = idx.get(str(row['record_id']))
+            if not r: continue
+            d = r['data']
+            d['fir_no']         = row['fir_no'] or ''
+            d['fir_date']       = fmt_date(row['fir_date'])
+            d['gd_no']          = row['gd_no'] or ''
+            d['gd_date']        = fmt_date(row['gd_date'])
+            d['brief_facts']    = row['brief_facts'] or ''
+            d['case_status']    = row['case_status'] or ''
+            d['status']         = row['case_status'] or ''      # for is_disposed()
+            d['disposal_type']  = row['disposal_type'] or ''
+            d['is_worked_out']  = bool(row['is_worked_out'])
+            d['local_head']     = row['local_head'] or ''
+            d['canonical_code'] = row['canonical_code'] or ''
+            d['crime_head']     = row['local_head'] or ''       # alias for sheets 09/10/11
+            d['occurrence_place'] = row['occ_place'] or ''
+            if row['occurrence_from_datetime']:
+                dt = row['occurrence_from_datetime']
+                d['occurrence_date']    = fmt_date(dt)
+                d['time_of_occurrence'] = dt.strftime('%H:%M') if hasattr(dt, 'strftime') else ''
+            if row['occurrence_to_datetime']:
+                dt_to = row['occurrence_to_datetime']
+                d['occurrence_end_date'] = fmt_date(dt_to)
+                d['occurrence_end_time'] = dt_to.strftime('%H:%M') if hasattr(dt_to, 'strftime') else ''
 
-        # 1. CASE — fir_details + local_head + occurrence location
-        if case_ids:
-            for row in _q("""
-                SELECT fd.record_id,
-                       fd.fir_no, fd.fir_date, fd.gd_no, fd.gd_date, fd.gd_time,
-                       fd.brief_facts, fd.case_status, fd.disposal_type, fd.is_worked_out,
-                       fd.occurrence_from_datetime,
-                       lh.local_head, lh.canonical_code,
-                       COALESCE(NULLIF(TRIM(loc.full_address),''),
-                                NULLIF(TRIM(CONCAT_WS(', ', NULLIF(loc.house_no,''),
-                                       NULLIF(loc.street,''), NULLIF(loc.colony,''),
-                                       NULLIF(loc.city_town_village,''))), '')) AS occ_place
-                FROM fir_details fd
-                LEFT JOIN ref.local_heads lh ON lh.local_head_cd = fd.local_head_id
-                LEFT JOIN locations loc ON loc.id = fd.occurrence_location_id
-                WHERE fd.record_id IN (__PH__)
-            """, case_ids):
-                r = idx.get(str(row['record_id']))
-                if not r: continue
-                d = r['data']
-                d['fir_no']         = row['fir_no'] or ''
-                d['fir_date']       = fmt_date(row['fir_date'])
-                d['gd_no']          = row['gd_no'] or ''
-                d['gd_date']        = fmt_date(row['gd_date'])
-                d['brief_facts']    = row['brief_facts'] or ''
-                d['case_status']    = row['case_status'] or ''
-                d['status']         = row['case_status'] or ''      # for is_disposed()
-                d['disposal_type']  = row['disposal_type'] or ''
-                d['is_worked_out']  = bool(row['is_worked_out'])
-                d['local_head']     = row['local_head'] or ''
-                d['canonical_code'] = row['canonical_code'] or ''
-                d['crime_head']     = row['local_head'] or ''       # alias for sheets 09/10/11
-                d['occurrence_place'] = row['occ_place'] or ''
-                if row['occurrence_from_datetime']:
-                    dt = row['occurrence_from_datetime']
-                    d['occurrence_date']    = fmt_date(dt)
-                    d['time_of_occurrence'] = dt.strftime('%H:%M') if hasattr(dt, 'strftime') else ''
+    # 2. ARREST — arrest_details + local_head
+    if arrest_ids:
+        for row in _q("""
+            SELECT ad.record_id,
+                   ad.fir_no, ad.gd_no, ad.gd_date, ad.case_type, ad.case_status,
+                   ad.custody_status, ad.recovery,
+                   ad.scheme_of_arrest, ad.scheme_of_arrest_other,
+                   ad.integrated_pi, ad.group_patrolling, ad.cycle_patrolling,
+                   ad.by_antisnatching_team, ad.by_prahari, ad.by_eyes_ears_scheme_members,
+                   ad.arresting_officer_name, ad.arresting_officer_rank,
+                   lh.local_head, lh.canonical_code
+            FROM arrest_details ad
+            LEFT JOIN ref.local_heads lh ON lh.local_head_cd = ad.local_head_id
+            WHERE ad.record_id IN (__PH__)
+        """, arrest_ids):
+            r = idx.get(str(row['record_id']))
+            if not r: continue
+            d = r['data']
+            d['linked_fir_dd_no']  = row['fir_no'] or ''
+            d['fir_no']            = row['fir_no'] or ''
+            d['gd_no']             = row['gd_no'] or ''
+            d['gd_date']           = fmt_date(row['gd_date'])
+            d['case_type']         = row['case_type'] or ''
+            d['case_status']       = row['case_status'] or ''
+            d['custody_status']    = row['custody_status'] or ''
+            d['status']            = row['custody_status'] or ''  # pcjcbail in sheet 07
+            d['io_name']           = row['arresting_officer_name'] or d.get('io_name') or ''
+            d['io_rank']           = row['arresting_officer_rank'] or d.get('io_rank') or ''
+            _rec = (row['recovery'] or '').strip()
+            if _rec.lower().startswith('undefined:'):
+                _rec = _rec.split(':', 1)[1].strip()
+            d['recovery']          = _rec or ''
 
-        # 2. ARREST — arrest_details + local_head
-        if arrest_ids:
-            for row in _q("""
-                SELECT ad.record_id,
-                       ad.fir_no, ad.gd_no, ad.gd_date, ad.case_type, ad.case_status,
-                       ad.custody_status, ad.recovery,
-                       ad.integrated_pi, ad.group_patrolling, ad.cycle_patrolling,
-                       ad.by_antisnatching_team, ad.by_prahari, ad.by_eyes_ears_scheme_members,
-                       ad.arresting_officer_name, ad.arresting_officer_rank,
-                       lh.local_head, lh.canonical_code
-                FROM arrest_details ad
-                LEFT JOIN ref.local_heads lh ON lh.local_head_cd = ad.local_head_id
-                WHERE ad.record_id IN (__PH__)
-            """, arrest_ids):
-                r = idx.get(str(row['record_id']))
-                if not r: continue
-                d = r['data']
-                d['linked_fir_dd_no']  = row['fir_no'] or ''
-                d['fir_no']            = row['fir_no'] or ''
-                d['gd_no']             = row['gd_no'] or ''
-                d['gd_date']           = fmt_date(row['gd_date'])
-                d['case_type']         = row['case_type'] or ''
-                d['case_status']       = row['case_status'] or ''
-                d['custody_status']    = row['custody_status'] or ''
-                d['status']            = row['custody_status'] or ''  # pcjcbail in sheet 07
-                # arresting officer name/rank columns were selected but never mapped,
-                # leaving every arrested-sheet "Name of IO" blank. Assign here; the
-                # persons loop (role=IO) still overrides via its "not in d" guard.
-                d['io_name']           = row['arresting_officer_name'] or d.get('io_name') or ''
-                d['io_rank']           = row['arresting_officer_rank'] or d.get('io_rank') or ''
-                # Some imported rows carry a literal "undefined: ..." prefix from a
-                # JS-side string concat bug — strip it so it doesn't reach the sheet.
-                _rec = (row['recovery'] or '').strip()
-                if _rec.lower().startswith('undefined:'):
-                    _rec = _rec.split(':', 1)[1].strip()
-                d['recovery']          = _rec or 'No'
-                d['integrated_pi']            = yn(row['integrated_pi'])
-                d['integrated_rate_picked']   = yn(row['integrated_pi'])  # sheet 10 alias
-                d['group_patrolling']  = yn(row['group_patrolling'])
-                d['group_rolling']     = yn(row['group_patrolling'])  # sheet 09 alias
-                d['cycle_patrolling']  = yn(row['cycle_patrolling'])
-                d['by_antisnatching_team']       = yn(row['by_antisnatching_team'])
-                d['by_prahari']                  = yn(row['by_prahari'])
-                d['by_eyes_ears_scheme_members'] = yn(row['by_eyes_ears_scheme_members'])
-                d['local_head']        = row['local_head'] or ''
-                d['canonical_code']    = row['canonical_code'] or ''
-                d['crime_head']        = row['local_head'] or ''
+            scheme_val = row['scheme_of_arrest'] or ''
+            if scheme_val == 'Other' and row['scheme_of_arrest_other']:
+                scheme_val = row['scheme_of_arrest_other']
+            if not scheme_val:
+                booleans = []
+                if row['integrated_pi']: booleans.append('Integrated Pride')
+                if row['group_patrolling']: booleans.append('Group Patrolling')
+                if row['cycle_patrolling']: booleans.append('Cycle Patrolling')
+                if row['by_antisnatching_team']: booleans.append('Anti-snatching')
+                if row['by_prahari']: booleans.append('By Prahari')
+                if row['by_eyes_ears_scheme_members']: booleans.append('By Eyes & Ears Scheme Members')
+                scheme_val = ', '.join(booleans) if booleans else ''
+            d['scheme_of_arrest'] = scheme_val
+            d['scheme_of_arrest_other'] = row['scheme_of_arrest_other'] or ''
+            d['arrest_scheme'] = scheme_val
 
-        # 3. MISSING — missing_details
-        if missing_ids:
-            for row in _q("""
-                SELECT md.record_id, md.gd_no, md.gd_date, md.missing_type,
-                       md.missing_status, md.zipnet_no, md.fir_no,
-                       md.operator_name, md.case_registered, md.source
-                FROM missing_details md
-                WHERE md.record_id IN (__PH__)
-            """, missing_ids):
-                r = idx.get(str(row['record_id']))
-                if not r: continue
-                d = r['data']
-                d['gd_no']           = row['gd_no'] or ''
-                d['gd_date']         = fmt_date(row['gd_date'])
-                d['dd_no']           = row['gd_no'] or ''           # sheets 18/21 alias
-                d['dd_date']         = fmt_date(row['gd_date'])     # sheets 18/21 alias
-                d['missing_type']    = row['missing_type'] or ''
-                d['missing_status']  = row['missing_status'] or ''
-                d['status']          = row['missing_status'] or ''  # sheets 20/21/22/23
-                d['zipnet_no']       = row['zipnet_no'] or ''
-                d['fir_no']          = row['fir_no'] or ''
-                d['operator_name']   = row['operator_name'] or ''
-                d['case_registered'] = bool(row['case_registered'])
-                d['source']          = row['source'] or ''
+            d['integrated_pi']            = yn(row['integrated_pi'])
+            d['integrated_rate_picked']   = yn(row['integrated_pi'])  # sheet 10 alias
+            d['group_patrolling']  = yn(row['group_patrolling'])
+            d['group_rolling']     = yn(row['group_patrolling'])  # sheet 09 alias
+            d['cycle_patrolling']  = yn(row['cycle_patrolling'])
+            d['by_antisnatching_team']       = yn(row['by_antisnatching_team'])
+            d['by_prahari']                  = yn(row['by_prahari'])
+            d['by_eyes_ears_scheme_members'] = yn(row['by_eyes_ears_scheme_members'])
+            d['local_head']        = row['local_head'] or ''
+            d['canonical_code']    = row['canonical_code'] or ''
+            d['crime_head']        = row['local_head'] or ''
 
-        # 4. UIDB — uidb_details + local_head + found location
-        if uidb_ids:
-            for row in _q("""
-                SELECT ud.record_id, ud.uidb_no, ud.gd_no, ud.gd_date,
-                       ud.cause_of_death, ud.uidb_status, ud.inquest_sections, ud.filed_by_acp_sdm,
-                       ud.found_date,
-                       lh.local_head, lh.canonical_code,
-                       COALESCE(NULLIF(TRIM(loc.full_address),''),
-                                NULLIF(TRIM(CONCAT_WS(', ', NULLIF(loc.house_no,''), NULLIF(loc.street,''),
-                                       NULLIF(loc.colony,''), NULLIF(loc.city_town_village,''),
-                                       NULLIF(loc.district,''))), '')) AS found_place_addr
-                FROM uidb_details ud
-                LEFT JOIN ref.local_heads lh ON lh.local_head_cd = ud.local_head_id
-                LEFT JOIN locations loc ON loc.id = ud.found_location_id
-                WHERE ud.record_id IN (__PH__)
-            """, uidb_ids):
-                r = idx.get(str(row['record_id']))
-                if not r: continue
-                d = r['data']
-                d['uidb_no']          = row['uidb_no'] or ''
-                d['gd_no']            = row['gd_no'] or ''
-                d['gd_date']          = fmt_date(row['gd_date'])
-                d['dd_no']            = row['gd_no'] or ''          # sheet 19/25/26 alias
-                d['dd_date']          = fmt_date(row['gd_date'])    # sheet 19/25/26 alias
-                d['cause_of_death']   = row['cause_of_death'] or ''
-                d['uidb_status']      = row['uidb_status'] or ''
-                d['status']           = row['uidb_status'] or ''
-                d['inquest_sections'] = row['inquest_sections'] or ''
-                d['filed_by_acp_sdm'] = bool(row['filed_by_acp_sdm'])
-                d['found_date']       = fmt_date(row['found_date'])
-                d['local_head']       = row['local_head'] or 'UIDB'
-                d['canonical_code']   = row['canonical_code'] or 'UIDB'
-                d['crime_head']       = row['local_head'] or 'UIDB'
-                d['occurrence_place'] = row['found_place_addr'] or ''
-                d['found_place']      = row['found_place_addr'] or ''  # sheet 19 alias
+    # 3. MISSING — missing_details
+    if missing_ids:
+        for row in _q("""
+            SELECT md.record_id, md.gd_no, md.gd_date, md.missing_type,
+                   md.missing_status, md.zipnet_no, md.fir_no,
+                   md.operator_name, md.case_registered, md.source
+            FROM missing_details md
+            WHERE md.record_id IN (__PH__)
+        """, missing_ids):
+            r = idx.get(str(row['record_id']))
+            if not r: continue
+            d = r['data']
+            d['gd_no']           = row['gd_no'] or ''
+            d['gd_date']         = fmt_date(row['gd_date'])
+            d['dd_no']           = row['gd_no'] or ''           # sheets 18/21 alias
+            d['dd_date']         = fmt_date(row['gd_date'])     # sheets 18/21 alias
+            d['missing_type']    = row['missing_type'] or ''
+            d['missing_status']  = row['missing_status'] or ''
+            d['status']          = row['missing_status'] or ''  # sheets 20/21/22/23
+            d['zipnet_no']       = row['zipnet_no'] or ''
+            d['fir_no']          = row['fir_no'] or ''
+            d['operator_name']   = row['operator_name'] or ''
+            d['case_registered'] = bool(row['case_registered'])
+            d['source']          = row['source'] or ''
 
-        # 5. PERSONS — all roles, with arrestee sub-details + address locations
-        if all_ids:
-            from collections import defaultdict
-            person_rows = _q("""
-                SELECT p.record_id, p.role, p.name, p.relative_name, p.relation_type,
-                       p.gender, p.age, p.mobile,
-                       ard.prev_involvement_count, ard.is_po, ard.is_bc,
-                       COALESCE(NULLIF(TRIM(ploc.full_address),''),
-                                NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ploc.house_no,''), NULLIF(ploc.street,''),
-                                       NULLIF(ploc.colony,''), NULLIF(ploc.city_town_village,''))), '')) AS p_addr,
-                       COALESCE(NULLIF(TRIM(aloc.full_address),''),
-                                NULLIF(TRIM(CONCAT_WS(', ', NULLIF(aloc.house_no,''), NULLIF(aloc.street,''),
-                                       NULLIF(aloc.colony,''), NULLIF(aloc.city_town_village,''))), '')) AS a_addr
-                FROM persons p
-                LEFT JOIN arrestee_details ard ON ard.person_id = p.id
-                LEFT JOIN locations ploc ON ploc.id = p.present_location_id
-                LEFT JOIN locations aloc ON aloc.id = ard.arrest_location_id
-                WHERE p.record_id IN (__PH__)
-                ORDER BY p.record_id, p.created_at
-            """, all_ids)
+    # 4. UIDB — uidb_details + local_head + found location
+    if uidb_ids:
+        for row in _q("""
+            SELECT ud.record_id, ud.uidb_no, ud.gd_no, ud.gd_date,
+                   ud.cause_of_death, ud.uidb_status, ud.inquest_sections, ud.filed_by_acp_sdm, ud.inquest_status,
+                   ud.found_date,
+                   lh.local_head, lh.canonical_code,
+                   COALESCE(NULLIF(TRIM(loc.full_address),''),
+                            NULLIF(TRIM(CONCAT_WS(', ', NULLIF(loc.house_no,''), NULLIF(loc.street,''),
+                                   NULLIF(loc.colony,''), NULLIF(loc.city_town_village,''),
+                                   NULLIF(loc.district,''))), '')) AS found_place_addr
+            FROM uidb_details ud
+            LEFT JOIN ref.local_heads lh ON lh.local_head_cd = ud.local_head_id
+            LEFT JOIN locations loc ON loc.id = ud.found_location_id
+            WHERE ud.record_id IN (__PH__)
+        """, uidb_ids):
+            r = idx.get(str(row['record_id']))
+            if not r: continue
+            d = r['data']
+            d['uidb_no']          = row['uidb_no'] or ''
+            d['gd_no']            = row['gd_no'] or ''
+            d['gd_date']          = fmt_date(row['gd_date'])
+            d['dd_no']            = row['gd_no'] or ''          # sheet 19/25/26 alias
+            d['dd_date']          = fmt_date(row['gd_date'])    # sheet 19/25/26 alias
+            d['cause_of_death']   = row['cause_of_death'] or ''
+            d['uidb_status']      = row['uidb_status'] or ''
+            d['status']           = row['uidb_status'] or ''
+            d['inquest_sections'] = row['inquest_sections'] or ''
+            d['inquest_status']   = row['inquest_status'] or ''
+            d['filed_by_acp_sdm'] = bool(row['filed_by_acp_sdm'])
+            d['found_date']       = fmt_date(row['found_date'])
+            d['local_head']       = row['local_head'] or 'UIDB'
+            d['canonical_code']   = row['canonical_code'] or 'UIDB'
+            d['crime_head']       = row['local_head'] or 'UIDB'
+            d['occurrence_place'] = row['found_place_addr'] or ''
+            d['found_place']      = row['found_place_addr'] or ''  # sheet 19 alias
 
-            by_rec = defaultdict(list)
-            for row in person_rows:
-                by_rec[str(row['record_id'])].append(dict(row))
+    # 5. PERSONS — all roles, with arrest sub-details + address locations
+    if display_ids:
+        from collections import defaultdict
+        person_rows = _q("""
+            SELECT p.record_id, p.role, p.name, p.relative_name, p.relation_type,
+                   p.gender, p.age, p.mobile, p.extra AS p_extra,
+                   ad.extra AS ad_extra,
+                   COALESCE(NULLIF(TRIM(ploc.full_address),''),
+                            NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ploc.house_no,''), NULLIF(ploc.street,''),
+                                   NULLIF(ploc.colony,''), NULLIF(ploc.city_town_village,''))), '')) AS p_addr,
+                   COALESCE(NULLIF(TRIM(permloc.full_address),''),
+                            NULLIF(TRIM(CONCAT_WS(', ', NULLIF(permloc.house_no,''), NULLIF(permloc.street,''),
+                                   NULLIF(permloc.colony,''), NULLIF(permloc.city_town_village,''))), '')) AS a_addr
+            FROM persons p
+            LEFT JOIN arrest_details ad ON ad.record_id = p.record_id
+            LEFT JOIN locations ploc ON ploc.id = p.present_location_id
+            LEFT JOIN locations permloc ON permloc.id = p.perm_location_id
+            WHERE p.record_id IN (__PH__)
+            ORDER BY p.record_id, p.created_at
+        """, display_ids)
 
-            for rid, plist in by_rec.items():
-                r = idx.get(rid)
-                if not r: continue
-                d = r['data']
-                arrestees = []
-                for p in plist:
-                    role = p['role']
-                    if role == 'COMPLAINANT' and 'complainant_name' not in d:
-                        d['complainant_name']          = p['name'] or ''
-                        d['complainant_relative_name'] = p['relative_name'] or ''
-                        d['complainant_relation_type'] = p['relation_type'] or ''
-                        d['complainant_address']       = p['p_addr'] or ''
-                    elif role == 'IO' and 'io_name' not in d:
-                        d['io_name'] = p['name'] or ''
-                    elif role == 'ACCUSED' and 'accused_name' not in d:
-                        d['accused_name']    = p['name'] or ''
-                        d['accused_age']     = p['age']
-                        d['accused_address'] = p['p_addr'] or ''
-                    elif role == 'VICTIM' and 'victim_name' not in d:
-                        d['victim_name'] = p['name'] or ''
-                        d['victim_age']  = p['age']
-                    elif role == 'ARRESTEE':
-                        if 'arrested_name' not in d:
-                            d['arrested_name']    = p['name'] or ''
-                            d['age']              = p['age']
-                            d['relative_name']    = p['relative_name'] or ''
-                            d['parents_name']     = p['relative_name'] or ''  # _arrested_parent key
-                            d['relation_type']    = p['relation_type'] or ''
-                            d['arrested_address'] = p['p_addr'] or ''
-                            d['arrest_place']     = p['a_addr'] or ''
-                            d['prev_involvement'] = str(p['prev_involvement_count'] or 0)
-                            d['bad_character']    = yn(p['is_bc'])
-                            d['is_po']            = yn(p['is_po'])
-                        if p.get('name'):
-                            arrestees.append(p['name'])
-                    elif role == 'MISSING' and 'person_name' not in d:
-                        d['person_name']    = p['name'] or ''
-                        d['missing_name']   = p['name'] or ''        # sheet 18/21 alias
-                        d['gender']         = p['gender'] or ''
-                        d['age']            = p['age']
-                        d['relative_name']  = p['relative_name'] or ''
-                        d['parents_name']   = p['relative_name'] or ''
-                        d['missing_address']= p['p_addr'] or ''
-                    elif role == 'DECEASED' and 'person_name' not in d:
-                        d['person_name']    = p['name'] or ''
-                        d['deceased_name']  = p['name'] or ''        # sheets 25/26 alias
-                        d['gender']         = p['gender'] or ''
-                        d['deceased_father_husband_name'] = p['relative_name'] or ''
-                        d['deceased_address'] = p['p_addr'] or ''
+        by_rec = defaultdict(list)
+        for row in person_rows:
+            by_rec[str(row['record_id'])].append(dict(row))
 
-                if arrestees:
-                    d['arrested_person'] = ', '.join(arrestees)
+        for rid, plist in by_rec.items():
+            r = idx.get(rid)
+            if not r: continue
+            d = r['data']
+            arrestees = []
+            for p in plist:
+                role = p['role']
+                pextra = p.get('p_extra') or {}
+                if isinstance(pextra, str):
+                    try: pextra = json.loads(pextra)
+                    except: pextra = {}
+                adextra = p.get('ad_extra') or {}
+                if isinstance(adextra, str):
+                    try: adextra = json.loads(adextra)
+                    except: adextra = {}
 
-        # 6. PERSON DESCRIPTIONS — for MISSING and DECEASED persons (sheets 18, 19, 20, 21)
-        if all_ids:
-            for row in _q("""
-                SELECT p.record_id,
-                       pd.height, pd.built, pd.complexion, pd.face, pd.hair,
-                       pd.beard, pd.moustache, pd.upper_dress_color, pd.lower_dress_color,
-                       pd.identification_marks, pd.physical_description
-                FROM person_descriptions pd
-                JOIN persons p ON p.id = pd.person_id
-                WHERE p.record_id IN (__PH__)
-                  AND p.role IN ('MISSING', 'DECEASED')
-            """, all_ids):
-                r = idx.get(str(row['record_id']))
-                if not r: continue
-                d = r['data']
-                d['height']               = row['height'] or ''
-                d['built']                = row['built'] or ''
-                d['complexion']           = row['complexion'] or ''
-                d['face']                 = row['face'] or ''
-                d['hair']                 = row['hair'] or ''
-                d['beard']                = row['beard'] or ''
-                d['moustache']            = row['moustache'] or ''
-                d['upper_dress_color']    = row['upper_dress_color'] or ''
-                d['lower_dress_color']    = row['lower_dress_color'] or ''
-                d['identification_marks'] = row['identification_marks'] or ''
+                prev_inv_val = (
+                    pextra.get('prev_involvement_count') or pextra.get('prev_involvement') or pextra.get('pi_count')
+                    or adextra.get('prev_involvement_count') or adextra.get('prev_involvement') or adextra.get('pi_count')
+                    or 0
+                )
+                is_po_val = bool(
+                    pextra.get('is_po') or pextra.get('proclaimed_offender') or pextra.get('po_flag')
+                    or adextra.get('is_po') or adextra.get('proclaimed_offender') or adextra.get('po_flag')
+                )
+                is_bc_val = bool(
+                    pextra.get('is_bc') or pextra.get('bad_character') or pextra.get('bc_flag')
+                    or pextra.get('listed_criminal') or pextra.get('whether_accused_is_bc_or_not')
+                    or adextra.get('is_bc') or adextra.get('bad_character') or adextra.get('bc_flag')
+                    or adextra.get('listed_criminal') or adextra.get('whether_accused_is_bc_or_not')
+                )
 
-        # 7. OFFENCES — sections + act names (STRING_AGG, no ORDER inside DISTINCT)
-        if all_ids:
-            for row in _q("""
-                SELECT ro.record_id,
-                       STRING_AGG(DISTINCT ro.section_id, ', ') AS sections,
-                       STRING_AGG(DISTINCT COALESCE(a.act_long, ro.other_act_name), ', ') AS act_name
-                FROM record_offences ro
-                LEFT JOIN ref.acts a ON a.act_cd = ro.act_id
-                WHERE ro.record_id IN (__PH__)
-                GROUP BY ro.record_id
-            """, all_ids):
-                r = idx.get(str(row['record_id']))
-                if not r: continue
-                d = r['data']
-                d['sections'] = row['sections'] or ''
-                d['act_name'] = row['act_name'] or ''
+                if role == 'COMPLAINANT' and not d.get('complainant_name'):
+                    d['complainant_name']          = p['name'] or ''
+                    d['complainant_relative_name'] = p['relative_name'] or ''
+                    d['complainant_relation_type'] = p['relation_type'] or ''
+                    d['complainant_address']       = p['p_addr'] or ''
+                elif role == 'IO' and not d.get('io_name'):
+                    d['io_name'] = p['name'] or ''
+                elif role == 'ACCUSED' and not d.get('accused_name'):
+                    d['accused_name']    = p['name'] or ''
+                    d['accused_age']     = p['age']
+                    d['accused_address'] = p['p_addr'] or ''
+                elif role == 'VICTIM' and not d.get('victim_name'):
+                    d['victim_name'] = p['name'] or ''
+                    d['victim_age']  = p['age']
+                elif role == 'ARRESTEE':
+                    if not d.get('arrested_name'):
+                        d['arrested_name']    = p['name'] or ''
+                        d['age']              = p['age']
+                        d['relative_name']    = p['relative_name'] or ''
+                        d['parents_name']     = p['relative_name'] or ''  # _arrested_parent key
+                        d['relation_type']    = p['relation_type'] or ''
+                        d['arrested_address'] = p['p_addr'] or ''
+                        d['arrest_place']     = p['a_addr'] or ''
+                        d['prev_involvement'] = str(prev_inv_val)
+                        d['bad_character']    = yn(is_bc_val)
+                        d['is_po']            = yn(is_po_val)
+                    if p.get('name'):
+                        arrestees.append(p['name'])
+                elif role == 'MISSING' and not d.get('person_name'):
+                    d['person_name']    = p['name'] or ''
+                    d['missing_name']   = p['name'] or ''        # sheet 18/21 alias
+                    d['gender']         = p['gender'] or ''
+                    d['age']            = p['age']
+                    d['relative_name']  = p['relative_name'] or ''
+                    d['parents_name']   = p['relative_name'] or ''
+                    d['missing_address']= p['p_addr'] or ''
+                elif role == 'DECEASED' and not d.get('person_name'):
+                    d['person_name']    = p['name'] or ''
+                    d['deceased_name']  = p['name'] or ''        # sheets 25/26 alias
+                    d['gender']         = p['gender'] or ''
+                    d['deceased_father_husband_name'] = p['relative_name'] or ''
+                    d['deceased_address'] = p['p_addr'] or ''
 
-        # 8. IO USER RESOLUTION — fallback when io_name is missing
-        io_uuids = list(set([str(r['io_id']) for r in records if r.get('io_id') and not r['data'].get('io_name')]))
-        if io_uuids:
-            user_rows = _q("""
-                SELECT u.id, u.name, u.role
-                FROM users u
-                WHERE u.id IN (__PH__)
-            """, io_uuids)
-            user_map = {str(u['id']): u for u in user_rows}
-            for r in records:
-                io_id_str = str(r.get('io_id') or '')
-                if io_id_str in user_map and not r['data'].get('io_name'):
-                    r['data']['io_name'] = user_map[io_id_str]['name'] or ''
-                    r['data']['io_rank'] = user_map[io_id_str].get('role') or ''
+            if arrestees:
+                d['arrested_person'] = ', '.join(arrestees)
+
+    # 6. PERSON DESCRIPTIONS — for MISSING and DECEASED persons (sheets 18, 19, 20, 21)
+    if display_ids:
+        for row in _q("""
+            SELECT p.record_id,
+                   pd.height, pd.built, pd.complexion, pd.face, pd.hair,
+                   pd.beard, pd.moustache, pd.upper_dress_color, pd.lower_dress_color,
+                   pd.identification_marks, pd.physical_description
+            FROM person_descriptions pd
+            JOIN persons p ON p.id = pd.person_id
+            WHERE p.record_id IN (__PH__)
+              AND p.role IN ('MISSING', 'DECEASED')
+        """, display_ids):
+            r = idx.get(str(row['record_id']))
+            if not r: continue
+            d = r['data']
+            d['height']               = row['height'] or ''
+            d['built']                = row['built'] or ''
+            d['complexion']           = row['complexion'] or ''
+            d['face']                 = row['face'] or ''
+            d['hair']                 = row['hair'] or ''
+            d['beard']                = row['beard'] or ''
+            d['moustache']            = row['moustache'] or ''
+            d['upper_dress_color']    = row['upper_dress_color'] or ''
+            d['lower_dress_color']    = row['lower_dress_color'] or ''
+            d['identification_marks'] = row['identification_marks'] or ''
+
+    # 7. OFFENCES — sections + act names formatted as "<Act Name> u/s <Section(s)>"
+    if display_ids:
+        offence_rows = _q("""
+            SELECT ro.record_id,
+                   COALESCE(NULLIF(a.act_long, ''), NULLIF(ro.other_act_name, '')) AS act_name,
+                   COALESCE(NULLIF(s.section, ''), REGEXP_REPLACE(ro.section_id, '^[0-9]+-', ''), ro.section_id) AS sec_clean
+            FROM record_offences ro
+            LEFT JOIN ref.acts a ON a.act_cd = ro.act_id
+            LEFT JOIN ref.sections s ON s.section_code = ro.section_id OR s.section_cd::text = ro.section_id
+            WHERE ro.record_id IN (__PH__)
+        """, display_ids)
+
+        offences_by_rec = defaultdict(list)
+        for orow in offence_rows:
+            offences_by_rec[str(orow['record_id'])].append(orow)
+
+        for rid, olist in offences_by_rec.items():
+            r = idx.get(rid)
+            if not r: continue
+            d = r['data']
+
+            act_sections = defaultdict(set)
+            all_acts = set()
+            all_secs = set()
+
+            for item in olist:
+                act = (item['act_name'] or '').strip()
+                sec = (item['sec_clean'] or '').strip()
+                if act: all_acts.add(act)
+                if sec: all_secs.add(sec)
+                if act and sec:
+                    act_sections[act].add(sec)
+
+            formatted_parts = []
+            if act_sections:
+                for act, secs in act_sections.items():
+                    sec_str = ', '.join(sorted(list(secs)))
+                    formatted_parts.append(f"{act} u/s {sec_str}")
+            elif all_acts and all_secs:
+                act_str = ', '.join(sorted(list(all_acts)))
+                sec_str = ', '.join(sorted(list(all_secs)))
+                formatted_parts.append(f"{act_str} u/s {sec_str}")
+            elif all_secs:
+                sec_str = ', '.join(sorted(list(all_secs)))
+                formatted_parts.append(f"u/s {sec_str}")
+            elif all_acts:
+                formatted_parts.append(', '.join(sorted(list(all_acts))))
+
+            final_us_str = '; '.join(formatted_parts) or d.get('local_head') or d.get('crime_head') or ''
+            d['sections']        = final_us_str
+            d['us']              = final_us_str
+            d['act_section']     = final_us_str
+            d['us_act_section']  = final_us_str
+            d['act_name']        = ', '.join(sorted(list(all_acts))) if all_acts else ''
+
+    # 8. IO USER RESOLUTION — fallback when io_name is missing
+    io_uuids = list(set([str(r['io_id']) for r in records if r.get('io_id') and not r['data'].get('io_name')]))
+    if io_uuids:
+        user_rows = _q("""
+            SELECT u.id, u.name, u.role
+            FROM users u
+            WHERE u.id IN (__PH__)
+        """, io_uuids)
+        user_map = {str(u['id']): u for u in user_rows}
+        for r in records:
+            io_id_str = str(r.get('io_id') or '')
+            if io_id_str in user_map and not r['data'].get('io_name'):
+                r['data']['io_name'] = user_map[io_id_str]['name'] or ''
+                r['data']['io_rank'] = user_map[io_id_str].get('role') or ''
 
     return records
 

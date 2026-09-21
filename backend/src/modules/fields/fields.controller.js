@@ -421,9 +421,10 @@ export const getFieldsForForm = async (req, res) => {
           ].includes(f.field_key) || f.section === 'corpse_desc') {
             section = 'corpse_desc';
             sort_order = 20.0 + f.sort_order * 0.1;
-          } else if (['cause_of_death', 'cause_of_death_other', 'deceased_relative_name', 'deceased_relation_type', 'filed_by_acp_sdm', 'filed_by_acp_sdm_date', 'informant_name', 'informant_relation', 'informant_mobile'].includes(f.field_key)) {
+          } else if (['inquest_status', 'cause_of_death', 'cause_of_death_other', 'deceased_relative_name', 'deceased_relation_type', 'filed_by_acp_sdm', 'filed_by_acp_sdm_date', 'informant_name', 'informant_relation', 'informant_mobile'].includes(f.field_key)) {
             section = 'inquest_details';
-            if (f.field_key === 'cause_of_death') sort_order = 40.1;
+            if (f.field_key === 'inquest_status') sort_order = 40.05;
+            else if (f.field_key === 'cause_of_death') sort_order = 40.1;
             else if (f.field_key === 'cause_of_death_other') sort_order = 40.15;
             else if (f.field_key === 'deceased_relative_name') sort_order = 40.2;
             else if (f.field_key === 'deceased_relation_type') sort_order = 40.3;
@@ -443,13 +444,20 @@ export const getFieldsForForm = async (req, res) => {
 
 
 
+        let label_en = f.label_en;
+        let label_hi = f.label_hi || f.label_en;
+        if (f.field_key === 'sent_to_court_date' || f.field_key === 'date_of_chargesheet' || f.field_key === 'chargesheet_date') {
+          label_en = 'Chargesheet Date / Sent to Court Date';
+          label_hi = 'आरोप पत्र दिनांक / अदालत भेजने की तिथि';
+        }
+
         return {
           id: f.id,
           field_key: f.field_key,
           field_type: field_type,
           applicable_record_types: parseJsonField(f.applicable_record_types),
-          label_en: f.label_en,
-          label_hi: f.label_hi || f.label_en,
+          label_en,
+          label_hi,
           placeholder_en: f.placeholder_en || null,
           placeholder_hi: f.placeholder_hi || null,
           options,
@@ -583,14 +591,21 @@ export const getFieldsForForm = async (req, res) => {
           title_en: 'Action Taken',
           title_hi: 'की गई कार्रवाई',
           is_repeater: false,
-          fields: filteredFields.filter(f => ['investigation_officer', 'investigation_details', 'action_taken'].includes(f.section) && !f.repeater_entity)
-        },
-        {
-          section: 'court_details',
-          title_en: 'Court Details',
-          title_hi: 'अदालत का विवरण',
-          is_repeater: false,
-          fields: filteredFields.filter(f => f.section === 'court_details' && !f.repeater_entity)
+          sub_tabs: [
+            {
+              id: 'case_status',
+              title_en: 'Case Status',
+              title_hi: 'केस स्थिति',
+              fields: filteredFields.filter(f => ['investigation_officer', 'investigation_details', 'action_taken'].includes(f.section) && !f.repeater_entity)
+            },
+            {
+              id: 'court_status',
+              title_en: 'Court Status',
+              title_hi: 'कोर्ट स्थिति',
+              fields: filteredFields.filter(f => f.section === 'court_details' && !f.repeater_entity)
+            }
+          ],
+          fields: filteredFields.filter(f => ['investigation_officer', 'investigation_details', 'action_taken', 'court_details'].includes(f.section) && !f.repeater_entity)
         }
       ];
     } else if (normalizedType === 'ARREST') {

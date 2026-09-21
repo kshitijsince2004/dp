@@ -33,4 +33,10 @@ router.get('/crime-head-matrix', authMiddleware, enforceScope, analyticsControll
 router.get('/case-status-breakdown', authMiddleware, enforceScope, analyticsController.getCaseStatusBreakdown);
 router.get('/crime-head-year-trend', authMiddleware, enforceScope, analyticsController.getCrimeHeadYearTrend);
 
+// Specialized Operational Command Domains
+router.get('/property-recovery', authMiddleware, enforceScope, analyticsController.getPropertyRecoveryStats);
+router.get('/investigation-disposal', authMiddleware, enforceScope, analyticsController.getInvestigationDisposalStats);
+router.get('/community-safety', authMiddleware, enforceScope, analyticsController.getCommunitySafetyStats);
+router.get('/beat-preventive', authMiddleware, enforceScope, analyticsController.getBeatPreventiveStats);
+
 export default router;

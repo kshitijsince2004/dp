@@ -46,7 +46,7 @@ def summarize(classified):
     ps_map = {}
 
     for r in arrests:
-        ps = r.get('ps_name') or 'UNKNOWN'
+        ps = r.get('ps_name') or ''
         if ps not in ps_map:
             ps_map[ps] = {col: 0 for col in COLUMNS if col != 'ps'}
 

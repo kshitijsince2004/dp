@@ -12,11 +12,11 @@ router.get('/statutory-fir/prefix', authMiddleware, recordsController.getStatuto
 router.get('/statutory-fir/allowed-types', authMiddleware, recordsController.getAllowedStatutoryFirTypes);
 router.get('/:id', authMiddleware, recordsController.getRecord);
 
-router.post('/', authMiddleware, allow('HC'), recordsController.create);
-router.put('/:id', authMiddleware, allow('HC', 'SHO', 'DISTRICT_OFFICER', 'DISTRICT'), recordsController.update);
-router.delete('/:id', authMiddleware, allow('HC'), recordsController.deleteRecord);
-router.post('/:id/submit', authMiddleware, allow('HC'), recordsController.submit);
-router.put('/:id/submit', authMiddleware, allow('HC'), recordsController.submit);
+router.post('/', authMiddleware, allow('HC', 'SHO', 'PS'), recordsController.create);
+router.put('/:id', authMiddleware, allow('HC', 'SHO', 'PS', 'DISTRICT_OFFICER', 'DISTRICT'), recordsController.update);
+router.delete('/:id', authMiddleware, allow('HC', 'SHO', 'PS'), recordsController.deleteRecord);
+router.post('/:id/submit', authMiddleware, allow('HC', 'SHO', 'PS'), recordsController.submit);
+router.put('/:id/submit', authMiddleware, allow('HC', 'SHO', 'PS'), recordsController.submit);
 
 router.post('/:id/approve', authMiddleware, allow('SHO', 'DISTRICT_OFFICER'), recordsController.approve);
 router.post('/:id/jcp-approve', authMiddleware, allow('JCP'), recordsController.jcpApprove);

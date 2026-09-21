@@ -292,8 +292,8 @@ export default function ReportModal({ isOpen, onClose, title, data, type }) {
                   {renderMetaItem("Police Station", data.policeStation)}
                   {renderMetaItem("DD Number", data.ddNumber)}
                   {renderMetaItem("Report Time/Date", data.dateTime)}
-                  {renderMetaItem("Date Missing", data.missingDate)}
-                  {renderMetaItem("Last Seen Place", data.missingPlace)}
+                  {renderMetaItem("Date Missing / Found", data.missingDate)}
+                  {renderMetaItem("Last Seen/Found Place", data.missingPlace)}
                 </div>
 
                 <div className="report-section-title">Missing Person Demographics</div>

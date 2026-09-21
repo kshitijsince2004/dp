@@ -199,34 +199,111 @@ sequenceDiagram
 
 ---
 
-### 5. Multi-Sheet Excel & PHQ Diary Report Generation Flow
+### 5. Consolidated PHAROS Report Engine Flow (Station Daily Diary, District Diary, PHQ Diary)
 
-This flow describes how reports are compiled and executed through the external Python worker.
+This flow describes the unified report compilation, classification, calculation, and multi-format rendering pipeline.
 
-#### Entry Point
-`POST /api/v1/reports/phq-diary/generate` or `POST /api/v1/reports/custom-excel`
+#### Entry Points
+- **Station Daily Diary**: `POST /api/v1/reports/custom-excel` or `POST /api/v1/reports/generate` (routed to `python_worker/generator.py`)
+- **District Diary**: `POST /api/v1/reports/district-diary/generate` or `POST /api/v1/report-engine/generate` (routed to `district-diary.service.js`)
+- **PHQ Diary**: `POST /api/v1/reports/phq-diary/generate` or `POST /api/v1/report-engine/generate` (routed to `phq-diary.service.js`)
 
-#### Flowchart
+#### Organizational Hierarchy Flow
+The report engine supports rollup and aggregation across all 6 administrative tiers:
+$$\text{HQ (PHQ)} \longrightarrow \text{ZONE} \longrightarrow \text{RANGE} \longrightarrow \text{DISTRICT} \longrightarrow \text{SUB\_DIV} \longrightarrow \text{PS (Police Station)}$$
+- `scope.level`: Set to `HQ`, `ZONE`, `RANGE`, `DISTRICT`, `SUB_DIV`, or `PS`.
+- `scope.children_ids`: Populated with child node IDs for multi-station or sub-unit matrix breakdown.
+
+#### Statistical Authority & Classification Data Model
+- **Sole Relational Authority**: `fir_details.local_head_id` joined 1:1 against `ref.local_heads.local_head_cd` is the single authoritative foreign key driving all statistical case headcounts and crime category breakdowns (`HEINOUS`, `NON_HEINOUS`, `OTHER`/`TOTAL ACT`).
+- **Role of `record_offences`**: The repeater table `record_offences` is used solely for section string aggregation (`STRING_AGG(section_name, ', ')`) in detail listings. It is never joined for count aggregation.
+- **BNS 111 & BNS 113 Classification**: BNS 111 (`ORGANISED_CRIME`, `local_head_cd = 57`) and BNS 113 (`TERRORIST_ACT`, `local_head_cd = 58`) are classified under **`TOTAL ACT`** (`crime_category = 'OTHER'`), each as a distinct line item.
+
+#### Unified Dual-Rendering Pipeline (Excel & PDF)
 
 ```mermaid
 flowchart TD
-    A[Frontend ReportBuilder / CustomExcelBuilder] -->|1. Generate Request| B[reports.router.js]
-    B -->|2. Request Validation| C[reports.controller.js]
-    C -->|3. Build SQL Criteria| D[diary-query-builder.js]
-    D -->|4. Execute SQL Queries| E[(PostgreSQL)]
-    E -->> D: Tabular Records Data
-    C -->|5. Spawn Process (python generator.py)| F[Python Worker Engine]
-    F -->|6. Load Template & Apply pandas/openpyxl| F
-    F -->> C: Generated .xlsx File Buffer
-    C -->> A: HTTP Download Response (Content-Disposition: attachment)
+    A[Client Request: format = xlsx | pdf] --> B[reports.controller.js / report-engine.service.js]
+    B --> C{Report Suite}
+    
+    C -->|Station Daily Diary| D[python_worker/generator.py]
+    D --> D1[Load Registry: 24 Active Sheets]
+    D1 --> D2[Export .xlsx / .pdf via openpyxl/WeasyPrint]
+    
+    C -->|District Diary| E[district-diary.service.js]
+    E --> E1[Shared Data Layer & Aggregator]
+    E1 --> E2{Output Format?}
+    E2 -->|Excel| E3[ExcelJS Workbook Renderers A1-C3]
+    E2 -->|PDF / HTML| E4[report-html-renderer.js -> Puppeteer A4 Landscape]
+    
+    C -->|PHQ Diary| F[phq-diary.service.js]
+    F --> F1[Shared Data Layer & Window Matrix]
+    F1 --> F2{Output Format?}
+    F2 -->|Excel| F3[phq-diary.excel.js Workbook Renderer]
+    F2 -->|PDF / HTML| F4[report-html-renderer.js -> Puppeteer A4 Landscape]
 ```
 
-#### Execution Steps & Code Reference
-1. **Report Trigger**: User configures report scope, station filters, and date range in report builder frontend pages.
-2. **Query Building**: [`diary-query-builder.js`](file:///d:/DPI/FIR/pharos-prototype/backend/src/modules/report-engine/shared/diary-query-builder.js) constructs dynamic PostgreSQL query specs for requested stations and crime heads.
-3. **Sub-process Spawn**: [`reports.controller.js`](file:///d:/DPI/FIR/pharos-prototype/backend/src/modules/reports/reports.controller.js) spawns `python_worker/generator.py` passing JSON specifications via standard stdin/arguments.
-4. **Excel Formatting**: [`python_worker/generator.py`](file:///d:/DPI/FIR/pharos-prototype/python_worker/generator.py) builds formatted multi-sheet Excel workbooks with executive styling, formula injection protection, and multi-column headers.
-5. **File Delivery**: Buffer is streamed back to client as executable Excel attachment.
+#### In-Scope Suite Sheet Inventories
+
+##### 1. Station Daily Diary (Python Worker — Exactly 24 Active Sheets)
+| Sheet # | Table Name | Label / Description |
+|---|---|---|
+| **01** | `excel_1manual_fir` | Manual FIR |
+| **02** | `excel_2eburglary_cases` | E-Burglary Cases |
+| **03** | `excel_3ehouse_theft_cases` | E-House Theft Cases |
+| **04** | `excel_4eother_theft_cases` | E-Other Theft Cases |
+| **05** | `excel_5mvt_cases` | MVT Cases |
+| **07** | `excel_7arrested_east_district` | Arrested - District |
+| **08** | `excel_8arrested_kalandara` | Arrested - Kalandara / Preventive |
+| **09** | `excel_9arrested_efir_theft` | Arrested - E-FIR Theft |
+| **10** | `excel_10arrested_efir_mv_theft` | Arrested - E-FIR MV Theft |
+| **11** | `excel_11proclaimed_offenders` | Proclaimed Offenders |
+| **13** | `excel_13arrested_24_hrs_list` | Arrested - Last 24 Hrs |
+| **14** | `excel_14pi_disposal_manual` | PI Disposal - Manual |
+| **15** | `excel_15pi_disposal_eproperty` | PI Disposal - E-Property |
+| **16** | `excel_16pi_disposal_emvt` | PI Disposal - E-MVT |
+| **18** | `excel_18missing_persons` | Missing Persons |
+| **19** | `excel_19uidb` | UIDB (Unidentified Bodies) |
+| **20** | `excel_20abandoned_persons` | Abandoned Persons |
+| **21** | `excel_21traced_persons` | Traced Persons |
+| **22** | `excel_22women_missing` | Women Missing |
+| **23** | `excel_23children_missing` | Children Missing |
+| **25** | `excel_25inquest_registered` | Inquest Registered |
+| **26** | `excel_26inquest_acpsdm_disposal` | Inquest ACP/SDM Disposal |
+| **28** | `excel_28fir_goswara_summary` | FIR Goswara Summary |
+| **29** | `excel_29arrest_count_summary` | Arrest Count Summary (PS vs Category Matrix) |
+
+*(Note: Sheet 06 is permanently removed and archived in `python_worker/deprecated/`).*
+
+##### 2. District Diary (District Suite — 16 Rendered Sheets / Views)
+- **A1**: `District Crime`
+- **A2**: `R Cell- Distt Crime`
+- **A3**: `Morning-Daily Diary`
+- **A4**: `Daily Chart, Heinous, IPC`
+- **A5**: `DCsP- Crime Chart`
+- **A6**: `G-22 Daily Crime` (Quadrants 1-4 with BNS 111/113 in Quadrant 4)
+- **A7**: `Accident Cases`
+- **B1**: `E-FIR`
+- **B2**: `N-1,N-2,N-3` Register
+- **B3**: `D1,N-1,2,3 Res` (D1 Resolution Matrix)
+- **B4**: `D-2 Heinous Brief Fact` (Exact 7 statutory Heinous heads only)
+- **B5**: `D-8 Brief Facts`
+- **B6**: `D-9 FIR Arrests`
+- **B7**: `D-9 Kal Arrests`
+- **C1**: `Upto PCR calls 25-26`
+- **C2**: `D10 Action of 66 DP Act`
+- **C3**: `D13 66DP`
+
+##### 3. PHQ Diary (State / HQ Suite — 9 Sheets)
+- **Sheet 1**: `MANUALY` (Multi-year comparative matrix across all crime heads)
+- **Sheet 2**: `Monday_Morning` (Monday morning briefing with merged RAPE & POCSO row)
+- **Sheet 3**: `DISTRICTS` (District-wise comparative counts)
+- **Sheet 4**: `Upto_Date` (Cumulative year-to-date district matrix)
+- **Sheet 5**: `for week` (Weekly movement and detection trends)
+- **Sheet 6**: `Snatching` (Detailed snatching analysis)
+- **Sheet 7**: `Robbery` (Detailed robbery analysis)
+- **Sheet 8**: `Burglary` (Detailed burglary analysis)
+- **Sheet 9**: `Variation% (mvt) 2017` (Longitudinal variation movement)
 
 ---
 
@@ -310,3 +387,94 @@ In the Arrest registration form (Person Particulars), users select the scheme un
 - **Custom Field Rendering in CASE Tabs**: CASE's "Acts & Sections" and "FIR Contents" tabs now properly accept and render district-custom fields whose section is literally `acts_and_sections` or `fir_contents`. This was fixed by making their backend filters self-inclusive and adding an "Additional Information" fallback rendering block to `renderActsAndSectionsStep` in `DynamicForm.jsx`. (Note: A separate safety net collision issue related to a missing `created_by` column in `field_registry` was identified and documented for follow-up).
 
 - **Custom Field Rendering in ARREST Tabs**: The ARREST `general_info` tab now correctly renders district-custom fields. Similar to the CASE Acts & Sections fix, an "Additional Information" fallback rendering block was added to `renderArrestGeneralInfoStep` in `DynamicForm.jsx` to capture and display fields not explicitly laid out in the hand-written component.
+
+
+## Report Engine Architecture Layer (Layer 1 & Layer 2 Rebuild)
+
+### Overview
+To eliminate duplicate logic and mathematical discrepancies across report sheets (PHQ Diary, District Diary, and Station Daily Diary), the report engine architecture is structured into two shared, pure service layers:
+
+```
+[ Excel / Sheet Generators (Layer 3) ]
+             │
+             ▼
+[ Layer 2: Shared Formula Library (python_worker/formula_library.py) ]
+  • compute_variation(curr, prev)
+  • compute_detection(solved, rep)
+  • person_display(person, opts)
+  • address_compile(loc, mode)
+  • custody_status_display(val)
+  • accused_history(arrestee)
+  • recovery_display(props)
+             │
+             ▼
+[ Layer 1: Classification & Aggregation Service (python_worker/aggregation_service.py) ]
+
+
+## Report Engine Architecture Layer (Layer 1 & Layer 2 Rebuild)
+
+### Overview
+To eliminate duplicate logic and mathematical discrepancies across report sheets (PHQ Diary, District Diary, and Station Daily Diary), the report engine architecture is structured into two shared, pure service layers:
+
+```
+[ Excel / Sheet Generators (Layer 3) ]
+             │
+             ▼
+[ Layer 2: Shared Formula Library (python_worker/formula_library.py) ]
+  • compute_variation(curr, prev)
+  • compute_detection(solved, rep)
+  • person_display(person, opts)
+  • address_compile(loc, mode)
+  • custody_status_display(val)
+  • accused_history(arrestee)
+  • recovery_display(props)
+             │
+             ▼
+[ Layer 1: Classification & Aggregation Service (python_worker/aggregation_service.py) ]
+  • fetch_classified_counts(jurisdiction, dates, head_selector, channel)
+  • Heinous / Non-Heinous / Act categorization per ref.local_heads
+  • DB-enforced FK guarantees (fir_details.local_head_id -> ref.local_heads)
+```
+
+### Mandate
+- **No Sheet-Level Duplication**: Individual report sheet generators consume Layer 1 for count aggregation and Layer 2 for formatting/math formulas. Sheet generators MUST NOT write custom SQL queries against `ref.local_heads` or reimplement `Variation%` / `Detection%` math.
+- **Taxonomy Locking**: All classification rules and enum mappings import directly from `TAXONOMY_LOCK.md` / `formula_library.py`.
+
+### Phase 2 Correctness Verification Layer (Golden Dataset & Automated Harness)
+To ensure Layer 1 (`fetch_classified_counts`) and Layer 2 (`formula_library.py`) function correctly together before sheet building starts, Phase 2 establishes an automated correctness verification flow:
+
+```
+[ Golden Dataset (PostgreSQL DB: source_reference = 'GOLDEN_DATASET_PHAROS_V1') ]
+                             │
+                             ▼
+[ Layer 1 Service & Layer 2 Formula Library Execution ]
+                             │
+                             ▼
+[ Automated Harness (tests/test_golden_correctness_harness.py) ]
+                             │
+                             ▼
+[ Ground Truth Verification (golden_dataset/expected_values.json) ]
+```
+
+1. **Golden Dataset (`scripts/seed_golden_dataset.py`)**: Populates deterministic, idempotent PostgreSQL records covering all edge cases (7 Heinous heads, BNS 111/113, non-heinous/act heads, COALESCE date fallback tiers, E-FIR channels, multi-accused, custody/missing/UIDB status normalizations, multi-jurisdiction nodes, year boundary).
+2. **Ground Truth Spec (`golden_dataset/expected_values.json`)**: Contains hand-authored expected results authored independently of code execution.
+3. **Automated Harness (`tests/test_golden_correctness_harness.py`)**: Runs as part of `python -m unittest discover -s tests`, calling Layer 1 and Layer 2 routines and asserting 100% equality against ground truth before any report sheet code changes are permitted.
+4. **Cleanup Insurance (`scripts/cleanup_golden_dataset.py`)**: Standalone teardown script for clearing golden dataset records on demand.
+
+### Phase 3 Layer 3 Declarative Report Spec & Generic Renderer Architecture
+
+```
+[ Declarative Spec File (JSON / REPORT_SPEC_FORMAT.md) ]
+                         │
+                         ▼
+[ Generic Report Renderer (python_worker/report_renderer.py) ]
+          │                                  │
+          ▼                                  ▼
+[ Layer 1: Classification & Agg ]  [ Layer 2: Formula & Format ]
+```
+
+1. **Declarative Spec Format (`REPORT_SPEC_FORMAT.md` & `golden_dataset/report_specs/`)**: Each report sheet is defined entirely as JSON data containing row grain, jurisdiction scope, date column conventions, subtotal definitions, and column source bindings (`layer1_aggregation`, `layer2_formula`, `person_template`, `direct_field`).
+2. **Generic Report Renderer (`python_worker/report_renderer.py`)**: Reads spec files and executes Layer 1 (`aggregation_service.py`) and Layer 2 (`formula_library.py`) routines dynamically. Enforces generic Row 5 annotation stripping (`strip_row_5_annotation`) and A4 print setup metadata (`print_setup`).
+3. **Strict Architecture Boundary Mandate**:
+   > **"no report sheet may contain inline classification, formula, or aggregation logic going forward — express it in the spec format and let the generic renderer + Layers 1/2 do the work."**
+

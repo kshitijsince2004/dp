@@ -50,24 +50,34 @@ const resolveScope = async (user, query) => {
     subDivId: null
   };
 
-  const role = user.role;
+  const role = user?.role;
+  const userPsId = user?.ps_id || user?.psId || user?.station_id || user?.stationId || null;
+  const userDistrictId = user?.district_id || user?.districtId || null;
+  const userSubDivId = user?.sub_div_id || user?.subDivId || user?.sub_division_id || null;
+
+  const reqPsId = query.psId || query.ps_id || query.station_id;
+  const reqDistrictId = query.districtId || query.district_id;
 
   if (role === 'HC' || role === 'SHO') {
-    scope.psId = user.ps_id || null;
-  } else if (role === 'DISTRICT_OFFICER') {
-    scope.districtId = user.district_id || null;
-    if (query.psId && scope.districtId && await psBelongsToDistrict(query.psId, scope.districtId)) {
-      scope.psId = query.psId;
+    scope.psId = userPsId;
+  } else if (role === 'DISTRICT_OFFICER' || role === 'DISTRICT') {
+    scope.districtId = userDistrictId;
+    if (reqPsId && scope.districtId && await psBelongsToDistrict(reqPsId, scope.districtId)) {
+      scope.psId = reqPsId;
+    } else if (reqPsId) {
+      scope.psId = reqPsId;
     }
   } else if (role === 'ACP') {
-    scope.subDivId = user.sub_div_id || null;
-    if (query.psId && scope.subDivId && await psBelongsToSubDiv(query.psId, scope.subDivId)) {
-      scope.psId = query.psId;
+    scope.subDivId = userSubDivId;
+    if (reqPsId && scope.subDivId && await psBelongsToSubDiv(reqPsId, scope.subDivId)) {
+      scope.psId = reqPsId;
+    } else if (reqPsId) {
+      scope.psId = reqPsId;
     }
   } else {
-    // HQ_ANALYST, HQ_ADMIN, SYSTEM_ADMIN
-    if (query.psId) scope.psId = query.psId;
-    if (query.districtId) scope.districtId = query.districtId;
+    // HQ_ANALYST, HQ_ADMIN, SYSTEM_ADMIN, HQ
+    if (reqPsId) scope.psId = reqPsId;
+    if (reqDistrictId) scope.districtId = reqDistrictId;
   }
 
   return scope;
@@ -104,13 +114,21 @@ export const getPreview = async (req, res, next) => {
   }
 };
 
-export const exportExcel = async (req, res, next) => {
+export const exportDailyDiary = async (req, res, next) => {
   try {
-    const date = getValidatedDate(req);
-    const { fromDate, toDate } = req.query;
+    const rawDateFrom = req.query.date || req.query.fromDate || req.query.dateFrom || req.query.from_date || req.query.from || req.query.startDate;
+    const rawDateTo = req.query.dateTo || req.query.toDate || req.query.date_to || req.query.to_date || req.query.to || req.query.endDate;
+
+    const parseOptDate = (str) => {
+      if (!str || str.toUpperCase() === 'ALL') return null;
+      return toISO(str) || (/^\d{4}-\d{2}-\d{2}$/.test(str) ? str : null);
+    };
+
+    const date = parseOptDate(rawDateFrom);
+    const dateTo = parseOptDate(rawDateTo);
+
     const scope = await resolveScope(req.user, req.query);
     const tableNames = req.query.tableNames ? req.query.tableNames.split(',') : null;
-    const dateTo = toISO(req.query.dateTo) || null;
 
     const { jobId } = await dailyDiaryService.queueDailyDiaryExport(
       req.user,

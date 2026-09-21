@@ -270,7 +270,7 @@ export default function Queue() {
                 disabled={bulkLoading}
                 className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2 cursor-pointer disabled:bg-slate-700 disabled:text-slate-500 border-none"
               >
-                Approve &amp; Forward to ACP
+                Approve &amp; Forward to District
               </button>
             </div>
           </div>

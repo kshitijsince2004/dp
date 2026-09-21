@@ -58,7 +58,7 @@ const templates = [
   { id: "daily-diary",                    name_en: "Daily Diary Export (All Sheets)",         name_hi: "दैनिक डायरी निर्यात",                    format: ["excel"], applicable_record_types: ["ARREST","CASE","PCR_CALL","MISSING","UIDB"], template_type: "DAILY_DIARY_PARALLEL" },
   { id: "dd-manual-fir",                  name_en: "Daily Diary: Manual FIR",                name_hi: "मैनुअल एफआईआर",                         format: ["excel"], applicable_record_types: ["CASE"],                               template_type: "DAILY_DIARY_PARALLEL" },
   { id: "dd-eburglary-ehouse-theft-mvt",  name_en: "Daily Diary: E-Burglary, E-House Theft, MVT", name_hi: "ई-चोरी मामले",                    format: ["excel"], applicable_record_types: ["CASE"],                               template_type: "DAILY_DIARY_PARALLEL" },
-  { id: "dd-arrested-all-heads",          name_en: "Daily Diary: Persons Arrested All Heads", name_hi: "गिरफ्तार व्यक्ति सभी शीर्ष",            format: ["excel"], applicable_record_types: ["ARREST"],                            template_type: "DAILY_DIARY_PARALLEL" },
+  { id: "dd-arrest-count-summary",        name_en: "Daily Diary: Arrest Count Summary",       name_hi: "गिरफ्तारी गणना सारांश",                 format: ["excel"], applicable_record_types: ["ARREST"],                            template_type: "DAILY_DIARY_PARALLEL" },
   { id: "dd-arrested-east-district",      name_en: "Daily Diary: Arrested East District",    name_hi: "पूर्वी जिला गिरफ्तार",                  format: ["excel"], applicable_record_types: ["ARREST"],                            template_type: "DAILY_DIARY_PARALLEL" },
   { id: "dd-arrested-kalandara",          name_en: "Daily Diary: Arrested Kalandara",        name_hi: "कलंदरा गिरफ्तार",                       format: ["excel"], applicable_record_types: ["ARREST"],                            template_type: "DAILY_DIARY_PARALLEL" },
   { id: "dd-arrested-efir-theft",         name_en: "Daily Diary: Arrested E-FIR Theft",      name_hi: "ई-एफआईआर चोरी गिरफ्तार",               format: ["excel"], applicable_record_types: ["ARREST"],                            template_type: "DAILY_DIARY_PARALLEL" },
@@ -170,33 +170,70 @@ const getRecordsForReport = async (templateId, filters) => {
   if (templateId === 'arrest-summary') recordType = 'ARREST';
   else if (templateId === 'pcr-call-log') recordType = 'PCR_CALL';
   else if (templateId === 'cases-register') recordType = 'CASE';
+  else if (filters?.record_type) recordType = String(filters.record_type).toUpperCase();
 
-  let query = db('records')
-    .select('records.*', 'ps.name as ps_name', 'dist.name as district_name')
-    .leftJoin('hierarchy_nodes as ps', 'records.ps_id', 'ps.id')
-    .leftJoin('hierarchy_nodes as dist', 'records.district_id', 'dist.id');
+  let query = db('records as r')
+    .select(
+      'r.id', 'r.uid', 'r.record_type', 'r.record_date', 'r.registration_date', 'r.current_status', 'r.current_level', 'r.ps_id', 'r.district_id', 'r.data as raw_data',
+      'ps.name as ps_name', 'dist.name as district_name', 'io.name as io_name',
+      'fd.fir_no as fd_fir_no', 'fd.fir_date as fd_fir_date', 'fd.brief_facts as fd_brief_facts', 'lh_f.local_head as fd_local_head',
+      'ad.fir_no as ad_fir_no', 'ad.gd_no as ad_gd_no', 'ad.arresting_officer_name', 'ad.case_status as ad_custody_status', 'lh_a.local_head as ad_local_head',
+      'md.missing_status as md_status', 'md.person_name as md_name',
+      'ud.uidb_no as ud_uidb_no', 'ud.uidb_status as ud_status',
+      'pd.pcr_no as pd_pcr_no', 'pd.call_head as pd_call_head', 'pd.action_taken as pd_action'
+    )
+    .leftJoin('hierarchy_nodes as ps', 'r.ps_id', 'ps.id')
+    .leftJoin('hierarchy_nodes as dist', 'r.district_id', 'dist.id')
+    .leftJoin('investigating_officers as io', 'r.io_id', 'io.id')
+    .leftJoin('fir_details as fd', 'r.id', 'fd.record_id')
+    .leftJoin('arrest_details as ad', 'r.id', 'ad.record_id')
+    .leftJoin('missing_details as md', 'r.id', 'md.record_id')
+    .leftJoin('uidb_details as ud', 'r.id', 'ud.record_id')
+    .leftJoin('pcr_call_details as pd', 'r.id', 'pd.record_id')
+    .leftJoin('ref.local_heads as lh_f', 'fd.local_head_id', 'lh_f.local_head_cd')
+    .leftJoin('ref.local_heads as lh_a', 'ad.local_head_id', 'lh_a.local_head_cd')
+    .whereNot('r.current_status', 'DELETED');
 
   if (recordType) {
-    query = query.where('records.record_type', recordType);
+    query = query.where('r.record_type', recordType);
   }
 
-  const psId = filters.psId || filters.station_id;
-  const districtId = filters.districtId || filters.district_id;
+  const psId = filters.ps_id || filters.psId || filters.station_id;
+  const districtId = filters.district_id || filters.districtId;
   const from = toISO(filters.from || filters.dateFrom || filters.from_date || filters.date);
-  const to = toISO(filters.to || filters.dateTo || filters.to_date || filters.date);
+  const to = toISO(filters.to || filters.dateTo || filters.to_date || filters.date_to);
 
-  if (psId) query = query.where('records.ps_id', psId);
-  if (districtId) query = query.where('records.district_id', districtId);
-  if (from) query = query.where('records.record_date', '>=', from);
-  if (to) query = query.where('records.record_date', '<=', to);
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (psId && psId !== 'ALL' && psId !== 'ALL_STATIONS' && psId !== 'ALL_DELHI_TOTAL') {
+    if (UUID_RE.test(psId)) {
+      query = query.where('r.ps_id', psId);
+    } else {
+      query = query.where(b => b.where('ps.code', psId).orWhere('ps.name', psId).orWhereILike('ps.name', `%${psId}%`));
+    }
+  }
+
+  if (districtId && districtId !== 'ALL' && districtId !== 'ALL_DISTRICTS') {
+    if (UUID_RE.test(districtId)) {
+      query = query.where('r.district_id', districtId);
+    } else {
+      query = query.where(b => b.where('dist.code', districtId).orWhere('dist.name', districtId).orWhereILike('dist.name', `%${districtId}%`));
+    }
+  }
+
+  if (from) {
+    query = query.whereRaw('COALESCE(r.registration_date, fd.fir_date, r.record_date) >= ?', [from]);
+  }
+  if (to) {
+    query = query.whereRaw('COALESCE(r.registration_date, fd.fir_date, r.record_date) <= ?', [to]);
+  }
 
   // Dynamic user data filters from request parameters
   const systemKeys = new Set([
-    'psId', 'station_id', 'districtId', 'district_id',
+    'psId', 'ps_id', 'station_id', 'districtId', 'district_id',
     'from', 'dateFrom', 'from_date', 'date',
     'to', 'dateTo', 'to_date', 'date_to',
     'selected_sub_templates', 'page', 'limit', 'format', 'template_id',
-    'scope_node_id', 'scopeNodeId', 'selected_sheets'
+    'scope_node_id', 'scopeNodeId', 'selected_sheets', 'record_type'
   ]);
 
   for (const [key, val] of Object.entries(filters)) {
@@ -205,18 +242,50 @@ const getRecordsForReport = async (templateId, filters) => {
     }
     const coreColumns = ['id', 'current_status', 'current_level'];
     if (coreColumns.includes(key)) {
-      query = query.where(`records.${key}`, val);
-    } else {
-      log.warn('getRecordsForReport: skipping dynamic filter for non-existent records.data column', { templateId, key });
+      query = query.where(`r.${key}`, val);
     }
   }
 
-  const results = await query.orderBy('records.record_date', 'desc');
+  const results = await query.orderByRaw('COALESCE(r.registration_date, fd.fir_date, r.record_date) DESC, r.created_at DESC');
+
+  const recordIds = results.map(r => r.id);
+  let personMap = {};
+  if (recordIds.length > 0) {
+    const personRows = await db('persons')
+      .whereIn('record_id', recordIds.slice(0, 10000))
+      .select('record_id', 'role', 'name');
+    for (const p of personRows) {
+      if (!p.name) continue;
+      if (!personMap[p.record_id]) {
+        personMap[p.record_id] = p.name;
+      } else if (['COMPLAINANT', 'ARRESTEE', 'MISSING', 'DECEASED'].includes(p.role)) {
+        personMap[p.record_id] = p.name;
+      }
+    }
+  }
+
   log.info('getRecordsForReport: exit', { templateId, recordType, count: results.length });
-  return results.map(r => ({
-    ...r,
-    data: parseJsonField(r.data)
-  }));
+  return results.map(r => {
+    const parsedData = parseJsonField(r.raw_data) || {};
+    const name = personMap[r.id] || r.ad_accused_name || r.md_name || parsedData.arrested_name || parsedData.name || '—';
+    return {
+      ...r,
+      record_date: r.registration_date || r.fd_fir_date || r.record_date,
+      data: {
+        ...parsedData,
+        uid: r.uid || parsedData.uid || String(r.id).substring(0, 8),
+        fir_no: r.fd_fir_no || r.ad_fir_no || r.ud_uidb_no || r.pd_pcr_no || parsedData.fir_no || '',
+        fir_date: r.fd_fir_date || r.record_date,
+        arrested_name: name,
+        complainant_name: name,
+        name: name,
+        local_head: r.fd_local_head || r.ad_local_head || r.pd_call_head || parsedData.local_head || r.record_type,
+        brief_facts: r.fd_brief_facts || r.pd_action || parsedData.brief_facts || '',
+        io_name: r.io_name || r.arresting_officer_name || parsedData.io_name || '',
+        status: r.ad_custody_status || r.md_status || r.ud_status || r.current_status || ''
+      }
+    };
+  });
 };
 
 const getCompilationsForReport = async (filters) => {
@@ -238,18 +307,95 @@ const getCompilationsForReport = async (filters) => {
 
 async function generatePDF(htmlContent) {
   log.debug('generatePDF: enter', { htmlLength: htmlContent.length });
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
-  log.debug('generatePDF: puppeteer browser launched');
-  const page = await browser.newPage();
-  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-  log.debug('generatePDF: page content set, rendering PDF');
-  const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-  await browser.close();
-  log.info('generatePDF: exit', { pdfBytes: pdfBuffer.length });
-  return pdfBuffer;
+  try {
+    const puppeteerModule = await import('puppeteer');
+    const puppeteer = puppeteerModule.default || puppeteerModule;
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    log.debug('generatePDF: puppeteer browser launched');
+    const page = await browser.newPage();
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    log.debug('generatePDF: page content set, rendering PDF');
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+    await browser.close();
+    log.info('generatePDF: exit', { pdfBytes: pdfBuffer.length });
+    return pdfBuffer;
+  } catch (err) {
+    log.warn('generatePDF: Puppeteer failed, using clean HTML-text buffer fallback', { err: err.message });
+    const plainText = htmlContent.replace(/<style[\s\S]*?<\/style>/gi, '')
+                                 .replace(/<[^>]+>/g, ' ')
+                                 .replace(/\s+/g, ' ')
+                                 .trim();
+    return Buffer.from(plainText, 'utf8');
+  }
+}
+
+async function generateCustomExcelReport(jobId, customDefinition, filters, filePath) {
+  log.info('generateCustomExcelReport: enter', { jobId, sheets: customDefinition?.sheets?.length });
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'PHAROS Intelligence System';
+  workbook.created = new Date();
+
+  const sheets = customDefinition?.sheets || [];
+  if (sheets.length === 0) {
+    sheets.push({ record_type: 'CASE', field_keys: ['id', 'record_type', 'record_date', 'current_status'] });
+  }
+
+  for (let idx = 0; idx < sheets.length; idx++) {
+    const s = sheets[idx];
+    const recType = s.record_type || 'CASE';
+    const fieldKeys = s.field_keys || [];
+    const rawSheetName = s.sheet_name || s.title || `${recType}_Sheet_${idx + 1}`;
+    const sheetName = String(rawSheetName).replace(/[*?:/\\\[\]]/g, '').substring(0, 31);
+
+    const worksheet = workbook.addWorksheet(sheetName);
+
+    let labelMap = new Map();
+    if (fieldKeys.length > 0) {
+      const registered = await db('field_registry')
+        .whereIn('field_key', fieldKeys)
+        .andWhere('is_active', true);
+      labelMap = new Map(registered.map(f => {
+        const labels = typeof f.labels === 'string' ? (JSON.parse(f.labels) || {}) : (f.labels || {});
+        return [f.field_key, labels.en || f.label_en || f.field_key];
+      }));
+    }
+
+    const cols = fieldKeys.map(k => ({
+      header: labelMap.get(k) || k.replace(/_/g, ' ').toUpperCase(),
+      key: k,
+      width: 22
+    }));
+    worksheet.columns = cols;
+
+    const records = await getRecordsForReport(null, { ...filters, record_type: recType });
+
+    records.forEach(r => {
+      const d = r.data || {};
+      const rowObj = {};
+      fieldKeys.forEach(k => {
+        if (k === 'id') rowObj[k] = r.id;
+        else if (k === 'record_type') rowObj[k] = r.record_type;
+        else if (k === 'current_status') rowObj[k] = r.current_status;
+        else if (k === 'current_level') rowObj[k] = r.current_level;
+        else if (k === 'record_date') rowObj[k] = toDMY(r.record_date) || '';
+        else if (k === 'ps_name') rowObj[k] = r.ps_name || d.police_station || '';
+        else if (k === 'district_name') rowObj[k] = r.district_name || d.district || '';
+        else rowObj[k] = d[k] !== undefined ? (typeof d[k] === 'object' ? JSON.stringify(d[k]) : d[k]) : '';
+      });
+      worksheet.addRow(rowObj);
+    });
+
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+    headerRow.height = 26;
+  }
+
+  await workbook.xlsx.writeFile(filePath);
+  log.info('generateCustomExcelReport: completed', { jobId, filePath });
 }
 
 async function generateExcelFile(template_id, records, parsedFilters, psName, filePath) {
@@ -455,8 +601,8 @@ export const generateReport = async (req, res) => {
   const ext = (fmt === 'EXCEL' || fmt === 'XLSX') ? 'xlsx' : fmt.toLowerCase();
 
   // RBAC scope checks
-  const userPsId = req.user?.psId || req.user?.station_id;
-  const userDistrictId = req.user?.districtId || req.user?.district_id;
+  const userPsId = req.user?.ps_id || req.user?.psId || req.user?.station_id || req.user?.stationId;
+  const userDistrictId = req.user?.district_id || req.user?.districtId;
   const filterPsId = filters?.ps_id || filters?.psId || filters?.station_id;
   const filterDistrictId = filters?.district_id || filters?.districtId;
 
@@ -512,34 +658,27 @@ export const generateReport = async (req, res) => {
     });
     log.info('generateReport: wrote report_jobs row (PENDING)', { jobId, userId, template_id, format: fmt, filePath });
 
-    // Check if this is a PHQ / District template or metadata-driven template (Node.js engine)
-    const tCode = (selectedTemplate?.code || (typeof template_id === 'string' && !UUID_RE.test(template_id) ? template_id : '')).toUpperCase();
-    const isReportEngineTemplate = tCode.startsWith('PHQ') || tCode === 'PHQ_DIARY' || tCode.startsWith('DISTRICT') || tCode === 'DISTRICT_DIARY' || tCode === 'FN_DIARY' || selectedTemplate?.template_type === 'PHQ_DIARY' || selectedTemplate?.template_type === 'DISTRICT_DIARY' || selectedTemplate?.template_type === 'FN_DIARY';
-    const isMetadataTemplate = isReportEngineTemplate || (selectedTemplate && selectedTemplate.template_definition && parseJsonField(selectedTemplate.template_definition) && Object.keys(parseJsonField(selectedTemplate.template_definition)).length > 0);
-
-    if (isMetadataTemplate) {
-      setImmediate(async () => {
-        try {
-          await generateReportInternal(jobId, selectedTemplate?.id || selectedTemplate?.code || template_id, filters || {}, fmt, filePath, userId);
-        } catch (err) {
-          log.error('generateReport: Metadata report generation failed', { jobId, err: err.message, stack: err.stack });
-          await db('report_jobs').where({ id: jobId }).update({ status: 'FAILED', updated_at: new Date().toISOString() });
-        }
-      });
-    } else {
-      // Hand off to Python worker via RabbitMQ for single-sheet reports
-      await publish('report.requested', {
-        job_id: jobId,
-        template_id: template_id || null,
-        custom_definition: custom_definition || null,
-        filters: filters || {},
-        format: fmt,
-        selected_sub_templates: selected_sub_templates || null,
-        user_id: userId
-      });
-      log.debug('generateReport: published report.requested', { jobId, userId });
-      setTimeout(() => runPythonFallback(jobId), 100);
-    }
+    // Trigger async generation in Node.js engine with status tracking
+    setImmediate(async () => {
+      try {
+        await generateReportInternal(
+          jobId,
+          selectedTemplate?.id || selectedTemplate?.code || template_id,
+          filters || {},
+          fmt,
+          filePath,
+          userId,
+          custom_definition
+        );
+      } catch (err) {
+        log.error('generateReport: Async report generation failed', { jobId, template_id, err: err.message, stack: err.stack });
+        await db('report_jobs').where({ id: jobId }).update({
+          status: 'FAILED',
+          error_message: String(err.message || 'Report generation failed').slice(0, 500),
+          updated_at: new Date().toISOString()
+        });
+      }
+    });
 
     log.info('generateReport: exit', { jobId, userId, template_id, format: fmt });
     return res.status(201).json({
@@ -562,8 +701,20 @@ export const generateReport = async (req, res) => {
   }
 };
 
-export const generateReportInternal = async (jobId, template_id, parsedFilters, format, filePath, userId) => {
-  log.debug('generateReportInternal: enter', { jobId, template_id, format, userId });
+export const generateReportInternal = async (jobId, template_id, parsedFilters, format, filePath, userId, custom_definition) => {
+  log.debug('generateReportInternal: enter', { jobId, template_id, format, userId, hasCustomDef: !!custom_definition });
+
+  // Handle custom_definition (from MultiSheetReportBuilder or CustomExcelBuilder)
+  if (custom_definition && (!template_id || template_id === 'custom' || template_id === 'custom_builder')) {
+    await generateCustomExcelReport(jobId, custom_definition, parsedFilters, filePath);
+    await db('report_jobs').where({ id: jobId }).update({
+      status: 'READY',
+      file_path: filePath,
+      updated_at: new Date().toISOString()
+    });
+    return;
+  }
+
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   let template = null;
   if (template_id) {
@@ -599,7 +750,8 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
       reportFamily,
       scopeNodeId: scope,
       cutoffDate: runDateStr,
-      selectedSheets
+      selectedSheets,
+      format
     });
     fs.writeFileSync(filePath, buffer);
     await db('report_jobs').where({ id: jobId }).update({
@@ -618,16 +770,17 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
   );
 
   if (isDailyDiaryParallel) {
-    const { execFileSync } = await import('child_process');
-    const pythonPath = process.env.PYTHON_PATH || 'python';
-    const pyDir = fs.existsSync(path.resolve(process.cwd(), 'python_worker'))
-      ? path.resolve(process.cwd(), 'python_worker')
-      : fs.existsSync(path.resolve(process.cwd(), '../python_worker'))
-        ? path.resolve(process.cwd(), '../python_worker')
-        : path.resolve('python_worker');
-    const pyCode = `import sys; sys.path.insert(0, r'${pyDir}'); from generator import generate_report; generate_report('${jobId}')`;
-    log.info('generateReportInternal: executing Python daily-diary engine', { jobId, template_id });
-    execFileSync(pythonPath, ['-c', pyCode], { cwd: path.dirname(pyDir) });
+    log.info('generateReportInternal: executing Native JS daily-diary Excel engine', { jobId, template_id });
+    const { generateDailyDiaryExcelNative } = await import('../daily-diary/daily-diary.service.js');
+    const dateFrom = parsedFilters.date || parsedFilters.from_date || parsedFilters.dateFrom || parsedFilters.from;
+    const dateTo = parsedFilters.date_to || parsedFilters.dateTo || parsedFilters.to || dateFrom;
+    const psId = parsedFilters.psId || parsedFilters.ps_id || parsedFilters.station_id;
+    const districtId = parsedFilters.districtId || parsedFilters.district_id;
+    const subDivId = parsedFilters.subDivId || parsedFilters.sub_div_id;
+    const tableNamesFilter = parsedFilters.table_names || parsedFilters.tableNames;
+
+    await generateDailyDiaryExcelNative(jobId, dateFrom, dateTo, psId, districtId, subDivId, tableNamesFilter, filePath);
+
     await db('report_jobs').where({ id: jobId }).update({
       status: 'READY',
       file_path: filePath,
@@ -909,27 +1062,26 @@ export const generateReportInternal = async (jobId, template_id, parsedFilters, 
         log.debug('generateReportInternal: executing daily-status export script', {
           jobId, template_id, scriptPath, templatePath, date, outPath: filePath, dbHost, dbPort, dbName, dbUser, hasDbPass: !!dbPass,
         });
-        const { execFileSync } = await import('child_process');
-        const pythonExecutable = process.env.PYTHON_PATH || 'python';
-        const envWithPass = {
-          ...process.env,
-          PGHOST: dbHost,
-          PGPORT: String(dbPort),
-          PGDATABASE: dbName,
-          PGUSER: dbUser,
-          PGPASSWORD: dbPass || ''
-        };
-        execFileSync(pythonExecutable, [
-          scriptPath,
-          '--date', date,
-          '--template', templatePath,
-          '--out', filePath,
-          '--host', dbHost,
-          '--port', String(dbPort),
-          '--dbname', dbName,
-          '--user', dbUser
-        ], { env: envWithPass });
-        log.info('generateReportInternal: daily-status export script completed', { jobId, filePath });
+        try {
+          const { execFile } = await import('child_process');
+          const util = await import('util');
+          const execFileAsync = util.promisify(execFile);
+          await execFileAsync(pythonExecutable, [
+            scriptPath,
+            '--date', date,
+            '--template', templatePath,
+            '--out', filePath,
+            '--host', dbHost,
+            '--port', String(dbPort),
+            '--dbname', dbName,
+            '--user', dbUser
+          ], { env: envWithPass, timeout: 30000, maxBuffer: 10 * 1024 * 1024 });
+          log.info('generateReportInternal: daily-status export script completed', { jobId, filePath });
+        } catch (pyErr) {
+          log.warn('generateReportInternal: daily-status Python script failed, using Node.js ExcelJS fallback', { jobId, err: pyErr.message });
+          records = await getRecordsForReport(template_id, parsedFilters);
+          await generateExcelFile(template_id, records, parsedFilters, psName, filePath);
+        }
       } else {
         log.info('generateReportInternal: Master script not present, using ExcelJS fallback for daily-status', { jobId });
         records = await getRecordsForReport(template_id, parsedFilters);
@@ -1400,32 +1552,28 @@ export const getFields = async (req, res) => {
       .orderBy('sort_order', 'asc');
 
     const filtered = allFields.filter(f => {
-      let types = [];
-      try {
-        types = typeof f.applicable_record_types === 'string'
-          ? JSON.parse(f.applicable_record_types)
-          : f.applicable_record_types;
-      } catch (e) {
-        types = [f.applicable_record_types];
+      let types = f.record_types || f.applicable_record_types || [];
+      if (typeof types === 'string') {
+        try { types = JSON.parse(types); } catch (e) { types = [types]; }
       }
-      return Array.isArray(types) && types.some(t => filterTypes.includes(t.toUpperCase()));
+      return Array.isArray(types) && types.some(t => filterTypes.includes(String(t).toUpperCase()));
     }).map(f => {
-      let recTypes = [];
-      try {
-        recTypes = typeof f.applicable_record_types === 'string' 
-          ? JSON.parse(f.applicable_record_types) 
-          : f.applicable_record_types;
-      } catch (e) {
-        recTypes = [f.applicable_record_types];
+      let recTypes = f.record_types || f.applicable_record_types || [];
+      if (typeof recTypes === 'string') {
+        try { recTypes = JSON.parse(recTypes); } catch (e) { recTypes = [recTypes]; }
       }
       
+      const labels = typeof f.labels === 'string' ? (JSON.parse(f.labels) || {}) : (f.labels || {});
+      const labelEn = labels.en || f.label_en || f.field_key;
+      const labelHi = labels.hi || labels.en || f.label_hi || labelEn;
+
       return {
         field_key: f.field_key,
-        label_en: f.label_en,
-        label_hi: f.label_hi,
+        label_en: labelEn,
+        label_hi: labelHi,
         field_type: f.field_type,
         section: f.section || 'General Details',
-        applicable_record_types: recTypes
+        applicable_record_types: Array.isArray(recTypes) ? recTypes : [recTypes]
       };
     });
 

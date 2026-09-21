@@ -648,10 +648,19 @@ async function writeAuditLog(trx, { recordId, action, user, fieldName, oldValue,
 }
 
 function calculateDiff(oldFlat, newFlat) {
+  // Normalise values so that null / undefined / '' are all treated as "empty" and do not
+  // produce phantom diff entries.  We still use JSON.stringify for objects/arrays so that
+  // deep-equal comparison works correctly on nested structures.
+  const normaliseVal = (v) => {
+    if (v === null || v === undefined || v === '') return '__EMPTY__';
+    if (typeof v === 'object') return JSON.stringify(v);
+    return String(v);
+  };
+
   const diff = [];
   const allKeys = new Set([...Object.keys(oldFlat || {}), ...Object.keys(newFlat || {})]);
   for (const key of allKeys) {
-    if (JSON.stringify(oldFlat?.[key]) !== JSON.stringify(newFlat?.[key])) {
+    if (normaliseVal(oldFlat?.[key]) !== normaliseVal(newFlat?.[key])) {
       diff.push({ field_key: key, old_value: oldFlat?.[key] ?? '', new_value: newFlat?.[key] ?? '' });
     }
   }
@@ -971,6 +980,10 @@ function withListJoins(query) {
     .leftJoin('missing_details as mis', 'records.id', 'mis.record_id')
     .leftJoin('uidb_details as uidb', 'records.id', 'uidb.record_id')
     .leftJoin('ref.local_heads as lh_uidb', 'uidb.local_head_id', 'lh_uidb.local_head_cd')
+    .leftJoin('workflow_transitions as last_wt', function () {
+      this.on('last_wt.id', '=', db.raw('(SELECT id FROM workflow_transitions WHERE record_id = records.id ORDER BY performed_at DESC LIMIT 1)'));
+    })
+    .leftJoin('users as last_wt_u', 'last_wt.performed_by', 'last_wt_u.id')
     .select(
       'records.*', 'ps.name as ps_name', 'dist.name as district_name', 'u.name as creator_name',
       'io.name as io_name',
@@ -988,11 +1001,18 @@ function withListJoins(query) {
       'pcr.final_call_status as final_call_status', 'pcr.call_head as call_head',
       'mis.missing_status as missing_status', 'mis.fir_no as missing_fir_no',
       'uidb.uidb_status as uidb_status', 'uidb.uidb_no as uidb_no', 'lh_uidb.local_head as uidb_local_head',
+      'last_wt.from_level as last_transition_from_level',
+      'last_wt.to_level as last_transition_to_level',
+      'last_wt.action as last_transition_action',
+      'last_wt.comment as last_transition_comment',
+      'last_wt.performed_at as last_transition_at',
+      'last_wt_u.name as last_transition_by_name',
+      'last_wt_u.role as last_transition_by_role'
     );
 }
 
-export const listRecords = async (recordType, filters, jurisdictionQuery) => {
-  log.debug('listRecords: enter', { recordType, filters: redact(filters), jurisdictionQuery });
+export const listRecords = async (recordType, filters, jurisdictionQuery = {}, user = null) => {
+  log.debug('listRecords: enter', { recordType, filters: redact(filters), jurisdictionQuery, userRole: user?.role });
   let query = withListJoins(db('records'));
 
   if (jurisdictionQuery.ps_id) {
@@ -1008,11 +1028,36 @@ export const listRecords = async (recordType, filters, jurisdictionQuery) => {
   if (jurisdictionQuery.district_id) { query = query.where('records.district_id', jurisdictionQuery.district_id); log.debug('listRecords: scoped by district_id', { districtId: jurisdictionQuery.district_id }); }
   if (jurisdictionQuery.sub_div_id) { query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id); log.debug('listRecords: scoped by sub_div_id', { subDivId: jurisdictionQuery.sub_div_id }); }
 
+  // HIERARCHY DRAFT ISOLATION:
+  // DRAFT records are only visible to the creator/HC at the PS level until submitted.
+  // SHO, District, ACP, JCP, SCP, and HQ hierarchies cannot see DRAFT records.
+  if (user && user.role !== 'HC') {
+    query = query.where('records.current_status', '<>', 'DRAFT');
+  } else if (!jurisdictionQuery.ps_id && (!user || user.role !== 'HC')) {
+    query = query.where('records.current_status', '<>', 'DRAFT');
+  }
+
   if (recordType && recordType !== 'ALL') { query = query.where('records.record_type', recordType); log.debug('listRecords: filtered by record_type', { recordType }); }
 
   if (filters.status) {
-    if (Array.isArray(filters.status)) query = query.whereIn('records.current_status', filters.status);
-    else query = query.where('records.current_status', filters.status);
+    if (filters.status === 'FORWARDED' || filters.status === 'FORWARDED_DISTRICT') {
+      query = query.whereIn('records.current_status', [
+        'DISTRICT_REVIEW', 'JCP_REVIEW', 'SCP_REVIEW', 'HQ_RECEIVED', 'COMPILED', 'ARCHIVED', 'SUBMITTED', 'SHO_REVIEWED', 'ACP_REVIEW'
+      ]);
+    } else if (filters.status === 'RETURNED_DISTRICT' || filters.status === 'SENT_BACK_DISTRICT') {
+      query = query.whereIn('records.current_status', ['SENT_BACK', 'SENT_BACK_HC'])
+        .andWhere('last_wt.from_level', 'DISTRICT');
+    } else if (filters.status === 'SENT_BACK_HC') {
+      query = query.whereIn('records.current_status', ['SENT_BACK', 'SENT_BACK_HC'])
+        .where((b) => {
+          b.where('last_wt.from_level', 'PS')
+            .orWhereNull('last_wt.from_level');
+        });
+    } else if (Array.isArray(filters.status)) {
+      query = query.whereIn('records.current_status', filters.status);
+    } else {
+      query = query.where('records.current_status', filters.status);
+    }
     log.debug('listRecords: filtered by status', { status: filters.status });
   }
   if (filters.dateFrom) query = query.where('records.record_date', '>=', filters.dateFrom);
@@ -1353,7 +1398,32 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
     split.detail.fir_ps_code = statutoryRes.firPsCode;
     split.detail.is_legacy_format = statutoryRes.isLegacyFormat;
 
+    if (split.detail.date_of_chargesheet || split.detail.chargesheet_date) {
+      split.detail.sent_to_court_date = split.detail.sent_to_court_date || split.detail.date_of_chargesheet || split.detail.chargesheet_date;
+      split.detail.date_of_chargesheet = split.detail.date_of_chargesheet || split.detail.chargesheet_date || split.detail.sent_to_court_date;
+      split.detail.chargesheet_date = split.detail.chargesheet_date || split.detail.date_of_chargesheet || split.detail.sent_to_court_date;
+    } else if (split.detail.sent_to_court_date) {
+      split.detail.date_of_chargesheet = split.detail.sent_to_court_date;
+      split.detail.chargesheet_date = split.detail.sent_to_court_date;
+    }
+
     log.debug('insertRecordCore: statutory FIR applied', { recordId: id, firNo: split.detail.fir_no, firYear: split.detail.fir_year, registrationType: split.detail.registration_type });
+  }
+
+  if (detailTable === 'fir_details' && split.detail.fir_no) {
+    const cleanFirNo = String(split.detail.fir_no).trim();
+    if (cleanFirNo.length > 0) {
+      const existingDup = await trx('fir_details')
+        .whereRaw('LOWER(TRIM(fir_no)) = LOWER(TRIM(?))', [cleanFirNo])
+        .whereNot({ record_id: id })
+        .first();
+      if (existingDup) {
+        log.warn('insertRecordCore: rejected — duplicate fir_no', { recordId: id, firNo: cleanFirNo, existingRecordId: existingDup.record_id });
+        const err = new Error(`FIR Number "${cleanFirNo}" is already registered as an FIR record.`);
+        err.status = 409;
+        throw err;
+      }
+    }
   }
 
   await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, scope.ps_id), ...split.detail, extra: JSON.stringify(split.detailExtra) });
@@ -1621,6 +1691,20 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
       const firYear = deriveFirYear(mergedFirNo, mergedFirDate, record.record_date);
       if (firYear != null) split.detail.fir_year = firYear;
 
+      if (mergedFirNo && String(mergedFirNo).trim().length > 0) {
+        const cleanFirNo = String(mergedFirNo).trim();
+        const existingDup = await trx('fir_details')
+          .whereRaw('LOWER(TRIM(fir_no)) = LOWER(TRIM(?))', [cleanFirNo])
+          .whereNot({ record_id: id })
+          .first();
+        if (existingDup) {
+          log.warn('updateRecord: rejected — duplicate fir_no', { recordId: id, firNo: cleanFirNo, existingRecordId: existingDup.record_id });
+          const err = new Error(`FIR Number "${cleanFirNo}" is already registered on another FIR record.`);
+          err.status = 409;
+          throw err;
+        }
+      }
+
       const currentCaseStatus = 'case_status' in split.detail ? split.detail.case_status : oldDetail?.case_status;
       const currentCaseStatusUpper = String(currentCaseStatus || '').toUpperCase().trim();
       const PENDING_STATUSES = ['PENDING', 'PENDING_INVESTIGATION', 'UNDER_INVESTIGATION'];
@@ -1636,10 +1720,24 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
         split.detail.is_worked_out = false;
       }
 
-      if (currentCaseStatus && ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'CHARGESHEETED', 'CHALLAN'].includes(currentCaseStatusUpper)) {
+      const isChargesheetOrJclStatus = (statusVal) => {
+        if (!statusVal) return false;
+        const u = String(statusVal).toUpperCase().trim();
+        return ['CHARGE SHEET', 'POLICE INVESTIGATION REPORT(PIR-JCL)', 'POLICE INVESTIGATION REPORT (PIR-JCL)', 'PIR-JCL', 'JCL', 'CHARGESHEETED', 'CHALLAN', 'SUPPLEMENTARY CHARGESHEET'].includes(u) || u.includes('CHARGE SHEET') || u.includes('JCL');
+      };
+
+      if (isChargesheetOrJclStatus(currentCaseStatus)) {
         if (!split.detail.sent_to_court_date && !oldDetail?.sent_to_court_date) {
-          split.detail.sent_to_court_date = new Date().toISOString().slice(0, 10);
+          split.detail.sent_to_court_date = split.detail.date_of_chargesheet || split.detail.chargesheet_date || new Date().toISOString().slice(0, 10);
         }
+      }
+      if (split.detail.date_of_chargesheet || split.detail.chargesheet_date) {
+        split.detail.sent_to_court_date = split.detail.sent_to_court_date || split.detail.date_of_chargesheet || split.detail.chargesheet_date;
+        split.detail.date_of_chargesheet = split.detail.date_of_chargesheet || split.detail.chargesheet_date || split.detail.sent_to_court_date;
+        split.detail.chargesheet_date = split.detail.chargesheet_date || split.detail.date_of_chargesheet || split.detail.sent_to_court_date;
+      } else if (split.detail.sent_to_court_date) {
+        split.detail.date_of_chargesheet = split.detail.sent_to_court_date;
+        split.detail.chargesheet_date = split.detail.sent_to_court_date;
       }
       log.debug('updateRecord: derived fir_year', { recordId: id, firNo: mergedFirNo, firDate: mergedFirDate, firYear });
     }
@@ -1717,7 +1815,15 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
       offenceRows: newFull.offenceRows,
       locationsById: newFull.locationsById,
     });
-    const diff = calculateDiff(oldFlatData, { ...newFlatData, ...data });
+    // Diff ONLY between the two registry-authoritative recomposed snapshots, NOT against the raw
+    // client `data` payload. The client payload contains frontend-sync alias keys (e.g.
+    // date_of_arrest, time_of_arrest, place_of_arrest, uid-as-UUID) that are not part of the
+    // field_registry for the record's type. Merging them via { ...newFlatData, ...data } caused
+    // those alias keys to appear in oldFlatData as absent (undefined → '') while the new side
+    // had them as '' — producing empty→empty false-change rows in every revision log entry.
+    // Using newFlatData alone (the post-save recomposed state) is correct: it is the canonical
+    // shape recomposeRecord produces from the actual DB state after the writes committed.
+    const diff = calculateDiff(oldFlatData, newFlatData);
     if (diff.length === 0 && statusChanges.length === 0 && propertyStatusChanges.length === 0) {
       log.info('updateRecord: no-op — nothing changed', { recordId: id });
       return { id, data: oldFlatData };

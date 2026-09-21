@@ -103,7 +103,7 @@ export default function CustomFieldsPage() {
   const { data: globalFields = [] } = useQuery({
     queryKey: ['district', 'fields', 'global-sections'],
     queryFn: async () => {
-      const res = await api.get('/fields?scope=global');
+      const res = await api.get('/fields', { params: { scope: 'global' } });
       return res.data?.data?.fields || [];
     },
     staleTime: 5 * 60_000,

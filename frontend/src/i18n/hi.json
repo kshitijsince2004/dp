@@ -35,12 +35,19 @@
   "status": {
     "DRAFT": "प्रारूप",
     "PENDING_SHO": "एसएचओ समीक्षा लंबित",
-    "DISTRICT_REVIEW": "डीसीपी समीक्षा लंबित",
+    "DISTRICT_REVIEW": "अग्रेषित (जिला समीक्षा)",
+    "FORWARDED": "जिला कार्यालय को अग्रेषित",
+    "FORWARDED_DISTRICT": "जिला कार्यालय को अग्रेषित",
+    "RETURNED_DISTRICT": "जिला कार्यालय द्वारा वापस",
+    "SENT_BACK_DISTRICT": "जिला कार्यालय द्वारा वापस",
+    "SENT_BACK": "संशोधन हेतु वापस",
+    "SENT_BACK_HC": "एचसी को संशोधन हेतु वापस",
+    "ACP_REVIEW": "एसीपी समीक्षा",
+    "JCP_REVIEW": "संयुक्त सीपी समीक्षा",
+    "SCP_REVIEW": "विशेष सीपी समीक्षा",
     "COMPILED": "संकलित",
     "HQ_RECEIVED": "मुख्यालय प्राप्त",
-    "ARCHIVED": "संग्रहीत एवं सील",
-    "SENT_BACK": "संशोधन हेतु वापस",
-    "SENT_BACK_HC": "संशोधन हेतु वापस"
+    "ARCHIVED": "संग्रहीत एवं सील"
   },
   "recordTypes": {
     "CASE": "मामला (एफआईआर) मास्टर",

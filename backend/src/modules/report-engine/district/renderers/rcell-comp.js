@@ -1,4 +1,4 @@
-import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 import { varPct, detPct } from '../../shared/calc.js';
 
 function formatDistrictTitle(name) {
@@ -49,7 +49,7 @@ const HEINOUS_CODES  = new Set(['DACOITY','MURDER','ATT_TO_MURDER','ROBBERY','RI
 const ACT_CODES      = new Set(['ARMS_ACT','EXCISE_ACT','GAMBLING_ACT','NDPS_ACT','POCSO','OTHER_ACT']);
 
 export function renderRcellComp(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('R Cell- Distt Crime');
+  let sheet = workbook.getWorksheet('R Cell- Distt Crime') || workbook.addWorksheet('R Cell- Distt Crime');
   const distTitle = formatDistrictTitle(scope.self_name);
   const yearNum = calcData.yearNum || 2026;
   const yearPrev = yearNum - 1;
@@ -74,18 +74,18 @@ export function renderRcellComp(workbook, scope, calcData) {
   });
 
   // Title Row 1
-  sheet.mergeCells('A1:D1');
+  safeMerge(sheet, 'A1:D1');
   const t1 = sheet.getCell('A1');
   t1.value = `R Cell Daily Diary- ${distTitle}`;
   t1.font = FONTS.TITLE;
 
-  sheet.mergeCells('H1:I1');
+  safeMerge(sheet, 'H1:I1');
   const tVar = sheet.getCell('H1');
   tVar.value = '% Variation of Cases reported';
   tVar.font = FONTS.HEADER;
 
   // Subtitle Row 2
-  sheet.mergeCells('A2:I2');
+  safeMerge(sheet, 'A2:I2');
   const t2 = sheet.getCell('A2');
   t2.value = 'COMPARATIVE CRIME STATEMENT';
   t2.font = FONTS.SUBTITLE;
@@ -96,12 +96,12 @@ export function renderRcellComp(workbook, scope, calcData) {
   const r4 = sheet.addRow(['', 'Rep.', 'W/O', '', 'Rep.', 'W/O', '']);
   r4.height = 24;
 
-  sheet.mergeCells('A3:A4');
-  sheet.mergeCells('B3:C3');
-  sheet.mergeCells('D3:D4');
-  sheet.mergeCells('E3:F3');
-  sheet.mergeCells('G3:G4');
-  sheet.mergeCells('H3:H4');
+  safeMerge(sheet, 'A3:A4');
+  safeMerge(sheet, 'B3:C3');
+  safeMerge(sheet, 'D3:D4');
+  safeMerge(sheet, 'E3:F3');
+  safeMerge(sheet, 'G3:G4');
+  safeMerge(sheet, 'H3:H4');
 
   [r3, r4].forEach(row => {
     row.eachCell(c => {

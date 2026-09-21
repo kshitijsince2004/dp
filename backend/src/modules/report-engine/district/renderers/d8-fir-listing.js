@@ -1,11 +1,11 @@
-﻿import { PALETTE, FONTS } from '../../shared/canonical-codes.js';
+import { PALETTE, FONTS, safeMerge } from '../../shared/canonical-codes.js';
 
 export function renderD8FirListing(workbook, scope, calcData) {
-  const sheet = workbook.addWorksheet('D-8 Brief Facts');
+  let sheet = workbook.getWorksheet('D-8 Brief Facts') || workbook.addWorksheet('D-8 Brief Facts');
   const districtName = (scope.self_name || 'DISTRICT').toUpperCase();
   const cutoffDate = calcData.cutoff_date || '';
 
-  sheet.mergeCells('A1:M1');
+  safeMerge(sheet, 'A1:M1');
   const t1 = sheet.getCell('A1');
   t1.value = `DAILY CRIME (PS FIR ) WITH BRIEF FACTS OF ${districtName} DISTRICT  : ${cutoffDate}`;
   t1.font = FONTS.D8_TITLE;
@@ -41,7 +41,7 @@ export function renderD8FirListing(workbook, scope, calcData) {
   Object.keys(groups).forEach(sdName => {
     // Sub-division separator header row
     const sdRow = sheet.addRow([`SUB DIVISION - ${sdName}`]);
-    sheet.mergeCells(`A${sdRow.number}:M${sdRow.number}`);
+    safeMerge(sheet, `A${sdRow.number}:M${sdRow.number}`);
     const sdCell = sheet.getCell(`A${sdRow.number}`);
     sdCell.font = FONTS.HEADER;
     sdCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PALETTE.OLIVE_GREEN } };

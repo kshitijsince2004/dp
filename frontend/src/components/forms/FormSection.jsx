@@ -7,6 +7,7 @@ import { parseRules } from '../../utils/fieldValidation.js';
 import { log } from '../../utils/logger.js';
 
 export const KEYS_TO_SKIP = [
+  'uid', 'district', 'police_station', 'submission_status', 'status',
   'sections',
   'ipc_sections', 'excise_sections', 'arms_sections', 'gambling_sections', 'other_sections',
   'ipc_major_head', 'excise_major_head', 'arms_major_head', 'gambling_major_head', 'other_major_head',
@@ -603,6 +604,19 @@ export default function FormSection({
                 if (!evaluateShowWhen(f.show_when, values)) return false;
                 return true;
               });
+
+              if (visibleFields.length === 0) {
+                return (
+                  <div className="col-span-1 md:col-span-2 p-8 text-center bg-[#f0f5fa] border border-[#c7d8ea] rounded-xl space-y-2">
+                    <p className="text-sm font-bold text-[#0d2a4a]">
+                      {lang === 'hi' ? 'इस अनुभाग में कोई फ़ील्ड वर्तमान स्थिति के लिए सक्रिय नहीं है।' : 'No fields currently required for this section.'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {lang === 'hi' ? 'फ़ील्ड संबंधित स्थिति के अनुसार स्वतः सक्रिय हो जाते हैं।' : 'Fields in this section activate dynamically based on case progress and status.'}
+                    </p>
+                  </div>
+                );
+              }
 
               return visibleFields.map((field, index) => {
                 const key = field.field_key;

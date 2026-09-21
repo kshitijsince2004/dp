@@ -153,6 +153,7 @@ export default function StatusUpdateModal({ recordId, open, onClose, onUpdated, 
     onSuccess: () => {
       toast.success(t('statusUpdate.updateSuccess', 'Status updated'));
       queryClient.invalidateQueries({ queryKey: ['records'] });
+      queryClient.invalidateQueries({ queryKey: ['all-records-stats'] });
       queryClient.invalidateQueries({ queryKey: statusOptionsQueryKey });
       onUpdated?.();
       handleClose();
