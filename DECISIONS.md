@@ -753,3 +753,9 @@ High. The solution relies exclusively on the existing field configuration schema
 * **Context**: Discrepancies between Windows and bash startup scripts resulted in missed preset seeds or port collisions during repeated development restarts.
 * **Why**: Ensures uniform execution, reproducible test states, and seamless service orchestration across Windows and Linux environments.
 * **Relevant Code**: `start.bat`, `start-no-install.bat`, `start.sh`
+
+### Configuration Reference Data Git Tracking
+* **Decision**: Whitelisted `!config/ref-data/*` and `!golden_dataset/*` in `.gitignore` to ensure statutory CSV datasets (`ps_manual_fir_codes.csv`, `ps_unified_codes.csv`, `district_codes.csv`) are tracked in source control.
+* **Context**: A blanket `*.csv` rule in `.gitignore` prevented mandatory reference datasets from being committed. Pulling the repository on fresh systems triggered startup crashes in `seed-statutory-fir-codes.mjs` during the boot autoload sequence.
+* **Why**: Mandatory reference datasets required by `runStartupAutoload()` must be bundled with the codebase to prevent fresh clones and other developer environments from crashing on backend boot.
+* **Relevant Code**: `.gitignore`, `backend/scripts/seed-statutory-fir-codes.mjs`, `backend/src/bootstrap/autoload.js`

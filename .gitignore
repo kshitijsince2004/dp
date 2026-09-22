@@ -73,6 +73,10 @@ sample files/
 *.xls
 *.csv
 
+# Unignore necessary config reference data and golden datasets
+!config/ref-data/*
+!golden_dataset/*
+
 # OCR / Tesseract data
 *.traineddata
 tesseract_output.txt
