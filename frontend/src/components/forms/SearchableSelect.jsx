@@ -130,8 +130,13 @@ export default function SearchableSelect({
                   log.debug('form:searchable_select_change', { multiple: true, action: isChecked ? 'deselect' : 'select', value: opt.value });
                   onChange(Array.isArray(value) ? nextValues : nextValues.join(', '));
                 } else {
-                  log.debug('form:searchable_select_change', { multiple: false, value: opt.value });
-                  onChange(opt.value);
+                  if (isChecked) {
+                    log.debug('form:searchable_select_change', { multiple: false, action: 'deselect', value: opt.value });
+                    onChange('');
+                  } else {
+                    log.debug('form:searchable_select_change', { multiple: false, action: 'select', value: opt.value });
+                    onChange(opt.value);
+                  }
                   closeDropdown();
                 }
               }}
@@ -199,6 +204,19 @@ export default function SearchableSelect({
     inputClass = `${inputClass} pr-7`;
   }
 
+  const hasValue = Array.isArray(value)
+    ? value.length > 0
+    : (value !== null && value !== undefined && String(value).trim() !== '');
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    log.debug('form:searchable_select_clear', { multiple });
+    onChange(multiple ? (Array.isArray(value) ? [] : '') : '');
+    setSearch('');
+    setOpen(false);
+  };
+
   return (
     <div className={`relative ${wrapperLayoutClass || 'w-full'}`} ref={triggerRef} title={title}>
       <input
@@ -226,6 +244,16 @@ export default function SearchableSelect({
         className={inputClass}
         style={style}
       />
+      {hasValue && !disabled && (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute right-7 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 px-1 rounded-full transition-all text-xs font-bold z-10 cursor-pointer"
+          title={lang === 'hi' ? 'चयन हटाएँ' : 'Clear selection'}
+        >
+          ✕
+        </button>
+      )}
       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">
         ▼
       </span>

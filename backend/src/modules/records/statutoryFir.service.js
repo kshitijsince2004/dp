@@ -140,18 +140,21 @@ export async function generateAndValidateStatutoryFir(trx, {
   requestedSerial,
   userOverride = false,
   isLegacy = false,
+  currentRecordId = null,
 }) {
   log.debug('generateAndValidateStatutoryFir: enter', {
-    psId, registrationType, recordDate, firDate, requestedFirNo, requestedSerial, isLegacy,
+    psId, registrationType, recordDate, firDate, requestedFirNo, requestedSerial, isLegacy, currentRecordId,
   });
 
   const reqStr = requestedFirNo ? String(requestedFirNo).trim() : '';
 
   // Explicit legacy bulk import pass-through
   if (isLegacy && reqStr && !/^\d{14}$/.test(reqStr)) {
-    const existingDuplicateLegacy = await trx('fir_details')
-      .whereRaw('LOWER(TRIM(fir_no)) = LOWER(TRIM(?))', [reqStr])
-      .first();
+    let legacyDupQuery = trx('fir_details').whereRaw('LOWER(TRIM(fir_no)) = LOWER(TRIM(?))', [reqStr]);
+    if (currentRecordId) {
+      legacyDupQuery = legacyDupQuery.whereNot({ record_id: currentRecordId });
+    }
+    const existingDuplicateLegacy = await legacyDupQuery.first();
 
     if (existingDuplicateLegacy) {
       log.warn('generateAndValidateStatutoryFir: rejected — duplicate legacy fir_no', { requestedFirNo: reqStr });
@@ -240,12 +243,15 @@ export async function generateAndValidateStatutoryFir(trx, {
   }
 
   // 3. Global Uniqueness Check
-  const existingDuplicate = await trx('fir_details')
-    .whereRaw('LOWER(TRIM(fir_no)) = LOWER(TRIM(?))', [finalFirNo])
-    .first();
+  let dupQuery = trx('fir_details').whereRaw('LOWER(TRIM(fir_no)) = LOWER(TRIM(?))', [finalFirNo]);
+  if (currentRecordId) {
+    dupQuery = dupQuery.whereNot({ record_id: currentRecordId });
+  }
+  const existingDuplicate = await dupQuery.first();
 
   if (existingDuplicate) {
-    const err = new Error(`Duplicate FIR Number detected: "${finalFirNo}" is already registered as an FIR record.`);
+    const serialStr = serial ? String(serial).padStart(4, '0') : finalFirNo.slice(10, 14);
+    const err = new Error(`FIR Number "${finalFirNo}" (Serial ${serialStr}) already exists for this Police Station and Year.`);
     err.status = 409;
     throw err;
   }

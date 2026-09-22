@@ -84,35 +84,34 @@ export default function StatutoryFirField({
 
   // Propagate assembled 14-digit value whenever prefix, year, or serial changes
   const commitStatutoryFir = (pfx, yr, ser, pad = false) => {
-    if (!pfx) return;
     const cleanYr = (yr || currentYear2Digit).replace(/\D/g, '').slice(0, 2).padStart(2, '0');
     const cleanSer = (ser || '').replace(/\D/g, '').slice(0, 4);
     
-    let full;
-    if (pad && cleanSer) {
-      const paddedSer = cleanSer.padStart(4, '0');
-      full = `${pfx}${cleanYr}${paddedSer}`;
+    let full = '';
+    if (pfx) {
+      if (pad && cleanSer) {
+        const paddedSer = cleanSer.padStart(4, '0');
+        full = `${pfx}${cleanYr}${paddedSer}`;
+      } else {
+        full = `${pfx}${cleanYr}${cleanSer}`;
+      }
     } else {
-      full = `${pfx}${cleanYr}${cleanSer}`;
+      full = cleanSer;
     }
     
     lastEmittedRef.current = full;
     onChange(full);
   };
 
-  // Recommit when prefixData updates or registration type changes
+  // Recommit when prefixData, registrationType, yearSegment, or serialSegment changes
   useEffect(() => {
-    if (statutoryPrefix) {
-      commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, serialSegment, false);
-    }
-  }, [statutoryPrefix, registrationType]);
+    commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, serialSegment, false);
+  }, [statutoryPrefix, registrationType, yearSegment, serialSegment]);
 
   const handleYearChange = (e) => {
     const raw = e.target.value.replace(/\D/g, '').slice(0, 2);
     setYearSegment(raw);
-    if (statutoryPrefix) {
-      commitStatutoryFir(statutoryPrefix, raw, serialSegment, false);
-    }
+    commitStatutoryFir(statutoryPrefix, raw, serialSegment, false);
   };
 
   const handleYearBlur = () => {
@@ -123,26 +122,20 @@ export default function StatutoryFirField({
       clean = clean.padStart(2, '0');
     }
     setYearSegment(clean);
-    if (statutoryPrefix) {
-      commitStatutoryFir(statutoryPrefix, clean, serialSegment, true);
-    }
+    commitStatutoryFir(statutoryPrefix, clean, serialSegment, true);
   };
 
   const handleSerialChange = (e) => {
     const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
     setSerialSegment(raw);
-    if (statutoryPrefix) {
-      commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, raw, false);
-    }
+    commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, raw, false);
   };
 
   const handleSerialBlur = () => {
     if (serialSegment) {
       const padded = serialSegment.padStart(4, '0');
       setSerialSegment(padded);
-      if (statutoryPrefix) {
-        commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, padded, true);
-      }
+      commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, padded, true);
     }
   };
 

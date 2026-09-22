@@ -1918,6 +1918,7 @@ export const submitRecord = async (id, user, ipAddress) => {
             firDate: full.detail.fir_date,
             requestedFirNo: currentFirNo,
             requestedSerial: full.detail.fir_seq,
+            currentRecordId: id,
           });
           await trx('fir_details').where({ record_id: id }).update({
             fir_no: statutoryRes.firNo,
