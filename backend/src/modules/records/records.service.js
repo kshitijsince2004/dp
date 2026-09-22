@@ -1051,11 +1051,14 @@ export const listRecords = async (recordType, filters, jurisdictionQuery = {}, u
   if (jurisdictionQuery.sub_div_id) { query = query.where('records.sub_div_id', jurisdictionQuery.sub_div_id); log.debug('listRecords: scoped by sub_div_id', { subDivId: jurisdictionQuery.sub_div_id }); }
 
   // HIERARCHY DRAFT ISOLATION:
-  // DRAFT records are only visible to the creator/HC at the PS level until submitted.
-  // SHO, District, ACP, JCP, SCP, and HQ hierarchies cannot see DRAFT records.
-  if (user && user.role !== 'HC') {
-    query = query.where('records.current_status', '<>', 'DRAFT');
-  } else if (!jurisdictionQuery.ps_id && (!user || user.role !== 'HC')) {
+  // DRAFT records are strictly private to the creator user (user.id).
+  // No other user (including other HCs, SHOs, or upper hierarchy levels) can view another user's DRAFT records.
+  if (user && user.id) {
+    query = query.where((b) => {
+      b.where('records.current_status', '<>', 'DRAFT')
+       .orWhere({ 'records.current_status': 'DRAFT', 'records.created_by': user.id });
+    });
+  } else {
     query = query.where('records.current_status', '<>', 'DRAFT');
   }
 
@@ -1256,8 +1259,8 @@ export const listRecords = async (recordType, filters, jurisdictionQuery = {}, u
   return rawRecords.map((r) => ({ ...r, data: buildListSummary(r) }));
 };
 
-export const getRecordDetails = async (id) => {
-  log.debug('getRecordDetails: enter', { recordId: id });
+export const getRecordDetails = async (id, user = null) => {
+  log.debug('getRecordDetails: enter', { recordId: id, userId: user?.id });
   return db.transaction(async (trx) => {
     const full = await fetchRecordFull(trx, id);
     if (!full) {
@@ -1265,6 +1268,13 @@ export const getRecordDetails = async (id) => {
       return null;
     }
     const { record, detail, personRows, propertyRows, offenceRows, locationsById } = full;
+
+    if (record.current_status === 'DRAFT' && user && user.id && record.created_by !== user.id) {
+      log.warn('getRecordDetails: rejected — draft access denied to non-creator', { recordId: id, createdBy: record.created_by, userId: user.id });
+      const err = new Error('Access denied: Draft records can only be viewed by the user who created them.');
+      err.status = 403;
+      throw err;
+    }
 
     const [ps, dist] = await Promise.all([
       trx('hierarchy_nodes').where({ id: record.ps_id }).first(),
@@ -1438,6 +1448,13 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
     }
 
     log.debug('insertRecordCore: statutory FIR applied', { recordId: id, firNo: split.detail.fir_no, firYear: split.detail.fir_year, registrationType: split.detail.registration_type });
+  }
+
+  if (detailTable === 'arrest_details') {
+    if (!split.detail.fir_no) {
+      const fallbackFir = data?.arrest_fir_no || data?.linked_fir_dd_no || data?.selected_fir || data?.fir_no;
+      if (fallbackFir) split.detail.fir_no = String(fallbackFir).trim();
+    }
   }
 
   if (detailTable === 'fir_details' && split.detail.fir_no) {
@@ -1715,6 +1732,12 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
     // final values (this update's split.detail if it touched the field, else the existing
     // oldDetail row) so an edit to an unrelated field doesn't wrongly null out an already-correct
     // fir_year. Idempotent/deterministic (P2.2) — safe to recompute unconditionally every update.
+    if (detailTable === 'arrest_details') {
+      if (!split.detail.fir_no) {
+        const fallbackFir = data?.arrest_fir_no || data?.linked_fir_dd_no || data?.selected_fir || data?.fir_no;
+        if (fallbackFir) split.detail.fir_no = String(fallbackFir).trim();
+      }
+    }
     if (detailTable === 'fir_details') {
       if ('organised_crime' in split.detail) {
         if (split.detail.organised_crime === undefined || split.detail.organised_crime === null || split.detail.organised_crime === '') {

@@ -525,7 +525,10 @@ export default function DynamicForm({
                             setValues(prev => ({
                               ...prev,
                               selected_fir: row.fir_no,
+                              fir_no: row.fir_no,
+                              arrest_fir_no: row.fir_no,
                               linked_fir_dd_no: row.fir_no,
+                              fir_date: row.fir_date || prev.fir_date,
                               act_name: actName,
                               sections: sections,
                               local_head: localHead,

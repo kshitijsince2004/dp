@@ -56,7 +56,7 @@ export const getRecord = async (req, res) => {
     // Verify geographical scope access
     await verifyRecordAccess(id, req.user);
 
-    const data = await recordsService.getRecordDetails(id);
+    const data = await recordsService.getRecordDetails(id, req.user);
     if (!data) {
       log.info('getRecord: not found', { recordId: id });
       return res.status(404).json({ success: false, message: 'Record not found' });
