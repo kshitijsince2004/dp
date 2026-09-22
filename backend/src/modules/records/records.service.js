@@ -1394,6 +1394,14 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
     if (split.detail.is_worked_out === undefined || split.detail.is_worked_out === null) {
       split.detail.is_worked_out = false;
     }
+    if (split.detail.organised_crime === undefined || split.detail.organised_crime === null || split.detail.organised_crime === '') {
+      split.detail.organised_crime = false;
+    } else if (typeof split.detail.organised_crime === 'string') {
+      const valUpper = split.detail.organised_crime.toUpperCase().trim();
+      split.detail.organised_crime = (valUpper === 'YES' || valUpper === 'TRUE' || valUpper === '1');
+    } else {
+      split.detail.organised_crime = !!split.detail.organised_crime;
+    }
     const caseStatusUpper = String(split.detail.case_status || '').toUpperCase().trim();
     const PENDING_STATUSES = ['PENDING', 'PENDING_INVESTIGATION', 'UNDER_INVESTIGATION'];
     if (!split.detail.case_status || PENDING_STATUSES.includes(caseStatusUpper) || caseStatusUpper.includes('PENDING')) {
@@ -1708,6 +1716,16 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
     // oldDetail row) so an edit to an unrelated field doesn't wrongly null out an already-correct
     // fir_year. Idempotent/deterministic (P2.2) — safe to recompute unconditionally every update.
     if (detailTable === 'fir_details') {
+      if ('organised_crime' in split.detail) {
+        if (split.detail.organised_crime === undefined || split.detail.organised_crime === null || split.detail.organised_crime === '') {
+          split.detail.organised_crime = false;
+        } else if (typeof split.detail.organised_crime === 'string') {
+          const valUpper = split.detail.organised_crime.toUpperCase().trim();
+          split.detail.organised_crime = (valUpper === 'YES' || valUpper === 'TRUE' || valUpper === '1');
+        } else {
+          split.detail.organised_crime = !!split.detail.organised_crime;
+        }
+      }
       const mergedFirNo = 'fir_no' in split.detail ? split.detail.fir_no : oldDetail?.fir_no;
       const mergedFirDate = 'fir_date' in split.detail ? split.detail.fir_date : oldDetail?.fir_date;
       const firYear = deriveFirYear(mergedFirNo, mergedFirDate, record.record_date);

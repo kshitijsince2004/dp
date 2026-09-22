@@ -862,12 +862,17 @@ export default function DynamicForm({
                     {isReq && <span className="text-red-500 font-bold ml-1">*</span>}
                   </span>
                   <div className="flex items-center gap-4">
-                    {getFieldOptions(sectionFields, radioField.field_key).map((opt) => (
-                      <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700">
-                        <input type="radio" disabled={readOnly || radioField.readonly === true || radioField.readonly === 'true' || !isFieldEditableForReview(radioField)} checked={values?.[radioField.field_key] === opt.value} onChange={() => handleChange(radioField.field_key, opt.value)} className="w-4 h-4 accent-[#0f52ba] cursor-pointer" />
-                        {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
-                      </label>
-                    ))}
+                    {getFieldOptions(sectionFields, radioField.field_key).map((opt) => {
+                      const isChecked = radioField.field_key === 'organised_crime'
+                        ? (values?.[radioField.field_key] ? values[radioField.field_key] === opt.value : opt.value === 'No')
+                        : values?.[radioField.field_key] === opt.value;
+                      return (
+                        <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700">
+                          <input type="radio" disabled={readOnly || radioField.readonly === true || radioField.readonly === 'true' || !isFieldEditableForReview(radioField)} checked={isChecked} onChange={() => handleChange(radioField.field_key, opt.value)} className="w-4 h-4 accent-[#0f52ba] cursor-pointer" />
+                          {lang === 'hi' ? (opt.label_hi || opt.label_en) : opt.label_en}
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               </fieldset>
@@ -3514,6 +3519,11 @@ useEffect(() => {
     if (firstMajor) updatedSeed.crime_head = firstMajor;
   }
 
+  // Default Organised Crime to 'No' if not explicitly selected as 'Yes'
+  if (recordType === 'CASE' || 'organised_crime' in updatedSeed) {
+    updatedSeed.organised_crime = (updatedSeed.organised_crime === 'Yes' || updatedSeed.organised_crime === true) ? 'Yes' : 'No';
+  }
+
   console.log('[PHAROS-DEBUG][seed-effect] setValues() about to run — final composite snapshot being written into form state:', {
     gd_no: updatedSeed.gd_no, gd_date: updatedSeed.gd_date, gd_time: updatedSeed.gd_time,
     fir_no: updatedSeed.fir_no, fir_date: updatedSeed.fir_date, fir_time: updatedSeed.fir_time,
@@ -4263,6 +4273,9 @@ const handleFormSubmit = (e) => {
   }
 
   const finalValues = { ...values };
+  if (recordType === 'CASE' || 'organised_crime' in finalValues) {
+    finalValues.organised_crime = (finalValues.organised_crime === 'Yes' || finalValues.organised_crime === true) ? 'Yes' : 'No';
+  }
   if (finalValues.time_of_occurrence !== undefined) {
     finalValues.occurrence_time = finalValues.time_of_occurrence;
   }
@@ -4294,6 +4307,9 @@ const handleFormSubmit = (e) => {
 const handleManualSave = () => {
   log.debug('form:save_draft_start', { recordType, recordId: activeRecordIdRef.current });
   const finalValues = { ...values };
+  if (recordType === 'CASE' || 'organised_crime' in finalValues) {
+    finalValues.organised_crime = (finalValues.organised_crime === 'Yes' || finalValues.organised_crime === true) ? 'Yes' : 'No';
+  }
   if (finalValues.time_of_occurrence !== undefined) {
     finalValues.occurrence_time = finalValues.time_of_occurrence;
   }

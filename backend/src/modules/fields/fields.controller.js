@@ -235,8 +235,16 @@ export const getFieldsForForm = async (req, res) => {
       minorHeadOptionsByFieldKey[fieldKey] = rows.map(toValueLabel('minor_head'));
     }
 
-    // 5. Beats
-    const beatOptions = (await fieldsService.getBeats()).map(toValueLabel('beat_name'));
+    // 5. Beats — load from ref.beats or default to dropdown of numbers 1-10
+    const rawBeats = await fieldsService.getBeats();
+    let beatOptions = (rawBeats || []).map(toValueLabel('beat_name')).filter(b => b.value);
+    if (!beatOptions || beatOptions.length === 0) {
+      beatOptions = Array.from({ length: 10 }, (_, i) => ({
+        value: `Beat ${i + 1}`,
+        label_en: `Beat ${i + 1}`,
+        label_hi: `बीट ${i + 1}`
+      }));
+    }
 
     // 6. Local Heads — crime_category carried through (not dropped like toValueLabel would) so the
     // form can derive Heinous Offence from the selected local head instead of storing it separately.
@@ -1544,7 +1552,14 @@ export const listBeats = async (req, res) => {
   const ps_cd = req.query.ps_cd || null;
   try {
     const rows = await fieldsService.getBeats(ps_cd);
-    const data = rows.map(r => ({ value: r.beat_cd, label: r.beat_name, ps_cd: r.ps_cd }));
+    let data = (rows || []).map(r => ({ value: r.beat_name || r.beat_cd, label: r.beat_name || `Beat ${r.beat_cd}`, ps_cd: r.ps_cd }));
+    if (data.length === 0) {
+      data = Array.from({ length: 10 }, (_, i) => ({
+        value: `Beat ${i + 1}`,
+        label: `Beat ${i + 1}`,
+        ps_cd: ps_cd || null,
+      }));
+    }
     return res.status(200).json({ success: true, data });
   } catch (error) {
     log.error('listBeats: failed', { ps_cd, err: error });
