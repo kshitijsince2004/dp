@@ -6,27 +6,27 @@ export function formatRecordRef(record) {
 
   const type = record.record_type || 'CASE';
 
-  // 1. CASE (FIR)
+  // 1. CASE (FIR) -> exact 14-digit FIR number
   if (type === 'CASE') {
     const rawFirNo = record.fir_no || record.data?.fir_no || record.original_fir_no;
     if (rawFirNo) {
       const clean = String(rawFirNo).trim();
-      if (/^\d{14}$/.test(clean)) {
-        return clean; // Exact 14-digit statutory FIR number
-      }
       return clean;
     }
     return `CASE/${record.record_date?.slice(0, 7) ?? '—'}`;
   }
 
-  // 2. ARREST
+  // 2. ARREST -> ARR/<14-digit FIR number> for Against FIR, KAL/<no>/<year> for Kalandra
   if (type === 'ARREST') {
     const isDdBased = record.is_dd_based === true || record.data?.is_dd_based === true || record.arrest_kind === 'KALANDRA';
     const firNo = record.arrest_fir_no || record.fir_no || record.data?.arrest_fir_no || record.data?.fir_no;
 
     if (!isDdBased && firNo) {
-      const clean = String(firNo).trim();
-      return `FIR ${clean}`; // 14-digit FIR number for Arrest against FIR
+      let clean = String(firNo).trim();
+      if (clean.toUpperCase().startsWith('FIR ')) clean = clean.slice(4).trim();
+      if (clean.toUpperCase().startsWith('ARR/')) clean = clean.slice(4).trim();
+      if (clean.toUpperCase().startsWith('ARR ')) clean = clean.slice(4).trim();
+      return `ARR/${clean}`; // ARR<14-digit FIR number>
     }
 
     // Kalandra / Non-FIR arrest
@@ -40,25 +40,28 @@ export function formatRecordRef(record) {
     return `KAL/${shortId}/${year}`;
   }
 
-  // 3. MISSING
+  // 3. MISSING -> MISS/<unique number>
   if (type === 'MISSING') {
     const misNo = record.data?.missing_reg_no || record.missing_fir_no || record.data?.missing_fir_no || record.gd_no || record.data?.gd_no || record.zipnet_no || record.data?.zipnet_no;
     const year = record.record_date?.slice(0, 4) ?? new Date().getFullYear();
     if (misNo) {
-      const cleanMis = String(misNo).trim();
-      return cleanMis.toUpperCase().startsWith('MIS/') ? cleanMis : `MIS/${cleanMis}/${year}`;
+      let cleanMis = String(misNo).trim();
+      if (cleanMis.toUpperCase().startsWith('MIS/')) cleanMis = cleanMis.slice(4).trim();
+      if (cleanMis.toUpperCase().startsWith('MISS/')) cleanMis = cleanMis.slice(5).trim();
+      return `MISS/${cleanMis}/${year}`;
     }
     const shortId = record.id?.slice(-6).toUpperCase() ?? '——';
-    return `MIS/${shortId}/${year}`;
+    return `MISS/${shortId}/${year}`;
   }
 
-  // 4. UIDB
+  // 4. UIDB -> UIDB/<unique number>
   if (type === 'UIDB') {
     const uidbNo = record.uidb_no || record.data?.uidb_no || record.data?.uidbNumber || record.gd_no || record.data?.gd_no;
     const year = record.record_date?.slice(0, 4) ?? new Date().getFullYear();
     if (uidbNo) {
-      const cleanUidb = String(uidbNo).trim();
-      return cleanUidb.toUpperCase().startsWith('UIDB/') ? cleanUidb : `UIDB/${cleanUidb}/${year}`;
+      let cleanUidb = String(uidbNo).trim();
+      if (cleanUidb.toUpperCase().startsWith('UIDB/')) cleanUidb = cleanUidb.slice(5).trim();
+      return `UIDB/${cleanUidb}/${year}`;
     }
     const shortId = record.id?.slice(-6).toUpperCase() ?? '——';
     return `UIDB/${shortId}/${year}`;
@@ -69,8 +72,9 @@ export function formatRecordRef(record) {
     const pcrNo = record.pcr_no || record.data?.pcr_no || record.gd_no || record.data?.gd_no;
     const year = record.record_date?.slice(0, 4) ?? new Date().getFullYear();
     if (pcrNo) {
-      const cleanPcr = String(pcrNo).trim();
-      return cleanPcr.toUpperCase().startsWith('PCR/') ? cleanPcr : `PCR/${cleanPcr}/${year}`;
+      let cleanPcr = String(pcrNo).trim();
+      if (cleanPcr.toUpperCase().startsWith('PCR/')) cleanPcr = cleanPcr.slice(4).trim();
+      return `PCR/${cleanPcr}/${year}`;
     }
     const shortId = record.id?.slice(-6).toUpperCase() ?? '——';
     return `PCR/${shortId}/${year}`;
@@ -79,7 +83,7 @@ export function formatRecordRef(record) {
   const prefix = {
     ARREST: 'ARR',
     PCR_CALL: 'PCR',
-    MISSING: 'MIS',
+    MISSING: 'MISS',
     UIDB: 'UIDB',
   }[type] ?? 'REF';
 
