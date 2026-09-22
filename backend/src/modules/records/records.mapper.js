@@ -406,8 +406,10 @@ function splitFlatFields(registry, recordType, data) {
     }
     if (!shape.table) continue;
 
-    const targetTable = shape.table === '$detail' ? detailTable : shape.table;
-    if (targetTable === 'investigating_officers') continue; // free-text io_* display fields, retired in favor of io_id (Phase 2)
+    if (targetTable === 'investigating_officers' || (f.field_key && f.field_key.startsWith('io_'))) {
+      if (raw !== '' && raw !== null && raw !== undefined) detailExtra[f.field_key] = raw;
+      continue;
+    }
     if (targetTable === 'records') {
       spine[shape.column] = raw === '' ? null : raw;
       continue;
@@ -1095,6 +1097,28 @@ export async function recomposeRecord(trx, registry, recordType, {
   if (detailRow?.transferred_to_agency_id) data.transferred_to_agency_id = detailRow.transferred_to_agency_id;
   if (detailRow?.transferred_to_agency_label) data.transferred_to_agency = detailRow.transferred_to_agency_label;
   if (detailRow?.date_of_transfer) data.date_of_transfer = detailRow.date_of_transfer;
+
+  // IO details recovery — fetch from investigating_officers table if spineRow.io_id exists,
+  // or fall back to detailRow.extra
+  if (spineRow?.io_id) {
+    try {
+      const ioRow = await trx('investigating_officers').where({ id: spineRow.io_id }).first();
+      if (ioRow) {
+        data.io_id = ioRow.id;
+        if (!data.io_name && ioRow.name) data.io_name = ioRow.name;
+        if (!data.io_rank && ioRow.rank) data.io_rank = ioRow.rank;
+        if (!data.io_pis && ioRow.pis_no) data.io_pis = ioRow.pis_no;
+        if (!data.io_mobile && ioRow.mobile) data.io_mobile = ioRow.mobile;
+      }
+    } catch (e) {
+      log.warn('recomposeRecord: failed to fetch IO for spineRow.io_id', { ioId: spineRow.io_id, err: e.message });
+    }
+  }
+  const extraBag = detailRow?.extra || {};
+  if (!data.io_name && extraBag.io_name) data.io_name = extraBag.io_name;
+  if (!data.io_rank && extraBag.io_rank) data.io_rank = extraBag.io_rank;
+  if (!data.io_pis && extraBag.io_pis) data.io_pis = extraBag.io_pis;
+  if (!data.io_mobile && extraBag.io_mobile) data.io_mobile = extraBag.io_mobile;
 
   // Derive Heinous vs Non-Heinous classification systematically at the backend from local head,
   // major heads, acts, and sections.

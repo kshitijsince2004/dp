@@ -4287,11 +4287,18 @@ const handleFormSubmit = (e) => {
   // any fir_no so linkResolver never auto-links a standalone DD arrest to a FIR/CASE.
   // This is the frontend half of the fix; records.controller.js applies the same guard
   // server-side as defence-in-depth.
-  if (recordType === 'ARREST' && caseType === 'kalandra') {
-    finalValues.is_dd_based = true;
-    delete finalValues.fir_no;
-    delete finalValues.fir_date;
-    log.debug('form:kalandra_stamp', { recordType, caseType, action: 'set is_dd_based=true, cleared fir_no/fir_date' });
+  if (recordType === 'ARREST') {
+    if (caseType === 'kalandra') {
+      finalValues.is_dd_based = true;
+      delete finalValues.fir_no;
+      delete finalValues.fir_date;
+      log.debug('form:kalandra_stamp', { recordType, caseType, action: 'set is_dd_based=true, cleared fir_no/fir_date' });
+    } else {
+      finalValues.is_dd_based = false;
+      if (!finalValues.fir_no) {
+        finalValues.fir_no = finalValues.arrest_fir_no || finalValues.linked_fir_dd_no || finalValues.selected_fir || '';
+      }
+    }
   }
 
   const { persons, properties } = buildRepeaterPayload();
@@ -4315,6 +4322,18 @@ const handleManualSave = () => {
   }
   if (finalValues.time_of_occurrence !== undefined) {
     finalValues.occurrence_time = finalValues.time_of_occurrence;
+  }
+  if (recordType === 'ARREST') {
+    if (caseType === 'kalandra') {
+      finalValues.is_dd_based = true;
+      delete finalValues.fir_no;
+      delete finalValues.fir_date;
+    } else {
+      finalValues.is_dd_based = false;
+      if (!finalValues.fir_no) {
+        finalValues.fir_no = finalValues.arrest_fir_no || finalValues.linked_fir_dd_no || finalValues.selected_fir || '';
+      }
+    }
   }
   // persons/properties MUST ride along — omitting them dropped every victim/accused/
   // arrested entry and property row from manually-saved drafts (create defaulted them

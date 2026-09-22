@@ -977,7 +977,7 @@ function buildListSummary(r) {
       sections: r.data?.sections || r.sections || null,
       act_name: r.data?.act_name || r.act_name || null
     };
-    case 'ARREST': return { fir_no: r.arrest_fir_no, case_status: r.arrest_case_status, local_head: r.arrest_local_head, io_name: r.io_name, sections: r.data?.sections || null, act_name: r.data?.act_name || null };
+    case 'ARREST': return { fir_no: r.arrest_fir_no, is_dd_based: r.is_dd_based === true, case_status: r.arrest_case_status, local_head: r.arrest_local_head, io_name: r.io_name, sections: r.data?.sections || null, act_name: r.data?.act_name || null };
     case 'PCR_CALL': return { final_call_status: r.final_call_status, call_head: r.call_head, io_name: r.io_name };
     case 'MISSING': return { missing_status: r.missing_status, fir_no: r.missing_fir_no, io_name: r.io_name };
     case 'UIDB': return { uidb_status: r.uidb_status, uidb_no: r.uidb_no, local_head: r.uidb_local_head, io_name: r.io_name };
@@ -1019,7 +1019,7 @@ function withListJoins(query) {
       'trans_agency.category as transferred_to_agency_category',
       'fir.date_of_transfer as date_of_transfer',
       'lh_fir.local_head as case_local_head',
-      'arr.case_status as arrest_case_status', 'arr.fir_no as arrest_fir_no', 'lh_arr.local_head as arrest_local_head',
+      'arr.case_status as arrest_case_status', 'arr.fir_no as arrest_fir_no', 'arr.is_dd_based as is_dd_based', 'lh_arr.local_head as arrest_local_head',
       'pcr.final_call_status as final_call_status', 'pcr.call_head as call_head',
       'mis.missing_status as missing_status', 'mis.fir_no as missing_fir_no',
       'uidb.uidb_status as uidb_status', 'uidb.uidb_no as uidb_no', 'lh_uidb.local_head as uidb_local_head',
@@ -1256,7 +1256,13 @@ export const listRecords = async (recordType, filters, jurisdictionQuery = {}, u
 
   const rawRecords = await query.orderBy('records.created_at', 'desc');
   log.info('listRecords: exit', { recordType, resultCount: rawRecords.length });
-  return rawRecords.map((r) => ({ ...r, data: buildListSummary(r) }));
+  return rawRecords.map((r) => ({
+    ...r,
+    is_dd_based: r.is_dd_based === true,
+    arrest_fir_no: r.arrest_fir_no || null,
+    fir_no: r.record_type === 'ARREST' ? (r.arrest_fir_no || r.fir_no || null) : (r.fir_no || null),
+    data: buildListSummary(r),
+  }));
 };
 
 export const getRecordDetails = async (id, user = null) => {
@@ -1332,6 +1338,63 @@ export const getRecordDetails = async (id, user = null) => {
 
 // ── write path ────────────────────────────────────────────────────────────────────────
 
+async function resolveOrCreateIo(trx, psId, data) {
+  if (!data) return null;
+  const ioPis = String(data.io_pis || '').trim();
+  const ioName = String(data.io_name || '').trim();
+  const ioRank = String(data.io_rank || '').trim();
+  const ioMobile = String(data.io_mobile || '').trim();
+
+  if (data.io_id) return data.io_id;
+
+  if (ioPis) {
+    const existing = await trx('investigating_officers').whereRaw('LOWER(pis_no) = LOWER(?)', [ioPis]).first();
+    if (existing) {
+      if (ioName && (existing.name !== ioName || existing.rank !== ioRank || existing.mobile !== ioMobile)) {
+        await trx('investigating_officers').where({ id: existing.id }).update({
+          name: ioName || existing.name,
+          rank: ioRank || existing.rank,
+          mobile: ioMobile || existing.mobile,
+          updated_at: trx.fn.now(),
+        });
+      }
+      return existing.id;
+    }
+  }
+
+  if (ioName && psId) {
+    const existing = await trx('investigating_officers').where({ ps_id: psId }).whereRaw('LOWER(name) = LOWER(?)', [ioName]).first();
+    if (existing) {
+      if (ioPis || ioRank || ioMobile) {
+        await trx('investigating_officers').where({ id: existing.id }).update({
+          pis_no: ioPis || existing.pis_no,
+          rank: ioRank || existing.rank,
+          mobile: ioMobile || existing.mobile,
+          updated_at: trx.fn.now(),
+        });
+      }
+      return existing.id;
+    }
+  }
+
+  if (ioName || ioPis) {
+    const newId = uuidv4();
+    await trx('investigating_officers').insert({
+      id: newId,
+      ps_id: psId || null,
+      name: ioName || `IO (${ioPis})`,
+      rank: ioRank || null,
+      pis_no: ioPis || null,
+      mobile: ioMobile || null,
+      is_active: true,
+      created_at: trx.fn.now(),
+      updated_at: trx.fn.now(),
+    });
+    return newId;
+  }
+  return null;
+}
+
 /**
  * Shared transaction body for every fresh-record insert. `createRecord` (interactive HTTP
  * create) and `createImportedRecord` (bulk import, Integration 3) are both thin wrappers
@@ -1356,15 +1419,6 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
     scope, isImport: !!importStamps, createdBy: user.id,
   });
 
-  // records.record_date is a DATE column. The interactive path sends ISO already, but bulk import
-  // supplies the raw Excel value (often DD/MM/YYYY) — inserted verbatim, Postgres parses that with
-  // its own datestyle (MM/DD), so any day > 12 became an invalid month → pg 22008 datetime overflow
-  // and an opaque per-row "system error" (a large fraction of real import rows — #1 class,
-  // 2026-07-20). Normalize to ISO here so EVERY write path is safe; normalizeDate is idempotent on
-  // an already-ISO value, so the interactive path is unaffected. Fails CLOSED: an unparseable date
-  // stays as-is only if normalizeDate returns null (import.validate.js's RECORD_DATE_INVALID check
-  // already rejects those before write; this null-guard just avoids passing `null` to a NOT NULL
-  // column, surfacing a clear not-null error rather than a datetime-format crash if one slips past).
   const normalizedRecordDate = normalizeDate(recordDate);
   log.debug('insertRecordCore: normalized record_date', { recordId: id, recordDate, normalizedRecordDate });
 
@@ -1378,10 +1432,12 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
   }
 
   const recordUid = await generateRecordUid(trx, recordType, normalizedRecordDate);
+  const resolvedIoId = await resolveOrCreateIo(trx, scope.ps_id, data);
+  const finalIoId = resolvedIoId || split.spine.io_id || null;
 
   await trx('records').insert({
     id, uid: recordUid, record_type: recordType, ps_id: scope.ps_id, district_id: scope.district_id, sub_div_id: scope.sub_div_id || null,
-    io_id: split.spine.io_id || null, current_status: status, current_level: level, record_date: normalizedRecordDate,
+    io_id: finalIoId, current_status: status, current_level: level, record_date: normalizedRecordDate,
     created_by: user.id, updated_by: user.id,
     ...(importStamps ? {
       is_legacy: !!importStamps.isLegacy,
@@ -1394,12 +1450,6 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
   });
   log.info('insertRecordCore: wrote records row (spine)', { recordId: id, uid: recordUid, recordType, psId: scope.ps_id, districtId: scope.district_id, status });
 
-  // C8 (2026-07-26, user ruling): stamp fir_details.fir_year on every CASE write, through this
-  // one write path (both interactive create and import go through insertRecordCore) — see
-  // deriveFirYear's doc comment for the year-source preference order. This is what makes the
-  // schema's existing UNIQUE(ps_id, fir_year, fir_no) constraint actually fire; before this it
-  // was always NULL and Postgres treats NULL as always-distinct, so the constraint never caught
-  // a same-PS duplicate FIR.
   if (detailTable === 'fir_details') {
     if (split.detail.is_worked_out === undefined || split.detail.is_worked_out === null) {
       split.detail.is_worked_out = false;
@@ -1451,6 +1501,14 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
   }
 
   if (detailTable === 'arrest_details') {
+    if (data?.is_dd_based !== undefined && data?.is_dd_based !== null) {
+      split.detail.is_dd_based = data.is_dd_based === true || data.is_dd_based === 'true';
+    } else if (data?.case_type === 'kalandra') {
+      split.detail.is_dd_based = true;
+    } else {
+      split.detail.is_dd_based = false;
+    }
+
     if (!split.detail.fir_no) {
       const fallbackFir = data?.arrest_fir_no || data?.linked_fir_dd_no || data?.selected_fir || data?.fir_no;
       if (fallbackFir) split.detail.fir_no = String(fallbackFir).trim();
@@ -1732,7 +1790,20 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
     // final values (this update's split.detail if it touched the field, else the existing
     // oldDetail row) so an edit to an unrelated field doesn't wrongly null out an already-correct
     // fir_year. Idempotent/deterministic (P2.2) — safe to recompute unconditionally every update.
+    const resolvedIoId = await resolveOrCreateIo(trx, record.ps_id, data);
+    if (resolvedIoId) {
+      await trx('records').where({ id }).update({ io_id: resolvedIoId, updated_at: trx.fn.now() });
+    }
+
     if (detailTable === 'arrest_details') {
+      if (data?.is_dd_based !== undefined && data?.is_dd_based !== null) {
+        split.detail.is_dd_based = data.is_dd_based === true || data.is_dd_based === 'true';
+      } else if (data?.case_type === 'kalandra') {
+        split.detail.is_dd_based = true;
+      } else if (split.detail.fir_no || data?.arrest_fir_no || data?.linked_fir_dd_no || data?.selected_fir || data?.fir_no) {
+        split.detail.is_dd_based = false;
+      }
+
       if (!split.detail.fir_no) {
         const fallbackFir = data?.arrest_fir_no || data?.linked_fir_dd_no || data?.selected_fir || data?.fir_no;
         if (fallbackFir) split.detail.fir_no = String(fallbackFir).trim();
