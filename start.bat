@@ -8,12 +8,13 @@ echo ===================================================
 echo.
 
 :: ── Step 0: Clean stale node processes on app ports ────────────────────────
-echo [0/6] Cleaning stale port locks (3000, 5173)...
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING') do (
-    taskkill /F /PID %%a >nul 2>&1
-)
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :5173 ^| findstr LISTENING') do (
-    taskkill /F /PID %%a >nul 2>&1
+echo [0/6] Cleaning stale port locks (3000, 5000, 5173-5180)...
+for %%p in (3000 5000 5173 5174 5175 5176 5177 5178 5179 5180) do (
+    for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :%%p ^| findstr LISTENING 2^>nul') do (
+        if "%%a" neq "0" (
+            taskkill /F /PID %%a >nul 2>&1
+        )
+    )
 )
 echo  [OK] Port locks cleared.
 echo.
@@ -105,7 +106,11 @@ echo [4.5/6] Seeding development test records...
 node scripts/seed-test-data.js
 echo.
 
-echo [4.6/6] Auto-updating import template baseline...
+echo [4.6/6] Seeding report presets...
+node scripts/seed-report-presets.js
+echo.
+
+echo [4.7/6] Auto-updating import template baseline...
 node scripts/template-regression.js baseline
 echo.
 
@@ -122,7 +127,14 @@ if %ERRORLEVEL% equ 0 (
     start "PHAROS Python Worker" cmd /k "cd /d %~dp0python_worker && python main.py"
     echo  [OK] Python worker launched.
 ) else (
-    echo  [Notice] Python not found in PATH; skipping background report worker.
+    where py >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        py -m pip install -r requirements.txt --quiet >nul 2>&1
+        start "PHAROS Python Worker" cmd /k "cd /d %~dp0python_worker && py main.py"
+        echo  [OK] Python worker launched via py launcher.
+    ) else (
+        echo  [Notice] Python not found in PATH; skipping background report worker.
+    )
 )
 cd /d %~dp0
 echo.

@@ -7,16 +7,17 @@ echo   PHAROS Application Startup Script (Fast Launch)
 echo ===================================================
 echo.
 
-:: ── Step 0: Free lingering node ports (3000 & 5173) ─────────────────────────
+:: ── Step 0: Free lingering node ports ───────────────────────────────────────
 echo [0/6] Cleaning up previous application port locks...
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING 2^>nul') do (
-    echo  Freeing port 3000 (PID %%a^)...
-    taskkill /f /pid %%a >nul 2>&1
+for %%p in (3000 5000 5173 5174 5175 5176 5177 5178 5179 5180) do (
+    for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :%%p ^| findstr LISTENING 2^>nul') do (
+        if "%%a" neq "0" (
+            echo  Freeing port %%p (PID %%a^)...
+            taskkill /f /pid %%a >nul 2>&1
+        )
+    )
 )
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :5173 ^| findstr LISTENING 2^>nul') do (
-    echo  Freeing port 5173 (PID %%a^)...
-    taskkill /f /pid %%a >nul 2>&1
-)
+echo  [OK] Port locks cleared.
 echo.
 
 :: ── Step 1: Ensure Docker daemon is reachable ──────────────────────────────
@@ -64,6 +65,8 @@ echo  Waiting for database readiness on port 5435...
 set /a _dbtries=0
 
 :waitdb
+docker compose exec -T db pg_isready -U postgres >nul 2>&1
+if %ERRORLEVEL% equ 0 goto dbready
 netstat -aon 2>nul | findstr :5435 | findstr LISTENING >nul 2>&1
 if %ERRORLEVEL% equ 0 goto dbready
 set /a _dbtries+=1
@@ -105,15 +108,18 @@ if %ERRORLEVEL% equ 0 (
     start "PHAROS Python Worker" cmd /k "cd /d %~dp0python_worker && python main.py"
     echo  [OK] Python worker launched.
 ) else (
-    echo  [Notice] Python not found in PATH; skipping background report worker.
+    where py >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        start "PHAROS Python Worker" cmd /k "cd /d %~dp0python_worker && py main.py"
+        echo  [OK] Python worker launched via py launcher.
+    ) else (
+        echo  [Notice] Python not found in PATH; skipping background report worker.
+    )
 )
 cd /d %~dp0
 echo.
 
 echo [5/6] Launching PHAROS Backend API...
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING 2^>nul') do (
-    taskkill /f /pid %%a >nul 2>&1
-)
 start "PHAROS Backend" cmd /k "cd /d %~dp0backend && npm run dev"
 echo  [OK] Backend launched on http://localhost:3000
 echo.

@@ -34,6 +34,14 @@ echo "[4.5/6] Seeding dev test data (fresh dummy records)..."
 node scripts/seed-test-data.js
 echo
 
+echo "[4.6/6] Seeding report presets..."
+node scripts/seed-report-presets.js
+echo
+
+echo "[4.7/6] Auto-updating import template baseline..."
+node scripts/template-regression.js baseline
+echo
+
 echo "[5/6] Installing frontend dependencies and starting frontend in a new terminal..."
 cd "$SCRIPT_DIR/frontend"
 npm install --prefer-offline 2>&1 | grep -v "^npm warn" | grep -v "^$" || true
@@ -75,6 +83,6 @@ echo
 
 echo "==================================================="
 echo " PHAROS is starting up!"
-echo " Backend:  http://localhost:5000"
+echo " Backend:  http://localhost:3000"
 echo " Frontend: http://localhost:5173"
 echo "==================================================="
