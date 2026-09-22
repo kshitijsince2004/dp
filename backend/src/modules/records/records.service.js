@@ -929,6 +929,28 @@ export async function validateRequiredFields(trx, recordType, flatData, { person
     err.status = 422;
     throw err;
   }
+
+  // Strict 14-Digit Statutory FIR validation on submission
+  if (recordType === 'CASE') {
+    const firNo = String(flatData.fir_no || '').trim();
+    if (!firNo || !/^\d{14}$/.test(firNo)) {
+      log.warn('validateRequiredFields: rejected — invalid/incomplete 14-digit FIR number', { recordType, firNo });
+      const err = new Error('Cannot submit FIR record without a complete 14-digit unique statutory FIR number.');
+      err.status = 422;
+      throw err;
+    }
+  }
+
+  if (recordType === 'ARREST' && flatData.is_dd_based !== true) {
+    const firNo = String(flatData.fir_no || '').trim();
+    if (!firNo || !/^\d{14}$/.test(firNo)) {
+      log.warn('validateRequiredFields: rejected — arrest record against FIR missing 14-digit FIR number', { recordType, firNo });
+      const err = new Error('Cannot submit Arrest record against FIR without a complete 14-digit unique statutory FIR number.');
+      err.status = 422;
+      throw err;
+    }
+  }
+
   log.debug('validateRequiredFields: passed', { recordType });
 }
 
@@ -1864,7 +1886,35 @@ export const submitRecord = async (id, user, ipAddress) => {
     if (!record) { log.warn('submitRecord: rejected — record not found', { recordId: id }); throw new Error('Record not found'); }
 
     await db.transaction(async (trx) => {
-      const full = await fetchRecordFull(trx, id);
+      let full = await fetchRecordFull(trx, id);
+
+      // Auto-complete 14-digit Statutory FIR Number if missing or non-14 digits before submission
+      if (record.record_type === 'CASE' && full?.detail) {
+        const currentFirNo = String(full.detail.fir_no || '').trim();
+        if (!currentFirNo || !/^\d{14}$/.test(currentFirNo)) {
+          const regType = full.detail.registration_type || 'MANUAL_CCTNS';
+          const statutoryRes = await generateAndValidateStatutoryFir(trx, {
+            psId: record.ps_id,
+            registrationType: regType,
+            recordDate: record.record_date,
+            firDate: full.detail.fir_date,
+            requestedFirNo: currentFirNo,
+            requestedSerial: full.detail.fir_seq,
+          });
+          await trx('fir_details').where({ record_id: id }).update({
+            fir_no: statutoryRes.firNo,
+            registration_type: statutoryRes.registrationType,
+            fir_year: statutoryRes.firYear,
+            fir_seq: statutoryRes.firSeq,
+            fir_type_prefix: statutoryRes.firTypePrefix,
+            fir_ps_code: statutoryRes.firPsCode,
+            is_legacy_format: false,
+            updated_at: trx.fn.now(),
+          });
+          full = await fetchRecordFull(trx, id);
+        }
+      }
+
       const registry = await mapper.loadRegistry(trx, record.record_type);
       const { data: flatData, persons } = await mapper.recomposeRecord(trx, registry, record.record_type, {
         spineRow: record, detailRow: full.detail, personRows: full.personRows, propertyRows: full.propertyRows,

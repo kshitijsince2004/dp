@@ -3131,12 +3131,72 @@ const formDirtyRef = useRef(false);
 const repeaterSeededIdRef = useRef(undefined);
 const flatSeededIdRef = useRef(undefined);
 
-/* ── Sync saved record ID ─────────────────────────────────────────────── */
+/* ── Sync saved record ID & update URL query param so drafts persist on reload ── */
 useEffect(() => {
   if (savedRecord?.id) {
     activeRecordIdRef.current = savedRecord.id;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('edit') !== savedRecord.id) {
+        url.searchParams.set('edit', savedRecord.id);
+        window.history.replaceState(null, '', url.toString());
+      }
+    } catch (e) {
+      console.error('Failed to sync URL edit parameter:', e);
+    }
   }
 }, [savedRecord]);
+
+const storageDraftKey = `pharos_crash_draft_${recordType}_${caseType || 'default'}_${initialValues?.id || 'new'}`;
+
+/* ── Auto-save in-progress form entry to LocalStorage for crash protection ── */
+useEffect(() => {
+  if (readOnly) return;
+  if (!values || Object.keys(values).length === 0) return;
+  try {
+    const draftPayload = {
+      values,
+      repeaterState,
+      timestamp: Date.now(),
+      recordType,
+      caseType,
+    };
+    localStorage.setItem(storageDraftKey, JSON.stringify(draftPayload));
+  } catch (err) {
+    console.error('Failed to save in-progress draft to localStorage:', err);
+  }
+}, [values, repeaterState, recordType, caseType, readOnly, storageDraftKey]);
+
+/* ── Restore unsaved in-progress local draft on mount if page reloaded/crashed ── */
+const localRestoredRef = useRef(false);
+useEffect(() => {
+  if (readOnly || localRestoredRef.current) return;
+  try {
+    const raw = localStorage.getItem(storageDraftKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && (Date.now() - parsed.timestamp) < 86400000 && parsed.values && Object.keys(parsed.values).length > 3) {
+        localRestoredRef.current = true;
+        setValues(prev => ({ ...prev, ...parsed.values }));
+        if (parsed.repeaterState && Object.keys(parsed.repeaterState).length > 0) {
+          setRepeaterState(prev => ({ ...prev, ...parsed.repeaterState }));
+        }
+        toast(lang === 'hi' ? 'आपका सहेजा न गया फ़ॉर्म डेटा पुनर्प्राप्त कर लिया गया है।' : 'Restored your unsaved draft progress.', { icon: '💾' });
+      }
+    }
+  } catch (err) {
+    console.error('Failed to restore local draft:', err);
+  }
+}, [storageDraftKey, readOnly, lang]);
+
+const clearLocalCrashDraft = () => {
+  try {
+    localStorage.removeItem(storageDraftKey);
+    localStorage.removeItem(`pharos_crash_draft_${recordType}_${caseType || 'default'}_new`);
+  } catch (err) {
+    console.error('Failed to clear local crash draft:', err);
+  }
+};
 
 /* ── Adjust step bounds if schema changes ───────────────────────────────── */
 useEffect(() => {
@@ -4221,6 +4281,7 @@ const handleFormSubmit = (e) => {
   const { persons, properties } = buildRepeaterPayload();
 
   try {
+    clearLocalCrashDraft();
     onSubmit?.(finalValues, persons, properties, activeRecordIdRef.current);
     log.info('form:submit_success', { recordType, recordId: activeRecordIdRef.current, personsCount: persons.length, propertiesCount: properties.length });
   } catch (err) {
@@ -4241,6 +4302,7 @@ const handleManualSave = () => {
   // to [] server-side, so the repeater data was never written at all).
   const { persons, properties } = buildRepeaterPayload();
   saveImmediately(finalValues, activeRecordIdRef.current, persons, properties);
+  clearLocalCrashDraft();
   log.info('form:save_draft_success', { recordType, recordId: activeRecordIdRef.current, personsCount: persons.length, propertiesCount: properties.length });
   toast.success(lang === 'hi' ? 'ड्राफ्ट सहेज लिया गया है।' : 'Draft saved successfully.');
 };

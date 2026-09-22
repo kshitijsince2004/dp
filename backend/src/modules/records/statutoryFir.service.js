@@ -145,10 +145,10 @@ export async function generateAndValidateStatutoryFir(trx, {
     psId, registrationType, recordDate, firDate, requestedFirNo, requestedSerial, isLegacy,
   });
 
-  // If explicit legacy import or requestedFirNo is a legacy format (e.g. 104/2026 or non-14 digits), allow legacy pass-through
   const reqStr = requestedFirNo ? String(requestedFirNo).trim() : '';
-  const isReqLegacy = isLegacy || (reqStr.length > 0 && (reqStr.includes('/') || reqStr.length !== 14));
-  if (isReqLegacy && reqStr && !/^\d{14}$/.test(reqStr)) {
+
+  // Explicit legacy bulk import pass-through
+  if (isLegacy && reqStr && !/^\d{14}$/.test(reqStr)) {
     const existingDuplicateLegacy = await trx('fir_details')
       .whereRaw('LOWER(TRIM(fir_no)) = LOWER(TRIM(?))', [reqStr])
       .first();
@@ -215,15 +215,23 @@ export async function generateAndValidateStatutoryFir(trx, {
       throw err;
     }
   } else {
-    // Generate serial
-    if (requestedSerial != null && requestedSerial !== '') {
-      serial = parseInt(requestedSerial, 10);
-      if (isNaN(serial) || serial <= 0 || serial > 9999) {
-        const err = new Error(`Requested FIR serial "${requestedSerial}" is invalid. Must be between 1 and 9999.`);
-        err.status = 422;
-        throw err;
+    // Generate serial or parse sequence from requestedFirNo if provided as short/slash format
+    if (requestedFirNo && !/^\d{14}$/.test(String(requestedFirNo).trim())) {
+      const nums = String(requestedFirNo).match(/\d+/g);
+      if (nums && nums.length > 0) {
+        const parsedSeq = parseInt(nums[0], 10);
+        if (!isNaN(parsedSeq) && parsedSeq > 0 && parsedSeq <= 9999) {
+          serial = parsedSeq;
+        }
       }
-    } else {
+    }
+    if (!serial && requestedSerial != null && requestedSerial !== '') {
+      const parsedReq = parseInt(requestedSerial, 10);
+      if (!isNaN(parsedReq) && parsedReq > 0 && parsedReq <= 9999) {
+        serial = parsedReq;
+      }
+    }
+    if (!serial) {
       serial = await getNextFirSerial(trx, { psId, registrationType, year4 });
     }
 

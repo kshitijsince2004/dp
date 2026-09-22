@@ -591,23 +591,7 @@ export default function MyRecords() {
                   <tbody className="divide-y divide-[#E2E8F0] text-[#1A202C]">
                     {filteredRecords.map((rec, index) => {
                       const psName = rec.ps_name || rec.data?.police_station || rec.data?.ps || 'PS Parliament Street';
-                      const refId =
-                        rec.fir_no ||
-                        rec.arrest_fir_no ||
-                        rec.data?.fir_no ||
-                        rec.data?.arrest_fir_no ||
-                        rec.data?.linked_fir_dd_no ||
-                        rec.data?.dd_fir_no ||
-                        rec.missing_fir_no ||
-                        rec.data?.missing_fir_no ||
-                        rec.uidb_no ||
-                        rec.data?.uidb_no ||
-                        rec.data?.uidbNumber ||
-                        rec.uid ||
-                        rec.data?.uid ||
-                        rec.legacy_ref ||
-                        rec.data?.gd_no ||
-                        (rec.id ? rec.id.slice(0, 8) : 'N/A');
+                      const refId = formatRecordRef(rec);
 
                       const gist =
                         rec.data?.brief_facts ||
