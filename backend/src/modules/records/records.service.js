@@ -220,8 +220,19 @@ async function upsertLocation(trx, existingId, cols) {
   const hasCols = cols && Object.keys(cols).length > 0;
   if (!hasCols) {
     if (existingId) {
+      await trx('persons').where({ present_location_id: existingId }).update({ present_location_id: null });
+      await trx('persons').where({ perm_location_id: existingId }).update({ perm_location_id: null });
+      await trx('person_arrest_details').where({ arrest_location_id: existingId }).update({ arrest_location_id: null });
+      await trx('person_missing_details').where({ missing_location_id: existingId }).update({ missing_location_id: null });
+      await trx('person_missing_details').where({ found_location_id: existingId }).update({ found_location_id: null });
+      await trx('fir_details').where({ occurrence_location_id: existingId }).update({ occurrence_location_id: null });
+      await trx('arrest_details').where({ occurrence_location_id: existingId }).update({ occurrence_location_id: null });
+      await trx('arrest_details').where({ arrest_location_id: existingId }).update({ arrest_location_id: null });
+      await trx('missing_details').where({ occurrence_location_id: existingId }).update({ occurrence_location_id: null });
+      await trx('uidb_details').where({ found_location_id: existingId }).update({ found_location_id: null });
+      await trx('pcr_call_details').where({ occurrence_location_id: existingId }).update({ occurrence_location_id: null });
       await trx('locations').where({ id: existingId }).delete();
-      log.debug('upsertLocation: cleared block, deleted locations row', { locationId: existingId });
+      log.debug('upsertLocation: cleared block, unlinked and deleted locations row', { locationId: existingId });
     }
     return null;
   }

@@ -611,6 +611,10 @@ export default function DynamicForm({
           {renderReadOnlyRow(fieldLabel('district') || (lang === 'hi' ? 'जिला' : 'District'), values.district || user?.district)}
           {renderReadOnlyRow(fieldLabel('police_station') || (lang === 'hi' ? 'थाना' : 'Police Station'), values.police_station || user?.police_station)}
           {renderReadOnlyRow(fieldLabel('submission_status') || (lang === 'hi' ? 'प्रस्तुति स्थिति' : 'Submission Status'), values.status || 'DRAFT')}
+          {renderReadOnlyRow(
+            fieldLabel('fir_no') || (lang === 'hi' ? 'संबंधित प्राथमिकी संख्या (Associated FIR No.)' : 'Associated FIR Number'),
+            values.fir_no || values.arrest_fir_no || values.linked_fir_dd_no || values.selected_fir || (values.case_type === 'kalandra' ? (lang === 'hi' ? 'लागू नहीं (कलंदरा / डीडी आधारित)' : 'N/A (Kalandra / DD Based)') : '—')
+          )}
 
           {/* Case Type field */}
           <React.Fragment>
@@ -4081,6 +4085,8 @@ const handleNext = () => {
       }
       setValues(prev => ({
         ...prev,
+        fir_no: prev.fir_no || selectedFir,
+        arrest_fir_no: prev.arrest_fir_no || selectedFir,
         linked_fir_dd_no: selectedFir,
         act_name: prev.act_name || autofilled.act_name || '',
         sections: prev.sections !== undefined ? prev.sections : (autofilled.sections || ''),
