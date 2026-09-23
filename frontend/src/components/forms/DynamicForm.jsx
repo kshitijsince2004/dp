@@ -667,7 +667,7 @@ export default function DynamicForm({
 
 
         {/* Acts, Sections, Major/Minor, Local Head Panels */}
-        <ActsSectionsTable {...actsSectionsProps} localHeadLayout={recordType === 'UIDB' ? 'hidden' : 'split'} />
+        <ActsSectionsTable {...actsSectionsProps} localHeadLayout="split" />
       </div>
     );
   };
@@ -4385,7 +4385,7 @@ const isLastStep = currentStep === finalSchema.length - 1;
 
 const SECTION_RENDERERS = {
   select_fir: renderFirSearchStep,
-  ...(recordType === 'CASE' || recordType === 'ARREST' ? { general_info: renderArrestGeneralInfoStep } : {}),
+  general_info: renderArrestGeneralInfoStep,
   acts_and_sections: renderActsAndSectionsStep,
   occurrence_info: renderOccurrenceStep,
   complainant_info: renderComplainantStep,
