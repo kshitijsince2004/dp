@@ -406,6 +406,7 @@ function splitFlatFields(registry, recordType, data) {
     }
     if (!shape.table) continue;
 
+    const targetTable = shape.table === '$detail' ? detailTable : shape.table;
     if (targetTable === 'investigating_officers' || (f.field_key && f.field_key.startsWith('io_'))) {
       if (raw !== '' && raw !== null && raw !== undefined) detailExtra[f.field_key] = raw;
       continue;
