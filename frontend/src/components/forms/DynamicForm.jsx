@@ -611,35 +611,37 @@ export default function DynamicForm({
           {renderReadOnlyRow(fieldLabel('district') || (lang === 'hi' ? 'जिला' : 'District'), values.district || user?.district)}
           {renderReadOnlyRow(fieldLabel('police_station') || (lang === 'hi' ? 'थाना' : 'Police Station'), values.police_station || user?.police_station)}
           {renderReadOnlyRow(fieldLabel('submission_status') || (lang === 'hi' ? 'प्रस्तुति स्थिति' : 'Submission Status'), values.status || 'DRAFT')}
-          {renderReadOnlyRow(
+          {recordType !== 'UIDB' && renderReadOnlyRow(
             fieldLabel('fir_no') || (lang === 'hi' ? 'संबंधित प्राथमिकी संख्या (Associated FIR No.)' : 'Associated FIR Number'),
             values.fir_no || values.arrest_fir_no || values.linked_fir_dd_no || values.selected_fir || (values.case_type === 'kalandra' ? (lang === 'hi' ? 'लागू नहीं (कलंदरा / डीडी आधारित)' : 'N/A (Kalandra / DD Based)') : '—')
           )}
 
           {/* Case Type field */}
-          <React.Fragment>
-            <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-b border-r border-[#c7d8ea] min-h-[44px]">
-              {fieldLabel('case_type') || (lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE')}
-            </div>
-            <div className="px-4 py-2 bg-white flex items-center border-b border-[#c7d8ea] min-h-[44px]">
-              <div className="w-full max-w-md">
-                {(() => {
-                  const caseTypeField = allSchemaFields.find(f => f.field_key === 'case_type');
-                  return (
-                    <FieldRenderer
-                      field={caseTypeField}
-                      value={values.case_type || ''}
-                      onChange={handleChange}
-                      readOnly={readOnly || !isFieldEditableForReview(caseTypeField)}
-                      error={touched.case_type ? errors.case_type : null}
-                      lang={lang}
-                      values={values}
-                    />
-                  );
-                })()}
+          {recordType !== 'UIDB' && (
+            <React.Fragment>
+              <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-b border-r border-[#c7d8ea] min-h-[44px]">
+                {fieldLabel('case_type') || (lang === 'hi' ? 'मामले का प्रकार' : 'CASE TYPE')}
               </div>
-            </div>
-          </React.Fragment>
+              <div className="px-4 py-2 bg-white flex items-center border-b border-[#c7d8ea] min-h-[44px]">
+                <div className="w-full max-w-md">
+                  {(() => {
+                    const caseTypeField = allSchemaFields.find(f => f.field_key === 'case_type');
+                    return (
+                      <FieldRenderer
+                        field={caseTypeField}
+                        value={values.case_type || ''}
+                        onChange={handleChange}
+                        readOnly={readOnly || !isFieldEditableForReview(caseTypeField)}
+                        error={touched.case_type ? errors.case_type : null}
+                        lang={lang}
+                        values={values}
+                      />
+                    );
+                  })()}
+                </div>
+              </div>
+            </React.Fragment>
+          )}
 
           {/* GD Number, Date & Time */}
           <React.Fragment>
@@ -647,7 +649,7 @@ export default function DynamicForm({
               {(fieldLabel('gd_no') || (lang === 'hi' ? 'जीडी नंबर, दिनांक और समय' : 'GD Number, Date & Time'))}
               {isFieldRequired('gd_no') && <span className="text-red-500 font-bold">{' *'}</span>}
             </div>
-            <div className="px-4 py-2 bg-white flex items-center gap-3 min-h-[44px] relative">
+            <div className="px-[#4px] py-2 bg-white flex items-center gap-3 min-h-[44px] relative">
               {(() => {
                 const gdNoField = allSchemaFields.find(f => f.field_key === 'gd_no');
                 return (
@@ -4385,7 +4387,7 @@ const isLastStep = currentStep === finalSchema.length - 1;
 
 const SECTION_RENDERERS = {
   select_fir: renderFirSearchStep,
-  ...(recordType === 'CASE' || recordType === 'ARREST' ? { general_info: renderArrestGeneralInfoStep } : {}),
+  ...(recordType === 'CASE' || recordType === 'ARREST' || recordType === 'UIDB' ? { general_info: renderArrestGeneralInfoStep } : {}),
   acts_and_sections: renderActsAndSectionsStep,
   occurrence_info: renderOccurrenceStep,
   complainant_info: renderComplainantStep,
