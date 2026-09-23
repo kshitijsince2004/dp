@@ -134,25 +134,28 @@ export default function StatutoryFirField({
   const handleSerialBlur = () => {
     if (serialSegment) {
       let num = parseInt(serialSegment, 10);
-      if (isNaN(num) || num < 1) {
-        num = 1;
-      } else if (num > 9999) {
+      if (!isNaN(num) && num > 9999) {
         num = 9999;
+        const padded = String(num).padStart(4, '0');
+        setSerialSegment(padded);
+        commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, padded, true);
+      } else {
+        const padded = serialSegment.padStart(4, '0');
+        setSerialSegment(padded);
+        commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, padded, true);
       }
-      const padded = String(num).padStart(4, '0');
-      setSerialSegment(padded);
-      commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, padded, true);
     }
   };
 
   const serialInt = value && /^\d{14}$/.test(value) ? parseInt(value.slice(10, 14), 10) : 0;
   const isValidStatutory = value && /^\d{14}$/.test(value) && serialInt >= 1 && serialInt <= 9999;
+  const isZeroSerial = serialSegment === '0000' || (serialSegment.length > 0 && parseInt(serialSegment, 10) === 0);
 
   return (
     <div className="w-full flex flex-col gap-2">
       <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         {/* Statutory 14-digit composite widget */}
-        <div className="flex-1 flex flex-wrap items-center bg-white border-2 border-slate-200 focus-within:border-[var(--accent-color,#3b82f6)] rounded-xl p-1 gap-2 transition-colors">
+        <div className={`flex-1 flex flex-wrap items-center bg-white border-2 rounded-xl p-1 gap-2 transition-colors ${isZeroSerial ? 'border-red-500 bg-red-50/20' : 'border-slate-200 focus-within:border-[var(--accent-color,#3b82f6)]'}`}>
           {/* 8-Digit Statutory Prefix Chip (Non-editable fixed prefix) */}
           <div
             className="flex items-center gap-1.5 bg-slate-100 text-slate-800 px-3 py-1.5 rounded-lg font-mono text-sm font-bold border border-slate-300 select-none shadow-inner"
@@ -208,7 +211,7 @@ export default function StatutoryFirField({
           <span className="text-slate-300 font-bold hidden sm:inline">-</span>
 
           {/* 4-Digit Serial Input (NNNN) with comfortable width */}
-          <div className="flex-1 flex items-center min-w-[120px] bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 focus-within:bg-white focus-within:border-blue-400 transition-colors">
+          <div className={`flex-1 flex items-center min-w-[120px] rounded-lg px-2.5 py-1 transition-colors border ${isZeroSerial ? 'bg-red-50 border-red-300 focus-within:border-red-500' : 'bg-slate-50 border-slate-200 focus-within:bg-white focus-within:border-blue-400'}`}>
             <span className="text-[10px] uppercase font-bold text-slate-400 mr-1.5 select-none">Seq</span>
             <input
               type="text"
@@ -218,7 +221,7 @@ export default function StatutoryFirField({
               onChange={handleSerialChange}
               onBlur={handleSerialBlur}
               placeholder="0001"
-              className={`w-full bg-transparent border-0 text-sm font-mono font-bold text-slate-800 outline-none placeholder:text-slate-300 ${disabledClass}`}
+              className={`w-full bg-transparent border-0 text-sm font-mono font-bold outline-none placeholder:text-slate-300 ${isZeroSerial ? 'text-red-600 font-extrabold' : 'text-slate-800'} ${disabledClass}`}
             />
           </div>
 
@@ -226,6 +229,8 @@ export default function StatutoryFirField({
           <div className="px-1.5 flex items-center">
             {isValidStatutory ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-500" title="Valid 14-digit statutory FIR number" />
+            ) : isZeroSerial ? (
+              <AlertTriangle className="w-4 h-4 text-red-500 animate-bounce" title="Invalid serial 0000" />
             ) : (
               <span className="text-[11px] text-slate-400 font-mono">
                 {value ? `${value.length}/14` : '14 digits'}
@@ -237,6 +242,14 @@ export default function StatutoryFirField({
         {/* Date & Time Picker */}
         {compositeDateTimeCell && compositeDateTimeCell('fir_date', 'fir_time', 'w-full sm:w-[220px]')}
       </div>
+
+      {/* Explicit Red Warning for 0000 */}
+      {isZeroSerial && (
+        <div className="flex items-center gap-1.5 text-red-600 font-bold text-xs bg-red-50 border border-red-300 rounded-lg p-2.5 shadow-sm">
+          <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+          <span>You have entered a wrong FIR serial number (0000). It must be between 0001 and 9999.</span>
+        </div>
+      )}
 
       {/* Helper caption info */}
       <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 px-1">

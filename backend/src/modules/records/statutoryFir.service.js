@@ -213,25 +213,30 @@ export async function generateAndValidateStatutoryFir(trx, {
 
     serial = parseInt(serialSegment, 10);
     if (isNaN(serial) || serial < 1 || serial > 9999) {
-      const err = new Error(`Invalid FIR serial segment "${serialSegment}". Must be between 0001 and 9999 (0000 is not allowed).`);
+      const err = new Error(`You have entered a wrong FIR serial number (${serialSegment}). It must be between 0001 and 9999.`);
       err.status = 422;
       throw err;
     }
   } else {
     // Generate serial or parse sequence from requestedFirNo if provided as short/slash format
-    if (requestedFirNo && !/^\d{14}$/.test(String(requestedFirNo).trim())) {
+    if (requestedSerial !== undefined && requestedSerial !== null && String(requestedSerial).trim() !== '') {
+      const parsedReq = parseInt(requestedSerial, 10);
+      if (isNaN(parsedReq) || parsedReq < 1 || parsedReq > 9999) {
+        const err = new Error(`You have entered a wrong FIR serial number (${requestedSerial}). It must be between 0001 and 9999.`);
+        err.status = 422;
+        throw err;
+      }
+      serial = parsedReq;
+    } else if (requestedFirNo && !/^\d{14}$/.test(String(requestedFirNo).trim())) {
       const nums = String(requestedFirNo).match(/\d+/g);
       if (nums && nums.length > 0) {
         const parsedSeq = parseInt(nums[0], 10);
-        if (!isNaN(parsedSeq) && parsedSeq > 0 && parsedSeq <= 9999) {
-          serial = parsedSeq;
+        if (isNaN(parsedSeq) || parsedSeq < 1 || parsedSeq > 9999) {
+          const err = new Error(`You have entered a wrong FIR serial number (${nums[0]}). It must be between 0001 and 9999.`);
+          err.status = 422;
+          throw err;
         }
-      }
-    }
-    if (!serial && requestedSerial != null && requestedSerial !== '') {
-      const parsedReq = parseInt(requestedSerial, 10);
-      if (!isNaN(parsedReq) && parsedReq > 0 && parsedReq <= 9999) {
-        serial = parsedReq;
+        serial = parsedSeq;
       }
     }
     if (!serial) {
