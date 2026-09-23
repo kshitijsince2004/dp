@@ -687,12 +687,6 @@ const STATUS_FIELD_DEFS = [
   { statusField: 'uidb_status', recordType: 'UIDB', column: 'uidb_status' },
   { statusField: 'final_call_status', recordType: 'PCR_CALL', column: 'final_call_status' },
   { statusField: 'is_worked_out', recordType: 'CASE', column: 'is_worked_out', valueType: 'boolean' },
-  { statusField: 'sent_to_court_date', recordType: 'CASE', column: 'sent_to_court_date' },
-  { statusField: 'court_case_no', recordType: 'CASE', column: 'court_case_no' },
-  { statusField: 'court_name', recordType: 'CASE', column: 'court_name' },
-  { statusField: 'court_disposal_type', recordType: 'CASE', column: 'court_disposal_type' },
-  { statusField: 'court_disposal_date', recordType: 'CASE', column: 'court_disposal_date' },
-  { statusField: 'supplementary_chargesheet_details', recordType: 'CASE', column: 'supplementary_chargesheet_details' },
 ];
 
 // Derived, not hand-duplicated: detailTable -> { column -> statusField }, used by
