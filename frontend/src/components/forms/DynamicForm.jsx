@@ -22,6 +22,7 @@ import { parseDMY, formatDMY, parseAnyDate } from '../../utils/dateFormat.js';
 import ActsSectionsTable, { reMergeKnownActFragments } from './ActsSectionsTable.jsx';
 import { parseRules, getFieldError, checkFieldFormat, validateFieldPattern } from '../../utils/fieldValidation.js';
 import { log } from '../../utils/logger.js';
+import { mapCaseTypeToRegistrationType } from './StatutoryFirField.jsx';
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 function getFieldOptions(fieldsArr, key) {
   const field = fieldsArr.find((f) => f.field_key === key);
@@ -294,18 +295,23 @@ export default function DynamicForm({
 
   const handleFirSearch = () => {
     log.debug('form:fir_search_attempt', { hasSearchDate: !!searchDate, hasQuery: !!searchQuery });
-    if (!searchDate) {
-      setSearchError(lang === 'hi' ? 'एफआईआर दिनांक चुनना अनिवार्य है।' : 'FIR Date is required.');
+    if (!searchDate && !searchQuery.trim()) {
+      setSearchError(
+        lang === 'hi'
+          ? 'कृपया खोज के लिए प्राथमिकी दिनांक, प्राथमिकी संख्या या शिकायतकर्ता का नाम दर्ज करें।'
+          : 'Please enter FIR Date, FIR Number, or Complainant Name to search.'
+      );
       return;
     }
     setSearchError('');
 
     // Real backend cases only; MOCK_FIR_LIST is a fallback for when the backend has none
     const backendCases = (casesData || []).map(c => ({
-      fir_no: c.data?.fir_no || c.fir_no || `FIR No. ${c.id}`,
-      fir_date: c.data?.fir_date || c.fir_date || c.record_date,
-      complainant_name: c.data?.complainant_name || c.complainant_name || 'N/A',
-      police_station: c.data?.police_station || c.police_station || 'Unknown',
+      fir_no: c.data?.fir_no || c.fir_no || c.original_fir_no || `FIR No. ${c.id}`,
+      fir_date: c.data?.fir_date || c.fir_date || c.record_date || c.data?.record_date,
+      record_date: c.record_date || c.data?.record_date || c.fir_date || c.data?.fir_date,
+      complainant_name: c.data?.complainant_name || c.complainant_name || c.data?.complainant?.name || 'N/A',
+      police_station: c.ps_name || c.data?.police_station || c.police_station || 'Unknown',
       crime_head: c.data?.local_head || c.data?.crime_head || c.local_head || c.crime_head || 'N/A',
       sections: c.data?.sections || c.sections || 'N/A',
       isBackend: true
@@ -314,10 +320,13 @@ export default function DynamicForm({
 
     // Filter unified list
     const filtered = unifiedCases.filter(c => {
-      // Date exact match — both sides are dd/mm/yyyy
-      const sDate = formatDMY(parseDMY(searchDate)) || searchDate;
-      const cDate = formatDMY(parseAnyDate(c.fir_date)) || c.fir_date;
-      if (cDate !== sDate) return false;
+      // Date match — check against fir_date OR record_date if searchDate is specified
+      if (searchDate) {
+        const sDate = formatDMY(parseDMY(searchDate)) || searchDate;
+        const cFirDate = c.fir_date ? (formatDMY(parseAnyDate(c.fir_date)) || c.fir_date) : '';
+        const cRecDate = c.record_date ? (formatDMY(parseAnyDate(c.record_date)) || c.record_date) : '';
+        if (cFirDate !== sDate && cRecDate !== sDate) return false;
+      }
 
       // Query (complainant name or FIR no) match
       if (searchQuery) {
@@ -336,12 +345,10 @@ export default function DynamicForm({
 
   const renderFirSearchStep = () => {
     const title = lang === 'hi' ? 'प्राथमिकी (FIR) खोजें और लिंक करें' : 'Search & Link First Information Report (FIR)';
-    const dateLabel = lang === 'hi' ? 'प्राथमिकी दिनांक (FIR Date) *' : 'FIR Date *';
+    const dateLabel = lang === 'hi' ? 'प्राथमिकी दिनांक (FIR Date) (वैकल्पिक)' : 'FIR Date (Optional)';
     const queryLabel = lang === 'hi' ? 'शिकायतकर्ता का नाम / प्राथमिकी संख्या (वैकल्पिक)' : 'Complainant Name / FIR No. (Optional)';
     const queryPlaceholder = lang === 'hi' ? 'खोजने के लिए लिखें...' : 'Type to search...';
     const btnText = lang === 'hi' ? 'प्राथमिकी खोजें' : 'Search FIR';
-
-
 
     return (
       <div className="space-y-6">
@@ -350,7 +357,7 @@ export default function DynamicForm({
 
           <div className="p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Mandatory Date Field */}
+              {/* Optional Date Field */}
               <div className="flex flex-col gap-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 tracking-wide">
                   <Calendar size={14} className="text-slate-400" />
@@ -385,7 +392,16 @@ export default function DynamicForm({
                   type="text"
                   disabled={readOnly}
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (searchError) setSearchError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleFirSearch();
+                    }
+                  }}
                   placeholder={queryPlaceholder}
                   className="w-full bg-white border-2 border-slate-200 text-slate-800 text-sm px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all placeholder:text-slate-400"
                 />
@@ -3416,6 +3432,9 @@ useEffect(() => {
   // click away without pre-seeding state behind the user's back.
   if (!initialValues?.id && recordType === 'CASE' && !seed.case_type) {
     seed.case_type = 'cctns(manual FIR)';
+    seed.registration_type = 'MANUAL_CCTNS';
+  } else if (seed.case_type) {
+    seed.registration_type = mapCaseTypeToRegistrationType(seed.case_type);
   }
 
   // Resolve station and district dynamically based on record metadata or active user node
@@ -3714,6 +3733,11 @@ const handleChange = useCallback((key, val) => {
 
   setValues((prev) => {
     const next = { ...prev, [key]: val };
+
+    if (key === 'case_type' || key === 'registration_type') {
+      const normReg = mapCaseTypeToRegistrationType(val);
+      next.registration_type = normReg;
+    }
 
     // Reset work_out when case_status is changed to PENDING or empty
     if (key === 'case_status') {

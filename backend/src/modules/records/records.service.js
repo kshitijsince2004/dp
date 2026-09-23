@@ -7,7 +7,7 @@ import { toISO } from '../../utils/dateFormat.js';
 import * as workflowEngine from '../workflow/workflow.engine.js';
 import * as mapper from './records.mapper.js';
 import { resolveMajorHead, resolveLocalHead, normalizeDate, deriveFirYear } from './records.normalize.js';
-import { generateAndValidateStatutoryFir, resolveJurisdictionPrefix, getAllowedRegistrationTypes, getNextFirSerial } from './statutoryFir.service.js';
+import { generateAndValidateStatutoryFir, resolveJurisdictionPrefix, getAllowedRegistrationTypes, getNextFirSerial, normalizeRegistrationType } from './statutoryFir.service.js';
 import { getStatusOptionsForType } from '../fields/statusOptions.config.js';
 import { getLogger } from '../../utils/logger.js';
 import { redact } from '../../utils/redact.js';
@@ -1473,7 +1473,11 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
       split.detail.is_worked_out = false;
     }
 
-    const regType = split.detail.registration_type || data?.registration_type || 'MANUAL_CCTNS';
+    const rawTypeCandidate = split.detail.case_type || data?.case_type;
+    const normCaseType = rawTypeCandidate ? normalizeRegistrationType(rawTypeCandidate) : null;
+    const regType = (normCaseType && normCaseType !== 'MANUAL_CCTNS')
+      ? normCaseType
+      : normalizeRegistrationType(split.detail.registration_type || data?.registration_type || rawTypeCandidate);
     const statutoryRes = await generateAndValidateStatutoryFir(trx, {
       psId: scope.ps_id,
       registrationType: regType,
