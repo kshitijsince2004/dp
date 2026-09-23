@@ -597,11 +597,11 @@
           "key": "case_status",
           "section": "Action Taken",
           "label": "Status",
-          "hint": "select: CHARGE SHEET, POLICE INVESTIGATION REPORT(PIR-JCL), UNTRACED, PENDING, CANCELLATION, QUASHED, CLOSURE REPORT, RELEASED U/S 189 BNSS, TRANSFER",
+          "hint": "select: CHARGE SHEET, POLICE INVESTIGATION REPORT(PIR-JCL), UNTRACED, PENDING, CANCELLATION, QUASHED, CLOSURE REPORT, RELEASED U/S 189 BNSS, TRANSFER, SUPPLEMENTARY CHARGESHEET",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"CHARGE SHEET,POLICE INVESTIGATION REPORT(PIR-JCL),UNTRACED,PENDING,CANCELLATION,QUASHED,CLOSURE REPORT,RELEASED U/S 189 BNSS,TRANSFER\""
+              "\"CHARGE SHEET,POLICE INVESTIGATION REPORT(PIR-JCL),UNTRACED,PENDING,CANCELLATION,QUASHED,CLOSURE REPORT,RELEASED U/S 189 BNSS,TRANSFER,SUPPLEMENTARY CHARGESHEET\""
             ]
           }
         },
@@ -628,6 +628,76 @@
         },
         {
           "col": 60,
+          "key": "sent_to_court_date",
+          "section": "General Information",
+          "label": "Sent to Court Date",
+          "hint": "date (dd-mm-yyyy)",
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6,
+              10
+            ]
+          }
+        },
+        {
+          "col": 61,
+          "key": "court_case_no",
+          "section": "General Information",
+          "label": "Court Case Number",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 62,
+          "key": "court_name",
+          "section": "General Information",
+          "label": "Court Name",
+          "hint": "select: MM, CMM, ACMM, SESSION, HC, OTHER",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"MM,CMM,ACMM,SESSION,HC,OTHER\""
+            ]
+          }
+        },
+        {
+          "col": 63,
+          "key": "court_disposal_type",
+          "section": "General Information",
+          "label": "Court Status / Disposal",
+          "hint": "select: PENDING_TRIAL, CONVICTED, ACQUITTED, COMPOUNDED, DISCHARGED",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"PENDING_TRIAL,CONVICTED,ACQUITTED,COMPOUNDED,DISCHARGED\""
+            ]
+          }
+        },
+        {
+          "col": 64,
+          "key": "court_disposal_date",
+          "section": "General Information",
+          "label": "Date of Court Disposal",
+          "hint": "date (dd-mm-yyyy)",
+          "validation": {
+            "type": "textLength",
+            "formulae": [
+              6,
+              10
+            ]
+          }
+        },
+        {
+          "col": 65,
+          "key": "supplementary_chargesheet_details",
+          "section": "General Information",
+          "label": "Supplementary Chargesheet Details",
+          "hint": "textarea",
+          "validation": null
+        },
+        {
+          "col": 66,
           "key": "complainant_age_month",
           "section": "Complainant Personal Details",
           "label": "Complainant Age (Months)",
@@ -635,7 +705,7 @@
           "validation": null
         },
         {
-          "col": 61,
+          "col": 67,
           "key": "transferred_to_ps_id",
           "section": "General Information",
           "label": "Transferred to Police Station",
@@ -643,7 +713,7 @@
           "validation": null
         },
         {
-          "col": 62,
+          "col": 68,
           "key": "work_out",
           "section": "General Information",
           "label": "WorkOut",
@@ -656,7 +726,7 @@
           }
         },
         {
-          "col": 63,
+          "col": 69,
           "key": "transferred_to_agency_id",
           "section": "General Information",
           "label": "Transferred to Agency",
@@ -664,7 +734,7 @@
           "validation": null
         },
         {
-          "col": 64,
+          "col": 70,
           "key": "work_out_date",
           "section": "General Information",
           "label": "WorkOut Date",
@@ -678,7 +748,7 @@
           }
         },
         {
-          "col": 65,
+          "col": 71,
           "key": "date_of_transfer",
           "section": "General Information",
           "label": "Date of Transfer",
@@ -692,7 +762,23 @@
           }
         },
         {
-          "col": 66,
+          "col": 72,
+          "key": "registered_on_direction",
+          "section": "General Information",
+          "label": "Registered on Direction",
+          "hint": "boolean",
+          "validation": null
+        },
+        {
+          "col": 73,
+          "key": "direction_authority",
+          "section": "General Information",
+          "label": "Direction Authority",
+          "hint": "text",
+          "validation": null
+        },
+        {
+          "col": 74,
           "key": "burglary_mo_cd",
           "section": "General Information",
           "label": "burglary_mo_cd",
@@ -700,7 +786,7 @@
           "validation": null
         },
         {
-          "col": 67,
+          "col": 75,
           "key": "cheating_amount",
           "section": "General Information",
           "label": "cheating_amount",
@@ -708,47 +794,7 @@
           "validation": null
         },
         {
-          "col": 68,
-          "key": "court_case_no",
-          "section": "General Information",
-          "label": "court_case_no",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 69,
-          "key": "court_disposal_date",
-          "section": "General Information",
-          "label": "court_disposal_date",
-          "hint": "date",
-          "validation": null
-        },
-        {
-          "col": 70,
-          "key": "court_disposal_type",
-          "section": "General Information",
-          "label": "court_disposal_type",
-          "hint": "select",
-          "validation": null
-        },
-        {
-          "col": 71,
-          "key": "court_name",
-          "section": "General Information",
-          "label": "court_name",
-          "hint": "select",
-          "validation": null
-        },
-        {
-          "col": 72,
-          "key": "direction_authority",
-          "section": "General Information",
-          "label": "direction_authority",
-          "hint": "text",
-          "validation": null
-        },
-        {
-          "col": 73,
+          "col": 76,
           "key": "education",
           "section": "General Information",
           "label": "education",
@@ -756,7 +802,7 @@
           "validation": null
         },
         {
-          "col": 74,
+          "col": 77,
           "key": "financial_status",
           "section": "General Information",
           "label": "financial_status",
@@ -764,35 +810,11 @@
           "validation": null
         },
         {
-          "col": 75,
-          "key": "registered_on_direction",
-          "section": "General Information",
-          "label": "registered_on_direction",
-          "hint": "boolean",
-          "validation": null
-        },
-        {
-          "col": 76,
-          "key": "sent_to_court_date",
-          "section": "General Information",
-          "label": "sent_to_court_date",
-          "hint": "date",
-          "validation": null
-        },
-        {
-          "col": 77,
+          "col": 78,
           "key": "social_category",
           "section": "General Information",
           "label": "social_category",
           "hint": "select",
-          "validation": null
-        },
-        {
-          "col": 78,
-          "key": null,
-          "section": "General Information",
-          "label": null,
-          "hint": null,
           "validation": null
         },
         {
@@ -874,6 +896,14 @@
           "label": null,
           "hint": null,
           "validation": null
+        },
+        {
+          "col": 89,
+          "key": null,
+          "section": "General Information",
+          "label": null,
+          "hint": null,
+          "validation": null
         }
       ],
       "row2Merges": [
@@ -881,7 +911,8 @@
         "AK2:AT2",
         "AU2:BC2",
         "BE2:BG2",
-        "BI2:CJ2",
+        "BH2:BM2",
+        "BO2:CK2",
         "L2:Y2",
         "Z2:AJ2"
       ]
@@ -2953,11 +2984,11 @@
           "key": "scheme_of_arrest",
           "section": "Particular Details",
           "label": "Scheme of arrest",
-          "hint": "select: Integrated Pride, Group Patrolling, Anti-snatching, By Prahari, By Eyes & Ears Scheme Members, Special Drive, Cyber Hawk, Kawach, General, Other",
+          "hint": "select: Integrated Pride, Group Patrolling, Cycle Patrolling, Anti-snatching Team, By Prahari, By Eyes & Ears Scheme Members, Special Drive, Cyber Hawk, Kawach, General, Other",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Integrated Pride,Group Patrolling,Anti-snatching,By Prahari,By Eyes & Ears Scheme Members,Special Drive,Cyber Hawk,Kawach,General,Other\""
+              "\"Integrated Pride,Group Patrolling,Cycle Patrolling,Anti-snatching Team,By Prahari,By Eyes & Ears Scheme Members,Special Drive,Cyber Hawk,Kawach,General,Other\""
             ]
           }
         },
@@ -3920,14 +3951,14 @@
         },
         {
           "col": 51,
-          "key": "education",
-          "section": "General Information",
-          "label": "education",
-          "hint": "select",
+          "key": "inquest_status",
+          "section": "Inquest Details",
+          "label": "Inquest Status",
+          "hint": "select: Disposal, Closure",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Post Graduate,Professional,Unknown\""
+              "\"Disposal,Closure\""
             ]
           }
         }
@@ -4300,7 +4331,7 @@
           "col": 27,
           "key": "missing_date",
           "section": "Address Details",
-          "label": "Date Missing Since",
+          "label": "Date of Missing/Found",
           "hint": "date (dd-mm-yyyy)",
           "validation": {
             "type": "textLength",
@@ -4314,7 +4345,7 @@
           "col": 28,
           "key": "missing_place",
           "section": "Address Details",
-          "label": "Last Seen Place",
+          "label": "Last Seen/Found Place",
           "hint": "text",
           "validation": null
         },
@@ -4543,45 +4574,6 @@
               "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Post Graduate,Professional,Unknown\""
             ]
           }
-        },
-        {
-          "col": 52,
-          "key": "complainant_social_category",
-          "section": "Complainant Personal Details",
-          "label": "complainant_social_category",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 53,
-          "key": "complainant_financial_status",
-          "section": "Complainant Personal Details",
-          "label": "complainant_financial_status",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
-            ]
-          }
-        },
-        {
-          "col": 54,
-          "key": "education",
-          "section": "General Information",
-          "label": "education",
-          "hint": "select",
-          "validation": {
-            "type": "list",
-            "formulae": [
-              "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Post Graduate,Professional,Unknown\""
-            ]
-          }
         }
       ],
       "row2Merges": [
@@ -4589,7 +4581,6 @@
         "AE2:AH2",
         "AI2:AQ2",
         "AS2:AX2",
-        "AZ2:BA2",
         "G2:AD2"
       ]
     }
@@ -5689,11 +5680,11 @@
           "key": "scheme_of_arrest",
           "section": "Verification & Police Record",
           "label": "Scheme of Arrest",
-          "hint": "select: Integrated Pride, Group Patrolling, Anti-snatching, By Prahari, By Eyes & Ears Scheme Members, Special Drive, Cyber Hawk, Kawach, General, Other",
+          "hint": "select: Integrated Pride, Group Patrolling, Cycle Patrolling, Anti-snatching Team, By Prahari, By Eyes & Ears Scheme Members, Special Drive, Cyber Hawk, Kawach, General, Other",
           "validation": {
             "type": "list",
             "formulae": [
-              "\"Integrated Pride,Group Patrolling,Anti-snatching,By Prahari,By Eyes & Ears Scheme Members,Special Drive,Cyber Hawk,Kawach,General,Other\""
+              "\"Integrated Pride / Picket,Group Patrolling,Cycle Patrolling,Anti-Snatching Team,By Prahari Scheme,By Eyes & Ears Scheme Members,Special Drive,Cyber Hawk,Kawach,General,Other (Specify below)\""
             ]
           }
         }
