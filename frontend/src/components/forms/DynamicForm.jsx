@@ -4385,7 +4385,7 @@ const isLastStep = currentStep === finalSchema.length - 1;
 
 const SECTION_RENDERERS = {
   select_fir: renderFirSearchStep,
-  general_info: renderArrestGeneralInfoStep,
+  ...(recordType === 'CASE' || recordType === 'ARREST' ? { general_info: renderArrestGeneralInfoStep } : {}),
   acts_and_sections: renderActsAndSectionsStep,
   occurrence_info: renderOccurrenceStep,
   complainant_info: renderComplainantStep,
@@ -4478,27 +4478,60 @@ return (
           {SECTION_RENDERERS[activeSection?.section] ? (
             SECTION_RENDERERS[activeSection.section]()
           ) : (
-            <FormSection
-              section={activeSection}
-              currentStep={currentStep}
-              isFieldEditableForReview={isFieldEditableForReview}
-              totalSteps={finalSchema.length}
-              values={values}
-              errors={errors}
-              touched={touched}
-              handleChange={handleChange}
-              readOnly={readOnly}
-              targetFields={targetFields}
-              lang={lang}
-              saveStatus={saveStatus}
-              hideHeader={true}
-              entries={repeaterState[activeSection?.section] || []}
-              onEntriesChange={(entries) =>
-                setRepeaterState(prev => ({ ...prev, [activeSection.section]: entries }))
-              }
-              actsSectionsProps={actsSectionsProps}
-              recordType={recordType}
-            />
+            <React.Fragment>
+              {activeSection?.section === 'general_info' && (
+                <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] border-2 border-[#7a9cc5] rounded-2xl overflow-hidden shadow-sm bg-white mb-3">
+                  <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-b border-r border-[#c7d8ea] min-h-[44px]">
+                    {lang === 'hi' ? 'रिकॉर्ड यूआईडी (UID)' : 'Record UID'}
+                  </div>
+                  <div className="px-4 py-2.5 bg-white text-slate-700 text-sm sm:text-base font-medium flex items-center border-b border-[#c7d8ea] min-h-[44px]">
+                    {values.uid || 'NEW_DRAFT_PENDING'}
+                  </div>
+
+                  <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-b border-r border-[#c7d8ea] min-h-[44px]">
+                    {lang === 'hi' ? 'जिला' : 'District'}
+                  </div>
+                  <div className="px-4 py-2.5 bg-white text-slate-700 text-sm sm:text-base font-medium flex items-center border-b border-[#c7d8ea] min-h-[44px]">
+                    {values.district || user?.district || '—'}
+                  </div>
+
+                  <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-b border-r border-[#c7d8ea] min-h-[44px]">
+                    {lang === 'hi' ? 'थाना' : 'Police Station'}
+                  </div>
+                  <div className="px-4 py-2.5 bg-white text-slate-700 text-sm sm:text-base font-medium flex items-center border-b border-[#c7d8ea] min-h-[44px]">
+                    {values.police_station || user?.police_station || '—'}
+                  </div>
+
+                  <div className="bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base font-bold text-[#0d2a4a] flex items-center border-r border-[#c7d8ea] min-h-[44px]">
+                    {lang === 'hi' ? 'प्रस्तुति स्थिति' : 'Submission Status'}
+                  </div>
+                  <div className="px-4 py-2.5 bg-white text-slate-700 text-sm sm:text-base font-medium flex items-center min-h-[44px]">
+                    {values.status || values.submission_status || 'DRAFT'}
+                  </div>
+                </div>
+              )}
+              <FormSection
+                section={activeSection}
+                currentStep={currentStep}
+                isFieldEditableForReview={isFieldEditableForReview}
+                totalSteps={finalSchema.length}
+                values={values}
+                errors={errors}
+                touched={touched}
+                handleChange={handleChange}
+                readOnly={readOnly}
+                targetFields={targetFields}
+                lang={lang}
+                saveStatus={saveStatus}
+                hideHeader={true}
+                entries={repeaterState[activeSection?.section] || []}
+                onEntriesChange={(entries) =>
+                  setRepeaterState(prev => ({ ...prev, [activeSection.section]: entries }))
+                }
+                actsSectionsProps={actsSectionsProps}
+                recordType={recordType}
+              />
+            </React.Fragment>
           )}
         </form>
 
