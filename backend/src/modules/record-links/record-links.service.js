@@ -46,8 +46,117 @@ export const getLinksForRecord = async (recordId) => {
     ORDER BY rl.created_at DESC
   `, { recordId });
 
-  log.debug('getLinksForRecord: exit', { recordId, count: (result.rows || []).length });
-  return result.rows || [];
+  const explicitLinks = result.rows || [];
+  const linkedIds = new Set(explicitLinks.map(l => l.linked_record_id));
+
+  // Dynamic FIR <-> Arrest linkage lookup based on fir_no
+  try {
+    const currentRecord = await db('records').where({ id: recordId }).first();
+    if (currentRecord) {
+      if (currentRecord.record_type === 'CASE') {
+        const firRow = await db('fir_details').where({ record_id: recordId }).first();
+        if (firRow?.fir_no) {
+          const firNoStr = String(firRow.fir_no).trim();
+          const matchSnippet = firNoStr.length >= 6 ? firNoStr.slice(-6) : firNoStr;
+          const arrestMatches = await db('arrest_details as arr')
+            .join('records as r', 'arr.record_id', 'r.id')
+            .join('hierarchy_nodes as ps', 'r.ps_id', 'ps.id')
+            .leftJoin('users as u', 'r.created_by', 'u.id')
+            .leftJoin('persons as p', function () {
+              this.on('p.record_id', '=', 'r.id').andOnVal('p.role', '=', 'ARRESTEE');
+            })
+            .whereNot('r.id', recordId)
+            .where((b) => {
+              b.where('arr.fir_no', firNoStr)
+                .orWhere('arr.fir_no', 'ILIKE', `%${matchSnippet}%`);
+            })
+            .select(
+              'r.id', 'r.record_type', 'r.current_status', 'r.record_date', 'r.created_at',
+              'ps.name as ps_name', 'u.name as creator_name', 'arr.fir_no', 'arr.case_status',
+              'p.name as person_name'
+            );
+
+          for (const match of arrestMatches) {
+            if (!linkedIds.has(match.id)) {
+              linkedIds.add(match.id);
+              explicitLinks.push({
+                id: `auto-link-${recordId}-${match.id}`,
+                metadata: {},
+                linked_at: match.created_at || match.record_date,
+                link_type_code: 'FIR_ARREST',
+                link_type_label: 'Arrest Linked to FIR',
+                link_type_label_en: 'Arrest Linked to FIR',
+                cardinality: '1:N',
+                my_role: 'source',
+                linked_record_id: match.id,
+                linked_record_type: 'ARREST',
+                linked_record_status: match.current_status,
+                linked_record_date: match.record_date,
+                linked_ps_name: match.ps_name,
+                linked_by_name: match.creator_name || 'System',
+                linked_record_data: {
+                  arrested_name: match.person_name || 'Arrested Person',
+                  crime_head: match.case_status || 'Arrest Record',
+                  fir_no: match.fir_no
+                }
+              });
+            }
+          }
+        }
+      } else if (currentRecord.record_type === 'ARREST') {
+        const arrRow = await db('arrest_details').where({ record_id: recordId }).first();
+        if (arrRow?.fir_no) {
+          const firNoStr = String(arrRow.fir_no).trim();
+          const matchSnippet = firNoStr.length >= 6 ? firNoStr.slice(-6) : firNoStr;
+          const caseMatches = await db('fir_details as fir')
+            .join('records as r', 'fir.record_id', 'r.id')
+            .join('hierarchy_nodes as ps', 'r.ps_id', 'ps.id')
+            .leftJoin('users as u', 'r.created_by', 'u.id')
+            .leftJoin('ref.local_heads as lh', 'fir.local_head_id', 'lh.local_head_cd')
+            .whereNot('r.id', recordId)
+            .where((b) => {
+              b.where('fir.fir_no', firNoStr)
+                .orWhere('fir.fir_no', 'ILIKE', `%${matchSnippet}%`);
+            })
+            .select(
+              'r.id', 'r.record_type', 'r.current_status', 'r.record_date', 'r.created_at',
+              'ps.name as ps_name', 'u.name as creator_name', 'fir.fir_no', 'lh.local_head'
+            );
+
+          for (const match of caseMatches) {
+            if (!linkedIds.has(match.id)) {
+              linkedIds.add(match.id);
+              explicitLinks.push({
+                id: `auto-link-${recordId}-${match.id}`,
+                metadata: {},
+                linked_at: match.created_at || match.record_date,
+                link_type_code: 'FIR_ARREST',
+                link_type_label: 'FIR / Case Record',
+                link_type_label_en: 'FIR / Case Record',
+                cardinality: '1:N',
+                my_role: 'target',
+                linked_record_id: match.id,
+                linked_record_type: 'CASE',
+                linked_record_status: match.current_status,
+                linked_record_date: match.record_date,
+                linked_ps_name: match.ps_name,
+                linked_by_name: match.creator_name || 'System',
+                linked_record_data: {
+                  fir_no: match.fir_no,
+                  local_head: match.local_head || 'Case Record'
+                }
+              });
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    log.warn('getLinksForRecord: dynamic link resolution warning', { recordId, err: err.message });
+  }
+
+  log.debug('getLinksForRecord: exit', { recordId, count: explicitLinks.length });
+  return explicitLinks;
 };
 
 // Fetch a single link row (with its link-type code) — used by the controller to resolve

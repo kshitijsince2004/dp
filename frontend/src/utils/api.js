@@ -2129,9 +2129,77 @@ api.interceptors.request.use(
       if (!record) {
         throw createMockError('Record not found', 404);
       }
+
+      // Dynamically populate linkedRecords for FIR / Arrest associations
+      const existingLinked = record.linkedRecords || [];
+      const dynamicallyLinked = [];
+      const recordFirNo = String(record.data?.fir_no || record.fir_no || record.data?.arrest_fir_no || record.data?.associated_fir_no || '').trim();
+
+      if (record.record_type === 'CASE' && recordFirNo) {
+        // Find ARREST records matching this FIR number or case id
+        const matchingArrests = allRecords.filter(r => r.id !== recId && r.record_type === 'ARREST' && (
+          String(r.data?.fir_no || r.fir_no || r.data?.arrest_fir_no || r.data?.associated_fir_no || '').trim() === recordFirNo ||
+          (recordFirNo.length >= 4 && String(r.data?.fir_no || r.fir_no || r.data?.arrest_fir_no || r.data?.associated_fir_no || '').includes(recordFirNo)) ||
+          (r.data?.fir_no && recordFirNo.includes(String(r.data?.fir_no)))
+        ));
+
+        for (const arr of matchingArrests) {
+          if (!existingLinked.some(l => l.linked_record_id === arr.id)) {
+            dynamicallyLinked.push({
+              id: `mock-link-${recId}-${arr.id}`,
+              link_type_code: 'FIR_ARREST',
+              link_type_label: 'Arrest Linked to FIR',
+              link_type_label_en: 'Arrest Linked to FIR',
+              linked_record_id: arr.id,
+              linked_record_type: 'ARREST',
+              linked_record_status: arr.current_status || 'PENDING_SHO',
+              linked_record_date: arr.record_date || arr.created_at,
+              linked_ps_name: arr.ps_name || 'PS Parliament Street',
+              linked_record_data: {
+                arrested_name: arr.data?.arrested_name || arr.data?.name || arr.data?.accused_name || arr.data?.arrestee_name || arr.data?.person_name || 'Arrested Person',
+                crime_head: arr.data?.crime_head || arr.data?.local_head || 'Arrest Record',
+                fir_no: arr.data?.fir_no || recordFirNo
+              }
+            });
+          }
+        }
+      } else if (record.record_type === 'ARREST' && recordFirNo) {
+        // Find CASE records matching this FIR number or case id
+        const matchingCases = allRecords.filter(r => r.id !== recId && r.record_type === 'CASE' && (
+          String(r.data?.fir_no || r.fir_no || '').trim() === recordFirNo ||
+          (recordFirNo.length >= 4 && String(r.data?.fir_no || r.fir_no || '').includes(recordFirNo)) ||
+          (r.data?.fir_no && recordFirNo.includes(String(r.data?.fir_no)))
+        ));
+
+        for (const c of matchingCases) {
+          if (!existingLinked.some(l => l.linked_record_id === c.id)) {
+            dynamicallyLinked.push({
+              id: `mock-link-${recId}-${c.id}`,
+              link_type_code: 'FIR_ARREST',
+              link_type_label: 'FIR / Case Record',
+              link_type_label_en: 'FIR / Case Record',
+              linked_record_id: c.id,
+              linked_record_type: 'CASE',
+              linked_record_status: c.current_status || 'PENDING_SHO',
+              linked_record_date: c.record_date || c.created_at,
+              linked_ps_name: c.ps_name || 'PS Parliament Street',
+              linked_record_data: {
+                fir_no: c.data?.fir_no || c.fir_no || recordFirNo,
+                local_head: c.data?.local_head || c.data?.crime_head || 'Case Record'
+              }
+            });
+          }
+        }
+      }
+
+      const mergedRecord = {
+        ...record,
+        linkedRecords: [...existingLinked, ...dynamicallyLinked]
+      };
+
       return Promise.reject({
         isMock: true,
-        response: createMockResponse(record)
+        response: createMockResponse(mergedRecord)
       });
     }
 

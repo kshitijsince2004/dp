@@ -17,19 +17,21 @@ const RECORD_TYPE_COLORS = {
   UIDB: 'bg-slate-500/10 text-slate-400 border-slate-500/30'
 };
 
-const getKeySummary = (type, data) => {
-  if (!data) return '';
-  if (type === 'ARREST') return data.arrested_name || data.fullName || '';
-  if (type === 'CASE') return data.fir_no ? `FIR ${data.fir_no}` : data.local_head || data.localHead || '';
-  if (type === 'MISSING') return data.missing_name || data.name || '';
-  if (type === 'PCR_CALL') return data.pcr_no || data.call_head || '';
-  if (type === 'UIDB') return data.uidb_no || data.gd_no || '';
+const getKeySummary = (type, data, row) => {
+  if (data?.arrested_name) return data.arrested_name;
+  if (data?.fullName) return data.fullName;
+  if (data?.name) return data.name;
+  if (type === 'ARREST') return data?.arrested_name || data?.accused_name || data?.person_name || 'Arrest Record';
+  if (type === 'CASE') return (data?.fir_no || row?.linked_record_data?.fir_no) ? `FIR ${data?.fir_no || row?.linked_record_data?.fir_no}` : (data?.local_head || 'FIR Record');
+  if (type === 'MISSING') return data?.missing_name || data?.name || 'Missing Person';
+  if (type === 'PCR_CALL') return data?.pcr_no || data?.call_head || 'PCR Call';
+  if (type === 'UIDB') return data?.uidb_no || data?.gd_no || 'UIDB Record';
   return '';
 };
 
 const getSecondaryInfo = (type, data) => {
   if (!data) return '';
-  if (type === 'ARREST') return data.crime_head || data.crimeHead || '';
+  if (type === 'ARREST') return data.crime_head || data.crimeHead || (data.fir_no ? `FIR: ${data.fir_no}` : '');
   if (type === 'CASE') return data.local_head || data.localHead || '';
   if (type === 'MISSING') return data.gd_no || '';
   return '';
@@ -52,7 +54,7 @@ export default function LinkedRecordsPanel({ linkedRecords = [], onUnlink, userR
 
   // Group by link type label
   const groups = linkedRecords.reduce((acc, row) => {
-    const key = row.link_type_label_en || row.link_type_code;
+    const key = row.link_type_label_en || row.link_type_label || row.link_type_code || 'Linked Records';
     if (!acc[key]) acc[key] = [];
     acc[key].push(row);
     return acc;
@@ -73,11 +75,15 @@ export default function LinkedRecordsPanel({ linkedRecords = [], onUnlink, userR
             <div className="flex flex-col gap-2">
               {rows.map(row => {
                 const colorClass = RECORD_TYPE_COLORS[row.linked_record_type] || RECORD_TYPE_COLORS.CASE;
-                const summary = getKeySummary(row.linked_record_type, row.linked_record_data);
+                const summary = getKeySummary(row.linked_record_type, row.linked_record_data, row);
                 const secondary = getSecondaryInfo(row.linked_record_type, row.linked_record_data);
 
                 return (
-                  <div key={row.id} className="flex items-center gap-3 p-3 border border-slate-700 rounded-lg hover:bg-slate-800/40 transition-colors">
+                  <div
+                    key={row.id}
+                    className="flex items-center gap-3 p-3 border border-slate-700 rounded-lg hover:bg-slate-800/40 transition-colors cursor-pointer"
+                    onClick={() => onNavigate && onNavigate(row.linked_record_id, row.linked_record_type)}
+                  >
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded border shrink-0 ${colorClass}`}>
                       {RECORD_TYPE_LABELS[row.linked_record_type] || row.linked_record_type}
                     </span>
@@ -90,9 +96,12 @@ export default function LinkedRecordsPanel({ linkedRecords = [], onUnlink, userR
                       {onNavigate && (
                         <button
                           type="button"
-                          className="text-slate-400 hover:text-slate-200 transition-colors"
+                          className="text-slate-400 hover:text-slate-200 transition-colors p-1"
                           title="View record"
-                          onClick={() => onNavigate(row.linked_record_id, row.linked_record_type)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onNavigate(row.linked_record_id, row.linked_record_type);
+                          }}
                         >
                           <ExternalLink size={14} />
                         </button>
@@ -100,9 +109,12 @@ export default function LinkedRecordsPanel({ linkedRecords = [], onUnlink, userR
                       {canUnlink && (
                         <button
                           type="button"
-                          className="text-red-400/60 hover:text-red-400 transition-colors"
+                          className="text-red-400/60 hover:text-red-400 transition-colors p-1"
                           title="Remove link"
-                          onClick={() => onUnlink(row.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUnlink(row.id);
+                          }}
                         >
                           <Unlink size={14} />
                         </button>
