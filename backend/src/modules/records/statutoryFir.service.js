@@ -212,8 +212,8 @@ export async function generateAndValidateStatutoryFir(trx, {
     }
 
     serial = parseInt(serialSegment, 10);
-    if (isNaN(serial) || serial <= 0) {
-      const err = new Error(`Invalid FIR serial segment "${serialSegment}". Must be 0001–9999.`);
+    if (isNaN(serial) || serial < 1 || serial > 9999) {
+      const err = new Error(`Invalid FIR serial segment "${serialSegment}". Must be between 0001 and 9999 (0000 is not allowed).`);
       err.status = 422;
       throw err;
     }

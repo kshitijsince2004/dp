@@ -133,13 +133,20 @@ export default function StatutoryFirField({
 
   const handleSerialBlur = () => {
     if (serialSegment) {
-      const padded = serialSegment.padStart(4, '0');
+      let num = parseInt(serialSegment, 10);
+      if (isNaN(num) || num < 1) {
+        num = 1;
+      } else if (num > 9999) {
+        num = 9999;
+      }
+      const padded = String(num).padStart(4, '0');
       setSerialSegment(padded);
       commitStatutoryFir(statutoryPrefix, yearSegment || currentYear2Digit, padded, true);
     }
   };
 
-  const isValidStatutory = value && /^\d{14}$/.test(value);
+  const serialInt = value && /^\d{14}$/.test(value) ? parseInt(value.slice(10, 14), 10) : 0;
+  const isValidStatutory = value && /^\d{14}$/.test(value) && serialInt >= 1 && serialInt <= 9999;
 
   return (
     <div className="w-full flex flex-col gap-2">

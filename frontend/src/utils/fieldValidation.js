@@ -38,9 +38,14 @@ const RULES = [
     test: (key) => key === 'fir_no',
     sanitize: (v) => digitsOnly(v).slice(0, 14),
     pattern: /^\d{14}$/,
+    validate: (v) => {
+      if (!/^\d{14}$/.test(v)) return false;
+      const serial = parseInt(v.slice(10, 14), 10);
+      return serial >= 1 && serial <= 9999;
+    },
     message: {
-      en: 'FIR number must be a 14-digit statutory number (e.g. 08162010260001)',
-      hi: 'प्राथमिकी संख्या 14 अंकों की वैधानिक संख्या (जैसे 08162010260001) होनी चाहिए'
+      en: 'FIR number must be a 14-digit statutory number with serial between 0001 and 9999 (0000 is invalid)',
+      hi: 'प्राथमिकी संख्या 14 अंकों की वैधानिक संख्या होनी चाहिए जिसका क्रम 0001 से 9999 (0000 अमान्य है) के बीच हो'
     },
   },
   {
