@@ -1490,12 +1490,9 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
 
     if (split.detail.date_of_chargesheet || split.detail.chargesheet_date) {
       split.detail.sent_to_court_date = split.detail.sent_to_court_date || split.detail.date_of_chargesheet || split.detail.chargesheet_date;
-      split.detail.date_of_chargesheet = split.detail.date_of_chargesheet || split.detail.chargesheet_date || split.detail.sent_to_court_date;
-      split.detail.chargesheet_date = split.detail.chargesheet_date || split.detail.date_of_chargesheet || split.detail.sent_to_court_date;
-    } else if (split.detail.sent_to_court_date) {
-      split.detail.date_of_chargesheet = split.detail.sent_to_court_date;
-      split.detail.chargesheet_date = split.detail.sent_to_court_date;
     }
+    delete split.detail.date_of_chargesheet;
+    delete split.detail.chargesheet_date;
 
     log.debug('insertRecordCore: statutory FIR applied', { recordId: id, firNo: split.detail.fir_no, firYear: split.detail.fir_year, registrationType: split.detail.registration_type });
   }
@@ -1531,7 +1528,9 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
     }
   }
 
-  await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, scope.ps_id), ...split.detail, extra: JSON.stringify(split.detailExtra) });
+  const cols = await mapper.loadColumns(trx);
+  const cleanDetail = mapper.filterRealColumns(cols, detailTable, split.detail, split.detailExtra);
+  await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, scope.ps_id), ...cleanDetail, extra: JSON.stringify(split.detailExtra) });
   log.info('insertRecordCore: wrote detail row', { recordId: id, detailTable });
 
   const personIdBySourceIndex = {};
@@ -1867,20 +1866,21 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
       }
       if (split.detail.date_of_chargesheet || split.detail.chargesheet_date) {
         split.detail.sent_to_court_date = split.detail.sent_to_court_date || split.detail.date_of_chargesheet || split.detail.chargesheet_date;
-        split.detail.date_of_chargesheet = split.detail.date_of_chargesheet || split.detail.chargesheet_date || split.detail.sent_to_court_date;
-        split.detail.chargesheet_date = split.detail.chargesheet_date || split.detail.date_of_chargesheet || split.detail.sent_to_court_date;
-      } else if (split.detail.sent_to_court_date) {
-        split.detail.date_of_chargesheet = split.detail.sent_to_court_date;
-        split.detail.chargesheet_date = split.detail.sent_to_court_date;
       }
+      delete split.detail.date_of_chargesheet;
+      delete split.detail.chargesheet_date;
+
       log.debug('updateRecord: derived fir_year', { recordId: id, firNo: mergedFirNo, firDate: mergedFirDate, firYear });
     }
 
+    const cols = await mapper.loadColumns(trx);
+    const cleanDetail = mapper.filterRealColumns(cols, detailTable, split.detail, split.detailExtra);
+
     if (oldDetail) {
-      await trx(detailTable).where({ record_id: id }).update({ ...split.detail, extra: JSON.stringify(split.detailExtra), updated_at: trx.fn.now() });
+      await trx(detailTable).where({ record_id: id }).update({ ...cleanDetail, extra: JSON.stringify(split.detailExtra), updated_at: trx.fn.now() });
       log.debug('updateRecord: updated detail row', { recordId: id, detailTable });
     } else {
-      await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, record.ps_id), ...split.detail, extra: JSON.stringify(split.detailExtra) });
+      await trx(detailTable).insert({ record_id: id, ...detailScopingColumns(recordType, record.ps_id), ...cleanDetail, extra: JSON.stringify(split.detailExtra) });
       log.debug('updateRecord: inserted detail row (was missing)', { recordId: id, detailTable });
     }
 

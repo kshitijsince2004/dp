@@ -167,7 +167,7 @@ let columnMaxLenCache = null;
 /** information_schema introspection, cached for the process lifetime (mirrors
  * scripts/lib/sync-config-core.mjs's loadColumns — schema only changes via a migration +
  * restart, so a request-scoped or one-shot query would be wasted work). */
-async function loadColumns(trx) {
+export async function loadColumns(trx) {
   if (columnCache) return columnCache;
   const rows = await trx.raw(
     `SELECT table_name, column_name, data_type, character_maximum_length
@@ -183,6 +183,21 @@ async function loadColumns(trx) {
   columnMaxLenCache = lens;
   log.debug('loadColumns: loaded and cached information_schema column types', { tableCount: Object.keys(cols).length });
   return cols;
+}
+
+export function filterRealColumns(cols, tableName, detail, detailExtra = {}) {
+  const tableCols = cols?.[tableName] || {};
+  const cleanDetail = {};
+  for (const [k, v] of Object.entries(detail || {})) {
+    if (k in tableCols) {
+      cleanDetail[k] = v;
+    } else {
+      if (v !== undefined && v !== null && v !== '') {
+        detailExtra[k] = v;
+      }
+    }
+  }
+  return cleanDetail;
 }
 
 /** Coerce a raw submitted value per the DESTINATION COLUMN'S ACTUAL pg type (read from

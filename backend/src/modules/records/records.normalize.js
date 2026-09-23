@@ -110,6 +110,10 @@ export function normalizeFirNo(raw) {
   if (raw === null || raw === undefined) return raw;
   const s = String(raw).trim();
   if (!s) return raw;
+  const cleanDigits = s.replace(/\D/g, '');
+  if (cleanDigits.length === 14) {
+    return cleanDigits;
+  }
   if (s.split(FIR_LIST_SEPARATORS).filter(Boolean).length > 1) {
     log.debug('normalizeFirNo: multi-FIR list detected — returned unchanged', { raw });
     return raw;
@@ -119,7 +123,7 @@ export function normalizeFirNo(raw) {
     log.debug('normalizeFirNo: no digits found — returned unchanged', { raw });
     return raw;
   }
-  if (nums.length === 1) return String(parseInt(nums[0], 10));
+  if (nums.length === 1) return nums[0];
   // Prefer an explicit 4-digit year token anywhere in the string; else treat the second
   // number as the year (2-digit -> century-expanded). Mirrors import.parse.js parseFirAndYear.
   let yearIdx = -1;
