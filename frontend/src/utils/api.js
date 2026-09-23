@@ -2277,12 +2277,14 @@ api.interceptors.request.use(
       }
 
       const record = allRecords[idx];
+      const prevStatus = record.current_status || 'DRAFT';
       record.current_status = 'PENDING_SHO';
       record.updated_at = new Date().toISOString();
+      if (!record.transitions) record.transitions = [];
       record.transitions.unshift({
         from_level: 'PS',
         to_level: 'PS',
-        from_status: 'DRAFT',
+        from_status: prevStatus,
         to_status: 'PENDING_SHO',
         action: 'SUBMIT',
         performed_by: 'HC Ramesh Kumar',
@@ -2404,11 +2406,14 @@ api.interceptors.request.use(
         } catch (e) { }
       }
 
+      const userPsId = currentUser.ps_id || currentUser.psId || currentUser.station_id;
+      const userDistrictId = currentUser.district_id || currentUser.districtId;
+
       let filteredQueue = [];
       if (currentUser.role === 'SHO') {
-        filteredQueue = allRecords.filter(r => r.current_status === 'PENDING_SHO' && r.ps_id === currentUser.psId);
+        filteredQueue = allRecords.filter(r => r.current_status === 'PENDING_SHO' && (!userPsId || r.ps_id === userPsId));
       } else if (currentUser.role === 'DISTRICT' || currentUser.role === 'DISTRICT_OFFICER') {
-        filteredQueue = allRecords.filter(r => r.current_status === 'DISTRICT_REVIEW' && r.district_id === currentUser.districtId);
+        filteredQueue = allRecords.filter(r => r.current_status === 'DISTRICT_REVIEW' && (!userDistrictId || r.district_id === userDistrictId));
       } else {
         filteredQueue = allRecords.filter(r => r.current_status !== 'DRAFT');
       }
@@ -2431,11 +2436,14 @@ api.interceptors.request.use(
         } catch (e) { }
       }
 
+      const userPsId = currentUser.ps_id || currentUser.psId || currentUser.station_id;
+      const userDistrictId = currentUser.district_id || currentUser.districtId;
+
       let count = 0;
       if (currentUser.role === 'SHO') {
-        count = allRecords.filter(r => r.current_status === 'PENDING_SHO' && r.ps_id === currentUser.psId).length;
+        count = allRecords.filter(r => r.current_status === 'PENDING_SHO' && (!userPsId || r.ps_id === userPsId)).length;
       } else if (currentUser.role === 'DISTRICT' || currentUser.role === 'DISTRICT_OFFICER') {
-        count = allRecords.filter(r => r.current_status === 'DISTRICT_REVIEW' && r.district_id === currentUser.districtId).length;
+        count = allRecords.filter(r => r.current_status === 'DISTRICT_REVIEW' && (!userDistrictId || r.district_id === userDistrictId)).length;
       }
 
       return Promise.reject({

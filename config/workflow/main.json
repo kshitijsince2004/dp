@@ -26,7 +26,8 @@
   "to_level": "PS",
   "allowed_roles": [
    "HC",
-   "PS"
+   "PS",
+   "SHO"
   ],
   "requires_comment": false,
   "sla_hours": null,
