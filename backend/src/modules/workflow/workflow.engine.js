@@ -92,23 +92,25 @@ export async function assertFieldsCorrected(trx, rule, record) {
 
   const targetFields = typeof lastSendBack.target_fields === 'string'
     ? JSON.parse(lastSendBack.target_fields) : (lastSendBack.target_fields || []);
-  if (!targetFields.length) return;
 
   const revisions = await trx('record_revisions')
     .where({ record_id: record.id })
     .andWhere('changed_at', '>', lastSendBack.performed_at)
     .select('field_changes');
 
-  const changedKeys = new Set();
-  for (const rev of revisions) {
-    const changes = typeof rev.field_changes === 'string' ? JSON.parse(rev.field_changes) : (rev.field_changes || []);
-    for (const c of changes) changedKeys.add(c.field_key);
+  if (!revisions.length) {
+    log.warn('assertFieldsCorrected: rejected — no edits made since send back', { recordId: record.id });
+    throw new Error('Cannot resend to SHO — please edit and save the record to apply corrections before submitting.');
   }
 
-  const missing = targetFields.filter((f) => !changedKeys.has(f));
-  if (missing.length > 0) {
-    log.warn('assertFieldsCorrected: rejected — flagged fields not corrected', { recordId: record.id, missing });
-    throw new Error(`Cannot resend to SHO — please correct the following field(s) flagged for correction: ${missing.join(', ')}`);
+  if (targetFields.length > 0) {
+    const changedKeys = new Set();
+    for (const rev of revisions) {
+      const changes = typeof rev.field_changes === 'string' ? JSON.parse(rev.field_changes) : (rev.field_changes || []);
+      for (const c of changes) changedKeys.add(c.field_key);
+    }
+    const matchingCount = targetFields.filter((f) => changedKeys.has(f)).length;
+    log.debug('assertFieldsCorrected: checked target fields against post-send-back revisions', { recordId: record.id, targetFieldsCount: targetFields.length, matchingCount, revisionCount: revisions.length });
   }
 }
 

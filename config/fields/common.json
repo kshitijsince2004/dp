@@ -5250,9 +5250,7 @@
     "field_type": "select",
     "record_types": [
       "CASE",
-      "ARREST",
-      "MISSING",
-      "UIDB"
+      "ARREST"
     ],
     "storage": {
       "table": "persons",
@@ -5289,9 +5287,7 @@
     "field_type": "select",
     "record_types": [
       "CASE",
-      "ARREST",
-      "MISSING",
-      "UIDB"
+      "ARREST"
     ],
     "storage": {
       "table": "persons",
@@ -5340,9 +5336,7 @@
     "field_type": "select",
     "record_types": [
       "CASE",
-      "ARREST",
-      "MISSING",
-      "UIDB"
+      "ARREST"
     ],
     "storage": {
       "table": "persons",
