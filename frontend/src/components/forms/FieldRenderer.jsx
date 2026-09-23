@@ -124,7 +124,8 @@ function FieldRendererCore({
     key === 'transfer_to' ||
     key === 'transferred_to_ps_id' ||
     key === 'transferred_to_agency_id' ||
-    key === 'date_of_transfer'
+    key === 'date_of_transfer' ||
+    key === 'supplementary_chargesheet_details'
   ) {
     return null;
   }

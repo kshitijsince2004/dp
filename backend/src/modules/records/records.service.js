@@ -2088,7 +2088,7 @@ export const transitionRecord = async (id, user, action, comment, targetFields, 
         });
 
         await writeRevision(trx, {
-          recordId: id, changeType: 'SUBMIT', level: targetLevel, changedBy: user.id, ipAddress,
+          recordId: id, changeType: 'STATUS_CHANGE', level: targetLevel, changedBy: user.id, ipAddress,
           comment: comment || 'Initial record submission by Head Constable',
           fieldChanges: calculateDiff({}, submittedData),
         });
