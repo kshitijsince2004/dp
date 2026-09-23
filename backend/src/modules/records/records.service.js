@@ -1556,11 +1556,13 @@ async function insertRecordCore(trx, user, recordType, recordDate, data, ipAddre
     await autoLinkArrestToCase(trx, id, scope.ps_id, split.detail.fir_no, user);
   }
 
-  await writeRevision(trx, {
-    recordId: id, changeType, level, changedBy: user.id, ipAddress,
-    fieldChanges: calculateDiff({}, data),
-  });
-  await writeAuditLog(trx, { recordId: id, action: changeType, user, newValue: data, ipAddress });
+  if (split.detail.current_status !== 'DRAFT' && data?.is_draft !== true) {
+    await writeRevision(trx, {
+      recordId: id, changeType, level, changedBy: user.id, ipAddress,
+      fieldChanges: calculateDiff({}, data),
+    });
+    await writeAuditLog(trx, { recordId: id, action: changeType, user, newValue: data, ipAddress });
+  }
 
   log.info('insertRecordCore: exit', { recordId: id, recordType, psId: scope.ps_id, personCount: split.personEntries.length, propertyCount: split.propertyEntries.length, offenceCount: split.offenceRows.length });
   return { id, ps_id: scope.ps_id };
@@ -1964,11 +1966,13 @@ export const updateRecord = async (id, user, data, ipAddress, { persons, propert
     }
     log.debug('updateRecord: computed diff', { recordId: id, changedFieldCount: diff.length, statusChanges: statusChanges.length, propertyStatusChanges: propertyStatusChanges.length });
 
-    await writeRevision(trx, {
-      recordId: id, changeType: 'UPDATE', level: record.current_level, changedBy: user.id, ipAddress, fieldChanges: diff,
-    });
-    for (const change of diff) {
-      await writeAuditLog(trx, { recordId: id, action: 'UPDATE', user, fieldName: change.field_key, oldValue: change.old_value, newValue: change.new_value, ipAddress });
+    if (record.current_status !== 'DRAFT') {
+      await writeRevision(trx, {
+        recordId: id, changeType: 'UPDATE', level: record.current_level, changedBy: user.id, ipAddress, fieldChanges: diff,
+      });
+      for (const change of diff) {
+        await writeAuditLog(trx, { recordId: id, action: 'UPDATE', user, fieldName: change.field_key, oldValue: change.old_value, newValue: change.new_value, ipAddress });
+      }
     }
 
     const effectiveDate = split.detail.worked_out_date || toISO(new Date().toISOString());
@@ -2076,10 +2080,30 @@ export const transitionRecord = async (id, user, action, comment, targetFields, 
       });
       log.debug('transitionRecord: wrote workflow_transitions row', { recordId: id, action: action.toUpperCase() });
 
-      await writeRevision(trx, {
-        recordId: id, changeType: 'STATUS_CHANGE', level: targetLevel, changedBy: user.id, ipAddress,
-        comment, fieldChanges: [{ field_key: 'current_status', old_value: fromStatus, new_value: targetStatus }],
-      });
+      const hasPrevRevision = await trx('record_revisions').where({ record_id: id }).first();
+      if (!hasPrevRevision || fromStatus === 'DRAFT') {
+        const detailTable = mapper.DETAIL_TABLES[record.record_type];
+        const detailRow = await trx(detailTable).where({ record_id: id }).first();
+        const personRows = await trx('persons').where({ record_id: id });
+        const propertyRows = await trx('record_properties').where({ record_id: id });
+        const offenceRows = await trx('record_offences').where({ record_id: id });
+        const registry = await mapper.loadRegistry(trx, record.record_type);
+        const { data: submittedData } = await mapper.recomposeRecord(trx, registry, record.record_type, {
+          spineRow: { ...record, current_status: targetStatus, current_level: targetLevel },
+          detailRow, personRows, propertyRows, offenceRows,
+        });
+
+        await writeRevision(trx, {
+          recordId: id, changeType: 'SUBMIT', level: targetLevel, changedBy: user.id, ipAddress,
+          comment: comment || 'Initial record submission by Head Constable',
+          fieldChanges: calculateDiff({}, submittedData),
+        });
+      } else {
+        await writeRevision(trx, {
+          recordId: id, changeType: 'STATUS_CHANGE', level: targetLevel, changedBy: user.id, ipAddress,
+          comment, fieldChanges: [{ field_key: 'current_status', old_value: fromStatus, new_value: targetStatus }],
+        });
+      }
 
       await writeAuditLog(trx, { recordId: id, action: action.toUpperCase(), user, reason: comment, ipAddress });
     });

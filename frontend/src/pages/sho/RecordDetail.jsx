@@ -667,9 +667,11 @@ export default function RecordDetail() {
           {/* Diffs & Revisions logs */}
           <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-4 shadow-sm">
             {(() => {
-              // ── Separate CREATE from edits ──────────────────────────────────────
-              const createRevision = revisions.find((r) => r.change_type === 'CREATE' || r.revision_number === 1);
-              const editRevisions  = revisions.filter((r) => r.change_type !== 'CREATE' && (r.revision_number > 1 || r.revision_number === undefined));
+              // ── Separate initial submission from post-submission edits ──────────
+              const firstSubIndex = revisions.findIndex((r) => r.change_type === 'SUBMIT' || r.change_type === 'CREATE' || r.revision_number === 1);
+              const activeRevisions = firstSubIndex >= 0 ? revisions.slice(firstSubIndex) : revisions.filter((r) => r.level !== 'DRAFT');
+              const createRevision = activeRevisions.find((r) => r.change_type === 'SUBMIT' || r.change_type === 'CREATE' || r.revision_number === 1);
+              const editRevisions  = activeRevisions.filter((r) => r.id !== createRevision?.id && r.level !== 'DRAFT');
 
               // ── System-internal keys that must NEVER appear as field-change rows ──
               // These are workflow-plumbing fields, UUID identifiers, or backend-computed
