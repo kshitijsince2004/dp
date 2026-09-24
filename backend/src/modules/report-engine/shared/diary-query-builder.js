@@ -274,7 +274,16 @@ export async function diaryKalandraCount(options = {}) {
     let query = db('records as r')
       .join('arrest_details as ad', 'ad.record_id', 'r.id')
       .where('r.record_type', 'ARREST')
-      .where('ad.is_dd_based', true)
+      .where(function() {
+        this.where('ad.is_dd_based', true)
+          .orWhereILike('ad.case_type', '%kal%')
+          .orWhereILike('ad.case_type', '%prev%');
+      })
+      .where(function() {
+        this.whereNull('ad.fir_no')
+          .orWhere('ad.fir_no', '')
+          .orWhere('ad.fir_no', 'N/A');
+      })
       .where('r.current_status', '<>', 'DRAFT');
 
     if (scopeId && UUID_RE.test(scopeId)) {
@@ -306,23 +315,36 @@ export async function diaryKalandraCount(options = {}) {
     }
 
     if ((sectionCodes && sectionCodes.length > 0) || (actCodes && actCodes.length > 0) || actNameContains) {
-      query = query.whereExists(function() {
-        let sub = this.select(1)
-            .from('record_offences as ro')
-            .whereRaw('ro.record_id = r.id');
+      query = query.where(function() {
+        this.whereExists(function() {
+          let sub = this.select(1)
+              .from('record_offences as ro')
+              .leftJoin('ref.sections as s', 's.section_code', 'ro.section_id')
+              .whereRaw('ro.record_id = r.id');
 
+          if (sectionCodes && sectionCodes.length > 0) {
+            sub = sub.where(function() {
+              this.whereIn('s.section', sectionCodes)
+                .orWhereIn('ro.section_id', sectionCodes);
+              sectionCodes.forEach(code => {
+                this.orWhereILike('ro.other_act_name', `%${code}%`);
+              });
+            });
+          }
+
+          if (actCodes && actCodes.length > 0) {
+            sub = sub.whereIn('ro.act_id', actCodes);
+          }
+
+          if (actNameContains) {
+            sub = sub.join('ref.acts as a', 'a.act_cd', 'ro.act_id')
+                     .whereILike('a.act_long', `%${actNameContains}%`);
+          }
+        });
         if (sectionCodes && sectionCodes.length > 0) {
-          sub = sub.join('ref.sections as s', 's.section_code', 'ro.section_id')
-                   .whereIn('s.section', sectionCodes);
-        }
-
-        if (actCodes && actCodes.length > 0) {
-          sub = sub.whereIn('ro.act_id', actCodes);
-        }
-
-        if (actNameContains) {
-          sub = sub.join('ref.acts as a', 'a.act_cd', 'ro.act_id')
-                   .whereILike('a.act_long', `%${actNameContains}%`);
+          sectionCodes.forEach(code => {
+            this.orWhereILike('ad.case_type', `%${code}%`);
+          });
         }
       });
     }

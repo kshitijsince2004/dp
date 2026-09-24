@@ -96,11 +96,11 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
     if (!dt) return '';
     const d = new Date(dt);
     if (isNaN(d.getTime())) return String(dt);
-    const day = String(d.getDate()).padStart(2, '0');
-    const mo = String(d.getMonth() + 1).padStart(2, '0');
-    const yr = d.getFullYear();
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const yr = d.getUTCFullYear();
+    const hh = String(d.getUTCHours()).padStart(2, '0');
+    const mm = String(d.getUTCMinutes()).padStart(2, '0');
     return `${day}/${mo}/${yr}; ${hh}:${mm}`;
   };
   const fmtIO = (r) => {
@@ -279,7 +279,7 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
       'r.id', 'r.record_date', 'r.current_status',
       'ps.name as ps_name', 'dist.name as dist_name',
       'io.name as io_name', 'io.rank as io_rank', 'io.pis_no as io_pis_no', 'io.mobile as io_mobile',
-      'ad.gd_no', 'ad.fir_no', 'ad.fir_date', 'ad.gd_date', 'ad.case_type', 'ad.custody_status',
+      'ad.gd_no', 'ad.fir_no', 'ad.fir_date', 'ad.gd_date', 'ad.case_type', 'ad.is_dd_based', 'ad.custody_status',
       'ad.recovery', 'ad.scheme_of_arrest', 'ad.scheme_of_arrest_other',
       'ad.integrated_pi', 'ad.group_patrolling', 'ad.cycle_patrolling',
       'ad.by_antisnatching_team', 'ad.by_prahari', 'ad.by_eyes_ears_scheme_members',
@@ -324,6 +324,8 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
     const pRows = await db('persons as p')
       .leftJoin('locations as pl', 'p.present_location_id', 'pl.id')
       .leftJoin('locations as pml', 'p.perm_location_id', 'pml.id')
+      .leftJoin('arrestee_details as ard', 'ard.person_id', 'p.id')
+      .leftJoin('locations as al', 'ard.arrest_location_id', 'al.id')
       .whereIn('p.record_id', allIds)
       .select(
         'p.id', 'p.record_id', 'p.role', 'p.name', 'p.relative_name', 'p.relation_type', 'p.gender', 'p.age', 'p.nick_names', 'p.mobile', 'p.extra',
@@ -332,7 +334,11 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
           NULLIF(TRIM(CONCAT_WS(', ', NULLIF(pl.house_no, ''), NULLIF(pl.street, ''), NULLIF(pl.colony, ''), NULLIF(pl.city_town_village, ''), NULLIF(pl.district, ''))), ''),
           NULLIF(TRIM(pml.full_address), ''),
           NULLIF(TRIM(CONCAT_WS(', ', NULLIF(pml.house_no, ''), NULLIF(pml.street, ''), NULLIF(pml.colony, ''), NULLIF(pml.city_town_village, ''), NULLIF(pml.district, ''))), '')
-        ) as address`)
+        ) as address`),
+        db.raw(`COALESCE(
+          NULLIF(TRIM(al.full_address), ''),
+          NULLIF(TRIM(CONCAT_WS(', ', NULLIF(al.house_no, ''), NULLIF(al.street, ''), NULLIF(al.colony, ''), NULLIF(al.city_town_village, ''), NULLIF(al.district, ''))), '')
+        ) as arrest_address`)
       );
     for (const p of pRows) {
       if (!PR[p.record_id]) PR[p.record_id] = {};
@@ -395,8 +401,16 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
 
   const MANUAL_REG = new Set(['MANUAL_CCTNS', 'ZERO_FIR', 'NCRP']);
   const isManual = r => MANUAL_REG.has(r.registration_type) || ['cctns(manual fir)','zero fir','ncrp'].includes((r.case_type||'').toLowerCase());
-  const isETheft = r => r.registration_type === 'E_THEFT' || (r.case_type||'').toLowerCase() === 'etheft';
-  const isEMVT   = r => r.registration_type === 'E_MVT'   || (r.case_type||'').toLowerCase() === 'emvt';
+  const isETheft = r => r.registration_type === 'E_THEFT' || ['etheft', 'e_theft', 'e-theft'].some(k => (r.case_type||'').toLowerCase().includes(k));
+  const isEMVT   = r => r.registration_type === 'E_MVT'   || ['emvt', 'e_mvt', 'e-mvt'].some(k => (r.case_type||'').toLowerCase().includes(k));
+  const isLast24HoursArrest = (r, targetDate) => {
+    if (!targetDate) return true;
+    const targetStr = String(targetDate).substring(0, 10);
+    const recDate = r.gd_date || r.fir_date || r.record_date;
+    if (!recDate) return true;
+    const rStr = typeof recDate === 'string' ? recDate.substring(0, 10) : recDate.toISOString().substring(0, 10);
+    return rStr === targetStr;
+  };
   const hasHead  = (r, kw) => (r.crime_head||'').toLowerCase().includes(kw.toLowerCase());
 
   const DEFS = [
@@ -447,17 +461,18 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
     { key:'arrested_kalandara', excelKey:'excel_8arrested_kalandara', label:'6. Arrested-Kalandara Preven',
       hdrs:['S.N.','FIR No.','U/S','Accused (Name/Age/S-O/R-O Address)','Place of Occurrence','Name of IO','Custody Status','Accused History','Recovery','Arrest Scheme'],
       wds:[7,18,25,32,38,26,18,22,30,30],
-      rawRows: () => arrRows.filter(r => !r.case_type||['cctns(manual fir)','zero fir','kalandara','preventive'].includes((r.case_type||'').toLowerCase())),
-      rows:() => arrRows.filter(r => !r.case_type||['cctns(manual fir)','zero fir','kalandara','preventive'].includes((r.case_type||'').toLowerCase())).map((r,i) => {
+      rawRows: () => arrRows.filter(r => (r.is_dd_based || ['kalandra','kalandara','preventive','107/151','110g','109'].some(k => (r.case_type||'').toLowerCase().includes(k))) && (!r.fir_no || r.fir_no === 'N/A' || r.fir_no.trim() === '')),
+      rows:() => arrRows.filter(r => (r.is_dd_based || ['kalandra','kalandara','preventive','107/151','110g','109'].some(k => (r.case_type||'').toLowerCase().includes(k))) && (!r.fir_no || r.fir_no === 'N/A' || r.fir_no.trim() === '')).map((r,i) => {
         const arr = getP(r.id, 'ARRESTEE');
-        return [i+1,r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(arr, true),fmtLoc(r,'occ')||'-',fmtIO(r),fmtCust(r.custody_status),formatAccusedHistory(arr, r),r.recovery||'-',resolveArrestScheme(r)];
+        const occPlace = arr?.arrest_address || arr?.address || fmtLoc(r,'occ') || '-';
+        return [i+1,r.gd_no||r.fir_no||'-',getUS(r.id),fmtP(arr, true),occPlace,fmtIO(r),fmtCust(r.custody_status),formatAccusedHistory(arr, r),r.recovery||'-',resolveArrestScheme(r)];
       })
     },
     { key:'arrested_efir_theft', excelKey:'excel_9arrested_efir_theft', label:'7. Arrested-E-FIR Theft',
       hdrs:['S.N.','FIR No.','U/S','Accused (Name/Age/S-O/R-O Address)','Name of IO','Custody Status','Accused History','Recovery','Arrest Scheme'],
       wds:[7,18,25,32,26,18,22,30,30],
-      rawRows: () => arrRows.filter(r => (r.case_type||'').toLowerCase()==='etheft'||(hasHead(r,'theft')&&!hasHead(r,'m.v.')&&!hasHead(r,'motor vehicle'))),
-      rows:() => arrRows.filter(r => (r.case_type||'').toLowerCase()==='etheft'||(hasHead(r,'theft')&&!hasHead(r,'m.v.')&&!hasHead(r,'motor vehicle'))).map((r,i) => {
+      rawRows: () => arrRows.filter(r => isETheft(r)),
+      rows:() => arrRows.filter(r => isETheft(r)).map((r,i) => {
         const arr = getP(r.id, 'ARRESTEE');
         return [i+1,r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(arr, true),fmtIO(r),fmtCust(r.custody_status),formatAccusedHistory(arr, r),r.recovery||'-',resolveArrestScheme(r)];
       })
@@ -475,8 +490,8 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
     { key:'arrested_efir_mv_theft', excelKey:'excel_10arrested_efir_mv_theft', label:'8. Arrested-E-FIR MV Theft',
       hdrs:['FIR No.','U/S','Accused (Name/Age/S-O/R-O Address)','Name of IO','Custody Status','Accused History','Recovery','Arrest Scheme'],
       wds:[18,25,32,26,18,22,30,30],
-      rawRows: () => arrRows.filter(r => (r.case_type||'').toLowerCase()==='emvt'||hasHead(r,'m.v.')||hasHead(r,'motor vehicle')),
-      rows:() => arrRows.filter(r => (r.case_type||'').toLowerCase()==='emvt'||hasHead(r,'m.v.')||hasHead(r,'motor vehicle')).map(r => {
+      rawRows: () => arrRows.filter(r => isEMVT(r)),
+      rows:() => arrRows.filter(r => isEMVT(r)).map(r => {
         const arr = getP(r.id, 'ARRESTEE');
         return [r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(arr, true),fmtIO(r),fmtCust(r.custody_status),formatAccusedHistory(arr, r),r.recovery||'-',resolveArrestScheme(r)];
       })
@@ -501,8 +516,8 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
     { key:'preventive_action', excelKey:'excel_12preventive_action', label:'10. Preventive Action',
       hdrs:['S. No.','Police Station','DD No. & Date','U/S','Accused (Name/Age/S-O/R-O Address)','Name of IO','Custody Status','Accused History'],
       wds:[7,22,20,25,32,26,18,22],
-      rawRows: () => arrRows.filter(r => !r.case_type||['kalandara','preventive','107/151','110g','109'].includes((r.case_type||'').toLowerCase())),
-      rows:() => arrRows.filter(r => !r.case_type||['kalandara','preventive','107/151','110g','109'].includes((r.case_type||'').toLowerCase())).map((r,i) => {
+      rawRows: () => arrRows.filter(r => r.is_dd_based || ['kalandra','kalandara','preventive','107/151','110g','109'].some(k => (r.case_type||'').toLowerCase().includes(k)) || (!r.case_type && !r.fir_no)),
+      rows:() => arrRows.filter(r => r.is_dd_based || ['kalandra','kalandara','preventive','107/151','110g','109'].some(k => (r.case_type||'').toLowerCase().includes(k)) || (!r.case_type && !r.fir_no)).map((r,i) => {
         const arr = getP(r.id, 'ARRESTEE');
         return [i+1,r.ps_name||'-',`${r.gd_no||r.fir_no||'-'} dt ${fmtD(r.gd_date||r.record_date)}`,getUS(r.id),fmtP(arr, true),fmtIO(r),fmtCust(r.custody_status),formatAccusedHistory(arr, r)];
       })
@@ -510,8 +525,8 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
     { key:'arrested_last_24hrs', excelKey:'excel_13arrested_24_hrs_list', label:'11. Arrested-Last 24 Hrs',
       hdrs:['S. No.','Accused (Name/Age/S-O/R-O Address)','FIR / DD No.','U/S','Police Station','Name of IO','IO Mobile','Status of arrest'],
       wds:[7,32,18,25,22,26,15,18],
-      rawRows: () => arrRows,
-      rows:() => arrRows.map((r,i) =>
+      rawRows: () => arrRows.filter(r => isLast24HoursArrest(r, dateTo || date)),
+      rows:() => arrRows.filter(r => isLast24HoursArrest(r, dateTo || date)).map((r,i) =>
         [i+1,fmtP(getP(r.id, 'ARRESTEE'), true),r.fir_no||r.gd_no||'-',getUS(r.id),r.ps_name||'-',fmtIO(r),r.io_mobile||'-',fmtCust(r.custody_status)])
     },
     { key:'pi_disposal_manual', excelKey:'excel_14pi_disposal_manual', label:'12. PI Disposal-Manual',
@@ -712,7 +727,14 @@ export const generateDailyDiaryExcelNative = async (
     tr.alignment = {horizontal:'center',vertical:'middle'};
     tr.height = 22;
 
-    const dlr = ws.addRow([dateLabel]);
+    let sheetDateLabel = dateLabel;
+    if (def.key === 'arrested_last_24hrs') {
+      const targetDateStr = dateTo || date || new Date().toISOString().slice(0, 10);
+      const formattedDate = toDMY(String(targetDateStr).substring(0, 10));
+      sheetDateLabel = `Last 24 Hours Period: ${formattedDate} 00:00 to ${formattedDate} 23:59`;
+    }
+
+    const dlr = ws.addRow([sheetDateLabel]);
     ws.mergeCells(dlr.number, 1, dlr.number, def.hdrs.length);
     dlr.font = {name:'Arial',italic:true,size:10};
     dlr.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'FFD6E4F0'}};

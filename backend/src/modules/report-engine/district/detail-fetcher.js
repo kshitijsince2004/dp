@@ -81,12 +81,12 @@ export async function fetchHeinousBriefFacts({ psIds, cutoffDate }) {
                           NULLIF(loc.colony,''), NULLIF(loc.city_town_village,''))), '')) as occurrence_place`),
       db.raw(`CASE 
         WHEN fd.occurrence_from_datetime IS NOT NULL AND fd.occurrence_to_datetime IS NOT NULL 
-          THEN TO_CHAR(fd.occurrence_from_datetime AT TIME ZONE 'Asia/Kolkata', 'DD/MM/YYYY HH24:MI') || ' to ' || TO_CHAR(fd.occurrence_to_datetime AT TIME ZONE 'Asia/Kolkata', 'DD/MM/YYYY HH24:MI')
+          THEN TO_CHAR(fd.occurrence_from_datetime, 'DD/MM/YYYY HH24:MI') || ' to ' || TO_CHAR(fd.occurrence_to_datetime, 'DD/MM/YYYY HH24:MI')
         WHEN fd.occurrence_from_datetime IS NOT NULL 
-          THEN TO_CHAR(fd.occurrence_from_datetime AT TIME ZONE 'Asia/Kolkata', 'DD/MM/YYYY HH24:MI')
+          THEN TO_CHAR(fd.occurrence_from_datetime, 'DD/MM/YYYY HH24:MI')
         WHEN fd.occurrence_to_datetime IS NOT NULL 
-          THEN TO_CHAR(fd.occurrence_to_datetime AT TIME ZONE 'Asia/Kolkata', 'DD/MM/YYYY HH24:MI')
-        ELSE 'N/A'
+          THEN TO_CHAR(fd.occurrence_to_datetime, 'DD/MM/YYYY HH24:MI')
+        ELSE COALESCE(NULLIF(TRIM(fd.extra->>'occurrence_time'), ''), NULLIF(TRIM(fd.extra->>'time_of_occurrence'), ''), 'N/A')
       END as time_of_occurrence`)
     )
     .orderBy('hn.name');
@@ -188,12 +188,12 @@ export async function fetchFullFirListing({ psIds, cutoffDate }) {
                           NULLIF(loc.colony,''), NULLIF(loc.city_town_village,''))), '')) as occurrence_place`),
     db.raw(`CASE 
       WHEN fd.occurrence_from_datetime IS NOT NULL AND fd.occurrence_to_datetime IS NOT NULL 
-        THEN TO_CHAR(fd.occurrence_from_datetime AT TIME ZONE 'Asia/Kolkata', 'DD/MM/YYYY HH24:MI') || ' to ' || TO_CHAR(fd.occurrence_to_datetime AT TIME ZONE 'Asia/Kolkata', 'DD/MM/YYYY HH24:MI')
+        THEN TO_CHAR(fd.occurrence_from_datetime, 'DD/MM/YYYY HH24:MI') || ' to ' || TO_CHAR(fd.occurrence_to_datetime, 'DD/MM/YYYY HH24:MI')
       WHEN fd.occurrence_from_datetime IS NOT NULL 
-        THEN TO_CHAR(fd.occurrence_from_datetime AT TIME ZONE 'Asia/Kolkata', 'DD/MM/YYYY HH24:MI')
+        THEN TO_CHAR(fd.occurrence_from_datetime, 'DD/MM/YYYY HH24:MI')
       WHEN fd.occurrence_to_datetime IS NOT NULL 
-        THEN TO_CHAR(fd.occurrence_to_datetime AT TIME ZONE 'Asia/Kolkata', 'DD/MM/YYYY HH24:MI')
-      ELSE 'N/A'
+        THEN TO_CHAR(fd.occurrence_to_datetime, 'DD/MM/YYYY HH24:MI')
+      ELSE COALESCE(NULLIF(TRIM(fd.extra->>'occurrence_time'), ''), NULLIF(TRIM(fd.extra->>'time_of_occurrence'), ''), 'N/A')
     END as time_of_occurrence`)
     )
     .orderBy(['sd.name', 'hn.name', 'fd.fir_date']);
@@ -320,9 +320,20 @@ export async function fetchArrestsByCaseType({ psIds, cutoffDate, caseType = 'FI
   const ctUpper = String(caseType).toUpperCase();
   if (ctUpper.includes('KAL') || ctUpper.includes('PREV')) {
     qb = qb.where(function() {
-      this.whereILike('ad.case_type', '%kal%')
-        .orWhereILike('ad.case_type', '%prev%')
-        .orWhere('ad.is_dd_based', true);
+      this.where(function() {
+        this.whereILike('ad.case_type', '%kal%')
+          .orWhereILike('ad.case_type', '%prev%')
+          .orWhere('ad.is_dd_based', true);
+      })
+      .andWhere(function() {
+        this.whereNull('ad.fir_no')
+          .orWhere('ad.fir_no', '')
+          .orWhere('ad.fir_no', 'N/A');
+      })
+      .andWhere(function() {
+        this.whereNull('ad.case_type')
+          .orWhereRaw("(ad.case_type NOT ILIKE '%fir%' AND ad.case_type NOT ILIKE '%theft%' AND ad.case_type NOT ILIKE '%mvt%')");
+      });
     });
   } else {
     qb = qb.where(function() {
@@ -342,7 +353,8 @@ export async function fetchArrestsByCaseType({ psIds, cutoffDate, caseType = 'FI
     'r.ps_id',
     'hn.name as ps_name',
     'sd.name as sub_div_name',
-    db.raw("COALESCE(ad.fir_no, r.legacy_ref, 'N/A') as fir_no"),
+    db.raw("COALESCE(ad.gd_no, ad.fir_no, r.legacy_ref, 'N/A') as fir_no"),
+    'ad.gd_no',
     db.raw('COALESCE(r.registration_date, r.record_date) as registration_date'),
     'ad.custody_status',
     'ad.extra as ad_extra',
@@ -358,6 +370,8 @@ export async function fetchArrestsByCaseType({ psIds, cutoffDate, caseType = 'FI
     db('persons as p')
       .leftJoin('locations as ploc', 'ploc.id', 'p.present_location_id')
       .leftJoin('locations as permloc', 'permloc.id', 'p.perm_location_id')
+      .leftJoin('arrestee_details as ard', 'ard.person_id', 'p.id')
+      .leftJoin('locations as arloc', 'arloc.id', 'ard.arrest_location_id')
       .whereIn('p.record_id', recordIds)
       .whereIn('p.role', ['ARRESTEE', 'ACCUSED', 'IO'])
       .select(
@@ -370,10 +384,12 @@ export async function fetchArrestsByCaseType({ psIds, cutoffDate, caseType = 'FI
           NULLIF(TRIM(CONCAT_WS(', ', NULLIF(permloc.house_no,''), NULLIF(permloc.street,''), NULLIF(permloc.colony,''), NULLIF(permloc.city_town_village,''), NULLIF(permloc.district,''))), '')
         ) as person_address`),
         db.raw(`COALESCE(
-          NULLIF(TRIM(permloc.full_address),''),
-          NULLIF(TRIM(CONCAT_WS(', ', NULLIF(permloc.house_no,''), NULLIF(permloc.street,''), NULLIF(permloc.colony,''), NULLIF(permloc.city_town_village,''), NULLIF(permloc.district,''))), ''),
+          NULLIF(TRIM(arloc.full_address),''),
+          NULLIF(TRIM(CONCAT_WS(', ', NULLIF(arloc.house_no,''), NULLIF(arloc.street,''), NULLIF(arloc.colony,''), NULLIF(arloc.city_town_village,''), NULLIF(arloc.district,''))), ''),
           NULLIF(TRIM(ploc.full_address),''),
-          NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ploc.house_no,''), NULLIF(ploc.street,''), NULLIF(ploc.colony,''), NULLIF(ploc.city_town_village,''), NULLIF(ploc.district,''))), '')
+          NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ploc.house_no,''), NULLIF(ploc.street,''), NULLIF(ploc.colony,''), NULLIF(ploc.city_town_village,''), NULLIF(ploc.district,''))), ''),
+          NULLIF(TRIM(permloc.full_address),''),
+          NULLIF(TRIM(CONCAT_WS(', ', NULLIF(permloc.house_no,''), NULLIF(permloc.street,''), NULLIF(permloc.colony,''), NULLIF(permloc.city_town_village,''), NULLIF(permloc.district,''))), '')
         ) as arrest_address`)
       ),
     db('record_offences as ro')
