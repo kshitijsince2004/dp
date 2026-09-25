@@ -377,6 +377,7 @@ export async function fetchArrestsByCaseType({ psIds, cutoffDate, caseType = 'FI
       .select(
         'p.record_id', 'p.role', 'p.name', 'p.age', 'p.mobile',
         'p.relative_name', 'p.relation_type', 'p.extra as p_extra',
+        'ard.is_bc', 'ard.is_po', 'ard.prev_involvement', 'ard.prev_involvement_count',
         db.raw(`COALESCE(
           NULLIF(TRIM(ploc.full_address),''),
           NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ploc.house_no,''), NULLIF(ploc.street,''), NULLIF(ploc.colony,''), NULLIF(ploc.city_town_village,''), NULLIF(ploc.district,''))), ''),
@@ -393,19 +394,78 @@ export async function fetchArrestsByCaseType({ psIds, cutoffDate, caseType = 'FI
         ) as arrest_address`)
       ),
     db('record_offences as ro')
+      .leftJoin('ref.sections as s', 'ro.section_id', 's.act_sec_cd')
+      .leftJoin('ref.acts as a', db.raw('ro.act_id::text'), db.raw('a.act_cd::text'))
       .whereIn('ro.record_id', recordIds)
-      .select(db.raw("ro.record_id, STRING_AGG(DISTINCT ro.section_id, ', ') as sections"))
-      .groupBy('ro.record_id'),
+      .select('ro.record_id', 'ro.other_act_name', 's.section', 's.act_sec_cd', 'a.act_long')
+      .orderBy('ro.is_primary', 'desc'),
   ]);
+
+  const isTruthy = (val) => {
+    if (val === true) return true;
+    if (val === false || val === null || val === undefined || val === '') return false;
+    if (typeof val === 'number') return val > 0;
+    const s = String(val).trim().toLowerCase();
+    return ['yes', 'true', '1', 'y', 't'].includes(s);
+  };
+
+  const formatActSections = (offenceRows) => {
+    if (!Array.isArray(offenceRows) || offenceRows.length === 0) return '-';
+    const actMap = new Map();
+    for (const o of offenceRows) {
+      let rawAct = (o.act_long || o.act_name || o.act || o.other_act_name || '').trim();
+      let rawSec = (o.section || o.act_sec_cd || o.section_label || '').trim();
+      if (!rawAct && !rawSec) continue;
+
+      let act = rawAct;
+      if (/penal code|ipc/i.test(act)) act = 'IPC';
+      else if (/nyaya sanhita|\bbns\b/i.test(act)) act = 'BNS';
+      else if (/nagarik suraksha|\bbnss\b/i.test(act)) act = 'BNSS';
+      else if (/arms/i.test(act)) act = 'Arms Act';
+      else if (/excise/i.test(act)) act = 'Delhi Excise Act';
+      else if (/delhi police|\bdp act\b/i.test(act)) act = 'DP Act';
+      else if (/narcotic|ndps/i.test(act)) act = 'NDPS Act';
+      else if (/information technology|\bit act\b/i.test(act)) act = 'IT Act';
+      else if (/gambling/i.test(act)) act = 'Gambling Act';
+      else if (/motor vehicle|\bmv act\b/i.test(act)) act = 'MV Act';
+      else if (/pocso/i.test(act)) act = 'POCSO Act';
+      else if (act) act = act.replace(/^THE\s+/i, '').replace(/,\s*\d{4}$/, '').trim();
+
+      if (!act) act = 'U/S';
+
+      let sec = rawSec.replace(/^u\/s\s+/i, '').replace(/^sec(tion)?\.?\s*/i, '').trim();
+      if (act && act !== 'U/S') {
+        const re = new RegExp(`\\b${act.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        sec = sec.replace(re, '').trim();
+      }
+      sec = sec.replace(/^u\/s\s+/i, '').trim();
+
+      if (!actMap.has(act)) actMap.set(act, new Set());
+      if (sec) actMap.get(act).add(sec);
+    }
+
+    if (actMap.size === 0) return '-';
+    const actStrings = [];
+    for (const [actName, secSet] of actMap.entries()) {
+      const secArray = Array.from(secSet).filter(Boolean);
+      if (secArray.length > 0) {
+        actStrings.push(`${actName} ${secArray.join('/')}`);
+      } else {
+        actStrings.push(actName);
+      }
+    }
+    return actStrings.join(', ');
+  };
 
   const personMap = {};
   persons.forEach(p => {
     if (!personMap[p.record_id]) personMap[p.record_id] = {};
     if ((p.role === 'ARRESTEE' || p.role === 'ACCUSED') && !personMap[p.record_id].person_name) {
       const pEx = (typeof p.p_extra === 'object' && p.p_extra) ? p.p_extra : {};
-      const prevCount = pEx.prev_involvement_count ?? pEx.prev_involvement_no_of_cases ?? (pEx.prev_involvement ? 1 : 0);
-      const isPo = Boolean(pEx.is_po || pEx.proclaimed_offender || pEx.po_flag);
-      const isBc = Boolean(pEx.is_bc || pEx.bad_character || pEx.bc_flag || pEx.listed_criminal || pEx.whether_accused_is_bc_or_not);
+      const ardEx = (typeof p.ard_extra === 'object' && p.ard_extra) ? p.ard_extra : {};
+      const prevCount = p.prev_involvement_count ?? pEx.prev_involvement_count ?? pEx.prev_involvement_no_of_cases ?? ardEx.prev_involvement_count ?? (isTruthy(p.prev_involvement) || isTruthy(pEx.prev_involvement) || isTruthy(ardEx.prev_involvement) ? 1 : 0);
+      const isPo = isTruthy(p.is_po) || isTruthy(pEx.is_po) || isTruthy(pEx.proclaimed_offender) || isTruthy(pEx.po_flag) || isTruthy(ardEx.is_po);
+      const isBc = isTruthy(p.is_bc) || isTruthy(pEx.is_bc) || isTruthy(pEx.bad_character) || isTruthy(pEx.bc_flag) || isTruthy(pEx.listed_criminal) || isTruthy(pEx.whether_accused_is_bc_or_not) || isTruthy(ardEx.is_bc);
 
       personMap[p.record_id].person_name      = p.name;
       personMap[p.record_id].age              = p.age;
@@ -423,15 +483,18 @@ export async function fetchArrestsByCaseType({ psIds, cutoffDate, caseType = 'FI
     }
   });
 
-  const offenceMap = {};
-  offences.forEach(o => { offenceMap[o.record_id] = o.sections; });
+  const offenceRowsMap = {};
+  offences.forEach(o => {
+    if (!offenceRowsMap[o.record_id]) offenceRowsMap[o.record_id] = [];
+    offenceRowsMap[o.record_id].push(o);
+  });
 
   return rows.map(r => {
     const pData = personMap[r.record_id] || {};
     const adEx = (typeof r.ad_extra === 'object' && r.ad_extra) ? r.ad_extra : {};
-    const isPo = (pData.is_po === 'Yes') || Boolean(adEx.is_po || adEx.proclaimed_offender || adEx.po_flag);
-    const isBc = (pData.is_bc === 'Yes') || Boolean(adEx.is_bc || adEx.bad_character || adEx.bc_flag || adEx.listed_criminal || adEx.whether_accused_is_bc_or_not);
-    const prevCount = pData.prev_involvement ?? adEx.prev_involvement_count ?? adEx.prev_involvement_no_of_cases ?? (adEx.prev_involvement ? 1 : 0);
+    const isPo = (pData.is_po === 'Yes') || isTruthy(adEx.is_po) || isTruthy(adEx.proclaimed_offender) || isTruthy(adEx.po_flag);
+    const isBc = (pData.is_bc === 'Yes') || isTruthy(adEx.is_bc) || isTruthy(adEx.bad_character) || isTruthy(adEx.bc_flag) || isTruthy(adEx.listed_criminal) || isTruthy(adEx.whether_accused_is_bc_or_not);
+    const prevCount = pData.prev_involvement ?? adEx.prev_involvement_count ?? adEx.prev_involvement_no_of_cases ?? (isTruthy(adEx.prev_involvement) ? 1 : 0);
 
     return {
       ...r,
@@ -439,7 +502,7 @@ export async function fetchArrestsByCaseType({ psIds, cutoffDate, caseType = 'FI
       prev_involvement: prevCount,
       is_po: isPo ? 'Yes' : 'No',
       is_bc: isBc ? 'Yes' : 'No',
-      sections: offenceMap[r.record_id] || '',
+      sections: formatActSections(offenceRowsMap[r.record_id]),
     };
   });
 }

@@ -105,20 +105,22 @@ export function accusedHistory(accused = {}) {
   const d = typeof accused === 'object' ? accused : {};
   const ex = (typeof d.extra === 'object' && d.extra) ? d.extra : {};
 
+  const isTruthy = (val) => {
+    if (val === true) return true;
+    if (val === false || val === null || val === undefined || val === '') return false;
+    if (typeof val === 'number') return val > 0;
+    const s = String(val).trim().toLowerCase();
+    return ['yes', 'true', '1', 'y', 't'].includes(s);
+  };
+
   const prevCount = d.prev_involvement_count ?? d.prevInvolvementCount ?? d.prev_involvement_no_of_cases ?? ex.prev_involvement_count ?? ex.prev_involvement_no_of_cases ?? 0;
-  const isPi = Boolean(
-    d.prev_involvement || d.previous_involvement || d.pi_flag ||
-    ex.prev_involvement || ex.previous_involvement || ex.pi_flag ||
-    (Number(prevCount) > 0)
-  );
-  const isPo = Boolean(
-    d.is_po || d.isPo || d.proclaimed_offender || d.po_flag ||
-    ex.is_po || ex.proclaimed_offender || ex.po_flag
-  );
-  const isBc = Boolean(
-    d.is_bc || d.isBc || d.bad_character || d.bc_flag || d.listed_criminal || d.whether_accused_is_bc_or_not ||
-    ex.is_bc || ex.bad_character || ex.bc_flag || ex.listed_criminal || ex.whether_accused_is_bc_or_not
-  );
+  const isPi = isTruthy(d.prev_involvement) || isTruthy(d.previous_involvement) || isTruthy(d.pi_flag) ||
+    isTruthy(ex.prev_involvement) || isTruthy(ex.previous_involvement) || isTruthy(ex.pi_flag) ||
+    (Number(prevCount) > 0);
+  const isPo = isTruthy(d.is_po) || isTruthy(d.isPo) || isTruthy(d.proclaimed_offender) || isTruthy(d.po_flag) ||
+    isTruthy(ex.is_po) || isTruthy(ex.proclaimed_offender) || isTruthy(ex.po_flag);
+  const isBc = isTruthy(d.is_bc) || isTruthy(d.isBc) || isTruthy(d.bad_character) || isTruthy(d.bc_flag) || isTruthy(d.listed_criminal) || isTruthy(d.whether_accused_is_bc_or_not) ||
+    isTruthy(ex.is_bc) || isTruthy(ex.bad_character) || isTruthy(ex.bc_flag) || isTruthy(ex.listed_criminal) || isTruthy(ex.whether_accused_is_bc_or_not);
 
   const parts = [];
   if (isPi) parts.push("PI");

@@ -189,31 +189,64 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
     return map[str] || s;
   };
 
+  const isTruthyVal = (val) => {
+    if (val === true) return true;
+    if (val === false || val === null || val === undefined || val === '') return false;
+    if (typeof val === 'number') return val > 0;
+    const s = String(val).trim().toLowerCase();
+    return ['yes', 'true', '1', 'y', 't'].includes(s);
+  };
+
   const formatAccusedHistory = (p, r = {}) => {
     const pObj = p || {};
     const pEx = (typeof pObj.extra === 'object' && pObj.extra) ? pObj.extra : {};
+    const ardEx = (typeof pObj.ard_extra === 'object' && pObj.ard_extra) ? pObj.ard_extra : {};
     const rEx = (typeof r.ad_extra === 'object' && r.ad_extra) ? r.ad_extra : ((typeof r.extra === 'object' && r.extra) ? r.extra : {});
 
-    const piCount = pObj.prev_involvement_count ?? pEx.prev_involvement_count ?? pEx.prev_involvement_no_of_cases ?? rEx.prev_involvement_count ?? rEx.prev_involvement_no_of_cases ?? 0;
-    const piFlag = Boolean(
-      pObj.prev_involvement || pObj.previous_involvement || pObj.pi_flag ||
-      pEx.prev_involvement || pEx.previous_involvement || pEx.pi_flag ||
-      rEx.prev_involvement || rEx.previous_involvement || rEx.pi_flag ||
-      r.integrated_pi ||
-      (Number(piCount) > 0)
-    );
-    const poFlag = Boolean(
-      pObj.is_po || pObj.proclaimed_offender || pObj.po_flag ||
-      pEx.is_po || pEx.proclaimed_offender || pEx.po_flag ||
-      rEx.is_po || rEx.proclaimed_offender || rEx.po_flag ||
-      r.is_po || r.proclaimed_offender
-    );
-    const bcFlag = Boolean(
-      pObj.is_bc || pObj.bad_character || pObj.bc_flag || pObj.listed_criminal || pObj.whether_accused_is_bc_or_not ||
-      pEx.is_bc || pEx.bad_character || pEx.bc_flag || pEx.listed_criminal || pEx.whether_accused_is_bc_or_not ||
-      rEx.is_bc || rEx.bad_character || rEx.bc_flag || rEx.listed_criminal || rEx.whether_accused_is_bc_or_not ||
-      r.is_bc || r.bad_character || r.listed_criminal
-    );
+    const piCount = pObj.prev_involvement_count ?? pEx.prev_involvement_count ?? pEx.prev_involvement_no_of_cases ?? ardEx.prev_involvement_count ?? rEx.prev_involvement_count ?? rEx.prev_involvement_no_of_cases ?? 0;
+    const piFlag = isTruthyVal(pObj.prev_involvement) ||
+      isTruthyVal(pObj.previous_involvement) ||
+      isTruthyVal(pObj.pi_flag) ||
+      isTruthyVal(pEx.prev_involvement) ||
+      isTruthyVal(pEx.previous_involvement) ||
+      isTruthyVal(pEx.pi_flag) ||
+      isTruthyVal(ardEx.prev_involvement) ||
+      isTruthyVal(rEx.prev_involvement) ||
+      isTruthyVal(rEx.previous_involvement) ||
+      isTruthyVal(rEx.pi_flag) ||
+      isTruthyVal(r.integrated_pi) ||
+      (Number(piCount) > 0);
+    const poFlag = isTruthyVal(pObj.is_po) ||
+      isTruthyVal(pObj.proclaimed_offender) ||
+      isTruthyVal(pObj.po_flag) ||
+      isTruthyVal(pEx.is_po) ||
+      isTruthyVal(pEx.proclaimed_offender) ||
+      isTruthyVal(pEx.po_flag) ||
+      isTruthyVal(ardEx.is_po) ||
+      isTruthyVal(rEx.is_po) ||
+      isTruthyVal(rEx.proclaimed_offender) ||
+      isTruthyVal(rEx.po_flag) ||
+      isTruthyVal(r.is_po) ||
+      isTruthyVal(r.proclaimed_offender);
+    const bcFlag = isTruthyVal(pObj.is_bc) ||
+      isTruthyVal(pObj.bad_character) ||
+      isTruthyVal(pObj.bc_flag) ||
+      isTruthyVal(pObj.listed_criminal) ||
+      isTruthyVal(pObj.whether_accused_is_bc_or_not) ||
+      isTruthyVal(pEx.is_bc) ||
+      isTruthyVal(pEx.bad_character) ||
+      isTruthyVal(pEx.bc_flag) ||
+      isTruthyVal(pEx.listed_criminal) ||
+      isTruthyVal(pEx.whether_accused_is_bc_or_not) ||
+      isTruthyVal(ardEx.is_bc) ||
+      isTruthyVal(rEx.is_bc) ||
+      isTruthyVal(rEx.bad_character) ||
+      isTruthyVal(rEx.bc_flag) ||
+      isTruthyVal(rEx.listed_criminal) ||
+      isTruthyVal(rEx.whether_accused_is_bc_or_not) ||
+      isTruthyVal(r.is_bc) ||
+      isTruthyVal(r.bad_character) ||
+      isTruthyVal(r.listed_criminal);
 
     const parts = [];
     if (piFlag) parts.push('PI');
@@ -329,6 +362,7 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
       .whereIn('p.record_id', allIds)
       .select(
         'p.id', 'p.record_id', 'p.role', 'p.name', 'p.relative_name', 'p.relation_type', 'p.gender', 'p.age', 'p.nick_names', 'p.mobile', 'p.extra',
+        'ard.is_bc', 'ard.is_po', 'ard.prev_involvement', 'ard.prev_involvement_count',
         db.raw(`COALESCE(
           NULLIF(TRIM(pl.full_address), ''),
           NULLIF(TRIM(CONCAT_WS(', ', NULLIF(pl.house_no, ''), NULLIF(pl.street, ''), NULLIF(pl.colony, ''), NULLIF(pl.city_town_village, ''), NULLIF(pl.district, ''))), ''),
@@ -355,30 +389,52 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
     return rec[role] || null;
   };
 
-  const cleanOffenceLabel = (actLong, section, actSecCd, otherActName) => {
-    let other = (otherActName || '').trim();
-    if (other) {
-      return other.replace(/^u\/s\s+/i, '').replace(/\s+u\/s\s+/i, ' ').trim();
-    }
-    let act = (actLong || '').trim();
-    let sec = (section || actSecCd || '').trim();
-    if (/penal code|ipc/i.test(act)) act = 'IPC';
-    else if (/nyaya sanhita|\bbns\b/i.test(act)) act = 'BNS';
-    else if (/nagarik suraksha|\bbnss\b/i.test(act)) act = 'BNSS';
-    else if (/arms/i.test(act)) act = 'Arms Act';
-    else if (/excise/i.test(act)) act = 'Delhi Excise Act';
-    else if (/delhi police|\bdp act\b/i.test(act)) act = 'DP Act';
-    else if (/narcotic|ndps/i.test(act)) act = 'NDPS Act';
-    else if (/information technology|\bit act\b/i.test(act)) act = 'IT Act';
-    else if (/gambling/i.test(act)) act = 'Gambling Act';
-    else if (/motor vehicle|\bmv act\b/i.test(act)) act = 'MV Act';
-    else if (/pocso/i.test(act)) act = 'POCSO Act';
-    else if (act) act = act.replace(/^THE\s+/i, '').replace(/,\s*\d{4}$/, '').trim();
+  const formatActSections = (offences) => {
+    if (!Array.isArray(offences) || offences.length === 0) return '-';
+    const actMap = new Map();
+    for (const o of offences) {
+      let rawAct = (o.act_long || o.act_name || o.act || o.other_act_name || '').trim();
+      let rawSec = (o.section || o.act_sec_cd || o.section_label || '').trim();
+      if (!rawAct && !rawSec) continue;
 
-    sec = sec.replace(/^u\/s\s+/i, '').trim();
-    if (act && new RegExp(`\\b${act}\\b`, 'i').test(sec)) return sec;
-    if (sec && act) return `${sec} ${act}`;
-    return sec || act || '';
+      let act = rawAct;
+      if (/penal code|ipc/i.test(act)) act = 'IPC';
+      else if (/nyaya sanhita|\bbns\b/i.test(act)) act = 'BNS';
+      else if (/nagarik suraksha|\bbnss\b/i.test(act)) act = 'BNSS';
+      else if (/arms/i.test(act)) act = 'Arms Act';
+      else if (/excise/i.test(act)) act = 'Delhi Excise Act';
+      else if (/delhi police|\bdp act\b/i.test(act)) act = 'DP Act';
+      else if (/narcotic|ndps/i.test(act)) act = 'NDPS Act';
+      else if (/information technology|\bit act\b/i.test(act)) act = 'IT Act';
+      else if (/gambling/i.test(act)) act = 'Gambling Act';
+      else if (/motor vehicle|\bmv act\b/i.test(act)) act = 'MV Act';
+      else if (/pocso/i.test(act)) act = 'POCSO Act';
+      else if (act) act = act.replace(/^THE\s+/i, '').replace(/,\s*\d{4}$/, '').trim();
+
+      if (!act) act = 'U/S';
+
+      let sec = rawSec.replace(/^u\/s\s+/i, '').replace(/^sec(tion)?\.?\s*/i, '').trim();
+      if (act && act !== 'U/S') {
+        const re = new RegExp(`\\b${act.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        sec = sec.replace(re, '').trim();
+      }
+      sec = sec.replace(/^u\/s\s+/i, '').trim();
+
+      if (!actMap.has(act)) actMap.set(act, new Set());
+      if (sec) actMap.get(act).add(sec);
+    }
+
+    if (actMap.size === 0) return '-';
+    const actStrings = [];
+    for (const [actName, secSet] of actMap.entries()) {
+      const secArray = Array.from(secSet).filter(Boolean);
+      if (secArray.length > 0) {
+        actStrings.push(`${actName} ${secArray.join('/')}`);
+      } else {
+        actStrings.push(actName);
+      }
+    }
+    return actStrings.join(', ');
   };
 
   const OR = {};
@@ -392,12 +448,11 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
         .orderBy('ro.is_primary', 'desc');
       for (const o of oRows) {
         if (!OR[o.record_id]) OR[o.record_id] = [];
-        const lbl = cleanOffenceLabel(o.act_long, o.section, o.act_sec_cd, o.other_act_name);
-        if (lbl && !OR[o.record_id].includes(lbl)) OR[o.record_id].push(lbl);
+        OR[o.record_id].push(o);
       }
     } catch (e) { logger.warn('[DailyDiary] Offences join failed:', e.message); }
   }
-  const getUS = id => (OR[id] || []).join(', ') || '-';
+  const getUS = id => formatActSections(OR[id]);
 
   const MANUAL_REG = new Set(['MANUAL_CCTNS', 'ZERO_FIR', 'NCRP']);
   const isManual = r => MANUAL_REG.has(r.registration_type) || ['cctns(manual fir)','zero fir','ncrp'].includes((r.case_type||'').toLowerCase());
