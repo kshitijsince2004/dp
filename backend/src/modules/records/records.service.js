@@ -222,9 +222,9 @@ async function upsertLocation(trx, existingId, cols) {
     if (existingId) {
       await trx('persons').where({ present_location_id: existingId }).update({ present_location_id: null });
       await trx('persons').where({ perm_location_id: existingId }).update({ perm_location_id: null });
-      await trx('person_arrest_details').where({ arrest_location_id: existingId }).update({ arrest_location_id: null });
-      await trx('person_missing_details').where({ missing_location_id: existingId }).update({ missing_location_id: null });
-      await trx('person_missing_details').where({ found_location_id: existingId }).update({ found_location_id: null });
+      await trx('arrestee_details').where({ arrest_location_id: existingId }).update({ arrest_location_id: null });
+      await trx('missing_person_details').where({ missing_location_id: existingId }).update({ missing_location_id: null });
+      await trx('missing_person_details').where({ found_location_id: existingId }).update({ found_location_id: null });
       await trx('fir_details').where({ occurrence_location_id: existingId }).update({ occurrence_location_id: null });
       await trx('arrest_details').where({ occurrence_location_id: existingId }).update({ occurrence_location_id: null });
       await trx('arrest_details').where({ arrest_location_id: existingId }).update({ arrest_location_id: null });
