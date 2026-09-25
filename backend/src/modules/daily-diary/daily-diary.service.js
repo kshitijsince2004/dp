@@ -454,6 +454,69 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
   }
   const getUS = id => formatActSections(OR[id]);
 
+  const PROP = {};
+  if (allIds.length > 0) {
+    try {
+      const propRows = await db('record_properties')
+        .whereIn('record_id', allIds)
+        .orderBy('sort_order', 'asc');
+      for (const p of propRows) {
+        if (!PROP[p.record_id]) PROP[p.record_id] = [];
+        PROP[p.record_id].push(p);
+      }
+    } catch (e) { logger.warn('[DailyDiary] Properties join failed:', e.message); }
+  }
+
+  const getVehicleDetails = (r) => {
+    const props = PROP[r.id] || [];
+    const vehProp = props.find(p => p.vehicle_no || p.vehicle_make || p.vehicle_model || (p.extra && (p.extra.vehicle_no || p.extra.vehicle_type)));
+    const ex = (typeof r.fd_extra === 'object' && r.fd_extra) ? r.fd_extra : {};
+    
+    const vNo = vehProp?.vehicle_no || vehProp?.extra?.vehicle_no || ex.vehicle_no || '';
+    const vType = vehProp?.extra?.vehicle_type || vehProp?.vehicle_make || ex.vehicle_type || ex.vehicle_make || '';
+    const vModel = vehProp?.vehicle_model || ex.vehicle_model || '';
+    
+    const parts = [];
+    if (vType) parts.push(vType);
+    if (vModel && vModel !== vType) parts.push(vModel);
+    if (vNo) parts.push(vNo);
+    
+    if (parts.length > 0) return parts.join(' / ');
+    if (ex.vehicle_details) return ex.vehicle_details;
+    if (ex.stolen_property) return ex.stolen_property;
+    return '-';
+  };
+
+  const getStolenPropertyDetails = (r) => {
+    const props = PROP[r.id] || [];
+    const propParts = [];
+    
+    for (const p of props) {
+      const itemParts = [];
+      if (p.vehicle_no || p.vehicle_make) {
+        itemParts.push([p.vehicle_type || p.vehicle_make, p.vehicle_model, p.vehicle_no].filter(Boolean).join(' '));
+      }
+      if (p.phone_imei || p.phone_make) {
+        itemParts.push([p.phone_make, p.phone_model, p.phone_imei ? `IMEI: ${p.phone_imei}` : ''].filter(Boolean).join(' '));
+      }
+      if (p.estimated_value) {
+        itemParts.push(`Val: Rs. ${p.estimated_value}`);
+      }
+      const ex = (typeof p.extra === 'object' && p.extra) ? p.extra : {};
+      for (const [k, v] of Object.entries(ex)) {
+        if (v && typeof v !== 'object' && !['vehicle_no', 'vehicle_make', 'vehicle_type', 'phone_imei'].includes(k)) {
+          itemParts.push(`${k}: ${v}`);
+        }
+      }
+      if (itemParts.length > 0) propParts.push(itemParts.join(', '));
+    }
+    
+    const exFd = (typeof r.fd_extra === 'object' && r.fd_extra) ? r.fd_extra : {};
+    if (exFd.stolen_property) propParts.push(exFd.stolen_property);
+    if (r.brief_facts && propParts.length === 0) return r.brief_facts;
+    return propParts.join('; ') || '-';
+  };
+
   const MANUAL_REG = new Set(['MANUAL_CCTNS', 'ZERO_FIR', 'NCRP']);
   const isManual = r => MANUAL_REG.has(r.registration_type) || ['cctns(manual fir)','zero fir','ncrp'].includes((r.case_type||'').toLowerCase());
   const isETheft = r => r.registration_type === 'E_THEFT' || ['etheft', 'e_theft', 'e-theft'].some(k => (r.case_type||'').toLowerCase().includes(k));
@@ -481,8 +544,7 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
       wds:[6,22,18,25,32,22,32,38,26,15,13],
       rawRows: () => caseRows.filter(r => hasHead(r,'burglary')),
       rows:() => caseRows.filter(r => hasHead(r,'burglary')).map((r,i) => {
-        const ex=(typeof r.fd_extra==='object'&&r.fd_extra)?r.fd_extra:{};
-        return [i+1,r.ps_name||'-',r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(getP(r.id, 'COMPLAINANT'), false),fmtDT(r.occurrence_from_datetime),ex.stolen_property||r.brief_facts||'-',fmtLoc(r,'occ'),fmtIO(r),r.io_mobile||'-',r.beat_no||'-'];
+        return [i+1,r.ps_name||'-',r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(getP(r.id, 'COMPLAINANT'), false),fmtDT(r.occurrence_from_datetime),getStolenPropertyDetails(r),fmtLoc(r,'occ'),fmtIO(r),r.io_mobile||'-',r.beat_no||'-'];
       })
     },
     { key:'ehouse_theft_cases', excelKey:'excel_3ehouse_theft_cases', label:'3. E-House Theft Cases',
@@ -490,8 +552,15 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
       wds:[6,22,18,25,32,38,22,32,26,15,13],
       rawRows: () => caseRows.filter(r => hasHead(r,'house theft')||hasHead(r,'house-theft')),
       rows:() => caseRows.filter(r => hasHead(r,'house theft')||hasHead(r,'house-theft')).map((r,i) => {
-        const ex=(typeof r.fd_extra==='object'&&r.fd_extra)?r.fd_extra:{};
-        return [i+1,r.ps_name||'-',r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(getP(r.id, 'COMPLAINANT'), false),fmtLoc(r,'occ'),fmtDT(r.occurrence_from_datetime),ex.stolen_property||r.brief_facts||'-',fmtIO(r),r.io_mobile||'-',r.beat_no||'-'];
+        return [i+1,r.ps_name||'-',r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(getP(r.id, 'COMPLAINANT'), false),fmtLoc(r,'occ'),fmtDT(r.occurrence_from_datetime),getStolenPropertyDetails(r),fmtIO(r),r.io_mobile||'-',r.beat_no||'-'];
+      })
+    },
+    { key:'etheft_cases', excelKey:'excel_3a_etheft_cases', label:'3A. E-Theft Cases',
+      hdrs:['Sr.','Police Station','E-FIR No.','U/S','Complainant','Place of Occurrence','Date & Time of Occurrence','Stolen Property','Name of IO','IO Mobile','Beat No.'],
+      wds:[6,22,18,25,32,38,22,32,26,15,13],
+      rawRows: () => caseRows.filter(r => isETheft(r)),
+      rows:() => caseRows.filter(r => isETheft(r)).map((r,i) => {
+        return [i+1,r.ps_name||'-',r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(getP(r.id, 'COMPLAINANT'), false),fmtLoc(r,'occ'),fmtDT(r.occurrence_from_datetime),getStolenPropertyDetails(r),fmtIO(r),r.io_mobile||'-',r.beat_no||'-'];
       })
     },
     { key:'eother_theft_cases', excelKey:'excel_4eother_theft_cases', label:'4. E-Other Theft Cases',
@@ -499,18 +568,23 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
       wds:[6,22,18,25,32,22,32,38,26,15,13],
       rawRows: () => caseRows.filter(r => isETheft(r)&&!hasHead(r,'burglary')&&!hasHead(r,'house theft')&&!hasHead(r,'m.v.')&&!hasHead(r,'motor vehicle')),
       rows:() => caseRows.filter(r => isETheft(r)&&!hasHead(r,'burglary')&&!hasHead(r,'house theft')&&!hasHead(r,'m.v.')&&!hasHead(r,'motor vehicle')).map((r,i) => {
-        const ex=(typeof r.fd_extra==='object'&&r.fd_extra)?r.fd_extra:{};
-        return [i+1,r.ps_name||'-',r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(getP(r.id, 'COMPLAINANT'), false),fmtDT(r.occurrence_from_datetime),ex.stolen_property||r.brief_facts||'-',fmtLoc(r,'occ'),fmtIO(r),r.io_mobile||'-',r.beat_no||'-'];
+        return [i+1,r.ps_name||'-',r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(getP(r.id, 'COMPLAINANT'), false),fmtDT(r.occurrence_from_datetime),getStolenPropertyDetails(r),fmtLoc(r,'occ'),fmtIO(r),r.io_mobile||'-',r.beat_no||'-'];
       })
     },
     { key:'mvt_cases', excelKey:'excel_5mvt_cases', label:'5. MVT Cases',
       hdrs:['Sr.','Police Station','FIR No.','U/S','Date & Time of Occurrence','Place of Occurrence','Complainant','Vehicle Details','Name of IO','IO Mobile','Beat No.'],
       wds:[6,22,18,25,22,38,32,22,26,15,13],
-      rawRows: () => caseRows.filter(r => isEMVT(r)||hasHead(r,'m.v.')||hasHead(r,'motor vehicle')||hasHead(r,'mvt')),
-      rows:() => caseRows.filter(r => isEMVT(r)||hasHead(r,'m.v.')||hasHead(r,'motor vehicle')||hasHead(r,'mvt')).map((r,i) => {
-        const ex=(typeof r.fd_extra==='object'&&r.fd_extra)?r.fd_extra:{};
-        const veh=ex.vehicle_type?(ex.vehicle_type+(ex.vehicle_no?' / '+ex.vehicle_no:'')):(ex.vehicle_no||'-');
-        return [i+1,r.ps_name||'-',r.fir_no||r.gd_no||'-',getUS(r.id),fmtDT(r.occurrence_from_datetime),fmtLoc(r,'occ'),fmtP(getP(r.id, 'COMPLAINANT'), false),veh,fmtIO(r),r.io_mobile||'-',r.beat_no||'-'];
+      rawRows: () => caseRows.filter(r => isManual(r) ? (hasHead(r,'m.v.')||hasHead(r,'motor vehicle')||hasHead(r,'mvt')) : (isEMVT(r)||hasHead(r,'m.v.')||hasHead(r,'motor vehicle')||hasHead(r,'mvt'))),
+      rows:() => caseRows.filter(r => isManual(r) ? (hasHead(r,'m.v.')||hasHead(r,'motor vehicle')||hasHead(r,'mvt')) : (isEMVT(r)||hasHead(r,'m.v.')||hasHead(r,'motor vehicle')||hasHead(r,'mvt'))).map((r,i) => {
+        return [i+1,r.ps_name||'-',r.fir_no||r.gd_no||'-',getUS(r.id),fmtDT(r.occurrence_from_datetime),fmtLoc(r,'occ'),fmtP(getP(r.id, 'COMPLAINANT'), false),getVehicleDetails(r),fmtIO(r),r.io_mobile||'-',r.beat_no||'-'];
+      })
+    },
+    { key:'emvt_cases', excelKey:'excel_5a_emvt_cases', label:'5A. E-MVT Cases',
+      hdrs:['Sr.','Police Station','FIR No.','U/S','Date & Time of Occurrence','Place of Occurrence','Complainant','Vehicle Details','Name of IO','IO Mobile','Beat No.'],
+      wds:[6,22,18,25,22,38,32,22,26,15,13],
+      rawRows: () => caseRows.filter(r => isEMVT(r)),
+      rows:() => caseRows.filter(r => isEMVT(r)).map((r,i) => {
+        return [i+1,r.ps_name||'-',r.fir_no||r.gd_no||'-',getUS(r.id),fmtDT(r.occurrence_from_datetime),fmtLoc(r,'occ'),fmtP(getP(r.id, 'COMPLAINANT'), false),getVehicleDetails(r),fmtIO(r),r.io_mobile||'-',r.beat_no||'-'];
       })
     },
     { key:'arrested_kalandara', excelKey:'excel_8arrested_kalandara', label:'6. Arrested-Kalandara Preven',
@@ -538,7 +612,7 @@ export const fetchAllDiaryData = async (date, dateTo, psId, districtId, subDivId
       rawRows: () => arrRows,
       rows:() => arrRows.map((r,i) => {
         const arr = getP(r.id, 'ARRESTEE');
-        const bcVal = (arr?.is_bc || arr?.bad_character || r.is_bc || r.bad_character || r.bc_flag) ? 'Yes' : 'No';
+        const bcVal = (isTruthyVal(arr?.is_bc) || isTruthyVal(arr?.bad_character) || isTruthyVal(r.is_bc) || isTruthyVal(r.bad_character) || isTruthyVal(r.bc_flag) || isTruthyVal(arr?.extra?.is_bc) || isTruthyVal(arr?.extra?.bad_character) || isTruthyVal(arr?.extra?.whether_accused_is_bc_or_not)) ? 'Yes' : 'No';
         return [i+1,r.fir_no||r.gd_no||'-',getUS(r.id),fmtP(arr, true),fmtIO(r),fmtCust(r.custody_status),formatAccusedHistory(arr, r),r.recovery||'-',bcVal,resolveArrestScheme(r)];
       })
     },
