@@ -12,7 +12,8 @@ const log = getLogger('eventBus');
 let channel = null;
 let connection = null;
 const localEmitter = new EventEmitter();
-let isMock = false;
+/** True when RabbitMQ is unavailable — pub/sub uses in-process EventEmitter (no cross-process delivery). */
+let useInMemoryBus = false;
 
 export async function connect() {
   log.debug('connect: enter', { rabbitmqUrl: env.RABBITMQ_URL ? '[configured]' : '[missing]' });
@@ -20,10 +21,10 @@ export async function connect() {
     connection = await amqp.connect(env.RABBITMQ_URL);
     channel = await connection.createChannel();
     await channel.assertExchange('pharos', 'topic', { durable: true });
-    isMock = false;
+    useInMemoryBus = false;
     log.info('connect: RabbitMQ EventBus connected', { exchange: 'pharos', type: 'topic' });
   } catch (error) {
-    isMock = true;
+    useInMemoryBus = true;
     log.warn('connect: RabbitMQ offline, falling back to local in-memory events', { err: error });
   }
 }
@@ -45,7 +46,7 @@ export async function publish(routingKey, payload) {
 
   log.debug('publish: enter', { routingKey, keyIds, keys: Object.keys(payload || {}) });
 
-  if (isMock || !channel) {
+  if (useInMemoryBus || !channel) {
     // Dispatch via in-memory emitter
     localEmitter.emit(routingKey, messagePayload);
     // Also emit wildcard events
@@ -53,7 +54,7 @@ export async function publish(routingKey, payload) {
     if (parts.length > 0) {
       localEmitter.emit(`${parts[0]}.*`, messagePayload);
     }
-    log.info('publish: dispatched via mock in-memory emitter', { routingKey, keyIds });
+    log.info('publish: dispatched via in-memory event bus', { routingKey, keyIds });
     return;
   }
 
@@ -77,19 +78,19 @@ export async function subscribe(pattern, queueName, handler) {
     handler = queueName;
     queueName = `${pattern.replace(/[^a-zA-Z0-9.-]/g, '_')}-queue`;
   }
-  log.debug('subscribe: enter', { pattern, queueName, isMock: isMock || !channel });
+  log.debug('subscribe: enter', { pattern, queueName, useInMemoryBus: useInMemoryBus || !channel });
 
-  if (isMock || !channel) {
+  if (useInMemoryBus || !channel) {
     localEmitter.on(pattern, async (payload) => {
-      log.debug('subscribe: mock message consumed', { pattern, queueName, routingKey: pattern, keys: Object.keys(payload || {}) });
+      log.debug('subscribe: in-memory message consumed', { pattern, queueName, routingKey: pattern, keys: Object.keys(payload || {}) });
       try {
         await handler(payload);
-        log.debug('subscribe: mock handler completed', { pattern, queueName });
+        log.debug('subscribe: in-memory handler completed', { pattern, queueName });
       } catch (err) {
-        log.error('subscribe: mock handler error', { pattern, queueName, err });
+        log.error('subscribe: in-memory handler error', { pattern, queueName, err });
       }
     });
-    log.info('subscribe: bound mock in-memory listener', { pattern, queueName });
+    log.info('subscribe: bound in-memory event bus listener', { pattern, queueName });
     return;
   }
 

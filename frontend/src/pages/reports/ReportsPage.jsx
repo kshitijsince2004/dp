@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet, BarChart3, Search, FileText, BookOpen } from 'lucide-react';
 import useAuthStore from '../../store/authStore.js';
 import CustomExcelBuilder from './CustomExcelBuilder';
@@ -29,7 +28,6 @@ const getThemeClass = (role) => {
 };
 
 export const ReportsPage = () => {
-  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState('builder'); // 'builder', 'excel', 'multisheet', 'trace'
 
@@ -41,17 +39,17 @@ export const ReportsPage = () => {
   return (
     <div className={`fade-in-up ${getThemeClass(user?.role)} page-bg p-6 min-h-screen font-sans`}>
       {/* Top Header & Subtitle */}
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-800 shadow-xl backdrop-blur-md">
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
+            <div className="p-2.5 bg-blue-50 border border-blue-100 rounded-xl text-[#0f52ba]">
               <FileSpreadsheet size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-100 tracking-tight">
+              <h1 className="text-xl font-bold text-[#0d2a4a] tracking-tight">
                 Police Intelligence &amp; Executive Report Command Center
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Statutory Returns, OLAP Multi-Dimensional Pivots, Granular Dossier Exports &amp; FIR Traceability
               </p>
             </div>
@@ -59,13 +57,13 @@ export const ReportsPage = () => {
         </div>
 
         {/* Navigation Tabs Header */}
-        <div className="flex flex-wrap items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800/80">
+        <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
           <button
             onClick={() => setActiveTab('builder')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-xs transition-all cursor-pointer ${
               activeTab === 'builder'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/40'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-[#0f52ba] text-white shadow-md'
+                : 'text-slate-600 hover:text-[#0d2a4a] hover:bg-white'
             }`}
           >
             <BarChart3 size={14} />
@@ -76,8 +74,8 @@ export const ReportsPage = () => {
             onClick={() => setActiveTab('excel')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-xs transition-all cursor-pointer ${
               activeTab === 'excel'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/40'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-[#0f52ba] text-white shadow-md'
+                : 'text-slate-600 hover:text-[#0d2a4a] hover:bg-white'
             }`}
           >
             <FileText size={14} />
@@ -88,8 +86,8 @@ export const ReportsPage = () => {
             onClick={() => setActiveTab('multisheet')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-xs transition-all cursor-pointer ${
               activeTab === 'multisheet'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/40'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-[#0f52ba] text-white shadow-md'
+                : 'text-slate-600 hover:text-[#0d2a4a] hover:bg-white'
             }`}
           >
             <BookOpen size={14} />
@@ -100,8 +98,8 @@ export const ReportsPage = () => {
             onClick={() => setActiveTab('trace')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-xs transition-all cursor-pointer ${
               activeTab === 'trace'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950/40'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-[#0f52ba] text-white shadow-md'
+                : 'text-slate-600 hover:text-[#0d2a4a] hover:bg-white'
             }`}
           >
             <Search size={14} />

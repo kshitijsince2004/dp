@@ -10,6 +10,7 @@ import {
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
+import { asRecordsList } from '../../utils/dataShape.js';
 import UnifiedFilterStrip from '../../components/common/UnifiedFilterStrip.jsx';
 import FilterPresetsPanel from '../../components/common/FilterPresetsPanel.jsx';
 import useAuthStore from '../../store/authStore.js';
@@ -134,10 +135,9 @@ export default function MyRecords() {
       log.debug('data:load_start', { what: 'records_list', params });
       try {
         const res = await api.get('/records', { params });
-        const payload = res.data.data;
-        const rows = payload?.cases || payload?.records || payload?.queue || (Array.isArray(payload) ? payload : []);
+        const rows = asRecordsList(res.data.data);
         log.debug('data:load_success', { what: 'records_list', count: rows.length });
-        return Array.isArray(rows) ? rows : [];
+        return rows;
       } catch (err) {
         log.error('data:load_error', { what: 'records_list', err });
         throw err;
@@ -145,7 +145,7 @@ export default function MyRecords() {
     },
   });
 
-  const records = Array.isArray(rawRecords) ? rawRecords : [];
+  const records = asRecordsList(rawRecords);
 
   // Submit Draft to SHO mutation
   const submitMutation = useMutation({
@@ -281,74 +281,26 @@ export default function MyRecords() {
     queryClient.invalidateQueries({ queryKey: ['all-records-stats'] });
   };
 
-  // Render Status Badge with rich lifecycle context
-  const renderStatusBadge = (rec) => {
-    const status = rec.current_status || rec.status || 'DRAFT';
-    
-    // 1. Returned / Sent Back
-    if (status === 'SENT_BACK' || status === 'SENT_BACK_HC') {
-      const isFromDistrict = rec.last_transition_from_level === 'DISTRICT' || rec.last_transition_by_role === 'DISTRICT_OFFICER';
-      if (isFromDistrict) {
-        return (
-          <div className="flex flex-col gap-1 items-start">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-rose-100 text-rose-800 border-rose-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping" />
-              ↩ {t('status.RETURNED_DISTRICT', 'Returned by District')}
-            </span>
-            {rec.last_transition_comment && (
-              <span className="text-[11px] text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-200/80 max-w-[260px] truncate" title={rec.last_transition_comment}>
-                District Note: {rec.last_transition_comment}
-              </span>
-            )}
-          </div>
-        );
-      }
-
-      return (
-        <div className="flex flex-col gap-1 items-start">
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-amber-100 text-amber-900 border-amber-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-            ↩ {t('status.SENT_BACK_HC', 'Sent Back to HC')}
-          </span>
-          {rec.last_transition_comment && (
-            <span className="text-[11px] text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80 max-w-[260px] truncate" title={rec.last_transition_comment}>
-              SHO Note: {rec.last_transition_comment}
-            </span>
-          )}
-        </div>
-      );
-    }
-
-    // 2. Forwarded to District / Higher
-    if (status === 'DISTRICT_REVIEW') {
-      return (
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-blue-50 text-blue-700 border-blue-200/80">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-          ↗ {t('status.DISTRICT_REVIEW', 'Forwarded (District Review)')}
-        </span>
-      );
-    }
-
-    if (['JCP_REVIEW', 'SCP_REVIEW', 'HQ_RECEIVED', 'COMPILED', 'ARCHIVED'].includes(status)) {
-      return (
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-emerald-50 text-emerald-800 border-emerald-200/80">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-          ✓ {t(`status.${status}`, status)}
-        </span>
-      );
-    }
-
-    // 3. Pending SHO
-    if (status === 'PENDING_SHO') {
-      return (
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-amber-50 text-amber-700 border-amber-200/80">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-          ⏱ {t('status.PENDING_SHO', 'Pending SHO Review')}
-        </span>
-      );
-    }
-
-    // 4. Draft or Default
+  // Render Status Badge
+  const renderStatusBadge = (status) => {
+    const badges = {
+      DRAFT: 'bg-slate-100 text-slate-600 border-slate-200/80',
+      PENDING_SHO: 'bg-[var(--warning-bg)] text-[var(--warning)] border-[var(--border-color)]',
+      ACP_REVIEW: 'bg-[var(--ux4g-bg-primary-soft)] text-[var(--primary)] border-[var(--border-color)]',
+      DISTRICT_REVIEW: 'bg-[var(--ux4g-bg-primary-soft)] text-[var(--primary)] border-[var(--border-color)]',
+      SENT_BACK: 'bg-[var(--danger-bg)] text-[var(--danger)] border-[var(--border-color)]',
+      SENT_BACK_HC: 'bg-[var(--danger-bg)] text-[var(--danger)] border-[var(--border-color)]',
+      COMPILED: 'bg-[var(--success-bg)] text-[var(--success)] border-[var(--border-color)]',
+    };
+    const dotColors = {
+      DRAFT: 'bg-slate-400',
+      PENDING_SHO: 'bg-[var(--warning)]',
+      ACP_REVIEW: 'bg-[var(--primary)]',
+      DISTRICT_REVIEW: 'bg-[var(--primary)]',
+      SENT_BACK: 'bg-[var(--danger)]',
+      SENT_BACK_HC: 'bg-[var(--danger)]',
+      COMPILED: 'bg-[var(--success)]',
+    };
     return (
       <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-slate-100 text-slate-600 border-slate-200/80">
         <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
@@ -374,31 +326,38 @@ export default function MyRecords() {
   return (
     /* ── Full-page background matching Dashboard's deep navy gradient ── */
     <div className="min-h-screen theme-hc-page page-bg">
-      <div className="hero-banner-gradient px-4 sm:px-8 pt-8 pb-16 relative overflow-hidden shadow-xl">
-        <div className="absolute -top-10 -right-10 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+      <div className="hero-banner-gradient px-6 py-5 relative overflow-hidden shadow-xl">
 
-        <div className="w-full max-w-[1920px] mx-auto relative z-10 flex flex-col gap-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex flex-col gap-1.5">
-              <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center gap-3 m-0 font-display tracking-tight">
-                {t('nav.records', 'Station Records Desk')}
-              </h1>
-              <p className="text-base text-white/85 font-medium m-0">
-                {isUserSHO 
-                  ? t('common.shoRecordsSubtitle', 'Complete station lifecycle view: forwarded cases, district returns, HC revisions, and pending reviews.')
-                  : t('common.recordsSubtitle', 'Manage and submit your daily diary entries.')}
-              </p>
+        <div className="w-full max-w-[1920px] mx-auto relative z-10 flex flex-col md:flex-row justify-between items-start gap-4">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3 m-0 font-display tracking-tight">
+              {t('nav.records', 'My Records Desk')}
+            </h1>
+            <p className="text-base text-white/80 font-medium m-0">
+              {t('common.recordsSubtitle', 'Manage and submit your daily diary entries.')}
+            </p>
+          </div>
+
+          <div className="flex flex-col items-end gap-3 md:flex-shrink-0 w-full md:w-auto">
+            <p className="text-2xl font-bold text-white/95 m-0 text-right font-display">
+              Welcome back, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
+            </p>
+            <div className="flex flex-wrap gap-3 justify-end w-full bg-transparent">
+            {/* Sent Back Box */}
+            <div className="rounded-2xl bg-red-600/30 border border-red-400/50 backdrop-blur-md px-5 py-3 min-w-[110px] text-center transition-colors duration-200 hover:bg-white/20 shadow-sm">
+              <div className="text-3xl font-bold text-red-200 tabular-nums">{sentBackCount}</div>
+              <div className="text-xs text-red-100/90 mt-1 font-bold uppercase tracking-wider">
+                {t('status.SENT_BACK_LABEL', 'Returned')}
+              </div>
             </div>
 
-            <div className="text-right">
-              <p className="text-xl sm:text-2xl font-bold text-white/95 m-0 font-display">
-                {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
-              </p>
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white/80 bg-white/10 px-3 py-1 rounded-full border border-white/20 mt-1">
-                <ShieldCheck size={14} className="text-emerald-300" />
-                {t(`roles.${user?.role}`, user?.role)} • {user?.ps_name || 'Police Station'}
-              </span>
+            {/* Drafts Box */}
+            <div className="rounded-2xl bg-sky-500/20 border border-sky-400/40 backdrop-blur-md px-5 py-3 min-w-[110px] text-center transition-colors duration-200 hover:bg-white/20 shadow-sm">
+              <div className="text-3xl font-bold text-sky-300 tabular-nums">{draftCount}</div>
+              <div className="text-xs text-sky-100/90 mt-1 font-bold uppercase tracking-wider">
+                {t('status.DRAFT', 'Draft')}
+              </div>
+            </div>
             </div>
           </div>
 
@@ -424,7 +383,7 @@ export default function MyRecords() {
                     </span>
                     <Icon size={16} className={tab.color} />
                   </div>
-                  <div className="text-2xl sm:text-3xl font-black text-white tabular-nums">
+                  <div className="text-2xl sm:text-3xl font-bold text-white tabular-nums">
                     {tab.count}
                   </div>
                 </button>
@@ -439,7 +398,7 @@ export default function MyRecords() {
         variants={pageVariants}
         initial="hidden"
         animate="show"
-        className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 pb-12 -mt-6 space-y-6"
+        className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 pb-8 -mt-6 space-y-5"
       >
 
         {/* Unified Filter Strip */}
@@ -457,7 +416,7 @@ export default function MyRecords() {
         {/* Saved Filter Presets — card */}
         <motion.div
           variants={itemVariants}
-          className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] p-4 transition-shadow duration-200 hover:shadow-lg"
+          className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] p-4 transition-shadow duration-200 hover:shadow-lg"
         >
           <FilterPresetsPanel
             currentFilters={filters}
@@ -483,7 +442,7 @@ export default function MyRecords() {
             className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white backdrop-blur-xl border border-slate-700/80 px-6 py-4 rounded-2xl shadow-2xl flex flex-wrap items-center justify-between gap-4 min-w-[320px] max-w-[90vw]"
           >
             <div className="flex items-center gap-3">
-              <span className="bg-emerald-500 text-slate-950 font-black rounded-full h-7 w-7 flex items-center justify-center text-xs tabular-nums shadow-md">
+              <span className="bg-emerald-500 text-slate-950 font-bold rounded-full h-7 w-7 flex items-center justify-center text-xs tabular-nums shadow-md">
                 {selectedIds.length}
               </span>
               <div className="flex flex-col">
@@ -509,7 +468,7 @@ export default function MyRecords() {
                 type="button"
                 onClick={handleBulkSubmit}
                 disabled={bulkLoading}
-                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2 cursor-pointer disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed uppercase tracking-wider border-none"
+                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2 cursor-pointer disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed uppercase tracking-wider border-none"
               >
                 {bulkLoading ? (
                   <>
@@ -530,27 +489,25 @@ export default function MyRecords() {
         {/* Records Listing */}
         <div ref={tableRef} style={{ scrollMarginTop: '24px' }}>
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl shadow-md border border-[#E2E8F0] text-[#4A5568]">
+            <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl shadow-md border border-[var(--border-color)] text-[var(--text-muted)]">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent-color)] mb-4"></div>
-              <p className="text-sm font-semibold tracking-wide text-[#718096]">
+              <p className="text-sm font-semibold tracking-wide text-[var(--text-muted)]">
                 {t('common.loading', 'Syncing digital registry logs...')}
               </p>
             </div>
           ) : filteredRecords.length === 0 ? (
             <motion.div
               variants={itemVariants}
-              className="bg-white rounded-3xl border border-dashed border-[#CBD5E0] p-16 text-center shadow-md"
+              className="bg-white rounded-3xl border border-dashed border-[var(--border-color)] p-16 text-center shadow-md"
             >
               <div className="mx-auto w-16 h-16 rounded-2xl bg-[var(--accent-glow)] flex items-center justify-center mb-4 shadow-inner">
                 <FileText size={32} className="text-[var(--accent-color)]" />
               </div>
-              <p className="text-lg font-bold text-[#1A202C]">
-                {t('common.noRecords', 'No Station Records Found for Selected Filter')}
+              <p className="text-lg font-bold text-[var(--text-primary)]">
+                {t('common.noRecords', 'No Daily Log Entries Found')}
               </p>
-              <p className="text-base text-[#718096] mt-1 font-medium">
-                {filters.status !== 'ALL' 
-                  ? `There are currently no records matching "${filters.status}". Switch to "All Records" to view full repository.` 
-                  : t('common.noRecordsDetail', 'Enter daily general diary records or import legacy data.')}
+              <p className="text-base text-[var(--text-muted)] mt-1 font-medium">
+                {t('common.noRecordsDetail', 'Select a creation form above to enter your daily general diary records.')}
               </p>
               {filters.status !== 'ALL' && (
                 <button
@@ -565,12 +522,12 @@ export default function MyRecords() {
           ) : (
             <motion.div
               variants={itemVariants}
-              className="bg-white rounded-3xl overflow-hidden shadow-lg border border-[#E2E8F0] transition-shadow duration-200 hover:shadow-xl"
+              className="bg-white rounded-3xl overflow-hidden shadow-lg border border-[var(--border-color)] transition-shadow duration-200 hover:shadow-xl"
             >
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-base">
                   <thead>
-                    <tr className="bg-gradient-to-r from-[var(--accent-color-hover)] to-[var(--accent-color)] text-white uppercase font-black text-xs sm:text-sm tracking-wider">
+                    <tr className="bg-gradient-to-r from-[var(--accent-color-hover)] to-[var(--accent-color)] text-white uppercase font-bold text-xs sm:text-sm tracking-wider">
                       <th className="p-4 pl-6 w-12 text-center">
                         <input
                           type="checkbox"
@@ -588,7 +545,7 @@ export default function MyRecords() {
                       <th className="p-4 pr-6 text-right">{t('common.actions', 'Operations')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E2E8F0] text-[#1A202C]">
+                  <tbody className="divide-y divide-[var(--border-color)] text-[var(--text-primary)]">
                     {filteredRecords.map((rec, index) => {
                       const psName = rec.ps_name || rec.data?.police_station || rec.data?.ps || 'PS Parliament Street';
                       const refId = formatRecordRef(rec);
@@ -637,26 +594,26 @@ export default function MyRecords() {
                               className="rounded border-slate-300 text-[var(--accent-color)] focus:ring-[var(--accent-color)] h-4 w-4 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                             />
                           </td>
-                          <td className="p-4 font-mono font-bold text-[var(--accent-color)] text-sm sm:text-base group-hover:text-[var(--accent-color-hover)] transition-colors">
+                          <td className="p-4 font-mono font-bold text-[var(--accent-color)] text-xs sm:text-sm group-hover:text-[var(--accent-color-hover)] transition-colors">
                             <div className="flex flex-col gap-1">
                               <span>{refId}</span>
                               <RecordTypeBadge recordType={rec.record_type} />
                             </div>
                           </td>
-                          <td className="p-4 text-sm sm:text-base font-semibold text-[#1A202C]">
+                          <td className="p-4 text-xs sm:text-sm font-semibold text-[var(--text-primary)]">
                             <div className="flex flex-col gap-0.5">
                               <span>{psName}</span>
                               {rec.transfer_to_type === 'PS' && user?.ps_id && String(rec.transferred_to_ps_id) === String(user.ps_id) && String(rec.ps_id) !== String(user.ps_id) && (
-                                <span className="text-[11px] font-bold text-sky-600 flex items-center gap-1">
+                                <span className="text-label-s font-bold text-sky-600 flex items-center gap-1">
                                   ↙ Transferred from {rec.origin_ps_name || rec.ps_name}
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="p-4 font-mono text-[#4A5568] font-semibold text-sm sm:text-base">
+                          <td className="p-4 font-mono text-[var(--text-muted)] font-semibold text-xs sm:text-sm">
                             {typeof recDate === 'string' ? recDate.slice(0, 10) : 'N/A'}
                           </td>
-                          <td className="p-4 max-w-[320px] truncate text-[#4A5568] font-medium text-sm sm:text-base" title={gist}>
+                          <td className="p-4 max-w-[320px] truncate text-[var(--text-muted)] font-medium text-xs sm:text-sm" title={gist}>
                             {gist}
                           </td>
                           <td className="p-4">
@@ -668,7 +625,7 @@ export default function MyRecords() {
                                   {(rec.transfer_to_type === 'PS' || rec.data?.transfer_to === 'PS') && (
                                     user?.ps_id && String(rec.transferred_to_ps_id) === String(user.ps_id) && String(rec.ps_id) !== String(user.ps_id) ? (
                                       <span
-                                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 shadow-xs"
+                                        className="inline-flex items-center gap-1 text-label-s font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 shadow-xs"
                                         title={`Transferred from ${rec.ps_name || rec.origin_ps_name || 'Origin PS'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
                                       >
                                         <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
@@ -676,10 +633,10 @@ export default function MyRecords() {
                                       </span>
                                     ) : (
                                       <span
-                                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs"
+                                        className="inline-flex items-center gap-1 text-label-s font-bold px-2 py-0.5 rounded-full bg-[var(--ux4g-bg-primary-soft)] text-[var(--primary)] border border-[var(--border-color)] shadow-xs"
                                         title={`Transferred to ${rec.transferred_to_ps_name || rec.data?.transferred_to_ps || 'Destination PS'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
                                       >
-                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
                                         ↗ Transferred ({rec.transferred_to_ps_name || rec.data?.transferred_to_ps || 'PS'})
                                       </span>
                                     )
@@ -687,7 +644,7 @@ export default function MyRecords() {
                                   {/* Transfer to Agency */}
                                   {(rec.transfer_to_type === 'Agency' || rec.data?.transfer_to === 'Agency') && (
                                     <span
-                                      className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-xs"
+                                      className="inline-flex items-center gap-1 text-label-s font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-xs"
                                       title={`Investigation conducted by ${rec.transferred_to_agency_name || rec.data?.transferred_to_agency || 'Agency'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
                                     >
                                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -724,7 +681,7 @@ export default function MyRecords() {
                             {/* Update Status Action (WS9) */}
                             <button
                               onClick={() => setStatusModalRecordId(rec.id)}
-                              className="bg-violet-50 hover:bg-violet-500 text-violet-700 hover:text-white p-2.5 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-violet-200 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 active:scale-95 shadow-xs"
+                              className="bg-[var(--ux4g-bg-primary-soft)] hover:bg-[var(--primary)] text-[var(--primary)] hover:text-white p-2.5 rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer border border-[var(--border-color)] hover:border-[var(--primary)] hover:shadow-lg active:scale-95 shadow-xs"
                               title={t('statusUpdate.updateAction', 'Update Status')}
                             >
                               <RefreshCw size={16} />
@@ -734,8 +691,8 @@ export default function MyRecords() {
                             {rowEditable && (
                               <button
                                 onClick={() => navigate(`/records/new/${rec.record_type}?edit=${rec.id}`)}
-                                className="bg-amber-50 hover:bg-[#cca43b] text-amber-700 hover:text-white p-2.5 rounded-xl transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-amber-200 hover:border-[#cca43b] shadow-xs"
-                                title="Edit Full Record"
+                                className="bg-amber-50 hover:bg-[var(--accent-gold)] text-amber-700 hover:text-white p-2.5 rounded-xl transition-colors duration-200 inline-flex items-center justify-center cursor-pointer border border-amber-200 hover:border-[var(--accent-gold)] shadow-xs"
+                                title="Edit Record"
                               >
                                 <FileEdit size={16} />
                               </button>

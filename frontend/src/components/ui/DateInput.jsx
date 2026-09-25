@@ -83,7 +83,7 @@ export default function DateInput({
           `w-full h-10 pl-3 pr-9 rounded-lg border text-sm outline-none transition-colors ${
             status === 'error'
               ? 'border-red-400 bg-red-50 focus:border-red-500'
-              : 'border-slate-200 bg-white focus:border-[var(--accent-color,#2563eb)]'
+              : 'border-slate-200 bg-white focus:border-[var(--accent-color)]'
           } disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed`
         }
       />

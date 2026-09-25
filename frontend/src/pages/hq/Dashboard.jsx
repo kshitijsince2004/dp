@@ -5,25 +5,27 @@ import {
   Clock3, CheckCircle2, ChevronRight, AlertCircle, MapPin, UserX
 } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from 'recharts';
 import api from '../../utils/api.js';
+import { asArray, asRecordsList } from '../../utils/dataShape.js';
 import phqImage from '../../assets/phq.jpeg';
 import useAuthStore from '../../store/authStore.js';
 import SearchableSelect from '../../components/forms/SearchableSelect.jsx';
 import RecordTypeBadge from '../../components/common/RecordTypeBadge.jsx';
 import StatCard from '../../components/ui/StatCard.jsx';
+import SafeResponsiveContainer from '../../components/common/SafeResponsiveContainer.jsx';
 import { getCrimeHeadGroup } from '../../utils/crimeHeadGroups.js';
 import { log } from '../../utils/logger.js';
 
-const FILTER_SELECT_CLASS = 'w-full rounded-control border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-[#1A202C] min-h-[38px]';
+const FILTER_SELECT_CLASS = 'w-full rounded-control border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-[var(--text-primary)] min-h-[38px]';
 
 const typeMeta = {
   CASE: { bg: 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]', label: 'FIR Case' },
   ARREST: { bg: 'bg-[#D1FAE5] text-[#059669] border-[#6EE7B7]', label: 'Arrest' },
-  PCR_CALL: { bg: 'bg-[#DBEAFE] text-[#003087] border-[#BFDBFE]', label: 'PCR Call' },
+  PCR_CALL: { bg: 'bg-[#DBEAFE] text-[#0f52ba] border-[#BFDBFE]', label: 'PCR Call' },
   MISSING: { bg: 'bg-[#FEE2E2] text-[#DC2626] border-[#FCA5A5]', label: 'Missing' },
-  UIDB: { bg: 'bg-[#F3E8FF] text-[#7C3AED] border-[#DDD6FE]', label: 'UIDB' },
+  UIDB: { bg: 'bg-[#DBEAFE] text-[#0f52ba] border-[#BFDBFE]', label: 'UIDB' },
 };
 
 const statusMeta = (status) => {
@@ -32,29 +34,29 @@ const statusMeta = (status) => {
     case 'DISTRICT_REVIEW': return 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]';
     case 'PENDING_SHO': return 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]';
     case 'SENT_BACK': return 'bg-[#FEE2E2] text-[#DC2626] border-[#FCA5A5]';
-    case 'DRAFT': return 'bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]';
+    case 'DRAFT': return 'bg-[#F3F4F6] text-[#4B5563] border-[var(--border-color)]';
     default: return 'bg-[#F0F4F9] text-[#4A5568] border-[#E2E8F0]';
   }
 };
 
 // One color per year-offset-from-current (index 0 = current year), so a given year's
 // line color never repaints when the Duration selection changes. Max 5 lines (Last 5 Years).
-const YEAR_BAR_COLORS = ['#003087', '#7C3AED', '#059669', '#D97706', '#DC2626'];
+const YEAR_BAR_COLORS = ['#0f52ba', '#3b82f6', '#059669', '#D97706', '#DC2626'];
 
 function CrimeHeadBarTooltip({ active, label, payload }) {
   if (!active || !payload || !payload.length) return null;
   const total = payload.reduce((sum, entry) => sum + (Number(entry.value) || 0), 0);
   return (
     <div className="w-[180px] rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-lg text-xs">
-      <p className="mb-1.5 font-bold text-[#0A1628]">{label}</p>
+      <p className="mb-1.5 font-bold text-[var(--text-primary)]">{label}</p>
       {payload.map((entry) => (
         <div key={entry.dataKey} className="flex items-center gap-2 py-0.5">
           <span className="h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ backgroundColor: entry.color }} />
           <span className="text-[#4A5568]">{entry.name}</span>
-          <span className="ml-auto font-mono font-semibold tabular-nums text-[#1A202C]">{entry.value}</span>
+          <span className="ml-auto font-mono font-semibold tabular-nums text-[var(--text-primary)]">{entry.value}</span>
         </div>
       ))}
-      <div className="mt-1.5 flex items-center border-t border-[#E2E8F0] pt-1.5 font-semibold text-[#1A202C]">
+      <div className="mt-1.5 flex items-center border-t border-[#E2E8F0] pt-1.5 font-semibold text-[var(--text-primary)]">
         Total
         <span className="ml-auto font-mono tabular-nums">{total}</span>
       </div>
@@ -69,8 +71,8 @@ function CrimeHeadBarChart({ rows, years }) {
   const needsScroll = rows.length > SCROLL_THRESHOLD;
   return (
     <div className={needsScroll ? 'overflow-x-auto p-6' : 'p-6'}>
-      <div style={{ width: needsScroll ? rows.length * MIN_BAR_WIDTH : '100%', height: 340 }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div style={{ width: needsScroll ? rows.length * MIN_BAR_WIDTH : '100%', height: 270 }}>
+        <SafeResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 10, right: 20, left: 0, bottom: 90 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
             <XAxis
@@ -102,7 +104,7 @@ function CrimeHeadBarChart({ rows, years }) {
               );
             })}
           </BarChart>
-        </ResponsiveContainer>
+        </SafeResponsiveContainer>
       </div>
     </div>
   );
@@ -138,7 +140,7 @@ export default function HQDashboard() {
     },
   });
 
-  const records = Array.isArray(recordsData) ? recordsData : [];
+  const records = asArray(recordsData);
 
   useEffect(() => {
     log.debug('page:mount', { route: '/hq', userId: user?.id, role: user?.role });
@@ -235,8 +237,8 @@ export default function HQDashboard() {
     });
   }, [records, filterType, filterDistrict, filterLocalHead, dateFrom, dateTo]);
 
-  const years = chartResp?.years ?? [];
-  const chartRows = chartResp?.rows ?? [];
+  const years = asArray(chartResp?.years);
+  const chartRows = asArray(chartResp?.rows);
   const changeRate = chartResp?.change_rate ?? null;
 
   const heinousRows = chartRows.filter((r) => r.is_heinous);
@@ -261,7 +263,7 @@ export default function HQDashboard() {
     <div className="min-h-screen theme-hq-page page-bg">
 
       {/* ══════════════ HERO HEADER ══════════════ */}
-      <div className="relative overflow-hidden hero-banner-gradient px-8 py-8">
+      <div className="relative overflow-hidden hero-banner-gradient px-6 py-5">
         <div
           className="pointer-events-none absolute inset-0 w-full h-full"
           style={{
@@ -274,25 +276,17 @@ export default function HQDashboard() {
         <div
           className="pointer-events-none absolute inset-0 w-full h-full bg-[#0a1120]/75"
         />
-        <div className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-10 left-1/3 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
-        <div className="pointer-events-none absolute top-1/3 right-1/3 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: 'repeating-linear-gradient(0deg,white 0,white 1px,transparent 1px,transparent 48px),repeating-linear-gradient(90deg,white 0,white 1px,transparent 1px,transparent 48px)' }}
-        />
 
         <div className="relative z-10 mx-auto max-w-screen-xl">
           {/* Top row */}
           <div className="flex items-center gap-2 mb-3 text-xs font-semibold tracking-wide text-white/70">
-            <Building size={12} className="text-amber-400" />
             {getDistrictName()} · HQ Command Center
           </div>
 
           {/* Heading + welcome */}
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
-              <h1 className="text-4xl font-bold leading-tight tracking-tight text-white">
+              <h1 className="text-3xl font-bold leading-tight tracking-tight text-white">
                 Delhi Police
               </h1>
               <p className="mt-1 text-xl font-semibold tracking-wide text-slate-300">
@@ -313,10 +307,10 @@ export default function HQDashboard() {
       </div>
 
       {/* ══════════════ PAGE BODY ══════════════ */}
-      <div className="mx-auto max-w-screen-xl px-6 pb-12">
+      <div className="mx-auto max-w-screen-xl px-6 pb-8">
 
         {/* ── Overview Stat Cards ── */}
-        <div className="mt-8">
+        <div className="mt-5">
           <div className="mb-3 text-label font-semibold text-[#4A5568]">Operational Overview</div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {cards.map((card, idx) => (
@@ -338,7 +332,7 @@ export default function HQDashboard() {
           <div className="flex items-center gap-3 px-4 py-3">
             <Filter size={14} className="text-slate-400" />
             <div>
-              <p className="text-sm font-bold text-[#1A202C]">Scope Filters</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Scope Filters</p>
             </div>
             <span className="ml-auto text-meta text-slate-500">
               {activeFilterCount > 0 ? `${activeFilterCount} active` : 'No filters'}
@@ -404,7 +398,7 @@ export default function HQDashboard() {
             <div className="flex items-center gap-3">
               <ShieldAlert size={16} className="text-slate-400 shrink-0" />
               <div>
-                <h3 className="text-base font-bold text-[#1A202C]">Real-time Jurisdiction Activity Feed</h3>
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Real-time Jurisdiction Activity Feed</h3>
                 <p className="mt-0.5 text-xs text-[#718096]">
                   Showing {Math.min(8, filteredRecords.length)} of{' '}
                   {filteredRecords.length} records
@@ -448,11 +442,11 @@ export default function HQDashboard() {
                 onClick={() => setFilterType(prev => prev === 'PCR_CALL' ? 'All' : 'PCR_CALL')}
                 className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 shadow-sm transition-all cursor-pointer ${
                   filterType === 'PCR_CALL'
-                    ? 'border-[#003087] bg-[#BFDBFE] text-[#1E3A8A] ring-2 ring-[#003087]/30 font-bold'
-                    : 'border-[#BFDBFE] bg-[#EFF6FF] text-[#003087] hover:bg-[#BFDBFE]/50'
+                    ? 'border-[#0f52ba] bg-[#BFDBFE] text-[#1E3A8A] ring-2 ring-[#0f52ba]/30 font-bold'
+                    : 'border-[#BFDBFE] bg-[#EFF6FF] text-[#0f52ba] hover:bg-[#BFDBFE]/50'
                 }`}
               >
-                <PhoneCall size={11} className="text-[#003087]" />
+                <PhoneCall size={11} className="text-[#0f52ba]" />
                 <span className="text-xs font-semibold">PCR</span>
               </button>
             </div>
@@ -463,14 +457,14 @@ export default function HQDashboard() {
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="border-b border-[#E2E8F0] bg-[#F8FAFF] text-[#718096]">
-                  <th className="px-5 py-3.5 pl-6 font-semibold uppercase tracking-wide">#</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Reference No.</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Police Station</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">District</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Record Type</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Facts Gist</th>
-                  <th className="px-5 py-3.5 font-semibold uppercase tracking-wide">Status</th>
-                  <th className="px-5 py-3.5 pr-6 font-semibold uppercase tracking-wide">Timestamp</th>
+                  <th className="px-4 py-2.5 pl-6 font-semibold uppercase tracking-wide">#</th>
+                  <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Reference No.</th>
+                  <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Police Station</th>
+                  <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">District</th>
+                  <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Record Type</th>
+                  <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Facts Gist</th>
+                  <th className="px-4 py-2.5 font-semibold uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-2.5 pr-6 font-semibold uppercase tracking-wide">Timestamp</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0F4F9]">
@@ -497,49 +491,49 @@ export default function HQDashboard() {
                         className="group cursor-pointer transition-all duration-150 hover:bg-[#F8FAFF]"
                       >
                         {/* Row number */}
-                        <td className="px-5 py-4 pl-6">
+                        <td className="px-4 py-2.5 pl-6">
                           <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#F0F4F9] text-xs font-bold text-[#718096]">
                             {idx + 1}
                           </span>
                         </td>
                         {/* Reference */}
-                        <td className="px-5 py-4">
-                          <span className="font-mono text-sm font-bold text-[#0A1628]">{refId}</span>
+                        <td className="px-4 py-2.5">
+                          <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{refId}</span>
                         </td>
                         {/* Police Station */}
-                        <td className="px-5 py-4 font-semibold text-[#0A1628]">
+                        <td className="px-4 py-2.5 font-semibold text-[var(--text-primary)]">
                           {psName}
                         </td>
                         {/* District */}
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-2.5">
                           <div className="flex items-center gap-1.5">
-                            <MapPin size={11} className="text-[#003087] flex-shrink-0" />
+                            <MapPin size={11} className="text-[#0f52ba] flex-shrink-0" />
                             <span className="font-medium text-[#4A5568]">
                               {distName}
                             </span>
                           </div>
                         </td>
                         {/* Record type badge */}
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-2.5">
                           <RecordTypeBadge recordType={rec.record_type} />
                         </td>
                         {/* Facts gist */}
-                        <td className="max-w-[220px] px-5 py-4">
+                        <td className="max-w-[220px] px-4 py-2.5">
                           <p className="truncate text-[#4A5568]">{gist}</p>
                         </td>
                         {/* Status */}
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-2.5">
                           <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-semibold ${statusMeta(rec.current_status)}`}>
                             {rec.current_status}
                           </span>
                         </td>
                         {/* Timestamp + chevron */}
-                        <td className="px-5 py-4 pr-6">
+                        <td className="px-4 py-2.5 pr-6">
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-mono text-[#718096]">
                               {new Date(rec.created_at).toLocaleTimeString()}
                             </span>
-                            <ChevronRight size={13} className="text-[#E2E8F0] transition-colors duration-150 group-hover:text-[#003087]" />
+                            <ChevronRight size={13} className="text-[#E2E8F0] transition-colors duration-150 group-hover:text-[#0f52ba]" />
                           </div>
                         </td>
                       </tr>
@@ -582,7 +576,7 @@ export default function HQDashboard() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 flex items-center justify-center gap-2">
+        <div className="mt-5 flex items-center justify-center gap-2">
           <div className="h-px w-20 bg-[#E2E8F0]" />
           <p className="text-meta font-medium text-[#A0AEC0]">
             Delhi Police Command System · Data refreshes on page load · All times IST

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserCog, Plus, X, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Plus, X, Trash2, UserCheck, UserX } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
+import { asArray } from '../../utils/dataShape.js';
 import { validatePattern } from '../../utils/fieldPatterns.js';
 import { log } from '../../utils/logger.js';
 
@@ -35,7 +36,7 @@ export default function IOManagement() {
       log.debug('data:load_start', { what: 'io_list', includeInactive });
       try {
         const res = await api.get('/investigating-officers', { params: { include_inactive: includeInactive } });
-        const rows = res.data.data || [];
+        const rows = asArray(res.data.data);
         log.debug('data:load_success', { what: 'io_list', count: rows.length });
         return rows;
       } catch (err) {
@@ -111,8 +112,7 @@ export default function IOManagement() {
     <div className="space-y-6 theme-sho-page p-5 rounded-2xl bg-[var(--bg-page-main)] border border-slate-200 shadow-sm">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2 font-display">
-            <UserCog className="text-[var(--accent-color)]" />
+          <h1 className="text-2xl font-bold text-slate-800 font-display">
             <span>Investigating Officers</span>
           </h1>
           <p className="text-slate-500 text-xs mt-1 font-semibold">
@@ -148,7 +148,6 @@ export default function IOManagement() {
         </div>
       ) : ios.length === 0 ? (
         <div className="border border-dashed border-slate-200 bg-white rounded-xl p-16 text-center text-slate-500 shadow-sm">
-          <UserCog size={48} className="mx-auto text-slate-350 mb-3" />
           <p className="text-sm font-semibold">No investigating officers curated yet</p>
           <p className="text-xs text-slate-450 mt-1">Click "Add IO" to add the first officer for your station.</p>
         </div>
@@ -219,7 +218,7 @@ export default function IOManagement() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl">
             <div className="flex justify-between items-center bg-zinc-950/80 border-b border-zinc-800 px-5 py-3.5">
               <h3 className="text-sm font-bold text-zinc-200 flex items-center gap-2">
-                <Plus size={14} className="text-[#cca43b]" />
+                <Plus size={14} className="text-[var(--accent-gold)]" />
                 Add Investigating Officer
               </h3>
               <button onClick={() => { setModalOpen(false); resetForm(); }} className="text-zinc-500 hover:text-zinc-200 transition-colors">
@@ -235,7 +234,7 @@ export default function IOManagement() {
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Inspector Ramesh Kumar"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] transition-all"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--primary)] transition-all"
                   required
                 />
               </div>
@@ -246,7 +245,7 @@ export default function IOManagement() {
                   <select
                     value={form.rank}
                     onChange={(e) => setForm({ ...form, rank: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] transition-all cursor-pointer"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--primary)] transition-all cursor-pointer"
                   >
                     <option value="">-- Select --</option>
                     {RANK_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -259,7 +258,7 @@ export default function IOManagement() {
                     value={form.pis_no}
                     onChange={(e) => setForm({ ...form, pis_no: e.target.value })}
                     placeholder="28081234"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] transition-all font-mono"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--primary)] transition-all font-mono"
                   />
                 </div>
               </div>
@@ -276,7 +275,7 @@ export default function IOManagement() {
                   onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                   maxLength={10}
                   placeholder="9876543210"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] transition-all font-mono"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--primary)] transition-all font-mono"
                 />
               </div>
 
@@ -291,7 +290,7 @@ export default function IOManagement() {
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="bg-[#cca43b] hover:bg-amber-600 text-zinc-950 px-5 py-2 rounded-lg font-bold shadow-md cursor-pointer text-xs disabled:opacity-60"
+                  className="bg-[var(--accent-gold)] hover:bg-[var(--warning)] text-zinc-950 px-5 py-2 rounded-lg font-bold shadow-md cursor-pointer text-xs disabled:opacity-60"
                 >
                   {createMutation.isPending ? 'Adding…' : 'Add Officer'}
                 </button>

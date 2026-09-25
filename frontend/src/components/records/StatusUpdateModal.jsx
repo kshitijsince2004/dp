@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { X, AlertTriangle, Lock, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
+import { asArray, asNodesList } from '../../utils/dataShape.js';
 
 // Domain-status update modal (WS9). Zero hardcoded status vocabularies or per-type field
 // maps here (P4) — every field, option list, current value and label comes from
@@ -60,13 +61,13 @@ export default function StatusUpdateModal({ recordId, open, onClose, onUpdated, 
     queryKey: ['hierarchy-ps-nodes-transfer'],
     queryFn: async () => {
       const res = await api.get('/hierarchy/nodes', { params: { type: 'PS', for_transfer: 'true' } });
-      return res.data.data || [];
+      return asNodesList(res.data.data);
     },
     enabled: open,
     staleTime: 5 * 60 * 1000,
   });
 
-  const fields = data?.fields || [];
+  const fields = asArray(data?.fields);
   const isFrozen = !!data?.is_frozen;
 
   // Reset local form state whenever the modal is (re)opened for a record
@@ -219,7 +220,7 @@ export default function StatusUpdateModal({ recordId, open, onClose, onUpdated, 
 
   if (!open) return null;
 
-  const rawOptions = activeField?.options || [];
+  const rawOptions = asArray(activeField?.options);
   const hasSuppOption = rawOptions.some((o) => String(o.value).toUpperCase() === 'SUPPLEMENTARY CHARGESHEET');
   const fieldOptions = activeField?.status_field === 'case_status' && !hasSuppOption
     ? [...rawOptions, { value: 'SUPPLEMENTARY CHARGESHEET', label: 'SUPPLEMENTARY CHARGESHEET' }]
@@ -289,16 +290,16 @@ export default function StatusUpdateModal({ recordId, open, onClose, onUpdated, 
                           <div className="flex items-center justify-between">
                             <div className="text-sm font-bold text-[var(--text-main-theme)]">{f.label}</div>
                             {f.disabled && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
                                 <Lock size={12} /> Restricted
                               </span>
                             )}
                           </div>
-                          <div className="text-[11px] text-[var(--text-main-theme)] opacity-60 font-semibold mt-0.5">
+                          <div className="text-label-s text-[var(--text-main-theme)] opacity-60 font-semibold mt-0.5">
                             {t('statusUpdate.currentValue', 'Current')}: {resolveOptionLabel(f, f.current_value) ?? (f.current_value ?? t('statusUpdate.notSet', 'Not set'))}
                           </div>
                           {f.disabled && f.disabled_reason && (
-                            <div className="text-[11px] text-amber-700 font-semibold mt-1.5 flex items-start gap-1">
+                            <div className="text-label-s text-amber-700 font-semibold mt-1.5 flex items-start gap-1">
                               <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
                               <span>{f.disabled_reason}</span>
                             </div>
@@ -316,7 +317,7 @@ export default function StatusUpdateModal({ recordId, open, onClose, onUpdated, 
                     <button
                       type="button"
                       onClick={() => { setActiveFieldKey(null); setNewValue(''); }}
-                      className="text-[11px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
+                      className="text-label-s font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
                     >
                       &larr; {t('statusUpdate.change', 'Change')}
                     </button>
@@ -326,7 +327,7 @@ export default function StatusUpdateModal({ recordId, open, onClose, onUpdated, 
                     <label className="text-sm font-bold text-[var(--text-main-theme)] opacity-80">
                       {activeField.label}
                     </label>
-                    <p className="text-[11px] text-[var(--text-main-theme)] opacity-60 font-semibold">
+                    <p className="text-label-s text-[var(--text-main-theme)] opacity-60 font-semibold">
                       {t('statusUpdate.currentValue', 'Current')}: {resolveOptionLabel(activeField, activeField.current_value) ?? (activeField.current_value ?? t('statusUpdate.notSet', 'Not set'))}
                     </p>
                   </div>
@@ -375,7 +376,7 @@ export default function StatusUpdateModal({ recordId, open, onClose, onUpdated, 
                       <label className="text-xs font-bold text-amber-800 flex items-center gap-1">
                         <span>Pending Investigation / Items Remaining for Supplementary Chargesheet *</span>
                       </label>
-                      <p className="text-[11px] text-[var(--text-main-theme)] opacity-75 font-medium">
+                      <p className="text-label-s text-[var(--text-main-theme)] opacity-75 font-medium">
                         Specify what investigation items remain pending to be chargesheeted (e.g. FSL forensic report, pending arrest of co-accused, CDR/financial analysis):
                       </p>
                       <textarea
@@ -528,7 +529,7 @@ export default function StatusUpdateModal({ recordId, open, onClose, onUpdated, 
                       className="w-full bg-[var(--bg-page-main)]/40 border-2 border-[var(--border-card-theme)] text-sm text-[var(--text-main-theme)] px-3.5 py-2.5 rounded-xl outline-none focus:border-[var(--accent-color)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     />
                     {workoutYes && (
-                      <p className="text-[11px] text-[var(--text-main-theme)] opacity-60 font-semibold">
+                      <p className="text-label-s text-[var(--text-main-theme)] opacity-60 font-semibold">
                         {t('statusUpdate.workoutDateHint', 'This date is recorded as the official workout date for this case.')}
                       </p>
                     )}

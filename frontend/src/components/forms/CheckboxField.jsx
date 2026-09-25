@@ -24,7 +24,7 @@ export default function CheckboxField({ id, disabled, value, onChange, label }) 
           }}
           className="sr-only peer"
         />
-        <div className="w-5 h-5 rounded border-2 border-slate-300 bg-white peer-checked:bg-[var(--primary-accent,#0f52ba)] peer-checked:border-[var(--primary-accent,#0f52ba)] transition-colors flex items-center justify-center">
+        <div className="w-5 h-5 rounded border-2 border-slate-300 bg-white peer-checked:bg-[var(--primary-accent)] peer-checked:border-[var(--primary-accent)] transition-colors flex items-center justify-center">
           {isChecked && (
             <svg width="11" height="8" viewBox="0 0 11 8" fill="none">
               <path d="M1 4l3 3 6-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

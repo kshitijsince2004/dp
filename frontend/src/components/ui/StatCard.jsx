@@ -1,8 +1,8 @@
 export default function StatCard({
   label,
   value,
-  icon: Icon,
-  iconColor = "text-slate-400",
+  icon: _Icon,
+  iconColor: _iconColor,
   trend,
   trendDirection = "up",
   subtext,
@@ -10,7 +10,7 @@ export default function StatCard({
 }) {
   return (
     <div
-      className={`rounded-card border border-slate-200 bg-white p-4 flex items-center justify-between gap-3 ${className}`}
+      className={`rounded-card border border-slate-200 bg-white p-3 ${className}`}
     >
       <div className="min-w-0">
         <div className="text-label font-semibold text-slate-400">
@@ -36,7 +36,6 @@ export default function StatCard({
           <div className="text-meta text-slate-500 mt-0.5">{subtext}</div>
         )}
       </div>
-      {Icon && <Icon size={18} className={`shrink-0 ${iconColor}`} />}
     </div>
   );
 }

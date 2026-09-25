@@ -11,8 +11,8 @@ const variants = {
 
 const sizes = {
   sm: 'h-8 px-3 text-sm rounded-control',
-  md: 'h-10 px-4 text-sm rounded-control',
-  lg: 'h-12 px-6 text-base rounded-control',
+  md: 'h-9 px-4 text-sm rounded-control',
+  lg: 'h-10 px-5 text-sm rounded-control',
 };
 
 /**

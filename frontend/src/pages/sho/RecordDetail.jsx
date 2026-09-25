@@ -412,7 +412,7 @@ export default function RecordDetail() {
             <AlertTriangle size={20} />
           </div>
           <div className="flex-1">
-            <p className="text-xs sm:text-sm font-extrabold text-amber-950 m-0">
+            <p className="text-xs sm:text-sm font-bold text-amber-950 m-0">
               Editing Record Active
             </p>
             <p className="text-xs sm:text-sm text-amber-900/90 font-medium m-0 mt-0.5">
@@ -430,7 +430,7 @@ export default function RecordDetail() {
           </div>
           <div className="flex-1 space-y-1">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="font-extrabold text-sm uppercase tracking-wider text-indigo-950">
+              <span className="font-bold text-sm uppercase tracking-wider text-indigo-950">
                 {record.data?.transfer_to === 'Agency'
                   ? 'Case Transferred for Agency Investigation'
                   : user?.ps_id && String(user.ps_id) === String(record.data?.transferred_to_ps_id)
@@ -575,7 +575,7 @@ export default function RecordDetail() {
                         </button>
                       )
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
                         <Lock size={12} /> Requires Chargesheet
                       </span>
                     )}

@@ -1,37 +1,30 @@
 import React, { createContext, useContext } from 'react';
-import { jwtDecode } from 'jwt-decode';
 import useAuthStore from '../store/authStore.js';
 import { log } from '../utils/logger.js';
 
 const AuthContext = createContext(null);
 
+/**
+ * Thin provider over the Zustand auth store.
+ * Session tokens are owned by SuperTokens — do not write access_token/refresh_token
+ * to localStorage from this context.
+ */
 export function AuthProvider({ children }) {
-  const { user, login: storeLogin, logout: storeLogout } = useAuthStore();
-
-  const login = (tokens) => {
-    // REDACT: never log token values — presence only.
-    log.debug('auth:login_start', { hasToken: !!tokens?.access_token, hasRefreshToken: !!tokens?.refresh_token });
-    localStorage.setItem('access_token', tokens.access_token);
-    localStorage.setItem('refresh_token', tokens.refresh_token);
-    try {
-      const decoded = jwtDecode(tokens.access_token);
-      storeLogin(decoded);
-      log.info('auth:login_success', { userId: decoded?.sub, role: decoded?.role });
-    } catch (e) {
-      console.error('Failed to decode token on login', e);
-      log.error('auth:login_decode_failed', { err: e });
-    }
-  };
+  const { user, logout: storeLogout } = useAuthStore();
 
   const logout = () => {
     log.info('auth:logout', { userId: user?.id, role: user?.role });
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    try {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    } catch {
+      /* ignore */
+    }
     storeLogout();
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, logout }}>
       {children}
     </AuthContext.Provider>
   );

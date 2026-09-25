@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings, Plus, X, ChevronDown, ChevronRight, ToggleLeft, ToggleRight, Globe, Pencil } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronRight, ToggleLeft, ToggleRight, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import { log } from '../../utils/logger.js';
@@ -198,8 +198,7 @@ export default function FieldManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2 font-display">
-            <Settings className="text-[var(--accent-color)]" />
+          <h1 className="text-2xl font-bold text-slate-800 font-display">
             Field Registry Manager
           </h1>
           <p className="text-slate-500 text-xs mt-1 font-semibold">
@@ -217,7 +216,7 @@ export default function FieldManager() {
       {/* Tabs */}
       <div className="border-b border-slate-200 flex gap-1">
         {[
-          { key: 'global',   label: 'Global Field Registry', icon: <Globe size={12} /> },
+          { key: 'global',   label: 'Global Field Registry' },
           { key: 'district', label: 'District Extensions' },
         ].map((tab) => (
           <button key={tab.key} onClick={() => { log.debug('action:field_tab_change', { tab: tab.key }); setActiveTab(tab.key); }}
@@ -226,7 +225,7 @@ export default function FieldManager() {
                 ? 'border-[var(--accent-color)] text-[var(--accent-color)]'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}>
-            {tab.icon}{tab.label}
+            {tab.label}
             <span className="ml-1 text-[9px] bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-mono text-slate-600">
               {tab.key === 'global' ? globalFields.length : districtFields.length}
             </span>
@@ -239,7 +238,7 @@ export default function FieldManager() {
         <span className="text-slate-500 text-xs font-semibold">Filter:</span>
         {['ALL', ...RECORD_TYPES].map((type) => (
           <button key={type} onClick={() => setFilterType(type)}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
+            className={`px-3 py-1.5 rounded-lg text-label-s font-bold transition-all cursor-pointer border ${
               filterType === type
                 ? 'bg-[var(--accent-color)] text-white border-transparent shadow-md'
                 : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50'
@@ -257,7 +256,6 @@ export default function FieldManager() {
         </div>
       ) : Object.keys(grouped).length === 0 ? (
         <div className="text-center text-slate-500 py-12 border border-dashed border-slate-200 bg-white rounded-xl shadow-sm">
-          <Settings size={40} className="mx-auto mb-3 text-slate-350" />
           <p className="text-sm font-semibold">No fields found</p>
         </div>
       ) : (
@@ -295,7 +293,7 @@ export default function FieldManager() {
                     <tbody className="divide-y divide-slate-100">
                       {fields.map((f) => (
                         <tr key={f.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="p-3 pl-5 font-mono font-bold text-[var(--accent-color)] text-[11px]">{f.field_key}</td>
+                          <td className="p-3 pl-5 font-mono font-bold text-[var(--accent-color)] text-label-s">{f.field_key}</td>
                           <td className="p-3">
                             <span className="bg-slate-100 border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded text-[9px] font-bold font-mono">
                               {f.field_type}
@@ -363,7 +361,7 @@ export default function FieldManager() {
               {/* Modal header */}
               <div className="flex justify-between items-center bg-zinc-950/80 border-b border-zinc-800 px-5 py-3.5">
                 <h3 className="text-sm font-bold text-zinc-200 flex items-center gap-2">
-                  <Plus size={14} className="text-[#cca43b]" />
+                  <Plus size={14} className="text-[var(--accent-gold)]" />
                   {editTarget ? 'Edit Field' : 'Add Global Field'}
                 </h3>
                 <button onClick={closeModal} className="text-zinc-500 hover:text-zinc-200 cursor-pointer">
@@ -383,12 +381,12 @@ export default function FieldManager() {
                       value={form.field_key}
                       onChange={(e) => setForm({ ...form, field_key: e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') })}
                       placeholder="e.g. court_hearing_date"
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] font-mono disabled:opacity-50" />
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-mono disabled:opacity-50" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-zinc-400 font-semibold">Field Type *</label>
                     <select value={form.field_type} onChange={(e) => setForm({ ...form, field_type: e.target.value })}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] cursor-pointer">
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--accent-gold)] cursor-pointer">
                       {FIELD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
@@ -401,14 +399,14 @@ export default function FieldManager() {
                     <input type="text" required value={form.label_en}
                       onChange={(e) => setForm({ ...form, label_en: e.target.value })}
                       placeholder="e.g. Court Hearing Date"
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b]" />
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--accent-gold)]" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-zinc-400 font-semibold">Hindi Label</label>
                     <input type="text" value={form.label_hi}
                       onChange={(e) => setForm({ ...form, label_hi: e.target.value })}
                       placeholder="e.g. न्यायालय सुनवाई तिथि"
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] font-sans" />
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-sans" />
                   </div>
                 </div>
 
@@ -420,7 +418,7 @@ export default function FieldManager() {
                   <div className="flex flex-wrap gap-2">
                     {RECORD_TYPES.map((rt) => (
                       <button key={rt} type="button" onClick={() => toggleRecordType(rt)}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
+                        className={`px-3 py-1.5 rounded-lg text-label-s font-bold transition-all cursor-pointer border ${
                           form.applicable_record_types.includes(rt)
                             ? TYPE_COLORS[rt] || 'text-zinc-200 border-zinc-500 bg-zinc-700'
                             : 'bg-zinc-900 border-zinc-800 text-zinc-500'
@@ -435,7 +433,7 @@ export default function FieldManager() {
                 <div className="space-y-1.5">
                   <label className="text-zinc-400 font-semibold">Section</label>
                   {form.applicable_record_types.length === 0 ? (
-                    <div className="w-full bg-zinc-950/60 border border-zinc-800 rounded-lg p-2.5 text-zinc-600 text-[11px]">
+                    <div className="w-full bg-zinc-950/60 border border-zinc-800 rounded-lg p-2.5 text-zinc-600 text-label-s">
                       Select at least one record type above to see available sections.
                     </div>
                   ) : (
@@ -447,7 +445,7 @@ export default function FieldManager() {
                           setForm({ ...form, isNewSection: false, section: e.target.value });
                         }
                       }}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] cursor-pointer">
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--accent-gold)] cursor-pointer">
                       <option value="">Choose a section</option>
                       {knownSections.map((s) => (
                         <option key={s.key} value={s.key}>{s.label || s.key}</option>
@@ -462,7 +460,7 @@ export default function FieldManager() {
 
                 {form.isNewSection && (
                   <div className="border border-zinc-700/60 rounded-lg p-3 bg-zinc-950/40 space-y-3">
-                    <p className="text-zinc-400 font-semibold text-[11px] uppercase tracking-wide">New Section Details</p>
+                    <p className="text-zinc-400 font-semibold text-label-s uppercase tracking-wide">New Section Details</p>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1.5">
                         <label className="text-zinc-500">Key (snake_case) *</label>
@@ -470,7 +468,7 @@ export default function FieldManager() {
                           value={form.section}
                           onChange={(e) => setForm({ ...form, section: e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') })}
                           placeholder="court_details"
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[#cca43b] font-mono" />
+                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-mono" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-zinc-500">English Name *</label>
@@ -478,7 +476,7 @@ export default function FieldManager() {
                           value={form.section_label_en}
                           onChange={(e) => setForm({ ...form, section_label_en: e.target.value })}
                           placeholder="Court Details"
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[#cca43b]" />
+                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)]" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-zinc-500">Hindi Name</label>
@@ -486,7 +484,7 @@ export default function FieldManager() {
                           value={form.section_label_hi}
                           onChange={(e) => setForm({ ...form, section_label_hi: e.target.value })}
                           placeholder="न्यायालय विवरण"
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[#cca43b] font-sans" />
+                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-sans" />
                       </div>
                     </div>
                   </div>
@@ -498,7 +496,7 @@ export default function FieldManager() {
                     <div className="flex items-center justify-between">
                       <label className="text-zinc-400 font-semibold">Dropdown Options</label>
                       <button type="button" onClick={addOption}
-                        className="text-[11px] text-[#cca43b] hover:text-amber-500 font-bold flex items-center gap-1 cursor-pointer">
+                        className="text-label-s text-[var(--accent-gold)] hover:text-amber-500 font-bold flex items-center gap-1 cursor-pointer">
                         <Plus size={11} /> Add Option
                       </button>
                     </div>
@@ -506,13 +504,13 @@ export default function FieldManager() {
                       <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
                         <input type="text" placeholder="value (stored)" value={opt.value}
                           onChange={(e) => updateOption(i, 'value', e.target.value)}
-                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[#cca43b] font-mono" />
+                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-mono" />
                         <input type="text" placeholder="English label" value={opt.label_en}
                           onChange={(e) => updateOption(i, 'label_en', e.target.value)}
-                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[#cca43b]" />
+                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)]" />
                         <input type="text" placeholder="Hindi label" value={opt.label_hi || ''}
                           onChange={(e) => updateOption(i, 'label_hi', e.target.value)}
-                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[#cca43b] font-sans" />
+                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-sans" />
                         <button type="button" onClick={() => removeOption(i)}
                           className="text-zinc-600 hover:text-red-400 cursor-pointer">
                           <X size={14} />
@@ -527,14 +525,14 @@ export default function FieldManager() {
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={form.is_required}
                       onChange={(e) => setForm({ ...form, is_required: e.target.checked })}
-                      className="accent-[#cca43b]" />
+                      className="accent-[var(--accent-gold)]" />
                     <span className="text-zinc-400 font-semibold">Mark as required</span>
                   </label>
                   <div className="flex items-center gap-2">
                     <label className="text-zinc-500">Sort order</label>
                     <input type="number" value={form.sort_order}
                       onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })}
-                      className="w-20 bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[#cca43b] text-center" />
+                      className="w-20 bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] text-center" />
                   </div>
                 </div>
 
@@ -545,7 +543,7 @@ export default function FieldManager() {
                     Cancel
                   </button>
                   <button type="submit" disabled={isPending}
-                    className="bg-[#cca43b] hover:bg-amber-600 text-zinc-950 px-5 py-2 rounded-lg font-bold shadow-md cursor-pointer disabled:opacity-60">
+                    className="bg-[var(--accent-gold)] hover:bg-amber-600 text-zinc-950 px-5 py-2 rounded-lg font-bold shadow-md cursor-pointer disabled:opacity-60">
                     {isPending
                       ? (editTarget ? 'Saving…' : 'Publishing…')
                       : (editTarget ? 'Save Changes' : 'Publish Field')}

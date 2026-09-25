@@ -189,8 +189,8 @@ scope (Integration 4).
   `eventBus.js` nacks-without-requeue-or-DLQ on a thrown error (§4.6/G4) and a dropped message
   with no trace is worse than a batch correctly marked FAILED. `sweepStaleConfirmedBatches`
   (called once from the handler's `init()`, not on a timer) re-publishes any batch stuck in
-  `CONFIRMED` for >15 minutes — covers a message genuinely lost (e.g. a mock-mode process
-  restart between publish and consume); safe because of the same idempotency guarantee.
+  `CONFIRMED` for >15 minutes — covers a message genuinely lost (e.g. an in-memory event bus
+  process restart between publish and consume); safe because of the same idempotency guarantee.
 
   `import.controller.js` is now a THIN HTTP layer (3168 → 555 lines) — template generation
   (`downloadImportTemplate`/`addSheetToWorkbook`/`getHint`, untouched, WP7's territory) plus 5
@@ -677,8 +677,8 @@ them, and testing bore that out (first live run passed cleanly).
    and not 2**: the two survivors were correctly recognized via `(import_batch_id, legacy_ref)`
    and skipped, only the missing one was rewritten.
 4. **Real event-driven path** (not `processBatch` called directly): `eventBus.publish
-   ('import.confirm.requested', {batch_id})` on a freshly claimed batch → mock-mode's
-   synchronous-dispatch-of-an-async-handler correctly completed after a short wait → batch
+   ('import.confirm.requested', {batch_id})` on a freshly claimed batch → the in-memory event
+   bus's synchronous-dispatch-of-an-async-handler correctly completed after a short wait → batch
    reached `IMPORTED`, record exists.
 5. **Startup sweep**: a batch force-dated `confirmed_at` 20 minutes in the past →
    `sweepStaleConfirmedBatches` correctly identified and re-published it → the republished

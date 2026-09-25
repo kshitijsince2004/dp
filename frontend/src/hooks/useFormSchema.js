@@ -41,7 +41,7 @@ const SYSTEM_FIELDS = [
 ];
 
 /**
- * Normalize a field from either mock (has validation_rules) or real backend
+ * Normalize a field from backend schema variants
  * (may return `validation` instead of `validation_rules`).
  */
 function normalizeField(f) {
@@ -137,7 +137,12 @@ const KEYS_TO_SKIP = new Set([
       return { normalized, layout: res.data?.layout || null };
     },
     staleTime: 5 * 60 * 1000,
-    retry: 2,
+    // Align with app QueryClient default; avoid triple-retry spam on real outages.
+    retry: (failureCount, error) => {
+      const status = error?.response?.status;
+      if (status && status >= 400 && status < 500) return false;
+      return failureCount < 1;
+    },
     enabled: !!recordType,
   });
 

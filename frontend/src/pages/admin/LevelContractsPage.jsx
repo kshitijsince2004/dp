@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  FileSignature, Loader2, AlertTriangle, ChevronDown, ChevronUp, Info, Settings2,
+  Loader2, AlertTriangle, ChevronDown, ChevronUp, Info, Settings2,
 } from 'lucide-react';
 import api from '../../utils/api.js';
 import { log } from '../../utils/logger.js';
@@ -40,7 +40,7 @@ function ContractRow({ contract }) {
         <span className="text-slate-400 text-xs">&rarr;</span>
         {levelBadge(contract.to_level)}
         <span className="font-bold text-slate-800 text-xs">{contract.record_type}</span>
-        <span className="text-slate-550 text-[11px] ml-auto font-semibold">
+        <span className="text-slate-550 text-label-s ml-auto font-semibold">
           {contract.route}
           {' · '}
           <span className={contract.is_active ? 'text-emerald-600' : 'text-slate-400'}>
@@ -70,7 +70,7 @@ function ContractRow({ contract }) {
             <div>
               <p className="text-slate-500 mb-1">Aggregate definitions</p>
               <ul className="list-disc list-inside space-y-0.5">
-                {contract.aggregate_definitions.map((a, i) => (
+                {(contract.aggregate_definitions || []).map((a, i) => (
                   <li key={i}>{a.label_en || a.type}{a.field ? ` (${a.field})` : ''}</li>
                 ))}
               </ul>
@@ -117,8 +117,7 @@ export default function LevelContractsPage() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2 font-display">
-            <FileSignature className="text-[var(--accent-color)]" />
+          <h1 className="text-2xl font-bold text-slate-800 font-display">
             <span>Level Contracts</span>
           </h1>
           <p className="text-slate-500 text-xs mt-1 font-semibold">
@@ -132,8 +131,8 @@ export default function LevelContractsPage() {
         <Settings2 size={14} className="mt-0.5 flex-shrink-0 text-blue-600" />
         <p>
           Level contracts are <strong>config-as-data</strong>: they are authored in
-          <code className="mx-1 px-1.5 py-0.5 rounded bg-white border border-blue-200 font-mono text-[11px]">config/contracts/*.json</code>
-          and applied by running <code className="mx-1 px-1.5 py-0.5 rounded bg-white border border-blue-200 font-mono text-[11px]">npm run sync-config</code>.
+          <code className="mx-1 px-1.5 py-0.5 rounded bg-white border border-blue-200 font-mono text-label-s">config/contracts/*.json</code>
+          and applied by running <code className="mx-1 px-1.5 py-0.5 rounded bg-white border border-blue-200 font-mono text-label-s">npm run sync-config</code>.
           This page is a read-only viewer — contracts can no longer be created or edited from the API or the UI.
         </p>
       </div>
@@ -151,7 +150,6 @@ export default function LevelContractsPage() {
         </div>
       ) : contracts.length === 0 ? (
         <div className="border border-dashed border-slate-200 rounded-xl p-16 text-center text-slate-400 bg-white shadow-sm">
-          <FileSignature size={48} className="mx-auto opacity-20 mb-3 text-slate-300" />
           <p className="text-sm font-bold text-slate-700">No level contracts defined yet</p>
           <p className="text-xs mt-1 text-slate-500 flex items-center justify-center gap-1.5">
             <Info size={12} />

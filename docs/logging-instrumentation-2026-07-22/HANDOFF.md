@@ -169,9 +169,11 @@ Agents can run in parallel within Phase 1 — ownership is disjoint by file.
 
 ## 6. Pipe traps the FOUNDATION agent MUST handle (blocking)
 
-1. **Mock bypass** — `api.js` has a mock engine keyed on `prism_debug_api_mode`. The
-   client-log POST must go direct (raw axios/`fetch`), never through the mock/intercepted
-   client, or logs get swallowed in the exact debug mode a tester may be in.
+1. **Client-log bypass** — the client-log POST must go direct (raw `fetch`), never through
+   the intercepted axios client, or log shipping can feedback-loop / fail on auth.
+   *(Historical note: a frontend Mock Mode engine previously keyed on `prism_debug_api_mode`
+   also swallowed logs; that Mock Mode architecture was removed — see
+   `frontend/MOCK_MODE_REMOVAL_REPORT.md`.)*
 2. **No feedback loop** — the request/response interceptor logs API calls; sending logs is
    an API call. Exclude `/api/logs/client` from interceptor logging (and from the buffer)
    to avoid infinite recursion.

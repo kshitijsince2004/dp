@@ -9,8 +9,7 @@ import { LOG_ENABLED, downloadLogs } from './utils/logger.js';
  * Manual "Download logs" fallback (logging-instrumentation-2026-07-22, HANDOFF.md §6.5) — for
  * when the backend client-log ingest itself is unreachable/broken. Only rendered when the
  * client logger is actually enabled (dev, or VITE_DEBUG_LOGGING=true); a no-op/absent button in
- * production otherwise. Least-invasive mount point: a small, unobtrusive floating button
- * positioned above the existing DebugBar (routes/AppRouter.jsx), not inside it.
+ * production otherwise. Least-invasive mount point: a small, unobtrusive floating button.
  */
 function DownloadLogsButton() {
   if (!LOG_ENABLED) return null;
@@ -21,11 +20,11 @@ function DownloadLogsButton() {
       title="Download debug logs (PHAROS)"
       style={{
         position: 'fixed',
-        bottom: 48,
+        bottom: 12,
         right: 12,
         zIndex: 9999,
         padding: '5px 9px',
-        fontSize: 11,
+        fontSize: 'var(--text-label-s)',
         lineHeight: 1.2,
         borderRadius: 6,
         border: '1px solid rgba(148,163,184,0.4)',

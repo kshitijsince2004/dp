@@ -28,9 +28,9 @@ export default function RadioField({ id, disabled, value, onChange, options = []
               checked={value === opt.value}
               onChange={() => handleSelect(opt.value)}
               className={inputClassName || "cursor-pointer w-4 h-4"}
-              style={{ accentColor: '#0f52ba' }}
+              style={{ accentColor: 'var(--primary)' }}
             />
-            <span className="text-sm sm:text-base font-bold text-[#0d2a4a]">{getLabel(opt)}</span>
+            <span className="text-sm sm:text-base font-bold text-[var(--primary)]">{getLabel(opt)}</span>
           </label>
         ))}
       </div>
@@ -53,16 +53,16 @@ export default function RadioField({ id, disabled, value, onChange, options = []
               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0 bg-white ${
                 checked ? '' : 'border-slate-300'
               }`}
-              style={checked ? { borderColor: '#0f52ba' } : {}}
+              style={checked ? { borderColor: 'var(--primary)' } : {}}
             >
               {checked && (
                 <div
                   className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: '#0f52ba' }}
+                  style={{ backgroundColor: 'var(--primary)' }}
                 />
               )}
             </div>
-            <span className="text-sm sm:text-base text-[#0d2a4a] font-bold">{getLabel(opt)}</span>
+            <span className="text-sm sm:text-base text-[var(--primary)] font-bold">{getLabel(opt)}</span>
           </button>
         );
       })}

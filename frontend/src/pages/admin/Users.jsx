@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users as UsersIcon, Plus, UserCheck, UserX, ShieldAlert, X, Trash2, KeyRound } from 'lucide-react';
+import { Plus, UserCheck, UserX, ShieldAlert, X, Trash2, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
@@ -22,13 +22,13 @@ const ROLE_LABELS = {
 };
 
 const ROLE_COLORS = {
-  HC: 'text-sky-400 bg-sky-950/30 border-sky-800/40',
-  PS: 'text-sky-400 bg-sky-950/30 border-sky-800/40',
-  SHO: 'text-amber-400 bg-amber-950/30 border-amber-800/40',
-  DISTRICT_OFFICER: 'text-violet-400 bg-violet-950/30 border-violet-800/40',
-  HQ_ANALYST: 'text-blue-400 bg-blue-950/30 border-blue-800/40',
-  HQ_ADMIN: 'text-orange-400 bg-orange-950/30 border-orange-800/40',
-  SYSTEM_ADMIN: 'text-red-400 bg-red-950/30 border-red-800/40',
+  HC: 'text-[var(--primary)] bg-[var(--ux4g-bg-primary-soft)] border-[var(--border-color)]',
+  PS: 'text-[var(--primary)] bg-[var(--ux4g-bg-primary-soft)] border-[var(--border-color)]',
+  SHO: 'text-[var(--primary)] bg-[var(--ux4g-bg-primary-soft)] border-[var(--border-color)]',
+  DISTRICT_OFFICER: 'text-[var(--primary)] bg-[var(--ux4g-bg-primary-soft)] border-[var(--border-color)]',
+  HQ_ANALYST: 'text-[var(--primary)] bg-[var(--ux4g-bg-primary-soft)] border-[var(--border-color)]',
+  HQ_ADMIN: 'text-[var(--primary)] bg-[var(--ux4g-bg-primary-soft)] border-[var(--border-color)]',
+  SYSTEM_ADMIN: 'text-[var(--primary)] bg-[var(--ux4g-bg-primary-soft)] border-[var(--border-color)]',
 };
 
 export default function Users() {
@@ -173,8 +173,7 @@ export default function Users() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2 font-display">
-            <UsersIcon className="text-[var(--accent-color)]" />
+          <h1 className="text-2xl font-bold text-slate-800 font-display">
             <span>{isSHO ? 'My Police Station Officers' : 'Users Register Console'}</span>
           </h1>
           <p className="text-slate-500 text-xs mt-1 font-semibold">
@@ -203,7 +202,6 @@ export default function Users() {
         </div>
       ) : users.length === 0 ? (
         <div className="border border-dashed border-slate-200 bg-white rounded-xl p-16 text-center text-slate-500 shadow-sm">
-          <UsersIcon size={48} className="mx-auto text-slate-350 mb-3" />
           <p className="text-sm font-semibold">No users registered yet</p>
           <p className="text-xs text-slate-450 mt-1">Click "Register New Officer" to add the first user.</p>
         </div>
@@ -410,7 +408,7 @@ export default function Users() {
               </div>
               )}
 
-              <div className="bg-zinc-950 border border-zinc-800/80 p-2.5 rounded text-[11px] text-zinc-500 flex gap-2">
+              <div className="bg-zinc-950 border border-zinc-800/80 p-2.5 rounded text-label-s text-zinc-500 flex gap-2">
                 <ShieldAlert size={14} className="flex-shrink-0 mt-0.5 text-amber-600" />
                 <span>Creating a profile auto-binds security signatures to all submitted operations in audit logs.</span>
               </div>

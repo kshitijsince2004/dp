@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, FileText, Database, ShieldAlert, Cpu, ArrowRight, ClipboardCheck } from 'lucide-react';
+import { FileText, Database, ShieldAlert, ArrowRight, ClipboardCheck } from 'lucide-react';
 import { Button } from '../../components/ui/Button.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { ROUTES } from '../../utils/constants.js';
@@ -42,13 +42,11 @@ export default function HomePage() {
     }
   }, [isAuthenticated, navigate]);
   return (
-    <div className="home-page-container">
-      {/* Animated digital canvas background */}
+      <div className="home-page-container">
+      {/* Soft atmospheric background */}
       <div className="home-grid-overlay" />
       <div className="home-glow-orb-1" />
       <div className="home-glow-orb-2" />
-      <div className="home-glow-orb-3" />
-      <div className="tech-scanline" />
 
       {/* Ticker Marquee Banner (Top scrolling ribbon) */}
       <div className="ticker-banner">
@@ -90,8 +88,8 @@ export default function HomePage() {
                 />
               </div>
               <div className="py-5 px-4 text-center bg-white border-t-2 border-slate-100 flex-shrink-0">
-                <h3 className="text-xl font-black text-[#0d2a4a] font-display tracking-tight">Sardar Vallabhbhai Patel</h3>
-                <p className="text-xs sm:text-sm text-[#cca43b] font-black tracking-widest uppercase mt-1">First Home Minister of India</p>
+                <h3 className="text-heading-s font-bold text-[var(--primary)] font-display tracking-tight">Sardar Vallabhbhai Patel</h3>
+                <p className="text-xs sm:text-sm text-[var(--accent-gold)] font-bold tracking-widest uppercase mt-1">First Home Minister of India</p>
               </div>
             </motion.div>
           </div>
@@ -106,16 +104,16 @@ export default function HomePage() {
             >
               {/* Header Container: Delhi Police Badge & Login Button Parallel */}
               <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
-                <div className="prism-hologram flex-shrink-0 py-3 px-6">
+                <div className="prism-brand flex-shrink-0 py-3 px-6 flex items-center gap-4">
                   <img
                     src={delhiPoliceLogo}
                     alt="Delhi Police emblem"
-                    className="w-14 h-14 object-contain filter drop-shadow-md"
+                    className="w-14 h-14 object-contain"
                   />
                   <div className="hologram-text-block">
-                    <span className="hologram-title glow-text text-3xl font-black tracking-wide">PRISM</span>
+                    <span className="hologram-title text-3xl font-bold tracking-wide">PRISM</span>
                     <div className="hologram-line" />
-                    <span className="text-sm font-black text-slate-800 leading-snug uppercase tracking-wider">
+                    <span className="text-sm font-bold text-slate-800 leading-snug uppercase tracking-wider">
                       Police Reporting, Intelligence &amp; Statistics Management
                     </span>
                   </div>
@@ -126,7 +124,7 @@ export default function HomePage() {
                     size="lg"
                     as={Link}
                     to={ROUTES.LOGIN}
-                    className="w-full sm:w-auto text-lg px-10 py-4 shadow-2xl shadow-[#0f52ba]/30 hover:shadow-[#0f52ba]/45 hover:scale-[1.03] transition-all duration-200 font-black rounded-2xl"
+                    className="w-full sm:w-auto text-lg px-10 py-4 shadow-md hover:shadow-lg transition-all duration-200 font-bold rounded-2xl"
                   >
                     Login Securely
                     <ArrowRight className="w-6 h-6 ml-2.5" />
@@ -137,10 +135,10 @@ export default function HomePage() {
               {/* Operational Capabilities Section inside Right Panel */}
               <div className="w-full text-left">
                 <div className="mb-5">
-                  <h2 className="text-2xl sm:text-3xl font-black mb-1.5 tracking-tight font-display text-[#0d2a4a] home-section-title">
+                  <h2 className="text-heading-m sm:text-3xl font-bold mb-1.5 tracking-tight font-display text-[var(--primary)] home-section-title">
                     Operational Capabilities
                   </h2>
-                  <p className="text-slate-600 text-base sm:text-lg font-normal">
+                  <p className="text-slate-600 text-body-m sm:text-body-l font-normal">
                     Key integrated modules of the PRISM secure enterprise ecosystem
                   </p>
                 </div>
@@ -154,12 +152,12 @@ export default function HomePage() {
                       transition={{ delay: i * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                     >
                       <Card className="home-card-premium p-6 sm:p-7 flex gap-5 h-full items-start rounded-3xl border-2 border-slate-200 shadow-md hover:shadow-xl transition-all">
-                        <div className="p-4 rounded-2xl bg-[#cca43b]/15 border border-[#cca43b]/30 text-[#cca43b] h-fit flex-shrink-0 shadow-sm">
+                        <div className="p-4 rounded-2xl bg-[var(--accent-gold)]/15 border border-[var(--accent-gold)]/30 text-[var(--accent-gold)] h-fit flex-shrink-0 shadow-sm">
                           <Icon className="w-8 h-8 animate-pulse" style={{ animationDuration: '4s' }} />
                         </div>
                         <div>
-                          <h3 className="text-lg sm:text-xl font-black text-[#0d2a4a] mb-1.5 font-display tracking-tight leading-snug">{title}</h3>
-                          <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">{desc}</p>
+                          <h3 className="text-body-l sm:text-heading-s font-bold text-[var(--primary)] mb-1.5 font-display tracking-tight leading-snug">{title}</h3>
+                          <p className="text-sm sm:text-body-m text-slate-600 leading-relaxed font-normal">{desc}</p>
                         </div>
                       </Card>
                     </motion.div>

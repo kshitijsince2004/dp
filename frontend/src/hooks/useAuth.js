@@ -6,9 +6,10 @@ import { QUERY_KEYS } from '../utils/constants.js';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { log } from '../utils/logger.js';
+import Session from 'supertokens-web-js/recipe/session';
 
 export const useAuth = () => {
-  const { user, isAuthenticated, login, logout, setLoading, activeNodeId } = useAuthStore();
+  const { user, isAuthenticated, login, logout } = useAuthStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -16,12 +17,24 @@ export const useAuth = () => {
   // Keyed on the derived values themselves (not every render) so every consumer of this
   // hook doesn't spam a line per re-render — only when the auth state actually changes.
   useEffect(() => {
-    log.debug('auth:state_read', {
-      userId: user?.id ?? null,
-      role: user?.role ?? null,
-      isAuthenticated,
-      hasToken: !!localStorage.getItem('access_token'),
-    });
+    let cancelled = false;
+    (async () => {
+      let hasToken = !!localStorage.getItem('access_token');
+      try {
+        if (await Session.doesSessionExist()) hasToken = true;
+      } catch {
+        /* ignore */
+      }
+      if (!cancelled) {
+        log.debug('auth:state_read', {
+          userId: user?.id ?? null,
+          role: user?.role ?? null,
+          isAuthenticated,
+          hasToken,
+        });
+      }
+    })();
+    return () => { cancelled = true; };
   }, [user?.id, user?.role, isAuthenticated]);
 
   // Fetch current user (runs once on mount)
@@ -77,26 +90,21 @@ export const useAuth = () => {
           badgeNo: credentials.email
         };
         const res = await authApi.login(payload);
+        // SuperTokens establishes the session from the login response headers automatically
+        // (via the axios interceptors attached to this `api` instance). No manual token storage.
         const { user, access_token, refresh_token } = res.data.data;
-        if (access_token) localStorage.setItem('access_token', access_token);
-        if (refresh_token) localStorage.setItem('refresh_token', refresh_token);
-        log.info('auth:login_success', { userId: user?.id ?? null, role: user?.role ?? null, hasAccessToken: !!access_token, hasRefreshToken: !!refresh_token });
+
+        log.info('auth:login_success', {
+          userId: user?.id ?? null,
+          role: user?.role ?? null,
+          hasAccessToken: !!access_token,
+          hasRefreshToken: !!refresh_token,
+        });
         return user;
       } catch (err) {
         if (!err.response) {
-          const debugMode = localStorage.getItem('prism_debug_api_mode') || 'production';
-          if (debugMode === 'production') {
-            log.error('auth:login_error', { reason: 'backend_unreachable' });
-            throw new Error('Cannot reach the server. Start the backend with npm run dev.');
-          }
-          console.warn("Backend offline. Simulating mock login for:", credentials.email);
-          log.warn('auth:login_mock_fallback', { debugMode });
-          return {
-            id: "mock-user-id",
-            username: credentials.email.split('@')[0] || "HC Ramesh Kumar",
-            email: credentials.email,
-            role: "user",
-          };
+          log.error('auth:login_error', { reason: 'backend_unreachable' });
+          throw new Error('Cannot reach the server. Start the backend with npm run dev.', { cause: err });
         }
         log.error('auth:login_error', { status: err?.response?.status, message: err?.message });
         throw err;
@@ -148,7 +156,12 @@ export const useAuth = () => {
     mutationFn: async () => {
       log.debug('auth:logout_attempt', { userId: user?.id ?? null });
       try {
-        await authApi.logout();
+        await Session.signOut(); // revokes the SuperTokens session and clears its tokens
+        try {
+          await authApi.logout();
+        } catch {
+          /* best-effort app logout after ST signOut */
+        }
         log.info('auth:logout_success', {});
       } catch (err) {
         // Suppress offline errors on logout
@@ -174,4 +187,3 @@ export const useAuth = () => {
     logoutMutation,
   };
 };
-

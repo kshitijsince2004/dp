@@ -20,7 +20,7 @@ export const Card = ({
       className={clsx(
         'rounded-card',
         variants[variant],
-        padding && 'p-6',
+        padding && 'p-4',
         className
       )}
       {...props}

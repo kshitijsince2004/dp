@@ -39,7 +39,7 @@ export async function init() {
   });
 
   // Startup sweep (§4.6/G4) — catches batches left in CONFIRMED with no live message to
-  // process them (e.g. a mock-mode process restart between publish and consume). Runs once at
+  // process them (e.g. an in-memory event bus process restart between publish and consume). Runs once at
   // boot, not on a timer; processBatch's own leading status guard makes any redelivery safe.
   log.debug('init: running startup sweep for stale CONFIRMED batches');
   try {

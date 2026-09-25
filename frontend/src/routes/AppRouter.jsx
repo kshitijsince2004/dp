@@ -7,7 +7,6 @@ import DashboardLayout from '../components/layout/DashboardLayout.jsx';
 import { Spinner } from '../components/ui/Spinner.jsx';
 import { ROUTES } from '../utils/constants.js';
 import useAuthStore from '../store/authStore.js';
-import DebugBar from '../components/common/DebugBar.jsx';
 import { log } from '../utils/logger.js';
 
 // Logs every route change (from -> to). Mounted once inside <BrowserRouter> so it sees every
@@ -173,9 +172,5 @@ export const AppRouter = () => (
       </Routes>
     </Suspense>
     </ErrorBoundary>
-
-    {/* Global visual testing console bar — kept outside the ErrorBoundary so it survives a
-        render crash below it. */}
-    <DebugBar />
   </BrowserRouter>
 );

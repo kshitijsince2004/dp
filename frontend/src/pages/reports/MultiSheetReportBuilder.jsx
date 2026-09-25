@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import { log } from '../../utils/logger.js';
+import { asArray } from '../../utils/dataShape.js';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -39,9 +40,9 @@ export const MultiSheetReportBuilder = () => {
     queryFn: () => api.get('/reports/builder/metadata').then(res => res.data.data)
   });
 
-  const { data: stationsList } = useQuery({
+  const { data: stationsList = [] } = useQuery({
     queryKey: ['report-builder', 'lookups', 'police-stations'],
-    queryFn: () => api.get('/reports/builder/lookups/police-stations').then(res => res.data.data),
+    queryFn: () => api.get('/reports/builder/lookups/police-stations').then(res => asArray(res.data.data)),
     staleTime: 600000
   });
 
@@ -50,8 +51,8 @@ export const MultiSheetReportBuilder = () => {
   
   const getFieldsForType = (recordType) => {
     if (!metadataTables[recordType]) return [];
-    const fields = metadataTables[recordType].fields || [];
-    const system = metadataTables[recordType].system_fields || [];
+    const fields = asArray(metadataTables[recordType].fields);
+    const system = asArray(metadataTables[recordType].system_fields);
     return [...system.map(f => ({ ...f, isSystem: true })), ...fields];
   };
 
@@ -206,7 +207,7 @@ export const MultiSheetReportBuilder = () => {
       <Card
         title={
           <Space>
-            <Calendar size={18} className="text-[#cca43b]" />
+            <Calendar size={18} className="text-[var(--accent-gold)]" />
             <span className="text-zinc-100">Global Filters & Metadata</span>
           </Space>
         }
@@ -262,14 +263,14 @@ export const MultiSheetReportBuilder = () => {
         title={
           <Space className="w-full justify-between flex">
             <Space>
-              <Layers size={18} className="text-[#cca43b]" />
+              <Layers size={18} className="text-[var(--accent-gold)]" />
               <span className="text-zinc-100">Worksheet Configurations</span>
             </Space>
             <Button 
               type="dashed" 
               onClick={handleAddSheet}
               icon={<Plus size={14} />}
-              style={{ borderColor: '#cca43b', color: '#cca43b', background: 'transparent' }}
+              style={{ borderColor: 'var(--accent-gold)', color: 'var(--accent-gold)', background: 'transparent' }}
             >
               Add Sheet
             </Button>

@@ -6,7 +6,7 @@ import { log } from '../utils/logger.js';
 // error below the router just produced a white screen with nothing in the client log pipe.
 // Wrapped around <Suspense> in AppRouter.jsx (not App.jsx — foundation already owns that file
 // for the Download-logs button, see HANDOFF.md §4) so it catches render errors AND lazy-chunk
-// load failures, while <DebugBar/> stays outside it and survives a crash below.
+// load failures.
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);

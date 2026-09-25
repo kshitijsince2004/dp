@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import useAuthStore from "../../store/authStore.js";
 import api from "../../utils/api.js";
+import { asArray, asNodesList, asRecordsList } from "../../utils/dataShape.js";
 import StationFilters from "../../components/common/StationFilters.jsx";
 import StationSummaryCards from "../../components/common/StationSummaryCards.jsx";
 import StationPerformanceTable from "../../components/common/StationPerformanceTable.jsx";
@@ -59,12 +60,10 @@ export default function StationPerformanceDashboard() {
           api.get("/analytics/by-ps").catch(() => ({ data: { data: [] } })), // non-fatal
         ]);
 
-        const rawRecs = recordsRes.data?.data;
-        const recList = rawRecs?.cases || rawRecs?.records || rawRecs?.queue || (Array.isArray(rawRecs) ? rawRecs : (Array.isArray(recordsRes.data) ? recordsRes.data : []));
-        setNodes(nodesRes.data?.data || []);
-        setRecords(Array.isArray(recList) ? recList : []);
+        setNodes(asNodesList(nodesRes.data?.data));
+        setRecords(asRecordsList(recordsRes.data?.data ?? recordsRes.data));
         // Store station-level stats from the analytics endpoint
-        setPsStats(psStatsRes.data?.data || []);
+        setPsStats(asArray(psStatsRes.data?.data));
         log.debug('data:load_success', { what: 'station_performance_data' });
         setError(null);
       } catch (err) {
@@ -195,7 +194,7 @@ export default function StationPerformanceDashboard() {
 
     // 4. Merge stations and calculated stats
     const listToProcess = scopedStations.filter((s) => {
-      if (isHq && filters.districtId && !s.parent_id.includes(filters.districtId) && !s.id.includes(filters.districtId)) {
+      if (isHq && filters.districtId && !s.parent_id?.includes(filters.districtId) && !s.id?.includes(filters.districtId)) {
         // Traverse nodes to verify parent district id match
         let isMatch = false;
         let current = s;
@@ -305,7 +304,7 @@ export default function StationPerformanceDashboard() {
       <div className={`min-h-screen ${getThemeClass()} page-bg flex items-center justify-center font-sans`}>
         <div className="flex flex-col items-center gap-5">
           <div className="relative">
-            <div className="h-20 w-20 rounded-panel bg-[#0d2a4a] flex items-center justify-center">
+            <div className="h-20 w-20 rounded-panel bg-[var(--primary)] flex items-center justify-center">
               <Shield size={34} className="text-white" />
             </div>
             {/* Spinner badge */}
@@ -357,19 +356,7 @@ export default function StationPerformanceDashboard() {
     <div className={`min-h-screen ${getThemeClass()} page-bg text-[var(--text-main-theme)] font-sans`}>
 
       {/* ══════════════ HERO GRADIENT HEADER ══════════════ */}
-      <div className="relative hero-banner-gradient px-8 pt-5 pb-12 overflow-hidden">
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -top-16 -right-16 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-12 left-1/4 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
-        <div className="pointer-events-none absolute top-1/2 right-1/4 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
-        {/* Subtle grid pattern */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(0deg,white 0,white 1px,transparent 1px,transparent 48px),repeating-linear-gradient(90deg,white 0,white 1px,transparent 1px,transparent 48px)",
-          }}
-        />
+      <div className="relative hero-banner-gradient px-6 py-5 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-screen-xl w-full">
           {/* Top row */}
           <div className="flex flex-wrap items-center justify-end gap-3 mb-2">
@@ -380,9 +367,9 @@ export default function StationPerformanceDashboard() {
           </div>
 
           {/* Heading + inline hero stats */}
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
             <div className="max-w-2xl">
-              <h1 className="text-4xl font-bold text-white tracking-tight leading-tight font-display">
+              <h1 className="text-3xl font-bold text-white tracking-tight leading-tight font-display">
                 Station Wise Performance
               </h1>
               <p className="mt-1 text-xl font-medium text-white/70 tracking-wide">
@@ -425,7 +412,7 @@ export default function StationPerformanceDashboard() {
               ].map((tile) => (
                 <div
                   key={tile.label}
-                  className={`rounded-2xl ${tile.bg} border ${tile.border} backdrop-blur-sm px-5 py-4 min-w-[96px] text-center transition-all duration-200 hover:scale-105 hover:bg-white/20`}
+                  className={`rounded-2xl ${tile.bg} border ${tile.border} backdrop-blur-sm px-5 py-4 min-w-[96px] text-center transition-colors duration-200 hover:bg-white/20`}
                 >
                   <div className={`text-3xl font-bold ${tile.color} tabular-nums`}>{tile.value}</div>
                   <div className="text-xs text-white/50 mt-1 font-medium">{tile.label}</div>
@@ -435,12 +422,11 @@ export default function StationPerformanceDashboard() {
           </div>
         </div>
 
-        {/* Bottom fade line */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        {/* Bottom fade line removed for cleaner hero */}
       </div>
 
       {/* ══════════════ PAGE BODY ══════════════ */}
-      <div className="mx-auto max-w-screen-xl px-6 pb-12 relative z-10 -mt-10 space-y-6">
+      <div className="mx-auto max-w-screen-xl px-6 pb-8 relative z-10 -mt-10 space-y-5">
 
         {/* ── KPI Summary Cards ── */}
         {/* <div className="mt-8">
@@ -504,7 +490,7 @@ export default function StationPerformanceDashboard() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 flex items-center justify-center gap-2">
+        <div className="mt-5 flex items-center justify-center gap-2">
           <div className="h-px flex-1 max-w-[80px] bg-[var(--border-card-theme)]/70" />
           <p className="text-xs text-[var(--text-main-theme)] opacity-60 font-semibold">
             Delhi Police Command System · Data refreshes on page load · All times IST

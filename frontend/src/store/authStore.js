@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
 import { log } from '../utils/logger.js';
+import { purgeObsoleteMockModeStorage } from '../utils/authTokens.js';
 
 const RANK_BY_ROLE = {
   HC: 'Head Constable',
@@ -62,8 +63,14 @@ const useAuthStore = create(
 
         logout: () => {
           log.info('authStore:logout', { userId: get().user?.id, role: get().user?.role });
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
+          // SuperTokens Session.signOut() (called from useAuth) clears its own session tokens.
+          // Also clear any leftover legacy localStorage bearer tokens.
+          try {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+          } catch {
+            /* ignore */
+          }
           set({ user: null, jurisdiction: null, isAuthenticated: false });
         },
 
@@ -78,11 +85,20 @@ const useAuthStore = create(
       }),
       {
         name: 'crime-diaries-auth',
-        partialize: (state) => ({ 
+        partialize: (state) => ({
           user: state.user,
           jurisdiction: state.jurisdiction,
           isAuthenticated: state.isAuthenticated
         }),
+        onRehydrateStorage: () => (state) => {
+          // Purge obsolete Mock Mode keys; if synthetic JWTs were present, drop
+          // the persisted Zustand session so the user re-auths via SuperTokens.
+          const { clearedMockTokens } = purgeObsoleteMockModeStorage();
+          if (clearedMockTokens && state?.isAuthenticated) {
+            log.warn('authStore:rehydrate_cleared_stale_mock_session', {});
+            state?.logout?.();
+          }
+        },
       }
     ),
     { name: 'AuthStore' }

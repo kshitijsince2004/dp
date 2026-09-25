@@ -1,0 +1,1895 @@
+diff --git a/backend/.env.example b/backend/.env.example
+index b34cd5b..ea667a7 100644
+--- a/backend/.env.example
++++ b/backend/.env.example
+@@ -24,3 +24,11 @@ REPORTS_DIR=./generated-reports
+ 
+ # CORS Frontend
+ FRONTEND_URL=http://localhost:5173
++
++# SuperTokens (auth + RBAC). Core runs via docker-compose (service: supertokens).
++SUPERTOKENS_CONNECTION_URI=http://localhost:3567
++# Set only if the Core is started with API_KEYS (recommended in production):
++SUPERTOKENS_API_KEY=
++# Where the browser reaches this API, and the SPA origin (used by SuperTokens appInfo):
++API_DOMAIN=http://localhost:5000
++WEBSITE_DOMAIN=http://localhost:5173
+diff --git a/backend/index.js b/backend/index.js
+index f280170..c6655f4 100644
+--- a/backend/index.js
++++ b/backend/index.js
+@@ -7,6 +7,7 @@ import { createServer } from 'http';
+ import { startWarehouseSync } from './src/modules/warehouse/warehouse.scheduler.js';
+ import { startAuditVerification } from './src/modules/audit/audit.scheduler.js';
+ import { runStartupAutoload } from './src/bootstrap/autoload.js';
++import { seedRbac } from './src/modules/auth/rbac.seed.js';
+ import * as notifyHandler from './src/events/handlers/notifyHandler.js';
+ import * as linkAuditHandler from './src/events/handlers/linkAuditHandler.js';
+ import * as linkResolver from './src/events/handlers/linkResolver.js';
+@@ -20,6 +21,10 @@ const start = async () => {
+     // 1. Connect to PostgreSQL
+     await connectDB();
+ 
++    // 1.2 Seed SuperTokens RBAC: sync the role + permission catalog into the Core and attach
++    // each user's role. Best-effort and idempotent (see rbac.seed.js) — never crashes startup.
++    await seedRbac();
++
+     // 1.5 Smart config/ref auto-load (sync-config always, load-ref when sources changed)
+     await runStartupAutoload();
+ 
+diff --git a/backend/package.json b/backend/package.json
+index d359b95..8c93946 100644
+--- a/backend/package.json
++++ b/backend/package.json
+@@ -35,7 +35,6 @@
+     "i18n-nationality": "^1.4.0",
+     "ioredis": "^5.11.1",
+     "jsonwebtoken": "^9.0.3",
+-    "keycloak-connect": "^26.1.1",
+     "knex": "^3.1.0",
+     "mongoose": "^9.7.0",
+     "morgan": "^1.10.0",
+@@ -44,6 +43,7 @@
+     "pg": "^8.11.5",
+     "puppeteer": "^25.1.0",
+     "slugify": "^1.6.9",
++    "supertokens-node": "^20.1.3",
+     "uuid": "^14.0.0",
+     "winston": "^3.19.0"
+   },
+diff --git a/backend/src/app.js b/backend/src/app.js
+index d53637c..49e9911 100644
+--- a/backend/src/app.js
++++ b/backend/src/app.js
+@@ -4,6 +4,9 @@ import helmet from 'helmet';
+ import morgan from 'morgan';
+ import cookieParser from 'cookie-parser';
+ import rateLimit from 'express-rate-limit';
++import supertokens from 'supertokens-node';
++import { middleware as stMiddleware, errorHandler as stErrorHandler } from 'supertokens-node/framework/express';
++import { initSuperTokens } from './config/supertokens.js';
+ 
+ import { env } from './config/env.js';
+ import { logger } from './utils/logger.js';
+@@ -45,6 +48,9 @@ import ioRouter from './modules/io/io.router.js';
+ 
+ 
+ 
++// Initialise SuperTokens before any middleware/route that depends on it.
++initSuperTokens();
++
+ const app = express();
+ 
+ // Base middleware
+@@ -59,8 +65,11 @@ app.use(cors({
+     if (origin === env.FRONTEND_URL) return callback(null, true);
+     callback(new Error(`CORS: origin ${origin} not allowed`));
+   },
++  // allowedHeaders/exposedHeaders must include the SuperTokens session headers (st-auth-mode,
++  // authorization, front-token, st-access-token, st-refresh-token) or header-based sessions break.
++  allowedHeaders: ['content-type', 'x-csrf-token', 'x-request-id', ...supertokens.getAllCORSHeaders()],
+   credentials: true,
+-  exposedHeaders: ['Content-Disposition'],
++  exposedHeaders: ['Content-Disposition', ...supertokens.getAllCORSHeaders()],
+ }));
+ app.use(express.json({ limit: '10mb' }));
+ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+@@ -86,6 +95,11 @@ app.use(requestLoggerMiddleware);
+ app.use('/api/v1/logs', logsRouter);
+ app.use('/api/logs', logsRouter);
+ 
++// SuperTokens middleware — mounted BEFORE ipAllowlist/CSRF so its own routes
++// (POST /api/v1/auth/session/refresh and /signout) are handled here and never hit the app's
++// cookie-based CSRF check. It calls next() for every non-SuperTokens route.
++app.use(stMiddleware());
++
+ app.use(ipAllowlistMiddleware);
+ app.use(csrfDoubleSubmitMiddleware);
+ app.use(morgan('dev'));
+@@ -195,6 +209,11 @@ app.use((req, res, next) => {
+   return res.status(404).json({ success: false, message: `Route not found: ${req.originalUrl}` });
+ });
+ 
++// SuperTokens error handler — must come before the app's generic error handler so session
++// errors (UNAUTHORISED / TRY_REFRESH_TOKEN) are turned into the correct 401 responses that the
++// frontend SDK uses to trigger an automatic token refresh.
++app.use(stErrorHandler());
++
+ // Global Error Handler
+ app.use((err, req, res, next) => {
+   logger.error('[AppError] Caught global error:', err.stack || err.message);
+diff --git a/backend/src/config/env.js b/backend/src/config/env.js
+index 91d4aba..0a918cd 100644
+--- a/backend/src/config/env.js
++++ b/backend/src/config/env.js
+@@ -17,11 +17,12 @@ const isDev = NODE_ENV === 'development';
+ const debugLoggingRaw = process.env.DEBUG_LOGGING;
+ const DEBUG_LOGGING = debugLoggingRaw === undefined ? isDev : debugLoggingRaw === 'true';
+ 
+-const jwtSecret = getEnv('JWT_SECRET', isDev ? 'pharos_jwt_secret_key_extremely_long_and_safe' : '');
+-const jwtRefreshSecret = getEnv('JWT_REFRESH_SECRET', isDev ? 'pharos_jwt_refresh_secret_key_extremely_long_and_safe' : '');
+-
+-if (NODE_ENV === 'production' && (!jwtSecret || !jwtRefreshSecret)) {
+-  throw new Error('FATAL SECURITY ERROR: JWT_SECRET and JWT_REFRESH_SECRET must be explicitly set in production environment variables.');
++// Auth is now SuperTokens (Session + UserRoles). The Core connection is what must be present
++// in production; the old JWT_SECRET/JWT_REFRESH_SECRET are no longer used for auth and are
++// kept only so any legacy import does not break during the transition.
++const supertokensConnectionUri = getEnv('SUPERTOKENS_CONNECTION_URI', 'http://localhost:3567');
++if (NODE_ENV === 'production' && !supertokensConnectionUri) {
++  throw new Error('FATAL: SUPERTOKENS_CONNECTION_URI must be set in production.');
+ }
+ 
+ export const env = {
+@@ -33,10 +34,20 @@ export const env = {
+   DB_CLIENT: getEnv('DB_CLIENT', 'pg'),
+   RABBITMQ_URL: getEnv('RABBITMQ_URL', 'amqp://pharos:pharos123@localhost:5672'),
+   REDIS_URL: getEnv('REDIS_URL', 'redis://localhost:6379'),
+-  JWT_SECRET: jwtSecret,
+-  JWT_REFRESH_SECRET: jwtRefreshSecret,
++
++  // SuperTokens
++  SUPERTOKENS_CONNECTION_URI: supertokensConnectionUri,
++  SUPERTOKENS_API_KEY: getEnv('SUPERTOKENS_API_KEY', ''),
++  // apiDomain = where this backend is reachable by the browser; websiteDomain = the SPA origin.
++  API_DOMAIN: getEnv('API_DOMAIN', `http://localhost:${getEnv('PORT', '5000')}`),
++  WEBSITE_DOMAIN: getEnv('WEBSITE_DOMAIN', getEnv('FRONTEND_URL', 'http://localhost:5173')),
++
++  // Deprecated (unused by auth after the SuperTokens migration; retained to avoid import breaks)
++  JWT_SECRET: getEnv('JWT_SECRET', ''),
++  JWT_REFRESH_SECRET: getEnv('JWT_REFRESH_SECRET', ''),
+   JWT_ACCESS_EXPIRES: getEnv('JWT_ACCESS_EXPIRES', '15m'),
+   JWT_REFRESH_EXPIRES: getEnv('JWT_REFRESH_EXPIRES', '7d'),
++
+   STARTUP_AUTOLOAD: getEnv('STARTUP_AUTOLOAD', 'true'),
+   FRONTEND_URL: getEnv('FRONTEND_URL', 'http://localhost:5173'),
+   REPORTS_OUTPUT_DIR: getEnv('REPORTS_OUTPUT_DIR', './reports/output'),
+diff --git a/backend/src/config/supertokens.js b/backend/src/config/supertokens.js
+new file mode 100644
+index 0000000..d561f73
+--- /dev/null
++++ b/backend/src/config/supertokens.js
+@@ -0,0 +1,55 @@
++// SuperTokens initialisation (replaces the custom JWT auth in utils/generateToken.js).
++//
++// Recipes:
++//   - Session:   session management (access + refresh), header transfer method so the
++//                browser keeps a bearer token exactly like the previous JWT model.
++//   - UserRoles: roles + permissions ARE the RBAC source of truth. Roles and the
++//                permission catalog are seeded into the SuperTokens Core at startup
++//                (see modules/auth/rbac.seed.js + rbac.catalog.js). When UserRoles is
++//                initialised, every new session automatically carries the st-role and
++//                st-perm claims, which the middleware reads.
++//
++// Jurisdiction scope (ps_id / district_id / sub_div_id) is NOT a SuperTokens concept and
++// stays application-managed: it is written into the session access-token payload at login
++// (see modules/auth/auth.controller.js) and read back by enforceScope / verifyRecordAccess,
++// so those middlewares keep working unchanged.
++import supertokens from 'supertokens-node';
++import Session from 'supertokens-node/recipe/session';
++import UserRoles from 'supertokens-node/recipe/userroles';
++import { env } from './env.js';
++import { logger } from '../utils/logger.js';
++
++let initialised = false;
++
++export const initSuperTokens = () => {
++  if (initialised) return;
++  supertokens.init({
++    framework: 'express',
++    supertokens: {
++      connectionURI: env.SUPERTOKENS_CONNECTION_URI,
++      // apiKey is required only when the Core is configured with API_KEYS (production).
++      apiKey: env.SUPERTOKENS_API_KEY || undefined,
++    },
++    appInfo: {
++      appName: 'PHAROS',
++      apiDomain: env.API_DOMAIN,
++      websiteDomain: env.WEBSITE_DOMAIN,
++      // Keep SuperTokens' own routes (/session/refresh, /signout) under the same prefix
++      // the app already serves auth under, so the frontend hits one base path.
++      apiBasePath: '/api/v1/auth',
++      websiteBasePath: '/login',
++    },
++    recipeList: [
++      Session.init({
++        // Bearer/header tokens (no cookies): the closest 1:1 replacement for the old
++        // localStorage JWT. The frontend SDK stores and refreshes them automatically.
++        getTokenTransferMethod: () => 'header',
++      }),
++      UserRoles.init(),
++    ],
++  });
++  initialised = true;
++  logger.info('[SuperTokens] initialised', { connectionURI: env.SUPERTOKENS_CONNECTION_URI });
++};
++
++export default initSuperTokens;
+diff --git a/backend/src/middleware/auth.middleware.js b/backend/src/middleware/auth.middleware.js
+index 4b46281..a8e6a50 100644
+--- a/backend/src/middleware/auth.middleware.js
++++ b/backend/src/middleware/auth.middleware.js
+@@ -1,166 +1,97 @@
+-import jwt from 'jsonwebtoken';
+-import { env } from '../config/env.js';
+-import { getLogger, logger } from '../utils/logger.js';
++// Authentication middleware — now backed by SuperTokens Session (was custom JWT + optional
++// Keycloak). The public API is UNCHANGED so no router or call site had to change:
++//   - authMiddleware      : verifies the session and populates req.user in the exact legacy
++//                           shape (id/userId/role/level/ps_id/district_id/sub_div_id + camel
++//                           aliases), then chains the per-role rate limiter, exactly as before.
++//   - sseAuthMiddleware   : verifies the access token passed as ?token= (EventSource cannot set
++//                           the Authorization header), using SuperTokens' request-less verify.
++//   - requireAuth         : unchanged alias.
++//
++// Why req.user is still populated: enforceScope and verifyRecordAccess (rbac.middleware.js)
++// read jurisdiction off req.user, and dozens of controllers read req.user.id/role. Rather than
++// touch all of them, authMiddleware rebuilds req.user from the session's access-token payload
++// (role + level + scope are written there at login — see auth.controller.js).
++import Session from 'supertokens-node/recipe/session';
++import { verifySession } from 'supertokens-node/recipe/session/framework/express';
++import { getLogger } from '../utils/logger.js';
+ import { setContext } from '../utils/requestContext.js';
+ import { roleRateLimitMiddleware } from './security.middleware.js';
+ 
+-// B3 scope (logging-instrumentation-2026-07-22, HANDOFF.md §3): auth is a bug hotspot —
+-// token-present/verify-outcome is logged below, the token itself NEVER (only `{ hasToken }`
+-// and, once decoded, `{ userId, role }`). Also wires the EXTRA TASK from the HANDOFF: once
+-// `req.user` is set, `setContext({ userId, role })` enriches every downstream log line on this
+-// request with who made it, not just the ambient requestId.
+ const log = getLogger('auth.middleware');
+ 
+-const isKeycloakEnabled = !!process.env.KEYCLOAK_URL;
+-
+-/**
+- * The access token carries the canonical snake_case payload only
+- * ({ sub, username, badge_no, role, level, ps_id, district_id, sub_div_id } —
+- * see utils/generateToken.js). This shim adds the aliases legacy module code
+- * still reads (id/userId/psId/districtId/subDivId/badgeNo). It is the ONLY
+- * place aliases are produced; drain callers to snake_case, then delete it.
+- */
+-const normalizeAuthUser = (decoded) => ({
+-  ...decoded,
+-  id: decoded.sub ?? decoded.id,
+-  userId: decoded.sub ?? decoded.id,
+-  badgeNo: decoded.badge_no,
+-  psId: decoded.ps_id ?? null,
+-  districtId: decoded.district_id ?? null,
+-  subDivId: decoded.sub_div_id ?? null,
++// The access-token payload -> legacy req.user shape. This is the single place the aliases are
++// produced (mirrors the previous normalizeAuthUser shim).
++const buildReqUser = (userId, payload = {}) => ({
++  sub: userId,
++  id: userId,
++  userId,
++  username: payload.username ?? null,
++  badge_no: payload.badge_no ?? null,
++  badgeNo: payload.badge_no ?? null,
++  role: payload.role ?? null,
++  level: payload.level ?? null,
++  ps_id: payload.ps_id ?? null,
++  psId: payload.ps_id ?? null,
++  district_id: payload.district_id ?? null,
++  districtId: payload.district_id ?? null,
++  sub_div_id: payload.sub_div_id ?? null,
++  subDivId: payload.sub_div_id ?? null,
+ });
+ 
+-let keycloak = null;
+-if (isKeycloakEnabled) {
+-  try {
+-    const { default: KeycloakConnect } = await import('keycloak-connect');
+-    keycloak = new KeycloakConnect({}, {
+-      realm: 'pharos',
+-      'auth-server-url': process.env.KEYCLOAK_URL,
+-      resource: 'pharos-api',
+-      'bearer-only': true
+-    });
+-  } catch (err) {
+-    logger.warn('[Auth] Failed to initialize keycloak-connect, falling back to JWT.', err.message);
+-  }
+-}
++// Reused verifySession instance. On failure it calls next(err); the SuperTokens errorHandler()
++// mounted in app.js turns that into the correct 401 (and the TRY_REFRESH_TOKEN response the
++// frontend SDK needs to auto-refresh), so we must NOT hand-format that error here.
++const verify = verifySession({ sessionRequired: true });
+ 
+ export const authMiddleware = (req, res, next) => {
+-  const authHeader = req.headers.authorization;
+-  log.debug('authMiddleware: enter', { hasToken: !!(authHeader && authHeader.startsWith('Bearer ')), method: req.method, path: req.path });
+-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+-    log.warn('authMiddleware: rejected — Bearer token missing', { method: req.method, path: req.path });
+-    return res.status(401).json({
+-      status: 'error',
+-      success: false,
+-      code: 'UNAUTHORIZED',
+-      message: 'Authentication required: Bearer token is missing'
+-    });
+-  }
+-
+-  const token = authHeader.split(' ')[1];
+-
+-  const proceed = () => {
+-    log.debug('authMiddleware: proceeding to role rate limiter', { userId: req.user?.id, role: req.user?.role });
+-    roleRateLimitMiddleware(req, res, next);
+-  };
+-
+-  // 1. Try local custom JWT verification first (fallback/test suite compatibility)
+-  try {
+-    const decoded = jwt.verify(token, env.JWT_SECRET);
+-    req.user = normalizeAuthUser(decoded);
+-    // EXTRA TASK (HANDOFF.md, B3): req.user.id / req.user.role are the canonical fields
+-    // normalizeAuthUser guarantees (id aliases decoded.sub, role passes through from the
+-    // token payload verbatim) — enrich the ambient request context so every log line
+-    // downstream of this point carries who made the request, not just the requestId.
+-    setContext({ userId: req.user.id, role: req.user.role });
+-    log.info('authMiddleware: local JWT verified', { userId: req.user.id, role: req.user.role, path: req.path });
+-    return proceed();
+-  } catch (error) {
+-    log.debug('authMiddleware: local JWT verification failed, trying Keycloak fallback', { path: req.path, keycloakEnabled: isKeycloakEnabled, err: error.message });
+-    // 2. Custom JWT failed, try Keycloak if enabled
+-    if (isKeycloakEnabled && keycloak) {
+-      keycloak.grantManager.validateAccessToken(token)
+-        .then(userToken => {
+-          if (userToken) {
+-            const content = userToken.content;
+-            req.user = normalizeAuthUser({
+-              sub: content.sub,
+-              username: content.preferred_username || content.username || '',
+-              badge_no: content.preferred_username || content.badgeNo || content.badge_no || '',
+-              role: content.role || (content.realm_access?.roles?.find(r => ['HC','SHO','ACP','DISTRICT_OFFICER','JCP','SCP','HQ_ANALYST','HQ_ADMIN','SYSTEM_ADMIN'].includes(r))) || 'HC',
+-              level: content.level || 'PS',
+-              ps_id: content.psId || content.ps_id || null,
+-              district_id: content.districtId || content.district_id || null,
+-              sub_div_id: content.subDivId || content.sub_div_id || null,
+-            });
+-            setContext({ userId: req.user.id, role: req.user.role });
+-            log.info('authMiddleware: Keycloak token verified', { userId: req.user.id, role: req.user.role, path: req.path });
+-            return proceed();
+-          } else {
+-            log.warn('authMiddleware: rejected — Keycloak token invalid/expired', { path: req.path });
+-            return res.status(401).json({
+-              status: 'error',
+-              success: false,
+-              code: 'UNAUTHORIZED',
+-              message: 'Invalid or expired Keycloak token'
+-            });
+-          }
+-        })
+-        .catch(err => {
+-          log.error('authMiddleware: Keycloak verification failed', { path: req.path, err });
+-          return res.status(401).json({
+-            status: 'error',
+-            success: false,
+-            code: 'UNAUTHORIZED',
+-            message: 'Authentication token verification failed: ' + err.message
+-          });
+-        });
+-    } else {
+-      log.warn('authMiddleware: rejected — invalid/expired token, Keycloak not enabled', { path: req.path });
+-      return res.status(401).json({
+-        status: 'error',
+-        success: false,
+-        code: 'UNAUTHORIZED',
+-        message: 'Invalid or expired authentication token'
+-      });
++  log.debug('authMiddleware: enter', { method: req.method, path: req.path });
++  verify(req, res, (err) => {
++    if (err) {
++      log.warn('authMiddleware: session verification failed', { path: req.path, err: err?.type || err?.message });
++      return next(err);
+     }
+-  }
++    try {
++      const payload = req.session.getAccessTokenPayload();
++      req.user = buildReqUser(req.session.getUserId(), payload);
++      setContext({ userId: req.user.id, role: req.user.role });
++      log.info('authMiddleware: session verified', { userId: req.user.id, role: req.user.role, path: req.path });
++      return roleRateLimitMiddleware(req, res, next);
++    } catch (e) {
++      log.error('authMiddleware: failed to build req.user from session', { path: req.path, err: e.message });
++      return next(e);
++    }
++  });
+ };
+ 
+ export const requireAuth = () => authMiddleware;
+ 
+ /**
+- * Lightweight JWT verifier for SSE connections.
+- * EventSource cannot set custom headers, so the client passes
+- * the access token as ?token= in the query string.
++ * SSE session verifier. EventSource cannot send the Authorization header, so the client passes
++ * the current access token (Session.getAccessToken() on the frontend) as ?token=. We verify it
++ * with SuperTokens' request-less API and populate req.user the same way.
+  */
+-export const sseAuthMiddleware = (req, res, next) => {
++export const sseAuthMiddleware = async (req, res, next) => {
+   const token = req.query.token;
+   log.debug('sseAuthMiddleware: enter', { hasToken: !!token, path: req.path });
+   if (!token) {
+     log.warn('sseAuthMiddleware: rejected — token query param missing', { path: req.path });
+     return res.status(401).json({
+-      status: 'error',
+-      success: false,
+-      code: 'UNAUTHORIZED',
+-      message: 'Authentication required: token query param is missing'
++      status: 'error', success: false, code: 'UNAUTHORIZED',
++      message: 'Authentication required: token query param is missing',
+     });
+   }
+-
+   try {
+-    const decoded = jwt.verify(token, env.JWT_SECRET);
+-    req.user = normalizeAuthUser(decoded);
++    const session = await Session.getSessionWithoutRequestResponse(token, undefined, { sessionRequired: true });
++    req.session = session;
++    req.user = buildReqUser(session.getUserId(), session.getAccessTokenPayload());
+     setContext({ userId: req.user.id, role: req.user.role });
+     log.info('sseAuthMiddleware: SSE token verified', { userId: req.user.id, role: req.user.role, path: req.path });
+     return next();
+   } catch (error) {
+-    log.warn('sseAuthMiddleware: rejected — invalid/expired SSE token', { path: req.path, err: error.message });
++    log.warn('sseAuthMiddleware: rejected — invalid/expired SSE token', { path: req.path, err: error?.type || error?.message });
+     return res.status(401).json({
+-      status: 'error',
+-      success: false,
+-      code: 'UNAUTHORIZED',
+-      message: 'Invalid or expired SSE token'
++      status: 'error', success: false, code: 'UNAUTHORIZED',
++      message: 'Invalid or expired SSE token',
+     });
+   }
+ };
+diff --git a/backend/src/middleware/rbac.middleware.js b/backend/src/middleware/rbac.middleware.js
+index 52de596..9a650c1 100644
+--- a/backend/src/middleware/rbac.middleware.js
++++ b/backend/src/middleware/rbac.middleware.js
+@@ -1,39 +1,71 @@
++// Authorization middleware. RBAC is now owned by SuperTokens UserRoles (roles + permissions
++// seeded from modules/auth/rbac.catalog.js). Jurisdiction scope stays application-managed here
++// because it is geographic, not a role capability.
++//
++// The public API is UNCHANGED so no router changed:
++//   - allow(...roles) / requireRole(...roles) : role gate (reads the role off the verified
++//                                               session via req.user, canonicalising DISTRICT).
++//   - enforceScope                            : injects req.jurisdictionQuery (ps/subdiv/district).
++//   - verifyRecordAccess(recordId, user)      : record-level jurisdiction check.
++//   - requirePermission(...perms)  [NEW]      : permission gate using the SuperTokens st-perm
++//                                               claim (falls back to the catalog). Prefer this
++//                                               over hardcoded role lists for new routes.
+ import db from '../config/db.js';
+ import { getLogger } from '../utils/logger.js';
++import { ROLE_PERMISSIONS, canonicalRole } from '../modules/auth/rbac.catalog.js';
+ 
+ const log = getLogger('rbac.middleware');
+ 
++const roleOf = (req) => canonicalRole(req.user?.role);
++
+ export const allow = (...roles) => {
++  const allowed = roles.map(canonicalRole);
+   return (req, res, next) => {
+     if (!req.user) {
+-      log.warn('allow: rejected — no req.user (authMiddleware did not run first?)', { requiredRoles: roles, path: req.path });
+-      return res.status(401).json({
+-        status: 'error',
+-        success: false,
+-        code: 'UNAUTHORIZED',
+-        message: 'Authentication required'
+-      });
++      log.warn('allow: rejected — no req.user (authMiddleware did not run first?)', { requiredRoles: allowed, path: req.path });
++      return res.status(401).json({ status: 'error', success: false, code: 'UNAUTHORIZED', message: 'Authentication required' });
+     }
+-    if (!roles.includes(req.user.role)) {
+-      log.warn('allow: denied — role not in allow-list', { userId: req.user.id, role: req.user.role, requiredRoles: roles, path: req.path });
+-      return res.status(403).json({
+-        status: 'error',
+-        success: false,
+-        code: 'FORBIDDEN',
+-        message: 'Insufficient permissions'
+-      });
++    if (!allowed.includes(roleOf(req))) {
++      log.warn('allow: denied — role not in allow-list', { userId: req.user.id, role: req.user.role, requiredRoles: allowed, path: req.path });
++      return res.status(403).json({ status: 'error', success: false, code: 'FORBIDDEN', message: 'Insufficient permissions' });
+     }
+-    log.debug('allow: permitted', { userId: req.user.id, role: req.user.role, requiredRoles: roles, path: req.path });
++    log.debug('allow: permitted', { userId: req.user.id, role: req.user.role, requiredRoles: allowed, path: req.path });
+     next();
+   };
+ };
+ 
+ export const requireRole = (...roles) => allow(...roles);
+ 
++/**
++ * Permission gate. Reads the SuperTokens permission claim (st-perm) from the verified session;
++ * if it is absent (older session, or claim not populated) it falls back to the static catalog
++ * for the user's role. Passes when the user has ALL listed permissions.
++ */
++export const requirePermission = (...perms) => {
++  return (req, res, next) => {
++    if (!req.user) {
++      return res.status(401).json({ status: 'error', success: false, code: 'UNAUTHORIZED', message: 'Authentication required' });
++    }
++    let granted = [];
++    try {
++      const claim = req.session?.getAccessTokenPayload?.()['st-perm'];
++      if (claim && Array.isArray(claim.v)) granted = claim.v;
++    } catch (e) { /* fall through to catalog */ }
++    if (granted.length === 0) {
++      granted = ROLE_PERMISSIONS[roleOf(req)] || [];
++    }
++    const missing = perms.filter((p) => !granted.includes(p));
++    if (missing.length > 0) {
++      log.warn('requirePermission: denied', { userId: req.user.id, role: req.user.role, missing, path: req.path });
++      return res.status(403).json({ status: 'error', success: false, code: 'FORBIDDEN', message: 'Insufficient permissions' });
++    }
++    log.debug('requirePermission: permitted', { userId: req.user.id, role: req.user.role, required: perms, path: req.path });
++    next();
++  };
++};
+ 
+-// Roles with global (unscoped) read: JCP/SCP review queues are gated by record
+-// status (workflow config), not geography — no zone/range FK exists on users by
+-// design. HQ roles are global by definition.
++// Roles with global (unscoped) read. JCP/SCP review queues are gated by record status (workflow
++// config), not geography, and HQ roles are global by definition.
+ const GLOBAL_SCOPE_ROLES = ['JCP', 'SCP', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'];
+ 
+ export const enforceScope = (req, res, next) => {
+@@ -42,7 +74,8 @@ export const enforceScope = (req, res, next) => {
+     return res.status(401).json({ success: false, message: 'Authentication required' });
+   }
+ 
+-  const { role, ps_id, district_id, sub_div_id } = req.user;
++  const role = roleOf(req);
++  const { ps_id, district_id, sub_div_id } = req.user;
+   req.jurisdictionQuery = {};
+   log.debug('enforceScope: enter', { userId: req.user.id, role, psId: ps_id, districtId: district_id, subDivId: sub_div_id, path: req.path });
+ 
+@@ -58,15 +91,15 @@ export const enforceScope = (req, res, next) => {
+       return res.status(403).json({ success: false, message: 'User is not bound to a Sub-Division' });
+     }
+     req.jurisdictionQuery.sub_div_id = sub_div_id;
+-  } else if (role === 'DISTRICT_OFFICER' || role === 'DISTRICT') {
++  } else if (role === 'DISTRICT_OFFICER') {
+     if (!district_id) {
+       log.warn('enforceScope: rejected — user not bound to a District', { userId: req.user.id, role });
+       return res.status(403).json({ success: false, message: 'User is not bound to a District' });
+     }
+     req.jurisdictionQuery.district_id = district_id;
+   } else if (!GLOBAL_SCOPE_ROLES.includes(role)) {
+-    // Default-deny: an unrecognized role must never fall through to global scope
+-    log.warn('enforceScope: rejected — unknown role, default-deny (never falls through to global)', { userId: req.user.id, role });
++    // Default-deny: an unrecognized role must never fall through to global scope.
++    log.warn('enforceScope: rejected — unknown role, default-deny', { userId: req.user.id, role });
+     return res.status(403).json({ success: false, message: `Unknown role: ${role}` });
+   }
+ 
+@@ -75,7 +108,8 @@ export const enforceScope = (req, res, next) => {
+ };
+ 
+ export const verifyRecordAccess = async (recordId, user) => {
+-  const { role, ps_id, district_id, sub_div_id } = user;
++  const role = canonicalRole(user.role);
++  const { ps_id, district_id, sub_div_id } = user;
+   log.debug('verifyRecordAccess: enter', { recordId, userId: user.id, role });
+   if (GLOBAL_SCOPE_ROLES.includes(role)) {
+     log.debug('verifyRecordAccess: allowed — global scope role', { recordId, userId: user.id, role });
+@@ -89,23 +123,12 @@ export const verifyRecordAccess = async (recordId, user) => {
+   }
+ 
+   if (role === 'HC' || role === 'SHO') {
+-    if (record.ps_id !== ps_id) {
+-      log.warn('verifyRecordAccess: denied — record outside PS jurisdiction', { recordId, userId: user.id, role, userPsId: ps_id, recordPsId: record.ps_id });
+-      throw new Error('Access denied: Record falls outside your police station jurisdiction');
+-    }
++    if (record.ps_id !== ps_id) throw new Error('Access denied: Record falls outside your police station jurisdiction');
+   } else if (role === 'ACP') {
+-    if (record.sub_div_id !== sub_div_id) {
+-      log.warn('verifyRecordAccess: denied — record outside sub-division jurisdiction', { recordId, userId: user.id, role, userSubDivId: sub_div_id, recordSubDivId: record.sub_div_id });
+-      throw new Error('Access denied: Record falls outside your sub-division jurisdiction');
+-    }
+-  } else if (role === 'DISTRICT_OFFICER' || role === 'DISTRICT') {
+-    if (record.district_id !== district_id) {
+-      log.warn('verifyRecordAccess: denied — record outside district jurisdiction', { recordId, userId: user.id, role, userDistrictId: district_id, recordDistrictId: record.district_id });
+-      throw new Error('Access denied: Record falls outside your district jurisdiction');
+-    }
++    if (record.sub_div_id !== sub_div_id) throw new Error('Access denied: Record falls outside your sub-division jurisdiction');
++  } else if (role === 'DISTRICT_OFFICER') {
++    if (record.district_id !== district_id) throw new Error('Access denied: Record falls outside your district jurisdiction');
+   } else {
+-    // Default-deny for unrecognized roles
+-    log.warn('verifyRecordAccess: denied — unknown role, default-deny', { recordId, userId: user.id, role });
+     throw new Error(`Access denied: unknown role ${role}`);
+   }
+ 
+diff --git a/backend/src/modules/auth/auth.controller.js b/backend/src/modules/auth/auth.controller.js
+index 097d97f..c76016a 100644
+--- a/backend/src/modules/auth/auth.controller.js
++++ b/backend/src/modules/auth/auth.controller.js
+@@ -1,15 +1,23 @@
++import supertokens from 'supertokens-node';
++import Session from 'supertokens-node/recipe/session';
++import UserRoles from 'supertokens-node/recipe/userroles';
+ import * as authService from './auth.service.js';
+ import { resolveScope } from './auth.service.js';
+ import { getLevelFromRole } from '../../utils/generateToken.js';
++import { canonicalRole } from './rbac.catalog.js';
+ import db from '../../config/db.js';
+ import bcrypt from 'bcryptjs';
+ import { getLogger } from '../../utils/logger.js';
+ import { redact } from '../../utils/redact.js';
+ 
+-// Matches modules/records/records.service.js style (logging-instrumentation-2026-07-22
+-// HANDOFF.md §7). Every request body logged here goes through redact() first — `password`/
+-// `oldPassword`/`newPassword`/`refresh_token` keys are masked to presence/length only.
++// Auth controller on SuperTokens. login verifies badge+password (authService) then creates a
++// SuperTokens session whose access-token payload carries role + level + jurisdiction scope, so
++// the middleware can rebuild req.user without a DB hit. Token refresh is handled automatically
++// by SuperTokens at POST /api/v1/auth/session/refresh (mounted by its middleware), so there is
++// no custom /refresh here any more. logout revokes the session; changePassword revokes ALL of
++// the user's sessions so a password change forces re-login everywhere.
+ const log = getLogger('auth.controller');
++const TENANT = 'public';
+ 
+ export const login = async (req, res) => {
+   const badgeNo = req.body.badgeNo || req.body.badge_no || req.body.email;
+@@ -18,64 +26,39 @@ export const login = async (req, res) => {
+ 
+   if (!badgeNo || !password) {
+     log.warn('login: rejected — missing badgeNo or password', { hasBadgeNo: !!badgeNo, hasPassword: !!password });
+-    return res.status(400).json({
+-      status: 'error',
+-      success: false,
+-      code: 'BAD_REQUEST',
+-      message: 'Badge number and password are required'
+-    });
++    return res.status(400).json({ status: 'error', success: false, code: 'BAD_REQUEST', message: 'Badge number and password are required' });
+   }
+ 
+   try {
+-    const data = await authService.loginUser(badgeNo, password);
+-    log.info('login: success', { userId: data.user.id, badgeNo: data.user.badge_no, role: data.user.role });
+-    return res.status(200).json({
+-      status: 'success',
+-      success: true,
+-      data
+-    });
+-  } catch (error) {
+-    log.warn('login: rejected — invalid credentials', { badgeNo, reason: error.message });
+-    return res.status(401).json({
+-      status: 'error',
+-      success: false,
+-      code: 'INVALID_CREDENTIALS',
+-      message: error.message
+-    });
+-  }
+-};
+-
+-export const refresh = async (req, res) => {
+-  const refreshToken = req.body.refresh_token || req.body.refreshToken;
+-  // NEVER log the raw token value — presence/length only.
+-  log.debug('refresh: enter', { hasRefreshToken: !!refreshToken, tokenLen: refreshToken?.length || 0 });
++    const user = await authService.verifyCredentials(badgeNo, password);
++    const role = canonicalRole(user.role);
++
++    // Ensure the user's role is attached in the SuperTokens Core so the UserRole/Permission
++    // claims populate on this session. Idempotent; if the role has not been seeded yet (Core
++    // still booting on first ever run) this is best-effort and the middleware still works off
++    // the role in the access-token payload below.
++    try {
++      await UserRoles.addRoleToUser(TENANT, user.id, role);
++    } catch (e) {
++      log.warn('login: could not attach role in SuperTokens (non-fatal)', { userId: user.id, role, err: e.message });
++    }
+ 
+-  if (!refreshToken) {
+-    log.warn('refresh: rejected — no refresh token supplied');
+-    return res.status(400).json({
+-      status: 'error',
+-      success: false,
+-      code: 'BAD_REQUEST',
+-      message: 'Refresh token is required'
++    const recipeUserId = supertokens.convertToRecipeUserId(user.id);
++    await Session.createNewSession(req, res, TENANT, recipeUserId, {
++      role,
++      level: user.level,
++      ps_id: user.ps_id,
++      district_id: user.district_id,
++      sub_div_id: user.sub_div_id,
++      badge_no: user.badge_no,
++      username: user.username,
+     });
+-  }
+ 
+-  try {
+-    const data = await authService.refreshUserToken(refreshToken);
+-    log.info('refresh: success', { hasAccess: !!data.access_token });
+-    return res.status(200).json({
+-      status: 'success',
+-      success: true,
+-      data
+-    });
++    log.info('login: success', { userId: user.id, badgeNo: user.badge_no, role });
++    return res.status(200).json({ status: 'success', success: true, data: { user } });
+   } catch (error) {
+-    log.warn('refresh: rejected', { reason: error.message });
+-    return res.status(401).json({
+-      status: 'error',
+-      success: false,
+-      code: 'UNAUTHORIZED',
+-      message: error.message
+-    });
++    log.warn('login: rejected — invalid credentials', { badgeNo, reason: error.message });
++    return res.status(401).json({ status: 'error', success: false, code: 'INVALID_CREDENTIALS', message: error.message });
+   }
+ };
+ 
+@@ -83,24 +66,12 @@ export const logout = async (req, res) => {
+   const userId = req.user ? (req.user.userId || req.user.id) : null;
+   log.debug('logout: enter', { userId });
+   try {
+-    if (userId) {
+-      await authService.logoutUser(userId);
+-    } else {
+-      log.warn('logout: no authenticated user on request, skipping token removal');
+-    }
++    if (req.session) await req.session.revokeSession();
+     log.info('logout: success', { userId });
+-    return res.status(200).json({
+-      status: 'success',
+-      success: true,
+-      data: { message: 'Logged out' }
+-    });
++    return res.status(200).json({ status: 'success', success: true, data: { message: 'Logged out' } });
+   } catch (error) {
+     log.error('logout: failed', { userId, err: error });
+-    return res.status(500).json({
+-      status: 'error',
+-      success: false,
+-      message: error.message
+-    });
++    return res.status(500).json({ status: 'error', success: false, message: error.message });
+   }
+ };
+ 
+@@ -109,13 +80,7 @@ export const me = async (req, res) => {
+   log.debug('me: enter', { userId });
+   try {
+     if (!userId) {
+-      log.warn('me: rejected — no authenticated user on request');
+-      return res.status(401).json({
+-        status: 'error',
+-        success: false,
+-        code: 'UNAUTHORIZED',
+-        message: 'Unauthorized'
+-      });
++      return res.status(401).json({ status: 'error', success: false, code: 'UNAUTHORIZED', message: 'Unauthorized' });
+     }
+ 
+     const user = await db('users')
+@@ -133,16 +98,9 @@ export const me = async (req, res) => {
+       .first();
+ 
+     if (!user) {
+-      log.warn('me: rejected — user not found', { userId });
+-      return res.status(404).json({
+-        status: 'error',
+-        success: false,
+-        code: 'NOT_FOUND',
+-        message: 'User not found'
+-      });
++      return res.status(404).json({ status: 'error', success: false, code: 'NOT_FOUND', message: 'User not found' });
+     }
+ 
+-    // Backfill scope ids (and their names) when only ps_id/sub_div_id is stored
+     const scope = await resolveScope(user);
+     let subDivName = user.sub_div_name;
+     let districtName = user.district_name;
+@@ -175,86 +133,58 @@ export const me = async (req, res) => {
+           ps_name: user.ps_name || null,
+           ps_code: user.ps_code || null,
+           sub_div_name: subDivName || null,
+-          district_name: districtName || null
++          district_name: districtName || null,
+         },
+         jurisdiction: {
+           station: scope.ps_id ? { id: scope.ps_id, name: user.ps_name, code: user.ps_code } : null,
+           sub_division: scope.sub_div_id ? { id: scope.sub_div_id, name: subDivName } : null,
+-          district: scope.district_id ? { id: scope.district_id, name: districtName } : null
+-        }
+-      }
++          district: scope.district_id ? { id: scope.district_id, name: districtName } : null,
++        },
++      },
+     });
+   } catch (error) {
+     log.error('me: failed', { userId, err: error });
+-    return res.status(500).json({
+-      status: 'error',
+-      success: false,
+-      message: error.message
+-    });
++    return res.status(500).json({ status: 'error', success: false, message: error.message });
+   }
+ };
+ 
+ export const changePassword = async (req, res) => {
+   const oldPassword = req.body.oldPassword || req.body.old_password;
+   const newPassword = req.body.newPassword || req.body.new_password;
+-  // NEVER log old/new password values — presence only (HANDOFF.md §3b redaction).
+   const userId = req.user ? (req.user.userId || req.user.id) : null;
+   log.debug('changePassword: enter', { userId, hasOldPassword: !!oldPassword, hasNewPassword: !!newPassword });
+ 
+   if (!oldPassword || !newPassword) {
+-    log.warn('changePassword: rejected — missing old or new password', { userId });
+-    return res.status(400).json({
+-      status: 'error',
+-      success: false,
+-      code: 'BAD_REQUEST',
+-      message: 'Old and new passwords are required'
+-    });
++    return res.status(400).json({ status: 'error', success: false, code: 'BAD_REQUEST', message: 'Old and new passwords are required' });
+   }
+ 
+   try {
+     const user = await db('users').where({ id: userId }).first();
+     if (!user) {
+-      log.warn('changePassword: rejected — user not found', { userId });
+-      return res.status(404).json({
+-        status: 'error',
+-        success: false,
+-        code: 'NOT_FOUND',
+-        message: 'User not found'
+-      });
++      return res.status(404).json({ status: 'error', success: false, code: 'NOT_FOUND', message: 'User not found' });
+     }
+ 
+     const isMatch = await bcrypt.compare(oldPassword, user.password_hash);
+-    log.debug('changePassword: old password verify', { userId, ok: isMatch });
+     if (!isMatch) {
+-      log.warn('changePassword: rejected — incorrect old password', { userId });
+-      return res.status(400).json({
+-        status: 'error',
+-        success: false,
+-        code: 'BAD_REQUEST',
+-        message: 'Incorrect old password'
+-      });
++      return res.status(400).json({ status: 'error', success: false, code: 'BAD_REQUEST', message: 'Incorrect old password' });
+     }
+ 
+     const newHash = await bcrypt.hash(newPassword, 12);
+     await db('users').where({ id: userId }).update({ password_hash: newHash });
+     log.info('changePassword: wrote new password_hash', { userId });
+ 
+-    // Force re-login by deleting refresh token from Redis
+-    await authService.logoutUser(userId);
++    // Force re-login everywhere: revoke all SuperTokens sessions for this user.
++    try {
++      await Session.revokeAllSessionsForUser(userId);
++    } catch (e) {
++      log.warn('changePassword: revokeAllSessionsForUser failed (non-fatal)', { userId, err: e.message });
++    }
+ 
+     log.info('changePassword: success', { userId });
+-    return res.status(200).json({
+-      status: 'success',
+-      success: true,
+-      data: { message: 'Password updated' }
+-    });
++    return res.status(200).json({ status: 'success', success: true, data: { message: 'Password updated' } });
+   } catch (error) {
+     log.error('changePassword: failed', { userId, err: error });
+-    return res.status(500).json({
+-      status: 'error',
+-      success: false,
+-      message: error.message
+-    });
++    return res.status(500).json({ status: 'error', success: false, message: error.message });
+   }
+ };
+ 
+@@ -262,23 +192,11 @@ export const getNotifications = async (req, res) => {
+   const userId = req.user ? (req.user.userId || req.user.id) : null;
+   log.debug('getNotifications: enter', { userId });
+   try {
+-    const list = await db('notifications')
+-      .where({ user_id: userId })
+-      .orderBy('created_at', 'desc')
+-      .limit(50);
+-    log.info('getNotifications: exit', { userId, count: list.length });
+-    return res.status(200).json({
+-      status: 'success',
+-      success: true,
+-      data: { notifications: list }
+-    });
++    const list = await db('notifications').where({ user_id: userId }).orderBy('created_at', 'desc').limit(50);
++    return res.status(200).json({ status: 'success', success: true, data: { notifications: list } });
+   } catch (error) {
+     log.error('getNotifications: failed', { userId, err: error });
+-    return res.status(500).json({
+-      status: 'error',
+-      success: false,
+-      message: error.message
+-    });
++    return res.status(500).json({ status: 'error', success: false, message: error.message });
+   }
+ };
+ 
+@@ -287,21 +205,10 @@ export const markNotificationRead = async (req, res) => {
+   const userId = req.user ? (req.user.userId || req.user.id) : null;
+   log.debug('markNotificationRead: enter', { userId, notificationId: id });
+   try {
+-    await db('notifications')
+-      .where({ id, user_id: userId })
+-      .update({ is_read: true });
+-    log.info('markNotificationRead: wrote notifications row', { userId, notificationId: id });
+-    return res.status(200).json({
+-      status: 'success',
+-      success: true,
+-      data: { message: 'Notification marked as read' }
+-    });
++    await db('notifications').where({ id, user_id: userId }).update({ is_read: true });
++    return res.status(200).json({ status: 'success', success: true, data: { message: 'Notification marked as read' } });
+   } catch (error) {
+     log.error('markNotificationRead: failed', { userId, notificationId: id, err: error });
+-    return res.status(500).json({
+-      status: 'error',
+-      success: false,
+-      message: error.message
+-    });
++    return res.status(500).json({ status: 'error', success: false, message: error.message });
+   }
+ };
+diff --git a/backend/src/modules/auth/auth.router.js b/backend/src/modules/auth/auth.router.js
+index 67280d8..faa1365 100644
+--- a/backend/src/modules/auth/auth.router.js
++++ b/backend/src/modules/auth/auth.router.js
+@@ -14,7 +14,9 @@ const authLimiter = rateLimit({
+ });
+ 
+ router.post('/login', authLimiter, authController.login);
+-router.post('/refresh', authLimiter, authController.refresh);
++// NOTE: token refresh is handled automatically by SuperTokens at
++// POST /api/v1/auth/session/refresh (mounted by the SuperTokens express middleware in app.js).
++// The old custom /auth/refresh route was removed.
+ router.post('/logout', authMiddleware, authController.logout);
+ router.get('/me', authMiddleware, authController.me);
+ router.put('/change-password', authMiddleware, authController.changePassword);
+diff --git a/backend/src/modules/auth/auth.service.js b/backend/src/modules/auth/auth.service.js
+index f23f166..4c8381d 100644
+--- a/backend/src/modules/auth/auth.service.js
++++ b/backend/src/modules/auth/auth.service.js
+@@ -1,111 +1,21 @@
+ import bcrypt from 'bcryptjs';
+ import db from '../../config/db.js';
+ import { env } from '../../config/env.js';
+-import Redis from 'ioredis';
+-import { logger, getLogger } from '../../utils/logger.js';
+-import {
+-  buildAccessPayload,
+-  signAccessToken,
+-  signRefreshToken,
+-  verifyRefreshToken,
+-} from '../../utils/generateToken.js';
++import { getLogger } from '../../utils/logger.js';
++import { getLevelFromRole } from '../../utils/generateToken.js';
+ 
+-// STYLE ANCHOR: matches modules/records/records.service.js (logging-instrumentation-2026-07-22
+-// HANDOFF.md §7). Auth is the densest-logged module here per the brief — every login/refresh/
+-// logout step is traced. REDACTION IS MANDATORY: this file never logs a raw password,
+-// password_hash, access_token, or refresh_token value — only presence/booleans and, for the
+-// dev-only backdoor loop, never the literal candidate password strings even though they are
+-// hardcoded constants already visible in source.
++// After the SuperTokens migration this service is credential + scope logic ONLY. It no longer
++// issues, stores, or refreshes tokens — SuperTokens owns the session. auth.controller.js calls
++// verifyCredentials() to check badge+password, then creates the SuperTokens session itself
++// (it needs req/res). Redis and the refresh-token store are gone.
+ const log = getLogger('auth.service');
+ 
+-let redisClient = null;
+-const memoryTokenCache = new Map();
+-
+-try {
+-  if (env.REDIS_URL) {
+-    redisClient = new Redis(env.REDIS_URL, {
+-      maxRetriesPerRequest: 1,
+-      retryStrategy: (times) => {
+-        // Stop retrying and fall back to memory
+-        if (times > 3) return null;
+-        return 1000;
+-      }
+-    });
+-    redisClient.on('error', (err) => {
+-      logger.warn('[Redis] Connection failed. Using memory fallback cache.');
+-      if (redisClient) {
+-        try {
+-          redisClient.disconnect();
+-        } catch (e) {}
+-      }
+-      redisClient = null;
+-    });
+-  }
+-} catch (e) {
+-  logger.warn('[Redis] Client initialization skipped. Using memory fallback.');
+-}
+-
+-async function storeRefreshToken(userId, token) {
+-  log.debug('storeRefreshToken: enter', { userId, hasToken: !!token, backend: redisClient ? 'redis' : 'memory' });
+-  if (redisClient) {
+-    try {
+-      await redisClient.set(`refresh:${userId}`, token, 'EX', 7 * 24 * 60 * 60);
+-      log.debug('storeRefreshToken: stored in redis', { userId });
+-      return;
+-    } catch (e) {
+-      logger.warn('[Redis] Failed to set token. Falling back to memory.');
+-      log.warn('storeRefreshToken: redis set failed, falling back to memory', { userId, err: e });
+-    }
+-  }
+-  memoryTokenCache.set(userId, token);
+-  log.debug('storeRefreshToken: stored in memory cache', { userId });
+-}
+-
+-async function getRefreshToken(userId) {
+-  log.debug('getRefreshToken: enter', { userId, backend: redisClient ? 'redis' : 'memory' });
+-  if (redisClient) {
+-    try {
+-      const val = await redisClient.get(`refresh:${userId}`);
+-      log.debug('getRefreshToken: read from redis', { userId, found: !!val });
+-      return val;
+-    } catch (e) {
+-      logger.warn('[Redis] Failed to get token. Falling back to memory.');
+-      log.warn('getRefreshToken: redis get failed, falling back to memory', { userId, err: e });
+-    }
+-  }
+-  const val = memoryTokenCache.get(userId);
+-  log.debug('getRefreshToken: read from memory cache', { userId, found: !!val });
+-  return val;
+-}
+-
+-async function removeRefreshToken(userId) {
+-  log.debug('removeRefreshToken: enter', { userId, backend: redisClient ? 'redis' : 'memory' });
+-  if (redisClient) {
+-    try {
+-      await redisClient.del(`refresh:${userId}`);
+-      log.debug('removeRefreshToken: deleted from redis', { userId });
+-      return;
+-    } catch (e) {
+-      logger.warn('[Redis] Failed to delete token. Falling back to memory.');
+-      log.warn('removeRefreshToken: redis del failed, falling back to memory', { userId, err: e });
+-    }
+-  }
+-  memoryTokenCache.delete(userId);
+-  log.debug('removeRefreshToken: deleted from memory cache', { userId });
+-}
+-
+ /**
+  * Backfill missing scope FKs by climbing the hierarchy.
+- * Chain is HQ → ZONE → RANGE → DISTRICT → SUB_DIV → PS, so a PS's parent is
+- * its SUB_DIV and the district is TWO hops up — never assume ps.parent is the
+- * district. Seeds populate all three columns; this is a safety net for
+- * hand-created users.
++ * Chain is HQ -> ZONE -> RANGE -> DISTRICT -> SUB_DIV -> PS, so a PS's parent is its SUB_DIV
++ * and the district is TWO hops up. Seeds populate all three; this is a safety net.
+  */
+ export async function resolveScope(user) {
+-  log.debug('resolveScope: enter', {
+-    userId: user?.id || null, psId: user?.ps_id || null,
+-    subDivId: user?.sub_div_id || null, districtId: user?.district_id || null,
+-  });
+   const scope = {
+     ps_id: user.ps_id || null,
+     sub_div_id: user.sub_div_id || null,
+@@ -114,14 +24,11 @@ export async function resolveScope(user) {
+   if (scope.ps_id && !scope.sub_div_id) {
+     const ps = await db('hierarchy_nodes').where({ id: scope.ps_id }).first();
+     scope.sub_div_id = ps?.parent_id || null;
+-    log.debug('resolveScope: backfilled sub_div_id from ps parent', { psId: scope.ps_id, subDivId: scope.sub_div_id });
+   }
+   if (scope.sub_div_id && !scope.district_id) {
+     const subDiv = await db('hierarchy_nodes').where({ id: scope.sub_div_id }).first();
+     scope.district_id = subDiv?.parent_id || null;
+-    log.debug('resolveScope: backfilled district_id from sub_div parent', { subDivId: scope.sub_div_id, districtId: scope.district_id });
+   }
+-  log.debug('resolveScope: exit', { userId: user?.id || null, scope });
+   return scope;
+ }
+ 
+@@ -151,130 +58,54 @@ const findByBadgeOrUsername = async (value) => {
+   );
+ };
+ 
+-export const loginUser = async (badgeNo, password) => {
++/**
++ * Verify badge/username + password against the users table (bcrypt). Returns the identity +
++ * resolved scope that the controller writes into the SuperTokens session payload. Throws on
++ * bad credentials or a deactivated account. NEVER logs the password.
++ */
++export const verifyCredentials = async (badgeNo, password) => {
+   const normalizedBadgeNo = String(badgeNo).trim();
+-  // NEVER log `password` itself — only that one was supplied (HANDOFF.md §3b redaction).
+-  log.debug('loginUser: enter', { badgeNo: normalizedBadgeNo, hasPassword: !!password });
+-
+-  try {
+-    // Exact match first — a real username/badge always wins over alias guessing,
+-    // so a seeded username that happens to contain an alias keyword (e.g.
+-    // "dcp_nwd" containing "dcp") never gets silently hijacked into the wrong
+-    // account.
+-    let user = await findByBadgeOrUsername(normalizedBadgeNo);
+-    log.debug('loginUser: exact-match lookup', { badgeNo: normalizedBadgeNo, found: !!user, userId: user?.id || null, role: user?.role || null });
+-
+-    if (!user && isDev) {
+-      const alias = DEV_BADGE_ALIASES.find(([re]) => re.test(normalizedBadgeNo.toLowerCase()));
+-      if (alias) {
+-        log.debug('loginUser: dev alias fallback matched', { badgeNo: normalizedBadgeNo, aliasTarget: alias[1] });
+-        user = await findByBadgeOrUsername(alias[1]);
+-        log.debug('loginUser: dev alias lookup', { aliasTarget: alias[1], found: !!user, userId: user?.id || null, role: user?.role || null });
+-      }
+-    }
++  log.debug('verifyCredentials: enter', { badgeNo: normalizedBadgeNo, hasPassword: !!password });
+ 
+-    if (!user) {
+-      log.warn('loginUser: rejected — user not found', { badgeNo: normalizedBadgeNo });
+-      throw new Error('Invalid badge number or password');
+-    }
+-
+-    if (!user.is_active) {
+-      log.warn('loginUser: rejected — user account deactivated', { userId: user.id, badgeNo: normalizedBadgeNo });
+-      throw new Error('User account is deactivated');
+-    }
+-
+-    let isMatch = await bcrypt.compare(password, user.password_hash);
+-    log.debug('loginUser: password verify', { userId: user.id, ok: isMatch });
+-    // Dev-only backdoor: the seeded dev passwords are interchangeable. Never log the candidate
+-    // strings themselves, even though they're hardcoded dev constants — only that the backdoor
+-    // path engaged and its eventual outcome.
+-    if (!isMatch && isDev && ['Password123', 'test123', 'Test@1234'].includes(password)) {
+-      log.debug('loginUser: dev password-backdoor engaged', { userId: user.id });
+-      for (const p of ['Password123', 'test123', 'Test@1234']) {
+-        if (p !== password) {
+-          isMatch = await bcrypt.compare(p, user.password_hash);
+-          if (isMatch) break;
+-        }
+-      }
+-      log.debug('loginUser: dev password-backdoor outcome', { userId: user.id, ok: isMatch });
+-    }
+-
+-    if (!isMatch) {
+-      log.warn('loginUser: rejected — password mismatch', { userId: user.id, badgeNo: normalizedBadgeNo });
+-      throw new Error('Invalid badge number or password');
+-    }
+-
+-    // Backfill any missing scope ids from the hierarchy before building the token
+-    const scope = await resolveScope(user);
+-    const payload = buildAccessPayload({ ...user, ...scope });
+-
+-    const accessToken = signAccessToken(payload);
+-    const refreshToken = signRefreshToken(user.id);
+-    // NEVER log the token values themselves — presence only.
+-    log.debug('loginUser: tokens issued', { userId: user.id, hasAccess: !!accessToken, hasRefresh: !!refreshToken });
+-
+-    await storeRefreshToken(user.id, refreshToken);
+-    await db('users').where({ id: user.id }).update({ last_login: new Date().toISOString() });
+-    log.debug('loginUser: updated last_login', { userId: user.id });
+-
+-    log.info('loginUser: success', { userId: user.id, badgeNo: user.badge_no, role: user.role, level: payload.level });
+-    return {
+-      access_token: accessToken,
+-      refresh_token: refreshToken,
+-      user: {
+-        id: user.id,
+-        username: user.username,
+-        badge_no: user.badge_no,
+-        name: user.name,
+-        role: user.role,
+-        level: payload.level,
+-        ps_id: scope.ps_id,
+-        district_id: scope.district_id,
+-        sub_div_id: scope.sub_div_id,
+-      },
+-    };
+-  } catch (err) {
+-    log.error('loginUser: failed', { badgeNo: normalizedBadgeNo, err });
+-    throw err;
++  let user = await findByBadgeOrUsername(normalizedBadgeNo);
++  if (!user && isDev) {
++    const alias = DEV_BADGE_ALIASES.find(([re]) => re.test(normalizedBadgeNo.toLowerCase()));
++    if (alias) user = await findByBadgeOrUsername(alias[1]);
++  }
++  if (!user) {
++    log.warn('verifyCredentials: rejected — user not found', { badgeNo: normalizedBadgeNo });
++    throw new Error('Invalid badge number or password');
++  }
++  if (!user.is_active) {
++    log.warn('verifyCredentials: rejected — user deactivated', { userId: user.id });
++    throw new Error('User account is deactivated');
+   }
+-};
+-
+-export const refreshUserToken = async (token) => {
+-  // NEVER log the raw token value — presence/length only.
+-  log.debug('refreshUserToken: enter', { hasToken: !!token, tokenLen: token?.length || 0 });
+-  try {
+-    const decoded = verifyRefreshToken(token);
+-    const userId = decoded.sub ?? decoded.id; // decoded.id = pre-restructure tokens
+-    log.debug('refreshUserToken: token verified', { userId });
+-
+-    const savedToken = await getRefreshToken(userId);
+-    const matches = !!savedToken && savedToken === token;
+-    log.debug('refreshUserToken: compared against stored token', { userId, hasSavedToken: !!savedToken, matches });
+-    if (!matches) {
+-      log.warn('refreshUserToken: rejected — token mismatch or not stored', { userId });
+-      throw new Error('Invalid refresh token');
+-    }
+ 
+-    // Re-query so role/scope/is_active changes take effect on the next token
+-    const user = await db('users').select(USER_COLUMNS).where({ id: userId }).first();
+-    log.debug('refreshUserToken: re-queried user', { userId, found: !!user, isActive: user?.is_active ?? null });
+-    if (!user || !user.is_active) {
+-      log.warn('refreshUserToken: rejected — user not found or inactive', { userId });
+-      throw new Error('User not found or inactive');
++  let isMatch = await bcrypt.compare(password, user.password_hash);
++  // Dev-only backdoor: seeded dev passwords are interchangeable. Never log the candidate values.
++  if (!isMatch && isDev && ['Password123', 'test123', 'Test@1234'].includes(password)) {
++    for (const p of ['Password123', 'test123', 'Test@1234']) {
++      if (p !== password) { isMatch = await bcrypt.compare(p, user.password_hash); if (isMatch) break; }
+     }
+-
+-    const scope = await resolveScope(user);
+-    const newAccessToken = signAccessToken(buildAccessPayload({ ...user, ...scope }));
+-    log.info('refreshUserToken: success', { userId, role: user.role, hasAccess: !!newAccessToken });
+-    return { access_token: newAccessToken };
+-  } catch (error) {
+-    log.error('refreshUserToken: failed', { err: error });
+-    throw new Error('Token refresh failed: ' + error.message);
+   }
+-};
++  if (!isMatch) {
++    log.warn('verifyCredentials: rejected — password mismatch', { userId: user.id });
++    throw new Error('Invalid badge number or password');
++  }
+ 
+-export const logoutUser = async (userId) => {
+-  log.debug('logoutUser: enter', { userId });
+-  await removeRefreshToken(userId);
+-  log.info('logoutUser: success', { userId });
++  const scope = await resolveScope(user);
++  await db('users').where({ id: user.id }).update({ last_login: new Date().toISOString() });
++  log.info('verifyCredentials: success', { userId: user.id, badgeNo: user.badge_no, role: user.role });
++
++  return {
++    id: user.id,
++    username: user.username,
++    badge_no: user.badge_no,
++    name: user.name,
++    role: user.role,
++    level: getLevelFromRole(user.role),
++    ps_id: scope.ps_id,
++    district_id: scope.district_id,
++    sub_div_id: scope.sub_div_id,
++  };
+ };
+diff --git a/backend/src/modules/auth/rbac.catalog.js b/backend/src/modules/auth/rbac.catalog.js
+new file mode 100644
+index 0000000..5b1ca68
+--- /dev/null
++++ b/backend/src/modules/auth/rbac.catalog.js
+@@ -0,0 +1,106 @@
++// RBAC permission catalog — the SINGLE SOURCE OF TRUTH for who can do what.
++//
++// Before this migration, authorization was ~200 scattered allow('ROLE_A','ROLE_B',...)
++// role lists across 20 routers, with no central definition. This catalog centralises it:
++// roles map to named permissions, the permissions are seeded into SuperTokens UserRoles
++// (rbac.seed.js), and requirePermission() in rbac.middleware.js checks them.
++//
++// Two layers remain deliberately separate from this catalog:
++//   1. Jurisdiction scope (ps_id / district_id / sub_div_id) — enforced by enforceScope /
++//      verifyRecordAccess, because it is geographic, not a role capability.
++//   2. Per-transition workflow rights — still driven by config/workflow/main.json
++//      allowed_roles, because they are state-machine rules, not blanket capabilities.
++//
++// The nine canonical roles (users.role CHECK constraint). 'DISTRICT' is treated as an alias
++// of 'DISTRICT_OFFICER' by the middleware; do not seed a separate 'DISTRICT' role.
++export const ROLES = [
++  'HC', 'SHO', 'ACP', 'DISTRICT_OFFICER', 'JCP', 'SCP',
++  'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN',
++];
++
++// Every permission the app recognises. Verb:object naming. Tune these against product intent;
++// this is data, not code, and changing it is a seed re-run, not a code change.
++export const PERMISSIONS = {
++  RECORD_CREATE: 'record:create',
++  RECORD_READ: 'record:read',
++  RECORD_UPDATE: 'record:update',
++  RECORD_DELETE: 'record:delete',
++  RECORD_SUBMIT: 'record:submit',
++  WORKFLOW_APPROVE_SHO: 'workflow:approve_sho',
++  WORKFLOW_APPROVE_DISTRICT: 'workflow:approve_district',
++  WORKFLOW_APPROVE_JCP: 'workflow:approve_jcp',
++  WORKFLOW_APPROVE_SCP: 'workflow:approve_scp',
++  WORKFLOW_SEAL: 'workflow:seal',
++  WORKFLOW_SEND_BACK: 'workflow:send_back',
++  WORKFLOW_TRANSFER: 'workflow:transfer',
++  WORKFLOW_OVERRIDE_HEAD: 'workflow:override_head',
++  COMPILATION_MANAGE: 'compilation:manage',
++  REPORT_READ: 'report:read',
++  REPORT_GENERATE: 'report:generate',
++  REPORT_SCHEDULE: 'report:schedule',
++  USER_MANAGE: 'user:manage',
++  USER_RESET_PASSWORD: 'user:reset_password',
++  HIERARCHY_MANAGE: 'hierarchy:manage',
++  FIELD_MANAGE: 'field:manage',
++  FIELD_MANAGE_DISTRICT: 'field:manage_district',
++  AUDIT_READ: 'audit:read',
++  AUDIT_VERIFY: 'audit:verify',
++  AUDIT_FREEZE: 'audit:freeze',
++  IMPORT_MANAGE: 'import:manage',
++  IO_MANAGE: 'io:manage',
++  LEVEL_CONTRACT_MANAGE: 'level_contract:manage',
++  WAREHOUSE_RUN: 'warehouse:run',
++};
++
++const P = PERMISSIONS;
++const ALL = Object.values(PERMISSIONS);
++
++// Role -> permissions. Derived from the current allow() usage across the routers, made
++// explicit and consistent. Jurisdiction scope still narrows these to the user's PS/district.
++export const ROLE_PERMISSIONS = {
++  HC: [
++    P.RECORD_CREATE, P.RECORD_READ, P.RECORD_UPDATE, P.RECORD_DELETE, P.RECORD_SUBMIT,
++    P.IMPORT_MANAGE, P.REPORT_READ, P.REPORT_GENERATE,
++  ],
++  SHO: [
++    P.RECORD_READ, P.RECORD_UPDATE,
++    P.WORKFLOW_APPROVE_SHO, P.WORKFLOW_SEND_BACK, P.WORKFLOW_TRANSFER,
++    P.USER_MANAGE, P.USER_RESET_PASSWORD, P.IO_MANAGE,
++    P.REPORT_READ, P.REPORT_GENERATE,
++  ],
++  ACP: [
++    P.RECORD_READ, P.IO_MANAGE, P.REPORT_READ,
++  ],
++  DISTRICT_OFFICER: [
++    P.RECORD_READ, P.RECORD_UPDATE,
++    P.WORKFLOW_APPROVE_DISTRICT, P.WORKFLOW_SEND_BACK, P.WORKFLOW_OVERRIDE_HEAD, P.WORKFLOW_TRANSFER,
++    P.COMPILATION_MANAGE, P.FIELD_MANAGE_DISTRICT, P.IMPORT_MANAGE,
++    P.REPORT_READ, P.REPORT_GENERATE, P.AUDIT_READ, P.USER_MANAGE,
++  ],
++  JCP: [
++    P.RECORD_READ, P.WORKFLOW_APPROVE_JCP, P.WORKFLOW_SEND_BACK, P.REPORT_READ,
++  ],
++  SCP: [
++    P.RECORD_READ, P.WORKFLOW_APPROVE_SCP, P.WORKFLOW_SEND_BACK, P.REPORT_READ,
++  ],
++  HQ_ANALYST: [
++    P.RECORD_READ, P.REPORT_READ, P.REPORT_GENERATE, P.REPORT_SCHEDULE,
++    P.AUDIT_READ, P.WAREHOUSE_RUN, P.USER_MANAGE,
++  ],
++  HQ_ADMIN: [
++    P.RECORD_READ, P.REPORT_READ, P.REPORT_GENERATE, P.REPORT_SCHEDULE,
++    P.WORKFLOW_SEAL, P.FIELD_MANAGE, P.HIERARCHY_MANAGE,
++    P.AUDIT_READ, P.AUDIT_VERIFY, P.AUDIT_FREEZE,
++    P.USER_MANAGE, P.USER_RESET_PASSWORD, P.LEVEL_CONTRACT_MANAGE, P.WAREHOUSE_RUN, P.IMPORT_MANAGE,
++  ],
++  SYSTEM_ADMIN: ALL, // superuser
++};
++
++// role -> hierarchy level (kept in sync with utils/generateToken.js ROLE_LEVELS).
++export const ROLE_LEVEL = {
++  HC: 'PS', SHO: 'PS', ACP: 'SUB_DIV', DISTRICT_OFFICER: 'DISTRICT',
++  JCP: 'JCP', SCP: 'SCP', HQ_ANALYST: 'HQ', HQ_ADMIN: 'HQ', SYSTEM_ADMIN: 'HQ',
++};
++
++// Normalise the legacy 'DISTRICT' token to the canonical role.
++export const canonicalRole = (role) => (role === 'DISTRICT' ? 'DISTRICT_OFFICER' : role);
+diff --git a/backend/src/modules/auth/rbac.seed.js b/backend/src/modules/auth/rbac.seed.js
+new file mode 100644
+index 0000000..e1de0b8
+--- /dev/null
++++ b/backend/src/modules/auth/rbac.seed.js
+@@ -0,0 +1,52 @@
++// Seeds the SuperTokens Core with the RBAC catalog and assigns roles to existing users.
++// Idempotent and best-effort: called at startup after the DB connects. A failure here (for
++// example the Core still booting) is logged and never crashes the API — it retries next boot.
++import UserRoles from 'supertokens-node/recipe/userroles';
++import db from '../../config/db.js';
++import { ROLE_PERMISSIONS, canonicalRole } from './rbac.catalog.js';
++import { getLogger } from '../../utils/logger.js';
++
++const log = getLogger('rbac.seed');
++const DEFAULT_TENANT = 'public';
++
++// Create each role in the Core and (re)attach its permission set. createNewRoleOrAddPermissions
++// is additive and idempotent, so this is safe to run on every boot.
++export async function seedRolesAndPermissions() {
++  log.info('seedRolesAndPermissions: enter', { roleCount: Object.keys(ROLE_PERMISSIONS).length });
++  for (const [role, permissions] of Object.entries(ROLE_PERMISSIONS)) {
++    await UserRoles.createNewRoleOrAddPermissions(role, permissions);
++    log.debug('seedRolesAndPermissions: role synced', { role, permissionCount: permissions.length });
++  }
++  log.info('seedRolesAndPermissions: exit — all roles + permissions synced');
++}
++
++// Attach each app user's role (from users.role) to their SuperTokens identity so the
++// UserRoleClaim / PermissionClaim populate on their next session. Runs over the users table.
++export async function assignRolesToExistingUsers() {
++  const users = await db('users').select('id', 'role');
++  log.info('assignRolesToExistingUsers: enter', { userCount: users.length });
++  let assigned = 0;
++  for (const u of users) {
++    const role = canonicalRole(u.role);
++    if (!role || !ROLE_PERMISSIONS[role]) continue;
++    try {
++      await UserRoles.addRoleToUser(DEFAULT_TENANT, u.id, role);
++      assigned += 1;
++    } catch (err) {
++      log.warn('assignRolesToExistingUsers: failed for user', { userId: u.id, role, err: err.message });
++    }
++  }
++  log.info('assignRolesToExistingUsers: exit', { assigned, total: users.length });
++}
++
++// One call for startup wiring.
++export async function seedRbac() {
++  try {
++    await seedRolesAndPermissions();
++    await assignRolesToExistingUsers();
++  } catch (err) {
++    log.error('seedRbac: failed (non-fatal, will retry next boot)', { err: err.message });
++  }
++}
++
++export default seedRbac;
+diff --git a/backend/src/modules/users/users.controller.js b/backend/src/modules/users/users.controller.js
+index a2a4e1b..551b91b 100644
+--- a/backend/src/modules/users/users.controller.js
++++ b/backend/src/modules/users/users.controller.js
+@@ -1,7 +1,8 @@
+ import db from '../../config/db.js';
+ import bcrypt from 'bcryptjs';
+ import { v4 as uuidv4 } from 'uuid';
+-import { logoutUser, resolveScope } from '../auth/auth.service.js';
++import { resolveScope } from '../auth/auth.service.js';
++import Session from 'supertokens-node/recipe/session';
+ import { getLogger } from '../../utils/logger.js';
+ import { redact } from '../../utils/redact.js';
+ 
+@@ -324,7 +325,12 @@ export const resetPassword = async (req, res) => {
+     const hash = await bcrypt.hash(newPassword, 12);
+     await db('users').where({ id }).update({ password_hash: hash, updated_at: db.fn.now() });
+     log.info('resetPassword: wrote users row (new password_hash)', { userId: id });
+-    await logoutUser(id);
++    // Force re-login for the target user: revoke all their SuperTokens sessions (best-effort).
++    try {
++      await Session.revokeAllSessionsForUser(id);
++    } catch (e) {
++      log.warn('resetPassword: revokeAllSessionsForUser failed (non-fatal)', { userId: id, err: e.message });
++    }
+     log.info('resetPassword: exit', { userId: id });
+     return res.status(200).json({ status: 'success', success: true, data: { message: 'Password reset' } });
+   } catch (error) {
+diff --git a/backend/src/utils/generateToken.js b/backend/src/utils/generateToken.js
+index 552765f..4a16b87 100644
+--- a/backend/src/utils/generateToken.js
++++ b/backend/src/utils/generateToken.js
+@@ -1,22 +1,14 @@
+-import jwt from 'jsonwebtoken';
+-import { env } from '../config/env.js';
+-
+ /**
+- * THE token utility — the only place tokens are built, signed and verified.
+- *
+- * Canonical access payload (snake_case, ids only — names/codes come from /me,
+- * so a hierarchy rename never leaves stale data inside live tokens):
+- *   { sub, username, badge_no, role, level, ps_id, district_id, sub_div_id }
+- * Refresh payload: { sub }.
++ * Role -> hierarchy level mapping. This is the only responsibility left in this file after the
++ * SuperTokens migration: token signing/verification now lives in SuperTokens (see
++ * config/supertokens.js and modules/auth/auth.controller.js). The old JWT sign/verify helpers
++ * were removed. ROLE_LEVELS / getLevelFromRole are still imported by levelContracts.service.js
++ * and auth.controller.js, so they stay here.
+  *
+- * auth.middleware.js normalizes the decoded payload onto req.user (adds the
+- * legacy id/userId/psId/districtId aliases) — downstream code never re-derives.
++ * ACP is a live role (scope = sub_div_id) even though the workflow chain skips it until ACP
++ * transitions are added to config/workflow/. JCP/SCP are their own levels per the workflow
++ * config, not HQ.
+  */
+-
+-// Single source of truth for role → hierarchy level.
+-// ACP is a live role (scope = sub_div_id) even though the workflow chain skips it
+-// until ACP transitions are added to config/workflow/. JCP/SCP are their own
+-// levels per the workflow config (from_level/to_level values), not HQ.
+ export const ROLE_LEVELS = {
+   HC: 'PS',
+   SHO: 'PS',
+@@ -32,10 +24,10 @@ export const ROLE_LEVELS = {
+ export const getLevelFromRole = (role) => ROLE_LEVELS[role] ?? null;
+ 
+ /**
+- * Build the canonical access-token payload from a users row.
++ * Builds the identity + scope object that is written into the SuperTokens session access-token
++ * payload at login. (Previously this was the JWT claim set; now it is the session payload.)
+  */
+ export const buildAccessPayload = (user) => ({
+-  sub: user.id,
+   username: user.username,
+   badge_no: user.badge_no,
+   role: user.role,
+@@ -44,13 +36,3 @@ export const buildAccessPayload = (user) => ({
+   district_id: user.district_id || null,
+   sub_div_id: user.sub_div_id || null,
+ });
+-
+-export const signAccessToken = (payload) =>
+-  jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_ACCESS_EXPIRES });
+-
+-export const signRefreshToken = (userId) =>
+-  jwt.sign({ sub: userId }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES });
+-
+-export const verifyAccessToken = (token) => jwt.verify(token, env.JWT_SECRET);
+-
+-export const verifyRefreshToken = (token) => jwt.verify(token, env.JWT_REFRESH_SECRET);
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 163bc12..b3a15e8 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -44,5 +44,27 @@ services:
+       timeout: 5s
+       retries: 5
+ 
++  # SuperTokens Core (self-hosted) — owns session + roles/permissions storage. Connects to the
++  # same PostgreSQL instance as the app; its tables (session_info, roles, user_roles, ...) do not
++  # collide with the app schema. Use a separate database in the URI below if you prefer isolation.
++  supertokens:
++    image: registry.supertokens.io/supertokens/supertokens-postgresql:9.3.0
++    restart: unless-stopped
++    depends_on:
++      db:
++        condition: service_healthy
++    ports:
++      - "3567:3567"
++    environment:
++      POSTGRESQL_CONNECTION_URI: "postgresql://postgres:postgres@db:5432/pharos_db"
++      # Set an API key in production, then set SUPERTOKENS_API_KEY on the backend to match:
++      # API_KEYS: "replace-with-a-long-random-key"
++    healthcheck:
++      test: >
++        bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 && echo -e "GET /hello HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n" >&3 && cat <&3 | grep -q "Hello"'
++      interval: 10s
++      timeout: 5s
++      retries: 10
++
+ volumes:
+   pgdata:
+diff --git a/frontend/package.json b/frontend/package.json
+index ef7db3e..585cb9d 100644
+--- a/frontend/package.json
++++ b/frontend/package.json
+@@ -33,6 +33,7 @@
+     "react-i18next": "^17.0.8",
+     "react-router-dom": "^7.17.0",
+     "recharts": "^3.8.1",
++    "supertokens-web-js": "^0.13.0",
+     "tailwindcss": "^4.3.1",
+     "zod": "^4.4.3",
+     "zustand": "^5.0.14"
+diff --git a/frontend/src/config/supertokens.js b/frontend/src/config/supertokens.js
+new file mode 100644
+index 0000000..47891da
+--- /dev/null
++++ b/frontend/src/config/supertokens.js
+@@ -0,0 +1,29 @@
++// SuperTokens frontend init (replaces the manual localStorage token + axios refresh logic).
++// Header transfer mode keeps a bearer token in the browser exactly like the old JWT, but the
++// SDK now stores it, attaches it, and refreshes it automatically via the axios interceptors
++// added in utils/api.js.
++import SuperTokens from 'supertokens-web-js';
++import Session from 'supertokens-web-js/recipe/session';
++
++// VITE_API_URL is expected to be the API base (for example http://localhost:5000/api or
++// http://localhost:5000/api/v1). SuperTokens needs the ORIGIN plus the auth base path, so we
++// strip a trailing /api or /api/v1 to get the domain and pin apiBasePath to match the backend.
++const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
++const apiDomain = rawBase.replace(/\/api(\/v1)?\/?$/, '') || window.location.origin;
++
++export const initSuperTokensWeb = () => {
++  SuperTokens.init({
++    appInfo: {
++      appName: 'PHAROS',
++      apiDomain,
++      apiBasePath: '/api/v1/auth',
++    },
++    recipeList: [
++      Session.init({
++        tokenTransferMethod: 'header',
++      }),
++    ],
++  });
++};
++
++export default initSuperTokensWeb;
+diff --git a/frontend/src/hooks/useAuth.js b/frontend/src/hooks/useAuth.js
+index 760fbda..cd2ce78 100644
+--- a/frontend/src/hooks/useAuth.js
++++ b/frontend/src/hooks/useAuth.js
+@@ -6,6 +6,7 @@ import { QUERY_KEYS } from '../utils/constants.js';
+ import toast from 'react-hot-toast';
+ import { useNavigate } from 'react-router-dom';
+ import { log } from '../utils/logger.js';
++import Session from 'supertokens-web-js/recipe/session';
+ 
+ export const useAuth = () => {
+   const { user, isAuthenticated, login, logout, setLoading, activeNodeId } = useAuthStore();
+@@ -77,10 +78,10 @@ export const useAuth = () => {
+           badgeNo: credentials.email
+         };
+         const res = await authApi.login(payload);
+-        const { user, access_token, refresh_token } = res.data.data;
+-        if (access_token) localStorage.setItem('access_token', access_token);
+-        if (refresh_token) localStorage.setItem('refresh_token', refresh_token);
+-        log.info('auth:login_success', { userId: user?.id ?? null, role: user?.role ?? null, hasAccessToken: !!access_token, hasRefreshToken: !!refresh_token });
++        // SuperTokens establishes the session from the login response headers automatically
++        // (via the axios interceptors attached to this `api` instance). No manual token storage.
++        const { user } = res.data.data;
++        log.info('auth:login_success', { userId: user?.id ?? null, role: user?.role ?? null });
+         return user;
+       } catch (err) {
+         if (!err.response) {
+@@ -148,7 +149,7 @@ export const useAuth = () => {
+     mutationFn: async () => {
+       log.debug('auth:logout_attempt', { userId: user?.id ?? null });
+       try {
+-        await authApi.logout();
++        await Session.signOut(); // revokes the SuperTokens session and clears its tokens
+         log.info('auth:logout_success', {});
+       } catch (err) {
+         // Suppress offline errors on logout
+diff --git a/frontend/src/hooks/useNotifications.js b/frontend/src/hooks/useNotifications.js
+index 6260090..a243841 100644
+--- a/frontend/src/hooks/useNotifications.js
++++ b/frontend/src/hooks/useNotifications.js
+@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
+ import useAuthStore from '../store/authStore.js';
+ import { renderNotification } from '../utils/notificationText.js';
+ import { log } from '../utils/logger.js';
++import Session from 'supertokens-web-js/recipe/session';
+ 
+ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+ const SSE_URL = `${BASE_URL}/v1/notifications/stream`;
+@@ -39,7 +40,10 @@ export function useNotifications() {
+   const mountedRef = useRef(true);
+ 
+   // ── Helpers ──────────────────────────────────────────────────────────────
+-  const getToken = () => localStorage.getItem('access_token');
++  // In SuperTokens header mode the access token is owned by the SDK, not localStorage.
++  const getToken = async () => {
++    try { return (await Session.getAccessToken()) || null; } catch { return null; }
++  };
+   const getCsrfToken = () =>
+   document.cookie
+     .split('; ')
+@@ -47,7 +51,7 @@ export function useNotifications() {
+     ?.split('=')[1];
+ 
+   const fetchNotifications = useCallback(async () => {
+-    const token = getToken();
++    const token = await getToken();
+     if (!token) return;
+     setIsLoading(true);
+     log.debug('hook:notifications:fetch_start', { hasToken: true });
+@@ -72,9 +76,9 @@ export function useNotifications() {
+   }, []);
+ 
+   // ── SSE Connection ────────────────────────────────────────────────────────
+-  const connectSSE = useCallback(() => {
++  const connectSSE = useCallback(async () => {
+     if (!isAuthenticated) return;
+-    const token = getToken();
++    const token = await getToken();
+     if (!token) return;
+ 
+     // Close any existing connection
+diff --git a/frontend/src/main.jsx b/frontend/src/main.jsx
+index ee4eb0f..c8a1ece 100644
+--- a/frontend/src/main.jsx
++++ b/frontend/src/main.jsx
+@@ -6,6 +6,11 @@ import { X } from 'lucide-react';
+ import './i18n/index.js';
+ import App from './App.jsx';
+ import './index.css';
++import { initSuperTokensWeb } from './config/supertokens.js';
++
++// Initialise SuperTokens before render so the axios session interceptors (utils/api.js) and any
++// Session.* call have a configured SDK.
++initSuperTokensWeb();
+ 
+ const queryClient = new QueryClient({
+   defaultOptions: {
+diff --git a/frontend/src/routes/ProtectedRoute.jsx b/frontend/src/routes/ProtectedRoute.jsx
+index 4242776..5c78212 100644
+--- a/frontend/src/routes/ProtectedRoute.jsx
++++ b/frontend/src/routes/ProtectedRoute.jsx
+@@ -1,38 +1,55 @@
++import { useEffect, useState } from 'react';
+ import { Navigate, Outlet, useLocation } from 'react-router-dom';
++import Session from 'supertokens-web-js/recipe/session';
+ import useAuthStore from '../store/authStore.js';
+ import { Spinner } from '../components/ui/Spinner.jsx';
+ import { ROUTES } from '../utils/constants.js';
+ import { log } from '../utils/logger.js';
+ 
+ /**
+- * Wraps routes that require authentication.
+- * Optionally restricts to specific roles.
++ * Enforces authentication (and optional role) at the route level.
+  *
+- * Usage:
+- *   <Route element={<ProtectedRoute />}>
+- *     <Route path="/dashboard" element={<Dashboard />} />
+- *   </Route>
++ * Previously the redirects in this file were commented out, so the SPA gated nothing and every
++ * page was reachable regardless of login or role. This now enforces access:
++ *   - No live SuperTokens session -> redirect to login.
++ *   - Session but identity still loading -> spinner (avoids a flash redirect on refresh).
++ *   - Session + role restriction not met -> redirect home.
++ *
++ * Auth is confirmed against the LIVE SuperTokens session (Session.doesSessionExist), not just
++ * the persisted store, so a stale persisted user cannot grant access after the session expires.
+  *
+- *   <Route element={<ProtectedRoute roles={['admin']} />}>
+- *     <Route path="/admin" element={<AdminPanel />} />
+- *   </Route>
++ * Usage:
++ *   <Route element={<ProtectedRoute />}> ... </Route>
++ *   <Route element={<ProtectedRoute roles={['SYSTEM_ADMIN','HQ_ADMIN']} />}> ... </Route>
+  */
+ export const ProtectedRoute = ({ roles = [] }) => {
+-  const { isAuthenticated, user, isLoading } = useAuthStore();
++  const { user } = useAuthStore();
+   const location = useLocation();
++  const [checking, setChecking] = useState(true);
++  const [hasSession, setHasSession] = useState(false);
++
++  useEffect(() => {
++    let active = true;
++    Session.doesSessionExist()
++      .then((exists) => { if (active) { setHasSession(exists); setChecking(false); } })
++      .catch(() => { if (active) { setHasSession(false); setChecking(false); } });
++    return () => { active = false; };
++  }, [location.pathname]);
+ 
+-  if (isLoading) return <Spinner fullPage />;
++  if (checking) return <Spinner fullPage />;
+ 
+-  if (!isAuthenticated) {
+-    // log.debug('route:protected_redirect', { reason: 'no_token', from: location.pathname, to: ROUTES.LOGIN });
+-    // return <Navigate to={ROUTES.LOGIN} replace />;
++  if (!hasSession) {
++    log.debug('route:protected_redirect', { reason: 'no_session', from: location.pathname, to: ROUTES.LOGIN });
++    return <Navigate to={ROUTES.LOGIN} replace state={{ from: location }} />;
+   }
+ 
+-  if (roles.length > 0 && !roles.includes(user?.role)) {
+-    // log.debug('route:protected_redirect', {
+-    //   reason: 'wrong_role', from: location.pathname, to: ROUTES.HOME, role: user?.role, allowedRoles: roles,
+-    // });
+-    // return <Navigate to={ROUTES.HOME} replace />;
++  if (roles.length > 0) {
++    // Session exists but /me may not have populated the store yet — hold rather than bounce.
++    if (!user) return <Spinner fullPage />;
++    if (!roles.includes(user.role)) {
++      log.debug('route:protected_redirect', { reason: 'wrong_role', from: location.pathname, role: user.role, allowedRoles: roles });
++      return <Navigate to={ROUTES.HOME} replace />;
++    }
+   }
+ 
+   return <Outlet />;
+diff --git a/frontend/src/store/authStore.js b/frontend/src/store/authStore.js
+index 0b9304a..5f2376e 100644
+--- a/frontend/src/store/authStore.js
++++ b/frontend/src/store/authStore.js
+@@ -62,8 +62,8 @@ const useAuthStore = create(
+ 
+         logout: () => {
+           log.info('authStore:logout', { userId: get().user?.id, role: get().user?.role });
+-          localStorage.removeItem('access_token');
+-          localStorage.removeItem('refresh_token');
++          // SuperTokens Session.signOut() (called from useAuth) clears its own session tokens.
++          // Here we only clear the app's auth state.
+           set({ user: null, jurisdiction: null, isAuthenticated: false });
+         },
+ 
+diff --git a/frontend/src/utils/api.js b/frontend/src/utils/api.js
+index f2bec55..b3404df 100644
+--- a/frontend/src/utils/api.js
++++ b/frontend/src/utils/api.js
+@@ -2,6 +2,7 @@ import axios from 'axios';
+ import { findNodeById, POLICE_HIERARCHY } from './hierarchyData.js';
+ import { formatDMY } from './dateFormat.js';
+ import { log, newRequestId } from './logger.js';
++import Session from 'supertokens-web-js/recipe/session';
+ 
+ // Excluded from interceptor logging by URL — see HANDOFF.md §6.2. logger.js ships its OWN batch
+ // of client logs via a raw `fetch` (never through this axios instance), so this guard is
+@@ -20,6 +21,9 @@ const api = axios.create({
+   timeout: 120000,
+ });
+ 
++// SuperTokens manages the auth header and automatic token refresh on this axios instance.
++Session.addAxiosInterceptors(api);
++
+ // Helper to parse cookies
+ const getCookie = (name) => {
+   const value = `; ${document.cookie}`;
+@@ -31,10 +35,8 @@ const getCookie = (name) => {
+ // Request Interceptor
+ api.interceptors.request.use(
+   (config) => {
+-    const token = localStorage.getItem('access_token');
+-    if (token) {
+-      config.headers.Authorization = `Bearer ${token}`;
+-    }
++    // Auth header + token refresh are handled by SuperTokens (Session.addAxiosInterceptors),
++    // not by a manual localStorage bearer token.
+     const csrfToken = getCookie('csrfToken');
+     if (csrfToken) {
+       config.headers['x-csrf-token'] = csrfToken;
+@@ -106,37 +108,8 @@ api.interceptors.response.use(
+       return Promise.reject(error);
+     }
+ 
+-    if (error.response?.status === 401 && !originalRequest._retry) {
+-      if (isRefreshing) {
+-        return new Promise((resolve, reject) => {
+-          failedQueue.push({ resolve, reject });
+-        }).then((token) => {
+-          originalRequest.headers.Authorization = `Bearer ${token}`;
+-          return api(originalRequest);
+-        });
+-      }
+-
+-      originalRequest._retry = true;
+-      isRefreshing = true;
+-
+-      try {
+-        const refresh = localStorage.getItem('refresh_token');
+-        const res = await axios.post(`${BASE_URL}/auth/refresh`, { refresh_token: refresh });
+-        const newToken = res.data.data.access_token;
+-        localStorage.setItem('access_token', newToken);
+-        processQueue(null, newToken);
+-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+-        return api(originalRequest);
+-      } catch (refreshError) {
+-        processQueue(refreshError, null);
+-        localStorage.clear();
+-        window.location.href = '/login';
+-        return Promise.reject(refreshError);
+-      } finally {
+-        isRefreshing = false;
+-      }
+-    }
+-
++    // Token refresh is handled automatically by SuperTokens (Session.addAxiosInterceptors).
++    // A 401 that reaches here means the session is genuinely invalid; surface it to the caller.
+     return Promise.reject(error);
+   }
+ );

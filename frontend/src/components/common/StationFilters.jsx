@@ -16,19 +16,24 @@ export default function StationFilters({
   const [recordTypes, setRecordTypes] = useState([]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    const ignoreAbort = (err) =>
+      signal.aborted || err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError';
+
     // 1. Fetch Local Heads
-    api.get("/fields/lookup/local-heads")
+    api.get("/fields/lookup/local-heads", { signal })
       .then((res) => {
         if (res.data?.success && Array.isArray(res.data.data)) {
           setLocalHeads(res.data.data);
         }
       })
       .catch((err) => {
-        console.error("Failed to fetch local heads:", err);
+        if (!ignoreAbort(err)) console.error("Failed to fetch local heads:", err);
       });
 
     // 2. Fetch Date/Filter Presets
-    api.get("/filters/presets")
+    api.get("/filters/presets", { signal })
       .then((res) => {
         const raw = res.data?.data;
         if (Array.isArray(raw)) {
@@ -41,19 +46,23 @@ export default function StationFilters({
         }
       })
       .catch((err) => {
-        console.error("Failed to fetch presets:", err);
+        if (!ignoreAbort(err)) console.error("Failed to fetch presets:", err);
       });
 
     // 3. Fetch Record Types dynamically
-    api.get("/fields/lookup/record-types")
+    api.get("/fields/lookup/record-types", { signal })
       .then((res) => {
         if (res.data?.success && Array.isArray(res.data.data)) {
           setRecordTypes(res.data.data);
         }
       })
       .catch((err) => {
-        console.error("Failed to fetch record types:", err);
+        if (!ignoreAbort(err)) console.error("Failed to fetch record types:", err);
       });
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const handleChange = (key, value) => {

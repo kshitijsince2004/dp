@@ -77,7 +77,7 @@ export const Navbar = () => {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
               }}
-              className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-[#cca43b] transition-colors"
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-[var(--accent-gold)] transition-colors"
             >
               {link.label}
             </a>

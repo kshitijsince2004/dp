@@ -1,9 +1,10 @@
 import React from "react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { aggregateCrimeHeadCategories } from "../../utils/crimeHeadGroups.js";
+import SafeResponsiveContainer from "./SafeResponsiveContainer.jsx";
 
 const REPORTED_COLOR = "#D97706";
-const WORKOUT_COLOR = "#8B5CF6";
+const WORKOUT_COLOR = "#0f52ba";
 
 function CategoryTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
@@ -42,15 +43,15 @@ export default function CrimeHeadCategoryBarChart({ localHeads = [], matrixRows 
 
   if (!hasData) {
     return (
-      <div className="flex h-[240px] flex-col items-center justify-center gap-3">
+      <div className="flex h-[200px] flex-col items-center justify-center gap-3">
         <p className="text-meta font-medium text-[var(--text-main-theme)] opacity-70">No crime-head classified records in this period.</p>
       </div>
     );
   }
 
   return (
-    <div className="h-[240px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-[200px] w-full min-w-0">
+      <SafeResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 4 }} barGap={2} barCategoryGap="20%">
           <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
           <XAxis dataKey="category" stroke="#A0AEC0" fontSize={10} tickLine={false} />
@@ -60,7 +61,7 @@ export default function CrimeHeadCategoryBarChart({ localHeads = [], matrixRows 
           <Bar dataKey="reported" name="Reported" fill={REPORTED_COLOR} radius={[4, 4, 0, 0]} maxBarSize={28} />
           <Bar dataKey="workout" name="Workout" fill={WORKOUT_COLOR} radius={[4, 4, 0, 0]} maxBarSize={28} />
         </BarChart>
-      </ResponsiveContainer>
+      </SafeResponsiveContainer>
     </div>
   );
 }

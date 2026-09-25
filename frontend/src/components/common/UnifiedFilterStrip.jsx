@@ -5,6 +5,7 @@ import { DatePicker, Input, Select } from 'antd';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import api from '../../utils/api.js';
+import { asArray } from '../../utils/dataShape.js';
 
 dayjs.extend(customParseFormat);
 
@@ -17,13 +18,22 @@ export default function UnifiedFilterStrip({ filters, onFilterChange, allowedSta
   const [localHeads, setLocalHeads] = useState([]);
 
   useEffect(() => {
-    api.get('/fields/lookup/local-heads')
+    const controller = new AbortController();
+    api.get('/fields/lookup/local-heads', { signal: controller.signal })
       .then(res => {
         if (res.data?.success) {
-          setLocalHeads(res.data.data || []);
+          setLocalHeads(asArray(res.data.data));
         }
       })
-      .catch(err => console.error('Failed to fetch local heads', err));
+      .catch(err => {
+        if (controller.signal.aborted || err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError') {
+          return;
+        }
+        console.error('Failed to fetch local heads', err);
+      });
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   // Local state for debounced search

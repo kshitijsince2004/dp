@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ShieldAlert, Filter, Clock, User, Database, FileEdit, LogIn, Send, AlertTriangle } from 'lucide-react';
+import { Filter, Database, FileEdit, LogIn, Send, AlertTriangle } from 'lucide-react';
 import api from '../../utils/api.js';
+import { asArray, asLogsList } from '../../utils/dataShape.js';
 import { log as clientLog } from '../../utils/logger.js';
 
 const ACTION_STYLES = {
@@ -32,7 +33,7 @@ export default function AuditPage() {
       clientLog.debug('data:load_start', { what: 'audit_logs', page, actionFilter });
       try {
         const res = await api.get('/audit');
-        const logs = res.data?.data?.logs || res.data?.data || [];
+        const logs = asLogsList(res.data?.data);
         clientLog.debug('data:load_success', { what: 'audit_logs', count: logs.length });
         return { logs, total: logs.length };
       } catch (err) {
@@ -44,7 +45,7 @@ export default function AuditPage() {
     retry: 1,
   });
 
-  const rawLogs = data?.logs || [];
+  const rawLogs = asArray(data?.logs);
 
   const filteredLogs = actionFilter === 'ALL'
     ? rawLogs
@@ -63,8 +64,7 @@ export default function AuditPage() {
     <div className="space-y-6 theme-admin-page p-5 rounded-2xl bg-[var(--bg-page-main)] border border-slate-200 shadow-sm font-sans text-slate-800">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2 font-display">
-          <ShieldAlert className="text-[var(--accent-color)]" />
+        <h1 className="text-2xl font-bold text-slate-800 font-display">
           <span>Immutable Audit Ledger</span>
         </h1>
         <p className="text-slate-500 text-xs mt-1 font-semibold">
@@ -83,7 +83,7 @@ export default function AuditPage() {
             <button
               key={action}
               onClick={() => handleFilterChange(action)}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
+              className={`px-3 py-1.5 rounded-lg text-label-s font-bold transition-all cursor-pointer border ${
                 isActive
                   ? 'bg-[var(--accent-color)] text-white border-[var(--accent-color)] shadow-sm'
                   : 'bg-white border-slate-200 text-slate-650 hover:text-slate-900 hover:border-slate-350'
@@ -94,7 +94,7 @@ export default function AuditPage() {
           );
         })}
 
-        <span className="ml-auto text-slate-500 text-[11px] font-mono font-semibold">
+        <span className="ml-auto text-slate-500 text-label-s font-mono font-semibold">
           {filteredLogs.length} entries
         </span>
       </div>
@@ -113,7 +113,6 @@ export default function AuditPage() {
         </div>
       ) : filteredLogs.length === 0 ? (
         <div className="border border-dashed border-slate-200 rounded-xl p-16 text-center text-slate-400 bg-white shadow-sm">
-          <ShieldAlert size={48} className="mx-auto text-slate-300 mb-3" />
           <p className="text-sm font-bold text-slate-700">No audit entries found</p>
           <p className="text-xs text-slate-400 mt-1">Actions will appear here as officers use the system.</p>
         </div>

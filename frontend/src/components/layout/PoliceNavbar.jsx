@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { Bell, User, LogOut, Settings, Award, Shield, CheckCheck, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { Bell, User, LogOut, Settings, CheckCheck, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import useAuthStore from "../../store/authStore.js";
 import { useAuth } from "../../hooks/useAuth.js";
 import { useTranslation } from "react-i18next";
 import LanguageToggle from "../ui/LanguageToggle.jsx";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../utils/api.js";
+import { asArray } from "../../utils/dataShape.js";
 import { renderNotification } from "../../utils/notificationText.js";
 
 export default function PoliceNavbar({
@@ -64,7 +65,7 @@ export default function PoliceNavbar({
     queryKey: ['analytics', 'by-ps', 'navbar'],
     queryFn: async () => {
       const res = await api.get('/analytics/by-ps');
-      return res.data.data;
+      return asArray(res.data.data);
     },
     enabled: showStatusBar,
     refetchInterval: 60000,
@@ -101,9 +102,7 @@ export default function PoliceNavbar({
   // Compute breadcrumbs dynamically from current pathname
   const getBreadcrumbs = () => {
     const path = location.pathname;
-    const roleUpper = user?.role?.toUpperCase();
-    const homePath = (roleUpper === 'PS' || roleUpper === 'HC') ? '/ps/dashboard' : '/dashboard';
-    const crumbs = [{ label: t('nav.hq') || "Command Center", to: homePath }];
+    const crumbs = [{ label: t('nav.hq') || "Command Center", to: "/dashboard" }];
     if (path === "/dashboard" || path === "/dashboard/") {
       crumbs.push({ label: t('nav.dashboard') || "Dashboard", to: "/dashboard" });
     } else if (path.includes("/records")) {
@@ -176,7 +175,7 @@ export default function PoliceNavbar({
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-display">Stations</span>
               <span className="text-[13px] font-bold text-emerald-600 leading-tight">
                 {user?.role === 'DISTRICT_OFFICER' ? 14 : 214}
-                <span className="text-slate-400 font-medium text-[11px] ml-0.5">/ {user?.role === 'DISTRICT_OFFICER' ? 15 : (reportingStations.length || 225)}</span>
+                <span className="text-slate-400 font-medium text-label-s ml-0.5">/ {user?.role === 'DISTRICT_OFFICER' ? 15 : (reportingStations.length || 225)}</span>
               </span>
             </div>
 
@@ -193,7 +192,7 @@ export default function PoliceNavbar({
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-display">System</span>
               <div className="flex items-center gap-1.5 mt-[1px]">
                 <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
-                <span className={`text-[12px] font-bold leading-tight ${isConnected ? 'text-emerald-600' : 'text-slate-500'}`}>
+                <span className={`text-label-m font-bold leading-tight ${isConnected ? 'text-emerald-600' : 'text-slate-500'}`}>
                   {isConnected ? 'ONLINE' : 'OFFLINE'}
                 </span>
               </div>
@@ -203,7 +202,7 @@ export default function PoliceNavbar({
 
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-display">Sync</span>
-              <span className="text-[13px] font-bold text-[#0d2a4a] leading-tight">
+              <span className="text-[13px] font-bold text-[var(--primary)] leading-tight">
                 {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
               </span>
             </div>
@@ -214,7 +213,6 @@ export default function PoliceNavbar({
       <div className="navbar-right">
         {/* Terminal Authorization Scope Badge */}
         <div className={`console-switcher-container cursor-default ${showStatusBar ? 'console-switcher-status-bar-active' : ''}`} style={{ borderColor: 'var(--border-light)' }}>
-          <Shield size={14} className="text-amber-500" />
           <span className="text-xs font-bold text-amber-600 tracking-wide uppercase select-none flex items-center gap-1" style={{ fontFamily: 'var(--font-sans)' }}>
             {(() => {
               if (!user) return null;
@@ -285,7 +283,7 @@ export default function PoliceNavbar({
               fontSize: '10px',
               fontWeight: 600,
               letterSpacing: '0.05em',
-              color: isConnected ? '#22c55e' : '#94a3b8',
+              color: isConnected ? 'var(--success)' : 'var(--text-muted)',
               opacity: 0.85,
             }}
           >
@@ -334,14 +332,14 @@ export default function PoliceNavbar({
             >
               {/* Panel Header */}
               <div className="dropdown-panel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                <h3 style={{ margin: 0 }}>Notifications {unreadCount > 0 && <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700 }}>({unreadCount} unread)</span>}</h3>
+                <h3 style={{ margin: 0 }}>Notifications {unreadCount > 0 && <span style={{ fontSize: 'var(--text-label-s)', color: 'var(--warning)', fontWeight: 700 }}>({unreadCount} unread)</span>}</h3>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   {unreadCount > 0 && (
                     <button
                       type="button"
                       onClick={handleMarkAllRead}
                       title="Mark all as read"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#60a5fa', padding: '2px 4px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: '2px 4px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--text-label-s)' }}
                     >
                       <CheckCheck size={13} /> All read
                     </button>
@@ -350,7 +348,7 @@ export default function PoliceNavbar({
                     type="button"
                     onClick={handleRefresh}
                     title="Refresh"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px 4px', borderRadius: '4px' }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px 4px', borderRadius: '4px' }}
                   >
                     <RefreshCw size={12} />
                   </button>
@@ -360,7 +358,7 @@ export default function PoliceNavbar({
               {/* Panel Body */}
               <div className="dropdown-panel-body" style={{ maxHeight: '360px', overflowY: 'auto' }}>
                 {notifications.length === 0 ? (
-                  <div className="empty-state" style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                  <div className="empty-state" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     <Bell size={24} style={{ marginBottom: '8px', opacity: 0.4 }} />
                     <p style={{ margin: 0, fontSize: '13px' }}>No notifications</p>
                   </div>
@@ -379,7 +377,7 @@ export default function PoliceNavbar({
                           background: hoveredNotifId === notif.id
                             ? (notif.is_read ? 'rgba(0, 0, 0, 0.04)' : 'rgba(96, 165, 250, 0.12)')
                             : (notif.is_read ? 'transparent' : 'rgba(96, 165, 250, 0.05)'),
-                          borderLeft: notif.is_read ? 'none' : '3px solid #60a5fa',
+                          borderLeft: notif.is_read ? 'none' : '3px solid var(--primary)',
                           transition: 'background 0.2s',
                           cursor: isClickable ? 'pointer' : 'default',
                         }}
@@ -397,7 +395,7 @@ export default function PoliceNavbar({
                               margin: '0 0 4px 0',
                               fontSize: '13px',
                               fontWeight: notif.is_read ? 400 : 600,
-                              color: notif.is_read ? '#94a3b8' : '#0f172a',
+                              color: notif.is_read ? 'var(--text-muted)' : 'var(--text-primary)',
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -407,14 +405,14 @@ export default function PoliceNavbar({
                             {notifMessage && (
                               <p style={{
                                 margin: '0 0 6px 0',
-                                fontSize: '11px',
-                                color: '#64748b',
+                                fontSize: 'var(--text-label-s)',
+                                color: 'var(--text-muted)',
                                 lineHeight: '1.4',
                               }}>
                                 {notifMessage}
                               </p>
                             )}
-                            <span style={{ fontSize: '10px', color: '#475569' }}>
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                               {formatRelativeTime(notif.created_at)}
                             </span>
                           </div>
@@ -424,7 +422,7 @@ export default function PoliceNavbar({
                                 type="button"
                                 onClick={(e) => handleMarkRead(notif.id, e)}
                                 title="Mark as read"
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#60a5fa', padding: '2px', borderRadius: '3px' }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: '2px', borderRadius: '3px' }}
                               >
                                 <CheckCheck size={14} />
                               </button>
@@ -438,7 +436,7 @@ export default function PoliceNavbar({
                                   setNotificationsOpen(false);
                                 }}
                                 title="Go to page"
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px', fontSize: '10px', borderRadius: '3px' }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', fontSize: '10px', borderRadius: '3px' }}
                               >
                                 →
                               </button>
@@ -475,7 +473,7 @@ export default function PoliceNavbar({
                   ? (user?.name || user?.username || "हैंड कांस्टेबल रमेश कुमार")
                   : (user?.name || user?.username || "HC Ramesh Kumar")}
               </span>
-              <span className="officer-rank block text-[11px] text-slate-400 font-medium truncate max-w-[150px] whitespace-nowrap">
+              <span className="officer-rank block text-label-s text-slate-400 font-medium truncate max-w-[150px] whitespace-nowrap">
                 {user?.role ? t(`roles.${user.role}`) : (user?.rank || "Station Operator")}
               </span>
               <span className="officer-jurisdiction block text-[10px] text-amber-500 font-bold uppercase tracking-wider mt-0.5 truncate max-w-[150px] whitespace-nowrap">
@@ -502,7 +500,6 @@ export default function PoliceNavbar({
           {profileOpen && (
             <div className="dropdown-panel profile-panel" role="menu">
               <div className="profile-panel-header">
-                <Award size={24} className="badge-icon text-amber-500" aria-hidden="true" />
                 <div>
                   <h4 translate="no">{user?.pis || "PIS-28160942"}</h4>
                   <p>{user?.role ? t(`roles.${user.role}`) : (user?.rank || "Station Operator")}</p>

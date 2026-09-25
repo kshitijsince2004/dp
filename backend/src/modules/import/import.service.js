@@ -612,7 +612,7 @@ export async function processBatch(batchId) {
     // (§4.6/G4), which would just drop the message with no record of why. Marking FAILED here
     // and returning normally (ack) is the correct terminal state; the batch is done, just
     // unsuccessfully. The 15-minute sweep (below) is for batches stuck in CONFIRMED with no
-    // message at all (e.g. RabbitMQ itself lost it in mock-mode), not for batches that reached
+    // message at all (e.g. RabbitMQ itself lost it on the in-memory event bus path), not for batches that reached
     // this function and failed cleanly.
   }
 }
@@ -620,7 +620,7 @@ export async function processBatch(batchId) {
 /**
  * Startup safety net (§4.6/G4) — re-publishes `import.confirm.requested` for any batch stuck
  * in CONFIRMED for more than `staleMinutes`. Covers the case where the original message never
- * reached a handler at all (mock-mode process restart mid-flight) — `processBatch`'s own
+ * reached a handler at all (in-memory event bus process restart mid-flight) — `processBatch`'s own
  * leading status guard makes redelivery always safe (a batch already IMPORTED/FAILED is a
  * no-op; a batch still genuinely CONFIRMED picks up via the idempotency check per row).
  * Called once from `importConfirmHandler.js`'s `init()`, not on a recurring timer — a fresh

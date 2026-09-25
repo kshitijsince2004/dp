@@ -133,10 +133,9 @@ function flush() {
   const toSend = pending;
   pending = [];
   // RAW fetch — deliberately NOT the app's axios instance (utils/api.js). That instance is
-  // interceptor-wrapped and mock-engine-aware (`prism_debug_api_mode` in localStorage); routing
-  // the log-shipping POST through it risks the exact debug/mock mode a tester has active
-  // swallowing or rerouting the logs themselves (HANDOFF §6.1/§6.2). This is the one deliberate
-  // bypass in the whole pipe.
+  // interceptor-wrapped (auth/logging); routing the log-shipping POST through it risks
+  // feedback loops or auth failures swallowing logs (HANDOFF §6.1/§6.2). This is the one
+  // deliberate bypass in the whole pipe.
   fetch(CLIENT_LOG_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

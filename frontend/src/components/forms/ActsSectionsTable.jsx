@@ -61,7 +61,7 @@ export default function ActsSectionsTable({
   handleChange,
   readOnly,
   lang,
-  actsSectionsRegistry,
+  actsSectionsRegistry = [],
   showAddRow,
   setShowAddRow,
   newAct,
@@ -168,7 +168,7 @@ export default function ActsSectionsTable({
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <span className="text-[#0d2a4a] font-bold text-xs sm:text-sm">Major Head</span>
+          <span className="text-[var(--primary)] font-bold text-xs sm:text-sm">Major Head</span>
           <SearchableSelect
             disabled={readOnly || isMajorHeadLocked}
             value={selectedMajorHead}
@@ -180,14 +180,14 @@ export default function ActsSectionsTable({
             placeholder="Select Major Head"
             lang={lang}
             title={isMajorHeadLocked ? 'Major Head is locked to the first entry added below — delete all rows to pick a different one.' : undefined}
-            className={`w-full min-h-[38px] px-3 py-1.5 border border-[#7a9cc5] rounded-xl bg-white text-xs sm:text-sm outline-none focus:border-blue-600 ${
+            className={`w-full min-h-[38px] px-3 py-1.5 border border-[var(--border-color)] rounded-xl bg-white text-xs sm:text-sm outline-none focus:border-blue-600 ${
               isMajorHeadLocked ? 'cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500' : 'cursor-text'
             }`}
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-[#0d2a4a] font-bold text-xs sm:text-sm">Minor Head</span>
+          <span className="text-[var(--primary)] font-bold text-xs sm:text-sm">Minor Head</span>
           <div className="flex items-center gap-2">
             <SearchableSelect
               disabled={readOnly || !selectedMajorHead}
@@ -196,14 +196,14 @@ export default function ActsSectionsTable({
               options={getMinorHeadOptions()}
               placeholder="Select Minor Head"
               lang={lang}
-              className="flex-1 min-h-[38px] px-3 py-1.5 border border-[#7a9cc5] rounded-xl bg-white text-xs sm:text-sm outline-none focus:border-blue-600 cursor-text"
+              className="flex-1 min-h-[38px] px-3 py-1.5 border border-[var(--border-color)] rounded-xl bg-white text-xs sm:text-sm outline-none focus:border-blue-600 cursor-text"
             />
             {!readOnly && (
               <button
                 type="button"
                 onClick={onAddMajorMinorRow}
                 disabled={!selectedMajorHead || !selectedMinorHead}
-                className="bg-[#ea580c] hover:bg-[#c2410c] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                className="bg-[var(--accent-gold)] hover:bg-[var(--warning)] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer whitespace-nowrap"
               >
                 + Add
               </button>
@@ -212,13 +212,13 @@ export default function ActsSectionsTable({
         </div>
       </div>
 
-      <div className="w-full overflow-x-auto mt-2 max-h-[140px] overflow-y-auto border border-[#7a9cc5] rounded-xl">
+      <div className="w-full overflow-x-auto mt-2 max-h-[140px] overflow-y-auto border border-[var(--border-color)] rounded-xl">
         <table className="w-full border-collapse text-xs sm:text-sm">
           <thead>
-            <tr className="bg-[#d0e0f8] text-[#0d2a4a] border-b border-[#7a9cc5] sticky top-0">
-              <th className="px-3 py-1.5 text-left font-bold w-12 border-r border-[#7a9cc5]">S.No.</th>
-              <th className="px-3 py-1.5 text-left font-bold border-r border-[#7a9cc5]">Major Head</th>
-              <th className="px-3 py-1.5 text-left font-bold border-r border-[#7a9cc5]">Minor Head</th>
+            <tr className="bg-[var(--ux4g-bg-primary-soft)] text-[var(--primary)] border-b border-[var(--border-color)] sticky top-0">
+              <th className="px-3 py-1.5 text-left font-bold w-12 border-r border-[var(--border-color)]">S.No.</th>
+              <th className="px-3 py-1.5 text-left font-bold border-r border-[var(--border-color)]">Major Head</th>
+              <th className="px-3 py-1.5 text-left font-bold border-r border-[var(--border-color)]">Minor Head</th>
               {!readOnly && <th className="px-3 py-1.5 text-center font-bold w-16">Delete</th>}
             </tr>
           </thead>
@@ -231,10 +231,10 @@ export default function ActsSectionsTable({
               </tr>
             ) : (
               majorMinorRows.map((row, idx) => (
-                <tr key={idx} className="border-b border-[#7a9cc5] bg-white">
-                  <td className="px-3 py-1.5 border-r border-[#7a9cc5] text-[#0d2a4a] font-mono text-center font-bold">{idx + 1}</td>
-                  <td className="px-3 py-1.5 border-r border-[#7a9cc5] text-[#0d2a4a] font-semibold">{row.majorHead}</td>
-                  <td className="px-3 py-1.5 border-r border-[#7a9cc5] text-[#0d2a4a]">{row.minorHead}</td>
+                <tr key={idx} className="border-b border-[var(--border-color)] bg-white">
+                  <td className="px-3 py-1.5 border-r border-[var(--border-color)] text-[var(--primary)] font-mono text-center font-bold">{idx + 1}</td>
+                  <td className="px-3 py-1.5 border-r border-[var(--border-color)] text-[var(--primary)] font-semibold">{row.majorHead}</td>
+                  <td className="px-3 py-1.5 border-r border-[var(--border-color)] text-[var(--primary)]">{row.minorHead}</td>
                   {!readOnly && (
                     <td className="px-3 py-1.5 text-center">
                       <button
@@ -263,7 +263,7 @@ export default function ActsSectionsTable({
       options={getLocalHeadOptions()}
       placeholder="Select Local Head"
       lang={lang}
-      className="w-full min-h-[38px] px-3 py-1.5 border border-[#7a9cc5] rounded-xl bg-white text-xs sm:text-sm outline-none focus:border-blue-500 cursor-text"
+      className="w-full min-h-[38px] px-3 py-1.5 border border-[var(--border-color)] rounded-xl bg-white text-xs sm:text-sm outline-none focus:border-blue-500 cursor-text"
     />
   );
 
@@ -272,32 +272,32 @@ export default function ActsSectionsTable({
       <div className="flex flex-col md:flex-row gap-3">
         {/* Left: Acts & Sections */}
         {showActsPanel && (
-          <fieldset className="flex-1 border-2 border-[#7a9cc5] rounded-2xl p-3.5 bg-[#f0f4f8]/20 shadow-sm flex flex-col">
-            <legend className="text-[#0d2a4a] text-xs sm:text-sm font-black px-2.5 uppercase tracking-wide">
+          <fieldset className="flex-1 border border-[var(--border-color)] rounded-2xl p-3.5 bg-[#f0f4f8]/20 shadow-sm flex flex-col">
+            <legend className="text-[var(--primary)] text-xs sm:text-sm font-bold px-2.5 uppercase tracking-wide">
               Acts &amp; Sections
             </legend>
 
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[#0d2a4a] text-xs font-bold opacity-75">Registered List</span>
+            <span className="text-[var(--primary)] text-xs font-bold opacity-75">Registered List</span>
             {!readOnly && (
               <button
                 type="button"
                 onClick={() => setShowAddRow(true)}
-                className="bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs font-extrabold px-3 py-1 rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer uppercase tracking-wider"
+                className="bg-[var(--accent-gold)] hover:bg-[var(--warning)] text-white text-xs font-bold px-3 py-1 rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer uppercase tracking-wider"
               >
                 + Add Acts &amp; Section
               </button>
             )}
           </div>
 
-          <div className="w-full overflow-x-auto max-h-[190px] overflow-y-auto border border-[#7a9cc5] rounded-xl">
+          <div className="w-full overflow-x-auto max-h-[190px] overflow-y-auto border border-[var(--border-color)] rounded-xl">
             <table className="w-full border-collapse text-xs sm:text-sm">
               <thead>
-                <tr className="bg-[#d0e0f8] text-[#0d2a4a] border-b border-[#7a9cc5] sticky top-0">
-                  <th className="px-3 py-1.5 text-left font-bold w-12 border-r border-[#7a9cc5]">S.No.</th>
-                  <th className="px-3 py-1.5 text-left font-bold border-r border-[#7a9cc5]">Acts</th>
-                  <th className="px-3 py-1.5 text-left font-bold border-r border-[#7a9cc5]">Sections</th>
-                  <th className="px-3 py-1.5 text-center font-bold w-16 border-r border-[#7a9cc5]" title="Primary act used for statistical reporting">Primary</th>
+                <tr className="bg-[var(--ux4g-bg-primary-soft)] text-[var(--primary)] border-b border-[var(--border-color)] sticky top-0">
+                  <th className="px-3 py-1.5 text-left font-bold w-12 border-r border-[var(--border-color)]">S.No.</th>
+                  <th className="px-3 py-1.5 text-left font-bold border-r border-[var(--border-color)]">Acts</th>
+                  <th className="px-3 py-1.5 text-left font-bold border-r border-[var(--border-color)]">Sections</th>
+                  <th className="px-3 py-1.5 text-center font-bold w-16 border-r border-[var(--border-color)]" title="Primary act used for statistical reporting">Primary</th>
                   {!readOnly && <th className="px-3 py-1.5 text-center font-bold w-16">Delete</th>}
                 </tr>
               </thead>
@@ -310,24 +310,24 @@ export default function ActsSectionsTable({
                   </tr>
                 ) : (
                   Array.from({ length: maxLen }).map((_, i) => (
-                    <tr key={i} className={`border-b border-[#7a9cc5] ${i === primaryActIndex ? 'bg-[#eef6ff]' : 'bg-white'}`}>
-                      <td className="px-3 py-1.5 border-r border-[#7a9cc5] text-[#0d2a4a] font-mono text-center font-bold">
+                    <tr key={i} className={`border-b border-[var(--border-color)] ${i === primaryActIndex ? 'bg-[var(--ux4g-bg-primary-soft)]' : 'bg-white'}`}>
+                      <td className="px-3 py-1.5 border-r border-[var(--border-color)] text-[var(--primary)] font-mono text-center font-bold">
                         {i + 1}
                       </td>
-                      <td className="px-3 py-1.5 border-r border-[#7a9cc5] text-[#0d2a4a] font-semibold">
+                      <td className="px-3 py-1.5 border-r border-[var(--border-color)] text-[var(--primary)] font-semibold">
                         {acts[i] || ''}
                       </td>
-                      <td className="px-3 py-1.5 border-r border-[#7a9cc5] text-[#0d2a4a] font-medium">
+                      <td className="px-3 py-1.5 border-r border-[var(--border-color)] text-[var(--primary)] font-medium">
                         {secs[i] || ''}
                       </td>
-                      <td className="px-3 py-1.5 text-center border-r border-[#7a9cc5]">
+                      <td className="px-3 py-1.5 text-center border-r border-[var(--border-color)]">
                         <input
                           type="radio"
                           name="primary_act_radio"
                           checked={i === primaryActIndex}
                           disabled={readOnly}
                           onChange={() => onPrimaryChange && onPrimaryChange(i)}
-                          className="accent-[#0f52ba] cursor-pointer disabled:cursor-default w-3.5 h-3.5"
+                          className="accent-[var(--primary)] cursor-pointer disabled:cursor-default w-3.5 h-3.5"
                           title="Mark as primary act for reporting"
                         />
                       </td>
@@ -352,8 +352,8 @@ export default function ActsSectionsTable({
         )}
 
         {/* Right: Unified Major/Minor & Local Head */}
-        <fieldset className="flex-1 border-2 border-[#7a9cc5] rounded-2xl p-3.5 bg-[#f0f4f8]/20 shadow-sm flex flex-col justify-between">
-          <legend className="text-[#0d2a4a] text-xs sm:text-sm font-black px-2.5 uppercase tracking-wide">
+        <fieldset className="flex-1 border border-[var(--border-color)] rounded-2xl p-3.5 bg-[var(--bg-main)]/20 shadow-sm flex flex-col justify-between">
+          <legend className="text-[var(--primary)] text-xs sm:text-sm font-bold px-2.5 uppercase tracking-wide">
             Major / Minor &amp; Local Head
           </legend>
 
@@ -361,8 +361,8 @@ export default function ActsSectionsTable({
             {majorMinorBlock}
 
             {localHeadLayout !== 'hidden' && (
-              <div className="border-t border-[#7a9cc5]/40 pt-2 mt-1 flex items-center gap-2">
-                <span className="text-[#0d2a4a] font-bold text-xs sm:text-sm whitespace-nowrap">Local Head<span className="text-red-500 ml-0.5">*</span></span>
+              <div className="border-t border-[var(--border-color)]/40 pt-2 mt-1 flex items-center gap-2">
+                <span className="text-[var(--primary)] font-bold text-xs sm:text-sm whitespace-nowrap">Local Head<span className="text-red-500 ml-0.5">*</span></span>
                 <div className="flex-1">{localHeadBlock}</div>
               </div>
             )}
@@ -374,10 +374,10 @@ export default function ActsSectionsTable({
       {showAddRow && (
         <>
           <div className="fixed inset-0 z-40 bg-black/40" onClick={closeAddModal} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] bg-white border border-[#7a9cc5] rounded shadow-2xl z-50 p-4 flex flex-col justify-between text-slate-800">
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] bg-white border border-[var(--border-color)] rounded shadow-2xl z-50 p-4 flex flex-col justify-between text-slate-800">
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <h3 className="text-xs font-bold text-[#0d2a4a] uppercase tracking-wider">
+                <h3 className="text-xs font-bold text-[var(--primary)] uppercase tracking-wider">
                   Add Acts & Section
                 </h3>
                 <button
@@ -390,8 +390,8 @@ export default function ActsSectionsTable({
               </div>
 
               <div className="space-y-3">
-                <div className="flex flex-col gap-1 text-[11px] text-left">
-                  <label className="text-[#0d2a4a] font-bold">Act / Law Name</label>
+                <div className="flex flex-col gap-1 text-label-s text-left">
+                  <label className="text-[var(--primary)] font-bold">Act / Law Name</label>
                   <div className="relative w-full">
                     <input
                       type="text"
@@ -410,15 +410,15 @@ export default function ActsSectionsTable({
                         setTimeout(() => setActDropdownOpen(false), 200);
                       }}
                       placeholder="Search and select Act..."
-                      className="w-full h-8 px-2 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-[#ea580c] cursor-text"
+                      className="w-full h-8 px-2 border border-[var(--border-color)] rounded bg-white text-label-s outline-none focus:border-[var(--accent-gold)] cursor-text"
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-[8px]">
                       ▼
                     </span>
                     {actDropdownOpen && (
-                      <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto border border-[#7a9cc5] rounded bg-white shadow-lg z-50 text-left">
+                      <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto border border-[var(--border-color)] rounded bg-white shadow-lg z-50 text-left">
                         {filteredActs.length === 0 ? (
-                          <div className="px-2 py-1.5 text-gray-500 italic text-[11px]">
+                          <div className="px-2 py-1.5 text-gray-500 italic text-label-s">
                             No matching acts found
                           </div>
                         ) : (
@@ -432,9 +432,9 @@ export default function ActsSectionsTable({
                                 setNewSection('');
                                 setActDropdownOpen(false);
                               }}
-                              className={`px-2 py-1.5 cursor-pointer text-[11px] hover:bg-[#f0f4f8] transition-colors ${
+                              className={`px-2 py-1.5 cursor-pointer text-label-s hover:bg-[var(--bg-main)] transition-colors ${
                                 newAct === item.act
-                                  ? 'bg-[#d0e0f8] font-bold text-[#0d2a4a]'
+                                  ? 'bg-[var(--ux4g-bg-primary-soft)] font-bold text-[var(--primary)]'
                                   : 'text-slate-700'
                               }`}
                             >
@@ -446,8 +446,8 @@ export default function ActsSectionsTable({
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col gap-1 text-[11px] text-left">
-                  <label className="text-[#0d2a4a] font-bold">Section(s)</label>
+                <div className="flex flex-col gap-1 text-label-s text-left">
+                  <label className="text-[var(--primary)] font-bold">Section(s)</label>
                   <SearchableSelect
                     disabled={!newAct}
                     value={newSection}
@@ -463,7 +463,7 @@ export default function ActsSectionsTable({
                     placeholder="select an option"
                     lang={lang}
                     multiple={true}
-                    className="w-full h-8 px-2 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-[#ea580c] cursor-text disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    className="w-full h-8 px-2 border border-[var(--border-color)] rounded bg-white text-label-s outline-none focus:border-[var(--accent-gold)] cursor-text disabled:bg-slate-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -472,14 +472,14 @@ export default function ActsSectionsTable({
               <button
                 type="button"
                 onClick={closeAddModal}
-                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-[#0d2a4a] text-[11px] font-bold rounded cursor-pointer transition-colors"
+                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-[var(--primary)] text-label-s font-bold rounded cursor-pointer transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={saveAddModal}
-                className="px-3 py-1 bg-[#ea580c] hover:bg-[#c2410c] text-white text-[11px] font-bold rounded cursor-pointer transition-colors shadow-sm"
+                className="px-3 py-1 bg-[var(--accent-gold)] hover:bg-[var(--warning)] text-white text-label-s font-bold rounded cursor-pointer transition-colors shadow-sm"
               >
                 Save
               </button>

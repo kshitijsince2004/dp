@@ -1,7 +1,8 @@
 import db from '../../config/db.js';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { logoutUser, resolveScope } from '../auth/auth.service.js';
+import { resolveScope } from '../auth/auth.service.js';
+import Session from 'supertokens-node/recipe/session';
 import { getLogger } from '../../utils/logger.js';
 import { redact } from '../../utils/redact.js';
 
@@ -324,7 +325,12 @@ export const resetPassword = async (req, res) => {
     const hash = await bcrypt.hash(newPassword, 12);
     await db('users').where({ id }).update({ password_hash: hash, updated_at: db.fn.now() });
     log.info('resetPassword: wrote users row (new password_hash)', { userId: id });
-    await logoutUser(id);
+    // Force re-login for the target user: revoke all their SuperTokens sessions (best-effort).
+    try {
+      await Session.revokeAllSessionsForUser(id);
+    } catch (e) {
+      log.warn('resetPassword: revokeAllSessionsForUser failed (non-fatal)', { userId: id, err: e.message });
+    }
     log.info('resetPassword: exit', { userId: id });
     return res.status(200).json({ status: 'success', success: true, data: { message: 'Password reset' } });
   } catch (error) {

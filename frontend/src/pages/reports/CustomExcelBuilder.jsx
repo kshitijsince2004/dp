@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   FileSpreadsheet, Download, RefreshCw, ChevronDown, Search,
   X, Link2, AlertTriangle, CheckCircle2, Calendar, Shield,
-  Sparkles, Layers, UserCheck, Package, Lock, Filter, Trash2, ArrowRight,
+  Layers, UserCheck, Package, Lock, Filter, Trash2, ArrowRight,
   Building2, Users, FileText, ChevronUp, Tag, CheckSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -142,31 +142,31 @@ function CategorizedFieldPicker({ categorizedOptions, selected, onToggle, onTogg
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between bg-slate-950 border border-slate-700/80 rounded-xl text-xs text-slate-100 px-3.5 py-3 outline-none focus:border-emerald-500 transition-all cursor-pointer font-bold shadow-inner"
+        className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 px-3.5 py-3 outline-none focus:border-[#0f52ba] transition-all cursor-pointer font-bold shadow-inner"
       >
         <span className="truncate text-left flex items-center gap-2">
-          <Tag size={13} className="text-emerald-400" />
+          <Tag size={13} className="text-[#0f52ba]" />
           <span>{selected.size === 0 ? 'Select Form Sections & Fields...' : `${selected.size} Columns Selected`}</span>
         </span>
-        <ChevronDown size={15} className="text-slate-400 shrink-0" />
+        <ChevronDown size={15} className="text-slate-500 shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-96 backdrop-blur-xl">
+        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col max-h-96 backdrop-blur-xl">
           {/* Search Header */}
-          <div className="p-2.5 border-b border-slate-800 bg-slate-950 flex flex-col gap-2">
+          <div className="p-2.5 border-b border-slate-200 bg-slate-50 flex flex-col gap-2">
             <div className="relative">
-              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 placeholder="Search fields across sections..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-2 py-1.5 text-xs text-slate-100 outline-none focus:border-emerald-500 font-medium"
+                className="w-full bg-white border border-slate-300 rounded-lg pl-8 pr-2 py-1.5 text-xs text-slate-900 outline-none focus:border-[#0f52ba] font-medium"
               />
             </div>
-            <div className="flex items-center justify-between text-[11px] px-1 text-slate-400">
-              <span className="font-semibold text-slate-300">Form-Matched Categories</span>
+            <div className="flex items-center justify-between text-label-s px-1 text-slate-500">
+              <span className="font-semibold text-slate-600">Form-Matched Categories</span>
               <span>{selected.size} columns active</span>
             </div>
           </div>
@@ -187,11 +187,11 @@ function CategorizedFieldPicker({ categorizedOptions, selected, onToggle, onTogg
               return (
                 <div key={group.groupLabel} className="py-1">
                   {/* Category Header */}
-                  <div className="flex items-center justify-between px-3 py-1.5 bg-slate-950/80 rounded-lg mb-1">
+                  <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 rounded-lg mb-1">
                     <button
                       type="button"
                       onClick={() => toggleGroupCollapse(group.groupLabel)}
-                      className="flex items-center gap-1.5 text-xs font-bold text-slate-200 hover:text-emerald-400 cursor-pointer bg-transparent border-none p-0"
+                      className="flex items-center gap-1.5 text-xs font-bold text-slate-800 hover:text-[#0f52ba] cursor-pointer bg-transparent border-none p-0"
                     >
                       {isCollapsed ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
                       <span>{group.groupLabel}</span>
@@ -201,7 +201,7 @@ function CategorizedFieldPicker({ categorizedOptions, selected, onToggle, onTogg
                     <button
                       type="button"
                       onClick={() => onToggleGroup(filteredFields.map(f => f.value), !allSelected)}
-                      className="text-[10px] font-bold text-emerald-400 hover:underline cursor-pointer bg-transparent border-none p-0"
+                      className="text-[10px] font-bold text-[#0f52ba] hover:underline cursor-pointer bg-transparent border-none p-0"
                     >
                       {allSelected ? 'Deselect Section' : 'Select Section'}
                     </button>
@@ -213,13 +213,13 @@ function CategorizedFieldPicker({ categorizedOptions, selected, onToggle, onTogg
                       {filteredFields.map(opt => (
                         <label
                           key={opt.value}
-                          className="flex items-center gap-2.5 px-3 py-1.5 text-xs hover:bg-slate-800/80 rounded-md transition-colors cursor-pointer select-none text-slate-200"
+                          className="flex items-center gap-2.5 px-3 py-1.5 text-xs hover:bg-slate-100 rounded-md transition-colors cursor-pointer select-none text-slate-800"
                         >
                           <input
                             type="checkbox"
                             checked={selected.has(opt.value)}
                             onChange={() => onToggle(opt.value)}
-                            className="rounded border-slate-700 w-3.5 h-3.5 cursor-pointer accent-emerald-500"
+                            className="rounded border-slate-300 w-3.5 h-3.5 cursor-pointer accent-[#0f52ba]"
                           />
                           <span className="flex-1 font-medium">{opt.label}</span>
                           {opt.badge && (
@@ -529,16 +529,16 @@ export default function CustomExcelBuilder() {
 
   if (metaLoading) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto" />
-        <p className="text-xs text-slate-400 font-semibold">Loading field registry metadata...</p>
+      <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f52ba] mx-auto" />
+        <p className="text-xs text-slate-500 font-semibold">Loading field registry metadata...</p>
       </div>
     );
   }
 
   if (metaError) {
     return (
-      <div className="bg-slate-900 border border-red-900/50 rounded-2xl p-6 flex items-center gap-3 text-xs text-red-400">
+      <div className="bg-white border border-red-900/50 rounded-2xl p-6 flex items-center gap-3 text-xs text-red-400">
         <AlertTriangle size={18} />
         <span>Failed to connect to field registry API. Ensure backend server is online.</span>
       </div>
@@ -546,32 +546,31 @@ export default function CustomExcelBuilder() {
   }
 
   return (
-    <div className="space-y-6 font-sans text-slate-100">
+    <div className="space-y-6 font-sans text-slate-900">
       
       {/* Scope Privilege Indicator Banner */}
-      <div className="bg-slate-950 border border-slate-800/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2.5">
-          <Building2 size={18} className="text-emerald-400" />
+          <Building2 size={18} className="text-[#0f52ba]" />
           <div>
-            <span className="font-bold text-white block">Hierarchical Scope Authority: <span className="text-emerald-400 uppercase font-mono">{role}</span></span>
-            <span className="text-slate-400 text-[11px]">
+            <span className="font-bold text-slate-900 block">Hierarchical Scope Authority: <span className="text-[#0f52ba] uppercase font-mono">{role}</span></span>
+            <span className="text-slate-500 text-label-s">
               {isDistrictOrHQ
                 ? 'District Authority Enabled — You can customize descriptive reports for your entire district or filter down to any specific station.'
                 : 'Police Station Authority — Descriptive reports are automatically scoped to your assigned Station.'}
             </span>
           </div>
         </div>
-        <span className="text-[10px] bg-slate-800 text-slate-300 px-3 py-1 rounded-lg border border-slate-700 font-bold shrink-0">
+        <span className="text-[10px] bg-slate-100 text-slate-600 px-3 py-1 rounded-lg border border-slate-300 font-bold shrink-0">
           {isDistrictOrHQ ? 'Multi-Station Privileges Active' : 'Station Scoped'}
         </span>
       </div>
 
       {/* ⚡ Executive Quick-Start Presets */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xl space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-            <Sparkles size={15} className="text-amber-400" />
-            <span>One-Click Multi-Entity &amp; Officer Presets</span>
+          <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+            One-Click Multi-Entity &amp; Officer Presets
           </h3>
           <span className="text-[10px] text-slate-500 font-medium">Auto-configures tables, joins &amp; descriptive dossier fields</span>
         </div>
@@ -587,19 +586,19 @@ export default function CustomExcelBuilder() {
                 onClick={() => applyPreset(preset)}
                 className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
                   active
-                    ? 'bg-emerald-950/40 border-emerald-500/60 text-white shadow-lg shadow-emerald-950/30'
-                    : 'bg-slate-950/70 border-slate-800/80 hover:border-slate-700 text-slate-300 hover:bg-slate-950'
+                    ? 'bg-blue-50 border-[#0f52ba] text-[#0d2a4a] shadow-sm'
+                    : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className={`p-1.5 rounded-lg ${active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                  <span className={`p-1.5 rounded-lg ${active ? 'bg-blue-50 text-[#0f52ba]' : 'bg-slate-100 text-slate-500'}`}>
                     <Icon size={16} />
                   </span>
-                  {active && <CheckCircle2 size={14} className="text-emerald-400" />}
+                  {active && <CheckCircle2 size={14} className="text-[#0f52ba]" />}
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-100">{preset.title}</h4>
-                  <p className="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{preset.description}</p>
+                  <h4 className="text-xs font-bold text-slate-900">{preset.title}</h4>
+                  <p className="text-[10px] text-slate-500 line-clamp-2 mt-0.5">{preset.description}</p>
                 </div>
               </button>
             );
@@ -608,20 +607,20 @@ export default function CustomExcelBuilder() {
       </div>
 
       {/* ── Table Selection & Categorized Column Picker ────────────────────── */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-        <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
-          <Layers size={15} className="text-emerald-400" />
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xl space-y-4">
+        <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-3">
+          <Layers size={15} className="text-[#0f52ba]" />
           <span>Form-Matched Record Master &amp; Categorized Column Configurator</span>
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {/* Primary Table */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Primary Record Type</label>
+            <label className="text-label-s font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Primary Record Type</label>
             <select
               value={table}
               onChange={e => changeTable(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 cursor-pointer shadow-inner"
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-[#0f52ba] cursor-pointer shadow-inner"
             >
               {Object.entries(TABLE_LABELS).map(([val, lbl]) => (
                 <option key={val} value={val}>{lbl}</option>
@@ -631,14 +630,14 @@ export default function CustomExcelBuilder() {
 
           {/* Row Grain Unit */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+            <label className="text-label-s font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
               <span>Output Row Grain</span>
-              <span className="text-[9px] text-emerald-400 font-bold">Total Invariant</span>
+              <span className="text-[9px] text-[#0f52ba] font-bold">Total Invariant</span>
             </label>
             <select
               value={rowGrain}
               onChange={e => setRowGrain(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 cursor-pointer shadow-inner"
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-[#0f52ba] cursor-pointer shadow-inner"
             >
               <option value="per_fir">1 Row per FIR / Record (per_fir)</option>
               <option value="per_accused">1 Row per Accused Person (per_accused)</option>
@@ -649,7 +648,7 @@ export default function CustomExcelBuilder() {
 
           {/* Join Table */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+            <label className="text-label-s font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
               <span>Link / Sub-Table Join</span>
               <span className="text-[9px] text-slate-500 font-normal normal-case">(optional)</span>
             </label>
@@ -657,7 +656,7 @@ export default function CustomExcelBuilder() {
               value={join || ''}
               onChange={e => changeJoin(e.target.value || null)}
               disabled={joinOptions.length === 0}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 cursor-pointer disabled:opacity-40 shadow-inner"
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-[#0f52ba] cursor-pointer disabled:opacity-40 shadow-inner"
             >
               <option value="">No sub-table join (single entity)</option>
               {joinOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -666,13 +665,13 @@ export default function CustomExcelBuilder() {
 
           {/* Categorized Columns Picker Dropdown */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+            <label className="text-label-s font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
               <span>Form-Matched Columns to Export</span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={selectAllFields}
-                  className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none p-0"
+                  className="text-[10px] text-[#0f52ba] hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none p-0"
                 >
                   <CheckSquare size={10} /> Select All
                 </button>
@@ -703,27 +702,27 @@ export default function CustomExcelBuilder() {
 
         {/* Selected Field Chips List */}
         {selectedFields.size > 0 && (
-          <div className="space-y-2 pt-2 border-t border-slate-800/80">
-            <div className="flex items-center justify-between text-[11px] text-slate-400">
+          <div className="space-y-2 pt-2 border-t border-slate-200">
+            <div className="flex items-center justify-between text-label-s text-slate-500">
               <span>Selected Export Layout ({selectedFields.size} columns)</span>
               <span className="text-[10px] text-slate-500">Click x to remove a column</span>
             </div>
-            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto scrollbar-thin p-1.5 bg-slate-950/60 rounded-xl border border-slate-800">
+            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto scrollbar-thin p-1.5 bg-slate-50 rounded-xl border border-slate-200">
               {Array.from(selectedFields).map(ref => {
                 const opt = allFieldOptions.find(o => o.value === ref);
                 return (
                   <span
                     key={ref}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-800/90 text-slate-200 border border-slate-700/80"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-label-s font-medium bg-slate-100 text-slate-800 border border-slate-200"
                   >
                     <span>{opt?.label || ref}</span>
                     {opt?.badge && (
-                      <span className="text-[9px] font-bold bg-amber-500/20 text-amber-300 rounded px-1">{opt.badge}</span>
+                      <span className="text-[9px] font-bold bg-amber-50 text-amber-700 rounded px-1">{opt.badge}</span>
                     )}
                     <button
                       type="button"
                       onClick={() => toggleField(ref)}
-                      className="text-slate-400 hover:text-rose-400 transition-colors cursor-pointer bg-transparent border-none p-0"
+                      className="text-slate-500 hover:text-rose-400 transition-colors cursor-pointer bg-transparent border-none p-0"
                     >
                       <X size={12} />
                     </button>
@@ -736,15 +735,15 @@ export default function CustomExcelBuilder() {
       </div>
 
       {/* ── Scope & Filter Constraints ────────────────────────────────────── */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-        <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
-          <Filter size={15} className="text-emerald-400" />
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xl space-y-4">
+        <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-3">
+          <Filter size={15} className="text-[#0f52ba]" />
           <span>Hierarchical Scope &amp; Date Range Filters</span>
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">From Date</label>
+            <label className="text-label-s font-bold text-slate-500 uppercase tracking-wider block mb-1.5">From Date</label>
             <DateInput
               value={dateFrom}
               onChange={val => {
@@ -753,12 +752,12 @@ export default function CustomExcelBuilder() {
                 const to = parseDMY(dateTo);
                 if (from && to && from > to) setDateTo(val);
               }}
-              inputClassName="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 shadow-inner"
+              inputClassName="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-[#0f52ba] shadow-inner"
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">To Date</label>
+            <label className="text-label-s font-bold text-slate-500 uppercase tracking-wider block mb-1.5">To Date</label>
             <DateInput
               value={dateTo}
               onChange={val => {
@@ -767,20 +766,20 @@ export default function CustomExcelBuilder() {
                 if (from && to && to < from) return;
                 setDateTo(val);
               }}
-              inputClassName="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 shadow-inner"
+              inputClassName="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-[#0f52ba] shadow-inner"
             />
           </div>
 
           {stationsList.length > 0 && (
             <div>
-              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+              <label className="text-label-s font-bold text-slate-500 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
                 <span>Target Police Station Scope</span>
                 <span className="text-[9px] text-slate-500 font-normal normal-case">(optional)</span>
               </label>
               <select
                 value={psId || ''}
                 onChange={e => setPsId(e.target.value || null)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500 cursor-pointer shadow-inner"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none focus:border-[#0f52ba] cursor-pointer shadow-inner"
               >
                 <option value="">All Police Stations in District Scope</option>
                 {stationsList.map(ps => (
@@ -793,13 +792,13 @@ export default function CustomExcelBuilder() {
       </div>
 
       {/* ── Export Action Bar ────────────────────────────────────────────── */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handleExport}
             disabled={isExporting || selectedFields.size === 0}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all shadow-lg shadow-emerald-950/50 flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+            className="bg-[#0f52ba] hover:bg-[#0d2a4a] text-white font-bold text-xs px-6 py-3 rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
           >
             {isExporting ? (
               <><RefreshCw size={15} className="animate-spin" /><span>Generating Workbook...</span></>
@@ -818,16 +817,16 @@ export default function CustomExcelBuilder() {
 
         {/* Download Box */}
         {jobState.status === 'ready' && (
-          <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl px-4 py-2.5 flex items-center gap-3 animate-fade-in">
-            <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5 flex items-center gap-3 animate-fade-in">
+            <CheckCircle2 size={16} className="text-[#0f52ba] shrink-0" />
             <div className="text-xs">
-              <span className="font-bold text-white block">Workbook Ready!</span>
-              <span className="text-[10px] text-slate-400">Multi-entity dossier Excel generated</span>
+              <span className="font-bold text-slate-900 block">Workbook Ready!</span>
+              <span className="text-[10px] text-slate-500">Multi-entity dossier Excel generated</span>
             </div>
             <button
               type="button"
               onClick={handleDownload}
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+              className="bg-[#0f52ba] hover:bg-[#0d2a4a] text-white font-bold text-xs px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
             >
               <Download size={13} />
               <span>Download File</span>

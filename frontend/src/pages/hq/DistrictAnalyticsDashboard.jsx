@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
   AreaChart, Area
 } from 'recharts';
 import {
@@ -10,8 +10,10 @@ import {
   Award, Filter, Calendar, MapPin, ChevronRight, TrendingUp, AlertTriangle, X, UserX
 } from 'lucide-react';
 import api from '../../utils/api.js';
+import { asNodesList, asRecordsList } from '../../utils/dataShape.js';
 import useAuthStore from '../../store/authStore.js';
 import { Spinner } from '../../components/ui/Spinner.jsx';
+import SafeResponsiveContainer from '../../components/common/SafeResponsiveContainer.jsx';
 import { log } from '../../utils/logger.js';
 
 // Formats a Date to 'YYYY-MM-DD' using local date parts — record_date from the
@@ -44,7 +46,7 @@ export default function DistrictAnalyticsDashboard() {
       log.debug('data:load_start', { what: 'hierarchy_nodes' });
       try {
         const res = await api.get('/hierarchy/nodes');
-        const rows = res.data?.data || [];
+        const rows = asNodesList(res.data?.data);
         log.debug('data:load_success', { what: 'hierarchy_nodes', count: rows.length });
         return rows;
       } catch (err) {
@@ -60,7 +62,7 @@ export default function DistrictAnalyticsDashboard() {
       log.debug('data:load_start', { what: 'records_all' });
       try {
         const res = await api.get('/records?limit=200');
-        const rows = res.data?.data?.cases || res.data?.data || [];
+        const rows = asRecordsList(res.data?.data);
         log.debug('data:load_success', { what: 'records_all', count: rows.length });
         return rows;
       } catch (err) {
@@ -321,30 +323,13 @@ export default function DistrictAnalyticsDashboard() {
   }
 
   return (
-    <div className="min-h-screen theme-hq-page page-bg pb-12">
+    <div className="min-h-screen theme-hq-page page-bg pb-8">
       {/* ══════════════ HERO HEADER ══════════════ */}
-      <div className="relative overflow-hidden px-8 py-10 rounded-b-[2rem] shadow-xl text-white" 
-        style={{
-          background: 'linear-gradient(135deg, #2E0854 0%, #17022e 100%)'
-        }}
-      >
-        {/* Subtle grid pattern overlay */}
-        <div 
-          className="pointer-events-none absolute inset-0 opacity-[0.08]"
-          style={{
-            backgroundImage: `repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 1px, transparent 40px),
-                              repeating-linear-gradient(90deg, #fff 0, #fff 1px, transparent 1px, transparent 40px)`
-          }}
-        />
-        {/* Decorative blur elements */}
-        <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-purple-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 left-1/4 h-64 w-64 rounded-full bg-indigo-500/15 blur-3xl" />
-
-        <div className="relative z-10 mx-auto max-w-screen-xl flex flex-col justify-between h-full gap-6">
+      <div className="relative overflow-hidden hero-banner-gradient px-6 py-5 rounded-b-[2rem] shadow-xl text-white">
+        <div className="relative z-10 mx-auto max-w-screen-xl flex flex-col justify-between h-full gap-4">
           {/* Header row */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-white/70">
-              <Building size={12} className="text-purple-300" />
               Delhi Police · District Analytics
             </div>
 
@@ -358,15 +343,15 @@ export default function DistrictAnalyticsDashboard() {
           </div>
 
           {/* Heading + calendar selector */}
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-sm">
+              <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow-sm">
                 District Performance
               </h1>
-              <p className="mt-1 text-lg font-medium text-purple-200">
+              <p className="mt-1 text-lg font-medium text-blue-100">
                 HQ Comparative Desk
               </p>
-              <p className="mt-3 text-sm leading-relaxed text-purple-100/80">
+              <p className="mt-3 text-sm leading-relaxed text-white/70">
                 Aggregated overview of incident rates, operational workflow metrics, and performance metrics compared across all districts.
               </p>
             </div>
@@ -379,7 +364,7 @@ export default function DistrictAnalyticsDashboard() {
                   onClick={() => { log.debug('action:timeframe_change', { timeframe: item }); setTimeframe(item); }}
                   className={`rounded-lg px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-200 ${
                     timeframe === item
-                      ? 'bg-white text-purple-950 shadow-md font-bold'
+                      ? 'bg-white text-[#0d2a4a] shadow-md font-bold'
                       : 'text-white/80 hover:bg-white/10 hover:text-white'
                   }`}
                 >
@@ -392,7 +377,7 @@ export default function DistrictAnalyticsDashboard() {
       </div>
 
       {/* ══════════════ PAGE BODY ══════════════ */}
-      <div className="mx-auto max-w-screen-xl px-6 mt-8">
+      <div className="mx-auto max-w-screen-xl px-6 mt-5">
         
         {/* ── Summary KPI Cards ── */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -400,10 +385,10 @@ export default function DistrictAnalyticsDashboard() {
           <div className="rounded-card border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500">Total Aggregated Incidents</span>
-              <ShieldAlert size={18} className="text-purple-600 shrink-0" />
+              <ShieldAlert size={18} className="text-[#0f52ba] shrink-0" />
             </div>
             <div className="mt-4">
-              <div className="text-3xl font-extrabold text-slate-900 tabular-nums">{summaryKpis.total}</div>
+              <div className="text-3xl font-bold text-slate-900 tabular-nums">{summaryKpis.total}</div>
               <p className="mt-1 text-xs text-slate-500">({timeframe})</p>
             </div>
           </div>
@@ -420,7 +405,7 @@ export default function DistrictAnalyticsDashboard() {
               >
                 {summaryKpis.highest}
               </div>
-              <div className="text-2xl font-extrabold text-red-600 mt-1 tabular-nums">
+              <div className="text-2xl font-bold text-red-600 mt-1 tabular-nums">
                 {summaryKpis.highestCount} <span className="text-xs font-medium text-slate-500">incidents</span>
               </div>
             </div>
@@ -438,7 +423,7 @@ export default function DistrictAnalyticsDashboard() {
               >
                 {summaryKpis.lowest}
               </div>
-              <div className="text-2xl font-extrabold text-emerald-600 mt-1 tabular-nums">
+              <div className="text-2xl font-bold text-emerald-600 mt-1 tabular-nums">
                 {summaryKpis.lowestCount} <span className="text-xs font-medium text-slate-500">incidents</span>
               </div>
             </div>
@@ -447,10 +432,10 @@ export default function DistrictAnalyticsDashboard() {
           <div className="rounded-card border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500">District Average</span>
-              <TrendingUp size={18} className="text-indigo-600 shrink-0" />
+              <TrendingUp size={18} className="text-[#0f52ba] shrink-0" />
             </div>
             <div className="mt-4">
-              <div className="text-3xl font-extrabold text-slate-900 tabular-nums">{summaryKpis.avg}</div>
+              <div className="text-3xl font-bold text-slate-900 tabular-nums">{summaryKpis.avg}</div>
               <p className="mt-1 text-xs text-slate-500">Incidents / district</p>
             </div>
           </div>
@@ -458,7 +443,7 @@ export default function DistrictAnalyticsDashboard() {
         </div>
 
         {/* ── Category Filter Tabs ── */}
-        <div className="mt-8 flex flex-wrap gap-2 border-b border-slate-200 pb-4">
+        <div className="mt-5 flex flex-wrap gap-2 border-b border-slate-200 pb-4">
           {metricTabs.map((tab) => {
             const TabIcon = tab.icon;
             const isActive = activeMetric === tab.key;
@@ -480,10 +465,10 @@ export default function DistrictAnalyticsDashboard() {
         </div>
 
         {/* ── Leaderboard & Chart Content Panels ── */}
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-12">
           
           {/* LEFT: Styled Ranked Leaderboard */}
-          <div className="lg:col-span-5 rounded-panel border border-purple-200 bg-purple-50/60 p-5 flex flex-col gap-4">
+          <div className="lg:col-span-5 rounded-panel border border-slate-200 bg-white p-5 flex flex-col gap-4">
             <div>
               <h3 className="text-sm font-bold text-slate-900">Ranked Leaderboard</h3>
               <p className="text-xs text-slate-500 mt-0.5">Districts ordered by incidence density ({timeframe})</p>
@@ -505,14 +490,14 @@ export default function DistrictAnalyticsDashboard() {
                   <div
                     key={item.id}
                     onClick={() => handleSelectDistrict(item.id)}
-                    className="group flex items-center justify-between border border-slate-200 bg-white hover:border-purple-300 px-4 py-3 rounded-control cursor-pointer transition-colors duration-150"
+                    className="group flex items-center justify-between border border-slate-200 bg-white hover:border-[#3b82f6] px-4 py-3 rounded-control cursor-pointer transition-colors duration-150"
                   >
                     <div className="flex items-center gap-3">
-                      <span className={`flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-black ${rankBadgeBg}`}>
+                      <span className={`flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-bold ${rankBadgeBg}`}>
                         {rank}
                       </span>
                       <div>
-                        <p className="text-sm font-bold text-slate-900 group-hover:text-purple-900 transition-colors">
+                        <p className="text-sm font-bold text-slate-900 group-hover:text-[#0f52ba] transition-colors">
                           {item.name}
                         </p>
                         <p className="text-[10px] text-slate-400 font-medium">{item.name_hi}</p>
@@ -520,7 +505,7 @@ export default function DistrictAnalyticsDashboard() {
                     </div>
 
                     <div className="text-right">
-                      <p className="text-sm font-extrabold text-slate-900 tabular-nums">
+                      <p className="text-sm font-bold text-slate-900 tabular-nums">
                         {item[activeMetric]}
                       </p>
                       <p className="text-[10px] text-slate-400 font-semibold tabular-nums">
@@ -534,14 +519,14 @@ export default function DistrictAnalyticsDashboard() {
           </div>
 
           {/* RIGHT: Visual Leaderboard Bar Chart */}
-          <div className="lg:col-span-7 rounded-panel border border-purple-200 bg-purple-50/60 p-5 flex flex-col gap-4">
+          <div className="lg:col-span-7 rounded-panel border border-slate-200 bg-white p-5 flex flex-col gap-4">
             <div>
               <h3 className="text-sm font-bold text-slate-900">Comparative visual breakdown</h3>
               <p className="text-xs text-slate-500 mt-0.5">Click bars to inspect individual police stations</p>
             </div>
 
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[320px] w-full">
+              <SafeResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={sortedDistricts}
                   layout="vertical"
@@ -564,8 +549,8 @@ export default function DistrictAnalyticsDashboard() {
                         const data = payload[0].payload;
                         return (
                           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg text-xs text-slate-800">
-                            <p className="font-bold text-purple-950 mb-1">{data.name}</p>
-                            <p className="font-semibold">{activeMetric.toUpperCase()}: <span className="font-extrabold text-purple-600">{data[activeMetric]}</span></p>
+                            <p className="font-bold text-[#0d2a4a] mb-1">{data.name}</p>
+                            <p className="font-semibold">{activeMetric.toUpperCase()}: <span className="font-bold text-[#0f52ba]">{data[activeMetric]}</span></p>
                             <p className="text-[10px] text-slate-400 mt-1">Cases: {data.cases} | Arrests: {data.arrests} | PCR: {data.pcr} | Missing: {data.missing}</p>
                           </div>
                         );
@@ -581,8 +566,8 @@ export default function DistrictAnalyticsDashboard() {
                   >
                     {sortedDistricts.map((entry, index) => {
                       // Color bars dynamically: highlight highest/lowest in different colors
-                      let barColor = '#4f46e5'; // Default indigo
-                      if (index === 0) barColor = '#ef4444'; // Red-orange for highest alert
+                      let barColor = '#0f52ba'; // Brand blue default
+                      if (index === 0) barColor = '#ef4444'; // Red for highest alert
                       else if (index === sortedDistricts.length - 1) barColor = '#10b981'; // Emerald for lowest crime
 
                       return (
@@ -595,16 +580,16 @@ export default function DistrictAnalyticsDashboard() {
                     })}
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
+              </SafeResponsiveContainer>
             </div>
           </div>
 
         </div>
 
         {/* ── Sub-dashboard navigation trigger card ── */}
-        <div className="mt-8 rounded-2xl border border-purple-100 bg-purple-50/30 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="rounded-xl bg-purple-100 p-3 text-purple-700 mt-0.5">
+            <div className="rounded-xl bg-blue-50 p-3 text-[#0f52ba] mt-0.5">
               <MapPin size={20} />
             </div>
             <div>
@@ -616,7 +601,7 @@ export default function DistrictAnalyticsDashboard() {
           </div>
           <button
             onClick={() => navigate('/hq/stations')}
-            className="flex items-center justify-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs py-3 px-6 shadow-md transition-all self-start md:self-auto cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#0f52ba] hover:bg-[#0d2a4a] text-white font-bold text-xs py-3 px-6 shadow-md transition-all self-start md:self-auto cursor-pointer"
           >
             Open PS Console
             <ArrowRight size={14} />
@@ -627,23 +612,19 @@ export default function DistrictAnalyticsDashboard() {
         {selectedDistrictId && selectedDistrict && (
           <div 
             ref={trendSectionRef}
-            className="mt-8 rounded-panel border border-purple-800 bg-gradient-to-br from-[#2E0854] to-[#120124] p-8 text-white relative overflow-hidden transition-all duration-300"
+            className="mt-5 rounded-panel hero-banner-gradient p-6 text-white relative overflow-hidden transition-all duration-300"
           >
-            {/* Background glowing effects */}
-            <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-purple-500/10 blur-3xl"></div>
-            <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl"></div>
-            
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-purple-800/80 pb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/20 pb-6">
               <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-purple-200 border border-purple-500/30">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-100 border border-white/20">
                   <TrendingUp size={10} />
                   Operational Trend
                 </span>
-                <h3 className="text-2xl font-black tracking-tight mt-2 text-white flex items-center gap-2">
+                <h3 className="text-2xl font-bold tracking-tight mt-2 text-white flex items-center gap-2">
                   {selectedDistrict.name}
-                  <span className="text-sm font-normal text-purple-200">({selectedDistrict.name_hi})</span>
+                  <span className="text-sm font-normal text-blue-100">({selectedDistrict.name_hi})</span>
                 </h3>
-                <p className="text-xs text-purple-300 mt-1">
+                <p className="text-xs text-white/60 mt-1">
                   Timeline analysis showing filtered {activeMetric.toUpperCase()} trends over the last {
                     timeframe === 'Yearly' ? '12 months' : timeframe === 'Monthly' ? '30 days' : '7 days'
                   }.
@@ -653,14 +634,14 @@ export default function DistrictAnalyticsDashboard() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => navigate('/hq/stations', { state: { districtId: selectedDistrictId } })}
-                  className="flex items-center gap-2 rounded-xl bg-white hover:bg-purple-50 text-purple-950 font-extrabold text-xs py-3 px-5 shadow-lg transition-all cursor-pointer"
+                  className="flex items-center gap-2 rounded-xl bg-white hover:bg-blue-50 text-[#0d2a4a] font-bold text-xs py-3 px-5 shadow-lg transition-all cursor-pointer"
                 >
                   Inspect Stations in {selectedDistrict.name}
                   <ArrowRight size={14} />
                 </button>
                 <button
                   onClick={() => setSelectedDistrictId(null)}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-900/40 hover:bg-purple-900/80 border border-purple-700/50 text-purple-200 hover:text-white transition-all cursor-pointer"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-blue-100 hover:text-white transition-all cursor-pointer"
                   title="Close Trend Analysis"
                 >
                   <X size={18} />
@@ -668,54 +649,54 @@ export default function DistrictAnalyticsDashboard() {
               </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-12">
               {/* Left Column: PS leaderboard for the selected district */}
-              <div className="lg:col-span-3 rounded-2xl border border-purple-800 bg-purple-950/40 p-4 flex flex-col gap-3">
+              <div className="lg:col-span-3 rounded-2xl border border-white/15 bg-white/5 p-4 flex flex-col gap-3">
                 <div>
-                  <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">PS Leaderboard</span>
-                  <p className="text-[10px] text-purple-400 mt-0.5">Ranked by {activeMetric.toUpperCase()}</p>
+                  <span className="text-[10px] font-bold text-blue-100 uppercase tracking-wider">PS Leaderboard</span>
+                  <p className="text-[10px] text-white/50 mt-0.5">Ranked by {activeMetric.toUpperCase()}</p>
                 </div>
                 <div className="flex flex-col gap-2 overflow-y-auto max-h-[260px] pr-1">
                   {stationData.length === 0 && (
-                    <p className="text-xs text-purple-300/70">No stations found for this district.</p>
+                    <p className="text-xs text-white/50">No stations found for this district.</p>
                   )}
                   {stationData.map((s, idx) => (
                     <div
                       key={s.id}
                       onClick={() => navigate('/hq/stations', { state: { districtId: selectedDistrictId, psId: s.id } })}
-                      className="flex items-center justify-between gap-2 rounded-xl border border-purple-800/60 bg-purple-900/30 px-3 py-2 cursor-pointer hover:bg-purple-800/40 hover:border-purple-600 transition-colors"
+                      className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 cursor-pointer hover:bg-white/15 hover:border-white/30 transition-colors"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-purple-800/60 text-[10px] font-black text-purple-200">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/15 text-[10px] font-bold text-blue-100">
                           {idx + 1}
                         </span>
                         <span className="truncate text-xs font-semibold text-white hover:underline">{s.name}</span>
                       </div>
-                      <span className="shrink-0 text-sm font-black text-purple-200 tabular-nums">{s[activeMetric]}</span>
+                      <span className="shrink-0 text-sm font-bold text-blue-100 tabular-nums">{s[activeMetric]}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Right Column: Dynamic AreaChart */}
-              <div className="lg:col-span-9 rounded-2xl border border-purple-800 bg-purple-950/20 p-5 h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="lg:col-span-9 rounded-2xl border border-white/15 bg-white/5 p-5 h-[320px]">
+                <SafeResponsiveContainer width="100%" height="100%">
                   <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#d8b4fe" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="#d8b4fe" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#4a154b" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.12)" vertical={false} />
                     <XAxis 
                       dataKey="displayDate" 
-                      stroke="#c084fc" 
+                      stroke="#93c5fd" 
                       fontSize={11} 
                       tickLine={false} 
                     />
                     <YAxis 
-                      stroke="#c084fc" 
+                      stroke="#93c5fd" 
                       fontSize={11} 
                       tickLine={false} 
                       allowDecimals={false} 
@@ -725,12 +706,12 @@ export default function DistrictAnalyticsDashboard() {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
                           return (
-                            <div className="rounded-xl border border-purple-700 bg-purple-950 p-3 shadow-2xl text-xs text-white">
-                              <p className="font-bold mb-1 text-purple-200">{data.displayDate}</p>
-                              <p className="font-semibold text-white">
-                                {activeMetric.toUpperCase()}: <span className="font-black text-purple-300">{data[activeMetric]}</span>
+                            <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xl text-xs text-slate-800">
+                              <p className="font-bold mb-1 text-[#0d2a4a]">{data.displayDate}</p>
+                              <p className="font-semibold text-slate-700">
+                                {activeMetric.toUpperCase()}: <span className="font-bold text-[#0f52ba]">{data[activeMetric]}</span>
                               </p>
-                              <p className="text-[10px] text-purple-300 mt-1 border-t border-purple-800/80 pt-1">
+                              <p className="text-[10px] text-slate-500 mt-1 border-t border-slate-200 pt-1">
                                 Cases: {data.cases} | Arrests: {data.arrests} | PCR: {data.pcr} | Missing: {data.missing}
                               </p>
                             </div>
@@ -742,14 +723,14 @@ export default function DistrictAnalyticsDashboard() {
                     <Area
                       type="monotone"
                       dataKey={activeMetric}
-                      stroke="#c084fc"
+                      stroke="#3b82f6"
                       strokeWidth={3}
                       fillOpacity={1}
                       fill="url(#colorTrend)"
                       className="outline-none focus:outline-none"
                     />
                   </AreaChart>
-                </ResponsiveContainer>
+                </SafeResponsiveContainer>
               </div>
             </div>
           </div>

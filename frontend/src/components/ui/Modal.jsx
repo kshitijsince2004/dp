@@ -56,7 +56,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md', className
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between p-6 border-b border-slate-200">
+          <div className="flex items-center justify-between p-4 border-b border-slate-200">
             <h2 id="modal-title" className="text-lg font-semibold text-slate-900">
               {title}
             </h2>
@@ -71,7 +71,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md', className
         )}
 
         {/* Body */}
-        <div className="p-6">{children}</div>
+        <div className="p-4">{children}</div>
       </div>
     </div>
   );

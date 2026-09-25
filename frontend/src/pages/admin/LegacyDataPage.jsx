@@ -523,7 +523,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
                 type="file"
                 accept=".xlsx"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl px-3 py-2 text-[var(--text-main-theme)] opacity-80 cursor-pointer text-[11px] shadow-sm file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--bg-page-main)]/80 file:text-[var(--accent-color)] file:font-bold file:px-2 file:py-0.5"
+                className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl px-3 py-2 text-[var(--text-main-theme)] opacity-80 cursor-pointer text-label-s shadow-sm file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--bg-page-main)]/80 file:text-[var(--accent-color)] file:font-bold file:px-2 file:py-0.5"
               />
             </div>
           </div>
@@ -853,7 +853,7 @@ export default function LegacyDataPage() {
     <div className={`min-h-screen ${getThemeClass()} page-bg space-y-6 p-6 font-sans text-[var(--text-main-theme)]`}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="hero-banner-gradient px-8 py-8 shadow-lg relative overflow-hidden rounded-2xl">
+      <div className="hero-banner-gradient px-6 py-5 shadow-lg relative overflow-hidden rounded-2xl">
         <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full border border-white/5" />
         <div className="absolute -right-4 -top-4 h-32 w-32 rounded-full border border-white/5" />
 
@@ -899,7 +899,7 @@ export default function LegacyDataPage() {
             onClick={() => { log.debug('action:tab_change', { tab: tab.id }); setActiveTab(tab.id); setSelectedBatch(null); }}
             className={`relative px-5 py-2 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer border-none ${
               activeTab === tab.id
-                ? 'bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-glow)]'
+                ? 'bg-[var(--accent-color)] text-white shadow-md'
                 : 'text-[var(--text-main-theme)] opacity-80 hover:text-[var(--accent-color)] hover:bg-[var(--bg-page-main)]/80 bg-transparent'
             }`}
           >

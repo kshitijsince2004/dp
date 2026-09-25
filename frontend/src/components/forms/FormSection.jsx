@@ -5,6 +5,7 @@ import SelectField from './SelectField.jsx';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
 import { parseRules } from '../../utils/fieldValidation.js';
 import { log } from '../../utils/logger.js';
+import { asArray } from '../../utils/dataShape.js';
 
 export const KEYS_TO_SKIP = [
   'uid', 'district', 'police_station', 'submission_status', 'status',
@@ -321,7 +322,7 @@ function isFullWidth(field) {
 export function evaluateShowWhen(condition, values) {
   if (!condition) return true;
   if (condition.and) {
-    return condition.and.every(c => evaluateShowWhen(c, values));
+    return asArray(condition.and).every(c => evaluateShowWhen(c, values));
   }
   const { field: targetField, value: targetValue, value_in, not_in, operator } = condition;
   if (!targetField) return true;
@@ -331,10 +332,10 @@ export function evaluateShowWhen(condition, values) {
   }
   const allowedValues = value_in || (Array.isArray(targetValue) ? targetValue : null);
   if (allowedValues) {
-    return allowedValues.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
+    return asArray(allowedValues).map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
   }
   if (not_in) {
-    return !not_in.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
+    return !asArray(not_in).map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
   }
   return String(currentValue || '').toLowerCase() === String(targetValue || '').toLowerCase();
 }
@@ -347,10 +348,10 @@ export function evaluateShowWhen(condition, values) {
 export function evaluateDisabledWhen(condition, values) {
   if (!condition) return false;
   if (condition.or) {
-    return condition.or.some(c => evaluateDisabledWhen(c, values));
+    return asArray(condition.or).some(c => evaluateDisabledWhen(c, values));
   }
   if (condition.and) {
-    return condition.and.every(c => evaluateDisabledWhen(c, values));
+    return asArray(condition.and).every(c => evaluateDisabledWhen(c, values));
   }
   const { field: targetField, value: targetValue, value_in, not_in, operator } = condition;
   if (!targetField) return false;
@@ -363,10 +364,10 @@ export function evaluateDisabledWhen(condition, values) {
   }
   const allowedValues = value_in || (Array.isArray(targetValue) ? targetValue : null);
   if (allowedValues) {
-    return allowedValues.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
+    return asArray(allowedValues).map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
   }
   if (not_in) {
-    return !not_in.map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
+    return !asArray(not_in).map(v => String(v || '').toLowerCase()).includes(String(currentValue || '').toLowerCase());
   }
   return String(currentValue || '').toLowerCase() === String(targetValue || '').toLowerCase();
 }
@@ -451,7 +452,7 @@ function RepeaterSection({
 
         {entries.map((entry, idx) => {
           const isCollapsed = collapsed[idx];
-          const summaryKey = section.fields.find(f => f.field_key.endsWith('_first_name') || f.field_key.endsWith('_major_category'))?.field_key;
+          const summaryKey = asArray(section.fields).find(f => f.field_key.endsWith('_first_name') || f.field_key.endsWith('_major_category'))?.field_key;
           const summary = summaryKey ? entry[summaryKey] : null;
 
           return (
@@ -481,7 +482,7 @@ function RepeaterSection({
 
               {!isCollapsed && (
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                  {section.fields.map((field) => {
+                  {asArray(section.fields).map((field) => {
                     const key = field.field_key;
                     if (!evaluateShowWhen(field.show_when, entry)) return null;
 
@@ -564,7 +565,7 @@ export default function FormSection({
       {!hideHeader && (
         <div className="flex items-center justify-between bg-[#f0f5fa] border-b-2 border-[#7a9cc5] px-6 py-3.5">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg sm:text-xl font-bold text-[#0d2a4a] tracking-wide">
+            <h2 className="text-lg sm:text-xl font-bold text-[var(--primary)] tracking-wide">
               {lang === 'hi'
                 ? (section.title_hi || section.title_en)
                 : section.title_en}
@@ -573,7 +574,7 @@ export default function FormSection({
           <div className="flex items-center gap-3">
             <FormAutosave status={saveStatus} lang={lang} />
             {totalSteps > 1 && (
-              <span className="text-sm font-bold text-[#0d2a4a] bg-[#dfeaf5] border border-[#7a9cc5]/20 px-3 py-1.5 rounded-xl">
+              <span className="text-sm font-bold text-[var(--primary)] bg-[#dfeaf5] border border-[#7a9cc5]/20 px-3 py-1.5 rounded-xl">
                 {lang === 'hi' ? `चरण ${currentStep + 1} / ${totalSteps}` : `Step ${currentStep + 1} / ${totalSteps}`}
               </span>
             )}
@@ -587,20 +588,20 @@ export default function FormSection({
       )}
 
       {/* Fields grid container */}
-      <div className={hideHeader ? "p-0" : "p-4 sm:p-6"}>
+      <div className={hideHeader ? "p-0" : "p-4"}>
         {/* Enclose standard fields inside the styled blue border grid box */}
         <fieldset className={hideHeader ? "border-none p-0 bg-transparent" : "border-2 border-[#7a9cc5] rounded-2xl px-4 py-4 bg-white shadow-sm"}>
           {!hideHeader && (
-            <legend className="px-2.5 text-[#0d2a4a] font-bold uppercase text-sm sm:text-base tracking-wide">
+            <legend className="px-2.5 text-[var(--primary)] font-bold uppercase text-sm tracking-wide">
               {lang === 'hi'
                 ? (section.title_hi || section.title_en)
                 : section.title_en}
             </legend>
           )}
 
-          <div className={hideHeader ? "grid grid-cols-1 md:grid-cols-[260px_1fr] rounded-2xl overflow-hidden border-2 border-[#c7d8ea] shadow-sm" : "grid grid-cols-1 md:grid-cols-[260px_1fr] border-2 border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm"}>
+          <div className={hideHeader ? "grid grid-cols-1 md:grid-cols-[220px_1fr] rounded-2xl overflow-hidden border-2 border-[#c7d8ea] shadow-sm" : "grid grid-cols-1 md:grid-cols-[220px_1fr] border-2 border-[#c7d8ea] rounded-xl overflow-hidden shadow-sm"}>
             {(() => {
-              const visibleFields = section.fields.filter(f => {
+              const visibleFields = asArray(section.fields).filter(f => {
                 if (KEYS_TO_SKIP.includes(f.field_key)) return false;
                 if (!evaluateShowWhen(f.show_when, values)) return false;
                 return true;
@@ -651,7 +652,7 @@ export default function FormSection({
                 return (
                   <React.Fragment key={key}>
                     {/* Left label cell */}
-                    <div className={`bg-[#dfeaf5] px-4 py-3 text-sm sm:text-base ${isRequired ? 'font-bold' : 'font-medium'} text-[#0d2a4a] flex items-center gap-2 min-h-[46px] border-r border-[#c7d8ea]
+                    <div className={`bg-[#dfeaf5] px-4 py-2 text-sm ${isRequired ? 'font-bold' : 'font-medium'} text-[var(--primary)] flex items-center gap-2 min-h-[38px] border-r border-[#c7d8ea]
                       ${!isLast ? 'border-b border-[#c7d8ea]' : ''}
                       ${isHighlighted ? 'bg-amber-50 text-amber-900' : ''}
                     `}>
@@ -671,7 +672,7 @@ export default function FormSection({
                     </div>
 
                     {/* Right field cell */}
-                    <div className={`px-4 py-2 bg-white flex flex-col justify-center min-h-[46px]
+                    <div className={`px-4 py-2 bg-white flex flex-col justify-center min-h-[38px]
                       ${!isLast ? 'border-b border-[#c7d8ea]' : ''}
                     `}>
                       <FieldRenderer

@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis,
-  CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
 import {
-  BarChart3, LineChart as LineIcon, PieChart as PieIcon,
-  Calendar, FileText, Shield, Phone, Search, Activity,
-  TrendingUp, AlertCircle, Radio, UserX,
+  Calendar, FileText, Shield, Phone, Search,
+  Radio, UserX,
 } from 'lucide-react';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import StatCard from '../../components/ui/StatCard.jsx';
+import SafeResponsiveContainer from '../../components/common/SafeResponsiveContainer.jsx';
 import CrimeHeadMatrixTable from '../../components/common/CrimeHeadMatrixTable.jsx';
 import CaseStatusBarChart from '../../components/common/CaseStatusBarChart.jsx';
 import CrimeHeadCategoryBarChart from '../../components/common/CrimeHeadCategoryBarChart.jsx';
@@ -21,6 +21,7 @@ import InvestigationDisposalCard from '../../components/analytics/InvestigationD
 import CommunitySafetyCard from '../../components/analytics/CommunitySafetyCard.jsx';
 import BeatPreventiveCard from '../../components/analytics/BeatPreventiveCard.jsx';
 import { log } from '../../utils/logger.js';
+import { asArray, asCrimeHeadMatrix } from '../../utils/dataShape.js';
 
 // ── Shared chart tooltip style ────────────────────────────────────────────────
 const CHART_TOOLTIP = {
@@ -29,14 +30,14 @@ const CHART_TOOLTIP = {
     border: '1px solid var(--border-card-theme, #E2E8F0)',
     borderRadius: '12px',
     color: 'var(--text-main-theme, #1A202C)',
-    fontSize: '11px',
+    fontSize: 'var(--text-label-s)',
     boxShadow: '0 4px 24px var(--accent-glow, rgba(0,0,0,0.05))',
   },
   labelStyle: { color: 'var(--text-main-theme, #4A5568)', fontWeight: 600 },
   itemStyle:  { color: 'var(--text-main-theme, #1A202C)' },
 };
 
-const COLORS = ['#003087', '#D97706', '#059669', '#DC2626', '#7C3AED', '#0891B2', '#EA580C'];
+const COLORS = ['#0f52ba', '#D97706', '#059669', '#DC2626', '#3b82f6', '#0891B2', '#EA580C'];
 
 // UI period label (toggle button value) -> backend `period` query param.
 const PERIOD_PARAM_MAP = { daily: 'day', weekly: 'week', monthly: 'month', yearly: 'year' };
@@ -47,8 +48,8 @@ const STATUS_COLORS = {
   SENT_BACK_HC:    'bg-[#FEF2F2]  text-[#DC2626] border-[#FCA5A5]',
   PENDING_SHO:     'bg-[#FFFBEB]  text-[#D97706] border-[#FDE68A]',
   ACP_REVIEW:      'bg-[#FFF7ED]  text-[#EA580C] border-[#FDBA74]',
-  DISTRICT_REVIEW: 'bg-[#EFF6FF]  text-[#003087] border-[#BFDBFE]',
-  HQ_RECEIVED:     'bg-[#F5F3FF]  text-[#7C3AED] border-[#C4B5FD]',
+  DISTRICT_REVIEW: 'bg-[#EFF6FF]  text-[#0f52ba] border-[#BFDBFE]',
+  HQ_RECEIVED:     'bg-[#EFF6FF]  text-[#0f52ba] border-[#BFDBFE]',
   CLOSED:          'bg-[#ECFDF5]  text-[#059669] border-[#6EE7B7]',
   COMPILED:        'bg-[#ECFEFF]  text-[#0891B2] border-[#A5F3FC]',
 };
@@ -60,7 +61,7 @@ const STATUS_BAR = {
   PENDING_SHO:     'bg-[#D97706]',
   ACP_REVIEW:      'bg-[#EA580C]',
   DISTRICT_REVIEW: 'bg-[var(--accent-color)]',
-  HQ_RECEIVED:     'bg-[#7C3AED]',
+  HQ_RECEIVED:     'bg-[#0f52ba]',
   CLOSED:          'bg-[#059669]',
   COMPILED:        'bg-[#0891B2]',
 };
@@ -117,7 +118,7 @@ export default function AnalyticsDashboard() {
     queryKey: ['analytics', 'crime-head-matrix', periodParam],
     queryFn: async () => {
       const res = await api.get('/analytics/crime-head-matrix', { params: { period: periodParam } });
-      return res.data?.data ?? { columns: [], rows: [] };
+      return asCrimeHeadMatrix(res.data?.data);
     },
     enabled: needsCrimeHeadMatrix,
   });
@@ -126,7 +127,7 @@ export default function AnalyticsDashboard() {
     queryKey: ['analytics', 'case-status-breakdown', periodParam],
     queryFn: async () => {
       const res = await api.get('/analytics/case-status-breakdown', { params: { period: periodParam } });
-      return res.data?.data?.rows ?? [];
+      return asArray(res.data?.data?.rows);
     },
     enabled: isSho,
   });
@@ -135,7 +136,7 @@ export default function AnalyticsDashboard() {
     queryKey: ['fields', 'lookup', 'local-heads'],
     queryFn: async () => {
       const res = await api.get('/fields/lookup/local-heads');
-      return Array.isArray(res.data?.data) ? res.data.data : [];
+      return asArray(res.data?.data);
     },
     enabled: isDcpOrHq,
   });
@@ -163,7 +164,7 @@ export default function AnalyticsDashboard() {
       log.debug('data:load_start', { what: 'analytics_by_crime_head' });
       try {
         const res = await api.get('/analytics/by-crime-head');
-        const rows = Array.isArray(res.data?.data) ? res.data.data : [];
+        const rows = asArray(res.data?.data);
         log.debug('data:load_success', { what: 'analytics_by_crime_head', count: rows.length });
         return rows;
       } catch (err) {
@@ -178,7 +179,7 @@ export default function AnalyticsDashboard() {
     queryKey: ['analytics', 'arrest-trend-breakdown', periodParam],
     queryFn: async () => {
       const res = await api.get('/analytics/arrest-trend-breakdown', { params: { period: periodParam } });
-      return res.data?.data?.points ?? [];
+      return asArray(res.data?.data?.points);
     },
   });
 
@@ -262,7 +263,7 @@ export default function AnalyticsDashboard() {
     { label: 'Cases (FIR)',     value: summary.CASE ?? summary.CASES ?? 0,   icon: FileText, color: 'text-amber-500',   sub: 'Submitted & above' },
     { label: 'Arrests',         value: summary.ARREST ?? summary.ARRESTS ?? 0,  icon: Shield,   color: 'text-emerald-500', sub: 'In workflow' },
     { label: 'PCR Calls',       value: summary.PCR_CALL ?? summary.PCR ?? summary.PCR_CALLS ?? 0, icon: Phone, color: 'text-blue-500', sub: 'In workflow' },
-    { label: 'Missing Persons', value: summary.MISSING ?? 0, icon: Search,   color: 'text-violet-500',  sub: 'In workflow' },
+    { label: 'Missing Persons', value: summary.MISSING ?? 0, icon: Search,   color: 'text-blue-500',  sub: 'In workflow' },
     { label: 'Left Out Accused', value: summary.left_out_accused ?? summary.LEFT_OUT ?? 0, icon: UserX, color: 'text-amber-500', sub: 'Pending Arrest' },
   ];
 
@@ -272,9 +273,8 @@ export default function AnalyticsDashboard() {
   );
 
   // ── Shared empty-state ─────────────────────────────────────────────────────
-  const EmptyState = ({ icon: EIcon, message }) => (
+  const EmptyState = ({ message }) => (
     <div className="flex h-full flex-col items-center justify-center gap-3 py-12">
-      <EIcon size={24} className="text-[#A0AEC0]" />
       <p className="text-meta font-medium text-[#718096]">{message}</p>
     </div>
   );
@@ -283,22 +283,11 @@ export default function AnalyticsDashboard() {
     <div className={`min-h-screen ${getThemeClass()} page-bg text-[var(--text-main-theme)]`}>
 
       {/* ══════════════ HERO HEADER ══════════════ */}
-      <div className="relative overflow-hidden hero-banner-gradient px-8 py-8">
-        {/* Decorative blur orbs */}
-        <div className="pointer-events-none absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-10 left-1/3 h-56 w-56 rounded-full bg-[var(--accent-color)]/20 blur-3xl" />
-        <div className="pointer-events-none absolute top-1/2 right-1/4 h-28 w-28 rounded-full bg-white/5 blur-2xl" />
-        {/* Grid texture */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: 'repeating-linear-gradient(0deg,white 0,white 1px,transparent 1px,transparent 48px),repeating-linear-gradient(90deg,white 0,white 1px,transparent 1px,transparent 48px)' }}
-        />
-
+      <div className="relative overflow-hidden hero-banner-gradient px-6 py-5">
         <div className="relative z-10 mx-auto max-w-screen-xl">
           {/* Top row */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-white/70">
-              <BarChart3 size={12} className="text-amber-400" />
               {getDistrictName()} · Operational Analytics
             </div>
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-300">
@@ -308,9 +297,9 @@ export default function AnalyticsDashboard() {
           </div>
 
           {/* Heading + period toggle */}
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <h1 className="text-4xl font-bold leading-tight tracking-tight text-white">
+              <h1 className="text-3xl font-bold leading-tight tracking-tight text-white">
                 Operational Analytics
               </h1>
               <p className="mt-1 text-xl font-medium tracking-wide text-white/40">
@@ -348,10 +337,10 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* ══════════════ PAGE BODY ══════════════ */}
-      <div className="mx-auto max-w-screen-xl px-6 pb-12">
+      <div className="mx-auto max-w-screen-xl px-6 pb-8">
 
         {/* ── KPI Cards ── */}
-        <div className="mt-8">
+        <div className="mt-5">
           <SectionLabel>Summary KPIs</SectionLabel>
           {summaryLoading ? (
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
@@ -376,14 +365,13 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* ── Main Charts Row ── */}
-        <div className="mt-8">
+        <div className="mt-6">
           <SectionLabel>Incident Analysis</SectionLabel>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
             {/* Crime Head Breakdown — Donut */}
             <div className="overflow-hidden rounded-card border border-[var(--border-card-theme)] bg-white">
               <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
-                <PieIcon size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
                 <div>
                   <p className="text-sm font-bold text-[var(--text-main-theme)]">Heinous Offence Ratios</p>
                   <p className="text-meta text-[var(--text-main-theme)] opacity-70">Heinous offence breakdown · Donut view</p>
@@ -391,10 +379,10 @@ export default function AnalyticsDashboard() {
               </div>
               <div className="p-4">
                 {categoryData.length === 0 ? (
-                  <EmptyState icon={AlertCircle} message="No category data available" />
+                  <EmptyState message="No category data available" />
                 ) : (
-                  <div className="h-[280px] w-full flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="h-[220px] w-full min-w-0">
+                    <SafeResponsiveContainer>
                       <PieChart>
                         <Pie
                           data={categoryData}
@@ -413,7 +401,7 @@ export default function AnalyticsDashboard() {
                         <Tooltip {...CHART_TOOLTIP} />
                         <Legend wrapperStyle={{ fontSize: '10px', color: '#718096' }} />
                       </PieChart>
-                    </ResponsiveContainer>
+                    </SafeResponsiveContainer>
                   </div>
                 )}
               </div>
@@ -422,7 +410,6 @@ export default function AnalyticsDashboard() {
             {/* Combined Time-Series Trends — Line */}
             <div className="overflow-hidden rounded-card border border-[var(--border-card-theme)] bg-white">
               <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
-                <LineIcon size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
                 <div>
                   <p className="text-sm font-bold text-[var(--text-main-theme)]">Daily Activity Timeline</p>
                   <p className="text-meta text-[var(--text-main-theme)] opacity-70">Combined trends · {period} view</p>
@@ -430,10 +417,10 @@ export default function AnalyticsDashboard() {
               </div>
               <div className="p-4">
                 {trendData.length === 0 ? (
-                  <EmptyState icon={TrendingUp} message="No trend data available" />
+                  <EmptyState message="No trend data available" />
                 ) : (
-                  <div className="h-[280px] w-full pt-2">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="h-[220px] w-full min-w-0 pt-2">
+                    <SafeResponsiveContainer>
                       <LineChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                         <XAxis dataKey="name" stroke="#A0AEC0" fontSize={9} tickLine={false} />
@@ -444,7 +431,7 @@ export default function AnalyticsDashboard() {
                         <Line type="monotone" dataKey="pcr"     name="PCR Calls" stroke="var(--accent-color)" strokeWidth={2}   dot={false} activeDot={{ r: 4, fill: 'var(--accent-color)' }} />
                         <Line type="monotone" dataKey="arrests" name="Arrests"   stroke="#059669" strokeWidth={2}   dot={false} activeDot={{ r: 4, fill: '#059669' }} />
                       </LineChart>
-                    </ResponsiveContainer>
+                    </SafeResponsiveContainer>
                   </div>
                 )}
               </div>
@@ -464,14 +451,13 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* ── Bottom Row: Status + Station Bar ── */}
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
 
           {/* Workflow Status Distribution — Crime Head Breakdown for SHO/ACP */}
           <div className="overflow-hidden rounded-card border border-[var(--border-card-theme)] bg-white">
             {(isSho || isAcp) ? (
               <>
                 <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
-                  <Activity size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-[var(--text-main-theme)]">Crime Head Breakdown</p>
                     <p className="text-meta text-[var(--text-main-theme)] opacity-70">
@@ -481,7 +467,7 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div className="p-4">
                   {crimeHeadMatrix.rows.length === 0 ? (
-                    <EmptyState icon={AlertCircle} message="No crime-head classified records in this period" />
+                    <EmptyState message="No crime-head classified records in this period" />
                   ) : (
                     <CrimeHeadMatrixTable rows={crimeHeadMatrix.rows} columns={crimeHeadMatrix.columns} />
                   )}
@@ -490,7 +476,6 @@ export default function AnalyticsDashboard() {
             ) : (
               <>
                 <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
-                  <Activity size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-[var(--text-main-theme)]">Workflow Status Distribution</p>
                     <p className="text-meta text-[var(--text-main-theme)] opacity-70">{statusData.length} status stages · All record types</p>
@@ -498,7 +483,7 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div className="p-4">
                   {statusData.length === 0 ? (
-                    <EmptyState icon={AlertCircle} message="No status data available" />
+                    <EmptyState message="No status data available" />
                   ) : (
                     <div className="max-h-[240px] space-y-3 overflow-y-auto pr-1 pt-1">
                       {statusData.map((row) => {
@@ -536,7 +521,6 @@ export default function AnalyticsDashboard() {
             {isSho ? (
               <>
                 <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
-                  <BarChart3 size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-[var(--text-main-theme)]">Case Status</p>
                     <p className="text-meta text-[var(--text-main-theme)] opacity-70">Domain case status · This station</p>
@@ -544,7 +528,7 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div className="p-4">
                   {caseStatusRows.length === 0 ? (
-                    <EmptyState icon={AlertCircle} message="No case status data available" />
+                    <EmptyState message="No case status data available" />
                   ) : (
                     <CaseStatusBarChart data={caseStatusRows} />
                   )}
@@ -553,7 +537,6 @@ export default function AnalyticsDashboard() {
             ) : isDcpOrHq ? (
               <>
                 <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
-                  <BarChart3 size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-[var(--text-main-theme)]">Crime Head Category Performance</p>
                     <p className="text-meta text-[var(--text-main-theme)] opacity-70">Reported vs Workout · Heinous / Non-Heinous / Other IPC / Act</p>
@@ -566,7 +549,6 @@ export default function AnalyticsDashboard() {
             ) : (
               <>
                 <div className="flex items-center gap-3 border-b border-[var(--border-card-theme)] px-4 py-3">
-                  <BarChart3 size={16} className="text-[var(--text-main-theme)] opacity-50 shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-[var(--text-main-theme)]">Station Comparative Performance</p>
                     <p className="text-meta text-[var(--text-main-theme)] opacity-70">Top {Math.min(8, stationData.length)} stations · Cases, Arrests, PCR</p>
@@ -574,10 +556,10 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div className="p-4">
                   {stationData.length === 0 ? (
-                    <EmptyState icon={AlertCircle} message="No station data available" />
+                    <EmptyState message="No station data available" />
                   ) : (
-                    <div className="h-[240px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div className="h-[192px] w-full min-w-0">
+                      <SafeResponsiveContainer>
                         <BarChart data={stationData.slice(0, 8)} margin={{ top: 4, right: 4, left: -20, bottom: 30 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                           <XAxis
@@ -597,7 +579,7 @@ export default function AnalyticsDashboard() {
                           <Bar dataKey="pcr"     name="PCR"     fill="var(--accent-color)" radius={[4, 4, 0, 0]} />
                           <Bar dataKey="left_out" name="Left Out" fill="#D97706" radius={[4, 4, 0, 0]} />
                         </BarChart>
-                      </ResponsiveContainer>
+                      </SafeResponsiveContainer>
                     </div>
                   )}
                 </div>
@@ -607,7 +589,7 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 flex items-center justify-center gap-2">
+        <div className="mt-5 flex items-center justify-center gap-2">
           <div className="h-px w-20 bg-[var(--border-card-theme)]" />
           <p className="text-meta font-medium text-[var(--text-main-theme)] opacity-60">
             Delhi Police Command System · Data refreshes on page load · All times IST

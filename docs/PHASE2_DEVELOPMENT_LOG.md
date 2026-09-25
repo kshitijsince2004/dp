@@ -68,7 +68,7 @@ We maintain event-driven decoupling using the `pharos` topic exchange:
 
 | Track | Feature Description | Status |
 |---|---|---|
-| Reconstruct | RabbitMQ event bus & mock fallback | ✅ Implemented |
+| Reconstruct | RabbitMQ event bus & in-memory EventEmitter fallback | ✅ Implemented |
 | Reconstruct | Records CRUD & JSONB storage | ✅ Implemented |
 | Reconstruct | Workflow state machine | ✅ Implemented |
 | Net-New P2 | SHA-256 revision hash-chaining | ✅ Implemented |
