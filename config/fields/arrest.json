@@ -983,7 +983,7 @@
       }
     ],
     "validation_rules": {
-      "required": true
+      "required": false
     },
     "visible_to_levels": [
       "PS",
