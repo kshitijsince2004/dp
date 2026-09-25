@@ -1,0 +1,311 @@
+[
+ {
+  "code": "draft.submit",
+  "record_type": "*",
+  "from_status": "DRAFT",
+  "action": "submit",
+  "to_status": "PENDING_SHO",
+  "from_level": "PS",
+  "to_level": "PS",
+  "allowed_roles": [
+   "HC"
+  ],
+  "requires_comment": false,
+  "sla_hours": 24,
+  "is_active": true
+ },
+ {
+  "code": "sent_back.submit",
+  "requires_field_correction": true,
+  "record_type": "*",
+  "from_status": "SENT_BACK",
+  "action": "submit",
+  "to_status": "PENDING_SHO",
+  "from_level": "PS",
+  "to_level": "PS",
+  "allowed_roles": [
+   "HC"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "pending_sho.approve",
+  "record_type": "*",
+  "from_status": "PENDING_SHO",
+  "action": "approve",
+  "to_status": "DISTRICT_REVIEW",
+  "from_level": "PS",
+  "to_level": "DISTRICT",
+  "allowed_roles": [
+   "SHO"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "pending_sho.send_back",
+  "record_type": "*",
+  "from_status": "PENDING_SHO",
+  "action": "send_back",
+  "to_status": "SENT_BACK",
+  "from_level": "PS",
+  "to_level": "PS",
+  "allowed_roles": [
+   "SHO"
+  ],
+  "requires_comment": true,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "district.approve",
+  "record_type": "*",
+  "from_status": "DISTRICT_REVIEW",
+  "action": "approve",
+  "to_status": "JCP_REVIEW",
+  "from_level": "DISTRICT",
+  "to_level": "JCP",
+  "allowed_roles": [
+   "DISTRICT_OFFICER"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "district.send_back",
+  "record_type": "*",
+  "from_status": "DISTRICT_REVIEW",
+  "action": "send_back",
+  "to_status": "SENT_BACK",
+  "from_level": "DISTRICT",
+  "to_level": "PS",
+  "allowed_roles": [
+   "DISTRICT_OFFICER"
+  ],
+  "requires_comment": true,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "district.compile",
+  "record_type": "*",
+  "from_status": "DISTRICT_REVIEW",
+  "action": "compile",
+  "to_status": "COMPILED",
+  "from_level": "DISTRICT",
+  "to_level": "DISTRICT",
+  "allowed_roles": [
+   "DISTRICT_OFFICER"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "compiled.submit",
+  "record_type": "*",
+  "from_status": "COMPILED",
+  "action": "submit",
+  "to_status": "JCP_REVIEW",
+  "from_level": "DISTRICT",
+  "to_level": "JCP",
+  "allowed_roles": [
+   "DISTRICT_OFFICER"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "jcp.approve",
+  "record_type": "*",
+  "from_status": "JCP_REVIEW",
+  "action": "approve",
+  "to_status": "SCP_REVIEW",
+  "from_level": "JCP",
+  "to_level": "SCP",
+  "allowed_roles": [
+   "JCP"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "jcp.send_back",
+  "record_type": "*",
+  "from_status": "JCP_REVIEW",
+  "action": "send_back",
+  "to_status": "DISTRICT_REVIEW",
+  "from_level": "JCP",
+  "to_level": "DISTRICT",
+  "allowed_roles": [
+   "JCP"
+  ],
+  "requires_comment": true,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "scp.approve",
+  "record_type": "*",
+  "from_status": "SCP_REVIEW",
+  "action": "approve",
+  "to_status": "HQ_RECEIVED",
+  "from_level": "SCP",
+  "to_level": "HQ",
+  "allowed_roles": [
+   "SCP"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "scp.send_back",
+  "record_type": "*",
+  "from_status": "SCP_REVIEW",
+  "action": "send_back",
+  "to_status": "JCP_REVIEW",
+  "from_level": "SCP",
+  "to_level": "JCP",
+  "allowed_roles": [
+   "SCP"
+  ],
+  "requires_comment": true,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "hq.seal",
+  "record_type": "*",
+  "from_status": "HQ_RECEIVED",
+  "action": "seal",
+  "to_status": "ARCHIVED",
+  "from_level": "HQ",
+  "to_level": "HQ",
+  "allowed_roles": [
+   "HQ_ADMIN"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "hq.archive",
+  "record_type": "*",
+  "from_status": "HQ_RECEIVED",
+  "action": "archive",
+  "to_status": "ARCHIVED",
+  "from_level": "HQ",
+  "to_level": "HQ",
+  "allowed_roles": [
+   "HQ_ADMIN",
+   "SYSTEM_ADMIN"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "transfer.initiate",
+  "record_type": "*",
+  "from_status": "*",
+  "action": "transfer_initiate",
+  "to_status": "IN_TRANSFER",
+  "from_level": null,
+  "to_level": null,
+  "allowed_roles": [
+   "SHO",
+   "DISTRICT_OFFICER"
+  ],
+  "requires_comment": true,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "transfer.accept",
+  "record_type": "*",
+  "from_status": "IN_TRANSFER",
+  "action": "transfer_accept",
+  "to_status": "@PRIOR",
+  "from_level": null,
+  "to_level": null,
+  "allowed_roles": [
+   "SHO",
+   "DISTRICT_OFFICER"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "transfer.reject",
+  "record_type": "*",
+  "from_status": "IN_TRANSFER",
+  "action": "transfer_reject",
+  "to_status": "@PRIOR",
+  "from_level": null,
+  "to_level": null,
+  "allowed_roles": [
+   "SHO",
+   "DISTRICT_OFFICER"
+  ],
+  "requires_comment": true,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "legacy.amendment_request",
+  "record_type": "*",
+  "from_status": "LEGACY_IMPORTED",
+  "action": "amendment_request",
+  "to_status": "AMENDMENT_PENDING",
+  "from_level": null,
+  "to_level": null,
+  "allowed_roles": [
+   "HC",
+   "SHO",
+   "DISTRICT_OFFICER"
+  ],
+  "requires_comment": true,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "amendment.approve",
+  "record_type": "*",
+  "from_status": "AMENDMENT_PENDING",
+  "action": "amendment_approve",
+  "to_status": "LEGACY_IMPORTED",
+  "from_level": null,
+  "to_level": null,
+  "allowed_roles": [
+   "DISTRICT_OFFICER",
+   "HQ_ADMIN"
+  ],
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "code": "amendment.reject",
+  "record_type": "*",
+  "from_status": "AMENDMENT_PENDING",
+  "action": "amendment_reject",
+  "to_status": "LEGACY_IMPORTED",
+  "from_level": null,
+  "to_level": null,
+  "allowed_roles": [
+   "DISTRICT_OFFICER",
+   "HQ_ADMIN"
+  ],
+  "requires_comment": true,
+  "sla_hours": null,
+  "is_active": true
+ }
+]

@@ -1,0 +1,6047 @@
+[
+  {
+    "field_key": "occurrence_time_type",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "RADIO",
+    "labels": {
+      "en": "Is Time of Occurrence",
+      "hi": "क्या घटना का समय ज्ञात है?"
+    },
+    "section": "occurrence_info",
+    "storage": "ui_only",
+    "options": [
+      {
+        "value": "Known",
+        "label_en": "Known",
+        "label_hi": "ज्ञात"
+      },
+      {
+        "value": "Unknown",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 1,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_from_date_time",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "DATETIME",
+    "labels": {
+      "en": "From Date / Time",
+      "hi": "दिनांक / समय से"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "table": "fir_details",
+      "column": "occurrence_from_datetime"
+    },
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 1.1,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_to_date_time",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "DATETIME",
+    "labels": {
+      "en": "To Date / Time",
+      "hi": "दिनांक / समय तक"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "table": "fir_details",
+      "column": "occurrence_to_datetime"
+    },
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 1.2,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "info_received_at_ps_date_time",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "DATETIME",
+    "labels": {
+      "en": "Information received at P.S.",
+      "hi": "थाने पर सूचना प्राप्त होने का समय"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "table": "fir_details",
+      "column": "info_received_at_ps"
+    },
+    "validation_rules": {
+      "required": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 1.3,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "organised_crime",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "RADIO",
+    "labels": {
+      "en": "Organised Crime",
+      "hi": "संगठित अपराध"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "table": "fir_details",
+      "column": "organised_crime"
+    },
+    "options": [
+      {
+        "value": "Yes",
+        "label_en": "Yes",
+        "label_hi": "हाँ"
+      },
+      {
+        "value": "No",
+        "label_en": "No",
+        "label_hi": "नहीं"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 1.4,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_house_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Place of Occurrence House No.",
+      "hi": "घटनास्थल मकान संख्या"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "house_no"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 3,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_street",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Place of Occurrence Street",
+      "hi": "घटनास्थल गली / सड़क"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "street"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 3.1,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_colony",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Place of Occurrence Colony",
+      "hi": "घटनास्थल कॉलोनी"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "colony"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 3.2,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_city_town_village",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Place of Occurrence Village / City / Town",
+      "hi": "घटनास्थल गांव / शहर / नगर"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "city_town_village"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 3.3,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_tehsil_block_mandal",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Place of Occurrence Tehsil / Block / Mandal",
+      "hi": "घटनास्थल तहसील / ब्लॉक / मंडल"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "tehsil_block_mandal"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 3.4,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_country",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Place of Occurrence Nationality",
+      "hi": "घटनास्थल राष्ट्रीयता"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "country"
+    },
+    "options": [
+      {
+        "value": "India",
+        "label_en": "India",
+        "label_hi": "भारत"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 3.6,
+    "full_width": false,
+    "readonly": false,
+    "is_active": false,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_district",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Place of Occurrence District",
+      "hi": "घटनास्थल जिला"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "district"
+    },
+    "options": [
+      {
+        "value": "South District (SD)",
+        "label_en": "South District (SD)",
+        "label_hi": "South District (SD)"
+      },
+      {
+        "value": "South East District (SED)",
+        "label_en": "South East District (SED)",
+        "label_hi": "South East District (SED)"
+      },
+      {
+        "value": "New Delhi District (NDD)",
+        "label_en": "New Delhi District (NDD)",
+        "label_hi": "New Delhi District (NDD)"
+      },
+      {
+        "value": "South West District (SWD)",
+        "label_en": "South West District (SWD)",
+        "label_hi": "South West District (SWD)"
+      },
+      {
+        "value": "West District (WD)",
+        "label_en": "West District (WD)",
+        "label_hi": "West District (WD)"
+      },
+      {
+        "value": "Outer District (OD)",
+        "label_en": "Outer District (OD)",
+        "label_hi": "Outer District (OD)"
+      },
+      {
+        "value": "Dwarka District (DW)",
+        "label_en": "Dwarka District (DW)",
+        "label_hi": "Dwarka District (DW)"
+      },
+      {
+        "value": "North West District (NWD)",
+        "label_en": "North West District (NWD)",
+        "label_hi": "North West District (NWD)"
+      },
+      {
+        "value": "Rohini District (RND)",
+        "label_en": "Rohini District (RND)",
+        "label_hi": "Rohini District (RND)"
+      },
+      {
+        "value": "Outer North District (OND)",
+        "label_en": "Outer North District (OND)",
+        "label_hi": "Outer North District (OND)"
+      },
+      {
+        "value": "Central District (CD)",
+        "label_en": "Central District (CD)",
+        "label_hi": "Central District (CD)"
+      },
+      {
+        "value": "North District (ND)",
+        "label_en": "North District (ND)",
+        "label_hi": "North District (ND)"
+      },
+      {
+        "value": "East District (ED)",
+        "label_en": "East District (ED)",
+        "label_hi": "East District (ED)"
+      },
+      {
+        "value": "North East District (NED)",
+        "label_en": "North East District (NED)",
+        "label_hi": "North East District (NED)"
+      },
+      {
+        "value": "Shahdara District (SHD)",
+        "label_en": "Shahdara District (SHD)",
+        "label_hi": "Shahdara District (SHD)"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 3.8,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_police_station",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Place of Occurrence Police Station",
+      "hi": "घटनास्थल पुलिस स्टेशन (PS)"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "police_station"
+    },
+    "options": [],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 3.9,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_pincode",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Place of Occurrence Pin Code",
+      "hi": "घटनास्थल पिन कोड"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "pincode"
+    },
+    "validation_rules": {
+      "required": false,
+      "pattern": "pincode"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 4,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "source_reference",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Source / Reference of Complaint",
+      "hi": "शिकायत का स्रोत / संदर्भ"
+    },
+    "section": "general_info",
+    "storage": {
+      "table": "fir_details",
+      "column": "source_reference"
+    },
+    "options": [
+      {
+        "value": "PCR Call",
+        "label_en": "PCR Call",
+        "label_hi": "पीसीआर कॉल"
+      },
+      {
+        "value": "Written Complaint",
+        "label_en": "Written Complaint",
+        "label_hi": "लिखित शिकायत"
+      },
+      {
+        "value": "Public Informant",
+        "label_en": "Public Informant",
+        "label_hi": "सार्वजनिक सूचना"
+      },
+      {
+        "value": "Police Beat Officer",
+        "label_en": "Police Beat Officer",
+        "label_hi": "पुलिस बीट अधिकारी"
+      },
+      {
+        "value": "Physically appear",
+        "label_en": "Physically appear",
+        "label_hi": "व्यक्तिगत रूप से उपस्थिति"
+      },
+      {
+        "value": "Court Order",
+        "label_en": "Court Order",
+        "label_hi": "न्यायालय आदेश"
+      },
+      {
+        "value": "Individual/Group/Agency",
+        "label_en": "Individual/Group/Agency",
+        "label_hi": "व्यक्ति/समूह/एजेंसी"
+      }
+    ],
+    "validation_rules": {
+      "required": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 4,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "occurrence_latitude",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Place of Occurrence Latitude",
+      "hi": "घटनास्थल का अक्षांश"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "latitude"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 4.1,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "latlong"
+    }
+  },
+  {
+    "field_key": "occurrence_longitude",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Place of Occurrence Longitude",
+      "hi": "घटनास्थल का रेखांश"
+    },
+    "section": "occurrence_info",
+    "storage": {
+      "entity": "location",
+      "slot": "occurrence",
+      "column": "longitude"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 4.2,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "latlong"
+    }
+  },
+  {
+    "field_key": "beat_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Beat No.",
+      "hi": "बीट नंबर"
+    },
+    "section": "general_info",
+    "storage": {
+      "table": "fir_details",
+      "column": "beat_id"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 6,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "beat_raw",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Beat (as entered, unresolved)",
+      "hi": "बीट (जैसा दर्ज किया गया, अनसुलझा)"
+    },
+    "section": "general_info",
+    "storage": "extra",
+    "visible_to_levels": [],
+    "editable_by_levels": [],
+    "introduced_at_level": "PS",
+    "sort_order": 6.5,
+    "full_width": false,
+    "readonly": true,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "ipc_sections",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Sections (IPC)",
+      "hi": "धाराएं (आईपीसी)"
+    },
+    "section": "incident_details",
+    "storage": {
+      "entity": "offence",
+      "column": "section_id",
+      "act_group": "ipc"
+    },
+    "options": [
+      {
+        "value": "Sec 379 IPC",
+        "label_en": "Sec 379 IPC",
+        "label_hi": "धारा 379 आईपीसी"
+      },
+      {
+        "value": "Sec 302 IPC",
+        "label_en": "Sec 302 IPC",
+        "label_hi": "धारा 302 आईपीसी"
+      },
+      {
+        "value": "Sec 323 IPC",
+        "label_en": "Sec 323 IPC",
+        "label_hi": "धारा 323 आईपीसी"
+      },
+      {
+        "value": "Sec 406 IPC",
+        "label_en": "Sec 406 IPC",
+        "label_hi": "धारा 406 आईपीसी"
+      },
+      {
+        "value": "Sec 392 IPC",
+        "label_en": "Sec 392 IPC",
+        "label_hi": "धारा 392 आईपीसी"
+      },
+      {
+        "value": "Sec 356 IPC",
+        "label_en": "Sec 356 IPC",
+        "label_hi": "धारा 356 आईपीसी"
+      }
+    ],
+    "show_when": {
+      "field": "act_name",
+      "value": "IPC"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 11.1,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "excise_sections",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Sections (Excise Act)",
+      "hi": "धाराएं (उत्पाद शुल्क अधिनियम)"
+    },
+    "section": "incident_details",
+    "storage": {
+      "entity": "offence",
+      "column": "section_id",
+      "act_group": "excise"
+    },
+    "options": [
+      {
+        "value": "Sec 33 Excise Act",
+        "label_en": "Sec 33 Excise Act",
+        "label_hi": "धारा 33 उत्पाद शुल्क अधिनियम"
+      },
+      {
+        "value": "Sec 38 Excise Act",
+        "label_en": "Sec 38 Excise Act",
+        "label_hi": "धारा 38 उत्पाद शुल्क अधिनियम"
+      },
+      {
+        "value": "Sec 42 Excise Act",
+        "label_en": "Sec 42 Excise Act",
+        "label_hi": "धारा 42 उत्पाद शुल्क अधिनियम"
+      }
+    ],
+    "show_when": {
+      "field": "act_name",
+      "value": "Delhi Excise Act"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 11.2,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "arms_sections",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Sections (Arms Act)",
+      "hi": "धाराएं (शस्त्र अधिनियम)"
+    },
+    "section": "incident_details",
+    "storage": {
+      "entity": "offence",
+      "column": "section_id",
+      "act_group": "arms"
+    },
+    "options": [
+      {
+        "value": "Sec 25 Arms Act",
+        "label_en": "Sec 25 Arms Act",
+        "label_hi": "धारा 25 शस्त्र अधिनियम"
+      },
+      {
+        "value": "Sec 27 Arms Act",
+        "label_en": "Sec 27 Arms Act",
+        "label_hi": "धारा 27 शस्त्र अधिनियम"
+      },
+      {
+        "value": "Sec 30 Arms Act",
+        "label_en": "Sec 30 Arms Act",
+        "label_hi": "धारा 30 शस्त्र अधिनियम"
+      }
+    ],
+    "show_when": {
+      "field": "act_name",
+      "value": "Arms Act"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 11.3,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "gambling_sections",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Sections (Gambling Act)",
+      "hi": "धाराएं (जुआ अधिनियम)"
+    },
+    "section": "incident_details",
+    "storage": {
+      "entity": "offence",
+      "column": "section_id",
+      "act_group": "gambling"
+    },
+    "options": [
+      {
+        "value": "Sec 3 Gambling Act",
+        "label_en": "Sec 3 Gambling Act",
+        "label_hi": "धारा 3 जुआ अधिनियम"
+      },
+      {
+        "value": "Sec 4 Gambling Act",
+        "label_en": "Sec 4 Gambling Act",
+        "label_hi": "धारा 4 जुआ अधिनियम"
+      },
+      {
+        "value": "Sec 13 Gambling Act",
+        "label_en": "Sec 13 Gambling Act",
+        "label_hi": "धारा 13 जुआ अधिनियम"
+      }
+    ],
+    "show_when": {
+      "field": "act_name",
+      "value": "Gambling Act"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 11.4,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "other_sections",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Sections (Other Act)",
+      "hi": "धाराएं (अन्य अधिनियम)"
+    },
+    "section": "incident_details",
+    "storage": {
+      "entity": "offence",
+      "column": "section_id",
+      "act_group": "other"
+    },
+    "show_when": {
+      "field": "act_name",
+      "value": "Other Act"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 11.5,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "brief_facts",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXTAREA",
+    "labels": {
+      "en": "Brief Facts of the Case",
+      "hi": "मामले का संक्षिप्त विवरण"
+    },
+    "section": "incident_details",
+    "storage": {
+      "table": "fir_details",
+      "column": "brief_facts"
+    },
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 12,
+    "full_width": true,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "vehicle_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Vehicle Registration No.",
+      "hi": "वाहन पंजीकरण संख्या"
+    },
+    "section": "vehicle_details",
+    "storage": {
+      "entity": "property",
+      "group": "vehicle",
+      "column": "vehicle_no"
+    },
+    "show_when": {
+      "field": "case_type",
+      "value": [
+        "eMVT",
+        "eTheft"
+      ]
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 50,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "vehicle_type",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Vehicle Type",
+      "hi": "वाहन का प्रकार"
+    },
+    "section": "vehicle_details",
+    "storage": {
+      "entity": "property",
+      "group": "vehicle",
+      "column": "automobile_id"
+    },
+    "options": [
+      {
+        "value": "Car",
+        "label_en": "Car",
+        "label_hi": "कार"
+      },
+      {
+        "value": "Motorcycle",
+        "label_en": "Motorcycle",
+        "label_hi": "मोटरसाइकिल"
+      },
+      {
+        "value": "Scooter",
+        "label_en": "Scooter",
+        "label_hi": "स्कूटर"
+      },
+      {
+        "value": "E-Rickshaw",
+        "label_en": "E-Rickshaw",
+        "label_hi": "ई-रिक्शा"
+      },
+      {
+        "value": "Auto",
+        "label_en": "Auto Rickshaw",
+        "label_hi": "ऑटो रिक्शा"
+      },
+      {
+        "value": "Tempo",
+        "label_en": "Tempo / Truck",
+        "label_hi": "टेम्पो / ट्रक"
+      },
+      {
+        "value": "Cycle",
+        "label_en": "Bicycle",
+        "label_hi": "साइकिल"
+      },
+      {
+        "value": "Other",
+        "label_en": "Other",
+        "label_hi": "अन्य"
+      }
+    ],
+    "show_when": {
+      "field": "case_type",
+      "value": [
+        "eMVT",
+        "eTheft"
+      ]
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 51,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "vehicle_make",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Vehicle Make / Manufacturer",
+      "hi": "वाहन निर्माता / ब्रांड"
+    },
+    "section": "vehicle_details",
+    "storage": {
+      "entity": "property",
+      "group": "vehicle",
+      "column": "vehicle_make"
+    },
+    "show_when": {
+      "field": "case_type",
+      "value": [
+        "eMVT",
+        "eTheft"
+      ]
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 51.1,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "vehicle_model",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Vehicle Model",
+      "hi": "वाहन मॉडल"
+    },
+    "section": "vehicle_details",
+    "storage": {
+      "entity": "property",
+      "group": "vehicle",
+      "column": "vehicle_model"
+    },
+    "show_when": {
+      "field": "case_type",
+      "value": [
+        "eMVT",
+        "eTheft"
+      ]
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 51.2,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "vehicle_color",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Vehicle Color",
+      "hi": "वाहन का रंग"
+    },
+    "section": "vehicle_details",
+    "storage": {
+      "entity": "property",
+      "group": "vehicle",
+      "column": "vehicle_color"
+    },
+    "show_when": {
+      "field": "case_type",
+      "value": [
+        "eMVT",
+        "eTheft"
+      ]
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 51.3,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "vehicle_chassis_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Chassis Number",
+      "hi": "चेसिस नंबर"
+    },
+    "section": "vehicle_details",
+    "storage": {
+      "entity": "property",
+      "group": "vehicle",
+      "column": "vehicle_chassis_no"
+    },
+    "show_when": {
+      "field": "case_type",
+      "value": [
+        "eMVT",
+        "eTheft"
+      ]
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 51.4,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "vehicle_engine_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Engine Number",
+      "hi": "इंजन नंबर"
+    },
+    "section": "vehicle_details",
+    "storage": {
+      "entity": "property",
+      "group": "vehicle",
+      "column": "vehicle_engine_no"
+    },
+    "show_when": {
+      "field": "case_type",
+      "value": [
+        "eMVT",
+        "eTheft"
+      ]
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 51.5,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "cd_uploaded_24h",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "1st CD Uploaded Within 24 Hours",
+      "hi": "पहली सीडी 24 घंटे में अपलोड की गई"
+    },
+    "section": "vehicle_details",
+    "storage": {
+      "table": "fir_details",
+      "column": "cd_uploaded_24h"
+    },
+    "options": [
+      {
+        "value": "Yes",
+        "label_en": "Yes",
+        "label_hi": "हाँ"
+      },
+      {
+        "value": "No",
+        "label_en": "No",
+        "label_hi": "नहीं"
+      }
+    ],
+    "show_when": {
+      "field": "case_type",
+      "value": [
+        "eMVT",
+        "eTheft"
+      ]
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 52,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "footage_collected",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "CCTV Footage Collected",
+      "hi": "सीसीटीवी फुटेज एकत्र किया गया"
+    },
+    "section": "vehicle_details",
+    "storage": {
+      "table": "fir_details",
+      "column": "footage_collected"
+    },
+    "options": [
+      {
+        "value": "Yes",
+        "label_en": "Yes",
+        "label_hi": "हाँ"
+      },
+      {
+        "value": "No",
+        "label_en": "No",
+        "label_hi": "नहीं"
+      }
+    ],
+    "show_when": {
+      "field": "case_type",
+      "value": [
+        "eMVT",
+        "eTheft"
+      ]
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 53,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "is_important",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "BOOLEAN",
+    "labels": {
+      "en": "Mark as Important Case",
+      "hi": "महत्वपूर्ण मामले के रूप में चिह्नित करें"
+    },
+    "section": "general_info",
+    "storage": {
+      "table": "fir_details",
+      "column": "is_important"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 99,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_npr",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant NPR No.",
+      "hi": "शिकायतकर्ता एनपीआर संख्या"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "extra": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 400,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_first_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant First Name",
+      "hi": "शिकायतकर्ता पहला नाम"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "name",
+      "name_part": 1
+    },
+    "validation_rules": {
+      "required": false,
+      "pattern": "name"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 401,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_middle_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Middle Name",
+      "hi": "शिकायतकर्ता मध्यम नाम"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "name",
+      "name_part": 2
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 402,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "name"
+    }
+  },
+  {
+    "field_key": "complainant_last_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Last Name",
+      "hi": "शिकायतकर्ता अंतिम नाम"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "name",
+      "name_part": 3
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 403,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "name"
+    }
+  },
+  {
+    "field_key": "complainant_nickname",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Nickname(s)",
+      "hi": "शिकायतकर्ता उपनाम"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "nick_names"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 403.5,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "name"
+    }
+  },
+  {
+    "field_key": "complainant_gender",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant Gender",
+      "hi": "शिकायतकर्ता लिंग"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "gender"
+    },
+    "options": [
+      {
+        "value": "Male",
+        "label_en": "Male",
+        "label_hi": "पुरुष"
+      },
+      {
+        "value": "Female",
+        "label_en": "Female",
+        "label_hi": "महिला"
+      },
+      {
+        "value": "Transgender",
+        "label_en": "Transgender",
+        "label_hi": "ट्रांसजेंडर"
+      },
+      {
+        "value": "Unknown",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 404,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_relation_type",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant Relation Type",
+      "hi": "शिकायतकर्ता संबंध का प्रकार"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "relation_type"
+    },
+    "options": [
+      {
+        "value": "Father",
+        "label_en": "Father",
+        "label_hi": "पिता"
+      },
+      {
+        "value": "Mother",
+        "label_en": "Mother",
+        "label_hi": "माता"
+      },
+      {
+        "value": "Husband",
+        "label_en": "Husband",
+        "label_hi": "पति"
+      },
+      {
+        "value": "Wife",
+        "label_en": "Wife",
+        "label_hi": "पत्नी"
+      },
+      {
+        "value": "Guardian",
+        "label_en": "Guardian",
+        "label_hi": "अभिभावक"
+      },
+      {
+        "value": "Other",
+        "label_en": "Other",
+        "label_hi": "अन्य"
+      }
+    ],
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 405,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_relative_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Relative Name",
+      "hi": "शिकायतकर्ता रिश्तेदार का नाम"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "relative_name"
+    },
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 406,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_mobile_country_code",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Complainant Mobile Country Code",
+      "hi": "शिकायतकर्ता मोबाइल देश कोड"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "extra": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 407.9,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_mobile",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Complainant Mobile No.",
+      "hi": "शिकायतकर्ता मोबाइल नंबर"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "mobile"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 408,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_qualification",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant Qualification",
+      "hi": "शिकायतकर्ता योग्यता"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "qualification"
+    },
+    "options": [
+      {
+        "value": "Uneducated",
+        "label_en": "Uneducated",
+        "label_hi": "अशिक्षित"
+      },
+      {
+        "value": "10th",
+        "label_en": "10th",
+        "label_hi": "10वीं"
+      },
+      {
+        "value": "10+2",
+        "label_en": "10+2",
+        "label_hi": "12वीं"
+      },
+      {
+        "value": "Graduate",
+        "label_en": "Graduate",
+        "label_hi": "स्नातक"
+      },
+      {
+        "value": "Post-Graduate",
+        "label_en": "Post-Graduate",
+        "label_hi": "स्नातकोत्तर"
+      }
+    ],
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 408.5,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_same_as_victim",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Is Complainant same as Victim?",
+      "hi": "क्या शिकायतकर्ता ही पीड़ित है?"
+    },
+    "section": "complainant_personal_info",
+    "storage": "ui_only",
+    "options": [
+      {
+        "value": "Yes",
+        "label_en": "Yes",
+        "label_hi": "हाँ"
+      },
+      {
+        "value": "No",
+        "label_en": "No",
+        "label_hi": "नहीं"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 408.5,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_dob",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "DATE",
+    "labels": {
+      "en": "Complainant Date of Birth",
+      "hi": "शिकायतकर्ता जन्म तिथि"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "dob"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 409,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_age_year",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Complainant Age (Years)",
+      "hi": "शिकायतकर्ता आयु (वर्ष)"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "age"
+    },
+    "validation_rules": {
+      "required": false,
+      "min": 0,
+      "max": 120
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 410,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_birth_year",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Complainant Year of Birth",
+      "hi": "शिकायतकर्ता जन्म का वर्ष"
+    },
+    "section": "complainant_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "extra": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 412,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_house_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant House No.",
+      "hi": "शिकायतकर्ता मकान संख्या"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "house_no",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 413,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_street",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Street",
+      "hi": "शिकायतकर्ता गली / सड़क"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "street",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 414,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_colony",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Colony",
+      "hi": "शिकायतकर्ता कॉलोनी"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "colony",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 415,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_city_town_village",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Village / City / Town",
+      "hi": "शिकायतकर्ता गांव / शहर / नगर"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "city_town_village",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 416,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_tehsil_block_mandal",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Tehsil / Block / Mandal",
+      "hi": "शिकायतकर्ता तहसील / ब्लॉक / मंडल"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "tehsil_block_mandal",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 417,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_present_address",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXTAREA",
+    "labels": {
+      "en": "Complainant Full Present Address",
+      "hi": "शिकायतकर्ता वर्तमान पता"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "full_address",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 418,
+    "full_width": true,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_country",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant Nationality",
+      "hi": "शिकायतकर्ता राष्ट्रीयता"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "country",
+      "role": "COMPLAINANT"
+    },
+    "options": "$NATIONALITY",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 419,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_state",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant State",
+      "hi": "शिकायतकर्ता राज्य"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "state",
+      "role": "COMPLAINANT"
+    },
+    "options": "$INDIA_STATES",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 420,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_district",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant District",
+      "hi": "शिकायतकर्ता जिला"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "district",
+      "role": "COMPLAINANT"
+    },
+    "options": "$INDIA_DISTRICTS",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 421,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_police_station",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant Police Station",
+      "hi": "शिकायतकर्ता पुलिस स्टेशन (PS)"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "police_station",
+      "role": "COMPLAINANT"
+    },
+    "options": [],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 422,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_pincode",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Pin Code",
+      "hi": "शिकायतकर्ता पिन कोड"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "pincode",
+      "role": "COMPLAINANT"
+    },
+    "validation_rules": {
+      "required": false,
+      "pattern": "pincode"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 423,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_same",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "BOOLEAN",
+    "labels": {
+      "en": "Is Permanent Address same as Present Address?",
+      "hi": "क्या स्थायी पता वर्तमान पते के समान है?"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "person",
+      "role": "COMPLAINANT",
+      "column": "perm_same_as_present"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 423.9,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_house_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Permanent House No.",
+      "hi": "शिकायतकर्ता का स्थायी पता मकान संख्या"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "house_no",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 424,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_street",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Permanent Street",
+      "hi": "शिकायतकर्ता का स्थायी पता गली / सड़क"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "street",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 424.05,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_colony",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Permanent Colony",
+      "hi": "शिकायतकर्ता का स्थायी पता कॉलोनी"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "colony",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 424.1,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_city_town_village",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Permanent Village / City / Town",
+      "hi": "शिकायतकर्ता का स्थायी पता गांव / शहर / नगर"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "city_town_village",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 424.15,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_tehsil_block_mandal",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Permanent Tehsil / Block / Mandal",
+      "hi": "शिकायतकर्ता का स्थायी पता तहसील / ब्लॉक / मंडल"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "tehsil_block_mandal",
+      "role": "COMPLAINANT"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 424.2,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_country",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant Permanent Nationality",
+      "hi": "शिकायतकर्ता का स्थायी पता राष्ट्रीयता"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "country",
+      "role": "COMPLAINANT"
+    },
+    "options": "$NATIONALITY",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 424.25,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_state",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant Permanent State",
+      "hi": "शिकायतकर्ता का स्थायी पता राज्य"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "state",
+      "role": "COMPLAINANT"
+    },
+    "options": "$INDIA_STATES",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 424.3,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_district",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant Permanent District",
+      "hi": "शिकायतकर्ता का स्थायी पता जिला"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "district",
+      "role": "COMPLAINANT"
+    },
+    "options": "$INDIA_DISTRICTS",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 424.35,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_police_station",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Complainant Permanent Police Station",
+      "hi": "शिकायतकर्ता का स्थायी पता पुलिस स्टेशन (PS)"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "police_station",
+      "role": "COMPLAINANT"
+    },
+    "options": [],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 424.4,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "complainant_perm_pincode",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Complainant Permanent Pin Code",
+      "hi": "शिकायतकर्ता का स्थायी पता पिन कोड"
+    },
+    "section": "complainant_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "pincode",
+      "role": "COMPLAINANT"
+    },
+    "validation_rules": {
+      "required": false,
+      "pattern": "pincode"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 424.45,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_npr",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused NPR No.",
+      "hi": "अभियुक्त एनपीआर संख्या"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "extra": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 430,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_first_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused First Name",
+      "hi": "अभियुक्त पहला नाम"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "name",
+      "name_part": 1
+    },
+    "validation_rules": {
+      "required": false,
+      "pattern": "name"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 431,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_middle_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Middle Name",
+      "hi": "अभियुक्त मध्यम नाम"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "name",
+      "name_part": 2
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 432,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "name"
+    }
+  },
+  {
+    "field_key": "accused_last_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Last Name",
+      "hi": "अभियुक्त अंतिम नाम"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "name",
+      "name_part": 3
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 433,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "name"
+    }
+  },
+  {
+    "field_key": "accused_nickname",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Nickname(s)",
+      "hi": "अभियुक्त उपनाम"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "nick_names"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 433.5,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "name"
+    }
+  },
+  {
+    "field_key": "accused_gender",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused Gender",
+      "hi": "अभियुक्त लिंग"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "gender"
+    },
+    "options": [
+      {
+        "value": "Male",
+        "label_en": "Male",
+        "label_hi": "पुरुष"
+      },
+      {
+        "value": "Female",
+        "label_en": "Female",
+        "label_hi": "महिला"
+      },
+      {
+        "value": "Transgender",
+        "label_en": "Transgender",
+        "label_hi": "ट्रांसजेंडर"
+      },
+      {
+        "value": "Unknown",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 434,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_relation_type",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused Relation Type",
+      "hi": "अभियुक्त संबंध का प्रकार"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "relation_type"
+    },
+    "options": [
+      {
+        "value": "Father",
+        "label_en": "Father",
+        "label_hi": "पिता"
+      },
+      {
+        "value": "Mother",
+        "label_en": "Mother",
+        "label_hi": "माता"
+      },
+      {
+        "value": "Husband",
+        "label_en": "Husband",
+        "label_hi": "पति"
+      },
+      {
+        "value": "Wife",
+        "label_en": "Wife",
+        "label_hi": "पत्नी"
+      },
+      {
+        "value": "Guardian",
+        "label_en": "Guardian",
+        "label_hi": "अभिभावक"
+      },
+      {
+        "value": "Other",
+        "label_en": "Other",
+        "label_hi": "अन्य"
+      }
+    ],
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 435,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_relative_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Relative Name",
+      "hi": "अभियुक्त रिश्तेदार का नाम"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "relative_name"
+    },
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 436,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_mobile_country_code",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Accused Mobile Country Code",
+      "hi": "अभियुक्त मोबाइल देश कोड"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "extra": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 437.9,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_mobile",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Accused Mobile No.",
+      "hi": "अभियुक्त मोबाइल नंबर"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "mobile"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 438,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_qualification",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused Qualification",
+      "hi": "अभियुक्त योग्यता"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "qualification"
+    },
+    "options": [
+      {
+        "value": "Uneducated",
+        "label_en": "Uneducated",
+        "label_hi": "अशिक्षित"
+      },
+      {
+        "value": "10th",
+        "label_en": "10th",
+        "label_hi": "10वीं"
+      },
+      {
+        "value": "10+2",
+        "label_en": "10+2",
+        "label_hi": "12वीं"
+      },
+      {
+        "value": "Graduate",
+        "label_en": "Graduate",
+        "label_hi": "स्नातक"
+      },
+      {
+        "value": "Post-Graduate",
+        "label_en": "Post-Graduate",
+        "label_hi": "स्नातकोत्तर"
+      }
+    ],
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 438.5,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_dob",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "DATE",
+    "labels": {
+      "en": "Accused Date of Birth",
+      "hi": "अभियुक्त जन्म तिथि"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "dob"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 439,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_age_year",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Accused Age (Years)",
+      "hi": "अभियुक्त आयु (वर्ष)"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "age"
+    },
+    "validation_rules": {
+      "required": false,
+      "min": 0,
+      "max": 120
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 440,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_birth_year",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Accused Year of Birth",
+      "hi": "अभियुक्त जन्म का वर्ष"
+    },
+    "section": "accused_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "extra": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 442,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_house_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused House No.",
+      "hi": "अभियुक्त मकान संख्या"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "house_no",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 443,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_street",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Street",
+      "hi": "अभियुक्त गली / सड़क"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "street",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 444,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_colony",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Colony",
+      "hi": "अभियुक्त कॉलोनी"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "colony",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 445,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_city_town_village",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Village / City / Town",
+      "hi": "अभियुक्त गांव / शहर / नगर"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "city_town_village",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 446,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_tehsil_block_mandal",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Tehsil / Block / Mandal",
+      "hi": "अभियुक्त तहसील / ब्लॉक / मंडल"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "tehsil_block_mandal",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 447,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_present_address",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXTAREA",
+    "labels": {
+      "en": "Accused Full Present Address",
+      "hi": "अभियुक्त वर्तमान पता"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "full_address",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 448,
+    "full_width": true,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_country",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused Nationality",
+      "hi": "अभियुक्त राष्ट्रीयता"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "country",
+      "role": "ACCUSED"
+    },
+    "options": "$NATIONALITY",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 449,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_state",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused State",
+      "hi": "अभियुक्त राज्य"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "state",
+      "role": "ACCUSED"
+    },
+    "options": "$INDIA_STATES",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 450,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_district",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused District",
+      "hi": "अभियुक्त जिला"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "district",
+      "role": "ACCUSED"
+    },
+    "options": "$INDIA_DISTRICTS",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 451,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_police_station",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused Police Station",
+      "hi": "अभियुक्त पुलिस स्टेशन (PS)"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "police_station",
+      "role": "ACCUSED"
+    },
+    "options": [],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 452,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_pincode",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Pin Code",
+      "hi": "अभियुक्त पिन कोड"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "pincode",
+      "role": "ACCUSED"
+    },
+    "validation_rules": {
+      "required": false,
+      "pattern": "pincode"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 453,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_same",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "BOOLEAN",
+    "labels": {
+      "en": "Is Permanent Address same as Present Address?",
+      "hi": "क्या स्थायी पता वर्तमान पते के समान है?"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "person",
+      "role": "ACCUSED",
+      "column": "perm_same_as_present"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 453.9,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_house_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Permanent House No.",
+      "hi": "अभियुक्त का स्थायी पता मकान संख्या"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "house_no",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 454,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_street",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Permanent Street",
+      "hi": "अभियुक्त का स्थायी पता गली / सड़क"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "street",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 454.05,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_colony",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Permanent Colony",
+      "hi": "अभियुक्त का स्थायी पता कॉलोनी"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "colony",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 454.1,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_city_town_village",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Permanent Village / City / Town",
+      "hi": "अभियुक्त का स्थायी पता गांव / शहर / नगर"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "city_town_village",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 454.15,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_tehsil_block_mandal",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Permanent Tehsil / Block / Mandal",
+      "hi": "अभियुक्त का स्थायी पता तहसील / ब्लॉक / मंडल"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "tehsil_block_mandal",
+      "role": "ACCUSED"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 454.2,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_country",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused Permanent Nationality",
+      "hi": "अभियुक्त का स्थायी पता राष्ट्रीयता"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "country",
+      "role": "ACCUSED"
+    },
+    "options": "$NATIONALITY",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 454.25,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_state",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused Permanent State",
+      "hi": "अभियुक्त का स्थायी पता राज्य"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "state",
+      "role": "ACCUSED"
+    },
+    "options": "$INDIA_STATES",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 454.3,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_district",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused Permanent District",
+      "hi": "अभियुक्त का स्थायी पता जिला"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "district",
+      "role": "ACCUSED"
+    },
+    "options": "$INDIA_DISTRICTS",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 454.35,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_police_station",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Accused Permanent Police Station",
+      "hi": "अभियुक्त का स्थायी पता पुलिस स्टेशन (PS)"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "police_station",
+      "role": "ACCUSED"
+    },
+    "options": [],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 454.4,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "accused_perm_pincode",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Accused Permanent Pin Code",
+      "hi": "अभियुक्त का स्थायी पता पिन कोड"
+    },
+    "section": "accused_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "pincode",
+      "role": "ACCUSED"
+    },
+    "validation_rules": {
+      "required": false,
+      "pattern": "pincode"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_ACCUSED",
+    "sort_order": 454.45,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_npr",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim NPR No.",
+      "hi": "पीड़ित एनपीआर संख्या"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "extra": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 460,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_first_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim First Name",
+      "hi": "पीड़ित पहला नाम"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "name",
+      "name_part": 1
+    },
+    "validation_rules": {
+      "required": true,
+      "pattern": "name"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 461,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_middle_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Middle Name",
+      "hi": "पीड़ित मध्यम नाम"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "name",
+      "name_part": 2
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 462,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "name"
+    }
+  },
+  {
+    "field_key": "victim_last_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Last Name",
+      "hi": "पीड़ित अंतिम नाम"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "name",
+      "name_part": 3
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 463,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "name"
+    }
+  },
+  {
+    "field_key": "victim_nickname",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Nickname(s)",
+      "hi": "पीड़ित उपनाम"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "nick_names"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 463.5,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global",
+    "validation_rules": {
+      "pattern": "name"
+    }
+  },
+  {
+    "field_key": "victim_gender",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim Gender",
+      "hi": "पीड़ित लिंग"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "gender"
+    },
+    "options": [
+      {
+        "value": "Male",
+        "label_en": "Male",
+        "label_hi": "पुरुष"
+      },
+      {
+        "value": "Female",
+        "label_en": "Female",
+        "label_hi": "महिला"
+      },
+      {
+        "value": "Transgender",
+        "label_en": "Transgender",
+        "label_hi": "ट्रांसजेंडर"
+      },
+      {
+        "value": "Unknown",
+        "label_en": "Unknown",
+        "label_hi": "अज्ञात"
+      }
+    ],
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 464,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_relation_type",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim Relation Type",
+      "hi": "पीड़ित संबंध का प्रकार"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "relation_type"
+    },
+    "options": [
+      {
+        "value": "Father",
+        "label_en": "Father",
+        "label_hi": "पिता"
+      },
+      {
+        "value": "Mother",
+        "label_en": "Mother",
+        "label_hi": "माता"
+      },
+      {
+        "value": "Husband",
+        "label_en": "Husband",
+        "label_hi": "पति"
+      },
+      {
+        "value": "Wife",
+        "label_en": "Wife",
+        "label_hi": "पत्नी"
+      },
+      {
+        "value": "Guardian",
+        "label_en": "Guardian",
+        "label_hi": "अभिभावक"
+      },
+      {
+        "value": "Other",
+        "label_en": "Other",
+        "label_hi": "अन्य"
+      }
+    ],
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 465,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_relative_name",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Relative Name",
+      "hi": "पीड़ित रिश्तेदार का नाम"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "relative_name"
+    },
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 466,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_mobile_country_code",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Victim Mobile Country Code",
+      "hi": "पीड़ित मोबाइल देश कोड"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "extra": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 467.9,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_mobile",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Victim Mobile No.",
+      "hi": "पीड़ित मोबाइल नंबर"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "mobile"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 468,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_qualification",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim Qualification",
+      "hi": "पीड़ित योग्यता"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "qualification"
+    },
+    "options": [
+      {
+        "value": "Uneducated",
+        "label_en": "Uneducated",
+        "label_hi": "अशिक्षित"
+      },
+      {
+        "value": "10th",
+        "label_en": "10th",
+        "label_hi": "10वीं"
+      },
+      {
+        "value": "10+2",
+        "label_en": "10+2",
+        "label_hi": "12वीं"
+      },
+      {
+        "value": "Graduate",
+        "label_en": "Graduate",
+        "label_hi": "स्नातक"
+      },
+      {
+        "value": "Post-Graduate",
+        "label_en": "Post-Graduate",
+        "label_hi": "स्नातकोत्तर"
+      }
+    ],
+    "validation_rules": {
+      "required": false
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 468.5,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_dob",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "DATE",
+    "labels": {
+      "en": "Victim Date of Birth",
+      "hi": "पीड़ित जन्म तिथि"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "dob"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 469,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_age_year",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Victim Age (Years)",
+      "hi": "पीड़ित आयु (वर्ष)"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "age"
+    },
+    "validation_rules": {
+      "required": false,
+      "min": 0,
+      "max": 120
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 470,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_birth_year",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "NUMBER",
+    "labels": {
+      "en": "Victim Year of Birth",
+      "hi": "पीड़ित जन्म का वर्ष"
+    },
+    "section": "victim_personal_info",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "extra": true
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 472,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_house_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim House No.",
+      "hi": "पीड़ित मकान संख्या"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "house_no",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 473,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_street",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Street",
+      "hi": "पीड़ित गली / सड़क"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "street",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 474,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_colony",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Colony",
+      "hi": "पीड़ित कॉलोनी"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "colony",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 475,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_city_town_village",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Village / City / Town",
+      "hi": "पीड़ित गांव / शहर / नगर"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "city_town_village",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 476,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_tehsil_block_mandal",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Tehsil / Block / Mandal",
+      "hi": "पीड़ित तहसील / ब्लॉक / मंडल"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "tehsil_block_mandal",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 477,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_present_address",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXTAREA",
+    "labels": {
+      "en": "Victim Full Present Address",
+      "hi": "पीड़ित वर्तमान पता"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "full_address",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 478,
+    "full_width": true,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_country",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim Nationality",
+      "hi": "पीड़ित राष्ट्रीयता"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "country",
+      "role": "VICTIM"
+    },
+    "options": "$NATIONALITY",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 479,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_state",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim State",
+      "hi": "पीड़ित राज्य"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "state",
+      "role": "VICTIM"
+    },
+    "options": "$INDIA_STATES",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 480,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_district",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim District",
+      "hi": "पीड़ित जिला"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "district",
+      "role": "VICTIM"
+    },
+    "options": "$INDIA_DISTRICTS",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 481,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_police_station",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim Police Station",
+      "hi": "पीड़ित पुलिस स्टेशन (PS)"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "police_station",
+      "role": "VICTIM"
+    },
+    "options": [],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 482,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_pincode",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Pin Code",
+      "hi": "पीड़ित पिन कोड"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "present",
+      "column": "pincode",
+      "role": "VICTIM"
+    },
+    "validation_rules": {
+      "required": false,
+      "pattern": "pincode"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 483,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_same",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "BOOLEAN",
+    "labels": {
+      "en": "Is Permanent Address same as Present Address?",
+      "hi": "क्या स्थायी पता वर्तमान पते के समान है?"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "person",
+      "role": "VICTIM",
+      "column": "perm_same_as_present"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 483.9,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_house_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Permanent House No.",
+      "hi": "पीड़ित का स्थायी पता मकान संख्या"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "house_no",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 484,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_street",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Permanent Street",
+      "hi": "पीड़ित का स्थायी पता गली / सड़क"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "street",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 484.05,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_colony",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Permanent Colony",
+      "hi": "पीड़ित का स्थायी पता कॉलोनी"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "colony",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 484.1,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_city_town_village",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Permanent Village / City / Town",
+      "hi": "पीड़ित का स्थायी पता गांव / शहर / नगर"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "city_town_village",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 484.15,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_tehsil_block_mandal",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Permanent Tehsil / Block / Mandal",
+      "hi": "पीड़ित का स्थायी पता तहसील / ब्लॉक / मंडल"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "tehsil_block_mandal",
+      "role": "VICTIM"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 484.2,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_country",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim Permanent Nationality",
+      "hi": "पीड़ित का स्थायी पता राष्ट्रीयता"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "country",
+      "role": "VICTIM"
+    },
+    "options": "$NATIONALITY",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 484.25,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_state",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim Permanent State",
+      "hi": "पीड़ित का स्थायी पता राज्य"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "state",
+      "role": "VICTIM"
+    },
+    "options": "$INDIA_STATES",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 484.3,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_district",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim Permanent District",
+      "hi": "पीड़ित का स्थायी पता जिला"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "district",
+      "role": "VICTIM"
+    },
+    "options": "$INDIA_DISTRICTS",
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 484.35,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_police_station",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Victim Permanent Police Station",
+      "hi": "पीड़ित का स्थायी पता पुलिस स्टेशन (PS)"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "police_station",
+      "role": "VICTIM"
+    },
+    "options": [],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 484.4,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "victim_perm_pincode",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "Victim Permanent Pin Code",
+      "hi": "पीड़ित का स्थायी पता पिन कोड"
+    },
+    "section": "victim_address",
+    "storage": {
+      "entity": "location",
+      "slot": "permanent",
+      "column": "pincode",
+      "role": "VICTIM"
+    },
+    "validation_rules": {
+      "required": false,
+      "pattern": "pincode"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "repeater_entity": "PERSON_VICTIM",
+    "sort_order": 484.45,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "case_status",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Status",
+      "hi": "स्थिति"
+    },
+    "section": "investigation_officer",
+    "storage": {
+      "table": "fir_details",
+      "column": "case_status"
+    },
+    "options": [
+      {
+        "value": "CHARGE SHEET",
+        "label_en": "CHARGE SHEET",
+        "label_hi": "आरोप पत्र"
+      },
+      {
+        "value": "POLICE INVESTIGATION REPORT(PIR-JCL)",
+        "label_en": "POLICE INVESTIGATION REPORT(PIR-JCL)",
+        "label_hi": "पुलिस जांच रिपोर्ट (PIR-JCL)"
+      },
+      {
+        "value": "UNTRACED",
+        "label_en": "UNTRACED",
+        "label_hi": "अनट्रेस्ड"
+      },
+      {
+        "value": "PENDING",
+        "label_en": "PENDING",
+        "label_hi": "लंबित"
+      },
+      {
+        "value": "CANCELLATION",
+        "label_en": "CANCELLATION",
+        "label_hi": "रद्दीकरण"
+      },
+      {
+        "value": "QUASHED",
+        "label_en": "QUASHED",
+        "label_hi": "रद्द / क्वैश"
+      },
+      {
+        "value": "CLOSURE REPORT",
+        "label_en": "CLOSURE REPORT",
+        "label_hi": "क्लोजर रिपोर्ट"
+      },
+      {
+        "value": "RELEASED U/S 189 BNSS",
+        "label_en": "RELEASED U/S 189 BNSS",
+        "label_hi": "धारा 189 बीएनएसएस के तहत रिहा"
+      },
+      {
+        "value": "TRANSFER",
+        "label_en": "TRANSFER",
+        "label_hi": "स्थानांतरण"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 503,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "disposal_type",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Disposal Type",
+      "hi": "निपटान प्रकार"
+    },
+    "section": "investigation_details",
+    "storage": {
+      "table": "fir_details",
+      "column": "disposal_type"
+    },
+    "options": [
+      {
+        "value": "Challan",
+        "label_en": "Challan",
+        "label_hi": "चालान"
+      },
+      {
+        "value": "Untrace",
+        "label_en": "Untraced",
+        "label_hi": "अपता"
+      },
+      {
+        "value": "Cancel",
+        "label_en": "Cancelled",
+        "label_hi": "रद्द"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 504,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "rc_no",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "TEXT",
+    "labels": {
+      "en": "RC No.",
+      "hi": "आरसी संख्या"
+    },
+    "section": "investigation_details",
+    "storage": {
+      "table": "fir_details",
+      "column": "rc_no"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 505,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "transfer_to",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "RADIO",
+    "labels": {
+      "en": "Transfer To",
+      "hi": "स्थानांतरण करें"
+    },
+    "section": "investigation_officer",
+    "storage": {
+      "table": "fir_details",
+      "column": "transfer_to_type"
+    },
+    "options": [
+      {
+        "value": "PS",
+        "label_en": "PS",
+        "label_hi": "पुलिस स्टेशन"
+      },
+      {
+        "value": "Agency",
+        "label_en": "Agency",
+        "label_hi": "एजेंसी"
+      }
+    ],
+    "show_when": {
+      "field": "case_status",
+      "value": "TRANSFER"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 507,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "transferred_to_ps_id",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Transferred to Police Station",
+      "hi": "स्थानांतरित पुलिस स्टेशन"
+    },
+    "section": "investigation_officer",
+    "options_source": "police-stations",
+    "storage": {
+      "table": "fir_details",
+      "column": "transferred_to_ps_id"
+    },
+    "show_when": {
+      "field": "transfer_to",
+      "value": "PS"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 508,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "transferred_to_agency_id",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "SELECT",
+    "labels": {
+      "en": "Transferred to Agency",
+      "hi": "स्थानांतरित एजेंसी"
+    },
+    "section": "investigation_officer",
+    "options_source": "agencies",
+    "storage": {
+      "table": "fir_details",
+      "column": "transferred_to_agency_id"
+    },
+    "show_when": {
+      "field": "transfer_to",
+      "value": "Agency"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 509,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "date_of_transfer",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "DATE",
+    "labels": {
+      "en": "Date of Transfer",
+      "hi": "स्थानांतरण की तिथि"
+    },
+    "section": "investigation_officer",
+    "storage": {
+      "table": "fir_details",
+      "column": "date_of_transfer"
+    },
+    "show_when": {
+      "field": "case_status",
+      "value": "TRANSFER"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 510,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "work_out",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "RADIO",
+    "labels": {
+      "en": "WorkOut",
+      "hi": "वर्कआउट"
+    },
+    "section": "investigation_officer",
+    "storage": {
+      "table": "fir_details",
+      "column": "is_worked_out"
+    },
+    "options": [
+      {
+        "value": "Yes",
+        "label_en": "Yes",
+        "label_hi": "हाँ"
+      },
+      {
+        "value": "No",
+        "label_en": "No",
+        "label_hi": "नहीं"
+      }
+    ],
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 508,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "work_out_date",
+    "record_types": [
+      "CASE"
+    ],
+    "field_type": "DATE",
+    "labels": {
+      "en": "WorkOut Date",
+      "hi": "वर्कआउट तिथि"
+    },
+    "section": "investigation_officer",
+    "storage": {
+      "table": "fir_details",
+      "column": "worked_out_date"
+    },
+    "validation_rules": {
+      "required": true
+    },
+    "show_when": {
+      "field": "work_out",
+      "value": "Yes"
+    },
+    "visible_to_levels": [
+      "PS",
+      "DISTRICT",
+      "HQ"
+    ],
+    "editable_by_levels": [
+      "PS"
+    ],
+    "introduced_at_level": "PS",
+    "sort_order": 509,
+    "full_width": false,
+    "readonly": false,
+    "is_active": true,
+    "scope_level": "global"
+  },
+  {
+    "field_key": "sent_to_court_date",
+    "label_en": "Date sent to court",
+    "label_hi": "न्यायालय भेजने की तिथि",
+    "field_type": "date",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "sent_to_court_date"
+    },
+    "show_when": {
+      "field": "case_status",
+      "value_in": [
+        "CHARGE SHEET",
+        "POLICE INVESTIGATION REPORT(PIR-JCL)"
+      ]
+    },
+    "editable_by_roles": [
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "court_details",
+    "is_active": true
+  },
+  {
+    "field_key": "court_case_no",
+    "label_en": "Court case number",
+    "label_hi": "न्यायालय केस संख्या",
+    "field_type": "text",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "court_case_no"
+    },
+    "show_when": {
+      "field": "sent_to_court_date",
+      "not_null": true
+    },
+    "editable_by_roles": [
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "court_details",
+    "is_active": true
+  },
+  {
+    "field_key": "court_name",
+    "label_en": "Court name",
+    "label_hi": "न्यायालय का नाम",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "court_name"
+    },
+    "options": [
+      {
+        "value": "MM",
+        "label_en": "Metropolitan Magistrate (MM)"
+      },
+      {
+        "value": "CMM",
+        "label_en": "Chief Metropolitan Magistrate (CMM)"
+      },
+      {
+        "value": "ACMM",
+        "label_en": "Addl. Chief Metropolitan Magistrate (ACMM)"
+      },
+      {
+        "value": "SESSION",
+        "label_en": "Sessions Court"
+      },
+      {
+        "value": "HC",
+        "label_en": "High Court"
+      },
+      {
+        "value": "OTHER",
+        "label_en": "Other"
+      }
+    ],
+    "show_when": {
+      "field": "sent_to_court_date",
+      "not_null": true
+    },
+    "editable_by_roles": [
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "court_details",
+    "is_active": true
+  },
+  {
+    "field_key": "court_disposal_type",
+    "label_en": "Court disposal",
+    "label_hi": "न्यायालय निपटान",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "court_disposal_type"
+    },
+    "options": [
+      {
+        "value": "CONVICTED",
+        "label_en": "Convicted"
+      },
+      {
+        "value": "ACQUITTED",
+        "label_en": "Acquitted"
+      },
+      {
+        "value": "COMPOUNDED",
+        "label_en": "Compounded"
+      },
+      {
+        "value": "DISCHARGED",
+        "label_en": "Discharged"
+      },
+      {
+        "value": "PENDING_TRIAL",
+        "label_en": "Pending trial"
+      }
+    ],
+    "show_when": {
+      "field": "sent_to_court_date",
+      "not_null": true
+    },
+    "editable_by_roles": [
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "court_details",
+    "is_active": true
+  },
+  {
+    "field_key": "court_disposal_date",
+    "label_en": "Date of court disposal",
+    "label_hi": "न्यायालय निपटान तिथि",
+    "field_type": "date",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "court_disposal_date"
+    },
+    "show_when": {
+      "field": "court_disposal_type",
+      "not_in": [
+        "PENDING_TRIAL",
+        null
+      ]
+    },
+    "editable_by_roles": [
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "court_details",
+    "is_active": true
+  },
+  {
+    "field_key": "registered_on_direction",
+    "label_en": "Registered on Direction",
+    "label_hi": "निर्देश पर दर्ज",
+    "field_type": "boolean",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "registered_on_direction"
+    },
+    "editable_by_roles": [
+      "HC",
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "general",
+    "is_active": true
+  },
+  {
+    "field_key": "direction_authority",
+    "label_en": "Direction Authority",
+    "label_hi": "निर्देश प्राधिकारी",
+    "field_type": "text",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "direction_authority"
+    },
+    "show_when": {
+      "field": "registered_on_direction",
+      "equals": true
+    },
+    "editable_by_roles": [
+      "HC",
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "general",
+    "is_active": true
+  },
+  {
+    "field_key": "cheating_amount",
+    "label_en": "Cheating / Fraud Amount (Rs.)",
+    "label_hi": "धोखाधड़ी राशि",
+    "field_type": "number",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "cheating_amount"
+    },
+    "editable_by_roles": [
+      "HC",
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "property",
+    "is_active": true
+  },
+  {
+    "field_key": "modus_operandi",
+    "label_en": "Modus Operandi",
+    "label_hi": "अपराध का तरीका (MO)",
+    "field_type": "text",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "modus_operandi"
+    },
+    "editable_by_roles": [
+      "HC",
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "general",
+    "is_active": true
+  },
+  {
+    "field_key": "burglary_mo_cd",
+    "label_en": "Burglary Means of Entry",
+    "label_hi": "सेंधमारी प्रवेश विधि",
+    "field_type": "select",
+    "record_types": [
+      "CASE"
+    ],
+    "storage": {
+      "table": "fir_details",
+      "column": "burglary_mo_cd"
+    },
+    "editable_by_roles": [
+      "HC",
+      "SHO",
+      "DISTRICT_OFFICER",
+      "SYSTEM_ADMIN"
+    ],
+    "section": "general",
+    "is_active": true
+  }
+]

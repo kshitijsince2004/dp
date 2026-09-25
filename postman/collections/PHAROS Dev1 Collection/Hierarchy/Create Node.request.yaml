@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/hierarchy/nodes"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+      "name_en": "PS New Station",
+      "name_hi": "पीएस नया स्टेशन",
+      "node_type": "PS",
+      "parent_id": "SUBDIV_ASHOK_VIHAR",
+      "code": "PS_NEW"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 3000

@@ -1,0 +1,489 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-07-16T16:34:04.274253+00:00",
+  "tool": "extract_samples.py",
+  "tool_version": "1.0.0",
+  "inputs": {
+    "input_dir": "/home/ashmit/Projects/Crime-Diaries/sample files"
+  },
+  "corpus_version": 1,
+  "entries": [
+    {
+      "id": "2da9cea16527f908",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation (1)(1).xlsx",
+      "sha256": "2da9cea16527f908ee92d5983d1a72a693179cbe1f4ab845cd5ba9cfc1b956d4",
+      "record_type": "ARREST",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "3cbd5af2491a9301",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation (2).xlsx",
+      "sha256": "3cbd5af2491a930132dbd81d07624713dda772a8cfeedb9dfcbe73b811a1e975",
+      "record_type": "ARREST",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "6bfc20f2a86ad931",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation ...xlsx",
+      "sha256": "6bfc20f2a86ad931f32281f8843ce6a783dfd1a5c2af5c79218a961fbc2e3f76",
+      "record_type": "ARREST",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "8ec2a0efff3aaab6",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation PS BK Road.xlsx",
+      "sha256": "8ec2a0efff3aaab68c828e916f414353a62d58697dedd34c2d9118c89216f561",
+      "record_type": "ARREST",
+      "ps_hint": "PS BK Road",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "065281728b122607",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation PS MAURICE NAGAR.xlsx",
+      "sha256": "065281728b1226075de082b470272b091ccdbc4394ae6f9d3c1082d503c1273e",
+      "record_type": "ARREST",
+      "ps_hint": "PS MAURICE NAGAR",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "5c85cf01ff993d23",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation PS North Avenue.xlsx",
+      "sha256": "5c85cf01ff993d2336d48d3ff23ddaffdba40ca727a134feea03f693cdbd26d5",
+      "record_type": "ARREST",
+      "ps_hint": "PS North Avenue",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "4977edae26ef3382",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation T.Road.xlsx",
+      "sha256": "4977edae26ef33829b7ca0439a20f3bd6361515874b86a7213612b3f45adb6d9",
+      "record_type": "ARREST",
+      "ps_hint": "T.Road",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "d09d026a516cefeb",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation(1).xlsx",
+      "sha256": "d09d026a516cefebc17de64925cd5d41c0da3c25b50d2a339f40f8b1dbddb11f",
+      "record_type": "ARREST",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "e30a53bdade4902f",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation(2).xlsx",
+      "sha256": "e30a53bdade4902fde159497c721e1217c77031f626bc961fc756821c05f3a57",
+      "record_type": "ARREST",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "cef460100f5f0a21",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation(3).xlsx",
+      "sha256": "cef460100f5f0a216901ec977aeec3339f1e4c6868a2f11a0c05d3df695d1ab2",
+      "record_type": "ARREST",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "2a80eec38075505c",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation(4).xlsx",
+      "sha256": "2a80eec38075505c8e644618d46450784914be291c2afeee991fce39d28e0700",
+      "record_type": "ARREST",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "64ef7109b0ca896b",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation(5).xlsx",
+      "sha256": "64ef7109b0ca896b53baa1355e8f94f9ea5be32d23a85bc589c77f4fd404c9c8",
+      "record_type": "ARREST",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "9880c570741fc211",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation(6).xlsx",
+      "sha256": "9880c570741fc211ae77f5b5f7bbf6a169f6e4c11ead079f7aa4f817ef8b3816",
+      "record_type": "ARREST",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "1a163ac05d8eaff5",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/ARREST_Import_Template with validation.xlsx",
+      "sha256": "1a163ac05d8eaff547416b886bba69d9dd595decf8585d066aa55093bd828d64",
+      "record_type": "ARREST",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "47664b9c203d1178",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation (1) (1)(1).xlsx",
+      "sha256": "47664b9c203d11787110b5cec3fb727ca73b2eaa5c9c8c238e014976fa7692c5",
+      "record_type": "CASE",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "90b4fc459f45735e",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation (1)(1).xlsx",
+      "sha256": "90b4fc459f45735ea6e7ba04d8eb4cc2aee063328e90a4fb27cf2052651342c9",
+      "record_type": "CASE",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "e5474d5132c75160",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation (1)(2).xlsx",
+      "sha256": "e5474d5132c75160daf488e35602d73ab7f0c447c36a79e5a72cbf2a220638bf",
+      "record_type": "CASE",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "736efd42572757fb",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation (1)(3).xlsx",
+      "sha256": "736efd42572757fb406be1ec788671ca7dd1b21b2122969282a71512db39eed0",
+      "record_type": "CASE",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "09b1583b878d5b94",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation (1).xlsx",
+      "sha256": "09b1583b878d5b94e547df0e190c3888cb0d662b3a5ba2cced095a33267893d5",
+      "record_type": "CASE",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "cb376596d2eed6f6",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation (4).xlsx",
+      "sha256": "cb376596d2eed6f665d86601d310399f1d097f0bb4deff968fd493e44f7c9a99",
+      "record_type": "CASE",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "f290d7fc39e69ec5",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation C2.xlsx",
+      "sha256": "f290d7fc39e69ec5c5ddccb6b5ba4be8a9b75aaced504864c6eb75cd3ef34bfa",
+      "record_type": "CASE",
+      "ps_hint": "C2",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "79f21aa049b5db71",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation PS North Avenue.xlsx",
+      "sha256": "79f21aa049b5db71c2d0dfe9af5b4143aec598b448b49f25fe7fa38803f0c4cf",
+      "record_type": "CASE",
+      "ps_hint": "PS North Avenue",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "44220f90e9982275",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation T.Road.xlsx",
+      "sha256": "44220f90e9982275254bd1a5dd656ecbf5a279401d3e906736c123690c5743e5",
+      "record_type": "CASE",
+      "ps_hint": "T.Road",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "7d3c5da29452fc7a",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation(2).xlsx",
+      "sha256": "7d3c5da29452fc7a2a29e818e292b3a4f7f44cc67bffb36bcfe1ea47b7e08aa3",
+      "record_type": "CASE",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "e7bdb753b197f071",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation(3).xlsx",
+      "sha256": "e7bdb753b197f0710556292a45ee23fac505872cd57b57d40da2258325821186",
+      "record_type": "CASE",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "40225172390a64d4",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation(4).xlsx",
+      "sha256": "40225172390a64d47470d9ec4d640b818e38cb3c22ed1170b7fbbdab4d032ee8",
+      "record_type": "CASE",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "85a1fbf762686c6b",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/CASE_Import_Template with validation(5).xlsx",
+      "sha256": "85a1fbf762686c6bdc88d474fb254f089493503a34ac20157ff5cb3ef4bf97b9",
+      "record_type": "CASE",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "ef838ec348679bb2",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template (1).xlsx",
+      "sha256": "ef838ec348679bb246f163e9eda9ac8af553097be38c3e9ca82656aae99c1b82",
+      "record_type": "MISSING",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "4ecca16eb84b5ace",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template (2).xlsx",
+      "sha256": "4ecca16eb84b5acefb73c5fda4d519abea5ae4ff2da6af904df4b732f0a262d6",
+      "record_type": "MISSING",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "6ec72406d4f0f06e",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template PS BK Road.xlsx",
+      "sha256": "6ec72406d4f0f06eecea4640f17d1d6aa2b70ced11cc01864c63603030d08a3b",
+      "record_type": "MISSING",
+      "ps_hint": "PS BK Road",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "8bcca85586e09e3d",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template PS MAURICE NAGAR.xlsx",
+      "sha256": "8bcca85586e09e3d78ab77ec3835cb20d133f145492da407c29ab1873592a477",
+      "record_type": "MISSING",
+      "ps_hint": "PS MAURICE NAGAR",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "8c216b4b9f05ad89",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template PS North Avenue.xlsx",
+      "sha256": "8c216b4b9f05ad89afd54d81a4caabe125b425bc5817a2890daa743aa49240fc",
+      "record_type": "MISSING",
+      "ps_hint": "PS North Avenue",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "584dc8160b012b54",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template(1).xlsx",
+      "sha256": "584dc8160b012b540697abf2f49ffc8f2e3c88cfaac3f6290eb6007b50f467a2",
+      "record_type": "MISSING",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "9850855fbebead56",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template(2).xlsx",
+      "sha256": "9850855fbebead56f93c02d2abfc47c0509b8a4cd17b7f4d190f09b970ae89a0",
+      "record_type": "MISSING",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "953d3409dfca6191",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template(3).xlsx",
+      "sha256": "953d3409dfca61917f2b863b15a4edc5518516580e5182155b799726b0f04d2c",
+      "record_type": "MISSING",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "b24d824bdb505a75",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template(4).xlsx",
+      "sha256": "b24d824bdb505a75169d7586e5368668f1627fe0327832d792578c2b1eced0ef",
+      "record_type": "MISSING",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "e0b1b30f1210d196",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template(5).xlsx",
+      "sha256": "e0b1b30f1210d1964277fd25ad934930fae8d08df39b9cbce8209e61d1ae426c",
+      "record_type": "MISSING",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "2d58a75fe7460bd2",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template(6).xlsx",
+      "sha256": "2d58a75fe7460bd280750c4d46fc671ff1605c25838cca563fcd9ad249d0c3fc",
+      "record_type": "MISSING",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "beefe6eb92f5611e",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template(7).xlsx",
+      "sha256": "beefe6eb92f5611e0b02ca38726cf73bbb22da58040c715b10b6918f3b254a6d",
+      "record_type": "MISSING",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "43fee773a1085802",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/MISSING_Import_Template.xlsx",
+      "sha256": "43fee773a1085802619f64ec49fadaefa1c06d96e7d6a20b908c3fa10a1ac677",
+      "record_type": "MISSING",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "8d0a8fbc0bab1572",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template (1).xlsx",
+      "sha256": "8d0a8fbc0bab157285b9b8185b11f9b222507aa54b34fffbcd6a023f5e473945",
+      "record_type": "UIDB",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "acc3802a2f133eb9",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template (2).xlsx",
+      "sha256": "acc3802a2f133eb9b2b689fd9bd37de579813f7b9ce5d0e331c7d7d1dc2d7835",
+      "record_type": "UIDB",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "e0c0f6f734e25b95",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template PS BK Road.xlsx",
+      "sha256": "e0c0f6f734e25b9533a82cfd21c4d5ab1041087e55d1456a7ee6dd3a2a786c4e",
+      "record_type": "UIDB",
+      "ps_hint": "PS BK Road",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "3968ce3c3e22512e",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template PS MAURICE NAGAR.xlsx",
+      "sha256": "3968ce3c3e22512e711962ae6e5308688a60126acba73dc1d1b9675c9a95b365",
+      "record_type": "UIDB",
+      "ps_hint": "PS MAURICE NAGAR",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "50b2cba4ca29cf8b",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template PS North Avenue..xlsx",
+      "sha256": "50b2cba4ca29cf8b4157f0f43f8456069e918c2b1e9996446ac815093b2f18c5",
+      "record_type": "UIDB",
+      "ps_hint": "PS North Avenue",
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "03c71bbb75bcec39",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template(1).xlsx",
+      "sha256": "03c71bbb75bcec3957b0325eedc1b76f5aaa6d926c3d0136f32056118ee25af1",
+      "record_type": "UIDB",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "9b2924fff33d14c5",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template(2).xlsx",
+      "sha256": "9b2924fff33d14c5acdc9e58a27d7fafb8904aa6cc534ce2e71caa11fc39fb7d",
+      "record_type": "UIDB",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "94e4ca4c90f084b4",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template(3).xlsx",
+      "sha256": "94e4ca4c90f084b401dca02a64c788746be4cf26a33960b347dcc5d2702ebcc3",
+      "record_type": "UIDB",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "dc37bb6155ff3728",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template(4).xlsx",
+      "sha256": "dc37bb6155ff37283464c7892c32985e70a712153d83475c2cce947441684c5f",
+      "record_type": "UIDB",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "8df1e9e3004afe16",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template(5).xlsx",
+      "sha256": "8df1e9e3004afe16be09c9f5f83c131f0dc62d7b2ba19dd9148be5839e1dfd1e",
+      "record_type": "UIDB",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "30301591cf29f6cd",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template(6).xlsx",
+      "sha256": "30301591cf29f6cd24660cbab80cbc5efde194a1fbbf96412cef0e7b2d35734a",
+      "record_type": "UIDB",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "3f0ef8808515e897",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template(7).xlsx",
+      "sha256": "3f0ef8808515e89735ff847eeb3bb3639bb83788feb5152a551ee5e465371bb0",
+      "record_type": "UIDB",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    },
+    {
+      "id": "fcbb546bb5484a53",
+      "path": "/home/ashmit/Projects/Crime-Diaries/sample files/UIDB_Import_Template.xlsx",
+      "sha256": "fcbb546bb5484a534a1429716c977a379561606ef37da2872fb5a646008143f4",
+      "record_type": "UIDB",
+      "ps_hint": null,
+      "added_at": "2026-07-16T16:34:04.274253+00:00",
+      "source": "operator-pilot-2026-07"
+    }
+  ]
+}

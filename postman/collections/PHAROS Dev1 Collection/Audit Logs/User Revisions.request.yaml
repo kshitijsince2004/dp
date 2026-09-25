@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/audit/user/:userId?page=1&limit=20"
+method: GET
+queryParams:
+  page: "1"
+  limit: "20"
+pathVariables:
+  userId: U_HC001
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 2000

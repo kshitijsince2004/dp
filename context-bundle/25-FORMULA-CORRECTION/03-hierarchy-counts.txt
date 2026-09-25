@@ -1,0 +1,324 @@
+=== HIERARCHY NODE TYPES ===
+[
+  {
+    "node_type": "DISTRICT",
+    "count": "23"
+  },
+  {
+    "node_type": "HQ",
+    "count": "1"
+  },
+  {
+    "node_type": "PS",
+    "count": "225"
+  },
+  {
+    "node_type": "RANGE",
+    "count": "6"
+  },
+  {
+    "node_type": "SUB_DIV",
+    "count": "92"
+  },
+  {
+    "node_type": "ZONE",
+    "count": "2"
+  }
+]
+
+=== DISTRICTS (23) ===
+[
+  {
+    "name": "Central District",
+    "code": "DIST_CD",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Crime Branch",
+    "code": "DIST_CRIMEBRANCH",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Dwarka District",
+    "code": "DIST_DW",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "East District",
+    "code": "DIST_ED",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Eow",
+    "code": "DIST_EOW",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Igi Airport",
+    "code": "DIST_IGIAIRPORT",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Metro",
+    "code": "DIST_METRO",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "New Delhi District",
+    "code": "DIST_NDD",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "North District",
+    "code": "DIST_ND",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "North East District",
+    "code": "DIST_NED",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "North West District",
+    "code": "DIST_NWD",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Outer District",
+    "code": "DIST_OD",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Outer North District",
+    "code": "DIST_OND",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Railways",
+    "code": "DIST_RAILWAYS",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Rohini District",
+    "code": "DIST_RND",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Shahdara District",
+    "code": "DIST_SHD",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "South District",
+    "code": "DIST_SD",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "South East District",
+    "code": "DIST_SED",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "South West District",
+    "code": "DIST_SWD",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Special Cell",
+    "code": "DIST_SPECIALCELL",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Special Police Unit For Women & Children",
+    "code": "DIST_SPUWAC",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "Vigilance",
+    "code": "DIST_VIGILANCE",
+    "abbr": null,
+    "ord": null
+  },
+  {
+    "name": "West District",
+    "code": "DIST_WD",
+    "abbr": null,
+    "ord": null
+  }
+]
+
+=== POLICE STATIONS (225) ===
+[
+  {
+    "name": "PS Adarsh Nagar",
+    "code": "PS_NWD_ADARSHNAGAR",
+    "abbr": null
+  },
+  {
+    "name": "PS Ali Pur",
+    "code": "PS_OND_ALIPUR",
+    "abbr": null
+  },
+  {
+    "name": "PS Aman Vihar",
+    "code": "PS_RND_AMANVIHAR",
+    "abbr": null
+  },
+  {
+    "name": "PS Amar Colony",
+    "code": "PS_SED_AMARCOLONY",
+    "abbr": null
+  },
+  {
+    "name": "PS Ambedkar Nagar",
+    "code": "PS_SD_AMBEDKARNAGAR",
+    "abbr": null
+  },
+  {
+    "name": "PS Anand Parbat",
+    "code": "PS_CD_ANANDPARBAT",
+    "abbr": null
+  },
+  {
+    "name": "PS Anand Vihar",
+    "code": "PS_8957_ANANDVIHAR",
+    "abbr": null
+  },
+  {
+    "name": "PS Anand Vihar",
+    "code": "PS_SHD_ANANDVIHAR",
+    "abbr": null
+  },
+  {
+    "name": "PS Ashok Vihar",
+    "code": "PS_NWD_ASHOKVIHAR",
+    "abbr": null
+  },
+  {
+    "name": "PS Baba Haridas Nagar",
+    "code": "PS_DW_BABAHARIDASNAGAR",
+    "abbr": null
+  },
+  {
+    "name": "PS Badarpur",
+    "code": "PS_SED_BADARPUR",
+    "abbr": null
+  },
+  {
+    "name": "PS Bara Hindu Rao",
+    "code": "PS_ND_BARAHINDURAO",
+    "abbr": null
+  },
+  {
+    "name": "PS Barakhamba Road",
+    "code": "PS_NDD_BARAKHAMBAROAD",
+    "abbr": null
+  },
+  {
+    "name": "PS Bawana",
+    "code": "PS_OND_BAWANA",
+    "abbr": null
+  },
+  {
+    "name": "PS Begum Pur",
+    "code": "PS_RND_BEGUMPUR",
+    "abbr": null
+  },
+  {
+    "name": "PS Bhajan Pura",
+    "code": "PS_NED_BHAJANPURA",
+    "abbr": null
+  },
+  {
+    "name": "PS Bhalswa Dairy",
+    "code": "PS_OND_BHALSWADAIRY",
+    "abbr": null
+  },
+  {
+    "name": "PS Bharat Nagar",
+    "code": "PS_NWD_BHARATNAGAR",
+    "abbr": null
+  },
+  {
+    "name": "PS Binda Pur",
+    "code": "PS_DW_BINDAPUR",
+    "abbr": null
+  },
+  {
+    "name": "PS BudhVihar",
+    "code": "PS_RND_BUDHVIHAR",
+    "abbr": null
+  },
+  {
+    "name": "PS Burari",
+    "code": "PS_ND_BURARI",
+    "abbr": null
+  },
+  {
+    "name": "PS Chandni Mahal",
+    "code": "PS_CD_CHANDNIMAHAL",
+    "abbr": null
+  },
+  {
+    "name": "PS Chankaya Puri",
+    "code": "PS_NDD_CHANKAYAPURI",
+    "abbr": null
+  },
+  {
+    "name": "PS Chhawla",
+    "code": "PS_DW_CHHAWLA",
+    "abbr": null
+  },
+  {
+    "name": "PS Chitranjan Park",
+    "code": "PS_SD_CHITRANJANPARK",
+    "abbr": null
+  },
+  {
+    "name": "PS Civil Lines",
+    "code": "PS_ND_CIVILLINES",
+    "abbr": null
+  },
+  {
+    "name": "PS Connaught Place",
+    "code": "PS_NDD_CONNAUGHTPLACE",
+    "abbr": null
+  },
+  {
+    "name": "PS Crime (Women) Cell Nanak Pura",
+    "code": "PS_8953_CRIMEWOMENCELLNANAKP",
+    "abbr": null
+  },
+  {
+    "name": "PS Crime Branch",
+    "code": "PS_8175_CRIMEBRANCH",
+    "abbr": null
+  },
+  {
+    "name": "PS Cyber Crime",
+    "code": "PS_NED_PSCYBERCRIME",
+    "abbr": null
+  }
+]
+

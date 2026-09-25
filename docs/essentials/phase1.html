@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PHAROS — Prototype Sprint Plan</title>
+<style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.6;color:#1e293b;background:#f8fafc}
+.page{display:flex;min-height:100vh}
+.sidebar{width:210px;flex-shrink:0;background:#1e293b;position:sticky;top:0;height:100vh;overflow-y:auto;padding:1.25rem 0}
+.sidebar-logo{padding:0 1rem 1rem;border-bottom:1px solid #334155;margin-bottom:1rem}
+.sidebar-logo .n{font-size:1rem;font-weight:700;color:#f1f5f9}.sidebar-logo .s{font-size:0.65rem;color:#64748b;margin-top:2px}
+.nav-group{margin-bottom:0.75rem}.nav-label{font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#475569;padding:0 1rem;margin-bottom:0.2rem}
+.sidebar a{display:block;padding:0.28rem 1rem;font-size:0.78rem;color:#94a3b8;text-decoration:none;border-left:2px solid transparent;transition:all 0.1s}
+.sidebar a:hover{color:#f1f5f9;border-left-color:#3b82f6}
+.main{flex:1;padding:2rem 3rem;max-width:1120px}
+section{margin-bottom:2.75rem;scroll-margin-top:1.5rem}
+h2{font-size:1.05rem;font-weight:700;color:#0f172a;border-bottom:2px solid #e2e8f0;padding-bottom:0.45rem;margin-bottom:1.1rem;display:flex;align-items:center;gap:0.5rem}
+h3{font-size:0.88rem;font-weight:700;color:#1e293b;margin:1rem 0 0.4rem}
+h4{font-size:0.8rem;font-weight:700;color:#334155;margin:0.6rem 0 0.25rem}
+p{color:#475569;font-size:0.85rem;margin-bottom:0.7rem}
+.sn{font-size:0.65rem;font-weight:700;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;padding:0.12rem 0.4rem;border-radius:3px;font-family:monospace}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%);border-radius:10px;padding:1.75rem 2.25rem;margin-bottom:2.5rem;color:white}
+.hero h1{color:white;font-size:1.6rem;font-weight:800;margin-bottom:0.2rem}
+.hero .sub{color:#93c5fd;font-size:0.85rem;margin-bottom:1.25rem}
+.hero-grid{display:flex;flex-wrap:wrap;gap:0.6rem}
+.hero-badge{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:5px;padding:0.35rem 0.65rem;font-size:0.75rem;color:#e2e8f0}
+.hero-badge strong{color:white;display:block;font-size:0.8rem}
+
+/* Constraints */
+.constraints{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0.65rem;margin:0.75rem 0}
+.con{background:white;border:1px solid #e2e8f0;border-left:4px solid #dc2626;border-radius:6px;padding:0.75rem 1rem}
+.con .lbl{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#dc2626;margin-bottom:0.2rem}
+.con .val{font-size:0.8rem;color:#374151}
+
+/* Stack */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:0.6rem;margin:0.75rem 0}
+.si{background:white;border:1px solid #e2e8f0;border-radius:6px;padding:0.75rem}
+.si-layer{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:0.2rem}
+.si-choice{font-size:0.88rem;font-weight:700;color:#0f172a}
+.si-detail{font-size:0.73rem;color:#64748b;margin-top:0.1rem}
+
+/* Timeline */
+.tl{display:grid;grid-template-columns:75px repeat(4,1fr);border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;font-size:0.76rem}
+.tl-h{background:#1e293b;color:#f1f5f9;padding:0.5rem 0.6rem;font-weight:700;font-size:0.72rem;text-align:center}
+.tl-dl{background:#0f172a;color:#60a5fa;padding:0.5rem 0.6rem;font-weight:700;font-size:0.72rem;text-align:center;border-right:1px solid #334155}
+.tl-dev{padding:0.4rem 0.6rem;font-weight:700;font-size:0.7rem;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;display:flex;align-items:flex-start}
+.tl-c{padding:0.4rem 0.6rem;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;font-size:0.72rem;color:#374151;vertical-align:top}
+.tl-c:last-child{border-right:none}
+.tl-i{padding-left:0.6rem;position:relative;margin-bottom:0.15rem}
+.tl-i::before{content:'·';position:absolute;left:0;color:#94a3b8}
+.tl-i.crit{color:#dc2626;font-weight:600}.tl-i.crit::before{content:'★';font-size:0.6rem}
+
+/* Dev packages */
+.dp{border:1px solid var(--db);border-radius:8px;overflow:hidden;margin-bottom:1.75rem}
+.dp-head{background:var(--dl);border-bottom:1px solid var(--db);padding:0.75rem 1.1rem;display:flex;align-items:center;gap:0.65rem}
+.dp-av{width:30px;height:30px;border-radius:50%;background:var(--dc);color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+.dp-name{font-size:0.92rem;font-weight:700;color:var(--dc)}
+.dp-role{font-size:0.72rem;color:#64748b}
+.dp-body{padding:1.1rem}
+
+/* Task list */
+.tsk{list-style:none;margin:0.4rem 0 0.9rem}
+.tsk li{display:flex;gap:0.5rem;padding:0.28rem 0;border-bottom:1px solid #f8fafc;font-size:0.8rem;color:#374151;align-items:flex-start}
+.tsk li:last-child{border-bottom:none}
+.tsk li::before{content:'○';color:#cbd5e1;flex-shrink:0;margin-top:1px;font-size:0.75rem}
+.tsk li.crit::before{content:'★';color:#dc2626;font-size:0.65rem}
+.tsk li b{color:#0f172a}
+
+/* Method badges */
+.m{display:inline-block;padding:0.12rem 0.4rem;border-radius:3px;font-size:0.62rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap}
+.mg{background:#dbeafe;color:#1d4ed8}
+.mp{background:#dcfce7;color:#15803d}
+.mu{background:#fff7ed;color:#c2410c}
+.mpa{background:#fef9c3;color:#854d0e}
+.md{background:#fee2e2;color:#b91c1c}
+
+/* Owner badges */
+.ow{display:inline-block;padding:0.1rem 0.38rem;border-radius:3px;font-size:0.62rem;font-weight:700}
+.o1{background:#eff6ff;color:#1d4ed8}
+.o2{background:#ecfdf5;color:#047857}
+.o3{background:#f5f3ff;color:#6d28d9}
+
+/* API Table */
+.at-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:7px;margin:0.6rem 0 1.25rem}
+.at{width:100%;border-collapse:collapse;font-size:0.76rem;min-width:700px}
+.at thead th{background:#f8fafc;padding:0.45rem 0.65rem;border-bottom:1px solid #e2e8f0;text-align:left;font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;white-space:nowrap}
+.at tbody td{padding:0.38rem 0.65rem;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#374151}
+.at tbody tr:last-child td{border-bottom:none}
+.at tbody tr:hover td{background:#fafafa}
+.ep{font-family:'Courier New',monospace;font-size:0.76rem;color:#0f172a}
+.bd{font-family:'Courier New',monospace;font-size:0.72rem;color:#475569}
+
+/* Code blocks */
+pre{background:#0f172a;border-radius:7px;padding:0.9rem 1.1rem;overflow-x:auto;font-family:'Courier New',monospace;font-size:0.75rem;line-height:1.65;color:#94a3b8;margin:0.6rem 0 1.1rem}
+pre .c{color:#475569}pre .k{color:#93c5fd;font-weight:600}pre .s{color:#6ee7b7}
+code{font-family:'Courier New',monospace;font-size:0.82em;background:#f1f5f9;border:1px solid #e2e8f0;padding:0.1em 0.35em;border-radius:3px;color:#0f172a}
+
+/* Notes */
+.note{background:#eff6ff;border-left:3px solid #3b82f6;border-radius:0 5px 5px 0;padding:0.65rem 0.9rem;font-size:0.8rem;color:#1e3a8a;margin:0.6rem 0 1rem}
+.note.warn{background:#fffbeb;border-left-color:#f59e0b;color:#78350f}
+.note.danger{background:#fef2f2;border-left-color:#ef4444;color:#7f1d1d}
+.note.ok{background:#f0fdf4;border-left-color:#22c55e;color:#14532d}
+
+/* Git steps */
+.gs{display:flex;gap:0.75rem;padding:0.7rem 0;border-bottom:1px solid #f1f5f9;font-size:0.8rem;color:#374151}
+.gs:last-child{border-bottom:none}
+.gn{width:22px;height:22px;border-radius:50%;background:#1e293b;color:white;font-size:0.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.gs b{color:#0f172a;display:block;margin-bottom:0.15rem}
+
+/* Screen cards */
+.sc{background:white;border:1px solid #e2e8f0;border-radius:7px;margin-bottom:0.85rem;overflow:hidden}
+.sc-head{background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap}
+.sc-route{font-family:'Courier New',monospace;font-size:0.8rem;color:#6d28d9;font-weight:600}
+.sc-name{font-weight:700;color:#0f172a;font-size:0.88rem}
+.sc-role{font-size:0.67rem;background:#f1f5f9;border:1px solid #e2e8f0;padding:0.1rem 0.38rem;border-radius:3px;color:#475569}
+.sc-body{padding:0.85rem 1rem;display:grid;grid-template-columns:1fr 1fr;gap:0.85rem}
+.sc-body.full{grid-template-columns:1fr}
+.sc-lbl{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:0.3rem}
+.sc-apis{list-style:none}.sc-apis li{font-size:0.73rem;color:#374151;margin-bottom:0.15rem;font-family:'Courier New',monospace}
+.sc-comps{list-style:none}.sc-comps li{font-size:0.76rem;color:#374151;margin-bottom:0.15rem}
+.sc-comps li::before{content:'→ ';color:#6d28d9}
+.sc-note{font-size:0.74rem;color:#64748b;line-height:1.5}
+
+/* Env box */
+.env-box{background:white;border:1px solid #e2e8f0;border-radius:7px;padding:0.85rem 1.1rem;margin-bottom:0.85rem}
+
+/* Event bus */
+.ev{background:white;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:0.65rem;overflow:hidden}
+.ev-name{background:#fef3c7;border-bottom:1px solid #fde68a;padding:0.35rem 0.75rem;font-family:'Courier New',monospace;font-size:0.8rem;font-weight:700;color:#78350f}
+.ev-meta{padding:0.5rem 0.75rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;font-size:0.74rem}
+.ev-lbl{font-size:0.62rem;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:0.06em}
+.ev-val{font-family:'Courier New',monospace;color:#374151;font-size:0.76rem}
+
+/* Checklist */
+.cl{list-style:none}.cl li{display:flex;gap:0.6rem;padding:0.32rem 0;font-size:0.8rem;color:#374151;border-bottom:1px solid #f8fafc}
+.cl li:last-child{border-bottom:none}
+.cl li::before{content:'☐';font-size:0.95rem;flex-shrink:0;color:#94a3b8}
+.cl li.cat{font-weight:700;color:#0f172a;margin-top:0.5rem}.cl li.cat::before{content:'▸';color:#3b82f6}
+
+@media(max-width:900px){.sidebar{display:none}.main{padding:1.5rem}.sc-body{grid-template-columns:1fr}}
+@media print{.sidebar{display:none}.main{padding:1rem}pre{background:#f8fafc;color:#374151}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><div class="n">PHAROS</div><div class="s">P1 Sprint Plan · 4 Days</div></div>
+  <nav>
+    <div class="nav-group"><div class="nav-label">Sprint</div>
+      <a href="#constraints">Non-negotiables</a>
+      <a href="#stack">Tech stack</a>
+      <a href="#timeline">4-day timeline</a>
+      <a href="#git">Git workflow</a>
+      <a href="#env">Environment setup</a>
+    </div>
+    <div class="nav-group"><div class="nav-label" style="color:#93c5fd">Dev 1 — Auth &amp; Security</div>
+      <a href="#dev1">Work package</a>
+    </div>
+    <div class="nav-group"><div class="nav-label" style="color:#6ee7b7">Dev 2 — Backend Lead</div>
+      <a href="#dev2">Work package</a>
+      <a href="#events">Event bus schema</a>
+    </div>
+    <div class="nav-group"><div class="nav-label" style="color:#c4b5fd">Dev 3 — Frontend</div>
+      <a href="#dev3">Setup guide</a>
+      <a href="#dynamic-form">DynamicForm component</a>
+      <a href="#i18n">Hindi / English</a>
+      <a href="#screens">Screen-by-screen guide</a>
+    </div>
+    <div class="nav-group"><div class="nav-label">Reference</div>
+      <a href="#allapis">All API endpoints</a>
+      <a href="#day4">Day 4 checklist</a>
+    </div>
+  </nav>
+</aside>
+
+<main class="main">
+
+<div class="hero">
+  <h1>PHAROS — Prototype Sprint Plan</h1>
+  <p class="sub">Police Hierarchical Automated Reporting &amp; Operations System · P1 · 4-Day Sprint</p>
+  <div class="hero-grid">
+    <div class="hero-badge"><strong>3 Devs</strong>Parallel tracks</div>
+    <div class="hero-badge"><strong>PS → District → HQ</strong>3-level hierarchy</div>
+    <div class="hero-badge"><strong>All 3 masters</strong>Arrest · PCR · Cases</div>
+    <div class="hero-badge"><strong>JavaScript only</strong>No TypeScript</div>
+    <div class="hero-badge"><strong>Express.js + React</strong>Frontend: Ant Design</div>
+    <div class="hero-badge"><strong>RabbitMQ event bus</strong>Non-negotiable backbone</div>
+    <div class="hero-badge"><strong>Dynamic field registry</strong>No hardcoded forms</div>
+    <div class="hero-badge"><strong>Hindi + English</strong>From day 1</div>
+    <div class="hero-badge"><strong>PDF + screen reports</strong>Puppeteer</div>
+  </div>
+</div>
+
+<section id="constraints">
+  <h2><span class="sn">01</span> Non-negotiables — cannot be cut for speed</h2>
+  <p>P1 is the architectural baseline. Cutting any of these means Phase 2 requires a full rewrite, not an extension.</p>
+  <div class="constraints">
+    <div class="con"><div class="lbl">Pillar 1</div><div class="val"><b>Dynamic Field Registry live from Day 1.</b> All 3 master forms render from DB. No hardcoded form fields anywhere.</div></div>
+    <div class="con"><div class="lbl">Pillar 2</div><div class="val"><b>RabbitMQ Event Bus routes all inter-module events.</b> Modules cannot call each other directly. Phase 2 features only subscribe to events.</div></div>
+    <div class="con"><div class="lbl">Pillar 3</div><div class="val"><b>RBAC enforced server-side on every endpoint.</b> Middleware, not business logic. Frontend checks are UX-only, never security.</div></div>
+    <div class="con"><div class="lbl">Pillar 4</div><div class="val"><b>Append-only Audit Ledger active from Day 1.</b> Every record change emits an event → Audit writes a revision row. Cannot retrofit.</div></div>
+    <div class="con"><div class="lbl">Pillar 5</div><div class="val"><b>All labels bilingual from Day 1.</b> <code>label_en</code> + <code>label_hi</code> on every field, node, status. Retrofitting Hindi breaks every table.</div></div>
+    <div class="con"><div class="lbl">Pillar 6</div><div class="val"><b>Hierarchy as DB config.</b> PS → District → HQ in <code>hierarchy_nodes</code>. Changeable from admin screen without deployment.</div></div>
+  </div>
+  <div class="note danger">If any pillar is skipped "for speed" on Days 1–2, Phase 2 expansion breaks. The frontend can cut screens. The backend cannot cut architecture.</div>
+</section>
+
+<section id="stack">
+  <h2><span class="sn">02</span> Tech stack</h2>
+  <div class="stack-grid">
+    <div class="si"><div class="si-layer">Backend runtime</div><div class="si-choice">Express.js (JavaScript)</div><div class="si-detail">Module-structured folders matching NestJS. Migrates to NestJS in Phase 2 with minimal changes.</div></div>
+    <div class="si"><div class="si-layer">Frontend</div><div class="si-choice">React + Vite</div><div class="si-detail">Ant Design (light theme) · React Query v5 · React Router v6 · JavaScript</div></div>
+    <div class="si"><div class="si-layer">Database</div><div class="si-choice">PostgreSQL (Cloud)</div><div class="si-detail">JSONB for record.data. Use <code>pg</code> driver + Knex.js for query building.</div></div>
+    <div class="si"><div class="si-layer">Event Bus</div><div class="si-choice">RabbitMQ</div><div class="si-detail"><code>amqplib</code> via Docker locally. Non-negotiable backbone.</div></div>
+    <div class="si"><div class="si-layer">Cache</div><div class="si-choice">Redis</div><div class="si-detail">Notification counts + refresh token store. Docker locally.</div></div>
+    <div class="si"><div class="si-layer">Auth</div><div class="si-choice">JWT (jsonwebtoken)</div><div class="si-detail">Access 1h + refresh 7d. Keycloak in Phase 2 — architecture already supports swap.</div></div>
+    <div class="si"><div class="si-layer">PDF</div><div class="si-choice">Puppeteer</div><div class="si-detail">Server-side HTML → PDF. Dev 1 owns the report module.</div></div>
+    <div class="si"><div class="si-layer">i18n</div><div class="si-choice">react-i18next</div><div class="si-detail">EN + HI. Static UI strings in JSON files. Field labels from registry (label_en / label_hi).</div></div>
+    <div class="si"><div class="si-layer">Charts</div><div class="si-choice">Recharts</div><div class="si-detail">BarChart, LineChart, PieChart. Works well alongside Ant Design.</div></div>
+  </div>
+</section>
+
+<section id="timeline">
+  <h2><span class="sn">03</span> 4-day sprint timeline</h2>
+  <div class="note warn"><b>Rule:</b> Day 4 is integration only. Feature freeze at Day 3 EOD. If something is not done by Day 3, cut it — don't carry it into Day 4. Dev 2 pushes the scaffold to the repo before everyone else starts coding.</div>
+  <div class="tl">
+    <div class="tl-h"></div>
+    <div class="tl-dl">Day 1<br>Foundation</div>
+    <div class="tl-dl">Day 2<br>Core Features</div>
+    <div class="tl-dl">Day 3<br>Intelligence</div>
+    <div class="tl-dl">Day 4<br>Integration</div>
+
+    <div class="tl-dev" style="background:#f8fafc;color:#374151;font-size:0.7rem">All</div>
+    <div class="tl-c" style="background:#fafafa"><div class="tl-i crit">Morning call: env setup + API contract review (1 hr)</div><div class="tl-i crit">Agree on all endpoint signatures before coding</div><div class="tl-i">Dev 2 pushes scaffold — all clone after</div></div>
+    <div class="tl-c" style="background:#fafafa"><div class="tl-i">EOD: push all feature branches</div><div class="tl-i">5-min async standup in group chat</div></div>
+    <div class="tl-c" style="background:#fafafa"><div class="tl-i crit">Feature freeze at EOD</div><div class="tl-i">Dev 2 runs mock data script on cloud DB</div><div class="tl-i">Push all branches</div></div>
+    <div class="tl-c" style="background:#fafafa"><div class="tl-i crit">Full-day integration (video call)</div><div class="tl-i">Dev 2 merges all PRs to main</div><div class="tl-i">E2E test all 5 role flows</div><div class="tl-i">Demo prep</div></div>
+
+    <div class="tl-dev" style="--dc:#2563eb;--dl:#eff6ff;--db:#bfdbfe;color:#2563eb">Dev 1<br>Auth+Sec</div>
+    <div class="tl-c"><div class="tl-i crit">JWT login / refresh / me / logout</div><div class="tl-i">bcrypt password hashing</div><div class="tl-i">RBAC middleware skeleton (all 6 roles)</div><div class="tl-i">User model + basic CRUD</div></div>
+    <div class="tl-c"><div class="tl-i crit">Full RBAC guards on all routes</div><div class="tl-i">Hierarchy APIs (CRUD + tree)</div><div class="tl-i crit">Audit Ledger module (subscribe to bus)</div><div class="tl-i">Change password API</div></div>
+    <div class="tl-c"><div class="tl-i crit">Report Engine (Puppeteer)</div><div class="tl-i">Report templates API</div><div class="tl-i">PDF + CSV generation</div><div class="tl-i">helmet + rate-limiting + cors</div><div class="tl-i">Audit query APIs</div></div>
+    <div class="tl-c"><div class="tl-i">Fix auth integration issues</div><div class="tl-i">Test RBAC on all 6 roles</div><div class="tl-i">Test PDF download flow end-to-end</div></div>
+
+    <div class="tl-dev" style="--dc:#059669;--dl:#ecfdf5;--db:#a7f3d0;color:#059669">Dev 2<br>Backend</div>
+    <div class="tl-c"><div class="tl-i crit">Express scaffold → push to repo FIRST</div><div class="tl-i crit">DB migrations (all tables)</div><div class="tl-i crit">RabbitMQ eventBus.js singleton</div><div class="tl-i crit">Field Registry API + seed 3 masters</div></div>
+    <div class="tl-c"><div class="tl-i crit">Records API (all 3 types, CRUD)</div><div class="tl-i crit">Workflow Engine (state machine)</div><div class="tl-i">Workflow queue APIs</div><div class="tl-i">Publish all record events to bus</div></div>
+    <div class="tl-c"><div class="tl-i">Compilation Engine APIs</div><div class="tl-i">Analytics APIs (all 5 endpoints)</div><div class="tl-i">Notifications API</div><div class="tl-i crit">Mock data seed script</div></div>
+    <div class="tl-c"><div class="tl-i crit">Merge all PRs → main</div><div class="tl-i">Seed mock data on cloud DB</div><div class="tl-i">Fix integration blockers</div></div>
+
+    <div class="tl-dev" style="--dc:#7c3aed;--dl:#f5f3ff;--db:#ddd6fe;color:#7c3aed">Dev 3<br>Frontend</div>
+    <div class="tl-c"><div class="tl-i crit">React + Vite + Ant Design setup</div><div class="tl-i crit">Axios + JWT interceptor</div><div class="tl-i crit">React Query + i18next setup</div><div class="tl-i">AuthContext + ProtectedRoute</div><div class="tl-i">Layout (sidebar + header) — role-aware</div><div class="tl-i">Login screen</div></div>
+    <div class="tl-c"><div class="tl-i crit">DynamicForm component (core piece)</div><div class="tl-i">HC: All 3 master form screens</div><div class="tl-i">HC: My records list</div><div class="tl-i">SHO: Approval queue</div><div class="tl-i">SHO: Record detail + approve/send-back</div></div>
+    <div class="tl-c"><div class="tl-i">District dashboard + compilation UI</div><div class="tl-i">HQ dashboard</div><div class="tl-i">Analytics screens (role-aware)</div><div class="tl-i">Report builder + download flow</div><div class="tl-i">Admin: users + hierarchy + fields</div></div>
+    <div class="tl-c"><div class="tl-i">Swap mock data → real backend</div><div class="tl-i">Fix broken API integrations</div><div class="tl-i">Test all 5 role perspectives</div><div class="tl-i">Hindi/English toggle test</div></div>
+  </div>
+</section>
+
+<section id="git">
+  <h2><span class="sn">04</span> Git collaboration workflow</h2>
+  <div class="note"><b>Dev 2 owns main.</b> Dev 2 reviews and merges all PRs. Dev 1 and Dev 3 never push directly to main. All .env files go in the group chat — never in git.</div>
+
+  <h3>Repository structure</h3>
+<pre><span class="c">pharos-prototype/           ← single repo, both packages</span>
+  pharos-backend/
+    src/
+      modules/
+        auth/               <span class="c">← Dev 1</span>
+        users/              <span class="c">← Dev 1</span>
+        hierarchy/          <span class="c">← Dev 1</span>
+        audit/              <span class="c">← Dev 1</span>
+        reports/            <span class="c">← Dev 1</span>
+        fields/             <span class="c">← Dev 2</span>
+        records/            <span class="c">← Dev 2</span>
+        workflow/           <span class="c">← Dev 2</span>
+        compilation/        <span class="c">← Dev 2</span>
+        analytics/          <span class="c">← Dev 2</span>
+        notifications/      <span class="c">← Dev 2</span>
+      events/
+        eventBus.js         <span class="c">← Dev 2 (Day 1, non-negotiable)</span>
+        handlers/
+          auditHandler.js   <span class="c">← Dev 1</span>
+          notifyHandler.js  <span class="c">← Dev 2</span>
+      middleware/
+        auth.middleware.js  <span class="c">← Dev 1</span>
+        rbac.middleware.js  <span class="c">← Dev 1</span>
+      config/
+        db.js  rabbitmq.js  redis.js
+      app.js   server.js
+    .env.example
+  pharos-frontend/          <span class="c">← Dev 3</span>
+  docker-compose.yml        <span class="c">← Dev 2 creates Day 1</span>
+  README.md</pre>
+
+  <h3>Branch strategy and daily workflow</h3>
+  <div class="gs"><div class="gn">1</div><div><b>Dev 2 pushes scaffold first (Day 1 morning, before the call ends)</b>Express app skeleton, docker-compose.yml, db migrations, .env.example. Everyone clones from this. Do not start coding until scaffold is in repo.</div></div>
+  <div class="gs"><div class="gn">2</div><div><b>Each dev works on named branches</b><code>dev1/auth</code> (Dev 1) · <code>dev2/backend</code> (Dev 2) · <code>dev3/frontend</code> (Dev 3). Sub-feature branches off your own: <code>dev1/reports</code>, <code>dev2/analytics</code>.</div></div>
+  <div class="gs"><div class="gn">3</div><div><b>Push every evening — even if incomplete</b><code>git push origin dev1/auth</code>. This is your backup. Others can see your progress and unblock themselves.</div></div>
+  <div class="gs"><div class="gn">4</div><div><b>API contract changes: announce before pushing</b>If you change an endpoint signature (URL, body shape, response shape), message the group chat first. Dev 3 may already have built UI against it.</div></div>
+  <div class="gs"><div class="gn">5</div><div><b>PRs: feature branch → main via Dev 2</b>Open a PR with a short description of what's covered. Dev 2 reviews within 2 hours. Reviewer checks: does it follow the response format? Does RBAC middleware wrap it? Is it wired to the event bus where needed?</div></div>
+  <div class="gs"><div class="gn">6</div><div><b>Day 4 merge order (Dev 2 runs this)</b>(1) dev2/backend → main, (2) dev1/auth → main, (3) dev3/frontend → main. Do it in a call so conflicts are resolved together in real-time.</div></div>
+  <div class="gs"><div class="gn">7</div><div><b>Postman collection in the repo</b>Dev 1 and Dev 2 maintain a shared Postman collection in <code>/pharos-backend/postman/</code>. Add every endpoint as you build it. Dev 3 uses this to test APIs independently before the frontend calls them.</div></div>
+
+<pre><span class="c"># .gitignore (both packages)</span>
+node_modules/
+.env
+*.log
+dist/
+generated-reports/
+.DS_Store
+coverage/</pre>
+</section>
+
+<section id="env">
+  <h2><span class="sn">05</span> Environment setup</h2>
+  <div class="env-box">
+    <h3>Prerequisites (all devs)</h3>
+    <ul style="margin-left:1.2rem;font-size:0.8rem;color:#374151;line-height:1.8">
+      <li>Node.js 18+ — <code>node -v</code></li>
+      <li>Docker Desktop — for RabbitMQ + Redis locally</li>
+      <li>Git 2.x+</li>
+      <li>Postman or Insomnia</li>
+    </ul>
+  </div>
+  <div class="env-box">
+    <h3>Docker Compose — RabbitMQ + Redis (Dev 2 creates, everyone runs)</h3>
+<pre><span class="c"># docker-compose.yml — run once: docker compose up -d</span>
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: ["5672:5672", "15672:15672"]
+    environment:
+      RABBITMQ_DEFAULT_USER: pharos
+      RABBITMQ_DEFAULT_PASS: pharos123
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+<span class="c"># RabbitMQ UI at http://localhost:15672 (pharos / pharos123)</span></pre>
+  </div>
+  <div class="env-box">
+    <h3>Backend .env (share via secure chat — never commit)</h3>
+<pre>NODE_ENV=development
+PORT=3000
+DATABASE_URL=postgresql://user:pass@host:5432/pharos_db
+JWT_ACCESS_SECRET=change_this_to_strong_random_string
+JWT_REFRESH_SECRET=different_strong_random_string
+JWT_ACCESS_EXPIRES=1h
+JWT_REFRESH_EXPIRES=7d
+RABBITMQ_URL=amqp://pharos:pharos123@localhost:5672
+REDIS_URL=redis://localhost:6379
+REPORTS_DIR=./generated-reports
+FRONTEND_URL=http://localhost:5173</pre>
+  </div>
+  <div class="env-box">
+    <h3>Frontend .env</h3>
+<pre>VITE_API_URL=http://localhost:3000/api</pre>
+  </div>
+  <div class="env-box">
+    <h3>Standard API response format (all devs must follow — Dev 3 depends on this)</h3>
+<pre><span class="c">// Success (single object)</span>
+{ <span class="k">"status"</span>: <span class="s">"success"</span>, <span class="k">"data"</span>: { ... } }
+
+<span class="c">// Success (list)</span>
+{ <span class="k">"status"</span>: <span class="s">"success"</span>, <span class="k">"data"</span>: [...], <span class="k">"meta"</span>: { <span class="k">"page"</span>: 1, <span class="k">"limit"</span>: 20, <span class="k">"total"</span>: 100 } }
+
+<span class="c">// Error</span>
+{ <span class="k">"status"</span>: <span class="s">"error"</span>, <span class="k">"code"</span>: <span class="s">"UNAUTHORIZED"</span>, <span class="k">"message"</span>: <span class="s">"Invalid token"</span> }
+
+<span class="c">// JWT access token payload</span>
+{
+  <span class="k">"userId"</span>: <span class="s">"uuid"</span>, <span class="k">"badgeNo"</span>: <span class="s">"HC1234"</span>, <span class="k">"name"</span>: <span class="s">"Ramesh Kumar"</span>,
+  <span class="k">"role"</span>: <span class="s">"HC"</span>,            <span class="c">// HC | SHO | DISTRICT_OFFICER | HQ_ANALYST | HQ_ADMIN | SYSTEM_ADMIN</span>
+  <span class="k">"level"</span>: <span class="s">"PS"</span>,          <span class="c">// PS | DISTRICT | HQ</span>
+  <span class="k">"psId"</span>: <span class="s">"uuid|null"</span>, <span class="k">"districtId"</span>: <span class="s">"uuid|null"</span>
+}</pre>
+  </div>
+</section>
+
+<section id="dev1">
+  <h2><span class="sn">06</span> Dev 1 — Auth, RBAC, Audit &amp; Reports</h2>
+  <div class="dp" style="--dc:#2563eb;--dl:#eff6ff;--db:#bfdbfe">
+    <div class="dp-head"><div class="dp-av">D1</div><div><div class="dp-name">Dev 1 — Cybersec specialist</div><div class="dp-role">Auth · RBAC · Audit Ledger · Hierarchy · Report Engine</div></div></div>
+    <div class="dp-body">
+      <div class="note">Dev 2 must deliver the Express scaffold + eventBus.js before Dev 1 starts wiring modules. Dev 1's RBAC middleware wraps Dev 2's routes — coordinate on the middleware injection pattern on Day 1.</div>
+
+      <h3>Day 1 — Auth module</h3>
+      <ul class="tsk">
+        <li class="crit"><b>JWT login endpoint</b> — badgeNo + password → access_token + refresh_token</li>
+        <li><b>bcrypt</b> password hashing (rounds=12 for production-readiness)</li>
+        <li class="crit"><b>RBAC middleware</b> — <code>requireAuth()</code> and <code>requireRole(...roles)</code> — wire to every route</li>
+        <li><b>User model</b> — users table with role, psId, districtId, badgeNo, name_en, name_hi</li>
+        <li><b>Token refresh endpoint</b> — validate refresh token from Redis, issue new access token</li>
+      </ul>
+
+      <h3>Day 2 — RBAC, Hierarchy, Audit</h3>
+      <ul class="tsk">
+        <li class="crit"><b>Full RBAC guard</b> applied to ALL routes (including Dev 2's routes via app.js registration)</li>
+        <li><b>Hierarchy CRUD APIs</b> — hierarchy_nodes table, tree endpoint, PS/District/HQ list</li>
+        <li class="crit"><b>Audit Ledger module</b> — subscribe to <code>record.changed</code> event from RabbitMQ, write to record_revisions table (append-only)</li>
+        <li><b>User management APIs</b> — CRUD, reset password, role assignment (SYSTEM_ADMIN only)</li>
+      </ul>
+
+      <h3>Day 3 — Report Engine</h3>
+      <ul class="tsk">
+        <li class="crit"><b>Puppeteer setup</b> — install, configure chromium path, basic HTML → PDF function</li>
+        <li><b>Report templates</b> — seed 5 templates: Arrest Summary, PCR Call Log, Cases Register, Daily Status, District Compilation</li>
+        <li class="crit"><b>POST /reports/generate</b> — takes filters + format (pdf/csv), queues job, returns job_id</li>
+        <li><b>GET /reports/status/:jobId</b> — polling endpoint, returns 'pending' | 'ready' | 'failed'</li>
+        <li><b>GET /reports/download/:jobId</b> — streams PDF/CSV file</li>
+        <li><b>helmet + express-rate-limit + cors</b> — security hardening</li>
+      </ul>
+
+      <h3>Dev 1 API endpoints to build</h3>
+      <div class="at-wrap"><table class="at">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>RBAC</th></tr></thead>
+        <tbody>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/auth/login</td><td>badgeNo+password → tokens + user</td><td>Public</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/auth/refresh</td><td>refresh_token → new access_token</td><td>Public</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/auth/logout</td><td>Invalidate refresh token in Redis</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/auth/me</td><td>Current user + role + ps/district info</td><td>Any auth</td></tr>
+        <tr><td><span class="m mu">PUT</span></td><td class="ep">/auth/change-password</td><td>oldPassword + newPassword</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/users</td><td>List users. Query: role, psId, districtId, page, limit</td><td>DISTRICT+</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/users</td><td>Create user: badgeNo, name_en, name_hi, role, psId</td><td>SYSTEM_ADMIN</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/users/:id</td><td>Single user</td><td>DISTRICT+</td></tr>
+        <tr><td><span class="m mu">PUT</span></td><td class="ep">/users/:id</td><td>Update user details / role</td><td>SYSTEM_ADMIN</td></tr>
+        <tr><td><span class="m md">DELETE</span></td><td class="ep">/users/:id</td><td>Soft delete (is_active = false)</td><td>SYSTEM_ADMIN</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/users/:id/reset-password</td><td>Admin resets user password</td><td>SYSTEM_ADMIN</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/hierarchy/tree</td><td>Full HQ→District→PS tree</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/hierarchy/nodes</td><td>Query: type=PS|DISTRICT|HQ</td><td>Any auth</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/hierarchy/nodes</td><td>Create node: name_en, name_hi, node_type, parent_id, code</td><td>SYSTEM_ADMIN</td></tr>
+        <tr><td><span class="m mu">PUT</span></td><td class="ep">/hierarchy/nodes/:id</td><td>Update node name / parent</td><td>SYSTEM_ADMIN</td></tr>
+        <tr><td><span class="m md">DELETE</span></td><td class="ep">/hierarchy/nodes/:id</td><td>Soft delete node</td><td>SYSTEM_ADMIN</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/audit/record/:recordId</td><td>Full revision history for a record</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/audit/user/:userId</td><td>All actions by user. Query: from, to, page</td><td>DISTRICT+</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/templates</td><td>List available report types</td><td>Any auth</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/reports/generate</td><td>Body: template_id, filters, format (pdf|csv), from, to → job_id</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/status/:jobId</td><td>Poll: pending | ready | failed</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/download/:jobId</td><td>Stream file download (Content-Disposition: attachment)</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/history</td><td>Reports generated by current user. Query: page, limit</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/admin/stats</td><td>Total users, PS count, records today, system status</td><td>HQ_ADMIN+</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<section id="dev2">
+  <h2><span class="sn">07</span> Dev 2 — Backend Lead, Event Bus, Field Registry</h2>
+  <div class="dp" style="--dc:#059669;--dl:#ecfdf5;--db:#a7f3d0">
+    <div class="dp-head"><div class="dp-av">D2</div><div><div class="dp-name">Dev 2 — Backend specialist (Git merger)</div><div class="dp-role">Express scaffold · Event Bus · Field Registry · Records · Workflow · Compilation · Analytics</div></div></div>
+    <div class="dp-body">
+      <div class="note ok"><b>Day 1 morning priority (before you do anything else):</b> Push the Express scaffold to the repo. Dev 1 and Dev 3 cannot start until this exists. The scaffold must include: app.js, server.js, the module folder structure, db.js, rabbitmq.js, and docker-compose.yml.</div>
+
+      <h3>Day 1 — Scaffold + Event Bus + Field Registry</h3>
+      <ul class="tsk">
+        <li class="crit"><b>Push Express scaffold to repo</b> — see structure in Git section. Must be first commit of the day.</li>
+        <li class="crit"><b>DB migrations</b> — all 9 core tables (below). Run once on the cloud DB.</li>
+        <li class="crit"><b>eventBus.js singleton</b> — connects to RabbitMQ, exposes <code>publish(event, payload)</code> and <code>subscribe(event, handler)</code></li>
+        <li class="crit"><b>Field Registry API + seed data</b> — seed all fields for Arrest, PCR Call, and Cases masters (with EN + HI labels). This unblocks Dev 3's DynamicForm.</li>
+      </ul>
+
+      <h3>Day 2 — Records + Workflow</h3>
+      <ul class="tsk">
+        <li class="crit"><b>Records CRUD</b> — POST/GET/PUT/DELETE for all 3 types, storing data as JSONB</li>
+        <li class="crit"><b>Workflow Engine</b> — state machine: submit → approve/send-back, enforce valid transitions, publish <code>record.status_changed</code> event</li>
+        <li><b>Workflow queue API</b> — <code>GET /workflow/queue</code> returns records pending review for the calling user's level</li>
+        <li><b>All record events published to bus</b> — record.created, record.updated, record.status_changed</li>
+      </ul>
+
+      <h3>Day 3 — Compilation + Analytics + Notifications + Mock Data</h3>
+      <ul class="tsk">
+        <li><b>Compilation Engine</b> — District creates compilation for a date range, selects approved records, submits to HQ</li>
+        <li><b>Analytics APIs</b> — overview cards, crime head breakdown, PS comparison, trends, status breakdown</li>
+        <li><b>Notifications API</b> — subscribe to record.status_changed, write to notifications table, expose unread count</li>
+        <li class="crit"><b>Mock data script</b> — generates: 1 HQ, 3 districts, 9 PS (3 per district), 5 users per PS (HC + SHO + officers), 50+ records per PS across all 3 types in various states. Run with <code>node scripts/seed-mock-data.js</code></li>
+      </ul>
+
+      <h3>DB Migrations — all tables</h3>
+<pre><span class="c">-- Run order matters (foreign keys)</span>
+CREATE TABLE hierarchy_nodes (id UUID PRIMARY KEY, node_type VARCHAR, name_en VARCHAR, name_hi VARCHAR, code VARCHAR UNIQUE, parent_id UUID REFERENCES hierarchy_nodes(id), is_active BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE users (id UUID PRIMARY KEY, badge_no VARCHAR UNIQUE, name_en VARCHAR, name_hi VARCHAR, role VARCHAR, ps_id UUID REFERENCES hierarchy_nodes(id), district_id UUID REFERENCES hierarchy_nodes(id), password_hash VARCHAR, is_active BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE field_registry (id UUID PRIMARY KEY, field_key VARCHAR UNIQUE, field_type VARCHAR, applicable_record_types VARCHAR[], label_en VARCHAR, label_hi VARCHAR, options JSONB, validation_rules JSONB, visible_to_levels VARCHAR[] DEFAULT ARRAY['PS','DISTRICT','HQ'], editable_by_levels VARCHAR[] DEFAULT ARRAY['PS'], section VARCHAR, sort_order INT DEFAULT 0, is_active BOOLEAN DEFAULT true);
+CREATE TABLE records (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), record_type VARCHAR, ps_id UUID REFERENCES hierarchy_nodes(id), district_id UUID REFERENCES hierarchy_nodes(id), data JSONB DEFAULT '{}', current_status VARCHAR DEFAULT 'DRAFT', current_level VARCHAR DEFAULT 'PS', version INT DEFAULT 1, created_by UUID REFERENCES users(id), created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE record_revisions (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), record_id UUID REFERENCES records(id), revision_number INT, changed_by UUID REFERENCES users(id), changed_at TIMESTAMPTZ DEFAULT NOW(), level VARCHAR, change_type VARCHAR, field_changes JSONB DEFAULT '[]', comment TEXT, ip_address INET);
+CREATE TABLE workflow_transitions (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), record_id UUID REFERENCES records(id), from_status VARCHAR, to_status VARCHAR, action VARCHAR, performed_by UUID REFERENCES users(id), performed_at TIMESTAMPTZ DEFAULT NOW(), comment TEXT, target_fields VARCHAR[]);
+CREATE TABLE compilations (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), district_id UUID REFERENCES hierarchy_nodes(id), period DATE, status VARCHAR DEFAULT 'DRAFT', record_ids UUID[], compiled_summary JSONB, submitted_by UUID REFERENCES users(id), submitted_at TIMESTAMPTZ, created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE report_jobs (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), requested_by UUID REFERENCES users(id), template_id VARCHAR, filters JSONB, format VARCHAR, status VARCHAR DEFAULT 'pending', file_path VARCHAR, created_at TIMESTAMPTZ DEFAULT NOW(), completed_at TIMESTAMPTZ);
+CREATE TABLE notifications (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID REFERENCES users(id), type VARCHAR, title VARCHAR, body TEXT, record_id UUID, is_read BOOLEAN DEFAULT false, created_at TIMESTAMPTZ DEFAULT NOW());</pre>
+
+      <h3>eventBus.js skeleton</h3>
+<pre><span class="c">// src/events/eventBus.js</span>
+<span class="k">const</span> amqp = require(<span class="s">'amqplib'</span>);
+<span class="k">let</span> channel = null;
+
+<span class="k">async function</span> connect() {
+  <span class="k">const</span> conn = await amqp.connect(process.env.RABBITMQ_URL);
+  channel = await conn.createChannel();
+  await channel.assertExchange(<span class="s">'pharos'</span>, <span class="s">'topic'</span>, { durable: true });
+}
+
+<span class="k">async function</span> publish(routingKey, payload) {
+  <span class="k">if</span> (!channel) throw <span class="k">new</span> Error(<span class="s">'Event bus not connected'</span>);
+  channel.publish(<span class="s">'pharos'</span>, routingKey, Buffer.from(JSON.stringify(payload)), { persistent: true });
+  console.log(<span class="s">`[EventBus] Published: ${routingKey}`</span>);
+}
+
+<span class="k">async function</span> subscribe(routingKey, handler) {
+  <span class="k">const</span> q = await channel.assertQueue(<span class="s">''</span>, { exclusive: true });
+  await channel.bindQueue(q.queue, <span class="s">'pharos'</span>, routingKey);
+  channel.consume(q.queue, (msg) => {
+    <span class="k">if</span> (msg) {
+      handler(JSON.parse(msg.content.toString()));
+      channel.ack(msg);
+    }
+  });
+}
+
+module.exports = { connect, publish, subscribe };</pre>
+
+      <h3>Dev 2 API endpoints to build</h3>
+      <div class="at-wrap"><table class="at">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>RBAC</th></tr></thead>
+        <tbody>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/fields</td><td>List fields. Query: record_type, is_active</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/fields/form/:record_type</td><td>Fields grouped by section for form render → [{section, title_en, title_hi, fields:[]}]</td><td>Any auth</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/fields</td><td>Create field definition</td><td>SYSTEM_ADMIN</td></tr>
+        <tr><td><span class="m mu">PUT</span></td><td class="ep">/fields/:id</td><td>Update field definition</td><td>SYSTEM_ADMIN</td></tr>
+        <tr><td><span class="m mpa">PATCH</span></td><td class="ep">/fields/:id/status</td><td>Toggle is_active</td><td>SYSTEM_ADMIN</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/records</td><td>List records. Query: type, status, psId, districtId, from, to, page, limit</td><td>Any auth (scoped by level)</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/records</td><td>Create record: {record_type, data:{...}}</td><td>HC</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/records/:id</td><td>Single record with full data</td><td>Scoped</td></tr>
+        <tr><td><span class="m mu">PUT</span></td><td class="ep">/records/:id</td><td>Update record data (DRAFT only)</td><td>HC (own)</td></tr>
+        <tr><td><span class="m md">DELETE</span></td><td class="ep">/records/:id</td><td>Delete record (DRAFT only)</td><td>HC (own)</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/records/:id/revisions</td><td>Field-level revision history</td><td>Any auth</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/submit</td><td>HC submits to SHO</td><td>HC (own)</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/approve</td><td>SHO or District approves</td><td>SHO, DISTRICT</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/send-back</td><td>Send back: {comment, target_fields:[]}</td><td>SHO, DISTRICT</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/records/:id/history</td><td>Workflow transitions for a record</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/workflow/queue</td><td>Pending items for current user's level. Query: type, page</td><td>SHO+</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/workflow/queue/count</td><td>Unread pending count (for badge)</td><td>SHO+</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/compilations</td><td>Query: districtId, period, status</td><td>DISTRICT+</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/compilations</td><td>Create: {period, district_id}</td><td>DISTRICT_OFFICER</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/compilations/:id</td><td>Single compilation with records list</td><td>DISTRICT+</td></tr>
+        <tr><td><span class="m mp">POST</span></td><td class="ep">/compilations/:id/submit</td><td>Submit compilation to HQ</td><td>DISTRICT_OFFICER</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/overview</td><td>Count cards. Query: from, to, psId?, districtId? → {arrests_today, pcr_today, cases_today, pending_approvals}</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/by-crime-head</td><td>Breakdown by crime head. Query: from, to, psId?, districtId?</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/by-ps</td><td>Per-PS breakdown. Query: districtId, from, to</td><td>DISTRICT+</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/trends</td><td>Time series. Query: metric, period (daily|weekly|monthly), from, to</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/status-breakdown</td><td>Records by status. Query: psId?, districtId?</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/notifications</td><td>Query: read?, page, limit</td><td>Any auth</td></tr>
+        <tr><td><span class="m mg">GET</span></td><td class="ep">/notifications/count</td><td>Unread count → {count}</td><td>Any auth</td></tr>
+        <tr><td><span class="m mpa">PATCH</span></td><td class="ep">/notifications/:id/read</td><td>Mark one as read</td><td>Any auth</td></tr>
+        <tr><td><span class="m mpa">PATCH</span></td><td class="ep">/notifications/read-all</td><td>Mark all read for user</td><td>Any auth</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<section id="events">
+  <h2><span class="sn">08</span> Event Bus schema</h2>
+  <p>Exchange: <code>pharos</code> (topic). Dev 2 publishes all record/compilation events. Dev 1's Audit Ledger subscribes to <code>record.*</code>. Dev 2's Notification handler subscribes to <code>record.status_changed</code>.</p>
+  <div class="ev"><div class="ev-name">record.created</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Records module (Dev 2)</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Audit Ledger (Dev 1)</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{recordId, record_type, psId, created_by, data}</div></div></div></div>
+  <div class="ev"><div class="ev-name">record.updated</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Records module (Dev 2)</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Audit Ledger (Dev 1)</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{recordId, changed_by, field_changes:[{key,old,new}], level}</div></div></div></div>
+  <div class="ev"><div class="ev-name">record.status_changed</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Workflow Engine (Dev 2)</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Audit Ledger (Dev 1), Notifications (Dev 2)</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{recordId, action, from_status, to_status, performed_by, target_psId, comment}</div></div></div></div>
+  <div class="ev"><div class="ev-name">compilation.submitted</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Compilation module (Dev 2)</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Notifications (Dev 2)</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{compilationId, districtId, period, submitted_by}</div></div></div></div>
+</section>
+
+<section id="dev3">
+  <h2><span class="sn">09</span> Dev 3 — Frontend (detailed guide)</h2>
+  <div class="dp" style="--dc:#7c3aed;--dl:#f5f3ff;--db:#ddd6fe">
+    <div class="dp-head"><div class="dp-av">D3</div><div><div class="dp-name">Dev 3 — Frontend specialist</div><div class="dp-role">React + Ant Design · All screens · Hindi/English · DynamicForm · PDF download flow</div></div></div>
+    <div class="dp-body">
+
+      <h3>Day 1 setup — run these commands in order</h3>
+<pre><span class="c"># Create React app with Vite</span>
+npm create vite@latest pharos-frontend -- --template react
+cd pharos-frontend
+
+<span class="c"># Install all dependencies at once</span>
+npm install antd @ant-design/icons
+npm install axios
+npm install react-router-dom
+npm install @tanstack/react-query
+npm install react-i18next i18next i18next-browser-languagedetector
+npm install recharts
+npm install dayjs
+
+npm run dev  <span class="c"># should open at http://localhost:5173</span></pre>
+
+      <h3>Folder structure to create on Day 1</h3>
+<pre>src/
+  api/             <span class="c">← one file per domain, all axios calls go here</span>
+    auth.js        fields.js    records.js
+    workflow.js    analytics.js reports.js
+    hierarchy.js   admin.js     notifications.js
+  components/
+    common/
+      Layout.jsx         <span class="c">← sidebar + header wrapper</span>
+      Sidebar.jsx        <span class="c">← role-aware nav menu</span>
+      Header.jsx         <span class="c">← user info + notification bell + lang toggle</span>
+      ProtectedRoute.jsx <span class="c">← redirects to /login if not authed</span>
+      NotificationBell.jsx
+      LanguageToggle.jsx
+    forms/
+      DynamicForm.jsx    <span class="c">← THE core component, reads field registry</span>
+    charts/
+      CountCard.jsx      <span class="c">← Statistic card (Ant Design Statistic)</span>
+      TrendsChart.jsx    <span class="c">← Recharts LineChart</span>
+      BreakdownChart.jsx <span class="c">← Recharts BarChart</span>
+  contexts/
+    AuthContext.jsx      <span class="c">← user state + login/logout functions</span>
+  hooks/
+    useAuth.js           <span class="c">← useContext(AuthContext)</span>
+  i18n/
+    index.js             <span class="c">← i18next setup</span>
+    en.json              <span class="c">← English strings</span>
+    hi.json              <span class="c">← Hindi strings</span>
+  pages/
+    Login.jsx
+    hc/   NewRecord.jsx  MyRecords.jsx
+    sho/  Queue.jsx      RecordDetail.jsx
+    district/  Dashboard.jsx  CompilationUI.jsx
+    hq/   Dashboard.jsx
+    analytics/  AnalyticsDashboard.jsx
+    reports/    ReportBuilder.jsx  ReportHistory.jsx
+    admin/  Users.jsx  HierarchyManager.jsx  FieldManager.jsx
+  utils/
+    api.js       <span class="c">← axios instance with JWT interceptor</span>
+    constants.js <span class="c">← ROLES, STATUSES, STATUS_COLORS</span>
+  App.jsx
+  main.jsx</pre>
+
+      <h3>api/utils.js — Axios instance with JWT interceptor (do this on Day 1)</h3>
+<pre><span class="c">// src/utils/api.js</span>
+<span class="k">import</span> axios <span class="k">from</span> <span class="s">'axios'</span>;
+
+<span class="k">const</span> api = axios.create({ baseURL: import.meta.env.VITE_API_URL });
+
+<span class="c">// Attach access token to every request</span>
+api.interceptors.request.use((config) => {
+  <span class="k">const</span> token = localStorage.getItem(<span class="s">'access_token'</span>);
+  <span class="k">if</span> (token) config.headers.Authorization = <span class="s">`Bearer ${token}`</span>;
+  <span class="k">return</span> config;
+});
+
+<span class="c">// Auto-refresh access token on 401</span>
+api.interceptors.response.use(
+  (res) => res,
+  <span class="k">async</span> (err) => {
+    <span class="k">if</span> (err.response?.status === 401 && !err.config._retry) {
+      err.config._retry = true;
+      <span class="k">const</span> refresh = localStorage.getItem(<span class="s">'refresh_token'</span>);
+      <span class="k">const</span> { data } = await axios.post(<span class="s">`${import.meta.env.VITE_API_URL}/auth/refresh`</span>, { refresh_token: refresh });
+      localStorage.setItem(<span class="s">'access_token'</span>, data.data.access_token);
+      err.config.headers.Authorization = <span class="s">`Bearer ${data.data.access_token}`</span>;
+      <span class="k">return</span> api(err.config);
+    }
+    <span class="k">return</span> Promise.reject(err);
+  }
+);
+
+<span class="k">export default</span> api;</pre>
+
+      <h3>AuthContext — user state management</h3>
+<pre><span class="c">// src/contexts/AuthContext.jsx</span>
+<span class="k">import</span> { createContext, useState, useContext } <span class="k">from</span> <span class="s">'react'</span>;
+<span class="k">import</span> { jwtDecode } <span class="k">from</span> <span class="s">'jwt-decode'</span>; <span class="c">// npm install jwt-decode</span>
+
+<span class="k">const</span> AuthContext = createContext(null);
+
+<span class="k">export function</span> AuthProvider({ children }) {
+  <span class="k">const</span> [user, setUser] = useState(() => {
+    <span class="k">const</span> token = localStorage.getItem(<span class="s">'access_token'</span>);
+    <span class="k">return</span> token ? jwtDecode(token) : null;
+  });
+
+  <span class="k">function</span> login(tokens) {
+    localStorage.setItem(<span class="s">'access_token'</span>, tokens.access_token);
+    localStorage.setItem(<span class="s">'refresh_token'</span>, tokens.refresh_token);
+    setUser(jwtDecode(tokens.access_token));
+  }
+
+  <span class="k">function</span> logout() {
+    localStorage.clear();
+    setUser(null);
+  }
+
+  <span class="k">return</span> <span class="s">&lt;AuthContext.Provider value={{ user, login, logout }}&gt;{children}&lt;/AuthContext.Provider&gt;</span>;
+}
+
+<span class="k">export const</span> useAuth = () => useContext(AuthContext);</pre>
+
+      <h3>React Router setup with role-based redirect</h3>
+<pre><span class="c">// src/App.jsx</span>
+<span class="k">import</span> { BrowserRouter, Routes, Route, Navigate } <span class="k">from</span> <span class="s">'react-router-dom'</span>;
+<span class="k">import</span> { QueryClient, QueryClientProvider } <span class="k">from</span> <span class="s">'@tanstack/react-query'</span>;
+<span class="k">import</span> { ConfigProvider } <span class="k">from</span> <span class="s">'antd'</span>;
+
+<span class="k">const</span> queryClient = <span class="k">new</span> QueryClient();
+
+<span class="k">function</span> RoleRedirect() {
+  <span class="k">const</span> { user } = useAuth();
+  <span class="k">const</span> routes = { HC: <span class="s">'/records'</span>, SHO: <span class="s">'/queue'</span>, DISTRICT_OFFICER: <span class="s">'/district'</span>, HQ_ANALYST: <span class="s">'/hq'</span>, HQ_ADMIN: <span class="s">'/hq'</span>, SYSTEM_ADMIN: <span class="s">'/admin/users'</span> };
+  <span class="k">return</span> &lt;Navigate to={routes[user?.role] || <span class="s">'/login'</span>} replace /&gt;;
+}
+
+<span class="k">export default function</span> App() {
+  <span class="k">return</span> (
+    &lt;QueryClientProvider client={queryClient}&gt;
+      &lt;ConfigProvider theme={{ token: { colorPrimary: <span class="s">'#1d4ed8'</span> } }}&gt;
+        &lt;AuthProvider&gt;
+          &lt;BrowserRouter&gt;
+            &lt;Routes&gt;
+              &lt;Route path=<span class="s">"/login"</span> element={&lt;Login /&gt;} /&gt;
+              &lt;Route path=<span class="s">"/"</span> element={&lt;ProtectedRoute&gt;&lt;RoleRedirect /&gt;&lt;/ProtectedRoute&gt;} /&gt;
+              &lt;Route element={&lt;ProtectedRoute&gt;&lt;Layout /&gt;&lt;/ProtectedRoute&gt;}&gt;
+                &lt;Route path=<span class="s">"/records"</span> element={&lt;MyRecords /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/records/new/:type"</span> element={&lt;NewRecord /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/records/:id"</span> element={&lt;RecordDetail /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/queue"</span> element={&lt;Queue /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/district"</span> element={&lt;DistrictDashboard /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/compile"</span> element={&lt;CompilationUI /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/hq"</span> element={&lt;HQDashboard /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/analytics"</span> element={&lt;AnalyticsDashboard /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/reports"</span> element={&lt;ReportBuilder /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/reports/history"</span> element={&lt;ReportHistory /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/admin/users"</span> element={&lt;Users /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/admin/hierarchy"</span> element={&lt;HierarchyManager /&gt;} /&gt;
+                &lt;Route path=<span class="s">"/admin/fields"</span> element={&lt;FieldManager /&gt;} /&gt;
+              &lt;/Route&gt;
+            &lt;/Routes&gt;
+          &lt;/BrowserRouter&gt;
+        &lt;/AuthProvider&gt;
+      &lt;/ConfigProvider&gt;
+    &lt;/QueryClientProvider&gt;
+  );
+}</pre>
+
+    </div>
+  </div>
+</section>
+
+<section id="dynamic-form">
+  <h2><span class="sn">10</span> DynamicForm — the core frontend component</h2>
+  <div class="note warn">This is the most important component. It reads field definitions from the registry and renders the correct input for each field type. Get this right on Day 2 and all 3 master forms are essentially done.</div>
+<pre><span class="c">// src/components/forms/DynamicForm.jsx</span>
+<span class="k">import</span> { Form, Input, Select, DatePicker, Upload, Checkbox, Row, Col, Button } <span class="k">from</span> <span class="s">'antd'</span>;
+<span class="k">import</span> { useQuery } <span class="k">from</span> <span class="s">'@tanstack/react-query'</span>;
+<span class="k">import</span> { useTranslation } <span class="k">from</span> <span class="s">'react-i18next'</span>;
+<span class="k">import</span> api <span class="k">from</span> <span class="s">'../../utils/api'</span>;
+
+<span class="c">// Maps field_type from registry → Ant Design component</span>
+<span class="k">const</span> COMPONENTS = {
+  TEXT:        () => &lt;Input /&gt;,
+  NUMBER:      () => &lt;Input type="number" /&gt;,
+  DATE:        () => &lt;DatePicker style={{ width: <span class="s">'100%'</span> }} /&gt;,
+  DATETIME:    () => &lt;DatePicker showTime style={{ width: <span class="s">'100%'</span> }} /&gt;,
+  BOOLEAN:     () => &lt;Checkbox /&gt;,
+  PHONE:       () => &lt;Input type="tel" /&gt;,
+  TEXTAREA:    () => &lt;Input.TextArea rows={3} /&gt;,
+  FILE:        () => &lt;Upload beforeUpload={() => false}&gt;&lt;Button&gt;Upload&lt;/Button&gt;&lt;/Upload&gt;,
+  SELECT:      (field, lang) => (
+    &lt;Select options={(field.options || []).map(o => ({ value: o.value, label: lang === <span class="s">'hi'</span> ? o.label_hi : o.label_en }))} /&gt;
+  ),
+  MULTISELECT: (field, lang) => (
+    &lt;Select mode="multiple" options={(field.options || []).map(o => ({ value: o.value, label: lang === <span class="s">'hi'</span> ? o.label_hi : o.label_en }))} /&gt;
+  ),
+};
+
+<span class="k">export default function</span> DynamicForm({ recordType, initialValues, onSaveDraft, onSubmit, readOnly = false }) {
+  <span class="k">const</span> [form] = Form.useForm();
+  <span class="k">const</span> { i18n } = useTranslation();
+  <span class="k">const</span> lang = i18n.language;
+
+  <span class="k">const</span> { data, isLoading } = useQuery({
+    queryKey: [<span class="s">'fields'</span>, <span class="s">'form'</span>, recordType],
+    queryFn: () => api.get(<span class="s">`/fields/form/${recordType}`</span>).then(r => r.data.data),
+  });
+
+  <span class="k">if</span> (isLoading) <span class="k">return</span> &lt;div&gt;Loading form...&lt;/div&gt;;
+
+  <span class="k">return</span> (
+    &lt;Form form={form} layout="vertical" initialValues={initialValues?.data}
+          onValuesChange={(_, all) => onSaveDraft?.({ data: all })}&gt;
+      {(data || []).map(section => (
+        &lt;div key={section.section} style={{ marginBottom: 24 }}&gt;
+          &lt;h3 style={{ marginBottom: 12, color: <span class="s">'#1e293b'</span> }}&gt;
+            {lang === <span class="s">'hi'</span> ? section.title_hi : section.title_en}
+          &lt;/h3&gt;
+          &lt;Row gutter={16}&gt;
+            {section.fields.map(field => {
+              <span class="k">const</span> label = lang === <span class="s">'hi'</span> ? field.label_hi : field.label_en;
+              <span class="k">const</span> rules = [];
+              <span class="k">if</span> (field.validation_rules?.required) rules.push({ required: true, message: <span class="s">`${label} is required`</span> });
+              <span class="k">const</span> ComponentFn = COMPONENTS[field.field_type] || COMPONENTS.TEXT;
+              <span class="k">return</span> (
+                &lt;Col span={12} key={field.field_key}&gt;
+                  &lt;Form.Item name={field.field_key} label={label} rules={rules}&gt;
+                    {ComponentFn(field, lang)}
+                  &lt;/Form.Item&gt;
+                &lt;/Col&gt;
+              );
+            })}
+          &lt;/Row&gt;
+        &lt;/div&gt;
+      ))}
+      {!readOnly && (
+        &lt;div style={{ display: <span class="s">'flex'</span>, gap: 8 }}&gt;
+          &lt;Button onClick={() => form.validateFields().then(vals => onSaveDraft?.({ data: vals }))}&gt;Save Draft&lt;/Button&gt;
+          &lt;Button type="primary" onClick={() => form.validateFields().then(vals => onSubmit?.({ data: vals }))}&gt;Submit&lt;/Button&gt;
+        &lt;/div&gt;
+      )}
+    &lt;/Form&gt;
+  );
+}</pre>
+</section>
+
+<section id="i18n">
+  <h2><span class="sn">11</span> Hindi / English setup</h2>
+<pre><span class="c">// src/i18n/index.js</span>
+<span class="k">import</span> i18n <span class="k">from</span> <span class="s">'i18next'</span>;
+<span class="k">import</span> { initReactI18next } <span class="k">from</span> <span class="s">'react-i18next'</span>;
+<span class="k">import</span> LanguageDetector <span class="k">from</span> <span class="s">'i18next-browser-languagedetector'</span>;
+<span class="k">import</span> en <span class="k">from</span> <span class="s">'./en.json'</span>;
+<span class="k">import</span> hi <span class="k">from</span> <span class="s">'./hi.json'</span>;
+
+i18n.use(LanguageDetector).use(initReactI18next).init({
+  resources: { en: { translation: en }, hi: { translation: hi } },
+  fallbackLng: <span class="s">'en'</span>, interpolation: { escapeValue: false }
+});
+
+<span class="k">export default</span> i18n;</pre>
+<pre><span class="c">// src/i18n/en.json (static UI strings — field labels come from registry)</span>
+{
+  "login": { "title": "PHAROS", "badge": "Badge Number", "password": "Password", "submit": "Sign In" },
+  "nav": { "records": "My Records", "queue": "Approval Queue", "analytics": "Analytics", "reports": "Reports", "admin": "Admin" },
+  "actions": { "approve": "Approve", "sendBack": "Send Back", "submit": "Submit", "saveDraft": "Save Draft", "download": "Download", "generate": "Generate Report" },
+  "status": { "DRAFT": "Draft", "PENDING_SHO": "Pending SHO", "DISTRICT_REVIEW": "District Review", "COMPILED": "Compiled", "HQ_RECEIVED": "HQ Received", "ARCHIVED": "Archived", "SENT_BACK_HC": "Sent Back" },
+  "recordTypes": { "ARREST": "Arrest Master", "PCR_CALL": "PCR Call Master", "CASE": "Cases Master" },
+  "langToggle": "हिंदी"
+}</pre>
+<pre><span class="c">// Language toggle component</span>
+<span class="k">import</span> { useTranslation } <span class="k">from</span> <span class="s">'react-i18next'</span>;
+<span class="k">import</span> { Button } <span class="k">from</span> <span class="s">'antd'</span>;
+
+<span class="k">export default function</span> LanguageToggle() {
+  <span class="k">const</span> { i18n, t } = useTranslation();
+  <span class="k">const</span> toggle = () => i18n.changeLanguage(i18n.language === <span class="s">'en'</span> ? <span class="s">'hi'</span> : <span class="s">'en'</span>);
+  <span class="k">return</span> &lt;Button size="small" onClick={toggle}&gt;{i18n.language === <span class="s">'en'</span> ? <span class="s">'हिंदी'</span> : <span class="s">'English'</span>}&lt;/Button&gt;;
+}</pre>
+</section>
+
+<section id="screens">
+  <h2><span class="sn">12</span> Screen-by-screen guide</h2>
+  <p>Build screens in this order (matches Day 2 → Day 3). Use the mock data from Dev 2's seed script for testing.</p>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/login</span><span class="sc-name">Login</span><span class="sc-role">All roles</span></div>
+    <div class="sc-body">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>POST /auth/login → store tokens → redirect</li></ul><div class="sc-lbl" style="margin-top:0.5rem">Components</div><ul class="sc-comps"><li>Form + Form.Item (Ant Design)</li><li>Input + Input.Password</li><li>Button type="primary"</li><li>Card centered on screen</li></ul></div>
+      <div><div class="sc-lbl">Notes</div><div class="sc-note">On success: call login(tokens) from AuthContext, then navigate to /. The / route reads user.role and redirects to the right dashboard. Show Spin while loading. Show Alert on error (wrong credentials).</div></div>
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/records</span><span class="sc-name">My Records (HC view)</span><span class="sc-role">HC</span></div>
+    <div class="sc-body">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>GET /records?psId=&lt;user.psId&gt;&amp;page=1</li><li>GET /workflow/queue/count (for badge)</li></ul><div class="sc-lbl" style="margin-top:0.5rem">Components</div><ul class="sc-comps"><li>Table with pagination</li><li>Tag for status (color from STATUS_COLORS)</li><li>Button "New Record" → dropdown (Arrest / PCR Call / Case)</li><li>Statistic cards: Draft, Submitted, Approved, Sent Back</li></ul></div>
+      <div><div class="sc-lbl">Notes</div><div class="sc-note">Table columns: Record Type, Status (Tag), Created At, Beat/PS, Action (View). Status colors: DRAFT=gray, PENDING_SHO=orange, SENT_BACK_HC=red, APPROVED=green. Clicking a row opens /records/:id.</div></div>
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/records/new/:type</span><span class="sc-name">New Record Form</span><span class="sc-role">HC</span></div>
+    <div class="sc-body">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>GET /fields/form/:type (DynamicForm reads this)</li><li>POST /records on Save Draft</li><li>PUT /records/:id on subsequent saves</li><li>POST /records/:id/submit on Submit</li></ul><div class="sc-lbl" style="margin-top:0.5rem">Components</div><ul class="sc-comps"><li>DynamicForm (core component)</li><li>Breadcrumb: Records → New Arrest Master</li><li>Auto-save indicator (debounce 2s)</li></ul></div>
+      <div><div class="sc-lbl">Notes</div><div class="sc-note">On first save: POST /records → get ID → update URL to /records/:id/edit. Subsequent saves: PUT /records/:id. On Submit: POST /records/:id/submit → redirect to /records. Auto-save every 2s while user is typing (use debounce from lodash or write your own).</div></div>
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/queue</span><span class="sc-name">Approval Queue (SHO + District)</span><span class="sc-role">SHO, DISTRICT_OFFICER, HQ_ANALYST</span></div>
+    <div class="sc-body">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>GET /workflow/queue?page=1&amp;limit=20</li><li>GET /workflow/queue/count</li></ul><div class="sc-lbl" style="margin-top:0.5rem">Components</div><ul class="sc-comps"><li>Table with filter tabs: All / Arrest / PCR Call / Case</li><li>Each row: PS name, HC name, date, status, View button</li><li>Empty state with Ant Design Empty component</li></ul></div>
+      <div><div class="sc-lbl">Notes</div><div class="sc-note">SHO sees records from their PS only. DISTRICT_OFFICER sees records from all PS in their district that have been SHO-approved. HQ_ANALYST sees compiled summaries. The backend scopes this by the JWT's level + psId/districtId.</div></div>
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/records/:id</span><span class="sc-name">Record Detail + Workflow Actions</span><span class="sc-role">All (role-appropriate actions)</span></div>
+    <div class="sc-body">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>GET /records/:id</li><li>GET /records/:id/history</li><li>GET /records/:id/revisions</li><li>POST /records/:id/approve</li><li>POST /records/:id/send-back</li></ul><div class="sc-lbl" style="margin-top:0.5rem">Components</div><ul class="sc-comps"><li>DynamicForm in readOnly mode</li><li>Steps (Ant Design) showing workflow state</li><li>Timeline showing history entries</li><li>Approve button + Send Back modal (with comment + field selector)</li></ul></div>
+      <div><div class="sc-lbl">Notes</div><div class="sc-note">Show DynamicForm in readOnly=true mode for viewing. Action buttons are role-conditional: HC sees nothing (wait state), SHO sees Approve + Send Back if status=PENDING_SHO. On Send Back: open a Modal with a TextArea for comment and a Select to choose which specific fields are wrong (target_fields).</div></div>
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/district</span><span class="sc-name">District Dashboard</span><span class="sc-role">DISTRICT_OFFICER</span></div>
+    <div class="sc-body">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>GET /analytics/overview?districtId=&lt;user.districtId&gt;</li><li>GET /analytics/by-ps?districtId=&lt;user.districtId&gt;</li><li>GET /compilations?districtId=&lt;id&gt;&amp;status=DRAFT</li><li>GET /workflow/queue/count</li></ul><div class="sc-lbl" style="margin-top:0.5rem">Components</div><ul class="sc-comps"><li>4 Statistic cards: Arrests Today, PCR Calls, Cases, Pending</li><li>Table: PS-wise breakdown (arrests, PCR, cases per PS)</li><li>Button → /compile (create new compilation)</li></ul></div>
+      <div><div class="sc-lbl">Notes</div><div class="sc-note">District Officer can see all PS under their district. Show a BarChart (Recharts) of records by PS. Link to /compile to create a new daily compilation. Show pending compilation status.</div></div>
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/compile</span><span class="sc-name">Compilation UI</span><span class="sc-role">DISTRICT_OFFICER</span></div>
+    <div class="sc-body">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>GET /records?districtId=&lt;id&gt;&amp;status=APPROVED_SHO</li><li>POST /compilations (create)</li><li>POST /compilations/:id/submit</li></ul><div class="sc-lbl" style="margin-top:0.5rem">Components</div><ul class="sc-comps"><li>DatePicker for period selection</li><li>Table of approved records (selectable checkboxes)</li><li>Summary stats: count by type</li><li>Submit button → confirms → submits to HQ</li></ul></div>
+      <div><div class="sc-lbl">Notes</div><div class="sc-note">Flow: (1) Pick date range, (2) See approved records from all PS for that period, (3) POST /compilations to create it, (4) Review summary, (5) POST /compilations/:id/submit to send to HQ. Show Popconfirm before final submit.</div></div>
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/analytics</span><span class="sc-name">Analytics Dashboard (role-aware)</span><span class="sc-role">SHO, DISTRICT_OFFICER, HQ roles</span></div>
+    <div class="sc-body">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>GET /analytics/overview</li><li>GET /analytics/by-crime-head</li><li>GET /analytics/trends?period=weekly</li><li>GET /analytics/by-ps (District+ only)</li></ul><div class="sc-lbl" style="margin-top:0.5rem">Components</div><ul class="sc-comps"><li>Row of 4 Statistic cards (Arrests / PCR / Cases / Pending)</li><li>BarChart: Crime head breakdown (Recharts)</li><li>LineChart: Weekly trend (Recharts)</li><li>DateRangePicker: custom date filter</li></ul></div>
+      <div><div class="sc-lbl">Notes</div><div class="sc-note">The backend scopes all analytics by the user's level. SHO gets PS-level data only. District gets all PS under their district. HQ gets everything. Pass the user's psId or districtId as query params based on role. Show charts in a 2-column grid.</div></div>
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/reports</span><span class="sc-name">Report Builder + PDF Download</span><span class="sc-role">All</span></div>
+    <div class="sc-body">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>GET /reports/templates</li><li>POST /reports/generate → job_id</li><li>GET /reports/status/:jobId (poll)</li><li>GET /reports/download/:jobId (download)</li><li>GET /reports/history</li></ul><div class="sc-lbl" style="margin-top:0.5rem">Components</div><ul class="sc-comps"><li>Select: choose template / record type</li><li>RangePicker: date range</li><li>Select: format (PDF / CSV)</li><li>Generate button → Spin → Download button</li><li>Table below: report history</li></ul></div>
+      <div><div class="sc-lbl">PDF download flow</div><div class="sc-note">
+        1. POST /reports/generate → get job_id<br>
+        2. Poll GET /reports/status/:jobId every 2 seconds using setInterval<br>
+        3. When status='ready': show Download button, clear interval<br>
+        4. On Download click: window.open(API_URL + '/reports/download/' + jobId) OR use axios blob download:<br>
+        <code>const r = await api.get('/reports/download/'+id, {responseType:'blob'}); const url = URL.createObjectURL(r.data); const a = document.createElement('a'); a.href=url; a.download='report.pdf'; a.click();</code>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/admin/users</span><span class="sc-name">User Management</span><span class="sc-role">SYSTEM_ADMIN</span></div>
+    <div class="sc-body full">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>GET /users (with filters)</li><li>POST /users (create modal)</li><li>PUT /users/:id (edit modal)</li><li>POST /users/:id/reset-password</li><li>DELETE /users/:id (confirm modal)</li></ul></div>
+      <div class="sc-lbl" style="margin-top:0.5rem">Components</div><ul class="sc-comps"><li>Table with search bar + role filter Select</li><li>Modal Form for create/edit: badgeNo, name_en, name_hi, role Select, PS Select (from /hierarchy/nodes?type=PS)</li><li>Popconfirm before delete</li></ul>
+    </div>
+  </div>
+
+  <div class="sc">
+    <div class="sc-head"><span class="sc-route">/admin/fields</span><span class="sc-name">Field Registry Manager</span><span class="sc-role">SYSTEM_ADMIN</span></div>
+    <div class="sc-body full">
+      <div><div class="sc-lbl">API calls</div><ul class="sc-apis"><li>GET /fields?record_type=&amp;is_active=</li><li>POST /fields</li><li>PUT /fields/:id</li><li>PATCH /fields/:id/status</li></ul></div>
+      <div class="sc-lbl" style="margin-top:0.5rem">Notes</div>
+      <div class="sc-note">Show a Table grouped by record_type. Each row: field_key, label_en, label_hi, field_type, section, active toggle (Switch). Add field modal: all fields in the registry schema. This screen is what makes PHAROS extensible without code — test it carefully.</div>
+    </div>
+  </div>
+</section>
+
+<section id="allapis">
+  <h2><span class="sn">13</span> Complete API reference</h2>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Owner</th><th>Description</th><th>RBAC level</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/auth/login</td><td><span class="ow o1">Dev 1</span></td><td>badgeNo+password → access_token, refresh_token, user</td><td>Public</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/auth/refresh</td><td><span class="ow o1">Dev 1</span></td><td>refresh_token → new access_token</td><td>Public</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/auth/logout</td><td><span class="ow o1">Dev 1</span></td><td>Invalidate refresh in Redis</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/auth/me</td><td><span class="ow o1">Dev 1</span></td><td>Current user + role + hierarchy info</td><td>Any</td></tr>
+    <tr><td><span class="m mu">PUT</span></td><td class="ep">/auth/change-password</td><td><span class="ow o1">Dev 1</span></td><td>oldPassword, newPassword</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/users</td><td><span class="ow o1">Dev 1</span></td><td>List. Query: role, psId, districtId, page, limit</td><td>DISTRICT+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/users</td><td><span class="ow o1">Dev 1</span></td><td>Create: badgeNo, name_en, name_hi, role, psId, password</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/users/:id</td><td><span class="ow o1">Dev 1</span></td><td>Single user</td><td>DISTRICT+</td></tr>
+    <tr><td><span class="m mu">PUT</span></td><td class="ep">/users/:id</td><td><span class="ow o1">Dev 1</span></td><td>Update name/role/psId</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m md">DELETE</span></td><td class="ep">/users/:id</td><td><span class="ow o1">Dev 1</span></td><td>Soft delete</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/users/:id/reset-password</td><td><span class="ow o1">Dev 1</span></td><td>Admin resets user password</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/hierarchy/tree</td><td><span class="ow o1">Dev 1</span></td><td>Full hierarchy tree HQ→District→PS</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/hierarchy/nodes</td><td><span class="ow o1">Dev 1</span></td><td>Query: type=PS|DISTRICT|HQ</td><td>Any</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/hierarchy/nodes</td><td><span class="ow o1">Dev 1</span></td><td>Create node</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mu">PUT</span></td><td class="ep">/hierarchy/nodes/:id</td><td><span class="ow o1">Dev 1</span></td><td>Update node</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m md">DELETE</span></td><td class="ep">/hierarchy/nodes/:id</td><td><span class="ow o1">Dev 1</span></td><td>Soft delete</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/audit/record/:id</td><td><span class="ow o1">Dev 1</span></td><td>All revisions for a record</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/audit/user/:id</td><td><span class="ow o1">Dev 1</span></td><td>All actions by a user. Query: from, to, page</td><td>DISTRICT+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/templates</td><td><span class="ow o1">Dev 1</span></td><td>List report templates</td><td>Any</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/reports/generate</td><td><span class="ow o1">Dev 1</span></td><td>Body: template_id, filters, format, from, to → {job_id}</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/status/:jobId</td><td><span class="ow o1">Dev 1</span></td><td>Poll status: pending|ready|failed</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/download/:jobId</td><td><span class="ow o1">Dev 1</span></td><td>Stream file (PDF or CSV)</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/history</td><td><span class="ow o1">Dev 1</span></td><td>Past reports for current user</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/admin/stats</td><td><span class="ow o1">Dev 1</span></td><td>System health stats</td><td>HQ_ADMIN+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/fields</td><td><span class="ow o2">Dev 2</span></td><td>Query: record_type, is_active</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/fields/form/:record_type</td><td><span class="ow o2">Dev 2</span></td><td>Fields by section for form render</td><td>Any</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/fields</td><td><span class="ow o2">Dev 2</span></td><td>Create field definition (full schema)</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mu">PUT</span></td><td class="ep">/fields/:id</td><td><span class="ow o2">Dev 2</span></td><td>Update field definition</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mpa">PATCH</span></td><td class="ep">/fields/:id/status</td><td><span class="ow o2">Dev 2</span></td><td>Toggle is_active</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/records</td><td><span class="ow o2">Dev 2</span></td><td>List. Query: type, status, psId, districtId, from, to, page, limit</td><td>Any (scoped)</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records</td><td><span class="ow o2">Dev 2</span></td><td>Create: {record_type, data:{...}}</td><td>HC</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/records/:id</td><td><span class="ow o2">Dev 2</span></td><td>Single record with data</td><td>Any (scoped)</td></tr>
+    <tr><td><span class="m mu">PUT</span></td><td class="ep">/records/:id</td><td><span class="ow o2">Dev 2</span></td><td>Update data (DRAFT only)</td><td>HC (own)</td></tr>
+    <tr><td><span class="m md">DELETE</span></td><td class="ep">/records/:id</td><td><span class="ow o2">Dev 2</span></td><td>Delete (DRAFT only)</td><td>HC (own)</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/records/:id/revisions</td><td><span class="ow o2">Dev 2</span></td><td>Field-level audit trail</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/records/:id/history</td><td><span class="ow o2">Dev 2</span></td><td>Workflow transition history</td><td>Any</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/submit</td><td><span class="ow o2">Dev 2</span></td><td>HC → SHO</td><td>HC (own)</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/approve</td><td><span class="ow o2">Dev 2</span></td><td>SHO or District approves</td><td>SHO, DISTRICT</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/send-back</td><td><span class="ow o2">Dev 2</span></td><td>Body: {comment, target_fields:[]}</td><td>SHO, DISTRICT</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/workflow/queue</td><td><span class="ow o2">Dev 2</span></td><td>Records pending for current user. Query: type, page</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/workflow/queue/count</td><td><span class="ow o2">Dev 2</span></td><td>Count of pending items</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/compilations</td><td><span class="ow o2">Dev 2</span></td><td>Query: districtId, period, status</td><td>DISTRICT+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/compilations</td><td><span class="ow o2">Dev 2</span></td><td>Create: {period, district_id}</td><td>DISTRICT_OFFICER</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/compilations/:id</td><td><span class="ow o2">Dev 2</span></td><td>Single compilation + records</td><td>DISTRICT+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/compilations/:id/submit</td><td><span class="ow o2">Dev 2</span></td><td>Submit to HQ</td><td>DISTRICT_OFFICER</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/overview</td><td><span class="ow o2">Dev 2</span></td><td>Count cards. Query: from, to, psId?, districtId? → {arrests_today, pcr_today, cases_today, pending_approvals}</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/by-crime-head</td><td><span class="ow o2">Dev 2</span></td><td>Crime head breakdown</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/by-ps</td><td><span class="ow o2">Dev 2</span></td><td>Per-PS breakdown. Query: districtId, from, to</td><td>DISTRICT+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/trends</td><td><span class="ow o2">Dev 2</span></td><td>Time series. Query: metric, period, from, to</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/status-breakdown</td><td><span class="ow o2">Dev 2</span></td><td>Records by status</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/notifications</td><td><span class="ow o2">Dev 2</span></td><td>Query: read?, page, limit</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/notifications/count</td><td><span class="ow o2">Dev 2</span></td><td>Unread count</td><td>Any</td></tr>
+    <tr><td><span class="m mpa">PATCH</span></td><td class="ep">/notifications/:id/read</td><td><span class="ow o2">Dev 2</span></td><td>Mark one read</td><td>Any</td></tr>
+    <tr><td><span class="m mpa">PATCH</span></td><td class="ep">/notifications/read-all</td><td><span class="ow o2">Dev 2</span></td><td>Mark all read for user</td><td>Any</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="day4">
+  <h2><span class="sn">14</span> Day 4 — Integration checklist</h2>
+  <div class="note">Run this checklist top to bottom. Dev 2 does the merging. All 3 join the video call. Mark each item as you go. If something is broken but non-critical, note it and move on — don't get stuck.</div>
+  <ul class="cl">
+    <li class="cat">Morning: Merge and environment</li>
+    <li>Dev 2 merges dev2/backend → main first</li>
+    <li>Dev 2 merges dev1/auth → main, resolves any conflicts</li>
+    <li>Dev 2 merges dev3/frontend → main, resolves any conflicts</li>
+    <li>Everyone pulls main and runs <code>docker compose up -d</code></li>
+    <li>Dev 2 runs mock data script on cloud DB: <code>node scripts/seed-mock-data.js</code></li>
+    <li>Verify RabbitMQ management UI shows 'pharos' exchange at localhost:15672</li>
+    <li class="cat">Auth + RBAC flow</li>
+    <li>Login as HC (badgeNo: HC001, password: test123) → redirects to /records</li>
+    <li>Login as SHO → redirects to /queue, sees correct PS name in header</li>
+    <li>Login as DISTRICT_OFFICER → redirects to /district</li>
+    <li>Login as HQ_ADMIN → redirects to /hq</li>
+    <li>HC trying to access /queue returns 403 in network tab</li>
+    <li class="cat">Record lifecycle (HC → SHO → District → HQ)</li>
+    <li>HC creates Arrest Master record → status shows DRAFT in list</li>
+    <li>HC submits record → status changes to PENDING_SHO</li>
+    <li>SHO logs in → sees record in /queue</li>
+    <li>SHO sends back with comment → HC sees SENT_BACK status with comment</li>
+    <li>HC resubmits → SHO sees it again</li>
+    <li>SHO approves → record moves to DISTRICT_REVIEW</li>
+    <li>District officer sees record in their queue</li>
+    <li>District creates compilation → submits to HQ</li>
+    <li>HQ analyst sees compilation in HQ dashboard</li>
+    <li class="cat">Audit trail</li>
+    <li>Open /records/:id → history tab shows all state transitions</li>
+    <li>GET /audit/record/:id returns field-level diffs from revision edits</li>
+    <li>RabbitMQ management UI shows messages delivered to audit queue</li>
+    <li class="cat">Field Registry + DynamicForm</li>
+    <li>Arrest Master form renders all fields from registry (not hardcoded)</li>
+    <li>PCR Call Master form renders independently</li>
+    <li>Cases Master form renders independently</li>
+    <li>Toggle language → all field labels switch EN ↔ HI</li>
+    <li>Admin disables a field in /admin/fields → field disappears from form</li>
+    <li class="cat">Analytics + Reports</li>
+    <li>Analytics overview cards show non-zero numbers (mock data)</li>
+    <li>Crime head chart renders with data</li>
+    <li>POST /reports/generate → returns job_id</li>
+    <li>Poll /reports/status/:id → reaches 'ready' state</li>
+    <li>Download PDF → opens/downloads successfully</li>
+    <li class="cat">Notifications</li>
+    <li>SHO approves a record → HC gets a notification (count badge updates)</li>
+    <li>SHO sends back → HC sees send-back notification</li>
+    <li class="cat">Final</li>
+    <li>Run all 5 role flows end-to-end once</li>
+    <li>Note any bugs as GitHub issues for Phase 2</li>
+    <li>Record a 5-minute demo walkthrough</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

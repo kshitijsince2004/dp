@@ -1,0 +1,2622 @@
+[
+ {
+  "id": "DIST_CD",
+  "node_type": "DISTRICT",
+  "name_en": "Central District",
+  "name_hi": "Central District",
+  "code": "DIST_CD",
+  "parent_id": "RANGE_CR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_DW",
+  "node_type": "DISTRICT",
+  "name_en": "Dwarka District",
+  "name_hi": "Dwarka District",
+  "code": "DIST_DW",
+  "parent_id": "RANGE_WR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_ED",
+  "node_type": "DISTRICT",
+  "name_en": "East District",
+  "name_hi": "East District",
+  "code": "DIST_ED",
+  "parent_id": "RANGE_ER",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_ND",
+  "node_type": "DISTRICT",
+  "name_en": "North District",
+  "name_hi": "North District",
+  "code": "DIST_ND",
+  "parent_id": "RANGE_CR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_NDD",
+  "node_type": "DISTRICT",
+  "name_en": "New Delhi District",
+  "name_hi": "New Delhi District",
+  "code": "DIST_NDD",
+  "parent_id": "RANGE_NDR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_NED",
+  "node_type": "DISTRICT",
+  "name_en": "North East District",
+  "name_hi": "North East District",
+  "code": "DIST_NED",
+  "parent_id": "RANGE_ER",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_NWD",
+  "node_type": "DISTRICT",
+  "name_en": "North West District",
+  "name_hi": "North West District",
+  "code": "DIST_NWD",
+  "parent_id": "RANGE_NR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_OD",
+  "node_type": "DISTRICT",
+  "name_en": "Outer District",
+  "name_hi": "Outer District",
+  "code": "DIST_OD",
+  "parent_id": "RANGE_WR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_OND",
+  "node_type": "DISTRICT",
+  "name_en": "Outer North District",
+  "name_hi": "Outer North District",
+  "code": "DIST_OND",
+  "parent_id": "RANGE_NR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_RND",
+  "node_type": "DISTRICT",
+  "name_en": "Rohini District",
+  "name_hi": "Rohini District",
+  "code": "DIST_RND",
+  "parent_id": "RANGE_NR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_SD",
+  "node_type": "DISTRICT",
+  "name_en": "South District",
+  "name_hi": "South District",
+  "code": "DIST_SD",
+  "parent_id": "RANGE_SR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_SED",
+  "node_type": "DISTRICT",
+  "name_en": "South East District",
+  "name_hi": "South East District",
+  "code": "DIST_SED",
+  "parent_id": "RANGE_SR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_SHD",
+  "node_type": "DISTRICT",
+  "name_en": "Shahdara District",
+  "name_hi": "Shahdara District",
+  "code": "DIST_SHD",
+  "parent_id": "RANGE_ER",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_SWD",
+  "node_type": "DISTRICT",
+  "name_en": "South West District",
+  "name_hi": "South West District",
+  "code": "DIST_SWD",
+  "parent_id": "RANGE_NDR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "DIST_WD",
+  "node_type": "DISTRICT",
+  "name_en": "West District",
+  "name_hi": "West District",
+  "code": "DIST_WD",
+  "parent_id": "RANGE_WR",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "HQ",
+  "node_type": "HQ",
+  "name_en": "Delhi Police HQ",
+  "name_hi": "दिल्ली पुलिस मुख्यालय",
+  "code": "HQ",
+  "parent_id": null,
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_ANANDPARBAT",
+  "node_type": "PS",
+  "name_en": "PS Anand Parbat",
+  "name_hi": "PS Anand Parbat",
+  "code": "PS_CD_ANANDPARBAT",
+  "parent_id": "SUBDIV_DIST_CD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_CHANDNIMAHAL",
+  "node_type": "PS",
+  "name_en": "PS Chandni Mahal",
+  "name_hi": "PS Chandni Mahal",
+  "code": "PS_CD_CHANDNIMAHAL",
+  "parent_id": "SUBDIV_DIST_CD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_DARYAGANJ",
+  "node_type": "PS",
+  "name_en": "PS Darya Ganj",
+  "name_hi": "PS Darya Ganj",
+  "code": "PS_CD_DARYAGANJ",
+  "parent_id": "SUBDIV_DIST_CD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_DBGROAD",
+  "node_type": "PS",
+  "name_en": "PS D. B. G. Road",
+  "name_hi": "PS D. B. G. Road",
+  "code": "PS_CD_DBGROAD",
+  "parent_id": "SUBDIV_DIST_CD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_HAUZQAZI",
+  "node_type": "PS",
+  "name_en": "PS Hauz Qazi",
+  "name_hi": "PS Hauz Qazi",
+  "code": "PS_CD_HAUZQAZI",
+  "parent_id": "SUBDIV_DIST_CD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_IPESTATE",
+  "node_type": "PS",
+  "name_en": "PS I. P. Estate",
+  "name_hi": "PS I. P. Estate",
+  "code": "PS_CD_IPESTATE",
+  "parent_id": "SUBDIV_DIST_CD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_JAMAMASJID",
+  "node_type": "PS",
+  "name_en": "PS Jama Masjid",
+  "name_hi": "PS Jama Masjid",
+  "code": "PS_CD_JAMAMASJID",
+  "parent_id": "SUBDIV_DIST_CD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_KAMLAMARKET",
+  "node_type": "PS",
+  "name_en": "PS Kamla Market",
+  "name_hi": "PS Kamla Market",
+  "code": "PS_CD_KAMLAMARKET",
+  "parent_id": "SUBDIV_DIST_CD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_KAROLBAGH",
+  "node_type": "PS",
+  "name_en": "PS Karol Bagh",
+  "name_hi": "PS Karol Bagh",
+  "code": "PS_CD_KAROLBAGH",
+  "parent_id": "SUBDIV_DIST_CD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_NABIKARIM",
+  "node_type": "PS",
+  "name_en": "PS Nabi Karim",
+  "name_hi": "PS Nabi Karim",
+  "code": "PS_CD_NABIKARIM",
+  "parent_id": "SUBDIV_DIST_CD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_PAHARGANJ",
+  "node_type": "PS",
+  "name_en": "PS Pahar Ganj",
+  "name_hi": "PS Pahar Ganj",
+  "code": "PS_CD_PAHARGANJ",
+  "parent_id": "SUBDIV_DIST_CD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_PARSHADNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Parshad Nagar",
+  "name_hi": "PS Parshad Nagar",
+  "code": "PS_CD_PARSHADNAGAR",
+  "parent_id": "SUBDIV_DIST_CD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_PATELNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Patel Nagar",
+  "name_hi": "PS Patel Nagar",
+  "code": "PS_CD_PATELNAGAR",
+  "parent_id": "SUBDIV_DIST_CD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_CD_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_CD_3",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_RAJINDERNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Rajinder Nagar",
+  "name_hi": "PS Rajinder Nagar",
+  "code": "PS_CD_RAJINDERNAGAR",
+  "parent_id": "SUBDIV_DIST_CD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_CD_RANJITNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Ranjit Nagar",
+  "name_hi": "PS Ranjit Nagar",
+  "code": "PS_CD_RANJITNAGAR",
+  "parent_id": "SUBDIV_DIST_CD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_BABAHARIDASNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Baba Haridas Nagar",
+  "name_hi": "PS Baba Haridas Nagar",
+  "code": "PS_DW_BABAHARIDASNAGAR",
+  "parent_id": "SUBDIV_DIST_DW_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_BINDAPUR",
+  "node_type": "PS",
+  "name_en": "PS Binda Pur",
+  "name_hi": "PS Binda Pur",
+  "code": "PS_DW_BINDAPUR",
+  "parent_id": "SUBDIV_DIST_DW_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_CHHAWLA",
+  "node_type": "PS",
+  "name_en": "PS Chhawla",
+  "name_hi": "PS Chhawla",
+  "code": "PS_DW_CHHAWLA",
+  "parent_id": "SUBDIV_DIST_DW_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_DABRI",
+  "node_type": "PS",
+  "name_en": "PS Dabri",
+  "name_hi": "PS Dabri",
+  "code": "PS_DW_DABRI",
+  "parent_id": "SUBDIV_DIST_DW_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_DWARKANORTH",
+  "node_type": "PS",
+  "name_en": "PS Dwarka North",
+  "name_hi": "PS Dwarka North",
+  "code": "PS_DW_DWARKANORTH",
+  "parent_id": "SUBDIV_DIST_DW_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_DWARKASECTOR23",
+  "node_type": "PS",
+  "name_en": "PS Dwarka Sector 23",
+  "name_hi": "PS Dwarka Sector 23",
+  "code": "PS_DW_DWARKASECTOR23",
+  "parent_id": "SUBDIV_DIST_DW_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_DWARKASOUTH",
+  "node_type": "PS",
+  "name_en": "PS Dwarka South",
+  "name_hi": "PS Dwarka South",
+  "code": "PS_DW_DWARKASOUTH",
+  "parent_id": "SUBDIV_DIST_DW_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_JAFFARPURKALAN",
+  "node_type": "PS",
+  "name_en": "PS Jaffarpur Kalan",
+  "name_hi": "PS Jaffarpur Kalan",
+  "code": "PS_DW_JAFFARPURKALAN",
+  "parent_id": "SUBDIV_DIST_DW_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_MOHANGARDEN",
+  "node_type": "PS",
+  "name_en": "PS Mohan Garden",
+  "name_hi": "PS Mohan Garden",
+  "code": "PS_DW_MOHANGARDEN",
+  "parent_id": "SUBDIV_DIST_DW_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_NAJAFGARH",
+  "node_type": "PS",
+  "name_en": "PS Najafgarh",
+  "name_hi": "PS Najafgarh",
+  "code": "PS_DW_NAJAFGARH",
+  "parent_id": "SUBDIV_DIST_DW_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_DW_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_DW_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_DW_UTTAMNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Uttam Nagar",
+  "name_hi": "PS Uttam Nagar",
+  "code": "PS_DW_UTTAMNAGAR",
+  "parent_id": "SUBDIV_DIST_DW_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_GHAZIPUR",
+  "node_type": "PS",
+  "name_en": "PS Ghazipur",
+  "name_hi": "PS Ghazipur",
+  "code": "PS_ED_GHAZIPUR",
+  "parent_id": "SUBDIV_DIST_ED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_KALYANPURI",
+  "node_type": "PS",
+  "name_en": "PS Kalyan Puri",
+  "name_hi": "PS Kalyan Puri",
+  "code": "PS_ED_KALYANPURI",
+  "parent_id": "SUBDIV_DIST_ED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_LAXMINAGAR",
+  "node_type": "PS",
+  "name_en": "PS Laxmi Nagar",
+  "name_hi": "PS Laxmi Nagar",
+  "code": "PS_ED_LAXMINAGAR",
+  "parent_id": "SUBDIV_DIST_ED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_MADHUVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Madhu Vihar",
+  "name_hi": "PS Madhu Vihar",
+  "code": "PS_ED_MADHUVIHAR",
+  "parent_id": "SUBDIV_DIST_ED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_MANDAWALI",
+  "node_type": "PS",
+  "name_en": "PS Mandawali",
+  "name_hi": "PS Mandawali",
+  "code": "PS_ED_MANDAWALI",
+  "parent_id": "SUBDIV_DIST_ED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_MAYURVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Mayur Vihar",
+  "name_hi": "PS Mayur Vihar",
+  "code": "PS_ED_MAYURVIHAR",
+  "parent_id": "SUBDIV_DIST_ED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_NEWASHOKNAGAR",
+  "node_type": "PS",
+  "name_en": "PS New Ashok Nagar",
+  "name_hi": "PS New Ashok Nagar",
+  "code": "PS_ED_NEWASHOKNAGAR",
+  "parent_id": "SUBDIV_DIST_ED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_PANDAVNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Pandav Nagar",
+  "name_hi": "PS Pandav Nagar",
+  "code": "PS_ED_PANDAVNAGAR",
+  "parent_id": "SUBDIV_DIST_ED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_PATPARGANJINDAREA",
+  "node_type": "PS",
+  "name_en": "PS Patparganj Ind. Area",
+  "name_hi": "PS Patparganj Ind. Area",
+  "code": "PS_ED_PATPARGANJINDAREA",
+  "parent_id": "SUBDIV_DIST_ED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_PREETVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Preet Vihar",
+  "name_hi": "PS Preet Vihar",
+  "code": "PS_ED_PREETVIHAR",
+  "parent_id": "SUBDIV_DIST_ED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_ED_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_ED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ED_SHAKARPUR",
+  "node_type": "PS",
+  "name_en": "PS Shakar Pur",
+  "name_hi": "PS Shakar Pur",
+  "code": "PS_ED_SHAKARPUR",
+  "parent_id": "SUBDIV_DIST_ED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NDD_BARAKHAMBAROAD",
+  "node_type": "PS",
+  "name_en": "PS Barakhamba Road",
+  "name_hi": "PS Barakhamba Road",
+  "code": "PS_NDD_BARAKHAMBAROAD",
+  "parent_id": "SUBDIV_DIST_NDD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NDD_CHANKAYAPURI",
+  "node_type": "PS",
+  "name_en": "PS Chankaya Puri",
+  "name_hi": "PS Chankaya Puri",
+  "code": "PS_NDD_CHANKAYAPURI",
+  "parent_id": "SUBDIV_DIST_NDD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NDD_CONNAUGHTPLACE",
+  "node_type": "PS",
+  "name_en": "PS Connaught Place",
+  "name_hi": "PS Connaught Place",
+  "code": "PS_NDD_CONNAUGHTPLACE",
+  "parent_id": "SUBDIV_DIST_NDD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NDD_MANDIRMARG",
+  "node_type": "PS",
+  "name_en": "PS Mandir Marg",
+  "name_hi": "PS Mandir Marg",
+  "code": "PS_NDD_MANDIRMARG",
+  "parent_id": "SUBDIV_DIST_NDD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NDD_NORTHAVENUE",
+  "node_type": "PS",
+  "name_en": "PS North Avenue",
+  "name_hi": "PS North Avenue",
+  "code": "PS_NDD_NORTHAVENUE",
+  "parent_id": "SUBDIV_DIST_NDD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NDD_PARLIAMENTSTREET",
+  "node_type": "PS",
+  "name_en": "PS Parliament Street",
+  "name_hi": "PS Parliament Street",
+  "code": "PS_NDD_PARLIAMENTSTREET",
+  "parent_id": "SUBDIV_DIST_NDD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NDD_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_NDD_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_NDD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NDD_SOUTHAVENUE",
+  "node_type": "PS",
+  "name_en": "PS South Avenue",
+  "name_hi": "PS South Avenue",
+  "code": "PS_NDD_SOUTHAVENUE",
+  "parent_id": "SUBDIV_DIST_NDD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NDD_TILAKMARG",
+  "node_type": "PS",
+  "name_en": "PS Tilak Marg",
+  "name_hi": "PS Tilak Marg",
+  "code": "PS_NDD_TILAKMARG",
+  "parent_id": "SUBDIV_DIST_NDD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NDD_TUGLAKROAD",
+  "node_type": "PS",
+  "name_en": "PS Tuglak Road",
+  "name_hi": "PS Tuglak Road",
+  "code": "PS_NDD_TUGLAKROAD",
+  "parent_id": "SUBDIV_DIST_NDD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_BARAHINDURAO",
+  "node_type": "PS",
+  "name_en": "PS Bara Hindu Rao",
+  "name_hi": "PS Bara Hindu Rao",
+  "code": "PS_ND_BARAHINDURAO",
+  "parent_id": "SUBDIV_DIST_ND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_BURARI",
+  "node_type": "PS",
+  "name_en": "PS Burari",
+  "name_hi": "PS Burari",
+  "code": "PS_ND_BURARI",
+  "parent_id": "SUBDIV_DIST_ND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_CIVILLINES",
+  "node_type": "PS",
+  "name_en": "PS Civil Lines",
+  "name_hi": "PS Civil Lines",
+  "code": "PS_ND_CIVILLINES",
+  "parent_id": "SUBDIV_DIST_ND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_GULABIBAGH",
+  "node_type": "PS",
+  "name_en": "PS Gulabi Bagh",
+  "name_hi": "PS Gulabi Bagh",
+  "code": "PS_ND_GULABIBAGH",
+  "parent_id": "SUBDIV_DIST_ND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_KASHMEREGATE",
+  "node_type": "PS",
+  "name_en": "PS Kashmere Gate",
+  "name_hi": "PS Kashmere Gate",
+  "code": "PS_ND_KASHMEREGATE",
+  "parent_id": "SUBDIV_DIST_ND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_KOTWALI",
+  "node_type": "PS",
+  "name_en": "PS Kotwali",
+  "name_hi": "PS Kotwali",
+  "code": "PS_ND_KOTWALI",
+  "parent_id": "SUBDIV_DIST_ND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_LAHORIGATE",
+  "node_type": "PS",
+  "name_en": "PS Lahori Gate",
+  "name_hi": "PS Lahori Gate",
+  "code": "PS_ND_LAHORIGATE",
+  "parent_id": "SUBDIV_DIST_ND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_MAURICENAGAR",
+  "node_type": "PS",
+  "name_en": "PS Maurice Nagar",
+  "name_hi": "PS Maurice Nagar",
+  "code": "PS_ND_MAURICENAGAR",
+  "parent_id": "SUBDIV_DIST_ND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_ND_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_ND_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_ROOPNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Roop Nagar",
+  "name_hi": "PS Roop Nagar",
+  "code": "PS_ND_ROOPNAGAR",
+  "parent_id": "SUBDIV_DIST_ND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_SADARBAZAR",
+  "node_type": "PS",
+  "name_en": "PS Sadar Bazar",
+  "name_hi": "PS Sadar Bazar",
+  "code": "PS_ND_SADARBAZAR",
+  "parent_id": "SUBDIV_DIST_ND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_SARAIROHILLA",
+  "node_type": "PS",
+  "name_en": "PS Sarai Rohilla",
+  "name_hi": "PS Sarai Rohilla",
+  "code": "PS_ND_SARAIROHILLA",
+  "parent_id": "SUBDIV_DIST_ND_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_SUBZIMANDI",
+  "node_type": "PS",
+  "name_en": "PS Subzi Mandi",
+  "name_hi": "PS Subzi Mandi",
+  "code": "PS_ND_SUBZIMANDI",
+  "parent_id": "SUBDIV_DIST_ND_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_TIMARPUR",
+  "node_type": "PS",
+  "name_en": "PS TimarPur",
+  "name_hi": "PS TimarPur",
+  "code": "PS_ND_TIMARPUR",
+  "parent_id": "SUBDIV_DIST_ND_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_ND_WAZIRABAD",
+  "node_type": "PS",
+  "name_en": "PS Wazirabad",
+  "name_hi": "PS Wazirabad",
+  "code": "PS_ND_WAZIRABAD",
+  "parent_id": "SUBDIV_DIST_ND_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_BHAJANPURA",
+  "node_type": "PS",
+  "name_en": "PS Bhajan Pura",
+  "name_hi": "PS Bhajan Pura",
+  "code": "PS_NED_BHAJANPURA",
+  "parent_id": "SUBDIV_DIST_NED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_DAYALPUR",
+  "node_type": "PS",
+  "name_en": "PS Dayal Pur",
+  "name_hi": "PS Dayal Pur",
+  "code": "PS_NED_DAYALPUR",
+  "parent_id": "SUBDIV_DIST_NED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_GOKULPURI",
+  "node_type": "PS",
+  "name_en": "PS Gokul Puri",
+  "name_hi": "PS Gokul Puri",
+  "code": "PS_NED_GOKULPURI",
+  "parent_id": "SUBDIV_DIST_NED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_HARSHVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Harsh Vihar",
+  "name_hi": "PS Harsh Vihar",
+  "code": "PS_NED_HARSHVIHAR",
+  "parent_id": "SUBDIV_DIST_NED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_JAFFRABAD",
+  "node_type": "PS",
+  "name_en": "PS Jaffrabad",
+  "name_hi": "PS Jaffrabad",
+  "code": "PS_NED_JAFFRABAD",
+  "parent_id": "SUBDIV_DIST_NED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_JYOTINAGAR",
+  "node_type": "PS",
+  "name_en": "PS Jyoti Nagar",
+  "name_hi": "PS Jyoti Nagar",
+  "code": "PS_NED_JYOTINAGAR",
+  "parent_id": "SUBDIV_DIST_NED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_KARAWALNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Karawal Nagar",
+  "name_hi": "PS Karawal Nagar",
+  "code": "PS_NED_KARAWALNAGAR",
+  "parent_id": "SUBDIV_DIST_NED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_KHAJURIKHAS",
+  "node_type": "PS",
+  "name_en": "PS Khajuri Khas",
+  "name_hi": "PS Khajuri Khas",
+  "code": "PS_NED_KHAJURIKHAS",
+  "parent_id": "SUBDIV_DIST_NED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_NANDNAGRI",
+  "node_type": "PS",
+  "name_en": "PS Nand Nagri",
+  "name_hi": "PS Nand Nagri",
+  "code": "PS_NED_NANDNAGRI",
+  "parent_id": "SUBDIV_DIST_NED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_NEWUSMANPUR",
+  "node_type": "PS",
+  "name_en": "PS New Usman Pur",
+  "name_hi": "PS New Usman Pur",
+  "code": "PS_NED_NEWUSMANPUR",
+  "parent_id": "SUBDIV_DIST_NED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_NED_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_NED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_SEELAMPUR",
+  "node_type": "PS",
+  "name_en": "PS SeelamPur",
+  "name_hi": "PS SeelamPur",
+  "code": "PS_NED_SEELAMPUR",
+  "parent_id": "SUBDIV_DIST_NED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_SHASTRIPARK",
+  "node_type": "PS",
+  "name_en": "PS Shastri Park",
+  "name_hi": "PS Shastri Park",
+  "code": "PS_NED_SHASTRIPARK",
+  "parent_id": "SUBDIV_DIST_NED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_SONIAVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Sonia Vihar",
+  "name_hi": "PS Sonia Vihar",
+  "code": "PS_NED_SONIAVIHAR",
+  "parent_id": "SUBDIV_DIST_NED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NED_WELCOME",
+  "node_type": "PS",
+  "name_en": "PS Welcome",
+  "name_hi": "PS Welcome",
+  "code": "PS_NED_WELCOME",
+  "parent_id": "SUBDIV_DIST_NED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_ADARSHNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Adarsh Nagar",
+  "name_hi": "PS Adarsh Nagar",
+  "code": "PS_NWD_ADARSHNAGAR",
+  "parent_id": "SUBDIV_DIST_NWD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_ASHOKVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Ashok Vihar",
+  "name_hi": "PS Ashok Vihar",
+  "code": "PS_NWD_ASHOKVIHAR",
+  "parent_id": "SUBDIV_DIST_NWD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_BHARATNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Bharat Nagar",
+  "name_hi": "PS Bharat Nagar",
+  "code": "PS_NWD_BHARATNAGAR",
+  "parent_id": "SUBDIV_DIST_NWD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_JAHANGIRPURI",
+  "node_type": "PS",
+  "name_en": "PS Jahangir Puri",
+  "name_hi": "PS Jahangir Puri",
+  "code": "PS_NWD_JAHANGIRPURI",
+  "parent_id": "SUBDIV_DIST_NWD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_KESHAVPURAM",
+  "node_type": "PS",
+  "name_en": "PS Keshav Puram",
+  "name_hi": "PS Keshav Puram",
+  "code": "PS_NWD_KESHAVPURAM",
+  "parent_id": "SUBDIV_DIST_NWD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_MAHENDRAPARK",
+  "node_type": "PS",
+  "name_en": "PS Mahendra Park",
+  "name_hi": "PS Mahendra Park",
+  "code": "PS_NWD_MAHENDRAPARK",
+  "parent_id": "SUBDIV_DIST_NWD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_MAURYAENCLAVE",
+  "node_type": "PS",
+  "name_en": "PS Maurya Enclave",
+  "name_hi": "PS Maurya Enclave",
+  "code": "PS_NWD_MAURYAENCLAVE",
+  "parent_id": "SUBDIV_DIST_NWD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_MODELTOWN",
+  "node_type": "PS",
+  "name_en": "PS Model Town",
+  "name_hi": "PS Model Town",
+  "code": "PS_NWD_MODELTOWN",
+  "parent_id": "SUBDIV_DIST_NWD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_MUKHERJINAGAR",
+  "node_type": "PS",
+  "name_en": "PS Mukherji Nagar",
+  "name_hi": "PS Mukherji Nagar",
+  "code": "PS_NWD_MUKHERJINAGAR",
+  "parent_id": "SUBDIV_DIST_NWD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_NWD_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_NWD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_SHALIMARBAGH",
+  "node_type": "PS",
+  "name_en": "PS Shalimar Bagh",
+  "name_hi": "PS Shalimar Bagh",
+  "code": "PS_NWD_SHALIMARBAGH",
+  "parent_id": "SUBDIV_DIST_NWD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_NWD_SUBHASHPLACE",
+  "node_type": "PS",
+  "name_en": "PS Subhash Place",
+  "name_hi": "PS Subhash Place",
+  "code": "PS_NWD_SUBHASHPLACE",
+  "parent_id": "SUBDIV_DIST_NWD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_MANGOLPURI",
+  "node_type": "PS",
+  "name_en": "PS Mangol Puri",
+  "name_hi": "PS Mangol Puri",
+  "code": "PS_OD_MANGOLPURI",
+  "parent_id": "SUBDIV_DIST_OD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_MUNDKA",
+  "node_type": "PS",
+  "name_en": "PS Mundka",
+  "name_hi": "PS Mundka",
+  "code": "PS_OD_MUNDKA",
+  "parent_id": "SUBDIV_DIST_OD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_NANGLOI",
+  "node_type": "PS",
+  "name_en": "PS Nangloi",
+  "name_hi": "PS Nangloi",
+  "code": "PS_OD_NANGLOI",
+  "parent_id": "SUBDIV_DIST_OD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_NIHALVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Nihal Vihar",
+  "name_hi": "PS Nihal Vihar",
+  "code": "PS_OD_NIHALVIHAR",
+  "parent_id": "SUBDIV_DIST_OD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_PASCHIMVIHAREAST",
+  "node_type": "PS",
+  "name_en": "PS Paschim Vihar East",
+  "name_hi": "PS Paschim Vihar East",
+  "code": "PS_OD_PASCHIMVIHAREAST",
+  "parent_id": "SUBDIV_DIST_OD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_PASCHIMVIHARWEST",
+  "node_type": "PS",
+  "name_en": "PS Paschim Vihar West",
+  "name_hi": "PS Paschim Vihar West",
+  "code": "PS_OD_PASCHIMVIHARWEST",
+  "parent_id": "SUBDIV_DIST_OD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_OD_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_OD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_RAJPARK",
+  "node_type": "PS",
+  "name_en": "PS Raj Park",
+  "name_hi": "PS Raj Park",
+  "code": "PS_OD_RAJPARK",
+  "parent_id": "SUBDIV_DIST_OD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_RANHOLA",
+  "node_type": "PS",
+  "name_en": "PS Ranhola",
+  "name_hi": "PS Ranhola",
+  "code": "PS_OD_RANHOLA",
+  "parent_id": "SUBDIV_DIST_OD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_RANIBAGH",
+  "node_type": "PS",
+  "name_en": "PS Rani Bagh",
+  "name_hi": "PS Rani Bagh",
+  "code": "PS_OD_RANIBAGH",
+  "parent_id": "SUBDIV_DIST_OD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OD_SULTANPURI",
+  "node_type": "PS",
+  "name_en": "PS Sultan Puri",
+  "name_hi": "PS Sultan Puri",
+  "code": "PS_OD_SULTANPURI",
+  "parent_id": "SUBDIV_DIST_OD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OND_ALIPUR",
+  "node_type": "PS",
+  "name_en": "PS Ali Pur",
+  "name_hi": "PS Ali Pur",
+  "code": "PS_OND_ALIPUR",
+  "parent_id": "SUBDIV_DIST_OND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OND_BAWANA",
+  "node_type": "PS",
+  "name_en": "PS Bawana",
+  "name_hi": "PS Bawana",
+  "code": "PS_OND_BAWANA",
+  "parent_id": "SUBDIV_DIST_OND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OND_BHALSWADAIRY",
+  "node_type": "PS",
+  "name_en": "PS Bhalswa Dairy",
+  "name_hi": "PS Bhalswa Dairy",
+  "code": "PS_OND_BHALSWADAIRY",
+  "parent_id": "SUBDIV_DIST_OND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OND_NARELA",
+  "node_type": "PS",
+  "name_en": "PS Narela",
+  "name_hi": "PS Narela",
+  "code": "PS_OND_NARELA",
+  "parent_id": "SUBDIV_DIST_OND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OND_NARELAINDAREA",
+  "node_type": "PS",
+  "name_en": "PS Narela Ind. Area",
+  "name_hi": "PS Narela Ind. Area",
+  "code": "PS_OND_NARELAINDAREA",
+  "parent_id": "SUBDIV_DIST_OND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OND_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_OND_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_OND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OND_SAMAIPURBADLI",
+  "node_type": "PS",
+  "name_en": "PS Samai Pur Badli",
+  "name_hi": "PS Samai Pur Badli",
+  "code": "PS_OND_SAMAIPURBADLI",
+  "parent_id": "SUBDIV_DIST_OND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OND_SHAHBADDAIRY",
+  "node_type": "PS",
+  "name_en": "PS Shahbad Dairy",
+  "name_hi": "PS Shahbad Dairy",
+  "code": "PS_OND_SHAHBADDAIRY",
+  "parent_id": "SUBDIV_DIST_OND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_OND_SWARUPNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Swarup Nagar",
+  "name_hi": "PS Swarup Nagar",
+  "code": "PS_OND_SWARUPNAGAR",
+  "parent_id": "SUBDIV_DIST_OND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_AMANVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Aman Vihar",
+  "name_hi": "PS Aman Vihar",
+  "code": "PS_RND_AMANVIHAR",
+  "parent_id": "SUBDIV_DIST_RND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_BEGUMPUR",
+  "node_type": "PS",
+  "name_en": "PS Begum Pur",
+  "name_hi": "PS Begum Pur",
+  "code": "PS_RND_BEGUMPUR",
+  "parent_id": "SUBDIV_DIST_RND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_BUDHVIHAR",
+  "node_type": "PS",
+  "name_en": "PS BudhVihar",
+  "name_hi": "PS BudhVihar",
+  "code": "PS_RND_BUDHVIHAR",
+  "parent_id": "SUBDIV_DIST_RND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_KANJHAWALA",
+  "node_type": "PS",
+  "name_en": "PS Kanjha-wala",
+  "name_hi": "PS Kanjha-wala",
+  "code": "PS_RND_KANJHAWALA",
+  "parent_id": "SUBDIV_DIST_RND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_KNKATJUMARG",
+  "node_type": "PS",
+  "name_en": "PS K. N. Katju Marg",
+  "name_hi": "PS K. N. Katju Marg",
+  "code": "PS_RND_KNKATJUMARG",
+  "parent_id": "SUBDIV_DIST_RND_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_NORTHROHINI",
+  "node_type": "PS",
+  "name_en": "PS North Rohini",
+  "name_hi": "PS North Rohini",
+  "code": "PS_RND_NORTHROHINI",
+  "parent_id": "SUBDIV_DIST_RND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_PARSHANTVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Parshant Vihar",
+  "name_hi": "PS Parshant Vihar",
+  "code": "PS_RND_PARSHANTVIHAR",
+  "parent_id": "SUBDIV_DIST_RND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_PREMNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Prem Nagar",
+  "name_hi": "PS Prem Nagar",
+  "code": "PS_RND_PREMNAGAR",
+  "parent_id": "SUBDIV_DIST_RND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_RND_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_RND_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_SOUTHROHINI",
+  "node_type": "PS",
+  "name_en": "PS South Rohini",
+  "name_hi": "PS South Rohini",
+  "code": "PS_RND_SOUTHROHINI",
+  "parent_id": "SUBDIV_DIST_RND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_RND_VIJAYVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Vijay Vihar",
+  "name_hi": "PS Vijay Vihar",
+  "code": "PS_RND_VIJAYVIHAR",
+  "parent_id": "SUBDIV_DIST_RND_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_AMBEDKARNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Ambedkar Nagar",
+  "name_hi": "PS Ambedkar Nagar",
+  "code": "PS_SD_AMBEDKARNAGAR",
+  "parent_id": "SUBDIV_DIST_SD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_CHITRANJANPARK",
+  "node_type": "PS",
+  "name_en": "PS Chitranjan Park",
+  "name_hi": "PS Chitranjan Park",
+  "code": "PS_SD_CHITRANJANPARK",
+  "parent_id": "SUBDIV_DIST_SD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_DEFENCECOLONY",
+  "node_type": "PS",
+  "name_en": "PS Defence Colony",
+  "name_hi": "PS Defence Colony",
+  "code": "PS_SD_DEFENCECOLONY",
+  "parent_id": "SUBDIV_DIST_SD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_FATEHPURBERI",
+  "node_type": "PS",
+  "name_en": "PS Fatehpur Beri",
+  "name_hi": "PS Fatehpur Beri",
+  "code": "PS_SD_FATEHPURBERI",
+  "parent_id": "SUBDIV_DIST_SD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_GREATERKAILASH",
+  "node_type": "PS",
+  "name_en": "PS Greater Kailash",
+  "name_hi": "PS Greater Kailash",
+  "code": "PS_SD_GREATERKAILASH",
+  "parent_id": "SUBDIV_DIST_SD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_HAUZKHAS",
+  "node_type": "PS",
+  "name_en": "PS Hauz Khas",
+  "name_hi": "PS Hauz Khas",
+  "code": "PS_SD_HAUZKHAS",
+  "parent_id": "SUBDIV_DIST_SD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_KOTLAMUBARAKPUR",
+  "node_type": "PS",
+  "name_en": "PS Kotla Mubarak Pur",
+  "name_hi": "PS Kotla Mubarak Pur",
+  "code": "PS_SD_KOTLAMUBARAKPUR",
+  "parent_id": "SUBDIV_DIST_SD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_LODHICOLONY",
+  "node_type": "PS",
+  "name_en": "PS Lodhi Colony",
+  "name_hi": "PS Lodhi Colony",
+  "code": "PS_SD_LODHICOLONY",
+  "parent_id": "SUBDIV_DIST_SD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_MAIDANGARHI",
+  "node_type": "PS",
+  "name_en": "PS Maidan Garhi",
+  "name_hi": "PS Maidan Garhi",
+  "code": "PS_SD_MAIDANGARHI",
+  "parent_id": "SUBDIV_DIST_SD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_MALVIYANAGAR",
+  "node_type": "PS",
+  "name_en": "PS Malviya Nagar",
+  "name_hi": "PS Malviya Nagar",
+  "code": "PS_SD_MALVIYANAGAR",
+  "parent_id": "SUBDIV_DIST_SD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_MEHRAULI",
+  "node_type": "PS",
+  "name_en": "PS Mehrauli",
+  "name_hi": "PS Mehrauli",
+  "code": "PS_SD_MEHRAULI",
+  "parent_id": "SUBDIV_DIST_SD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_NEBSARAI",
+  "node_type": "PS",
+  "name_en": "PS Neb Sarai",
+  "name_hi": "PS Neb Sarai",
+  "code": "PS_SD_NEBSARAI",
+  "parent_id": "SUBDIV_DIST_SD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_SD_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_SD_3",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_SAKET",
+  "node_type": "PS",
+  "name_en": "PS Saket",
+  "name_hi": "PS Saket",
+  "code": "PS_SD_SAKET",
+  "parent_id": "SUBDIV_DIST_SD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_SANGAMVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Sangam Vihar",
+  "name_hi": "PS Sangam Vihar",
+  "code": "PS_SD_SANGAMVIHAR",
+  "parent_id": "SUBDIV_DIST_SD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SD_TIGRI",
+  "node_type": "PS",
+  "name_en": "PS Tigri",
+  "name_hi": "PS Tigri",
+  "code": "PS_SD_TIGRI",
+  "parent_id": "SUBDIV_DIST_SD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_AMARCOLONY",
+  "node_type": "PS",
+  "name_en": "PS Amar Colony",
+  "name_hi": "PS Amar Colony",
+  "code": "PS_SED_AMARCOLONY",
+  "parent_id": "SUBDIV_DIST_SED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_BADARPUR",
+  "node_type": "PS",
+  "name_en": "PS Badarpur",
+  "name_hi": "PS Badarpur",
+  "code": "PS_SED_BADARPUR",
+  "parent_id": "SUBDIV_DIST_SED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_GOVINDPURI",
+  "node_type": "PS",
+  "name_en": "PS Govind Puri",
+  "name_hi": "PS Govind Puri",
+  "code": "PS_SED_GOVINDPURI",
+  "parent_id": "SUBDIV_DIST_SED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_HNDIN",
+  "node_type": "PS",
+  "name_en": "PS H. N. Din",
+  "name_hi": "PS H. N. Din",
+  "code": "PS_SED_HNDIN",
+  "parent_id": "SUBDIV_DIST_SED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_JAITPUR",
+  "node_type": "PS",
+  "name_en": "PS Jaitpur",
+  "name_hi": "PS Jaitpur",
+  "code": "PS_SED_JAITPUR",
+  "parent_id": "SUBDIV_DIST_SED_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_JAMIANAGAR",
+  "node_type": "PS",
+  "name_en": "PS Jamia Nagar",
+  "name_hi": "PS Jamia Nagar",
+  "code": "PS_SED_JAMIANAGAR",
+  "parent_id": "SUBDIV_DIST_SED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_KALINDIKUNJ",
+  "node_type": "PS",
+  "name_en": "PS Kalindi Kunj",
+  "name_hi": "PS Kalindi Kunj",
+  "code": "PS_SED_KALINDIKUNJ",
+  "parent_id": "SUBDIV_DIST_SED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_KALKAJI",
+  "node_type": "PS",
+  "name_en": "PS Kalkaji",
+  "name_hi": "PS Kalkaji",
+  "code": "PS_SED_KALKAJI",
+  "parent_id": "SUBDIV_DIST_SED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_LAJPATNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Lajpat Nagar",
+  "name_hi": "PS Lajpat Nagar",
+  "code": "PS_SED_LAJPATNAGAR",
+  "parent_id": "SUBDIV_DIST_SED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_NEWFRIENDSCOLONY",
+  "node_type": "PS",
+  "name_en": "PS New Friends Colony",
+  "name_hi": "PS New Friends Colony",
+  "code": "PS_SED_NEWFRIENDSCOLONY",
+  "parent_id": "SUBDIV_DIST_SED_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_OKHLAINDLAREA",
+  "node_type": "PS",
+  "name_en": "PS Okhla Indl. Area",
+  "name_hi": "PS Okhla Indl. Area",
+  "code": "PS_SED_OKHLAINDLAREA",
+  "parent_id": "SUBDIV_DIST_SED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_SED_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_SED_3",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_PULPRAHLADPUR",
+  "node_type": "PS",
+  "name_en": "PS Pul Prahlad Pur",
+  "name_hi": "PS Pul Prahlad Pur",
+  "code": "PS_SED_PULPRAHLADPUR",
+  "parent_id": "SUBDIV_DIST_SED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_SARITAVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Sarita Vihar",
+  "name_hi": "PS Sarita Vihar",
+  "code": "PS_SED_SARITAVIHAR",
+  "parent_id": "SUBDIV_DIST_SED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_SHAHEENBAGH",
+  "node_type": "PS",
+  "name_en": "PS Shaheen Bagh",
+  "name_hi": "PS Shaheen Bagh",
+  "code": "PS_SED_SHAHEENBAGH",
+  "parent_id": "SUBDIV_DIST_SED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SED_SUNLIGHTCOLONY",
+  "node_type": "PS",
+  "name_en": "PS Sunlight Colony",
+  "name_hi": "PS Sunlight Colony",
+  "code": "PS_SED_SUNLIGHTCOLONY",
+  "parent_id": "SUBDIV_DIST_SED_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_ANANDVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Anand Vihar",
+  "name_hi": "PS Anand Vihar",
+  "code": "PS_SHD_ANANDVIHAR",
+  "parent_id": "SUBDIV_DIST_SHD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_FARSHBAZAR",
+  "node_type": "PS",
+  "name_en": "PS Farsh Bazar",
+  "name_hi": "PS Farsh Bazar",
+  "code": "PS_SHD_FARSHBAZAR",
+  "parent_id": "SUBDIV_DIST_SHD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_GANDHINAGAR",
+  "node_type": "PS",
+  "name_en": "PS Gandhi Nagar",
+  "name_hi": "PS Gandhi Nagar",
+  "code": "PS_SHD_GANDHINAGAR",
+  "parent_id": "SUBDIV_DIST_SHD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_GEETACOLONY",
+  "node_type": "PS",
+  "name_en": "PS Geeta Colony",
+  "name_hi": "PS Geeta Colony",
+  "code": "PS_SHD_GEETACOLONY",
+  "parent_id": "SUBDIV_DIST_SHD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_GTBENCLAVE",
+  "node_type": "PS",
+  "name_en": "PS G. T. B. Enclave",
+  "name_hi": "PS G. T. B. Enclave",
+  "code": "PS_SHD_GTBENCLAVE",
+  "parent_id": "SUBDIV_DIST_SHD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_JAGATPURI",
+  "node_type": "PS",
+  "name_en": "PS Jagat Puri",
+  "name_hi": "PS Jagat Puri",
+  "code": "PS_SHD_JAGATPURI",
+  "parent_id": "SUBDIV_DIST_SHD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_KRISHNANAGAR",
+  "node_type": "PS",
+  "name_en": "PS Krishna Nagar",
+  "name_hi": "PS Krishna Nagar",
+  "code": "PS_SHD_KRISHNANAGAR",
+  "parent_id": "SUBDIV_DIST_SHD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_MANSAROVERPARK",
+  "node_type": "PS",
+  "name_en": "PS Mansarover Park",
+  "name_hi": "PS Mansarover Park",
+  "code": "PS_SHD_MANSAROVERPARK",
+  "parent_id": "SUBDIV_DIST_SHD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_SHD_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_SHD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_SEEMAPURI",
+  "node_type": "PS",
+  "name_en": "PS Seema Puri",
+  "name_hi": "PS Seema Puri",
+  "code": "PS_SHD_SEEMAPURI",
+  "parent_id": "SUBDIV_DIST_SHD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_SHAHADRA",
+  "node_type": "PS",
+  "name_en": "PS Shahadra",
+  "name_hi": "PS Shahadra",
+  "code": "PS_SHD_SHAHADRA",
+  "parent_id": "SUBDIV_DIST_SHD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SHD_VIVEKVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Vivek Vihar",
+  "name_hi": "PS Vivek Vihar",
+  "code": "PS_SHD_VIVEKVIHAR",
+  "parent_id": "SUBDIV_DIST_SHD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_DELHICANTT",
+  "node_type": "PS",
+  "name_en": "PS Delhi Cantt.",
+  "name_hi": "PS Delhi Cantt.",
+  "code": "PS_SWD_DELHICANTT",
+  "parent_id": "SUBDIV_DIST_SWD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_KAPASHERA",
+  "node_type": "PS",
+  "name_en": "PS Kapashera",
+  "name_hi": "PS Kapashera",
+  "code": "PS_SWD_KAPASHERA",
+  "parent_id": "SUBDIV_DIST_SWD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_KISHANGARH",
+  "node_type": "PS",
+  "name_en": "PS Kishan-garh",
+  "name_hi": "PS Kishan-garh",
+  "code": "PS_SWD_KISHANGARH",
+  "parent_id": "SUBDIV_DIST_SWD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_PALAMVILLAGE",
+  "node_type": "PS",
+  "name_en": "PS Palam Village",
+  "name_hi": "PS Palam Village",
+  "code": "PS_SWD_PALAMVILLAGE",
+  "parent_id": "SUBDIV_DIST_SWD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_SWD_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_SWD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_RKPURAM",
+  "node_type": "PS",
+  "name_en": "PS R. K. Puram",
+  "name_hi": "PS R. K. Puram",
+  "code": "PS_SWD_RKPURAM",
+  "parent_id": "SUBDIV_DIST_SWD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_SAFDARJUNGENCLAVE",
+  "node_type": "PS",
+  "name_en": "PS Safdarjung Enclave",
+  "name_hi": "PS Safdarjung Enclave",
+  "code": "PS_SWD_SAFDARJUNGENCLAVE",
+  "parent_id": "SUBDIV_DIST_SWD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_SAGARPUR",
+  "node_type": "PS",
+  "name_en": "PS Sagar Pur",
+  "name_hi": "PS Sagar Pur",
+  "code": "PS_SWD_SAGARPUR",
+  "parent_id": "SUBDIV_DIST_SWD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_SOUTHCAMPUS",
+  "node_type": "PS",
+  "name_en": "PS South Campus",
+  "name_hi": "PS South Campus",
+  "code": "PS_SWD_SOUTHCAMPUS",
+  "parent_id": "SUBDIV_DIST_SWD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_VASANTKUNJNORTH",
+  "node_type": "PS",
+  "name_en": "PS Vasant Kunj North",
+  "name_hi": "PS Vasant Kunj North",
+  "code": "PS_SWD_VASANTKUNJNORTH",
+  "parent_id": "SUBDIV_DIST_SWD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_VASANTKUNJSOUTH",
+  "node_type": "PS",
+  "name_en": "PS Vasant Kunj South",
+  "name_hi": "PS Vasant Kunj South",
+  "code": "PS_SWD_VASANTKUNJSOUTH",
+  "parent_id": "SUBDIV_DIST_SWD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_SWD_VASANTVIHAR",
+  "node_type": "PS",
+  "name_en": "PS Vasant Vihar",
+  "name_hi": "PS Vasant Vihar",
+  "code": "PS_SWD_VASANTVIHAR",
+  "parent_id": "SUBDIV_DIST_SWD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_HARINAGAR",
+  "node_type": "PS",
+  "name_en": "PS Hari Nagar",
+  "name_hi": "PS Hari Nagar",
+  "code": "PS_WD_HARINAGAR",
+  "parent_id": "SUBDIV_DIST_WD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_INDERPURI",
+  "node_type": "PS",
+  "name_en": "PS Inder Puri",
+  "name_hi": "PS Inder Puri",
+  "code": "PS_WD_INDERPURI",
+  "parent_id": "SUBDIV_DIST_WD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_JANAKPURI",
+  "node_type": "PS",
+  "name_en": "PS Janak Puri",
+  "name_hi": "PS Janak Puri",
+  "code": "PS_WD_JANAKPURI",
+  "parent_id": "SUBDIV_DIST_WD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_KHYALA",
+  "node_type": "PS",
+  "name_en": "PS Khyala",
+  "name_hi": "PS Khyala",
+  "code": "PS_WD_KHYALA",
+  "parent_id": "SUBDIV_DIST_WD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_KIRTINAGAR",
+  "node_type": "PS",
+  "name_en": "PS Kirti Nagar",
+  "name_hi": "PS Kirti Nagar",
+  "code": "PS_WD_KIRTINAGAR",
+  "parent_id": "SUBDIV_DIST_WD_0",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_MAYAPURI",
+  "node_type": "PS",
+  "name_en": "PS Maya Puri",
+  "name_hi": "PS Maya Puri",
+  "code": "PS_WD_MAYAPURI",
+  "parent_id": "SUBDIV_DIST_WD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_MOTINAGAR",
+  "node_type": "PS",
+  "name_en": "PS Moti Nagar",
+  "name_hi": "PS Moti Nagar",
+  "code": "PS_WD_MOTINAGAR",
+  "parent_id": "SUBDIV_DIST_WD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_NARAINA",
+  "node_type": "PS",
+  "name_en": "PS Naraina",
+  "name_hi": "PS Naraina",
+  "code": "PS_WD_NARAINA",
+  "parent_id": "SUBDIV_DIST_WD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_PSCYBERCRIME",
+  "node_type": "PS",
+  "name_en": "PS Cyber Crime",
+  "name_hi": "PS Cyber Crime",
+  "code": "PS_WD_PSCYBERCRIME",
+  "parent_id": "SUBDIV_DIST_WD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_PUNJABIBAGH",
+  "node_type": "PS",
+  "name_en": "PS Punjabi Bagh",
+  "name_hi": "PS Punjabi Bagh",
+  "code": "PS_WD_PUNJABIBAGH",
+  "parent_id": "SUBDIV_DIST_WD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_RAJOURIGARDEN",
+  "node_type": "PS",
+  "name_en": "PS Rajouri Garden",
+  "name_hi": "PS Rajouri Garden",
+  "code": "PS_WD_RAJOURIGARDEN",
+  "parent_id": "SUBDIV_DIST_WD_1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_TILAKNAGAR",
+  "node_type": "PS",
+  "name_en": "PS Tilak Nagar",
+  "name_hi": "PS Tilak Nagar",
+  "code": "PS_WD_TILAKNAGAR",
+  "parent_id": "SUBDIV_DIST_WD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "PS_WD_VIKASPURI",
+  "node_type": "PS",
+  "name_en": "PS Vikas Puri",
+  "name_hi": "PS Vikas Puri",
+  "code": "PS_WD_VIKASPURI",
+  "parent_id": "SUBDIV_DIST_WD_2",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "RANGE_CR",
+  "node_type": "JCP",
+  "name_en": "Central Range",
+  "name_hi": "Central Range",
+  "code": "RANGE_CR",
+  "parent_id": "ZONE_SCPLOZ1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "RANGE_ER",
+  "node_type": "JCP",
+  "name_en": "Eastern Range",
+  "name_hi": "Eastern Range",
+  "code": "RANGE_ER",
+  "parent_id": "ZONE_SCPLOZ1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "RANGE_NDR",
+  "node_type": "JCP",
+  "name_en": "New Delhi Range",
+  "name_hi": "New Delhi Range",
+  "code": "RANGE_NDR",
+  "parent_id": "ZONE_SCPLOZ",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "RANGE_NR",
+  "node_type": "JCP",
+  "name_en": "Northern Range",
+  "name_hi": "Northern Range",
+  "code": "RANGE_NR",
+  "parent_id": "ZONE_SCPLOZ1",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "RANGE_SR",
+  "node_type": "JCP",
+  "name_en": "Southern Range",
+  "name_hi": "Southern Range",
+  "code": "RANGE_SR",
+  "parent_id": "ZONE_SCPLOZ",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "RANGE_WR",
+  "node_type": "JCP",
+  "name_en": "Western Range",
+  "name_hi": "Western Range",
+  "code": "RANGE_WR",
+  "parent_id": "ZONE_SCPLOZ",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_CD_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Anand Parbat Sub-Division",
+  "name_hi": "Anand Parbat Sub-Division",
+  "code": "SUBDIV_DIST_CD_0",
+  "parent_id": "DIST_CD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_CD_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "I. P. Estate Sub-Division",
+  "name_hi": "I. P. Estate Sub-Division",
+  "code": "SUBDIV_DIST_CD_1",
+  "parent_id": "DIST_CD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_CD_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Pahar Ganj Sub-Division",
+  "name_hi": "Pahar Ganj Sub-Division",
+  "code": "SUBDIV_DIST_CD_2",
+  "parent_id": "DIST_CD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_CD_3",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Cyber Sub-Division (Central District)",
+  "name_hi": "Cyber Sub-Division (Central District)",
+  "code": "SUBDIV_DIST_CD_3",
+  "parent_id": "DIST_CD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_DW_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Baba Haridas Nagar Sub-Division",
+  "name_hi": "Baba Haridas Nagar Sub-Division",
+  "code": "SUBDIV_DIST_DW_0",
+  "parent_id": "DIST_DW",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_DW_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Dwarka Sector 23 Sub-Division",
+  "name_hi": "Dwarka Sector 23 Sub-Division",
+  "code": "SUBDIV_DIST_DW_1",
+  "parent_id": "DIST_DW",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_DW_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Uttam Nagar Sub-Division",
+  "name_hi": "Uttam Nagar Sub-Division",
+  "code": "SUBDIV_DIST_DW_2",
+  "parent_id": "DIST_DW",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_ED_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Ghazipur Sub-Division",
+  "name_hi": "Ghazipur Sub-Division",
+  "code": "SUBDIV_DIST_ED_0",
+  "parent_id": "DIST_ED",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_ED_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Mayur Vihar Sub-Division",
+  "name_hi": "Mayur Vihar Sub-Division",
+  "code": "SUBDIV_DIST_ED_1",
+  "parent_id": "DIST_ED",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_ED_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Shakar Pur Sub-Division",
+  "name_hi": "Shakar Pur Sub-Division",
+  "code": "SUBDIV_DIST_ED_2",
+  "parent_id": "DIST_ED",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_NDD_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Barakhamba Road Sub-Division",
+  "name_hi": "Barakhamba Road Sub-Division",
+  "code": "SUBDIV_DIST_NDD_0",
+  "parent_id": "DIST_NDD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_NDD_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Parliament Street Sub-Division",
+  "name_hi": "Parliament Street Sub-Division",
+  "code": "SUBDIV_DIST_NDD_1",
+  "parent_id": "DIST_NDD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_ND_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Bara Hindu Rao Sub-Division",
+  "name_hi": "Bara Hindu Rao Sub-Division",
+  "code": "SUBDIV_DIST_ND_0",
+  "parent_id": "DIST_ND",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_ND_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Kotwali Sub-Division",
+  "name_hi": "Kotwali Sub-Division",
+  "code": "SUBDIV_DIST_ND_1",
+  "parent_id": "DIST_ND",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_ND_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Sarai Rohilla Sub-Division",
+  "name_hi": "Sarai Rohilla Sub-Division",
+  "code": "SUBDIV_DIST_ND_2",
+  "parent_id": "DIST_ND",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_NED_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Bhajan Pura Sub-Division",
+  "name_hi": "Bhajan Pura Sub-Division",
+  "code": "SUBDIV_DIST_NED_0",
+  "parent_id": "DIST_NED",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_NED_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Karawal Nagar Sub-Division",
+  "name_hi": "Karawal Nagar Sub-Division",
+  "code": "SUBDIV_DIST_NED_1",
+  "parent_id": "DIST_NED",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_NED_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Shastri Park Sub-Division",
+  "name_hi": "Shastri Park Sub-Division",
+  "code": "SUBDIV_DIST_NED_2",
+  "parent_id": "DIST_NED",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_NWD_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Adarsh Nagar Sub-Division",
+  "name_hi": "Adarsh Nagar Sub-Division",
+  "code": "SUBDIV_DIST_NWD_0",
+  "parent_id": "DIST_NWD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_NWD_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Mahendra Park Sub-Division",
+  "name_hi": "Mahendra Park Sub-Division",
+  "code": "SUBDIV_DIST_NWD_1",
+  "parent_id": "DIST_NWD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_NWD_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Subhash Place Sub-Division",
+  "name_hi": "Subhash Place Sub-Division",
+  "code": "SUBDIV_DIST_NWD_2",
+  "parent_id": "DIST_NWD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_OD_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Mangol Puri Sub-Division",
+  "name_hi": "Mangol Puri Sub-Division",
+  "code": "SUBDIV_DIST_OD_0",
+  "parent_id": "DIST_OD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_OD_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Paschim Vihar West Sub-Division",
+  "name_hi": "Paschim Vihar West Sub-Division",
+  "code": "SUBDIV_DIST_OD_1",
+  "parent_id": "DIST_OD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_OD_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Cyber Sub-Division (Outer District)",
+  "name_hi": "Cyber Sub-Division (Outer District)",
+  "code": "SUBDIV_DIST_OD_2",
+  "parent_id": "DIST_OD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_OND_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Ali Pur Sub-Division",
+  "name_hi": "Ali Pur Sub-Division",
+  "code": "SUBDIV_DIST_OND_0",
+  "parent_id": "DIST_OND",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_OND_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Samai Pur Badli Sub-Division",
+  "name_hi": "Samai Pur Badli Sub-Division",
+  "code": "SUBDIV_DIST_OND_1",
+  "parent_id": "DIST_OND",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_RND_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Aman Vihar Sub-Division",
+  "name_hi": "Aman Vihar Sub-Division",
+  "code": "SUBDIV_DIST_RND_0",
+  "parent_id": "DIST_RND",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_RND_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "North Rohini Sub-Division",
+  "name_hi": "North Rohini Sub-Division",
+  "code": "SUBDIV_DIST_RND_1",
+  "parent_id": "DIST_RND",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_RND_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Cyber Sub-Division (Rohini District)",
+  "name_hi": "Cyber Sub-Division (Rohini District)",
+  "code": "SUBDIV_DIST_RND_2",
+  "parent_id": "DIST_RND",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SD_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Ambedkar Nagar Sub-Division",
+  "name_hi": "Ambedkar Nagar Sub-Division",
+  "code": "SUBDIV_DIST_SD_0",
+  "parent_id": "DIST_SD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SD_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Hauz Khas Sub-Division",
+  "name_hi": "Hauz Khas Sub-Division",
+  "code": "SUBDIV_DIST_SD_1",
+  "parent_id": "DIST_SD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SD_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Mehrauli Sub-Division",
+  "name_hi": "Mehrauli Sub-Division",
+  "code": "SUBDIV_DIST_SD_2",
+  "parent_id": "DIST_SD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SD_3",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Cyber Sub-Division (South District)",
+  "name_hi": "Cyber Sub-Division (South District)",
+  "code": "SUBDIV_DIST_SD_3",
+  "parent_id": "DIST_SD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SED_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Amar Colony Sub-Division",
+  "name_hi": "Amar Colony Sub-Division",
+  "code": "SUBDIV_DIST_SED_0",
+  "parent_id": "DIST_SED",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SED_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Jamia Nagar Sub-Division",
+  "name_hi": "Jamia Nagar Sub-Division",
+  "code": "SUBDIV_DIST_SED_1",
+  "parent_id": "DIST_SED",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SED_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Okhla Indl. Area Sub-Division",
+  "name_hi": "Okhla Indl. Area Sub-Division",
+  "code": "SUBDIV_DIST_SED_2",
+  "parent_id": "DIST_SED",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SED_3",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Cyber Sub-Division (South East District)",
+  "name_hi": "Cyber Sub-Division (South East District)",
+  "code": "SUBDIV_DIST_SED_3",
+  "parent_id": "DIST_SED",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SHD_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Anand Vihar Sub-Division",
+  "name_hi": "Anand Vihar Sub-Division",
+  "code": "SUBDIV_DIST_SHD_0",
+  "parent_id": "DIST_SHD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SHD_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Jagat Puri Sub-Division",
+  "name_hi": "Jagat Puri Sub-Division",
+  "code": "SUBDIV_DIST_SHD_1",
+  "parent_id": "DIST_SHD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SHD_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Vivek Vihar Sub-Division",
+  "name_hi": "Vivek Vihar Sub-Division",
+  "code": "SUBDIV_DIST_SHD_2",
+  "parent_id": "DIST_SHD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SWD_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Delhi Cantt. Sub-Division",
+  "name_hi": "Delhi Cantt. Sub-Division",
+  "code": "SUBDIV_DIST_SWD_0",
+  "parent_id": "DIST_SWD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SWD_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Safdarjung Enclave Sub-Division",
+  "name_hi": "Safdarjung Enclave Sub-Division",
+  "code": "SUBDIV_DIST_SWD_1",
+  "parent_id": "DIST_SWD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_SWD_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Vasant Vihar Sub-Division",
+  "name_hi": "Vasant Vihar Sub-Division",
+  "code": "SUBDIV_DIST_SWD_2",
+  "parent_id": "DIST_SWD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_WD_0",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Hari Nagar Sub-Division",
+  "name_hi": "Hari Nagar Sub-Division",
+  "code": "SUBDIV_DIST_WD_0",
+  "parent_id": "DIST_WD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_WD_1",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Maya Puri Sub-Division",
+  "name_hi": "Maya Puri Sub-Division",
+  "code": "SUBDIV_DIST_WD_1",
+  "parent_id": "DIST_WD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "SUBDIV_DIST_WD_2",
+  "node_type": "SUB_DIVISION",
+  "name_en": "Tilak Nagar Sub-Division",
+  "name_hi": "Tilak Nagar Sub-Division",
+  "code": "SUBDIV_DIST_WD_2",
+  "parent_id": "DIST_WD",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "ZONE_SCPLOZ",
+  "node_type": "SCP",
+  "name_en": "Spl CP / L&O Zone 2",
+  "name_hi": "Spl CP / L&O Zone 2",
+  "code": "ZONE_SCPLOZ",
+  "parent_id": "HQ",
+  "metadata": null,
+  "is_active": true
+ },
+ {
+  "id": "ZONE_SCPLOZ1",
+  "node_type": "SCP",
+  "name_en": "Spl CP / L&O Zone 1",
+  "name_hi": "Spl CP / L&O Zone 1",
+  "code": "ZONE_SCPLOZ1",
+  "parent_id": "HQ",
+  "metadata": null,
+  "is_active": true
+ }
+]

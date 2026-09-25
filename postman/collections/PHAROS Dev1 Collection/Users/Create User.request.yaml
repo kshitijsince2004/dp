@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/users"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+      "badgeNo": "HC999",
+      "username": "hc_new_officer",
+      "name_en": "Amit Singh",
+      "name_hi": "अमित सिंह",
+      "role": "HC",
+      "psId": "PS_ADARSH_NAGAR",
+      "password": "test123"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 3000

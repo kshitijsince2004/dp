@@ -1,0 +1,3560 @@
+{
+  "hierarchy_nodes": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "node_type": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "name": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "code": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "parent_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "metadata": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "users": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "username": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "badge_no": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "name": {
+      "type": "varchar(100)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "password_hash": {
+      "type": "varchar(255)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "role": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "ps_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "district_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "sub_div_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "last_login": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "investigating_officers": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "user_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "name": {
+      "type": "varchar(100)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "rank": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "pis_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "mobile": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "ps_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.acts": {
+    "act_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "act_long": {
+      "type": "text",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.sections": {
+    "section_code": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "section_cd": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "act_sec_cd": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "section": {
+      "type": "varchar(200)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "section_desc": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "pnsh_gt_7yrs": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.major_heads": {
+    "major_head_code": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "major_head": {
+      "type": "varchar(200)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.minor_heads": {
+    "minor_head_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "major_head_code": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "minor_head": {
+      "type": "varchar(200)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.major_minor_mapping": {
+    "sec_mjrhd_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "act_cd": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "section_code": {
+      "type": "text",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "major_head_code": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.local_heads": {
+    "local_head_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "local_head": {
+      "type": "varchar(200)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "crime_category": {
+      "type": "varchar(15)",
+      "nullable": false,
+      "defaultVal": "'OTHER'"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "canonical_code": {
+      "type": "VARCHAR(100)",
+      "nullable": true,
+      "defaultVal": null
+    }
+  },
+  "ref.beats": {
+    "beat_cd": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "beat_name": {
+      "type": "text",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "source_ps_cd": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "ps_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.property_categories": {
+    "parent_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "parent_srno": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "code_type": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "parent_type": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "major_property": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.other_property_items": {
+    "property_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "parent_cd": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "property_type_srno": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "property": {
+      "type": "varchar(200)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.arms_categories": {
+    "arms_category_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arms_category": {
+      "type": "varchar(100)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.arms_made": {
+    "arms_made_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arms_made": {
+      "type": "varchar(100)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.fire_arms": {
+    "fire_arms_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arms_category_cd": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "fire_arms": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.fire_arms_subtypes": {
+    "arms_subtype_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arms_type_cd": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "arms_subtype": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.automobiles": {
+    "automobile_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "automobile": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.jewelry_types": {
+    "jewelry_type_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "jewelry_type": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.currency_types": {
+    "currency_type_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "currency_type": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.document_types": {
+    "document_type_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "document_type": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.drug_types": {
+    "drug_type_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "drug_type": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.electric_goods": {
+    "electric_goods_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "electric_goods": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.explosive_types": {
+    "explosive_type_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "explosive_type": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.cultural_properties": {
+    "cultural_prop_cd": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "cultural_prop": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "locations": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "house_no": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "street": {
+      "type": "varchar(150)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "colony": {
+      "type": "varchar(150)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "landmark": {
+      "type": "varchar(150)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "city_town_village": {
+      "type": "varchar(150)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "tehsil_block_mandal": {
+      "type": "varchar(150)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "district": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "state": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "country": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "police_station": {
+      "type": "varchar(150)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "pincode": {
+      "type": "varchar(10)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "latitude": {
+      "type": "numeric(9",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "longitude": {
+      "type": "numeric(9",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "full_address": {
+      "type": "varchar(500)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "extra": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "records": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "record_type": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "ps_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "district_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "sub_div_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "io_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "original_ps_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "current_status": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": "'DRAFT'"
+    },
+    "current_level": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": "'PS' CHECK (current_level IN ('PS'"
+    },
+    "record_date": {
+      "type": "date",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "is_frozen": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "is_legacy": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "source_system": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "legacy_ref": {
+      "type": "varchar(255)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "imported_at": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "imported_by": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_by": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "updated_by": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "import_batch_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "registration_date": {
+      "type": "DATE",
+      "nullable": true,
+      "defaultVal": null
+    }
+  },
+  "fir_details": {
+    "record_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "ps_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "fir_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "fir_year": {
+      "type": "smallint",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "original_fir_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "original_fir_year": {
+      "type": "smallint",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "fir_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_time": {
+      "type": "time",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "case_type": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "source_reference": {
+      "type": "varchar(255)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "beat_id": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_important": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "case_status": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_worked_out": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "worked_out_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "local_head_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "brief_facts": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "occurrence_location_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "occurrence_from_datetime": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "occurrence_to_datetime": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "info_received_at_ps": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "organised_crime": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "cd_uploaded_24h": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "footage_collected": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "rc_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "disposal_type": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "extra": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "transfer_to_type": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    }
+  },
+  "arrest_details": {
+    "record_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_time": {
+      "type": "time",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "case_type": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "case_status": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "fir_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "fir_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_dd_based": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "local_head_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "beat_id": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "intimation_datetime": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "intimated_relative_name": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "intimated_relative_relation": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "intimation_mode": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "nafis_prepared": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "dossier_prepared": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arresting_officer_name": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arresting_officer_mobile": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arresting_officer_rank": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "custody_status": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "other_status_reason": {
+      "type": "varchar(255)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "recovery": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "seizure_desc": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "scheme_of_arrest": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "integrated_pi": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "group_patrolling": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "cycle_patrolling": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "by_antisnatching_team": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "by_prahari": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "by_eyes_ears_scheme_members": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "extra": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "pcr_call_details": {
+    "record_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "pcr_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_time": {
+      "type": "time",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "call_head": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "call_gist": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "incident_location_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "occurrence_location_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "incident_datetime": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arrival_time": {
+      "type": "time",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "action_taken": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "final_call_status": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "extra": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "missing_details": {
+    "record_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "missing_type": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "missing_status": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "operator_name": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "source": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "zipnet_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "case_registered": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "fir_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "fir_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "remarks": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "extra": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "uidb_details": {
+    "record_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "uidb_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gd_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "inquest_sections": {
+      "type": "varchar(255)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "local_head_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "found_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "found_time": {
+      "type": "time",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "found_location_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "duty_officer": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "zipnet_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "identified": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "cause_of_death": {
+      "type": "varchar(255)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "deceased_relative_name": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "deceased_relation_type": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "filed_by_acp_sdm": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "filed_by_acp_sdm_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "mortuary_remarks": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "uidb_status": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "extra": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "record_offences": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "act_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "other_act_name": {
+      "type": "varchar(255)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "section_id": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "major_head_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "minor_head_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_primary": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "sort_order": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "persons": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "role": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "name": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "relative_name": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "relation_type": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "gender": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "age": {
+      "type": "smallint",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "dob": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_minor": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "nick_names": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[]'"
+    },
+    "mobile": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "qualification": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "present_location_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "perm_location_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "perm_same_as_present": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "relation_to_subject": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "sort_order": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "extra": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "arrestee_details": {
+    "person_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arrest_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arrest_time": {
+      "type": "time",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arrest_location_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "prev_involvement_count": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "prev_involvement": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_po": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "po_declared_court": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "po_case_reference": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_bc": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "missing_person_details": {
+    "person_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "missing_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "missing_location_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "last_seen_place": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "found_date": {
+      "type": "date",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "found_location_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "mp_known": {
+      "type": "boolean",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "mental_state": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "person_descriptions": {
+    "person_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "height": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "built": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "complexion": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "face": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "hair": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "beard": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "moustache": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "upper_dress_color": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "lower_dress_color": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "identification_marks": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "physical_description": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "age_range": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "record_properties": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "person_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "major_category_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "minor_category_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "status": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": "'STOLEN' CHECK (status IN"
+    },
+    "details": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "uid": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "estimated_value": {
+      "type": "numeric(14",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "automobile_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "fire_arm_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arms_subtype_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "arms_made_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "jewelry_type_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "currency_type_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "document_type_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "drug_type_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "electric_good_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "explosive_type_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "cultural_property_id": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "phone_number": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "phone_make": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "phone_model": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "phone_imei": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "phone_color": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "vehicle_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "vehicle_make": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "vehicle_model": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "vehicle_color": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "vehicle_chassis_no": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "vehicle_engine_no": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "sort_order": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "extra": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "quantity": {
+      "type": "numeric(14",
+      "nullable": true,
+      "defaultVal": null
+    }
+  },
+  "record_transfers": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "from_ps_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "to_ps_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "initiated_by": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "initiated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "reason": {
+      "type": "text",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "order_ref": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "status": {
+      "type": "varchar(10)",
+      "nullable": false,
+      "defaultVal": "'PENDING' CHECK (status IN ('PENDING'"
+    },
+    "prior_status": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "prior_level": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "assigned_fir_no": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "assigned_fir_year": {
+      "type": "smallint",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "decided_by": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "decided_at": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "decision_comment": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "fir_number_counters": {
+    "ps_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "fir_year": {
+      "type": "smallint",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "last_no": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "record_revisions": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "revision_number": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "change_type": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "field_changes": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[]'"
+    },
+    "level": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": "'PS'"
+    },
+    "changed_by": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "changed_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "comment": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "reason": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "ip_address": {
+      "type": "varchar(45)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "prev_hash": {
+      "type": "char(64)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "row_hash": {
+      "type": "char(64)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "hash_version": {
+      "type": "smallint",
+      "nullable": false,
+      "defaultVal": "1"
+    }
+  },
+  "workflow_transitions": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "from_status": {
+      "type": "varchar(30)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "to_status": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "from_level": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "to_level": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "action": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "performed_by": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "performed_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "comment": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "target_fields": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[]'"
+    }
+  },
+  "workflow_transitions_config": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "code": {
+      "type": "varchar(80)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "record_type": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": "'*'"
+    },
+    "from_status": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "action": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "to_status": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "from_level": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "to_level": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "allowed_roles": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[]'"
+    },
+    "requires_comment": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "sla_hours": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "checksum": {
+      "type": "varchar(64)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "record_amendments": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "requested_by": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "status": {
+      "type": "varchar(10)",
+      "nullable": false,
+      "defaultVal": "'PENDING' CHECK (status IN ('PENDING'"
+    },
+    "field_changes": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "reason": {
+      "type": "text",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "decided_by": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "decided_at": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "decision_comment": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "audit_logs": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "table_name": {
+      "type": "varchar(60)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "action": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "changed_by_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "changed_by_role": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "changed_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "field_name": {
+      "type": "varchar(60)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "old_value": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "new_value": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "reason": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "ip_address": {
+      "type": "varchar(45)",
+      "nullable": true,
+      "defaultVal": null
+    }
+  },
+  "record_status_events": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "property_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "status_field": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "old_value": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "new_value": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "effective_date": {
+      "type": "date",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "changed_by": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "changed_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "comment": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    }
+  },
+  "link_type_registry": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "code": {
+      "type": "varchar(60)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "source_record_type": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "target_record_type": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "label": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "cardinality": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": "'ONE_TO_MANY'"
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "record_links": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "link_type_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "source_record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "target_record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "metadata": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "created_by": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "compilations": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "source_level": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "target_level": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "route": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": "'OPS_CHAIN'"
+    },
+    "period": {
+      "type": "date",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "source_entity_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "status": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": "'DRAFT' CHECK (status IN ('DRAFT'"
+    },
+    "compiled_summary": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "submitted_by": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "submitted_at": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "compilation_records": {
+    "compilation_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "ps_id_at_compile": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "district_id_at_compile": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "added_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "field_registry": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "field_key": {
+      "type": "varchar(60)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "record_types": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[]'"
+    },
+    "field_type": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "labels": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "section": {
+      "type": "varchar(60)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "section_labels": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "storage": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "options": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "options_source": {
+      "type": "varchar(60)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "depends_on": {
+      "type": "varchar(60)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "show_when": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "validation_rules": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "visible_to_levels": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[]'"
+    },
+    "editable_by_levels": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[]'"
+    },
+    "introduced_at_level": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": "'PS'"
+    },
+    "repeater_entity": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "sort_order": {
+      "type": "real",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "full_width": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "readonly": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "scope_level": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": "'global'"
+    },
+    "scope_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "checksum": {
+      "type": "varchar(64)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "level_data_contracts": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "code": {
+      "type": "varchar(80)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "from_level": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "to_level": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "route": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": "'OPS_CHAIN'"
+    },
+    "record_type": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": "'*'"
+    },
+    "visible_field_keys": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "aggregate_definitions": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[]'"
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "checksum": {
+      "type": "varchar(64)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "report_templates": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "code": {
+      "type": "varchar(80)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "name": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "record_types": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "levels": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "template_definition": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "output_formats": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[\"PDF\"]'"
+    },
+    "template_type": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": "'PROFORMA'"
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "checksum": {
+      "type": "varchar(64)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "report_jobs": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "template_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "filters": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "format": {
+      "type": "varchar(10)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "status": {
+      "type": "varchar(10)",
+      "nullable": false,
+      "defaultVal": "'PENDING' CHECK (status IN ('PENDING'"
+    },
+    "file_path": {
+      "type": "varchar(500)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "custom_definition": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "error_message": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_by": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "scheduled_reports": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "template_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "cron_expr": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "filter_spec": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "format": {
+      "type": "varchar(10)",
+      "nullable": false,
+      "defaultVal": "'PDF'"
+    },
+    "scope_ps_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "scope_district_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "recipients": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[]'"
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "last_run_at": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "last_run_status": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_by": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "report_builder_saved": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "name": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "description": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "query_spec": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "is_shared": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "created_by": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "report_builder_audit": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "user_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "user_role": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "run_type": {
+      "type": "varchar(20)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "table_spec": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "fields_spec": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "filter_spec": {
+      "type": "jsonb",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "format": {
+      "type": "varchar(10)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "row_count": {
+      "type": "int",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "job_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "ip_address": {
+      "type": "varchar(45)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "filter_presets": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "name": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "scope": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": "'global'"
+    },
+    "scope_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "filter_spec": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "record_types": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'[]'"
+    },
+    "created_by": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "import_batches": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "record_type": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "is_legacy": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "uploaded_by": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "ps_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "district_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "file_path": {
+      "type": "varchar(500)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "total_rows": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "valid_rows": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "invalid_rows": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "imported_rows": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "processed_rows": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "status": {
+      "type": "varchar(30)",
+      "nullable": false,
+      "defaultVal": "'VALIDATION_PENDING' CHECK (status IN"
+    },
+    "error_message": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "confirmed_at": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "import_batch_errors": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "batch_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "row_number": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "field_key": {
+      "type": "varchar(60)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "error_code": {
+      "type": "varchar(40)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "severity": {
+      "type": "varchar(10)",
+      "nullable": false,
+      "defaultVal": "'ERROR' CHECK (severity IN ('ERROR'"
+    },
+    "error_message": {
+      "type": "text",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "notifications": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "user_id": {
+      "type": "uuid",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "type": {
+      "type": "varchar(40)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "params": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": "'{}'"
+    },
+    "record_id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "is_read": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "false"
+    },
+    "read_at": {
+      "type": "timestamptz",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "system_meta": {
+    "key": {
+      "type": "varchar(100)",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "value": {
+      "type": "jsonb",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "stat_baselines": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "year": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "scope_code": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "head_code": {
+      "type": "varchar(100)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "reported_count": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "solved_count": {
+      "type": "int",
+      "nullable": false,
+      "defaultVal": "0"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.units": {
+    "unit_cd": {
+      "type": "serial",
+      "nullable": true,
+      "defaultVal": null
+    },
+    "unit": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "to_kg_factor": {
+      "type": "numeric(20",
+      "nullable": false,
+      "defaultVal": "1.0"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  },
+  "ref.agencies": {
+    "id": {
+      "type": "uuid",
+      "nullable": true,
+      "defaultVal": "gen_random_uuid()"
+    },
+    "code": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "name": {
+      "type": "varchar(200)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "category": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "defaultVal": null
+    },
+    "is_active": {
+      "type": "boolean",
+      "nullable": false,
+      "defaultVal": "true"
+    },
+    "created_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    },
+    "updated_at": {
+      "type": "timestamptz",
+      "nullable": false,
+      "defaultVal": "now()"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/hierarchy/nodes/:id"
+method: PUT
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "name_en": "PS New Station Updated"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 4000

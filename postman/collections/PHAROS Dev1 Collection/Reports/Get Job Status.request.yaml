@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/reports/status/:jobId"
+method: GET
+pathVariables:
+  jobId: ""
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 3000

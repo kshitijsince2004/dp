@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/users/:id"
+method: PUT
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "name_en": "Amit Singh Updated",
+      "role": "HC"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 4000

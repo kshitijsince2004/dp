@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/audit/record/:recordId"
+method: GET
+pathVariables:
+  recordId: ""
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 1000

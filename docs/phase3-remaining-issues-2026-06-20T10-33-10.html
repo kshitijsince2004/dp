@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PHAROS — Phase 3 Remaining Issues & Punch List (2026-06-20)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg0: #0b0f1a; --bg1: #111827; --bg2: #1a2233; --bg3: #212d42;
+    --border: #2a3a58; --border-light: #1f2e48;
+    --text0: #e8edf5; --text1: #9bacc6; --text2: #5d738f;
+    --blue: #3b82f6; --teal: #14b8a6; --amber: #f59e0b;
+    --green: #22c55e; --red: #ef4444; --purple: #8b5cf6;
+    --mono: 'SF Mono','Fira Code','Cascadia Code','Courier New',monospace;
+    --sans: system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  body { font-family: var(--sans); background: var(--bg0); color: var(--text0); line-height: 1.6; font-size: 14px; padding: 3rem 4rem; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.3rem; }
+  .meta { font-size: 0.82rem; color: var(--text2); margin-bottom: 2.5rem; }
+  .meta span { margin-right: 1.5rem; }
+  h2 { font-size: 0.95rem; font-weight: 700; color: var(--text0); padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); margin: 2.5rem 0 1.2rem; display: flex; align-items: center; gap: 0.6rem; }
+  h3 { font-size: 0.85rem; font-weight: 600; color: var(--text1); margin: 1.4rem 0 0.6rem; }
+  p { color: var(--text1); font-size: 0.83rem; margin-bottom: 0.8rem; line-height: 1.65; }
+
+  /* ── Severity badges ── */
+  .sev { display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; margin-right: 0.5rem; vertical-align: middle; font-family: var(--mono); letter-spacing: 0.05em; }
+  .sev-blocker { background: #7f1d1d22; color: #fca5a5; border: 1px solid #991b1b; }
+  .sev-high    { background: #78350f22; color: #fde68a; border: 1px solid #b45309; }
+  .sev-medium  { background: #1e3a8a22; color: #93c5fd; border: 1px solid #1d4ed8; }
+  .sev-low     { background: #14532d22; color: #86efac; border: 1px solid #15803d; }
+  .sev-done    { background: #1a2233; color: #5d738f; border: 1px solid #2a3a58; }
+
+  /* ── Status badges ── */
+  .status { display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; font-family: var(--mono); }
+  .done    { background: #14532d22; color: #86efac; border: 1px solid #15803d; }
+  .todo    { background: #7f1d1d22; color: #fca5a5; border: 1px solid #991b1b; }
+  .partial { background: #78350f22; color: #fde68a; border: 1px solid #b45309; }
+
+  /* ── Table ── */
+  .tbl-wrap { overflow-x: auto; margin: 0.75rem 0 1.5rem; border: 1px solid var(--border); border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.79rem; }
+  th { text-align: left; padding: 0.55rem 0.85rem; background: var(--bg2); color: var(--text2); font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border-light); color: var(--text1); vertical-align: top; line-height: 1.5; }
+  td:first-child { color: var(--text0); font-family: var(--mono); font-size: 0.75rem; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg2); }
+
+  /* ── Code ── */
+  code { font-family: var(--mono); font-size: 0.8em; background: var(--bg2); border: 1px solid var(--border-light); padding: 0.1em 0.35em; border-radius: 3px; color: #93c5fd; }
+
+  /* ── Notes ── */
+  .note { background: var(--bg2); border-left: 3px solid var(--blue); border-radius: 0 6px 6px 0; padding: 0.7rem 1rem; font-size: 0.82rem; color: var(--text1); margin: 0.75rem 0 1.25rem; line-height: 1.6; }
+  .note.red    { border-left-color: var(--red); }
+  .note.amber  { border-left-color: var(--amber); }
+  .note.green  { border-left-color: var(--green); }
+  .note strong { color: var(--text0); }
+
+  /* ── Item list ── */
+  .issue-list { list-style: none; margin: 0.5rem 0 1.5rem; }
+  .issue-list li { padding: 0.65rem 0.9rem; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 0.5rem; background: var(--bg1); line-height: 1.55; }
+  .issue-list li strong { color: var(--text0); display: block; margin-bottom: 0.15rem; font-size: 0.84rem; }
+  .issue-list li span { font-size: 0.8rem; color: var(--text1); }
+  .issue-list li code { font-size: 0.75em; }
+
+  @media print {
+    body { background: white; color: #111; padding: 1.5rem 2rem; }
+    .note { background: #f8f9fa; }
+    table { font-size: 0.75rem; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>PHAROS — Phase 3 Remaining Issues & Punch List</h1>
+<div class="meta">
+  <span>Generated: <strong>2026-06-20 10:33 IST</strong></span>
+  <span>Branch: <strong>main</strong></span>
+  <span>System: <strong>PHAROS v3 (Node.js/Express + PostgreSQL + RabbitMQ + React/Vite)</strong></span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2>1 — Module Completion Matrix</h2>
+
+<div class="tbl-wrap">
+<table>
+  <tr>
+    <th>Module</th><th>Backend</th><th>Router / Scope</th><th>Frontend Page</th><th>Integration</th><th>Status</th>
+  </tr>
+  <tr>
+    <td>Report Builder</td>
+    <td>✅ Full (queryEngine + controller)</td>
+    <td>✅ <code>/api/reports/builder/*</code><br>enforceScope ✅</td>
+    <td>✅ ReportBuilder.jsx (1260 lines)</td>
+    <td>✅ All API calls match routes</td>
+    <td><span class="status done">DONE</span></td>
+  </tr>
+  <tr>
+    <td>Legacy Import</td>
+    <td>✅ Full (863 lines)</td>
+    <td>✅ <code>/api/legacy/*</code><br>enforceScope ✅ (fixed 2026-06-20)</td>
+    <td>✅ LegacyDataPage.jsx (437 lines)</td>
+    <td>✅ API calls match routes</td>
+    <td><span class="status done">DONE</span></td>
+  </tr>
+  <tr>
+    <td>Bulk Import (Validate/Confirm)</td>
+    <td>✅ Full (864 lines)</td>
+    <td>✅ <code>/api/import/*</code><br>enforceScope ✅ (fixed 2026-06-20)</td>
+    <td>❌ No frontend page</td>
+    <td>❌ API is headless — no UI</td>
+    <td><span class="status todo">FRONTEND MISSING</span></td>
+  </tr>
+  <tr>
+    <td>Warehouse ETL</td>
+    <td>✅ ETL pipeline + scheduler</td>
+    <td>✅ <code>/api/warehouse/status</code> only</td>
+    <td>❌ No UI (not critical)</td>
+    <td>✅ Scheduler runs on startup</td>
+    <td><span class="status partial">PARTIAL</span></td>
+  </tr>
+  <tr>
+    <td>Filter Presets</td>
+    <td>✅ CRUD controller</td>
+    <td>✅ <code>/api/filters/presets</code><br>enforceScope ✅ (fixed 2026-06-20)</td>
+    <td>⚠️ Hook exists, no UI component</td>
+    <td>⚠️ Hook not wired to any page</td>
+    <td><span class="status partial">HOOK ONLY</span></td>
+  </tr>
+  <tr>
+    <td>Level Contracts</td>
+    <td>✅ service + controller</td>
+    <td>✅ <code>/api/level-contracts</code><br>enforceScope ✅ (fixed 2026-06-20)</td>
+    <td>✅ LevelContractsPage.jsx (290 lines)</td>
+    <td>✅ Full round-trip</td>
+    <td><span class="status done">DONE</span></td>
+  </tr>
+  <tr>
+    <td>New Form Fields (24 fields)</td>
+    <td>✅ In seed.js code (commit 142d1c7)</td>
+    <td>N/A</td>
+    <td>N/A (DynamicForm auto-renders)</td>
+    <td>❌ Seed NOT run against DB yet</td>
+    <td><span class="status todo">DB NOT UPDATED</span></td>
+  </tr>
+  <tr>
+    <td>Daily Diary</td>
+    <td>✅ Fully done</td>
+    <td>✅ <code>/api/daily-diary/*</code></td>
+    <td>✅ CompilationUI.jsx</td>
+    <td>✅</td>
+    <td><span class="status done">DONE</span></td>
+  </tr>
+</table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2>2 — Critical Blockers</h2>
+
+<ul class="issue-list">
+  <li>
+    <strong><span class="sev sev-blocker">BLOCKER</span> Destructive migration will wipe report_jobs on next run</strong>
+    <span>File: <code>backend/migrations/20260620300000_phase3_reports_import.js</code><br>
+    The <code>up()</code> function calls <code>knex.schema.dropTableIfExists('report_jobs')</code> — this deletes all pending/completed report jobs in production on every migration run. Must be rewritten to use <code>alterTable</code> or check for column existence before dropping. <strong>Do NOT run this migration as-is.</strong></span>
+  </li>
+  <li>
+    <strong><span class="sev sev-blocker">BLOCKER</span> Untracked migration file not committed</strong>
+    <span>File: <code>backend/migrations/20260619000000_nullable_template_id_report_jobs.js</code><br>
+    This migration exists on disk but has never been committed to git. Any developer pulling the repo will not have it. Must be <code>git add</code> + committed before next deployment.</span>
+  </li>
+  <li>
+    <strong><span class="sev sev-blocker">BLOCKER</span> 24 new form fields not in database</strong>
+    <span>Fields for CASE (C_29–C_35), ARREST (A_24–A_29), MISSING (MS_23–MS_28), UIDB (U_14–U_28) were added to <code>backend/seeds/seed.js</code> in commit <code>142d1c7</code> but the seed has not been re-run against the database. Forms will not show these fields until seed runs. In Docker setup, this happens at container start via <code>start.bat</code> — but requires seed to be idempotent (<code>onConflict('field_key').ignore()</code>).</span>
+  </li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2>3 — High Priority Items</h2>
+
+<ul class="issue-list">
+  <li>
+    <strong><span class="sev sev-high">HIGH</span> Bulk Import has no frontend page</strong>
+    <span>The <code>/api/import/*</code> module provides template download, batch validation (dry-run with error report), and batch confirmation. It is fully functional but completely invisible to users — no React page exists. This is a core Phase 3 feature (legacy CSV/XLSX import flow with validation step). Needs a new page at <code>/import</code> or wired into <code>LegacyDataPage.jsx</code> as a second tab.</span>
+  </li>
+  <li>
+    <strong><span class="sev sev-high">HIGH</span> Possible duplicate notification subscriptions</strong>
+    <span><code>notifyHandler.init()</code> is called in <code>app.js</code> and subscribes to <code>record.submitted</code>, <code>record.approved</code>, <code>record.sent_back</code>, <code>compilation.submitted</code>.<br>
+    <code>notifications.service.js</code> <code>initSubscriptions()</code> is called in <code>index.js</code> and may subscribe to the same events.<br>
+    In RabbitMQ mode, competing consumers on the same queue would split messages. In mock/in-memory mode, both handlers fire — doubling notifications. Needs audit and consolidation into one handler.</span>
+  </li>
+  <li>
+    <strong><span class="sev sev-high">HIGH</span> Filter presets hook not wired to any UI</strong>
+    <span><code>frontend/src/hooks/useFilterPresets.js</code> wraps the filter presets API but is not imported or used by any page component. The records list page and analytics page have no way for users to save/load filter presets. Needs integration into the records queue or analytics page filter panel.</span>
+  </li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2>4 — Medium Priority Items</h2>
+
+<ul class="issue-list">
+  <li>
+    <strong><span class="sev sev-medium">MEDIUM</span> Warehouse status monitoring UI absent</strong>
+    <span>Only <code>GET /api/warehouse/status</code> exists. No dashboard widget or admin page shows last sync time, record counts, or sync health. Recommended: add a small status card to the HQ or Admin dashboard showing warehouse readiness and last sync timestamp.</span>
+  </li>
+  <li>
+    <strong><span class="sev sev-medium">MEDIUM</span> report-builder sub-mount not dual-registered</strong>
+    <span>The report builder router is mounted via <code>reports.router.js</code> → <code>router.use('/builder', reportBuilderRouter)</code>. This means it's accessible at <code>/api/reports/builder/*</code> and <code>/api/v1/reports/builder/*</code> (both work because reports.router itself is dual-mounted). Confirmed correct — no action needed, just documented for clarity.</span>
+  </li>
+  <li>
+    <strong><span class="sev sev-medium">MEDIUM</span> import.router.js uses its own Multer config</strong>
+    <span>The import router declares its own <code>multer.diskStorage</code> config with a <code>./temp-imports</code> directory, instead of using the shared <code>backend/src/middleware/upload.middleware.js</code>. Minor inconsistency; not a bug, but creates two upload paths. Consider consolidating.</span>
+  </li>
+  <li>
+    <strong><span class="sev sev-medium">MEDIUM</span> JCP/SCP roles missing from enforceScope</strong>
+    <span><code>rbac.middleware.js enforceScope()</code> handles HC/SHO (ps_id), DISTRICT_OFFICER (district_id), ACP (sub_div_id), and HQ/SYSTEM (global). JCP and SCP roles are not handled — they fall through to empty <code>jurisdictionQuery</code> (same as HQ). If JCP/SCP users are ever added, they will see all records. Phase 3 plan includes JCP/SCP chain — add cases to enforceScope before onboarding those roles.</span>
+  </li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2>5 — Low Priority / Cleanup</h2>
+
+<ul class="issue-list">
+  <li>
+    <strong><span class="sev sev-low">LOW</span> All console.* replaced with logger (done 2026-06-20)</strong>
+    <span>59 console.log/warn/error calls across 12 files were replaced with <code>logger.info/warn/error/debug</code> from <code>utils/logger.js</code>. Files fixed: app.js, index.js, auditHandler.js, notifyHandler.js, auth.service.js, auth.middleware.js, compilation.service.js, reports.controller.js, scheduler.js, import.controller.js, warehouse.db.js, warehouse/etl/backfill.js, warehouse/etl/dimensions.js, warehouse/etl/sync.js, utils/s3.js.</span>
+  </li>
+  <li>
+    <strong><span class="sev sev-low">LOW</span> Old orphaned *.routes.js files still in repo</strong>
+    <span>Several modules have both <code>*.router.js</code> (active, imported by app.js) and <code>*.routes.js</code> (orphaned, not imported). Examples: <code>compilation.routes.js</code>, <code>notifications.routes.js</code>. They should be deleted to avoid confusion — but verify no other file imports them first.</span>
+  </li>
+  <li>
+    <strong><span class="sev sev-low">LOW</span> Vaibhav's branch naming violated the brief</strong>
+    <span>PR #16 came from <code>feature/daily-diary-compilation</code> instead of <code>feature/be-reports</code> / <code>feature/be-import</code> as specified. Vaibhav self-merged without owner review. Process enforcement needed: require PR approval from repo owner (<code>Ashmit72061</code>) before merge.</span>
+  </li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2>6 — Phase 3 Roadmap Items Not Yet Started</h2>
+
+<div class="tbl-wrap">
+<table>
+  <tr><th>Item</th><th>From Roadmap</th><th>Effort</th><th>Status</th></tr>
+  <tr><td>MinIO integration (file attachments)</td><td>Phase 3 infra</td><td>Medium</td><td><span class="status todo">NOT STARTED</span></td></tr>
+  <tr><td>Offline PWA support</td><td>Phase 3</td><td>Large</td><td><span class="status todo">NOT STARTED</span></td></tr>
+  <tr><td>Elasticsearch integration (full-text search)</td><td>Phase 3</td><td>Large</td><td><span class="status todo">NOT STARTED</span></td></tr>
+  <tr><td>Performance testing (250 PS load)</td><td>Phase 3</td><td>Large</td><td><span class="status todo">NOT STARTED</span></td></tr>
+  <tr><td>Analytics: PS comparison, beat-wise views</td><td>Phase 2/3</td><td>Medium</td><td><span class="status todo">NOT STARTED</span></td></tr>
+  <tr><td>Hash-sealed audit (chain verification API)</td><td>Phase 2</td><td>Medium</td><td><span class="status partial">HASH WRITTEN, NO VERIFY API</span></td></tr>
+  <tr><td>Keycloak / MFA integration</td><td>Phase 2</td><td>Large</td><td><span class="status partial">STUB ONLY (falls back to JWT)</span></td></tr>
+  <tr><td>Scheduled reports UI (HQ/Admin cron)</td><td>Phase 3</td><td>Medium</td><td><span class="status partial">BACKEND DONE, FRONTEND MISSING</span></td></tr>
+</table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2>7 — RabbitMQ / Event Bus Status</h2>
+
+<div class="note green">
+  <strong>RabbitMQ workers are correctly initialized.</strong> Both <code>auditHandler.init()</code> and <code>notifyHandler.init()</code> are called in <code>app.js startServer()</code> after <code>eventBus.connect()</code>. The warehouse ETL does not use RabbitMQ — it uses <code>node-cron</code>, which is correct for a scheduled sync workload.
+</div>
+
+<div class="tbl-wrap">
+<table>
+  <tr><th>Handler / Worker</th><th>Initialized In</th><th>Subscribes To</th><th>Status</th></tr>
+  <tr>
+    <td>auditHandler</td>
+    <td>app.js → startServer()</td>
+    <td><code>record.*</code> → audit-queue → writes record_revisions</td>
+    <td><span class="status done">✅ WIRED</span></td>
+  </tr>
+  <tr>
+    <td>notifyHandler</td>
+    <td>app.js → startServer()</td>
+    <td>record.submitted, record.approved, record.sent_back, compilation.submitted → SSE push</td>
+    <td><span class="status done">✅ WIRED</span></td>
+  </tr>
+  <tr>
+    <td>notifications.service initSubscriptions</td>
+    <td>index.js → start()</td>
+    <td>Unknown — may duplicate notifyHandler subscriptions</td>
+    <td><span class="status todo">⚠️ AUDIT NEEDED</span></td>
+  </tr>
+  <tr>
+    <td>Warehouse Sync Scheduler</td>
+    <td>index.js → httpServer.listen callback</td>
+    <td>node-cron (not RabbitMQ) — runs every N minutes</td>
+    <td><span class="status done">✅ WIRED</span></td>
+  </tr>
+  <tr>
+    <td>RabbitMQ fallback</td>
+    <td>eventBus.js connect()</td>
+    <td>Falls back to in-memory EventEmitter if RabbitMQ offline</td>
+    <td><span class="status done">✅ IMPLEMENTED</span></td>
+  </tr>
+</table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2>8 — Immediate Next Steps (Ordered)</h2>
+
+<ol style="color: var(--text1); font-size: 0.83rem; line-height: 2; padding-left: 1.5rem;">
+  <li><strong style="color:var(--text0)">Fix migration 20260620300000</strong> — Replace <code>dropTableIfExists('report_jobs')</code> in <code>up()</code> with an <code>alterTable</code> that adds <code>template_id</code> nullable and import-related columns without dropping.</li>
+  <li><strong style="color:var(--text0)">Commit untracked migration</strong> — <code>git add backend/migrations/20260619000000_nullable_template_id_report_jobs.js</code> and commit.</li>
+  <li><strong style="color:var(--text0)">Verify seed idempotency</strong> — Ensure <code>backend/seeds/seed.js</code> uses <code>.onConflict('field_key').ignore()</code> on the field_registry insert so Docker re-mounts don't crash.</li>
+  <li><strong style="color:var(--text0)">Run migrations + seed in Docker</strong> — After fixes above, run to activate the 24 new form fields in DB.</li>
+  <li><strong style="color:var(--text0)">Audit notifications.service.js</strong> — Determine if <code>initSubscriptions()</code> duplicates <code>notifyHandler.init()</code> and consolidate.</li>
+  <li><strong style="color:var(--text0)">Build Bulk Import frontend page</strong> — Template download, file upload with validation preview, confirm step.</li>
+  <li><strong style="color:var(--text0)">Wire filter presets to records/analytics UI</strong> — Plug <code>useFilterPresets.js</code> hook into the queue/analytics filter panel.</li>
+</ol>
+
+<div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text2);">
+  Generated by Claude Code on 2026-06-20 | PHAROS — Police Hierarchical Automated Reporting &amp; Operations System
+</div>
+
+</body>
+</html>

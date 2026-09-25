@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/reports/download/:jobId"
+method: GET
+pathVariables:
+  jobId: ""
+order: 4000

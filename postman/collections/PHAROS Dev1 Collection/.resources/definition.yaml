@@ -1,0 +1,8 @@
+$kind: collection
+description: API collection for PHAROS Backend Dev1 package endpoints, including
+  Authentication, Users management, Hierarchy tree/nodes, Audit revisions,
+  Reports compilation, and Admin Stats.
+variables:
+  baseUrl: http://localhost:5000/api/v1
+  token: ""
+  refreshToken: ""

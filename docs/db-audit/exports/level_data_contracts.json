@@ -1,0 +1,24 @@
+[
+ {
+  "id": "LDC_DIST_HQ_ALL",
+  "from_level": "DISTRICT",
+  "to_level": "HQ",
+  "route": "OPS_CHAIN",
+  "record_type": "*",
+  "visible_field_keys": "[\"case_type\",\"fir_no\",\"fir_date\",\"local_head\",\"occurrence_place\",\"status\",\"brief_facts\",\"crime_head\",\"call_head\",\"missing_name\",\"found_date\"]",
+  "aggregate_definitions": "[{\"type\":\"count\",\"label_en\":\"Total Records\",\"label_hi\":\"कुल रिकॉर्ड\"},{\"type\":\"count_by\",\"field\":\"local_head\",\"label_en\":\"By Crime Head\",\"label_hi\":\"अपराध शीर्ष अनुसार\"}]",
+  "is_active": true,
+  "updated_at": "2026-07-09T10:00:56.510Z"
+ },
+ {
+  "id": "LDC_PS_DIST_ALL",
+  "from_level": "PS",
+  "to_level": "DISTRICT",
+  "route": "OPS_CHAIN",
+  "record_type": "*",
+  "visible_field_keys": "[\"case_type\",\"fir_no\",\"fir_date\",\"local_head\",\"occurrence_place\",\"io_name\",\"status\",\"brief_facts\",\"arrested_name\",\"arrest_date\",\"crime_head\",\"pcr_no\",\"call_head\",\"missing_name\",\"missing_date\",\"found_date\",\"found_place\"]",
+  "aggregate_definitions": "[]",
+  "is_active": true,
+  "updated_at": "2026-07-09T10:00:56.510Z"
+ }
+]

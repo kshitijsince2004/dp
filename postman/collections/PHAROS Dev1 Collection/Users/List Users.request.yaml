@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{baseUrl}}/users?page=1&limit=20"
+method: GET
+queryParams:
+  page: "1"
+  limit: "20"
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 1000

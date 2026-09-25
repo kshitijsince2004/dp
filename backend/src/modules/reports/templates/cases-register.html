@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Cases Register Report</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #333;
+      margin: 30px;
+      line-height: 1.4;
+    }
+    .header {
+      border-bottom: 2px solid #1a365d;
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 {
+      font-size: 24px;
+      color: #1a365d;
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .header-details {
+      font-size: 12px;
+      color: #718096;
+      text-align: right;
+    }
+    .summary-info {
+      background-color: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 25px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+    .info-item {
+      font-size: 13px;
+    }
+    .info-label {
+      font-weight: bold;
+      color: #4a5568;
+      display: block;
+      margin-bottom: 3px;
+    }
+    .info-value {
+      color: #2d3748;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th {
+      background-color: #4a5568;
+      color: white;
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    td {
+      padding: 10px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .footer {
+      margin-top: 40px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 15px;
+      font-size: 11px;
+      color: #a0aec0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Delhi Police Force</h1>
+      <div style="font-size: 14px; color: #4a5568; margin-top: 5px;">Cases Register Ledger Report</div>
+    </div>
+    <div class="header-details">
+      <div>Generated At: {{generated_at}}</div>
+      <div>Pharos Report Job ID: {{job_id}}</div>
+    </div>
+  </div>
+
+  <div class="summary-info">
+    <div class="info-item">
+      <span class="info-label">Date Range</span>
+      <span class="info-value">{{from_date}} to {{to_date}}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Police Station / District</span>
+      <span class="info-value">{{ps_name}}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Total Cases Registered</span>
+      <span class="info-value" style="font-weight: bold; color: #4a5568;">{{records_count}}</span>
+    </div>
+  </div>
+
+  <div class="records-container">
+    {{records_table}}
+  </div>
+
+  <div class="footer">
+    This document is a computer-generated summary retrieved from the PHAROS Automated Reporting System. Secure access log recorded.
+  </div>
+</body>
+</html>

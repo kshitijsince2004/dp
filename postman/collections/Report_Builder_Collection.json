@@ -1,0 +1,384 @@
+{
+  "info": {
+    "name": "PHAROS — Report Builder API",
+    "_postman_id": "pharos-report-builder-v1",
+    "description": "Complete API collection for the PHAROS Cross-Module Dynamic Report Builder.\n\n## Setup\n1. Import this collection into Postman.\n2. Create a Postman environment with:\n   - `base_url`: `http://localhost:3000`\n   - `access_token`: leave blank initially (filled by the Login request)\n3. Run **[Auth] Login** first — the test script auto-sets `access_token`.\n\n## Architecture Notes\n- All requests hit `/api/v1/reports/builder/*` (also accessible at `/api/reports/builder/*`).\n- Every query is whitelisted server-side — invalid fields/operators return `400`.\n- Export jobs are async: POST /export → job_id → GET /export/:jobId polls until `status=READY`.\n- PII fields (complainant names, mobile numbers) are hidden for HC/SHO roles automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",     "value": "http://localhost:3000", "type": "string" },
+    { "key": "access_token", "value": "",                      "type": "string" },
+    { "key": "export_job_id","value": "",                      "type": "string" },
+    { "key": "saved_report_id","value": "",                    "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "[Auth] Login (saves token)",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "if (pm.response.code === 200) {",
+            "  const body = pm.response.json();",
+            "  pm.collectionVariables.set('access_token', body.data?.access_token || body.data?.token || '');",
+            "  pm.test('Login successful', () => pm.expect(pm.response.code).to.equal(200));",
+            "}"
+          ]
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"hq_admin\",\n  \"password\": \"test123\"\n}"
+        },
+        "description": "Login as hq_admin. On success, saves the access token to collection variable `access_token`."
+      }
+    },
+    {
+      "name": "1. GET /metadata",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
+            "pm.test('Has tables', () => {",
+            "  const body = pm.response.json();",
+            "  pm.expect(body.data.tables).to.have.keys(['CASE','ARREST','PCR_CALL','MISSING','UIDB']);",
+            "});"
+          ]
+        }
+      }],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{base_url}}/api/v1/reports/builder/metadata",
+        "description": "Returns the reportable field dictionary for all 5 masters.\nPII fields are hidden for HC/SHO roles.\n\n### Response structure:\n```json\n{\n  \"data\": {\n    \"tables\": {\n      \"CASE\": { \"record_type\": \"CASE\", \"label_en\": \"FIR Master\", \"fields\": [...], \"system_fields\": [...] },\n      \"ARREST\": {...},\n      ...\n    },\n    \"joins\": [\n      { \"key\": \"CASE+ARREST\", \"tables\": [\"CASE\",\"ARREST\"], \"label_en\": \"FIR + Arrests\", ... }\n    ]\n  }\n}\n```"
+      }
+    },
+    {
+      "name": "2. POST /query — Single table (FIR by crime head)",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
+            "pm.test('Has rows array', () => {",
+            "  const body = pm.response.json();",
+            "  pm.expect(body.data).to.be.an('array');",
+            "  pm.expect(body.meta).to.have.property('total');",
+            "});"
+          ]
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/query",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"table\": \"CASE\",\n  \"fields\": [\n    { \"field\": \"fir_no\",          \"table\": \"CASE\" },\n    { \"field\": \"fir_date\",        \"table\": \"CASE\" },\n    { \"field\": \"local_head\",      \"table\": \"CASE\" },\n    { \"field\": \"occurrence_place\",\"table\": \"CASE\" },\n    { \"field\": \"io_name\",         \"table\": \"CASE\" },\n    { \"field\": \"status\",          \"table\": \"CASE\" },\n    { \"field\": \"_ps_id\",          \"table\": \"CASE\" }\n  ],\n  \"filters\": {\n    \"logic\": \"AND\",\n    \"conditions\": [\n      { \"field\": \"local_head\", \"table\": \"CASE\", \"operator\": \"IN\", \"value\": [\"Murder\", \"Robbery\", \"Rape\"] },\n      { \"field\": \"_record_date\", \"table\": \"CASE\", \"operator\": \"THIS_YEAR\" }\n    ]\n  },\n  \"sort\": { \"field\": \"fir_date\", \"dir\": \"desc\" },\n  \"page\": 1,\n  \"pageSize\": 25\n}"
+        },
+        "description": "Preview: FIR records filtered by serious crime heads (Murder/Robbery/Rape) registered this year.\n\n### Key fields:\n- `table`: required — must be one of CASE | ARREST | PCR_CALL | MISSING | UIDB\n- `fields[]`: `{ field, table }` objects — validated against metadata whitelist\n- `filters.logic`: AND | OR\n- `filters.conditions[]`: `{ field, table, operator, value }`\n- `page` + `pageSize` (max 500)\n\n### Operators by type:\n- Text: EQ | NOT_EQ | CONTAINS | STARTS_WITH | ENDS_WITH | IS_EMPTY | IS_NOT_EMPTY\n- Date: EQ | BEFORE | AFTER | BETWEEN | LAST_N_DAYS | THIS_WEEK | THIS_MONTH | THIS_YEAR\n- Enum: IN | NOT_IN | EQ\n- Boolean: IS_TRUE | IS_FALSE"
+      }
+    },
+    {
+      "name": "3. POST /query — Nested OR group filter",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/query",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"table\": \"MISSING\",\n  \"fields\": [\n    { \"field\": \"missing_name\",        \"table\": \"MISSING\" },\n    { \"field\": \"age\",                  \"table\": \"MISSING\" },\n    { \"field\": \"gender\",               \"table\": \"MISSING\" },\n    { \"field\": \"major_minor\",          \"table\": \"MISSING\" },\n    { \"field\": \"missing_date\",         \"table\": \"MISSING\" },\n    { \"field\": \"status\",               \"table\": \"MISSING\" },\n    { \"field\": \"io_name\",              \"table\": \"MISSING\" },\n    { \"field\": \"_ps_id\",               \"table\": \"MISSING\" }\n  ],\n  \"filters\": {\n    \"logic\": \"AND\",\n    \"conditions\": [\n      { \"field\": \"major_minor\", \"table\": \"MISSING\", \"operator\": \"EQ\", \"value\": \"Minor\" },\n      {\n        \"logic\": \"OR\",\n        \"conditions\": [\n          { \"field\": \"gender\", \"table\": \"MISSING\", \"operator\": \"EQ\", \"value\": \"Female\" },\n          { \"field\": \"status\", \"table\": \"MISSING\", \"operator\": \"IN\", \"value\": [\"Missing\", \"Searching\"] }\n        ]\n      }\n    ]\n  },\n  \"page\": 1,\n  \"pageSize\": 50\n}"
+        },
+        "description": "Missing persons: Minor AND (Female OR still Missing/Searching). Shows nested AND/OR filter composition."
+      }
+    },
+    {
+      "name": "4. POST /query — Cross-module join (FIR + Arrest)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/query",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"table\": \"CASE\",\n  \"join\": \"ARREST\",\n  \"fields\": [\n    { \"field\": \"fir_no\",         \"table\": \"CASE\" },\n    { \"field\": \"fir_date\",       \"table\": \"CASE\" },\n    { \"field\": \"local_head\",     \"table\": \"CASE\" },\n    { \"field\": \"status\",         \"table\": \"CASE\" },\n    { \"field\": \"arrested_name\",  \"table\": \"ARREST\" },\n    { \"field\": \"arrest_date\",    \"table\": \"ARREST\" },\n    { \"field\": \"crime_head\",     \"table\": \"ARREST\" },\n    { \"field\": \"status\",         \"table\": \"ARREST\" }\n  ],\n  \"filters\": {\n    \"logic\": \"AND\",\n    \"conditions\": [\n      { \"field\": \"local_head\", \"table\": \"CASE\", \"operator\": \"EQ\", \"value\": \"Murder\" }\n    ]\n  },\n  \"page\": 1,\n  \"pageSize\": 25\n}"
+        },
+        "description": "Cross-module join: FIR master joined with Arrest records via `CASE.fir_no = ARREST.linked_fir_dd_no`.\n\nThe response includes both CASE and ARREST fields, prefixed with the table name:\n```json\n{\n  \"CASE__fir_no\": \"...\",\n  \"CASE__local_head\": \"...\",\n  \"ARREST__arrested_name\": \"...\",\n  \"ARREST__arrest_date\": \"...\"\n}\n```\n\n**Note**: `arrested_name` is a PII field — hidden for HC/SHO roles."
+      }
+    },
+    {
+      "name": "5. POST /query — FIR + Missing Person join",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/query",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"table\": \"CASE\",\n  \"join\": \"MISSING\",\n  \"fields\": [\n    { \"field\": \"fir_no\",       \"table\": \"CASE\" },\n    { \"field\": \"gd_no\",        \"table\": \"CASE\" },\n    { \"field\": \"fir_date\",     \"table\": \"CASE\" },\n    { \"field\": \"local_head\",   \"table\": \"CASE\" },\n    { \"field\": \"dd_no\",        \"table\": \"MISSING\" },\n    { \"field\": \"missing_name\", \"table\": \"MISSING\" },\n    { \"field\": \"status\",       \"table\": \"MISSING\" },\n    { \"field\": \"missing_date\", \"table\": \"MISSING\" }\n  ],\n  \"page\": 1,\n  \"pageSize\": 25\n}"
+        },
+        "description": "Cross-module join: FIR + Missing Person via `CASE.gd_no = MISSING.dd_no`."
+      }
+    },
+    {
+      "name": "6. POST /query — Arrest by IO name (text search)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/query",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"table\": \"ARREST\",\n  \"fields\": [\n    { \"field\": \"io_name\",       \"table\": \"ARREST\" },\n    { \"field\": \"arrest_date\",   \"table\": \"ARREST\" },\n    { \"field\": \"crime_head\",    \"table\": \"ARREST\" },\n    { \"field\": \"status\",        \"table\": \"ARREST\" },\n    { \"field\": \"_ps_id\",        \"table\": \"ARREST\" },\n    { \"field\": \"_record_date\",  \"table\": \"ARREST\" }\n  ],\n  \"filters\": {\n    \"logic\": \"AND\",\n    \"conditions\": [\n      { \"field\": \"io_name\", \"table\": \"ARREST\", \"operator\": \"CONTAINS\", \"value\": \"Sharma\" },\n      { \"field\": \"_record_date\", \"table\": \"ARREST\", \"operator\": \"LAST_N_DAYS\", \"value\": 30 }\n    ]\n  },\n  \"page\": 1,\n  \"pageSize\": 50\n}"
+        },
+        "description": "All arrests by any IO whose name contains 'Sharma' in the last 30 days.\nDemonstrates text CONTAINS operator and LAST_N_DAYS date shortcut."
+      }
+    },
+    {
+      "name": "7. POST /export — Async CSV export",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Status 201', () => pm.expect(pm.response.code).to.equal(201));",
+            "const body = pm.response.json();",
+            "if (body.data?.job_id) {",
+            "  pm.collectionVariables.set('export_job_id', body.data.job_id);",
+            "  pm.test('Has job_id', () => pm.expect(body.data.job_id).to.be.a('string'));",
+            "}"
+          ]
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/export",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"table\": \"CASE\",\n  \"format\": \"csv\",\n  \"fields\": [\n    { \"field\": \"fir_no\",          \"table\": \"CASE\" },\n    { \"field\": \"fir_date\",        \"table\": \"CASE\" },\n    { \"field\": \"local_head\",      \"table\": \"CASE\" },\n    { \"field\": \"occurrence_place\",\"table\": \"CASE\" },\n    { \"field\": \"status\",          \"table\": \"CASE\" },\n    { \"field\": \"io_name\",         \"table\": \"CASE\" },\n    { \"field\": \"_ps_id\",          \"table\": \"CASE\" }\n  ],\n  \"filters\": {\n    \"logic\": \"AND\",\n    \"conditions\": [\n      { \"field\": \"_status\", \"table\": \"CASE\", \"operator\": \"IN\", \"value\": [\"DISTRICT_REVIEW\",\"HQ_RECEIVED\"] }\n    ]\n  }\n}"
+        },
+        "description": "Queue an async CSV export. Returns job_id immediately.\n\n### Response:\n```json\n{ \"data\": { \"job_id\": \"uuid\", \"status\": \"PENDING\", \"format\": \"csv\" } }\n```\n\nThe `export_job_id` variable is auto-saved by the test script for use in the next request.\n\n### Supported formats: `csv` | `xlsx` | `pdf`"
+      }
+    },
+    {
+      "name": "8. GET /export/:jobId — Poll / Download",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "const body = pm.response.json();",
+            "if (body.data?.status) {",
+            "  pm.test('Has status field', () => pm.expect(body.data.status).to.be.a('string'));",
+            "  console.log('Export status:', body.data.status);",
+            "}"
+          ]
+        }
+      }],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{base_url}}/api/v1/reports/builder/export/{{export_job_id}}",
+        "description": "Poll the status of an export job.\n\n- `status: PENDING` → still processing, poll again\n- `status: READY` → file is streamed as download immediately\n- `status: FAILED` → export failed\n\nRun **request 7** first to get a job_id."
+      }
+    },
+    {
+      "name": "9. POST /export — XLSX export (FIR + Arrest join)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/export",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"table\": \"CASE\",\n  \"join\": \"ARREST\",\n  \"format\": \"xlsx\",\n  \"fields\": [\n    { \"field\": \"fir_no\",         \"table\": \"CASE\" },\n    { \"field\": \"fir_date\",       \"table\": \"CASE\" },\n    { \"field\": \"local_head\",     \"table\": \"CASE\" },\n    { \"field\": \"status\",         \"table\": \"CASE\" },\n    { \"field\": \"arrested_name\",  \"table\": \"ARREST\" },\n    { \"field\": \"arrest_date\",    \"table\": \"ARREST\" },\n    { \"field\": \"crime_head\",     \"table\": \"ARREST\" },\n    { \"field\": \"nafis_prepared\", \"table\": \"ARREST\" }\n  ],\n  \"filters\": {\n    \"logic\": \"AND\",\n    \"conditions\": [\n      { \"field\": \"_record_date\", \"table\": \"CASE\", \"operator\": \"THIS_MONTH\" }\n    ]\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "10. POST /saved — Create saved report",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Status 201', () => pm.expect(pm.response.code).to.equal(201));",
+            "const body = pm.response.json();",
+            "if (body.data?.id) { pm.collectionVariables.set('saved_report_id', body.data.id); }"
+          ]
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/saved",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Monthly Murder / Robbery FIR Summary\",\n  \"description\": \"FIR records for serious crime heads registered this month\",\n  \"is_shared\": true,\n  \"query_spec\": {\n    \"table\": \"CASE\",\n    \"fields\": [\n      { \"field\": \"fir_no\",          \"table\": \"CASE\" },\n      { \"field\": \"fir_date\",        \"table\": \"CASE\" },\n      { \"field\": \"local_head\",      \"table\": \"CASE\" },\n      { \"field\": \"occurrence_place\",\"table\": \"CASE\" },\n      { \"field\": \"status\",          \"table\": \"CASE\" },\n      { \"field\": \"io_name\",         \"table\": \"CASE\" }\n    ],\n    \"filters\": {\n      \"logic\": \"AND\",\n      \"conditions\": [\n        { \"field\": \"local_head\", \"table\": \"CASE\", \"operator\": \"IN\", \"value\": [\"Murder\",\"Robbery\",\"Rape\"] },\n        { \"field\": \"_record_date\", \"table\": \"CASE\", \"operator\": \"THIS_MONTH\" }\n      ]\n    }\n  }\n}"
+        },
+        "description": "Save a custom report template. \n- `query_spec` is validated server-side before saving.\n- `is_shared: true` makes it visible to HQ roles.\n- The `saved_report_id` variable is auto-saved for subsequent CRUD requests."
+      }
+    },
+    {
+      "name": "11. GET /saved — List saved reports",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/v1/reports/builder/saved?page=1&limit=20",
+          "variable": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }]
+        }
+      }
+    },
+    {
+      "name": "12. PUT /saved/:id — Update saved report",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/saved/{{saved_report_id}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Monthly Murder / Robbery FIR Summary (Updated)\",\n  \"description\": \"Updated description\"\n}"
+        }
+      }
+    },
+    {
+      "name": "13. DELETE /saved/:id — Delete saved report",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{base_url}}/api/v1/reports/builder/saved/{{saved_report_id}}"
+      }
+    },
+    {
+      "name": "14. GET /lookups/districts",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{base_url}}/api/v1/reports/builder/lookups/districts"
+      }
+    },
+    {
+      "name": "15. GET /lookups/police-stations",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{base_url}}/api/v1/reports/builder/lookups/police-stations"
+      }
+    },
+    {
+      "name": "16. GET /lookups/crime-heads",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{base_url}}/api/v1/reports/builder/lookups/crime-heads"
+      }
+    },
+    {
+      "name": "17. GET /lookups/record-types",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": "{{base_url}}/api/v1/reports/builder/lookups/record-types",
+        "description": "Returns all available base tables with human-readable labels."
+      }
+    },
+    {
+      "name": "18. POST /cross-match/missing-uidb — By gender + age range",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/cross-match/missing-uidb",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gender\": \"Female\",\n  \"age_min\": 15,\n  \"age_max\": 25,\n  \"description_keywords\": [],\n  \"max_results\": 100\n}"
+        },
+        "description": "Similarity-based cross-match between Missing Person and UIDB records.\n\n### Algorithm:\n1. Fetches MISSING records matching the filter criteria (gender, age, description keywords)\n2. Fetches UIDB records matching the same criteria\n3. Cross-joins them in memory and scores each pair\n4. Returns sorted by match_score descending\n\n### Parameters:\n- `gender`: 'Male' | 'Female' | 'Unknown' | omit for all\n- `age_min`, `age_max`: integer age range\n- `description_keywords`: string array — matches against physical_description / description fields\n- `max_results`: max pairs returned (default 100, max 500)"
+      }
+    },
+    {
+      "name": "19. POST /cross-match/missing-uidb — By description keywords",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/cross-match/missing-uidb",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description_keywords\": [\"tattoo\", \"scar\"],\n  \"max_results\": 50\n}"
+        }
+      }
+    },
+    {
+      "name": "20. GET /audit — Report builder audit log (Admin only)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/v1/reports/builder/audit?page=1&limit=50",
+          "variable": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "50" }]
+        },
+        "description": "Requires HQ_ADMIN or SYSTEM_ADMIN role.\n\nReturns a chronological log of every preview, export, and cross-match run.\nEach entry shows: user, role, run_type, tables queried, fields selected, filter spec, row count, export format, IP address."
+      }
+    },
+    {
+      "name": "21. POST /query — Validation error (bad field)",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Status 400 for invalid field', () => pm.expect(pm.response.code).to.equal(400));",
+            "pm.test('Has errors array', () => {",
+            "  const body = pm.response.json();",
+            "  pm.expect(body.success).to.equal(false);",
+            "});"
+          ]
+        }
+      }],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "Content-Type",  "value": "application/json" }
+        ],
+        "url": "{{base_url}}/api/v1/reports/builder/query",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"table\": \"CASE\",\n  \"fields\": [\n    { \"field\": \"INJECTED_FIELD; DROP TABLE records;\", \"table\": \"CASE\" }\n  ]\n}"
+        },
+        "description": "Security test: verify that SQL injection attempts are rejected by the whitelist. Expected: 400 Bad Request."
+      }
+    }
+  ]
+}

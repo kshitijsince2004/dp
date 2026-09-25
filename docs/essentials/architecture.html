@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PHAROS — Architecture Reference</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg0: #0b0f1a;
+    --bg1: #111827;
+    --bg2: #1a2233;
+    --bg3: #212d42;
+    --border: #2a3a58;
+    --border-light: #1f2e48;
+    --text0: #e8edf5;
+    --text1: #9bacc6;
+    --text2: #5d738f;
+    --accent-blue: #3b82f6;
+    --accent-purple: #8b5cf6;
+    --accent-teal: #14b8a6;
+    --accent-amber: #f59e0b;
+    --accent-green: #22c55e;
+    --color-border-tertiary: #2a3a58;
+    --color-text-tertiary: #5d738f;
+    --color-text-secondary: #9bacc6;
+    --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg0);
+    color: var(--text0);
+    line-height: 1.6;
+    font-size: 14px;
+  }
+
+  /* ── Layout ── */
+  .page { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    position: sticky; top: 0; height: 100vh;
+    overflow-y: auto; overflow-x: hidden;
+    background: var(--bg1);
+    border-right: 1px solid var(--border);
+    padding: 2rem 0 2rem;
+  }
+
+  .sidebar-logo { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+  .sidebar-logo .sys { font-size: 1.1rem; font-weight: 800; letter-spacing: 0.08em; color: var(--text0); }
+  .sidebar-logo .sub { font-size: 0.7rem; color: var(--text2); margin-top: 0.1rem; line-height: 1.4; }
+
+  .sidebar-section { padding: 0 1.25rem 0.5rem; margin-top: 0.75rem; }
+  .sidebar-section-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text2); margin-bottom: 0.5rem; }
+
+  .sidebar nav a {
+    display: block; padding: 0.3rem 1.25rem;
+    font-size: 0.8rem; color: var(--text1);
+    text-decoration: none; line-height: 1.4;
+    border-left: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .sidebar nav a:hover { color: var(--text0); border-left-color: var(--accent-blue); }
+
+  .main { flex: 1; padding: 3rem 3.5rem; max-width: 860px; }
+
+  /* ── Header ── */
+  .doc-header { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+  .doc-header h1 { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text0); }
+  .doc-header .full-name { font-size: 0.9rem; color: var(--text1); margin: 0.2rem 0 1rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; }
+  .badge {
+    font-size: 0.7rem; font-weight: 500;
+    padding: 0.2rem 0.55rem; border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text1); background: var(--bg2);
+  }
+  .badge.blue { border-color: #1d4ed8; background: #1e3a8a22; color: #93c5fd; }
+  .badge.purple { border-color: #6d28d9; background: #4c1d9522; color: #c4b5fd; }
+  .badge.teal { border-color: #0f766e; background: #0d948022; color: #5eead4; }
+  .badge.amber { border-color: #b45309; background: #78350f22; color: #fde68a; }
+  .badge.green { border-color: #15803d; background: #14532d22; color: #86efac; }
+
+  /* ── Sections ── */
+  section { margin-bottom: 3.5rem; }
+  section h2 {
+    font-size: 1rem; font-weight: 700; letter-spacing: 0.02em;
+    color: var(--text0);
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .sn {
+    font-size: 0.65rem; font-weight: 700;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 0.15rem 0.45rem; border-radius: 4px;
+    font-family: var(--mono);
+  }
+
+  section h3 { font-size: 0.85rem; font-weight: 700; color: var(--text0); margin: 1.5rem 0 0.6rem; }
+
+  p { color: var(--text1); font-size: 0.85rem; margin-bottom: 0.9rem; line-height: 1.65; }
+  p:last-child { margin-bottom: 0; }
+
+  /* ── Code blocks ── */
+  pre {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.1rem 1.25rem;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    color: var(--text1);
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.7;
+    margin: 0.75rem 0 1.25rem;
+  }
+  pre .c { color: var(--text2); }
+  pre .k { color: #93c5fd; font-weight: 600; }
+  pre .s { color: #6ee7b7; }
+  pre .t { color: var(--text0); font-weight: 600; }
+  code {
+    font-family: var(--mono); font-size: 0.82em;
+    background: var(--bg2); border: 1px solid var(--border-light);
+    padding: 0.1em 0.35em; border-radius: 3px;
+    color: #93c5fd;
+  }
+
+  /* ── Callout / note ── */
+  .note {
+    background: var(--bg2); border-left: 3px solid var(--accent-blue);
+    border-radius: 0 6px 6px 0; padding: 0.75rem 1rem;
+    font-size: 0.82rem; color: var(--text1); margin: 0.75rem 0 1.25rem;
+    line-height: 1.55;
+  }
+  .note.amber { border-left-color: var(--accent-amber); }
+  .note.green { border-left-color: var(--accent-green); }
+
+  /* ── Tables ── */
+  .tbl-wrap { overflow-x: auto; margin: 0.75rem 0 1.25rem; border: 1px solid var(--border); border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th {
+    text-align: left; padding: 0.55rem 0.85rem;
+    background: var(--bg2); color: var(--text2);
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.5rem 0.85rem;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text1); vertical-align: top;
+  }
+  td:first-child { color: var(--text0); font-family: var(--mono); font-size: 0.76rem; font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg2); }
+
+  /* ── Pillar grid ── */
+  .pillar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; }
+  .pillar {
+    background: var(--bg1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.1rem;
+  }
+  .pillar-num { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); margin-bottom: 0.3rem; font-family: var(--mono); }
+  .pillar-name { font-size: 0.9rem; font-weight: 700; color: var(--text0); margin-bottom: 0.45rem; }
+  .pillar-desc { font-size: 0.8rem; color: var(--text1); line-height: 1.55; }
+
+  /* ── Module cards ── */
+  .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.75rem; }
+  .module {
+    background: var(--bg1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem;
+  }
+  .module-tier { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.35rem; }
+  .tier-cc { color: #a78bfa; }
+  .tier-core { color: #60a5fa; }
+  .tier-feat { color: #2dd4bf; }
+  .module-name { font-size: 0.9rem; font-weight: 700; color: var(--text0); margin-bottom: 0.4rem; }
+  .module-desc { font-size: 0.79rem; color: var(--text1); line-height: 1.5; }
+
+  /* ── Phase timeline ── */
+  .phases { list-style: none; }
+  .phase {
+    display: flex; gap: 1.1rem;
+    padding: 1rem 0; border-bottom: 1px solid var(--border-light);
+  }
+  .phase:last-child { border-bottom: none; }
+  .phase-circle {
+    width: 30px; height: 30px; flex-shrink: 0;
+    border-radius: 50%; background: var(--bg3); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; color: var(--text1);
+    margin-top: 2px; font-family: var(--mono);
+  }
+  .phase-name { font-size: 0.9rem; font-weight: 700; color: var(--text0); }
+  .phase-time { font-size: 0.72rem; color: var(--text2); margin: 0.15rem 0 0.4rem; }
+  .phase-list { font-size: 0.8rem; color: var(--text1); padding-left: 1.1rem; }
+  .phase-list li { margin-bottom: 0.2rem; }
+
+  /* ── RBAC grid ── */
+  .rbac-cell-yes { color: var(--accent-green); font-size: 0.78rem; }
+  .rbac-cell-no  { color: var(--text2); font-size: 0.78rem; }
+  .rbac-cell-partial { color: var(--accent-amber); font-size: 0.78rem; }
+
+  /* ── State machine ── */
+  .state-block { font-family: var(--mono); font-size: 0.74rem; line-height: 1.9; color: var(--text1); }
+  .state-name { color: var(--text0); font-weight: 600; }
+  .state-term { color: var(--accent-purple); font-weight: 700; }
+  .state-action { color: var(--text2); }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+
+  /* ── Embedded SVG diagrams ── */
+  .diagram-wrap { background: var(--bg1); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem 1rem; margin: 1rem 0 0.75rem; overflow-x: auto; }
+  .diagram-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text2); margin-bottom: 0.75rem; }
+  .diagram-note { font-size: 0.78rem; color: var(--text2); margin-top: 0.6rem; line-height: 1.55; }
+  .diagram-note code { font-size: 0.78rem; }
+  .diagram-group { margin-bottom: 2.5rem; }
+  .pharos-mod .c-gray rect, .pharos-hier .c-gray rect { fill:#1a2233; stroke:#2a3a58; }
+  .pharos-mod .c-purple rect, .pharos-hier .c-purple rect { fill:#1c0d60; stroke:#8b5cf6; }
+  .pharos-mod .c-blue rect, .pharos-hier .c-blue rect { fill:#0e1e45; stroke:#3b82f6; }
+  .pharos-mod .c-teal rect, .pharos-hier .c-teal rect { fill:#072a26; stroke:#14b8a6; }
+  .pharos-mod .c-amber rect, .pharos-hier .c-amber rect { fill:#431e00; stroke:#f59e0b; stroke-width:1; }
+  .pharos-mod .th, .pharos-hier .th { font-family:system-ui,-apple-system,sans-serif; font-size:13px; font-weight:600; fill:#e8edf5; }
+  .pharos-mod .ts, .pharos-hier .ts { font-family:system-ui,-apple-system,sans-serif; font-size:11px; fill:#9bacc6; }
+  /* ── Logging / docs code highlight additions ── */
+  pre .kw { color: #93c5fd; font-weight: 600; }
+  pre .str { color: #6ee7b7; }
+  pre .num { color: #fde68a; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { padding: 2rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sys">PHAROS</div>
+    <div class="sub">Architecture Reference<br>Delhi Police · v0.1</div>
+  </div>
+  <nav>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Design</div>
+      <a href="#pillars">Architectural pillars</a>
+      <a href="#data">Data architecture</a>
+      <a href="#modules">Module descriptions</a>
+      <a href="#hierarchy">Hierarchy config</a>
+      <a href="#workflow">Workflow states</a>
+      <a href="#diagrams">Architecture diagrams</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Features</div>
+      <a href="#filters">Filter engine</a>
+      <a href="#versioning">Version control</a>
+      <a href="#offline">Offline sync</a>
+      <a href="#reports">Report engine</a>
+      <a href="#analytics">Analytics</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Operations</div>
+      <a href="#rbac">RBAC reference</a>
+      <a href="#stack">Tech stack</a>
+      <a href="#security">Security</a>
+      <a href="#deployment">Deployment</a>
+      <a href="#phases">Dev phases</a>
+    </div>
+  </nav>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<main class="main">
+
+<!-- Header -->
+<div class="doc-header">
+  <h1>PHAROS</h1>
+  <p class="full-name">Police Hierarchical Automated Reporting &amp; Operations System</p>
+  <div class="badges">
+    <span class="badge blue">12 modules</span>
+    <span class="badge blue">3 record types</span>
+    <span class="badge purple">5 hierarchy levels</span>
+    <span class="badge teal">On-premise · intranet-only</span>
+    <span class="badge teal">Offline-capable PWA</span>
+    <span class="badge amber">Hindi/English bilingual</span>
+    <span class="badge green">~250 PS · all districts</span>
+  </div>
+</div>
+
+
+<!-- 02. DIAGRAMS -->
+<section id="diagrams">
+  <h2><span class="sn">02</span> Architecture diagrams</h2>
+
+  <div class="diagram-group">
+    <div class="diagram-title">Module architecture — 12 modules in 4 tiers</div>
+    <div class="diagram-wrap">
+<svg class="pharos-mod" width="100%" viewBox="0 0 680 440" role="img">
+<title>PHAROS module architecture</title>
+<g class="c-gray"><rect x="40" y="16" width="600" height="30" rx="4"/>
+<text class="th" x="340" y="31" text-anchor="middle" dominant-baseline="central">Client — React PWA · Hindi/English · offline-first · role-aware rendering</text></g>
+<g class="c-gray"><rect x="40" y="54" width="600" height="30" rx="4"/>
+<text class="th" x="340" y="69" text-anchor="middle" dominant-baseline="central">API gateway (Nginx) — JWT · TLS · rate limiting · IP allowlist</text></g>
+<line x1="108" y1="84" x2="108" y2="112" stroke="#2a3a58" stroke-width="0.5" stroke-dasharray="3,2"/>
+<line x1="263" y1="84" x2="263" y2="112" stroke="#2a3a58" stroke-width="0.5" stroke-dasharray="3,2"/>
+<line x1="418" y1="84" x2="418" y2="112" stroke="#2a3a58" stroke-width="0.5" stroke-dasharray="3,2"/>
+<line x1="573" y1="84" x2="573" y2="112" stroke="#2a3a58" stroke-width="0.5" stroke-dasharray="3,2"/>
+<text class="ts" x="40" y="106" dominant-baseline="central" fill="#5d738f">cross-cutting</text>
+<g class="c-purple"><rect x="40" y="112" width="135" height="52" rx="4"/>
+<text class="th" x="108" y="129" text-anchor="middle" dominant-baseline="central">IAM</text>
+<text class="ts" x="108" y="148" text-anchor="middle" dominant-baseline="central">Auth &amp; roles</text></g>
+<g class="c-purple"><rect x="195" y="112" width="135" height="52" rx="4"/>
+<text class="th" x="263" y="129" text-anchor="middle" dominant-baseline="central">Field registry</text>
+<text class="ts" x="263" y="148" text-anchor="middle" dominant-baseline="central">Dynamic schema</text></g>
+<g class="c-purple"><rect x="350" y="112" width="135" height="52" rx="4"/>
+<text class="th" x="418" y="129" text-anchor="middle" dominant-baseline="central">Audit ledger</text>
+<text class="ts" x="418" y="148" text-anchor="middle" dominant-baseline="central">Immutable log</text></g>
+<g class="c-purple"><rect x="505" y="112" width="135" height="52" rx="4"/>
+<text class="th" x="573" y="129" text-anchor="middle" dominant-baseline="central">Admin config</text>
+<text class="ts" x="573" y="148" text-anchor="middle" dominant-baseline="central">Hierarchy setup</text></g>
+<line x1="108" y1="164" x2="108" y2="180" stroke="#2a3a58" stroke-width="0.5"/>
+<line x1="263" y1="164" x2="263" y2="180" stroke="#2a3a58" stroke-width="0.5"/>
+<line x1="418" y1="164" x2="418" y2="180" stroke="#2a3a58" stroke-width="0.5"/>
+<line x1="573" y1="164" x2="573" y2="180" stroke="#2a3a58" stroke-width="0.5"/>
+<g class="c-amber"><rect x="40" y="180" width="600" height="28" rx="4"/>
+<text class="th" x="340" y="194" text-anchor="middle" dominant-baseline="central">Event bus (RabbitMQ) — async decoupled inter-module messaging</text></g>
+<line x1="108" y1="208" x2="108" y2="234" stroke="#2a3a58" stroke-width="0.5"/>
+<line x1="263" y1="208" x2="263" y2="234" stroke="#2a3a58" stroke-width="0.5"/>
+<line x1="418" y1="208" x2="418" y2="234" stroke="#2a3a58" stroke-width="0.5"/>
+<line x1="573" y1="208" x2="573" y2="234" stroke="#2a3a58" stroke-width="0.5"/>
+<text class="ts" x="40" y="228" dominant-baseline="central" fill="#5d738f">core processing</text>
+<g class="c-blue"><rect x="40" y="234" width="135" height="52" rx="4"/>
+<text class="th" x="108" y="251" text-anchor="middle" dominant-baseline="central">Data entry</text>
+<text class="ts" x="108" y="270" text-anchor="middle" dominant-baseline="central">Forms &amp; drafts</text></g>
+<g class="c-blue"><rect x="195" y="234" width="135" height="52" rx="4"/>
+<text class="th" x="263" y="251" text-anchor="middle" dominant-baseline="central">Workflow</text>
+<text class="ts" x="263" y="270" text-anchor="middle" dominant-baseline="central">State machine</text></g>
+<g class="c-blue"><rect x="350" y="234" width="135" height="52" rx="4"/>
+<text class="th" x="418" y="251" text-anchor="middle" dominant-baseline="central">Compilation</text>
+<text class="ts" x="418" y="270" text-anchor="middle" dominant-baseline="central">Level aggregation</text></g>
+<g class="c-blue"><rect x="505" y="234" width="135" height="52" rx="4"/>
+<text class="th" x="573" y="251" text-anchor="middle" dominant-baseline="central">Sync</text>
+<text class="ts" x="573" y="270" text-anchor="middle" dominant-baseline="central">Offline queue</text></g>
+<line x1="108" y1="286" x2="108" y2="312" stroke="#2a3a58" stroke-width="0.5"/>
+<line x1="263" y1="286" x2="263" y2="312" stroke="#2a3a58" stroke-width="0.5"/>
+<line x1="418" y1="286" x2="418" y2="312" stroke="#2a3a58" stroke-width="0.5"/>
+<line x1="573" y1="286" x2="573" y2="312" stroke="#2a3a58" stroke-width="0.5"/>
+<text class="ts" x="40" y="306" dominant-baseline="central" fill="#5d738f">feature modules</text>
+<g class="c-teal"><rect x="40" y="312" width="135" height="52" rx="4"/>
+<text class="th" x="108" y="329" text-anchor="middle" dominant-baseline="central">Filters</text>
+<text class="ts" x="108" y="348" text-anchor="middle" dominant-baseline="central">Dynamic queries</text></g>
+<g class="c-teal"><rect x="195" y="312" width="135" height="52" rx="4"/>
+<text class="th" x="263" y="329" text-anchor="middle" dominant-baseline="central">Reports</text>
+<text class="ts" x="263" y="348" text-anchor="middle" dominant-baseline="central">Templates &amp; PDF</text></g>
+<g class="c-teal"><rect x="350" y="312" width="135" height="52" rx="4"/>
+<text class="th" x="418" y="329" text-anchor="middle" dominant-baseline="central">Analytics</text>
+<text class="ts" x="418" y="348" text-anchor="middle" dominant-baseline="central">Dashboards &amp; KPIs</text></g>
+<g class="c-teal"><rect x="505" y="312" width="135" height="52" rx="4"/>
+<text class="th" x="573" y="329" text-anchor="middle" dominant-baseline="central">Notifications</text>
+<text class="ts" x="573" y="348" text-anchor="middle" dominant-baseline="central">Alerts &amp; pending</text></g>
+<line x1="40" y1="376" x2="640" y2="376" stroke="#2a3a58" stroke-width="0.5"/>
+<text class="ts" x="40" y="386" dominant-baseline="central" fill="#5d738f">infrastructure</text>
+<g class="c-gray"><rect x="40" y="392" width="187" height="40" rx="4"/>
+<text class="th" x="134" y="405" text-anchor="middle" dominant-baseline="central">PostgreSQL 15+</text>
+<text class="ts" x="134" y="421" text-anchor="middle" dominant-baseline="central">JSONB · row security</text></g>
+<g class="c-gray"><rect x="247" y="392" width="187" height="40" rx="4"/>
+<text class="th" x="341" y="405" text-anchor="middle" dominant-baseline="central">Elasticsearch · Redis</text>
+<text class="ts" x="341" y="421" text-anchor="middle" dominant-baseline="central">Search · cache · queue</text></g>
+<g class="c-gray"><rect x="454" y="392" width="186" height="40" rx="4"/>
+<text class="th" x="547" y="405" text-anchor="middle" dominant-baseline="central">MinIO · Keycloak</text>
+<text class="ts" x="547" y="421" text-anchor="middle" dominant-baseline="central">Files · auth · identity</text></g>
+</svg>
+    </div>
+    <p class="diagram-note">The amber event bus is the spine — all 12 modules communicate exclusively through it. Cross-cutting tier (purple) runs on every request via middleware and hooks. Core (blue) executes business logic. Features (teal) are independently deployable: each subscribes to events from the bus and knows nothing about other modules. Adding a new feature means a new module subscribing to existing events — nothing existing is touched.</p>
+  </div>
+
+  <div class="diagram-group">
+    <div class="diagram-title">Data flow through hierarchy</div>
+    <div class="diagram-wrap">
+<svg class="pharos-hier" width="100%" viewBox="0 0 680 498" role="img">
+<title>PHAROS data flow hierarchy</title>
+<defs>
+<marker id="hier-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+<g class="c-purple"><rect x="240" y="15" width="200" height="50" rx="4"/>
+<text class="th" x="340" y="32" text-anchor="middle" dominant-baseline="central">HQ</text>
+<text class="ts" x="340" y="50" text-anchor="middle" dominant-baseline="central">Archive · analytics · reports</text></g>
+<line x1="452" y1="25" x2="474" y2="25" stroke="#22c55e" stroke-width="1.5" marker-end="url(#hier-arrow)" fill="none"/>
+<text class="ts" x="479" y="25" dominant-baseline="central" fill="#9bacc6">approve / submit</text>
+<line x1="452" y1="41" x2="474" y2="41" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#hier-arrow)" fill="none"/>
+<text class="ts" x="479" y="41" dominant-baseline="central" fill="#9bacc6">send back</text>
+<line x1="452" y1="57" x2="474" y2="57" stroke="#14b8a6" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#hier-arrow)" fill="none"/>
+<text class="ts" x="479" y="57" dominant-baseline="central" fill="#9bacc6">direct route</text>
+<g class="c-blue"><rect x="50" y="80" width="180" height="50" rx="4"/>
+<text class="th" x="140" y="97" text-anchor="middle" dominant-baseline="central">Special CP</text>
+<text class="ts" x="140" y="116" text-anchor="middle" dominant-baseline="central">Consolidation level</text></g>
+<g class="c-blue"><rect x="50" y="165" width="180" height="50" rx="4"/>
+<text class="th" x="140" y="182" text-anchor="middle" dominant-baseline="central">Joint CP</text>
+<text class="ts" x="140" y="201" text-anchor="middle" dominant-baseline="central">Operational chain</text></g>
+<g class="c-teal"><rect x="160" y="265" width="360" height="50" rx="4"/>
+<text class="th" x="340" y="282" text-anchor="middle" dominant-baseline="central">District — compile &amp; review</text>
+<text class="ts" x="340" y="301" text-anchor="middle" dominant-baseline="central">Aggregates all PS · edits allowed fields · submits up</text></g>
+<g class="c-gray"><rect x="190" y="360" width="300" height="44" rx="4"/>
+<text class="th" x="340" y="376" text-anchor="middle" dominant-baseline="central">SHO — field review</text>
+<text class="ts" x="340" y="394" text-anchor="middle" dominant-baseline="central">Approve or send back with comment</text></g>
+<g class="c-gray"><rect x="40" y="432" width="600" height="50" rx="4"/>
+<text class="th" x="340" y="449" text-anchor="middle" dominant-baseline="central">Head constable — daily data entry</text>
+<text class="ts" x="340" y="467" text-anchor="middle" dominant-baseline="central">Arrest master · PCR call master · Cases master</text></g>
+<line x1="340" y1="432" x2="340" y2="404" stroke="#22c55e" stroke-width="1.5" marker-end="url(#hier-arrow)" fill="none"/>
+<line x1="340" y1="360" x2="340" y2="315" stroke="#22c55e" stroke-width="1.5" marker-end="url(#hier-arrow)" fill="none"/>
+<path d="M160,290 L140,290 L140,215" fill="none" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#hier-arrow)"/>
+<line x1="340" y1="265" x2="340" y2="65" stroke="#14b8a6" stroke-width="1.5" stroke-dasharray="7,3" marker-end="url(#hier-arrow)" fill="none"/>
+<line x1="140" y1="165" x2="140" y2="130" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#hier-arrow)" fill="none"/>
+<path d="M230,105 L260,105 L260,65" fill="none" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#hier-arrow)"/>
+<path d="M190,382 L80,382 L80,432" fill="none" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#hier-arrow)"/>
+<path d="M520,290 L570,290 L570,382 L490,382" fill="none" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#hier-arrow)"/>
+<text class="ts" x="132" y="283" text-anchor="end" dominant-baseline="central" fill="#5d738f">ops chain</text>
+<text class="ts" x="354" y="200" text-anchor="start" dominant-baseline="central" fill="#5d738f">direct route</text>
+</svg>
+    </div>
+    <p class="diagram-note">District is the critical junction — it simultaneously dispatches compiled data on two routes with different data contracts: the operational chain (JCP → SCP → HQ) and direct HQ reporting. Send-back arrows (amber, dashed) carry the <code>target_fields</code> array — the reviewing level specifies exactly which fields need correction without rejecting the whole record. HQ eventually receives data from both paths.</p>
+  </div>
+</section>
+
+<!-- 01. PILLARS -->
+<section id="pillars">
+  <h2><span class="sn">01</span> Architectural pillars</h2>
+  <div class="pillar-grid">
+    <div class="pillar">
+      <div class="pillar-num">Pillar 1</div>
+      <div class="pillar-name">Dynamic field registry</div>
+      <div class="pillar-desc">Every field is a row in <code>field_registry</code>, not a DB column. Forms render from this table at runtime. Adding, removing, or modifying a field requires only an INSERT or UPDATE — no migration, no deployment, no code change.</div>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">Pillar 2</div>
+      <div class="pillar-name">Immutable event ledger</div>
+      <div class="pillar-desc">Every field change at every level is written to an append-only <code>record_revisions</code> table. Nothing is ever deleted. Field-level diffs track who, what, old value, new value, when, from which IP. Hash-chained for tamper detection.</div>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">Pillar 3</div>
+      <div class="pillar-name">Level-aware data contracts</div>
+      <div class="pillar-desc">What District sends to JCP is not what it sends to HQ. These contracts live in a <code>level_data_contracts</code> config table. Changing what fields flow on which route requires a config edit — not a deployment.</div>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">Pillar 4</div>
+      <div class="pillar-name">Event-bus isolation</div>
+      <div class="pillar-desc">Modules never call each other directly. All inter-module communication is async via RabbitMQ. Adding a new feature means adding a new module that subscribes to events. Nothing existing can break because nothing existing is coupled to the new module.</div>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">Pillar 5</div>
+      <div class="pillar-name">Hierarchy as configuration</div>
+      <div class="pillar-desc">PS → District → JCP → SCP → HQ is a single self-referencing <code>hierarchy_nodes</code> table. Restructuring (move a PS, rename a district, add a new level) = row updates. Zero code changes required.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 02. DATA ARCHITECTURE -->
+<section id="data">
+  <h2><span class="sn">02</span> Data architecture</h2>
+
+  <p>Three record types (ARREST, PCR_CALL, CASE) share one physical <code>records</code> table with a JSONB <code>data</code> column. The field registry governs what lives inside that blob. PCR_CALL is independent; CASE and ARREST link via <code>fir_number</code> through a <code>case_arrest_links</code> junction table — they can be queried jointly or independently depending on the use case.</p>
+
+  <h3>records</h3>
+<pre><span class="c">-- All three master types use this single table</span>
+<span class="t">records</span> (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  record_type     VARCHAR NOT NULL  <span class="c">-- 'ARREST' | 'PCR_CALL' | 'CASE'</span>
+  ps_id           UUID NOT NULL REFERENCES hierarchy_nodes(id),
+  district_id     UUID NOT NULL REFERENCES hierarchy_nodes(id),
+  <span class="k">data</span>            JSONB NOT NULL DEFAULT '{}',  <span class="c">-- ALL field values live here</span>
+  current_status  VARCHAR NOT NULL DEFAULT 'DRAFT',
+  current_level   VARCHAR NOT NULL DEFAULT 'PS',
+  version         INTEGER NOT NULL DEFAULT 1,
+  created_by      UUID NOT NULL REFERENCES users(id),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)</pre>
+
+  <h3>field_registry</h3>
+<pre><span class="c">-- The schema itself — every field that can exist in any record</span>
+<span class="t">field_registry</span> (
+  id                       UUID PRIMARY KEY,
+  <span class="k">field_key</span>                VARCHAR UNIQUE NOT NULL,  <span class="c">-- "accused_name", "fir_no", "date_of_arrest"</span>
+  field_type               VARCHAR NOT NULL,
+    <span class="c">-- TEXT | NUMBER | DATE | DATETIME | SELECT | MULTISELECT | FILE | BOOLEAN | PHONE</span>
+  applicable_record_types  VARCHAR[] NOT NULL,  <span class="c">-- ['ARREST','CASE'] or ['PCR_CALL'] etc.</span>
+  label_en                 VARCHAR NOT NULL,    <span class="c">-- English label shown on form</span>
+  label_hi                 VARCHAR NOT NULL,    <span class="c">-- Hindi label shown on form</span>
+  options                  JSONB,               <span class="c">-- [{value, label_en, label_hi}] for SELECT fields</span>
+  validation_rules         JSONB,               <span class="c">-- {required, min, max, regex, pattern}</span>
+  visible_to_levels        VARCHAR[] NOT NULL DEFAULT '{PS,DISTRICT,JCP,SCP,HQ}',
+  editable_by_levels       VARCHAR[] NOT NULL DEFAULT '{PS}',
+  introduced_at_level      VARCHAR NOT NULL DEFAULT 'PS',
+  section                  VARCHAR,             <span class="c">-- form section grouping</span>
+  sort_order               INTEGER DEFAULT 0,
+  <span class="k">is_active</span>                BOOLEAN NOT NULL DEFAULT TRUE  <span class="c">-- soft-delete; historical data preserved</span>
+)</pre>
+
+  <h3>record_revisions</h3>
+<pre><span class="c">-- APPEND-ONLY. NEVER update or delete rows here.</span>
+<span class="t">record_revisions</span> (
+  id               UUID PRIMARY KEY,
+  record_id        UUID NOT NULL REFERENCES records(id),
+  revision_number  INTEGER NOT NULL,
+  changed_by       UUID NOT NULL REFERENCES users(id),
+  changed_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  level            VARCHAR NOT NULL,
+  change_type      VARCHAR NOT NULL,  <span class="c">-- 'CREATE'|'UPDATE'|'STATUS_CHANGE'|'LEVEL_TRANSITION'</span>
+  <span class="k">field_changes</span>    JSONB NOT NULL DEFAULT '[]',
+  <span class="c">  -- [{field_key, label_en, label_hi, old_value, new_value}]</span>
+  comment          TEXT,
+  ip_address       INET,
+  prev_hash        VARCHAR,           <span class="c">-- SHA256 of previous revision row (tamper chain)</span>
+  row_hash         VARCHAR            <span class="c">-- SHA256 of this row's content</span>
+)</pre>
+
+  <h3>workflow_transitions</h3>
+<pre><span class="c">-- Append-only workflow audit trail</span>
+<span class="t">workflow_transitions</span> (
+  id              UUID PRIMARY KEY,
+  record_id       UUID NOT NULL REFERENCES records(id),
+  from_level      VARCHAR,  to_level      VARCHAR,
+  from_status     VARCHAR,  to_status     VARCHAR,
+  action          VARCHAR NOT NULL,
+    <span class="c">-- 'SUBMIT'|'APPROVE'|'SEND_BACK'|'ESCALATE'|'RECALL'|'ARCHIVE'</span>
+  performed_by    UUID NOT NULL REFERENCES users(id),
+  performed_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  comment         TEXT,
+  <span class="k">target_fields</span>   VARCHAR[]  <span class="c">-- for SEND_BACK: specific fields that need correction</span>
+)</pre>
+
+  <h3>compilations</h3>
+<pre><span class="c">-- Daily compilations produced at District level and above</span>
+<span class="t">compilations</span> (
+  id                UUID PRIMARY KEY,
+  source_level      VARCHAR NOT NULL,  target_level   VARCHAR NOT NULL,
+  route             VARCHAR NOT NULL,  <span class="c">-- 'OPS_CHAIN' | 'DIRECT_HQ'</span>
+  period            DATE NOT NULL,     <span class="c">-- the date this compilation covers</span>
+  source_entity_id  UUID NOT NULL REFERENCES hierarchy_nodes(id),
+  status            VARCHAR NOT NULL DEFAULT 'DRAFT',
+  record_ids        UUID[] NOT NULL DEFAULT '{}',
+  compiled_summary  JSONB,             <span class="c">-- aggregated stats, counts by crime head, etc.</span>
+  submitted_by      UUID REFERENCES users(id),
+  submitted_at      TIMESTAMPTZ
+)</pre>
+
+  <h3>level_data_contracts</h3>
+<pre><span class="c">-- Controls which fields flow from one level to the next (Pillar 3)</span>
+<span class="t">level_data_contracts</span> (
+  from_level              VARCHAR NOT NULL,
+  to_level                VARCHAR NOT NULL,
+  route                   VARCHAR NOT NULL,   <span class="c">-- 'OPS_CHAIN' | 'DIRECT_HQ'</span>
+  record_type             VARCHAR NOT NULL,
+  <span class="k">visible_field_keys</span>      VARCHAR[] NOT NULL, <span class="c">-- which fields are included in this contract</span>
+  aggregate_definitions   JSONB              <span class="c">-- computed/aggregate fields added at this level</span>
+)</pre>
+
+  <h3>hierarchy_nodes</h3>
+<pre><span class="c">-- Single self-referencing table for all hierarchy entities</span>
+<span class="t">hierarchy_nodes</span> (
+  id          UUID PRIMARY KEY,
+  node_type   VARCHAR NOT NULL,  <span class="c">-- 'PS'|'DISTRICT'|'JCP'|'SCP'|'HQ'</span>
+  name_en     VARCHAR NOT NULL,  name_hi  VARCHAR NOT NULL,
+  code        VARCHAR UNIQUE,    <span class="c">-- official police unit code</span>
+  <span class="k">parent_id</span>   UUID REFERENCES hierarchy_nodes(id),  <span class="c">-- the parent in the hierarchy chain</span>
+  metadata    JSONB,             <span class="c">-- address, GPS coords, contact number, etc.</span>
+  is_active   BOOLEAN NOT NULL DEFAULT TRUE
+)</pre>
+
+  <h3>filter_presets</h3>
+<pre><span class="c">-- Saved filter specifications (SYSTEM / ROLE / USER scope)</span>
+<span class="t">filter_presets</span> (
+  id                     UUID PRIMARY KEY,
+  name_en                VARCHAR NOT NULL,  name_hi  VARCHAR NOT NULL,
+  scope                  VARCHAR NOT NULL,  <span class="c">-- 'SYSTEM'|'ROLE'|'USER'</span>
+  scope_id               UUID,             <span class="c">-- role_id or user_id if scoped</span>
+  <span class="k">filter_spec</span>            JSONB NOT NULL,   <span class="c">-- the AND/OR filter tree (see §06)</span>
+  applicable_record_types  VARCHAR[],
+  created_by             UUID REFERENCES users(id)
+)</pre>
+
+  <h3>report_templates</h3>
+<pre><span class="c">-- Proforma templates — new proforma = new row, no code change</span>
+<span class="t">report_templates</span> (
+  id                    UUID PRIMARY KEY,
+  name_en               VARCHAR NOT NULL,  name_hi  VARCHAR NOT NULL,
+  applicable_record_types  VARCHAR[],
+  applicable_levels     VARCHAR[],
+  <span class="k">template_definition</span>   JSONB NOT NULL,  <span class="c">-- sections, field mappings, layout, computed fields</span>
+  output_formats        VARCHAR[] DEFAULT '{PDF,EXCEL}',
+  is_active             BOOLEAN NOT NULL DEFAULT TRUE,
+  created_by            UUID REFERENCES users(id)
+)</pre>
+</section>
+
+<!-- 03. MODULES -->
+<section id="modules">
+  <h2><span class="sn">03</span> Module descriptions</h2>
+  <div class="module-grid">
+    <div class="module">
+      <div class="module-tier tier-cc">Cross-cutting</div>
+      <div class="module-name">IAM</div>
+      <div class="module-desc">Users, roles, permissions, session management. Backed by Keycloak OIDC. Every API call passes through IAM middleware before any business logic runs. Manages role hierarchy for 1000+ users across all PS.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-cc">Cross-cutting</div>
+      <div class="module-name">Field registry</div>
+      <div class="module-desc">Source of truth for all field definitions. Exposes a read API consumed by Data Entry, Filters, Reports, and Analytics. A change here propagates everywhere automatically — no sync needed.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-cc">Cross-cutting</div>
+      <div class="module-name">Audit ledger</div>
+      <div class="module-desc">Subscribes to <code>record.changed</code> events from all other modules. Writes append-only rows to <code>record_revisions</code>. Cannot be called directly — only via the event bus — making it impossible to bypass.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-cc">Cross-cutting</div>
+      <div class="module-name">Admin config</div>
+      <div class="module-desc">Manages <code>hierarchy_nodes</code>, <code>level_data_contracts</code>, user management, field registry UI. Only SYSTEM_ADMIN can write. District Admins can read relevant portions. All changes are audit-logged.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-core">Core</div>
+      <div class="module-name">Data entry</div>
+      <div class="module-desc">Renders forms dynamically from the Field Registry. Handles draft auto-save (every 30s + on change), file uploads to MinIO, bilingual label switching, per-field validation, and initial <code>records</code> row creation. Publishes <code>record.created</code> and <code>record.updated</code> events.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-core">Core</div>
+      <div class="module-name">Workflow</div>
+      <div class="module-desc">Finite state machine for record lifecycle. Validates every transition against role permissions. On SEND_BACK, requires comment and optionally <code>target_fields</code>. Publishes transition events consumed by Notifications and Audit Ledger. Illegal transitions throw 403 — not silently ignored.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-core">Core</div>
+      <div class="module-name">Compilation</div>
+      <div class="module-desc">District-level and above. Collects all approved records for a period, applies the relevant Level Data Contract to select/transform fields, and produces <code>compilations</code> rows. Handles the two parallel routes (ops chain vs. direct HQ) as separate compilation jobs triggered by the same event.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-core">Core</div>
+      <div class="module-name">Sync</div>
+      <div class="module-desc">Service Worker + IndexedDB. Intercepts API calls when offline, queues as <code>sync_ops</code>, replays in strict order on reconnect. Conflict rule: DRAFT = last-write-wins; ≥ PENDING_SHO = server wins. Notifies user of any discarded local edits.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-feat">Feature</div>
+      <div class="module-name">Filters</div>
+      <div class="module-desc">Accepts a JSON filter spec (AND/OR tree). Translates to PostgreSQL JSONB query (simple) or Elasticsearch DSL (complex/full-text). Every field in the registry is automatically filterable. Preset management with SYSTEM / ROLE / USER scoping.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-feat">Feature</div>
+      <div class="module-name">Reports</div>
+      <div class="module-desc">Template-based proforma generation. Templates define sections, field mappings, computed aggregates, headers, footers. Renders to PDF via Puppeteer or Excel via ExcelJS. New proforma = new template row in Admin UI. Zero deployments for new report types.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-feat">Feature</div>
+      <div class="module-name">Analytics</div>
+      <div class="module-desc">Dashboards scoped per hierarchy level. Comparative reports (day/week/month/year), PS vs PS, District vs District, beat-wise, crime-head-wise, IO performance. Powered by Elasticsearch aggregations. Renders trend charts and heat maps directly in the browser.</div>
+    </div>
+    <div class="module">
+      <div class="module-tier tier-feat">Feature</div>
+      <div class="module-name">Notifications</div>
+      <div class="module-desc">Subscribes to <code>record.submitted</code>, <code>record.sent_back</code>, <code>compilation.due</code>, <code>deadline.approaching</code> events. Delivers in-app alerts, maintains per-user pending count in Redis (live badge), and stores notification history. Extensible to SMS/email within intranet without touching other modules.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 04. HIERARCHY CONFIG -->
+<section id="hierarchy">
+  <h2><span class="sn">04</span> Hierarchy configuration</h2>
+  <p>All relationships are rows in <code>hierarchy_nodes</code>. The Admin Config module provides a UI to add, rename, or restructure nodes without touching code.</p>
+<pre>HQ (root, parent_id = NULL)
+ └── Spl. CP — Zone A
+      └── Jt. CP — District Group North
+           ├── District: Central Delhi
+           │    ├── PS: Connaught Place
+           │    ├── PS: Parliament Street
+           │    └── PS: Chanakyapuri
+           └── District: North Delhi
+                ├── PS: Civil Lines
+                └── PS: Timarpur
+ └── Spl. CP — Zone B
+      └── ...</pre>
+  <div class="note">To move a PS to a different District: <code>UPDATE hierarchy_nodes SET parent_id = &lt;new_district_id&gt; WHERE id = &lt;ps_id&gt;</code>. Historical records retain their original <code>ps_id</code> and <code>district_id</code> for audit accuracy. Only future records use the new assignment.</div>
+  <p>Level Data Contracts define what fields flow on each route. The Compilation module reads these at compile time. If contracts change mid-week, the next compilation uses the new contract; past compilations are unaffected.</p>
+</section>
+
+<!-- 05. WORKFLOW -->
+<section id="workflow">
+  <h2><span class="sn">05</span> Workflow state machine</h2>
+  <div class="state-block">
+<span class="state-name">DRAFT</span>
+  └─ <span class="state-action">[HC submits]</span> ──────────────────────────────────────→ <span class="state-name">PENDING_SHO</span>
+                                                                    │
+                                        ┌─ <span class="state-action">[SHO sends back + comment]</span> ──┘
+                                        ↓                           │ <span class="state-action">[SHO approves]</span>
+                               <span class="state-name">SENT_BACK_HC</span>                     ↓
+                                        │                  <span class="state-name">DISTRICT_REVIEW</span>
+                               <span class="state-action">[HC resubmits]</span>          │
+                                        └───────────────────┤
+                                                            ├─ <span class="state-action">[District sends back]</span> ──→ <span class="state-name">SENT_BACK_PS</span> ──→ PENDING_SHO
+                                                            │ <span class="state-action">[District compiles]</span>
+                                                            ↓
+                                                        <span class="state-name">COMPILED</span>
+                                                            ├─── <span class="state-action">[ops chain]</span> ──→ <span class="state-name">JCP_REVIEW</span> ──→ <span class="state-name">SCP_REVIEW</span> ──┐
+                                                            └─── <span class="state-action">[direct HQ]</span> ─────────────────────────────→─┤
+                                                                                                                <span class="state-name">HQ_RECEIVED</span>
+                                                                                                                    └─ <span class="state-action">[HQ seals]</span> ──→ <span class="state-term">ARCHIVED ■</span>
+  </div>
+  <div class="note amber" style="margin-top:1.25rem">On SEND_BACK: the <code>target_fields</code> array in <code>workflow_transitions</code> specifies exactly which fields need correction. The form highlights only those fields. This prevents rejecting a complete record when only one field is wrong.</div>
+  <div class="note">All transitions are validated by the Workflow module against role permissions before being applied. Illegal transitions (e.g. HC approving their own record, or District accessing JCP-level records) throw 403 and are logged in the audit ledger.</div>
+</section>
+
+<!-- 06. FILTERS -->
+<section id="filters">
+  <h2><span class="sn">06</span> Filter engine</h2>
+  <p>Filters are JSON specs — an AND/OR tree of field-operator-value conditions. The backend parses into PostgreSQL JSONB queries (simple, fast) or Elasticsearch DSL (full-text, complex multi-field). Every field added to the registry is automatically filterable — no code change needed for new fields.</p>
+
+<pre><span class="c">-- Filter spec format: AND/OR condition tree</span>
+{
+  <span class="k">"logic"</span>: <span class="s">"AND"</span>,
+  <span class="k">"conditions"</span>: [
+    { <span class="k">"field"</span>: <span class="s">"crime_head"</span>,  <span class="k">"operator"</span>: <span class="s">"IN"</span>,      <span class="k">"value"</span>: [<span class="s">"Robbery"</span>, <span class="s">"Theft"</span>] },
+    { <span class="k">"field"</span>: <span class="s">"beat_no"</span>,     <span class="k">"operator"</span>: <span class="s">"EQ"</span>,      <span class="k">"value"</span>: <span class="s">"14"</span> },
+    {
+      <span class="k">"logic"</span>: <span class="s">"OR"</span>,
+      <span class="k">"conditions"</span>: [
+        { <span class="k">"field"</span>: <span class="s">"date_of_arrest"</span>, <span class="k">"operator"</span>: <span class="s">"BETWEEN"</span>,   <span class="k">"value"</span>: [<span class="s">"2024-01-01"</span>, <span class="s">"2024-01-31"</span>] },
+        { <span class="k">"field"</span>: <span class="s">"status"</span>,          <span class="k">"operator"</span>: <span class="s">"EQ"</span>,         <span class="k">"value"</span>: <span class="s">"UNDER_INVESTIGATION"</span> }
+      ]
+    }
+  ]
+}</pre>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Field type</th><th>Available operators</th></tr></thead>
+    <tbody>
+      <tr><td>TEXT</td><td>eq, not_eq, contains, starts_with, ends_with, is_empty, is_not_empty</td></tr>
+      <tr><td>NUMBER</td><td>eq, not_eq, gt, gte, lt, lte, between</td></tr>
+      <tr><td>DATE / DATETIME</td><td>eq, before, after, between, last_n_days, this_week, this_month, this_year</td></tr>
+      <tr><td>SELECT</td><td>in, not_in, is_empty</td></tr>
+      <tr><td>MULTISELECT</td><td>contains_any, contains_all, is_empty</td></tr>
+      <tr><td>BOOLEAN</td><td>is_true, is_false</td></tr>
+      <tr><td>FILE</td><td>has_attachment, no_attachment</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Preset examples</h3>
+  <p>System-level presets (available to all): "Today's FIRs" · "Pending SHO approval" · "Cases under S.302" · "PCR calls — no action taken" · "Arrests this month by crime head" · "Beat 14 this week" · "IO-wise pending cases". Role-scoped and user-created presets follow the same format and are stored in <code>filter_presets</code> with the appropriate scope.</p>
+</section>
+
+<!-- 07. VERSION CONTROL -->
+<section id="versioning">
+  <h2><span class="sn">07</span> Version control</h2>
+  <p>Every save at every level generates a <code>record_revisions</code> row. The UI shows a full diff timeline per record. At ARCHIVED status, the chain is hash-sealed.</p>
+
+<pre><span class="c">-- field_changes payload: every field that changed in this save</span>
+[
+  {
+    <span class="k">"field_key"</span>:  <span class="s">"accused_name"</span>,
+    <span class="k">"label_en"</span>:   <span class="s">"Name of arrested person"</span>,
+    <span class="k">"label_hi"</span>:   <span class="s">"गिरफ्तार व्यक्ति का नाम"</span>,
+    <span class="k">"old_value"</span>:  <span class="s">"Ramesh Singh"</span>,
+    <span class="k">"new_value"</span>:  <span class="s">"Rakesh Singh"</span>
+  },
+  {
+    <span class="k">"field_key"</span>:  <span class="s">"place_of_arrest"</span>,
+    <span class="k">"label_en"</span>:   <span class="s">"Place of arrest"</span>,
+    <span class="k">"old_value"</span>:  <span class="s">"Lajpat Nagar"</span>,
+    <span class="k">"new_value"</span>:  <span class="s">"Lajpat Nagar Market, New Delhi"</span>
+  }
+]</pre>
+
+  <p>Tamper detection: each <code>record_revisions</code> row stores <code>prev_hash</code> (SHA256 of the previous row) and <code>row_hash</code> (SHA256 of this row's content). Any retroactive insert or modification breaks the chain at that point — detectable by a simple sequential hash-verification scan.</p>
+  <p>The timeline view shows revisions in reverse-chronological order, with bilingual labels, color-coded old/new values, and the actor's name, badge number, level, and timestamp. Any user with read access to the record can view its complete history.</p>
+</section>
+
+<!-- 08. OFFLINE -->
+<section id="offline">
+  <h2><span class="sn">08</span> Offline sync</h2>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Works offline (IndexedDB)</th><th>Requires connectivity</th></tr></thead>
+    <tbody>
+      <tr><td>Create / edit drafts</td><td>Final submission (state machine transition)</td></tr>
+      <tr><td>View all local PS records</td><td>Receiving send-backs from SHO</td></tr>
+      <tr><td>View cached filter presets</td><td>Cross-PS or cross-District data</td></tr>
+      <tr><td>Search local cached records</td><td>Real-time report generation</td></tr>
+      <tr><td>View previously downloaded reports</td><td>Analytics dashboards</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Offline operations queue as <code>sync_ops</code> in IndexedDB. On reconnect, the Sync Module replays the queue in strict creation order. Conflict rule: DRAFT records use last-write-wins (local beats server only if server version hasn't advanced). Records at PENDING_SHO or above are server-authoritative; local edits are silently discarded and the user is shown a notification: "Record has advanced — your local changes were not applied."</p>
+</section>
+
+<!-- 09. REPORTS -->
+<section id="reports">
+  <h2><span class="sn">09</span> Report engine</h2>
+  <p>New proforma = new row in <code>report_templates</code> via Admin UI. The template_definition JSONB governs layout, sections, field selection, and computed fields. No deployment required for any new proforma.</p>
+
+<pre><span class="c">-- Template definition structure</span>
+{
+  <span class="k">"layout"</span>:   <span class="s">"A4_PORTRAIT"</span>,
+  <span class="k">"header"</span>:   { <span class="k">"title_en"</span>: <span class="s">"Delhi Police"</span>, <span class="k">"title_hi"</span>: <span class="s">"दिल्ली पुलिस"</span>, <span class="k">"logo"</span>: true },
+  <span class="k">"footer"</span>:   { <span class="k">"page_numbers"</span>: true, <span class="k">"generated_by"</span>: true, <span class="k">"generated_at"</span>: true },
+  <span class="k">"sections"</span>: [
+    {
+      <span class="k">"title_en"</span>: <span class="s">"Arrest details"</span>,
+      <span class="k">"title_hi"</span>: <span class="s">"गिरफ्तारी का विवरण"</span>,
+      <span class="k">"fields"</span>: [
+        { <span class="k">"field_key"</span>: <span class="s">"fir_no"</span>,         <span class="k">"column_span"</span>: 1 },
+        { <span class="k">"field_key"</span>: <span class="s">"date_of_arrest"</span>, <span class="k">"column_span"</span>: 1 },
+        { <span class="k">"field_key"</span>: <span class="s">"accused_name"</span>,  <span class="k">"column_span"</span>: 2 }
+      ]
+    }
+  ],
+  <span class="k">"computed_fields"</span>: [
+    { <span class="k">"label_en"</span>: <span class="s">"Total arrests in period"</span>, <span class="k">"formula"</span>: <span class="s">"COUNT(record_type='ARREST')"</span> },
+    { <span class="k">"label_en"</span>: <span class="s">"Arrests by crime head"</span>,   <span class="k">"formula"</span>: <span class="s">"GROUP_COUNT(crime_head)"</span> }
+  ]
+}</pre>
+</section>
+
+<!-- 10. ANALYTICS -->
+<section id="analytics">
+  <h2><span class="sn">10</span> Analytics</h2>
+  <p>Each hierarchy level sees analytics scoped to their access: PS sees its own data; District sees all PS under it; HQ sees everything. All dashboards include a comparative period selector (previous day / week / month / year / custom range).</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Level</th><th>Available analytics</th></tr></thead>
+    <tbody>
+      <tr><td>PS / SHO</td><td>Daily record counts · Crime head breakdown · IO-wise pending · Beat-wise heat map</td></tr>
+      <tr><td>District</td><td>All above + PS vs PS comparison · Weekly / monthly trends · Top crime heads by PS · Revision frequency by HC (data quality proxy)</td></tr>
+      <tr><td>JCP / SCP</td><td>District vs District · Zone-level summaries · Escalation rates · Compilation timeliness</td></tr>
+      <tr><td>HQ</td><td>All-Delhi views · Year-over-year · Cross-district crime type correlation · Section-of-law distribution · Officer performance metrics</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Powered by Elasticsearch aggregations — faster than PostgreSQL GROUP BY on JSONB at scale. The Analytics module also reads from compiled <code>compilations</code> rows for district-level and above queries, which are pre-aggregated and much faster than querying raw records.</p>
+</section>
+
+<!-- 11. RBAC -->
+<section id="rbac">
+  <h2><span class="sn">11</span> RBAC reference</h2>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Role</th><th>Create records</th><th>Approve / reject</th><th>Edit fields</th><th>View analytics</th><th>Field registry</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>HC</td>
+        <td class="rbac-cell-yes">Own PS only</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-partial">Own drafts only</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-no">—</td>
+      </tr>
+      <tr>
+        <td>SHO</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-yes">Own PS records</td>
+        <td class="rbac-cell-partial">Before SHO approval</td>
+        <td class="rbac-cell-partial">Own PS</td>
+        <td class="rbac-cell-no">—</td>
+      </tr>
+      <tr>
+        <td>DISTRICT_OFFICER</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-yes">All PS under district</td>
+        <td class="rbac-cell-partial">District-allowed fields only</td>
+        <td class="rbac-cell-yes">All PS in district</td>
+        <td class="rbac-cell-no">—</td>
+      </tr>
+      <tr>
+        <td>JCP</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-yes">District compilations</td>
+        <td class="rbac-cell-partial">JCP-level fields</td>
+        <td class="rbac-cell-yes">All districts in zone</td>
+        <td class="rbac-cell-no">—</td>
+      </tr>
+      <tr>
+        <td>SCP</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-yes">JCP compilations</td>
+        <td class="rbac-cell-partial">SCP-level fields</td>
+        <td class="rbac-cell-yes">All zones</td>
+        <td class="rbac-cell-no">—</td>
+      </tr>
+      <tr>
+        <td>HQ_ANALYST</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-yes">All</td>
+        <td class="rbac-cell-no">—</td>
+      </tr>
+      <tr>
+        <td>HQ_ADMIN</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-yes">Archive seal</td>
+        <td class="rbac-cell-no">—</td>
+        <td class="rbac-cell-yes">All</td>
+        <td class="rbac-cell-partial">Add / deactivate</td>
+      </tr>
+      <tr>
+        <td>SYSTEM_ADMIN</td>
+        <td class="rbac-cell-yes">All</td>
+        <td class="rbac-cell-yes">All</td>
+        <td class="rbac-cell-yes">All</td>
+        <td class="rbac-cell-yes">All</td>
+        <td class="rbac-cell-yes">Full control</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note">Field-level editability is enforced by checking <code>editable_by_levels</code> in the field registry on every PUT request — not just in the UI. A DISTRICT_OFFICER can only edit fields where their level is in that array. This is a server-side check, not a frontend hide.</div>
+</section>
+
+<!-- 12. TECH STACK -->
+<section id="stack">
+  <h2><span class="sn">12</span> Tech stack</h2>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Layer</th><th>Choice</th><th>Why this specifically</th></tr></thead>
+    <tbody>
+      <tr><td>Backend</td><td>NestJS (Node + TypeScript)</td><td>Module system maps 1:1 to our 12 modules. Built-in DI makes RBAC middleware clean. TypeScript catches field-type mismatches at compile time.</td></tr>
+      <tr><td>Frontend</td><td>React + Redux Toolkit + PWA</td><td>Service Worker for offline. Redux for complex multi-level state across hierarchy. React Query for server-state caching. Same codebase ships as desktop and mobile PWA.</td></tr>
+      <tr><td>i18n</td><td>react-i18next</td><td>Runtime language switching. All field labels from the registry include both <code>label_en</code> and <code>label_hi</code>. Static UI strings in translation files.</td></tr>
+      <tr><td>Primary DB</td><td>PostgreSQL 15+</td><td>GIN-indexed JSONB is fast for <code>data @&gt; '{"crime_head":"Robbery"}'</code>. Row-level security for PS data isolation. Best ACID guarantees for audit compliance.</td></tr>
+      <tr><td>Search</td><td>Elasticsearch 8</td><td>Only production-ready option for AND/OR Hindi full-text across 250 PS simultaneously. Same cluster drives analytics aggregations — faster than PG GROUP BY on JSONB at scale.</td></tr>
+      <tr><td>Cache</td><td>Redis 7</td><td>Session token store. Per-user pending count (live badge via Redis pub/sub). Frequently-fetched compiled report results.</td></tr>
+      <tr><td>Event bus</td><td>RabbitMQ</td><td>Topic exchanges let modules subscribe only to what they need. Native clustering for HA. Dead-letter queues for failed event handling.</td></tr>
+      <tr><td>Auth</td><td>Keycloak</td><td>On-premise OIDC + fine-grained authorization. MFA enforcement. Manages 1000+ users. Admin UI for role management without touching the database.</td></tr>
+      <tr><td>File store</td><td>MinIO</td><td>On-premise S3-compatible. Accused photos + generated PDFs + document attachments. Bucket policies enforce per-level access control.</td></tr>
+      <tr><td>API gateway</td><td>Nginx</td><td>TLS termination, rate limiting, JWT pre-validation, load balancing, static asset serving — all in one config file.</td></tr>
+      <tr><td>PDF</td><td>Puppeteer</td><td>HTML → pixel-perfect A4 PDF. Hindi rendering via system Noto Devanagari fonts. Template maintenance is just HTML/CSS — no JasperReports XML.</td></tr>
+      <tr><td>Excel</td><td>ExcelJS</td><td>Code-level Excel manipulation. Multi-sheet proformas, merged cells, formulas — not achievable with CSV exports.</td></tr>
+      <tr><td>Monitoring</td><td>Prometheus + Grafana</td><td>System health, request latency, queue depths, active session counts. Runs entirely on-premise with alerting rules.</td></tr>
+      <tr><td>Log management</td><td>ELK stack</td><td>Centralized logs from all services. Reuses the same Elasticsearch cluster — no additional infra needed.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- 13. SECURITY -->
+
+<!-- 14. SYSTEM LOGGING -->
+<section id="logging">
+  <h2><span class="sn">14</span> System logging</h2>
+
+  <p>PHAROS uses <strong>Winston</strong> as the NestJS application logger, <strong>morgan</strong> for HTTP access logs, and <strong>winston-elasticsearch</strong> to ship every log line in real-time to the ELK stack. All logs are structured JSON — machine-parseable and fully indexed in Kibana for search, alerting, and post-mortem analysis.</p>
+
+  <h3>Log levels</h3>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Level</th><th>When to emit</th><th>Examples in PHAROS</th></tr></thead>
+    <tbody>
+      <tr><td>error</td><td>System failures requiring immediate attention. Always alerts on-call.</td><td>DB connection lost, uncaught exception, MinIO write failure, OOM, hash chain break detected</td></tr>
+      <tr><td>warn</td><td>Unexpected but recoverable. Investigated within the shift.</td><td>Invalid state transition attempted, RabbitMQ reconnect retry #2, slow PostgreSQL query (&gt;500ms), rate limit hit</td></tr>
+      <tr><td>info</td><td>Normal business events. The audit trail of system activity.</td><td>Record submitted, user logged in, compilation generated, module started/stopped, field registry updated</td></tr>
+      <tr><td>http</td><td>Every HTTP request/response. Logged by morgan interceptor.</td><td>Method, path, status code, duration, userId, correlationId — every single request</td></tr>
+      <tr><td>debug</td><td>Detailed flow for troubleshooting. Enabled per-environment.</td><td>Which module handled an event, event bus publish/consume details, PostgreSQL query params, cache hit/miss</td></tr>
+      <tr><td>verbose</td><td>Full payloads. Development only — never enabled in production.</td><td>Complete JSONB data blobs, full SQL with bound params, RabbitMQ message bodies</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Structured log format</h3>
+<pre><span class="c">// Every log line is JSON — indexed by Elasticsearch, searchable in Kibana</span>
+{
+  <span class="k">"timestamp"</span>:     <span class="s">"2024-01-15T09:30:22.145Z"</span>,
+  <span class="k">"level"</span>:          <span class="s">"error"</span>,
+  <span class="k">"correlationId"</span>:  <span class="s">"req-f4a2-9b1c"</span>,   <span class="c">// traces one request across all modules</span>
+  <span class="k">"service"</span>:        <span class="s">"pharos-api"</span>,
+  <span class="k">"module"</span>:         <span class="s">"workflow"</span>,
+  <span class="k">"userId"</span>:         <span class="s">"uuid"</span>,
+  <span class="k">"psId"</span>:           <span class="s">"uuid"</span>,
+  <span class="k">"recordId"</span>:       <span class="s">"uuid"</span>,
+  <span class="k">"action"</span>:         <span class="s">"SUBMIT_TO_SHO"</span>,
+  <span class="k">"duration"</span>:       145,              <span class="c">// ms</span>
+  <span class="k">"message"</span>:        <span class="s">"State transition failed: record not in DRAFT"</span>,
+  <span class="k">"error"</span>: {
+    <span class="k">"name"</span>:    <span class="s">"InvalidStateTransitionError"</span>,
+    <span class="k">"message"</span>: <span class="s">"Current status PENDING_SHO cannot transition to COMPILED"</span>,
+    <span class="k">"stack"</span>:   <span class="s">"Error: ...\n  at WorkflowService.submitToSHO (workflow.service.ts:142)"</span>
+  },
+  <span class="k">"ip"</span>: <span class="s">"192.168.10.45"</span>,
+  <span class="k">"userAgent"</span>: <span class="s">"Mozilla/5.0 (Windows NT 10.0...)"</span>
+}</pre>
+
+  <h3>What each module logs</h3>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Module</th><th>info events</th><th>error events</th></tr></thead>
+    <tbody>
+      <tr><td>IAM</td><td>login, logout, token refresh, role assignment changed</td><td>failed auth attempt, invalid/expired token, unauthorized access (403)</td></tr>
+      <tr><td>Data entry</td><td>draft saved (with record ID), record created, file uploaded (MinIO path + size)</td><td>validation failure (field + rule), MinIO write error, field registry fetch error</td></tr>
+      <tr><td>Workflow</td><td>every state transition — actor, record, old status, new status, duration</td><td>illegal transition attempt, permission denied, missing required comment on send-back</td></tr>
+      <tr><td>Compilation</td><td>compilation job started, record count included, route (OPS_CHAIN/DIRECT_HQ), submitted</td><td>missing records for period, data contract mismatch, compilation timeout</td></tr>
+      <tr><td>Audit ledger</td><td>revision written (revision number, field count changed)</td><td>hash chain break detected (CRITICAL), write failure</td></tr>
+      <tr><td>Filters</td><td>complex filter routed to Elasticsearch (query complexity score)</td><td>Elasticsearch timeout, invalid filter spec, unknown field key in filter</td></tr>
+      <tr><td>Reports</td><td>generation started (template, format, filter applied), completed (file size, duration)</td><td>Puppeteer crash, ExcelJS error, MinIO upload failure, template not found</td></tr>
+      <tr><td>Analytics</td><td>dashboard loaded (level, scope, time range, duration)</td><td>Elasticsearch aggregation timeout, missing compiled data for period</td></tr>
+      <tr><td>Notifications</td><td>notification delivered (type, recipient, channel), badge count updated</td><td>Redis write failure, undeliverable notification queued for retry</td></tr>
+      <tr><td>Sync</td><td>sync_op queued (offline), sync_op replayed (on reconnect), conflict resolved</td><td>replay failure, server-wins conflict (data discarded, user notified)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Winston setup (logger.config.ts)</h3>
+<pre><span class="c">// npm install winston nest-winston winston-elasticsearch</span>
+<span class="kw">import</span> { WinstonModule } <span class="kw">from</span> <span class="str">'nest-winston'</span>;
+<span class="kw">import</span> * <span class="kw">as</span> winston <span class="kw">from</span> <span class="str">'winston'</span>;
+<span class="kw">import</span> { ElasticsearchTransport } <span class="kw">from</span> <span class="str">'winston-elasticsearch'</span>;
+
+<span class="kw">export const</span> loggerConfig = WinstonModule.createLogger({
+  level: process.env.LOG_LEVEL || <span class="str">'info'</span>,
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: <span class="kw">true</span> }),   <span class="c">// include full stack on error objects</span>
+    winston.format.json()
+  ),
+  defaultMeta: { service: <span class="str">'pharos-api'</span> },
+  transports: [
+    <span class="c">// Console: colourised in dev, raw JSON in production</span>
+    <span class="kw">new</span> winston.transports.Console({
+      format: process.env.NODE_ENV === <span class="str">'production'</span>
+        ? winston.format.json()
+        : winston.format.combine(winston.format.colorize(), winston.format.simple())
+    }),
+    <span class="c">// File: errors only (50 MB rotation, 5 files max = 250 MB max)</span>
+    <span class="kw">new</span> winston.transports.File({
+      filename: <span class="str">'logs/error.log'</span>, level: <span class="str">'error'</span>,
+      maxsize: 50 * 1024 * 1024, maxFiles: 5
+    }),
+    <span class="c">// File: all levels (100 MB rotation, 10 files = 1 GB max)</span>
+    <span class="kw">new</span> winston.transports.File({
+      filename: <span class="str">'logs/combined.log'</span>,
+      maxsize: 100 * 1024 * 1024, maxFiles: 10
+    }),
+    <span class="c">// Elasticsearch: ships to ELK in real-time, indexed as pharos-logs-YYYY.MM.DD</span>
+    <span class="kw">new</span> ElasticsearchTransport({
+      level: <span class="str">'info'</span>,
+      indexPrefix: <span class="str">'pharos-logs'</span>,
+      clientOpts: { node: process.env.ELASTICSEARCH_URL }
+    })
+  ],
+  <span class="c">// Catch process-level crashes before Node exits</span>
+  exceptionHandlers: [
+    <span class="kw">new</span> winston.transports.File({ filename: <span class="str">'logs/exceptions.log'</span> }),
+    <span class="kw">new</span> ElasticsearchTransport({
+      level: <span class="str">'error'</span>, indexPrefix: <span class="str">'pharos-crashes'</span>,
+      clientOpts: { node: process.env.ELASTICSEARCH_URL }
+    })
+  ],
+  rejectionHandlers: [
+    <span class="kw">new</span> winston.transports.File({ filename: <span class="str">'logs/rejections.log'</span> })
+  ]
+});</pre>
+
+  <h3>Correlation ID middleware</h3>
+<pre><span class="c">// correlation.middleware.ts — every request gets a unique ID that threads through all logs</span>
+@Injectable()
+<span class="kw">export class</span> CorrelationMiddleware <span class="kw">implements</span> NestMiddleware {
+  use(req: Request, res: Response, next: NextFunction) {
+    <span class="kw">const</span> id = (req.headers[<span class="str">'x-correlation-id'</span>] <span class="kw">as</span> string) || uuidv4();
+    req[<span class="str">'correlationId'</span>] = id;
+    res.setHeader(<span class="str">'X-Correlation-Id'</span>, id);  <span class="c">// echo back so client can correlate</span>
+    next();
+  }
+}
+
+<span class="c">// Usage in any service method:</span>
+this.logger.log({
+  message: <span class="str">'Record submitted to SHO'</span>,
+  correlationId: request.correlationId,  <span class="c">// always include</span>
+  recordId, userId, psId, module: <span class="str">'workflow'</span>, action: <span class="str">'SUBMIT_TO_SHO'</span>
+});</pre>
+
+  <h3>HTTP logging interceptor</h3>
+<pre><span class="c">// logging.interceptor.ts — logs every request and response (or error) automatically</span>
+@Injectable()
+<span class="kw">export class</span> LoggingInterceptor <span class="kw">implements</span> NestInterceptor {
+  intercept(ctx: ExecutionContext, next: CallHandler): Observable&lt;<span class="kw">any</span>&gt; {
+    <span class="kw">const</span> req = ctx.switchToHttp().getRequest();
+    <span class="kw">const</span> start = Date.now();
+    <span class="kw">return</span> next.handle().pipe(
+      tap(() =&gt; this.logger.log({
+        level: <span class="str">'http'</span>, message: <span class="str">`\${req.method} \${req.url}`</span>,
+        correlationId: req.correlationId, userId: req.user?.id,
+        duration: Date.now() - start,
+        status: ctx.switchToHttp().getResponse().statusCode
+      })),
+      catchError(err =&gt; {
+        this.logger.error({
+          message: err.message, stack: err.stack,
+          correlationId: req.correlationId, userId: req.user?.id,
+          path: req.url, method: req.method, duration: Date.now() - start
+        });
+        throw err;
+      })
+    );
+  }
+}</pre>
+
+  <h3>Crash debugging</h3>
+  <div class="note amber">Winston's <code>exceptionHandlers</code> and <code>rejectionHandlers</code> catch Node.js-level crashes before the process exits. For OOM or SIGKILL (which bypass Winston), PM2 captures the exit code and writes to the system journal, then auto-restarts. Run with <code>NODE_OPTIONS=--enable-source-maps</code> so stack traces in production point to TypeScript source lines, not compiled JS offsets.</div>
+  <p>For memory leak investigation: start the app with <code>--inspect=0.0.0.0:9229</code> on the app server (intranet-only) and connect Chrome DevTools remotely. For automated heap snapshots on OOM: add <code>--heapsnapshot-signal=SIGUSR2</code> to Node options and send the signal from the monitoring server when Grafana's memory alert fires. Snapshots land in the working directory and can be loaded in Chrome Memory tab.</p>
+  <p>For slow-query root-cause: PostgreSQL is configured with <code>log_min_duration_statement = 500</code> (logs any query taking &gt;500ms). These logs are shipped to ELK via Filebeat from the PG log directory.</p>
+
+  <h3>Log retention policy</h3>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Log type</th><th>Retention</th><th>Where stored</th></tr></thead>
+    <tbody>
+      <tr><td>error / crash / exceptions</td><td>1 year</td><td>Elasticsearch (pharos-crashes-*) + local file backup</td></tr>
+      <tr><td>Security (auth, 403s, IP blocks)</td><td>1 year (compliance)</td><td>Elasticsearch (pharos-security-*), separate index, restricted access</td></tr>
+      <tr><td>warn</td><td>90 days</td><td>Elasticsearch (pharos-logs-*)</td></tr>
+      <tr><td>info / http</td><td>30 days</td><td>Elasticsearch (pharos-logs-*)</td></tr>
+      <tr><td>debug</td><td>7 days (auto-rotate)</td><td>Local file only — NOT shipped to Elasticsearch</td></tr>
+      <tr><td>verbose</td><td>Session only</td><td>Console output in dev only — never in production</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>ELK index lifecycle management (ILM) handles rotation and deletion automatically. Kibana dashboards are set up for: error rate over time, slow queries, auth failure frequency, record submission rate by PS, and module error distribution. Grafana alerting fires on error rate spikes and triggers a PagerDuty-equivalent notification to the on-call admin's intranet number.</p>
+</section>
+
+
+<!-- 15. CODE DOCUMENTATION -->
+<section id="docs">
+  <h2><span class="sn">15</span> Code documentation</h2>
+
+  <p>Four tools cover the full documentation surface of PHAROS: interactive API docs, NestJS architecture docs, TypeScript type docs, and inline code comments. All are auto-generated from the source code on every CI build — documentation stays in sync with the code by construction.</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Tool</th><th>What it documents</th><th>Setup</th><th>Access URL</th></tr></thead>
+    <tbody>
+      <tr><td>@nestjs/swagger</td><td>All REST endpoints — request/response schemas, auth requirements, example payloads. Interactive: try API calls from the browser.</td><td><code>npm i @nestjs/swagger swagger-ui-express</code></td><td><code>/api/docs</code></td></tr>
+      <tr><td>Compodoc</td><td>NestJS-specific: module dependency graph, component trees, service injection chains, route coverage, JSDoc from all classes. Best for onboarding new devs.</td><td><code>npm i -D @compodoc/compodoc</code></td><td><code>:8080</code> (local serve)</td></tr>
+      <tr><td>TypeDoc</td><td>All TypeScript types, interfaces, enums, and utility functions. Especially useful for FieldType, WorkflowStatus, HierarchyLevel, FilterSpec definitions.</td><td><code>npm i -D typedoc</code></td><td><code>/docs/types</code> (static)</td></tr>
+      <tr><td>JSDoc (inline)</td><td>Function-level documentation: purpose, params, return values, thrown errors, emitted events. Consumed by Compodoc and TypeDoc.</td><td>Write comments in source — no install needed</td><td>Embedded in above outputs</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Swagger setup (main.ts)</h3>
+<pre><span class="c">// main.ts — add Swagger after app creation</span>
+<span class="kw">import</span> { SwaggerModule, DocumentBuilder } <span class="kw">from</span> <span class="str">'@nestjs/swagger'</span>;
+
+<span class="kw">const</span> config = <span class="kw">new</span> DocumentBuilder()
+  .setTitle(<span class="str">'PHAROS API'</span>)
+  .setDescription(<span class="str">'Police Hierarchical Automated Reporting &amp; Operations System'</span>)
+  .setVersion(<span class="str">'1.0'</span>)
+  .addBearerAuth()
+  .addTag(<span class="str">'records'</span>).addTag(<span class="str">'workflow'</span>).addTag(<span class="str">'compilation'</span>)
+  .addTag(<span class="str">'filters'</span>).addTag(<span class="str">'reports'</span>).addTag(<span class="str">'analytics'</span>)
+  .build();
+
+<span class="kw">const</span> document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup(<span class="str">'api/docs'</span>, app, document);
+
+<span class="c">// Export the spec for client SDK generation:</span>
+<span class="c">// curl http://localhost:3000/api/docs-json &gt; pharos-api-spec.json</span></pre>
+
+  <h3>Compodoc (run + serve)</h3>
+<pre><span class="c"># package.json scripts</span>
+"docs:arch":  "compodoc -p tsconfig.json -d docs/architecture",
+"docs:serve": "compodoc -p tsconfig.json --serve --port 8080",
+"docs:coverage": "compodoc -p tsconfig.json --coverageTest 80"
+<span class="c"># Coverage threshold: fail CI if &lt;80% of public methods have JSDoc</span></pre>
+
+  <h3>TypeDoc (TypeScript types)</h3>
+<pre><span class="c"># package.json scripts</span>
+"docs:types": "typedoc --entryPointStrategy expand --entryPoints src --out docs/types"
+<span class="c"># Documents all exported types, interfaces, enums — key targets:</span>
+<span class="c">#   FieldType enum, WorkflowStatus enum, FilterSpec interface</span>
+<span class="c">#   HierarchyLevel enum, RecordRevision interface, DataContract interface</span></pre>
+
+  <h3>JSDoc comment standard</h3>
+<pre><span class="c">/**
+ * Submits a record from the head constable queue to SHO review.
+ * Validates that the record is in DRAFT status and the user belongs
+ * to the record's assigned PS. On success, publishes a record.submitted
+ * event to the event bus (consumed by Notifications and Audit Ledger).
+ *
+ * @param recordId  - UUID of the record to submit
+ * @param userId    - UUID of the head constable performing the action
+ * @param correlationId - Request correlation ID for log tracing
+ *
+ * @returns The created WorkflowTransition row
+ *
+ * @throws {InvalidStateTransitionError} if record.current_status !== 'DRAFT'
+ * @throws {UnauthorizedError} if user is not assigned to record.ps_id
+ * @throws {RecordNotFoundError} if recordId does not exist
+ *
+ * @emits record.submitted - payload: { recordId, psId, submittedBy, timestamp }
+ */</span>
+<span class="kw">async</span> submitToSHO(
+  recordId: string, userId: string, correlationId: string
+): Promise&lt;WorkflowTransition&gt; { ... }</pre>
+
+  <h3>Architecture Decision Records (ADRs)</h3>
+  <p>Lightweight markdown files in <code>/docs/adr/</code> that capture WHY certain architectural decisions were made. Format: Context → Decision → Consequences. Critical for future maintainers who will otherwise reverse good decisions without understanding the trade-offs.</p>
+<pre>docs/adr/
+  001-jsonb-vs-columns.md        Why JSONB for field storage vs. wide tables
+  002-event-bus-vs-direct-calls.md  Why RabbitMQ instead of direct service calls
+  003-elasticsearch-for-filters.md  Why not just PostgreSQL for complex filters
+  004-keycloak-vs-custom-auth.md   Why Keycloak instead of rolling our own JWT
+  005-postgresql-over-mongodb.md   Why relational despite flexible schema need
+  006-hierarchy-as-config.md       Why not hardcode PS/District structure in code</pre>
+
+  <h3>Documentation folder structure</h3>
+<pre>docs/
+  api/              Swagger UI (auto-generated, served at /api/docs in prod)
+  architecture/     Compodoc output — module graphs, service trees, route coverage
+  types/            TypeDoc output — all TypeScript interfaces and enums
+  adr/              Architecture Decision Records (manual, version-controlled)
+  runbooks/         Operational guides: deployment, incident response, rollback
+    deploy.md
+    incident-response.md
+    rollback-playbook.md
+    elk-kibana-queries.md   Common Kibana queries for debugging</pre>
+
+  <div class="note green">All auto-generated documentation (<code>docs/api</code>, <code>docs/architecture</code>, <code>docs/types</code>) is excluded from git via <code>.gitignore</code> and regenerated on every CI build. The output is deployed to an internal documentation server accessible on the intranet at <code>http://pharos-docs.police.local</code>. ADRs and runbooks are committed to git and treated as first-class code artifacts — PRs that change architecture are required to include an ADR update.</div>
+</section>
+
+<section id="security">
+  <h2><span class="sn">16</span> Security architecture</h2>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Layer</th><th>Mechanism</th></tr></thead>
+    <tbody>
+      <tr><td>Network perimeter</td><td>IP allowlist to police intranet CIDR only. No external internet access to any service. Nginx as single ingress point.</td></tr>
+      <tr><td>Transport</td><td>TLS 1.3 for all HTTP traffic within intranet. mTLS between backend services (NestJS ↔ PostgreSQL, RabbitMQ, Redis, MinIO).</td></tr>
+      <tr><td>Authentication</td><td>Keycloak OIDC. JWT access tokens (1h expiry) + refresh tokens (7 days, rotated on use). MFA enforced for all roles SHO and above.</td></tr>
+      <tr><td>Authorization</td><td>Server-side RBAC on every request. Row-level security in PostgreSQL for PS/District data isolation. Scope checks in NestJS guards before business logic.</td></tr>
+      <tr><td>Data at rest</td><td>AES-256 encryption on all PostgreSQL, Elasticsearch, MinIO, and Redis volumes. Keycloak token store encrypted separately.</td></tr>
+      <tr><td>Audit trail</td><td>Append-only <code>record_revisions</code> with SHA256 hash chaining. IP and user-agent logged on every write. Deletion of any audit row is detectable and blocked at DB level via trigger.</td></tr>
+      <tr><td>Rate limiting</td><td>100 requests/minute per authenticated user. 10 login attempts/hour per IP. Both enforced at Nginx gateway.</td></tr>
+      <tr><td>Backup security</td><td>Daily encrypted pg_dump to backup server (AES-256 passphrase stored in Keycloak vault). MinIO snapshots replicated to backup. 30-day retention.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- 14. DEPLOYMENT -->
+<section id="deployment">
+  <h2><span class="sn">17</span> Deployment architecture</h2>
+  <h3>Prototype (1 district, ~30 PS)</h3>
+<pre>Server A — Application
+  Nginx (reverse proxy + TLS)
+  NestJS API (Docker)
+  React PWA (served via Nginx)
+  RabbitMQ (Docker)
+  Redis (Docker)
+  MinIO (Docker)
+  Keycloak (Docker)
+
+Server B — Data
+  PostgreSQL 15 (standalone, daily backup)
+  Elasticsearch (single node)
+  Prometheus + Grafana (monitoring)
+
+Network: IP-whitelisted to district intranet CIDR
+         Internal CA TLS certs
+         All services on Docker bridge network</pre>
+
+  <h3>Production (250 PS, all districts)</h3>
+<pre>Load Balancer: Nginx / HAProxy
+  └── App Cluster: 3 NestJS nodes (Docker Swarm or K8s)
+
+PostgreSQL HA:    Primary + 2 replicas, Patroni auto-failover, pgBouncer pooling
+Elasticsearch:    3-node cluster (1 dedicated master, 2 data nodes)
+Redis:            Sentinel mode (1 primary, 2 replicas, 3 sentinels)
+RabbitMQ:         3-node cluster with classic mirrored queues
+MinIO:            4-node distributed (2 sites for zone-level redundancy)
+Keycloak:         2-node cluster with shared PostgreSQL schema
+
+Monitoring stack: Prometheus + Grafana + ELK (dedicated server)
+Backup server:    Daily encrypted pg_dump + MinIO snapshot, 30-day retention</pre>
+</section>
+
+<!-- 15. PHASES -->
+<section id="phases">
+  <h2><span class="sn">18</span> Development phases</h2>
+  <ul class="phases">
+    <li class="phase">
+      <div class="phase-circle">0</div>
+      <div>
+        <div class="phase-name">Foundation</div>
+        <div class="phase-time">8–10 weeks · 1 PS prototype</div>
+        <ul class="phase-list">
+          <li>IAM module + Keycloak integration with role hierarchy</li>
+          <li>Field Registry with initial 3 master table field definitions</li>
+          <li>Data Entry module — dynamic form renderer for HC</li>
+          <li>Workflow engine — HC submit → SHO approve/send-back</li>
+          <li>Audit Ledger — field-level revision tracking + hash chain</li>
+          <li>Basic Notifications — pending queue badge via Redis</li>
+        </ul>
+      </div>
+    </li>
+    <li class="phase">
+      <div class="phase-circle">1</div>
+      <div>
+        <div class="phase-name">Core flow</div>
+        <div class="phase-time">8–10 weeks · 1 full district</div>
+        <ul class="phase-list">
+          <li>District review, compilation, and dual-route submission (JCP + HQ direct)</li>
+          <li>Full hierarchy flow: JCP → SCP → HQ</li>
+          <li>Level Data Contracts — configurable field visibility per route</li>
+          <li>Basic Filter Engine — per-field filters with AND/OR logic</li>
+          <li>Hindi/English bilingual UI rollout (react-i18next)</li>
+          <li>Send-back with target_fields specification</li>
+        </ul>
+      </div>
+    </li>
+    <li class="phase">
+      <div class="phase-circle">2</div>
+      <div>
+        <div class="phase-name">Reports &amp; analytics</div>
+        <div class="phase-time">6–8 weeks</div>
+        <ul class="phase-list">
+          <li>Report Engine with first 10–15 proforma templates</li>
+          <li>Comparative analytics dashboards per level</li>
+          <li>Advanced filter presets — system-wide and per-role preset library</li>
+          <li>Admin Config UI — manage hierarchy, field registry, templates from browser</li>
+          <li>Scheduled report generation and distribution</li>
+        </ul>
+      </div>
+    </li>
+    <li class="phase">
+      <div class="phase-circle">3</div>
+      <div>
+        <div class="phase-name">Infrastructure &amp; polish</div>
+        <div class="phase-time">6 weeks</div>
+        <ul class="phase-list">
+          <li>Offline Sync Module — Service Worker, IndexedDB, conflict resolution</li>
+          <li>Elasticsearch integration replacing complex JSONB queries</li>
+          <li>Full-scale performance testing at 250 PS simulated load</li>
+          <li>Security audit + intranet penetration test</li>
+          <li>PostgreSQL HA setup with Patroni</li>
+        </ul>
+      </div>
+    </li>
+    <li class="phase">
+      <div class="phase-circle">4</div>
+      <div>
+        <div class="phase-name">Full rollout</div>
+        <div class="phase-time">Ongoing · 2–3 districts/week</div>
+        <ul class="phase-list">
+          <li>Incremental rollout to all 250 PS across all districts</li>
+          <li>New proformas added on demand via Admin UI — zero deployments</li>
+          <li>New features as isolated modules via event bus — zero risk to existing code</li>
+          <li>Analytics expansion: crime heat maps, beat-level trends, IO performance</li>
+        </ul>
+      </div>
+    </li>
+  </ul>
+  <div class="note green" style="margin-top:1.5rem">Because of Pillars 4 and 5, every phase after Phase 0 can add features horizontally without touching anything built before it. A new report type, a new analytics dimension, a new notification type — each is a new module or a new config row. The system's surface area grows; its risk profile doesn't.</div>
+</section>
+
+</main>
+</div>
+</body>
+</html>

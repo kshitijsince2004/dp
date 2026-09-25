@@ -1,0 +1,6 @@
+{
+  "execMap": { "js": "node --max-old-space-size=2048" },
+  "watch": ["src", "index.js"],
+  "ext": "js,json",
+  "ignore": ["src/**/*.test.js"]
+}

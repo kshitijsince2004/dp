@@ -1,0 +1,56 @@
+{
+  "code": "PHQ_VARIATION_MVT",
+  "name": "PHQ Historical Variation Statement (Deep-History Baseline Read)",
+  "record_types": ["CASE"],
+  "levels": ["HQ"],
+  "template_type": "PROFORMA",
+  "is_active": true,
+  "output_formats": ["PDF", "EXCEL"],
+  "template_definition": {
+    "layout_mode": "MATRIX",
+    "header": {
+      "title_en": "DELHI POLICE HQ: HISTORICAL VARIATION STATEMENT",
+      "short_name_en": "Variation% (mvt)"
+    },
+    "sections": [
+      {
+        "title_en": "Whole Delhi Historical Crime Counts & Variation",
+        "layout_mode": "MATRIX",
+        "rows": [
+          { "code": "MURDER", "label_en": "Murder", "classification": { "major_head_ids": [104] } },
+          { "code": "ATTEMPT_TO_MURDER", "label_en": "Attempt to Murder", "classification": { "major_head_ids": [105] } },
+          { "code": "ROBBERY", "label_en": "Robbery", "classification": { "major_head_ids": [106] } },
+          { "code": "BURGLARY", "label_en": "Burglary", "classification": { "major_head_ids": [101] } },
+          { "code": "MOTOR_VEHICLE_THEFT", "label_en": "Motor Vehicle Theft", "classification": { "major_head_ids": [107] } },
+          { "code": "RAPE", "label_en": "Rape", "classification": { "major_head_ids": [102] } }
+        ],
+        "columns": [
+          {
+            "code": "HIST_Y0",
+            "label_en": "Year -6 (Baseline)",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "UPTO_DATE",
+            "measure_type": "REGISTERED",
+            "year_offset": -6
+          },
+          {
+            "code": "HIST_Y1",
+            "label_en": "Year -7 (Baseline)",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "UPTO_DATE",
+            "measure_type": "REGISTERED",
+            "year_offset": -7
+          },
+          {
+            "code": "HIST_VAR",
+            "label_en": "Variation %",
+            "type": "DERIVED",
+            "formula": "VARIATION_PERCENT",
+            "curr_col": { "scope_group": "ALL_DELHI_TOTAL", "period": "UPTO_DATE", "measure_type": "REGISTERED", "year_offset": -6 },
+            "prev_col": { "scope_group": "ALL_DELHI_TOTAL", "period": "UPTO_DATE", "measure_type": "REGISTERED", "year_offset": -7 }
+          }
+        ]
+      }
+    ]
+  }
+}

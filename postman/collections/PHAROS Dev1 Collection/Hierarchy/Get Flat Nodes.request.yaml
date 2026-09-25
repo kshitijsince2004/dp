@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/hierarchy/nodes?type=PS"
+method: GET
+queryParams:
+  type: PS
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 2000

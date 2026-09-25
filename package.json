@@ -1,0 +1,33 @@
+{
+  "name": "CrimeDiaries",
+  "version": "1.0.0",
+  "description": "Full-stack Crime Diaries platform",
+  "homepage": "https://github.com/Ashmit72061/Crime-Diaries#readme",
+  "bugs": {
+    "url": "https://github.com/Ashmit72061/Crime-Diaries/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ashmit72061/Crime-Diaries.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "logs:clear": "npm run logs:clear --prefix backend",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs:merge": "node docs/postman/scripts/merge_collections.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "knex": "^3.3.0",
+    "tesseract.js": "^7.0.0"
+  }
+}

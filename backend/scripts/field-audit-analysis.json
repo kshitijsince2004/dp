@@ -1,0 +1,290 @@
+[
+  {
+    "field": "case_type",
+    "foundAs": "case_type",
+    "table": "fir_details",
+    "inDb": true,
+    "backendMatches": 86,
+    "frontendMatches": 28,
+    "action": "✅ DONE"
+  },
+  {
+    "field": "cd_uploaded_24h",
+    "foundAs": "cd_uploaded_24h",
+    "table": "fir_details",
+    "inDb": true,
+    "backendMatches": 3,
+    "frontendMatches": 1,
+    "action": "✅ DONE"
+  },
+  {
+    "field": "footage_collected",
+    "foundAs": "footage_collected",
+    "table": "fir_details",
+    "inDb": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "⚠️ PARTIAL"
+  },
+  {
+    "field": "is_important",
+    "foundAs": "is_important",
+    "table": "fir_details",
+    "inDb": true,
+    "backendMatches": 3,
+    "frontendMatches": 1,
+    "action": "✅ DONE"
+  },
+  {
+    "field": "organised_crime",
+    "foundAs": "organised_crime",
+    "table": "fir_details",
+    "inDb": true,
+    "backendMatches": 3,
+    "frontendMatches": 0,
+    "action": "⚠️ PARTIAL"
+  },
+  {
+    "field": "is_worked_out",
+    "foundAs": "is_worked_out",
+    "table": "fir_details",
+    "inDb": true,
+    "backendMatches": 244,
+    "frontendMatches": 28,
+    "action": "✅ DONE"
+  },
+  {
+    "field": "local_head_id",
+    "foundAs": "local_head_id",
+    "table": "fir_details",
+    "inDb": true,
+    "backendMatches": 321,
+    "frontendMatches": 136,
+    "action": "✅ DONE"
+  },
+  {
+    "field": "occurrence_from_datetime",
+    "foundAs": "occurrence_from_datetime",
+    "table": "fir_details",
+    "inDb": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "⚠️ PARTIAL"
+  },
+  {
+    "field": "registered_on_direction",
+    "foundAs": "NONE",
+    "table": "fir_details",
+    "inDb": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "cheating_amount",
+    "foundAs": "NONE",
+    "table": "fir_details",
+    "inDb": false,
+    "backendMatches": 3,
+    "frontendMatches": 1,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "modus_operandi",
+    "foundAs": "NONE",
+    "table": "fir_details",
+    "inDb": false,
+    "backendMatches": 2,
+    "frontendMatches": 0,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "burglary_mo_cd",
+    "foundAs": "NONE",
+    "table": "fir_details",
+    "inDb": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "social_category",
+    "foundAs": "NONE",
+    "table": "persons",
+    "inDb": false,
+    "backendMatches": 234,
+    "frontendMatches": 132,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "education",
+    "foundAs": "NONE",
+    "table": "persons",
+    "inDb": false,
+    "backendMatches": 5,
+    "frontendMatches": 1,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "home_state",
+    "foundAs": "state",
+    "table": "locations",
+    "inDb": true,
+    "backendMatches": 11,
+    "frontendMatches": 5,
+    "action": "✅ DONE"
+  },
+  {
+    "field": "financial_status",
+    "foundAs": "NONE",
+    "table": "persons",
+    "inDb": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "is_bc",
+    "foundAs": "is_bc",
+    "table": "arrestee_details",
+    "inDb": true,
+    "backendMatches": 11,
+    "frontendMatches": 0,
+    "action": "⚠️ PARTIAL"
+  },
+  {
+    "field": "is_po",
+    "foundAs": "is_po",
+    "table": "arrestee_details",
+    "inDb": true,
+    "backendMatches": 17,
+    "frontendMatches": 0,
+    "action": "⚠️ PARTIAL"
+  },
+  {
+    "field": "arrest_date",
+    "foundAs": "arrest_date",
+    "table": "arrestee_details",
+    "inDb": true,
+    "backendMatches": 30,
+    "frontendMatches": 28,
+    "action": "✅ DONE"
+  },
+  {
+    "field": "scheme_of_arrest",
+    "foundAs": "scheme_of_arrest",
+    "table": "arrest_details",
+    "inDb": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "⚠️ PARTIAL"
+  },
+  {
+    "field": "prev_involvement_count",
+    "foundAs": "prev_involvement_count",
+    "table": "arrestee_details",
+    "inDb": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "⚠️ PARTIAL"
+  },
+  {
+    "field": "quantity",
+    "foundAs": "quantity",
+    "table": "record_properties",
+    "inDb": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "⚠️ PARTIAL"
+  },
+  {
+    "field": "unit_cd",
+    "foundAs": "NONE",
+    "table": "record_properties",
+    "inDb": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "recovery_date",
+    "foundAs": "NONE",
+    "table": "record_properties",
+    "inDb": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "recovery_agency",
+    "foundAs": "NONE",
+    "table": "record_properties",
+    "inDb": false,
+    "backendMatches": 0,
+    "frontendMatches": 1,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "vehicle_no",
+    "foundAs": "vehicle_no",
+    "table": "record_properties",
+    "inDb": true,
+    "backendMatches": 2,
+    "frontendMatches": 2,
+    "action": "✅ DONE"
+  },
+  {
+    "field": "phone_imei",
+    "foundAs": "phone_imei",
+    "table": "record_properties",
+    "inDb": true,
+    "backendMatches": 5,
+    "frontendMatches": 2,
+    "action": "✅ DONE"
+  },
+  {
+    "field": "injury_severity",
+    "foundAs": "NONE",
+    "table": "victim_injury_details",
+    "inDb": false,
+    "backendMatches": 11,
+    "frontendMatches": 5,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "reason_for_detention",
+    "foundAs": "NONE",
+    "table": "arrest_details",
+    "inDb": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "❌ MISSING"
+  },
+  {
+    "field": "court_status",
+    "foundAs": "NONE",
+    "table": "fir_details",
+    "inDb": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "📋 PLAN"
+  },
+  {
+    "field": "sent_to_court_date",
+    "foundAs": "NONE",
+    "table": "fir_details",
+    "inDb": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "📋 PLAN"
+  },
+  {
+    "field": "disposal_type",
+    "foundAs": "NONE",
+    "table": "fir_details",
+    "inDb": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "action": "❌ MISSING"
+  }
+]

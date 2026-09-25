@@ -1,0 +1,143 @@
+fix(records/level-contracts/forms): DCP sees empty records, property data loss, form validation + FIR uniqueness
+
+Bugfix batch 2026-07-26. Full analysis, evidence and verification log:
+docs/bugfix-batch-2026-07-26/HANDOFF.md
+
+NOT COMMITTED BY THE ASSISTANT — staged for the repo owner to review and commit.
+
+═══════════════════════════════════════════════════════════════════════════════
+HEADLINE — C1: DCP/higher levels saw near-empty records (CRITICAL, verified)
+═══════════════════════════════════════════════════════════════════════════════
+Not a rendering bug and not data loss: the backend was deleting the fields on the
+way out, exactly as configured. config/contracts/ops_chain.json whitelisted only
+23 field keys for DISTRICT (15 for HQ), and levelContracts.service.js strips every
+domain key not on that list — including each persons[i].data and properties[i].
+The contracts were authored as stubs while masking was a silent no-op; Integration 5
+(2026-07-20) turned masking ON without revisiting them.
+
+The whitelist predicts every reported symptom exactly (act/section, major/minor head,
+occurrence block, complainant/victim/accused/property blank; ARREST showing only the
+arrestee's name; UIDB only place+date of body found; MISSING only date+status).
+Confirmed in the tester's own logs: "masking applied ... visibleKeyCount:23,
+personCount:0" — 3,662 masking events in one session.
+
+Fix (per user ruling: full record for DISTRICT/ACP/JCP/SCP, summary only at HQ):
+  - levelContracts.service.js: resolveMasking() treats a ["*"] contract as "full
+    record" (same fail-open path already used for PS roles). Chosen over deleting
+    rows so aggregate_definitions survive and workflow.engine.js's DIRECT_HQ route
+    lookup — which reads these same rows — is untouched.
+  - ops_chain.json: DISTRICT -> ["*"]; new LDC_DIST_JCP_ALL + LDC_JCP_SCP_ALL
+    wildcards (also retires the LEVEL_FALLBACK hack that routed JCP/SCP onto HQ's
+    even smaller 15-key list). LDC_DIST_HQ_ALL deliberately unchanged.
+  ⚠ Requires `npm run sync-config` after checkout.
+
+═══════════════════════════════════════════════════════════════════════════════
+DATA-LOSS AND INTEGRITY FIXES
+═══════════════════════════════════════════════════════════════════════════════
+C16 — properties silently wiped on update (records.service.js)
+  32 "upsertProperties: FULL WIPE" events in the tester's logs. upsertPersons got a
+  delete-to-zero guard in the 2026-07-23 batch; properties never did, so the same
+  frontend race wiped them. Guard now matches the persons one. Accepted trade-off
+  (same as ratified decision D1 for persons): clearing ALL properties via edit is
+  impossible until an explicit frontend "clear" affordance exists.
+  Verified: PUT with properties:[] on a record with a property -> row survives.
+
+C17 — schema drift crashed the tester's DB (migrations/20260726000001)
+  "value too long for type character varying(10)" on every TRANSGENDER person save.
+  ROOT CAUSE: an earlier session EDITED AN ALREADY-APPLIED MIGRATION IN PLACE
+  (widening persons.gender in 20260711000004, deleting the standalone ...000007).
+  Fresh DBs are fine; any DB provisioned from the original file keeps the narrow
+  column FOREVER because knex records that migration as run. Fixed with a forward,
+  idempotent, no-op-on-healthy repair migration. Also restores 'INVOLVED' on
+  record_properties.status.
+  ⚠ Deployment: affected environments need `npm run db:migrate`. NOT a db:reset —
+    testers keep their data.
+  RULE: never fix drift by editing an applied migration again.
+
+C8 — duplicate-FIR protection was completely inert (records.service/normalize)
+  fir_details has UNIQUE(ps_id, fir_year, fir_no), but fir_year was NULL on all 28
+  rows and Postgres treats NULL as always-distinct, so the constraint could never
+  fire. Proven: two same-PS/same-FIR rows coexisted; setting fir_year made Postgres
+  reject them immediately. fir_year is now derived on create AND update.
+  (Pre-existing duplicates in the DB are cross-PS, which is legitimate — FIR numbers
+  are per-station; that is why the constraint is composite.)
+
+C19 — workflow could never reach HQ without JCP+SCP (config only, E2E-verified)
+  Found by driving the chain end-to-end, not by reading code. The only route to
+  HQ_RECEIVED was DISTRICT -> JCP -> SCP -> HQ, so a DCP approval parked records at
+  JCP_REVIEW awaiting roles that are not staffed — 13 were already stranded silently.
+  workflow.engine.js already implemented a DIRECT_HQ short-circuit that had never been
+  switched on. Set LDC_DIST_HQ_ALL.route = DIRECT_HQ (config only, zero code); JCP/SCP
+  transitions stay dormant in config for when those roles go live.
+  Verified: HC create -> submit -> SHO approve -> DCP approve now lands HQ_RECEIVED;
+  transition ledger clean; `npm run audit:verify` hash-chain intact before and after;
+  record appears in HQ's list. Pre-stranded records left as-is (dev data, user ruling).
+
+C9 — property minor-category silently NULLed for arms/drugs (records.normalize)
+  resolvePropertyMinorCategory only consulted ref.other_property_items, never the
+  arms/drugs/jewelry/currency-specific ref tables. Against a real ARREST sample,
+  11 of 15 filled property rows could never resolve — major landed, minor dropped
+  silently. This is most of the tester's "property category nhi aaya".
+
+═══════════════════════════════════════════════════════════════════════════════
+FORM FIXES (each A/B tested: with patch, reverted to HEAD, restored)
+═══════════════════════════════════════════════════════════════════════════════
+C2  DynamicForm.jsx  — ARREST showed TWO arrest-time inputs. Reproduced without the
+                       patch: ["Date & Time of Arrest","Time Of Arrest"]; one with it.
+                       Only on the arrested-person modal's "Arrest Details" sub-tab.
+C3  FieldRenderer +   — "Contact of Arresting Officer" accepted free text. Now digits
+    config/fields/      only, capped at 10, still optional.
+    arrest.json         "abcd"->"" ; "98100abc00148"->"9810000148".
+C5  FieldRenderer.jsx — UIDB age accepted text. Without patch "abcdef" was accepted;
+                       now rejected, while "25-30" / "60+" / "unknown" still work.
+C10 LegacyDataPage    — HC's import-batch history never refetched after their own
+                       import (an `&& !isHC` gate). Independently re-verified.
+C12 UnifiedFilterStrip, FilterPresetsPanel, i18n, MyRecords.jsx
+                     — Kalandra / Arrest-against-FIR derived filter entries. Frontend
+                       forwards arrest_kind only; the backend classifies (P4).
+                       ⚠ INERT until the backend arrest_kind half lands.
+
+C11 import.validate.js — warns when a pre-D2 template supplies "SDM"/"ACP"/"None" for
+                       the now-boolean inquest field (was silently NULLing). The value
+                       coercion itself (ruling: SDM/ACP=Yes, None/blank=No) is NOT yet
+                       implemented — see Known Gaps.
+
+═══════════════════════════════════════════════════════════════════════════════
+VERIFICATION
+═══════════════════════════════════════════════════════════════════════════════
+  - Full workflow driven end-to-end against the real backend + Postgres:
+    HC create -> submit -> SHO approve -> DCP approve. DCP sees 35 data keys with
+    full VICTIM/ACCUSED; HQ sees 7 (intended summary). Confirmed in the browser at
+    SHO, DCP and HQ.
+  - C1 also confirmed visually: VICTIM/ACCUSED lists render real names where the
+    tester's screenshot showed "—".
+  - npm run import:parity GREEN; npm run sync-config idempotent; backend healthy.
+  - Browser testing ran on a local Playwright harness: the Playwright MCP is pinned
+    to a system-Chrome channel that is not installed here. Fix for future sessions:
+    add "--browser","chromium" to the playwright MCP args in ~/.claude.json.
+
+═══════════════════════════════════════════════════════════════════════════════
+KNOWN GAPS — READ BEFORE THE NEXT SESSION
+═══════════════════════════════════════════════════════════════════════════════
+  1. FROZEN IMPORT TEMPLATE GUARD IS BROKEN (pre-existing, independent of this batch).
+     `node scripts/template-regression.js check` reports ~173 differences vs the
+     baseline, including 5 REMOVED columns — with all batch edits reverted. That is
+     why nothing caught a bad column insertion this round. DO NOT run
+     `template-regression.js baseline` to make it pass: that rubber-stamps 173
+     unreviewed changes. Classify each drift first. Template changes require the
+     repo owner's explicit per-change sign-off.
+  2. C13 (3 approved new template columns) DEFERRED to a dedicated session. The first
+     attempt was reverted: registry auto-include INSERTS in registry order rather than
+     appending, shifting work_out 57->60 and work_out_date 58->61, which would make
+     every already-filled CASE sheet misparse.
+  3. Records-module work was interrupted twice by session limits. NOT done:
+     fir_year backfill for the 28 existing rows; the interactive duplicate-FIR
+     warning; C11 value coercion; C15 (submit "Missing required fields") and C4
+     (ARREST fields not persisting) were never started.
+  4. (RESOLVED — see C19 below) Workflow now routes DCP approve straight to HQ.
+  5. HQ_ANALYST/HQ_ADMIN still see 7 fields and dash-only persons — chosen, but it is
+     the same visual the DCP complained about. One-line change if it gets re-reported.
+  6. A stale `git stash` (108 files) exists whose contents are already in HEAD.
+     Left untouched deliberately — `git stash pop` would clobber current work.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>

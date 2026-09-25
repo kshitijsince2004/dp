@@ -1,0 +1,90 @@
+[
+ {
+  "id": "WTC_01",
+  "record_type": "*",
+  "from_status": "DRAFT",
+  "to_status": "PENDING_SHO",
+  "action": "submit",
+  "allowed_roles": "[\"HC\"]",
+  "requires_comment": false,
+  "sla_hours": 24,
+  "is_active": true
+ },
+ {
+  "id": "WTC_02",
+  "record_type": "*",
+  "from_status": "PENDING_SHO",
+  "to_status": "DISTRICT_REVIEW",
+  "action": "approve",
+  "allowed_roles": "[\"SHO\"]",
+  "requires_comment": false,
+  "sla_hours": 48,
+  "is_active": true
+ },
+ {
+  "id": "WTC_03",
+  "record_type": "*",
+  "from_status": "PENDING_SHO",
+  "to_status": "SENT_BACK",
+  "action": "send_back",
+  "allowed_roles": "[\"SHO\"]",
+  "requires_comment": true,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "id": "WTC_04",
+  "record_type": "*",
+  "from_status": "SENT_BACK",
+  "to_status": "PENDING_SHO",
+  "action": "submit",
+  "allowed_roles": "[\"HC\"]",
+  "requires_comment": false,
+  "sla_hours": 24,
+  "is_active": true
+ },
+ {
+  "id": "WTC_05",
+  "record_type": "*",
+  "from_status": "DISTRICT_REVIEW",
+  "to_status": "HQ_RECEIVED",
+  "action": "approve",
+  "allowed_roles": "[\"DISTRICT_OFFICER\"]",
+  "requires_comment": false,
+  "sla_hours": 48,
+  "is_active": true
+ },
+ {
+  "id": "WTC_06",
+  "record_type": "*",
+  "from_status": "DISTRICT_REVIEW",
+  "to_status": "SENT_BACK",
+  "action": "send_back",
+  "allowed_roles": "[\"DISTRICT_OFFICER\"]",
+  "requires_comment": true,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "id": "WTC_07",
+  "record_type": "*",
+  "from_status": "HQ_RECEIVED",
+  "to_status": "ARCHIVED",
+  "action": "archive",
+  "allowed_roles": "[\"HQ_ADMIN\",\"SYSTEM_ADMIN\"]",
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ },
+ {
+  "id": "WTC_08",
+  "record_type": "*",
+  "from_status": "HQ_RECEIVED",
+  "to_status": "COMPILED",
+  "action": "compile",
+  "allowed_roles": "[\"DISTRICT_OFFICER\",\"HQ_ADMIN\"]",
+  "requires_comment": false,
+  "sla_hours": null,
+  "is_active": true
+ }
+]

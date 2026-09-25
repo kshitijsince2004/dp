@@ -1,0 +1,3155 @@
+[
+ {
+  "field_key": "gd_time",
+  "record_types": [
+   "CASE",
+   "ARREST"
+  ],
+  "field_type": "TIME",
+  "labels": {
+   "en": "GD Time",
+   "hi": "जीडी समय"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "$detail",
+   "column": "gd_time"
+  },
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": -1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "is_dd_based",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "BOOLEAN",
+  "labels": {
+   "en": "DD/GD-Based Arrest (Kalandra)",
+   "hi": "जीडी आधारित गिरफ्तारी (कलंदरा)"
+  },
+  "section": "general_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "is_dd_based"
+  },
+  "visible_to_levels": [],
+  "editable_by_levels": [],
+  "introduced_at_level": "PS",
+  "sort_order": 0,
+  "full_width": false,
+  "readonly": true,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrest_date",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "DATE",
+  "labels": {
+   "en": "Date & Time of Arrest",
+   "hi": "गिरफ्तारी की तिथि"
+  },
+  "section": "arrest_details",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "arrest_date"
+  },
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 6,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrest_time",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TIME",
+  "labels": {
+   "en": "Time Of Arrest",
+   "hi": "गिरफ्तारी का समय"
+  },
+  "section": "arrest_details",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "arrest_time"
+  },
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 6.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrest_place",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Place of Arrest",
+   "hi": "गिरफ्तारी का स्थान"
+  },
+  "section": "arrest_details",
+  "storage": {
+   "entity": "location",
+   "slot": "arrest",
+   "column": "full_address",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 7,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrest_street",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Street of Arrest",
+   "hi": "गिरफ्तारी का गली / सड़क"
+  },
+  "section": "arrest_details",
+  "storage": {
+   "entity": "location",
+   "slot": "arrest",
+   "column": "street",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 7.1,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrest_colony",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Colony of Arrest",
+   "hi": "गिरफ्तारी का कॉलोनी"
+  },
+  "section": "arrest_details",
+  "storage": {
+   "entity": "location",
+   "slot": "arrest",
+   "column": "colony",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 7.2,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrest_district",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "District of Arrest",
+   "hi": "गिरफ्तारी का जिला"
+  },
+  "section": "arrest_details",
+  "storage": {
+   "entity": "location",
+   "slot": "arrest",
+   "column": "district",
+   "role": "ARRESTEE"
+  },
+  "options": [
+   {
+    "value": "South District (SD)",
+    "label_en": "South District (SD)",
+    "label_hi": "South District (SD)"
+   },
+   {
+    "value": "South East District (SED)",
+    "label_en": "South East District (SED)",
+    "label_hi": "South East District (SED)"
+   },
+   {
+    "value": "New Delhi District (NDD)",
+    "label_en": "New Delhi District (NDD)",
+    "label_hi": "New Delhi District (NDD)"
+   },
+   {
+    "value": "South West District (SWD)",
+    "label_en": "South West District (SWD)",
+    "label_hi": "South West District (SWD)"
+   },
+   {
+    "value": "West District (WD)",
+    "label_en": "West District (WD)",
+    "label_hi": "West District (WD)"
+   },
+   {
+    "value": "Outer District (OD)",
+    "label_en": "Outer District (OD)",
+    "label_hi": "Outer District (OD)"
+   },
+   {
+    "value": "Dwarka District (DW)",
+    "label_en": "Dwarka District (DW)",
+    "label_hi": "Dwarka District (DW)"
+   },
+   {
+    "value": "North West District (NWD)",
+    "label_en": "North West District (NWD)",
+    "label_hi": "North West District (NWD)"
+   },
+   {
+    "value": "Rohini District (RND)",
+    "label_en": "Rohini District (RND)",
+    "label_hi": "Rohini District (RND)"
+   },
+   {
+    "value": "Outer North District (OND)",
+    "label_en": "Outer North District (OND)",
+    "label_hi": "Outer North District (OND)"
+   },
+   {
+    "value": "Central District (CD)",
+    "label_en": "Central District (CD)",
+    "label_hi": "Central District (CD)"
+   },
+   {
+    "value": "North District (ND)",
+    "label_en": "North District (ND)",
+    "label_hi": "North District (ND)"
+   },
+   {
+    "value": "East District (ED)",
+    "label_en": "East District (ED)",
+    "label_hi": "East District (ED)"
+   },
+   {
+    "value": "North East District (NED)",
+    "label_en": "North East District (NED)",
+    "label_hi": "North East District (NED)"
+   },
+   {
+    "value": "Shahdara District (SHD)",
+    "label_en": "Shahdara District (SHD)",
+    "label_hi": "Shahdara District (SHD)"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 7.3,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrest_landmark",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Landmark of Arrest",
+   "hi": "गिरफ्तारी का लैंडमार्क"
+  },
+  "section": "arrest_details",
+  "storage": {
+   "entity": "location",
+   "slot": "arrest",
+   "column": "landmark",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 7.4,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "crime_head",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Crime Head",
+   "hi": "अपराध शीर्ष"
+  },
+  "section": "offence_info",
+  "storage": {
+   "table": "$detail",
+   "column": "local_head_id"
+  },
+  "options": [
+   {
+    "value": "Abduction",
+    "label_en": "Abduction",
+    "label_hi": "Abduction"
+   },
+   {
+    "value": "Abetment of Suicide",
+    "label_en": "Abetment of Suicide",
+    "label_hi": "Abetment of Suicide"
+   },
+   {
+    "value": "Acid Attack",
+    "label_en": "Acid Attack",
+    "label_hi": "Acid Attack"
+   },
+   {
+    "value": "Acid Attack Attempt",
+    "label_en": "Acid Attack Attempt",
+    "label_hi": "Acid Attack Attempt"
+   },
+   {
+    "value": "Adultery",
+    "label_en": "Adultery",
+    "label_hi": "Adultery"
+   },
+   {
+    "value": "Affray",
+    "label_en": "Affray",
+    "label_hi": "Affray"
+   },
+   {
+    "value": "Arms Act",
+    "label_en": "Arms Act",
+    "label_hi": "Arms Act"
+   },
+   {
+    "value": "Arson",
+    "label_en": "Arson",
+    "label_hi": "Arson"
+   },
+   {
+    "value": "Assault on Public Servant",
+    "label_en": "Assault on Public Servant",
+    "label_hi": "Assault on Public Servant"
+   },
+   {
+    "value": "Att. to Commit Suicide",
+    "label_en": "Att. to Commit Suicide",
+    "label_hi": "Att. to Commit Suicide"
+   },
+   {
+    "value": "Att. to Culpable Homicide not Amounting to Murder",
+    "label_en": "Att. to Culpable Homicide not Amounting to Murder",
+    "label_hi": "Att. to Culpable Homicide not Amounting to Murder"
+   },
+   {
+    "value": "Att. to Murder",
+    "label_en": "Att. to Murder",
+    "label_hi": "Att. to Murder"
+   },
+   {
+    "value": "Bombay Prevention of begging Act - 1959",
+    "label_en": "Bombay Prevention of begging Act - 1959",
+    "label_hi": "Bombay Prevention of begging Act - 1959"
+   },
+   {
+    "value": "Burglary",
+    "label_en": "Burglary",
+    "label_hi": "Burglary"
+   },
+   {
+    "value": "Cattle Theft",
+    "label_en": "Cattle Theft",
+    "label_hi": "Cattle Theft"
+   },
+   {
+    "value": "Central Motor Vehicles Rules,1989",
+    "label_en": "Central Motor Vehicles Rules,1989",
+    "label_hi": "Central Motor Vehicles Rules,1989"
+   },
+   {
+    "value": "Cheating",
+    "label_en": "Cheating",
+    "label_hi": "Cheating"
+   },
+   {
+    "value": "Child Labour Act-1986",
+    "label_en": "Child Labour Act-1986",
+    "label_hi": "Child Labour Act-1986"
+   },
+   {
+    "value": "Child Marriage Restraint Act 1929",
+    "label_en": "Child Marriage Restraint Act 1929",
+    "label_hi": "Child Marriage Restraint Act 1929"
+   },
+   {
+    "value": "Civil Rights Act",
+    "label_en": "Civil Rights Act",
+    "label_hi": "Civil Rights Act"
+   },
+   {
+    "value": "Concealment of birth",
+    "label_en": "Concealment of birth",
+    "label_hi": "Concealment of birth"
+   },
+   {
+    "value": "Copyright Act",
+    "label_en": "Copyright Act",
+    "label_hi": "Copyright Act"
+   },
+   {
+    "value": "Counterfeiting",
+    "label_en": "Counterfeiting",
+    "label_hi": "Counterfeiting"
+   },
+   {
+    "value": "Criminal Breach of Trust",
+    "label_en": "Criminal Breach of Trust",
+    "label_hi": "Criminal Breach of Trust"
+   },
+   {
+    "value": "Criminal Intimadation",
+    "label_en": "Criminal Intimadation",
+    "label_hi": "Criminal Intimadation"
+   },
+   {
+    "value": "Cruelty by Husband",
+    "label_en": "Cruelty by Husband",
+    "label_hi": "Cruelty by Husband"
+   },
+   {
+    "value": "Culpable Homicide not Amounting to Murder",
+    "label_en": "Culpable Homicide not Amounting to Murder",
+    "label_hi": "Culpable Homicide not Amounting to Murder"
+   },
+   {
+    "value": "Cycle Theft",
+    "label_en": "Cycle Theft",
+    "label_hi": "Cycle Theft"
+   },
+   {
+    "value": "Dacoity",
+    "label_en": "Dacoity",
+    "label_hi": "Dacoity"
+   },
+   {
+    "value": "Day Burglary",
+    "label_en": "Day Burglary",
+    "label_hi": "Day Burglary"
+   },
+   {
+    "value": "Delhi Control of vehicular and Other Traffic on Road Act",
+    "label_en": "Delhi Control of vehicular and Other Traffic on Road Act",
+    "label_hi": "Delhi Control of vehicular and Other Traffic on Road Act"
+   },
+   {
+    "value": "Delhi Excise Act",
+    "label_en": "Delhi Excise Act",
+    "label_hi": "Delhi Excise Act"
+   },
+   {
+    "value": "Delhi Police Act 1978",
+    "label_en": "Delhi Police Act 1978",
+    "label_hi": "Delhi Police Act 1978"
+   },
+   {
+    "value": "Delhi Preservation of Trees Act, 1994",
+    "label_en": "Delhi Preservation of Trees Act, 1994",
+    "label_hi": "Delhi Preservation of Trees Act, 1994"
+   },
+   {
+    "value": "Dowry Death",
+    "label_en": "Dowry Death",
+    "label_hi": "Dowry Death"
+   },
+   {
+    "value": "Dowry Prohibition Act-1961",
+    "label_en": "Dowry Prohibition Act-1961",
+    "label_hi": "Dowry Prohibition Act-1961"
+   },
+   {
+    "value": "Drugging/ Poisoning",
+    "label_en": "Drugging/ Poisoning",
+    "label_hi": "Drugging/ Poisoning"
+   },
+   {
+    "value": "Drugs and Cosmetics Act 1940",
+    "label_en": "Drugs and Cosmetics Act 1940",
+    "label_hi": "Drugs and Cosmetics Act 1940"
+   },
+   {
+    "value": "Election Offences",
+    "label_en": "Election Offences",
+    "label_hi": "Election Offences"
+   },
+   {
+    "value": "Electricity Act 2003",
+    "label_en": "Electricity Act 2003",
+    "label_hi": "Electricity Act 2003"
+   },
+   {
+    "value": "Electricity Theft",
+    "label_en": "Electricity Theft",
+    "label_hi": "Electricity Theft"
+   },
+   {
+    "value": "Encroachment on Govt. Land",
+    "label_en": "Encroachment on Govt. Land",
+    "label_hi": "Encroachment on Govt. Land"
+   },
+   {
+    "value": "Environment (Protection) Act 1986",
+    "label_en": "Environment (Protection) Act 1986",
+    "label_hi": "Environment (Protection) Act 1986"
+   },
+   {
+    "value": "Escape from Police Custody",
+    "label_en": "Escape from Police Custody",
+    "label_hi": "Escape from Police Custody"
+   },
+   {
+    "value": "Essential Commodities Act-1955",
+    "label_en": "Essential Commodities Act-1955",
+    "label_hi": "Essential Commodities Act-1955"
+   },
+   {
+    "value": "Eve Teasing",
+    "label_en": "Eve Teasing",
+    "label_hi": "Eve Teasing"
+   },
+   {
+    "value": "Explosive Act- 1884",
+    "label_en": "Explosive Act- 1884",
+    "label_hi": "Explosive Act- 1884"
+   },
+   {
+    "value": "Explosive Substances Act- 1908",
+    "label_en": "Explosive Substances Act- 1908",
+    "label_hi": "Explosive Substances Act- 1908"
+   },
+   {
+    "value": "Extortion",
+    "label_en": "Extortion",
+    "label_hi": "Extortion"
+   },
+   {
+    "value": "Fatal Accident",
+    "label_en": "Fatal Accident",
+    "label_hi": "Fatal Accident"
+   },
+   {
+    "value": "Fire Incident",
+    "label_en": "Fire Incident",
+    "label_hi": "Fire Incident"
+   },
+   {
+    "value": "Foreigners Act-1946",
+    "label_en": "Foreigners Act-1946",
+    "label_hi": "Foreigners Act-1946"
+   },
+   {
+    "value": "Forgery",
+    "label_en": "Forgery",
+    "label_hi": "Forgery"
+   },
+   {
+    "value": "Gambling Act",
+    "label_en": "Gambling Act",
+    "label_hi": "Gambling Act"
+   },
+   {
+    "value": "Grievous Hurt",
+    "label_en": "Grievous Hurt",
+    "label_hi": "Grievous Hurt"
+   },
+   {
+    "value": "House Theft",
+    "label_en": "House Theft",
+    "label_hi": "House Theft"
+   },
+   {
+    "value": "House/Criminal Trespass",
+    "label_en": "House/Criminal Trespass",
+    "label_hi": "House/Criminal Trespass"
+   },
+   {
+    "value": "Immoral Traffic(Prev.) Act, 1956 (SIT Act Renamed)",
+    "label_en": "Immoral Traffic(Prev.) Act, 1956 (SIT Act Renamed)",
+    "label_hi": "Immoral Traffic(Prev.) Act, 1956 (SIT Act Renamed)"
+   },
+   {
+    "value": "Impersonation",
+    "label_en": "Impersonation",
+    "label_hi": "Impersonation"
+   },
+   {
+    "value": "Information Technology Act-2000",
+    "label_en": "Information Technology Act-2000",
+    "label_hi": "Information Technology Act-2000"
+   },
+   {
+    "value": "Juvenile justice Act 2006",
+    "label_en": "Juvenile justice Act 2006",
+    "label_hi": "Juvenile justice Act 2006"
+   },
+   {
+    "value": "Juvenile justice Act 2010",
+    "label_en": "Juvenile justice Act 2010",
+    "label_hi": "Juvenile justice Act 2010"
+   },
+   {
+    "value": "Juvenile justice Act 2015",
+    "label_en": "Juvenile justice Act 2015",
+    "label_hi": "Juvenile justice Act 2015"
+   },
+   {
+    "value": "Kid. For Ransom",
+    "label_en": "Kid. For Ransom",
+    "label_hi": "Kid. For Ransom"
+   },
+   {
+    "value": "Kidnapping",
+    "label_en": "Kidnapping",
+    "label_hi": "Kidnapping"
+   },
+   {
+    "value": "M.O. Women",
+    "label_en": "M.O. Women",
+    "label_hi": "M.O. Women"
+   },
+   {
+    "value": "M.V. Accessiories Theft",
+    "label_en": "M.V. Accessiories Theft",
+    "label_hi": "M.V. Accessiories Theft"
+   },
+   {
+    "value": "M.V. Theft",
+    "label_en": "M.V. Theft",
+    "label_hi": "M.V. Theft"
+   },
+   {
+    "value": "Maharashtra Control of Organised Crime Act-1999",
+    "label_en": "Maharashtra Control of Organised Crime Act-1999",
+    "label_hi": "Maharashtra Control of Organised Crime Act-1999"
+   },
+   {
+    "value": "Misappropriation of Istri Dhan & cruelty by inlaws",
+    "label_en": "Misappropriation of Istri Dhan & cruelty by inlaws",
+    "label_hi": "Misappropriation of Istri Dhan & cruelty by inlaws"
+   },
+   {
+    "value": "Miscarriage Etc.",
+    "label_en": "Miscarriage Etc.",
+    "label_hi": "Miscarriage Etc."
+   },
+   {
+    "value": "Mischief",
+    "label_en": "Mischief",
+    "label_hi": "Mischief"
+   },
+   {
+    "value": "Mobile Phone Theft",
+    "label_en": "Mobile Phone Theft",
+    "label_hi": "Mobile Phone Theft"
+   },
+   {
+    "value": "Motor Vehicle Act,1988",
+    "label_en": "Motor Vehicle Act,1988",
+    "label_hi": "Motor Vehicle Act,1988"
+   },
+   {
+    "value": "Murder",
+    "label_en": "Murder",
+    "label_hi": "Murder"
+   },
+   {
+    "value": "Narcotics Drugs & Psychotropic Substances Act",
+    "label_en": "Narcotics Drugs & Psychotropic Substances Act",
+    "label_hi": "Narcotics Drugs & Psychotropic Substances Act"
+   },
+   {
+    "value": "National Security Act 1980",
+    "label_en": "National Security Act 1980",
+    "label_hi": "National Security Act 1980"
+   },
+   {
+    "value": "Night Burglary",
+    "label_en": "Night Burglary",
+    "label_hi": "Night Burglary"
+   },
+   {
+    "value": "Offence against Public Servent",
+    "label_en": "Offence against Public Servent",
+    "label_hi": "Offence against Public Servent"
+   },
+   {
+    "value": "Offences Relating to religion",
+    "label_en": "Offences Relating to religion",
+    "label_hi": "Offences Relating to religion"
+   },
+   {
+    "value": "Official Secret Act,1923",
+    "label_en": "Official Secret Act,1923",
+    "label_hi": "Official Secret Act,1923"
+   },
+   {
+    "value": "Organised Crime",
+    "label_en": "Organised Crime",
+    "label_hi": "Organised Crime"
+   },
+   {
+    "value": "Other Act",
+    "label_en": "Other Act",
+    "label_hi": "Other Act"
+   },
+   {
+    "value": "Other BNS",
+    "label_en": "Other BNS",
+    "label_hi": "Other BNS"
+   },
+   {
+    "value": "Other IPC",
+    "label_en": "Other IPC",
+    "label_hi": "Other IPC"
+   },
+   {
+    "value": "Other Theft",
+    "label_en": "Other Theft",
+    "label_hi": "Other Theft"
+   },
+   {
+    "value": "POCSO Act 2012",
+    "label_en": "POCSO Act 2012",
+    "label_hi": "POCSO Act 2012"
+   },
+   {
+    "value": "Pasport Act-1967",
+    "label_en": "Pasport Act-1967",
+    "label_hi": "Pasport Act-1967"
+   },
+   {
+    "value": "Personating public servent",
+    "label_en": "Personating public servent",
+    "label_hi": "Personating public servent"
+   },
+   {
+    "value": "Pick Pocketing",
+    "label_en": "Pick Pocketing",
+    "label_hi": "Pick Pocketing"
+   },
+   {
+    "value": "Poisions Act 1919",
+    "label_en": "Poisions Act 1919",
+    "label_hi": "Poisions Act 1919"
+   },
+   {
+    "value": "Pre conception and pre natal diagonstic(pro)",
+    "label_en": "Pre conception and pre natal diagonstic(pro)",
+    "label_hi": "Pre conception and pre natal diagonstic(pro)"
+   },
+   {
+    "value": "Prevention of Atocities SC/ST Act - 1989",
+    "label_en": "Prevention of Atocities SC/ST Act - 1989",
+    "label_hi": "Prevention of Atocities SC/ST Act - 1989"
+   },
+   {
+    "value": "Prevention of Corruption Act-1988",
+    "label_en": "Prevention of Corruption Act-1988",
+    "label_hi": "Prevention of Corruption Act-1988"
+   },
+   {
+    "value": "Prevention of Damage of Public Property Act-1984",
+    "label_en": "Prevention of Damage of Public Property Act-1984",
+    "label_hi": "Prevention of Damage of Public Property Act-1984"
+   },
+   {
+    "value": "Protection of Women Domestic Violence Act 2005",
+    "label_en": "Protection of Women Domestic Violence Act 2005",
+    "label_hi": "Protection of Women Domestic Violence Act 2005"
+   },
+   {
+    "value": "Protection of human rights Act 1993",
+    "label_en": "Protection of human rights Act 1993",
+    "label_hi": "Protection of human rights Act 1993"
+   },
+   {
+    "value": "Public Nuisance",
+    "label_en": "Public Nuisance",
+    "label_hi": "Public Nuisance"
+   },
+   {
+    "value": "Rape",
+    "label_en": "Rape",
+    "label_hi": "Rape"
+   },
+   {
+    "value": "Receiver of Stolen Property",
+    "label_en": "Receiver of Stolen Property",
+    "label_hi": "Receiver of Stolen Property"
+   },
+   {
+    "value": "Riot",
+    "label_en": "Riot",
+    "label_hi": "Riot"
+   },
+   {
+    "value": "Robbery",
+    "label_en": "Robbery",
+    "label_hi": "Robbery"
+   },
+   {
+    "value": "Sedition of Offences against State",
+    "label_en": "Sedition of Offences against State",
+    "label_hi": "Sedition of Offences against State"
+   },
+   {
+    "value": "Servant Theft",
+    "label_en": "Servant Theft",
+    "label_hi": "Servant Theft"
+   },
+   {
+    "value": "Simple Accident",
+    "label_en": "Simple Accident",
+    "label_hi": "Simple Accident"
+   },
+   {
+    "value": "Simple Hurt",
+    "label_en": "Simple Hurt",
+    "label_hi": "Simple Hurt"
+   },
+   {
+    "value": "Snatching",
+    "label_en": "Snatching",
+    "label_hi": "Snatching"
+   },
+   {
+    "value": "Stereo Theft",
+    "label_en": "Stereo Theft",
+    "label_hi": "Stereo Theft"
+   },
+   {
+    "value": "Terrorist Act",
+    "label_en": "Terrorist Act",
+    "label_hi": "Terrorist Act"
+   },
+   {
+    "value": "The Delhi Prevention of Touting and Malpractices Against Tourists Ordinance Act 2010",
+    "label_en": "The Delhi Prevention of Touting and Malpractices Against Tourists Ordinance Act 2010",
+    "label_hi": "The Delhi Prevention of Touting and Malpractices Against Tourists Ordinance Act 2010"
+   },
+   {
+    "value": "Theft in Shop",
+    "label_en": "Theft in Shop",
+    "label_hi": "Theft in Shop"
+   },
+   {
+    "value": "Threatning",
+    "label_en": "Threatning",
+    "label_hi": "Threatning"
+   },
+   {
+    "value": "Trade & Merchandise Marks Act, 1958",
+    "label_en": "Trade & Merchandise Marks Act, 1958",
+    "label_hi": "Trade & Merchandise Marks Act, 1958"
+   },
+   {
+    "value": "Tresspass",
+    "label_en": "Tresspass",
+    "label_hi": "Tresspass"
+   },
+   {
+    "value": "Un-Natural Death / Inquest Report",
+    "label_en": "Un-Natural Death / Inquest Report",
+    "label_hi": "Un-Natural Death / Inquest Report"
+   },
+   {
+    "value": "Unlawful Activities (Prevension) Act 1967",
+    "label_en": "Unlawful Activities (Prevension) Act 1967",
+    "label_hi": "Unlawful Activities (Prevension) Act 1967"
+   },
+   {
+    "value": "Unnatural Offences(SODOMY)",
+    "label_en": "Unnatural Offences(SODOMY)",
+    "label_hi": "Unnatural Offences(SODOMY)"
+   },
+   {
+    "value": "Wild Life (Protection) Act-1972",
+    "label_en": "Wild Life (Protection) Act-1972",
+    "label_hi": "Wild Life (Protection) Act-1972"
+   },
+   {
+    "value": "wrongful Confinement/restraint",
+    "label_en": "wrongful Confinement/restraint",
+    "label_hi": "wrongful Confinement/restraint"
+   }
+  ],
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 8,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "other_status_reason",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Other Status Reason",
+   "hi": "अन्य स्थिति का कारण"
+  },
+  "section": "custody_status",
+  "storage": {
+   "table": "arrest_details",
+   "column": "other_status_reason"
+  },
+  "options": [
+   {
+    "value": "JC",
+    "label_en": "JC",
+    "label_hi": "JC"
+   },
+   {
+    "value": "PC",
+    "label_en": "PC",
+    "label_hi": "PC"
+   },
+   {
+    "value": "Bail",
+    "label_en": "Bail",
+    "label_hi": "जमानत"
+   },
+   {
+    "value": "Bound Down",
+    "label_en": "Bound Down",
+    "label_hi": "Bound Down"
+   },
+   {
+    "value": "Release",
+    "label_en": "Release",
+    "label_hi": "रिहाई"
+   },
+   {
+    "value": "Lockup",
+    "label_en": "Lockup",
+    "label_hi": "Lockup"
+   },
+   {
+    "value": "Fine",
+    "label_en": "Fine",
+    "label_hi": "Fine"
+   },
+   {
+    "value": "35(3) BNS Notice",
+    "label_en": "35(3) BNS Notice",
+    "label_hi": "35(3) BNS Notice"
+   }
+  ],
+  "show_when": {
+   "field": "status",
+   "value": "others"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 10,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "scheme_of_arrest",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Scheme of Arrest",
+   "hi": "गिरफ्तारी की योजना"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "scheme_of_arrest"
+  },
+  "options": [
+   {
+    "value": "Integrated Pride",
+    "label_en": "Integrated Pride",
+    "label_hi": "Integrated Pride"
+   },
+   {
+    "value": "Group Patrolling",
+    "label_en": "Group Patrolling",
+    "label_hi": "Group Patrolling"
+   },
+   {
+    "value": "Anti-snatching",
+    "label_en": "Anti-snatching",
+    "label_hi": "Anti-snatching"
+   },
+   {
+    "value": "By Prahari",
+    "label_en": "By Prahari",
+    "label_hi": "By Prahari"
+   },
+   {
+    "value": "By Eyes & Ears Scheme Members",
+    "label_en": "By Eyes & Ears Scheme Members",
+    "label_hi": "By Eyes & Ears Scheme Members"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 10.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "recovery",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXTAREA",
+  "labels": {
+   "en": "Recovery",
+   "hi": "बरामदगी"
+  },
+  "section": "custody_status",
+  "storage": {
+   "table": "arrest_details",
+   "column": "recovery"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 11,
+  "full_width": true,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "nafis_prepared",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "NAFIS Prepared",
+   "hi": "नाफिस तैयार किया गया"
+  },
+  "section": "arrestee_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "nafis_prepared"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "show_when": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 12,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "dossier_prepared",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "Dossier Prepared",
+   "hi": "डोजियर तैयार किया गया"
+  },
+  "section": "arrestee_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "dossier_prepared"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "show_when": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 13,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "prev_involvement",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "Prev. Involvement (Y/N)",
+   "hi": "पूर्व संलिप्तता (हाँ/नहीं)"
+  },
+  "section": "arrestee_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "prev_involvement"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 17,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "proclaimed_offender",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "Proclaimed Offender (PO)",
+   "hi": "घोषित अपराधी (पीओ)"
+  },
+  "section": "arrestee_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "is_po"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 18,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "listed_criminal",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "RADIO",
+  "labels": {
+   "en": "Listed Criminal / Bad Character (BC)",
+   "hi": "सूचीबद्ध अपराधी / बैड कैरेक्टर (BC)"
+  },
+  "section": "arrestee_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "is_bc"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 19,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arresting_officer",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arresting Officer",
+   "hi": "गिरफ्तार करने वाले अधिकारी"
+  },
+  "section": "arrestee_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "arresting_officer_name"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 20,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arresting_officer_mobile",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Contact of Arresting Officer",
+   "hi": "गिरफ्तार करने वाले अधिकारी का मोबाइल"
+  },
+  "section": "arrestee_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "arresting_officer_mobile"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "mobile"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 21,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "verifying_officer_rank",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arresting Officer Rank",
+   "hi": "गिरफ्तार करने वाले अधिकारी का पद"
+  },
+  "section": "arrestee_info",
+  "storage": {
+   "table": "arrest_details",
+   "column": "arresting_officer_rank"
+  },
+  "options": [
+   {
+    "value": "Constable",
+    "label_en": "Constable",
+    "label_hi": "Constable"
+   },
+   {
+    "value": "Head Constable",
+    "label_en": "Head Constable",
+    "label_hi": "Head Constable"
+   },
+   {
+    "value": "Assistant Sub Inspector",
+    "label_en": "Assistant Sub Inspector",
+    "label_hi": "Assistant Sub Inspector"
+   },
+   {
+    "value": "Sub Inspector",
+    "label_en": "Sub Inspector",
+    "label_hi": "Sub Inspector"
+   },
+   {
+    "value": "Inspector",
+    "label_en": "Inspector",
+    "label_hi": "Inspector"
+   },
+   {
+    "value": "Deputy Superintendent of Police",
+    "label_en": "Deputy Superintendent of Police",
+    "label_hi": "Deputy Superintendent of Police"
+   },
+   {
+    "value": "Superintendent of Police",
+    "label_en": "Superintendent of Police",
+    "label_hi": "Superintendent of Police"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 21.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "integrated_pi",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested via Integrated PI",
+   "hi": "एकीकृत पीआई से गिरफ्तार"
+  },
+  "section": "special_scheme",
+  "storage": {
+   "table": "arrest_details",
+   "column": "integrated_pi"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 30,
+  "full_width": false,
+  "readonly": false,
+  "is_active": false,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "group_patrolling",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested via Group Patrolling",
+   "hi": "समूह गश्त से गिरफ्तार"
+  },
+  "section": "special_scheme",
+  "storage": {
+   "table": "arrest_details",
+   "column": "group_patrolling"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 31,
+  "full_width": false,
+  "readonly": false,
+  "is_active": false,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "cycle_patrolling",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested via Cycle Patrolling",
+   "hi": "साइकिल गश्त से गिरफ्तार"
+  },
+  "section": "special_scheme",
+  "storage": {
+   "table": "arrest_details",
+   "column": "cycle_patrolling"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 32,
+  "full_width": false,
+  "readonly": false,
+  "is_active": false,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "by_antisnatching_team",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested via Anti-Snatching Team",
+   "hi": "छीना-झपटी रोधी दल से गिरफ्तार"
+  },
+  "section": "special_scheme",
+  "storage": {
+   "table": "arrest_details",
+   "column": "by_antisnatching_team"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 33,
+  "full_width": false,
+  "readonly": false,
+  "is_active": false,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "by_prahari",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested via PRAHARI Scheme",
+   "hi": "प्रहरी योजना से गिरफ्तार"
+  },
+  "section": "special_scheme",
+  "storage": {
+   "table": "arrest_details",
+   "column": "by_prahari"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 34,
+  "full_width": false,
+  "readonly": false,
+  "is_active": false,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "by_eyes_ears_scheme_members",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested via Eyes & Ears Scheme",
+   "hi": "नेत्र और कान योजना से गिरफ्तार"
+  },
+  "section": "special_scheme",
+  "storage": {
+   "table": "arrest_details",
+   "column": "by_eyes_ears_scheme_members"
+  },
+  "options": [
+   {
+    "value": "Yes",
+    "label_en": "Yes",
+    "label_hi": "हाँ"
+   },
+   {
+    "value": "No",
+    "label_en": "No",
+    "label_hi": "नहीं"
+   }
+  ],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 35,
+  "full_width": false,
+  "readonly": false,
+  "is_active": false,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_npr",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person NPR No.",
+   "hi": "गिरफ्तार व्यक्ति एनपीआर संख्या"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "extra": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 400,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_first_name",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person First Name",
+   "hi": "गिरफ्तार व्यक्ति पहला नाम"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "name",
+   "name_part": 1
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "name"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 401,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_middle_name",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Middle Name",
+   "hi": "गिरफ्तार व्यक्ति मध्यम नाम"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "name",
+   "name_part": 2
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 402,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
+ },
+ {
+  "field_key": "arrested_last_name",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Last Name",
+   "hi": "गिरफ्तार व्यक्ति अंतिम नाम"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "name",
+   "name_part": 3
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 403,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
+ },
+ {
+  "field_key": "arrested_nickname",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Nickname(s)",
+   "hi": "गिरफ्तार व्यक्ति उपनाम"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "nick_names"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 403.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
+ },
+ {
+  "field_key": "nick_name",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Nick Name",
+   "hi": "उपनाम"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "nick_names"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 403.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global",
+  "validation_rules": {
+   "pattern": "name"
+  }
+ },
+ {
+  "field_key": "arrested_gender",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person Gender",
+   "hi": "गिरफ्तार व्यक्ति लिंग"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "gender"
+  },
+  "options": [
+   {
+    "value": "Male",
+    "label_en": "Male",
+    "label_hi": "पुरुष"
+   },
+   {
+    "value": "Female",
+    "label_en": "Female",
+    "label_hi": "महिला"
+   },
+   {
+    "value": "Transgender",
+    "label_en": "Transgender",
+    "label_hi": "ट्रांसजेंडर"
+   },
+   {
+    "value": "Unknown",
+    "label_en": "Unknown",
+    "label_hi": "अज्ञात"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 404,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_relation_type",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person Relation Type",
+   "hi": "गिरफ्तार व्यक्ति संबंध का प्रकार"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "relation_type"
+  },
+  "options": [
+   {
+    "value": "Father",
+    "label_en": "Father",
+    "label_hi": "पिता"
+   },
+   {
+    "value": "Mother",
+    "label_en": "Mother",
+    "label_hi": "माता"
+   },
+   {
+    "value": "Husband",
+    "label_en": "Husband",
+    "label_hi": "पति"
+   },
+   {
+    "value": "Wife",
+    "label_en": "Wife",
+    "label_hi": "पत्नी"
+   },
+   {
+    "value": "Guardian",
+    "label_en": "Guardian",
+    "label_hi": "अभिभावक"
+   },
+   {
+    "value": "Other",
+    "label_en": "Other",
+    "label_hi": "अन्य"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 405,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_relative_name",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Relative Name",
+   "hi": "गिरफ्तार व्यक्ति रिश्तेदार का नाम"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "relative_name"
+  },
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 406,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_mobile_country_code",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "NUMBER",
+  "labels": {
+   "en": "Arrested Person Mobile Country Code",
+   "hi": "गिरफ्तार व्यक्ति मोबाइल देश कोड"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "extra": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 407.9,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_mobile",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "NUMBER",
+  "labels": {
+   "en": "Arrested Person Mobile No.",
+   "hi": "गिरफ्तार व्यक्ति मोबाइल नंबर"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "mobile"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 408,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_qualification",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person Qualification",
+   "hi": "गिरफ्तार व्यक्ति योग्यता"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "qualification"
+  },
+  "options": [
+   {
+    "value": "Uneducated",
+    "label_en": "Uneducated",
+    "label_hi": "अशिक्षित"
+   },
+   {
+    "value": "10th",
+    "label_en": "10th",
+    "label_hi": "10वीं"
+   },
+   {
+    "value": "10+2",
+    "label_en": "10+2",
+    "label_hi": "12वीं"
+   },
+   {
+    "value": "Graduate",
+    "label_en": "Graduate",
+    "label_hi": "स्नातक"
+   },
+   {
+    "value": "Post-Graduate",
+    "label_en": "Post-Graduate",
+    "label_hi": "स्नातकोत्तर"
+   }
+  ],
+  "validation_rules": {
+   "required": false
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 408.5,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_dob",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "DATE",
+  "labels": {
+   "en": "Arrested Person Date of Birth",
+   "hi": "गिरफ्तार व्यक्ति जन्म तिथि"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "dob"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 409,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_age_year",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "NUMBER",
+  "labels": {
+   "en": "Arrested Person Age (Years)",
+   "hi": "गिरफ्तार व्यक्ति आयु (वर्ष)"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "age"
+  },
+  "validation_rules": {
+   "required": false,
+   "min": 0,
+   "max": 120
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 410,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_birth_year",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "NUMBER",
+  "labels": {
+   "en": "Arrested Person Year of Birth",
+   "hi": "गिरफ्तार व्यक्ति जन्म का वर्ष"
+  },
+  "section": "arrested_personal_info",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "extra": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 412,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_house_no",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person House No.",
+   "hi": "गिरफ्तार व्यक्ति मकान संख्या"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "house_no",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 413,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_street",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Street",
+   "hi": "गिरफ्तार व्यक्ति गली / सड़क"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "street",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 414,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_colony",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Colony",
+   "hi": "गिरफ्तार व्यक्ति कॉलोनी"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "colony",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 415,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_city_town_village",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Village / City / Town",
+   "hi": "गिरफ्तार व्यक्ति गांव / शहर / नगर"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "city_town_village",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 416,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_tehsil_block_mandal",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Tehsil / Block / Mandal",
+   "hi": "गिरफ्तार व्यक्ति तहसील / ब्लॉक / मंडल"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "tehsil_block_mandal",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 417,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_present_address",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXTAREA",
+  "labels": {
+   "en": "Arrested Person Full Present Address",
+   "hi": "गिरफ्तार व्यक्ति वर्तमान पता"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "full_address",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 418,
+  "full_width": true,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_country",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person Nationality",
+   "hi": "गिरफ्तार व्यक्ति राष्ट्रीयता"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "country",
+   "role": "ARRESTEE"
+  },
+  "options": "$NATIONALITY",
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 419,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_state",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person State",
+   "hi": "गिरफ्तार व्यक्ति राज्य"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "state",
+   "role": "ARRESTEE"
+  },
+  "options": "$INDIA_STATES",
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 420,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_district",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person District",
+   "hi": "गिरफ्तार व्यक्ति जिला"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "district",
+   "role": "ARRESTEE"
+  },
+  "options": "$INDIA_DISTRICTS",
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 421,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_police_station",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person Police Station",
+   "hi": "गिरफ्तार व्यक्ति पुलिस स्टेशन (PS)"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "police_station",
+   "role": "ARRESTEE"
+  },
+  "options": [],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 422,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_pincode",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Pin Code",
+   "hi": "गिरफ्तार व्यक्ति पिन कोड"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "present",
+   "column": "pincode",
+   "role": "ARRESTEE"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 423,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_same",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "BOOLEAN",
+  "labels": {
+   "en": "Is Permanent Address same as Present Address?",
+   "hi": "क्या स्थायी पता वर्तमान पते के समान है?"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "person",
+   "role": "ARRESTEE",
+   "column": "perm_same_as_present"
+  },
+  "validation_rules": {
+   "required": true
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 423.9,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_address",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXTAREA",
+  "labels": {
+   "en": "Full Permanent Address",
+   "hi": "स्थायी पता"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "full_address",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "sort_order": 424.5,
+  "full_width": true,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_house_no",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Permanent House No.",
+   "hi": "गिरफ्तार व्यक्ति का स्थायी पता मकान संख्या"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "house_no",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 424.6,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_street",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Permanent Street",
+   "hi": "गिरफ्तार व्यक्ति का स्थायी पता गली / सड़क"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "street",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 424.65,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_colony",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Permanent Colony",
+   "hi": "गिरफ्तार व्यक्ति का स्थायी पता कॉलोनी"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "colony",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 424.7,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_city_town_village",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Permanent Village / City / Town",
+   "hi": "गिरफ्तार व्यक्ति का स्थायी पता गांव / शहर / नगर"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "city_town_village",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 424.75,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_tehsil_block_mandal",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Permanent Tehsil / Block / Mandal",
+   "hi": "गिरफ्तार व्यक्ति का स्थायी पता तहसील / ब्लॉक / मंडल"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "tehsil_block_mandal",
+   "role": "ARRESTEE"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 424.8,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_country",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person Permanent Nationality",
+   "hi": "गिरफ्तार व्यक्ति का स्थायी पता राष्ट्रीयता"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "country",
+   "role": "ARRESTEE"
+  },
+  "options": "$NATIONALITY",
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 424.85,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_state",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person Permanent State",
+   "hi": "गिरफ्तार व्यक्ति का स्थायी पता राज्य"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "state",
+   "role": "ARRESTEE"
+  },
+  "options": "$INDIA_STATES",
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 424.9,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_district",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person Permanent District",
+   "hi": "गिरफ्तार व्यक्ति का स्थायी पता जिला"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "district",
+   "role": "ARRESTEE"
+  },
+  "options": "$INDIA_DISTRICTS",
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 424.95,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_police_station",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "SELECT",
+  "labels": {
+   "en": "Arrested Person Permanent Police Station",
+   "hi": "गिरफ्तार व्यक्ति का स्थायी पता पुलिस स्टेशन (PS)"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "police_station",
+   "role": "ARRESTEE"
+  },
+  "options": [],
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 425,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ },
+ {
+  "field_key": "arrested_perm_pincode",
+  "record_types": [
+   "ARREST"
+  ],
+  "field_type": "TEXT",
+  "labels": {
+   "en": "Arrested Person Permanent Pin Code",
+   "hi": "गिरफ्तार व्यक्ति का स्थायी पता पिन कोड"
+  },
+  "section": "arrested_address",
+  "storage": {
+   "entity": "location",
+   "slot": "permanent",
+   "column": "pincode",
+   "role": "ARRESTEE"
+  },
+  "validation_rules": {
+   "required": false,
+   "pattern": "pincode"
+  },
+  "visible_to_levels": [
+   "PS",
+   "DISTRICT",
+   "HQ"
+  ],
+  "editable_by_levels": [
+   "PS"
+  ],
+  "introduced_at_level": "PS",
+  "repeater_entity": "PERSON_ARRESTED",
+  "sort_order": 425.05,
+  "full_width": false,
+  "readonly": false,
+  "is_active": true,
+  "scope_level": "global"
+ }
+]

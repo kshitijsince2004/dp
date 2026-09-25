@@ -1,0 +1,460 @@
+{
+  "propCats": [
+    {
+      "parent_cd": 4,
+      "parent_srno": 28,
+      "code_type": "ARMS AND AMMUNITION",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 8,
+      "parent_srno": 32,
+      "code_type": "COIN AND CURRENCY",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 9,
+      "parent_srno": 33,
+      "code_type": "AUTOMOBILES AND OTHERS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 10,
+      "parent_srno": 34,
+      "code_type": "CULTURAL PROPERTY",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 11,
+      "parent_srno": 35,
+      "code_type": "DOCUMENTS AND VALUABLE SECURITIES",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 12,
+      "parent_srno": 36,
+      "code_type": "DRUGS/NARCOTIC DRUGS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 13,
+      "parent_srno": 37,
+      "code_type": "ELECTRICAL AND ELECTRONIC GOODS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 14,
+      "parent_srno": 38,
+      "code_type": "EXPLOSIVES",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 17,
+      "parent_srno": 41,
+      "code_type": "JEWELLERY",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 0,
+      "parent_srno": 50,
+      "code_type": "OTHERS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 1,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 1,
+      "parent_srno": 25,
+      "code_type": "AGRICULTURE PRODUCTS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 2,
+      "parent_srno": 26,
+      "code_type": "ANIMALS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 3,
+      "parent_srno": 27,
+      "code_type": "ANIMALS - HIDE/SKIN/REMAINS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 5,
+      "parent_srno": 29,
+      "code_type": "BIRDS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 6,
+      "parent_srno": 30,
+      "code_type": "BUILDING AND BUILDING MATERIALS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 7,
+      "parent_srno": 31,
+      "code_type": "CHEMICALS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 15,
+      "parent_srno": 39,
+      "code_type": "FOREST PRODUCTS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 16,
+      "parent_srno": 40,
+      "code_type": "HOUSEHOLD ARTICLES",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 18,
+      "parent_srno": 42,
+      "code_type": "MACHINERY-INSTRUMENTS/ACCESSORIES",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "parent_cd": 19,
+      "parent_srno": 43,
+      "code_type": "MARINE/RIVER PRODUCTS",
+      "parent_type": "PROPERTY TYPE",
+      "major_property": 0,
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    }
+  ],
+  "firearms": [
+    {
+      "fire_arms_cd": 1,
+      "arms_category_cd": 1,
+      "fire_arms": "Revolver",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 2,
+      "arms_category_cd": 1,
+      "fire_arms": "Pistol",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 3,
+      "arms_category_cd": 1,
+      "fire_arms": "Carbine",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 4,
+      "arms_category_cd": 1,
+      "fire_arms": "Rifle",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 5,
+      "arms_category_cd": 1,
+      "fire_arms": "AK-Type",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 6,
+      "arms_category_cd": 1,
+      "fire_arms": "SLR",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 7,
+      "arms_category_cd": 1,
+      "fire_arms": "Gun BL",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 8,
+      "arms_category_cd": 1,
+      "fire_arms": "Shotgun DB/SB",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 9,
+      "arms_category_cd": 2,
+      "fire_arms": "Cartridge",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 10,
+      "arms_category_cd": 1,
+      "fire_arms": "Local Pistol (Katta / Tamancha)",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 11,
+      "arms_category_cd": 1,
+      "fire_arms": "Local Barrel Gun (Pipe/ Desi/Topidar)",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 12,
+      "arms_category_cd": 1,
+      "fire_arms": "Machine Gun",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 13,
+      "arms_category_cd": 1,
+      "fire_arms": "Launcher",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 14,
+      "arms_category_cd": 1,
+      "fire_arms": "Mortar Gun",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 15,
+      "arms_category_cd": 2,
+      "fire_arms": "Shell",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 16,
+      "arms_category_cd": 3,
+      "fire_arms": "Grenade",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 17,
+      "arms_category_cd": 3,
+      "fire_arms": "Bombs",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 18,
+      "arms_category_cd": 3,
+      "fire_arms": "Mines",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 19,
+      "arms_category_cd": 3,
+      "fire_arms": "Explosive Parts",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "fire_arms_cd": 20,
+      "arms_category_cd": 4,
+      "fire_arms": "FIREARM PARTS",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    }
+  ],
+  "armsCats": [
+    {
+      "arms_category_cd": 1,
+      "arms_category": "FIRE ARMS",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "arms_category_cd": 2,
+      "arms_category": "AMMUNITIONS",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "arms_category_cd": 3,
+      "arms_category": "EXPLOSIVES",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "arms_category_cd": 4,
+      "arms_category": "FIRE ARMS PARTS",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    },
+    {
+      "arms_category_cd": 5,
+      "arms_category": "WEAPONS OTHER THAN FIRE ARMS",
+      "created_at": "2026-07-30T17:32:57.722Z",
+      "updated_at": "2026-07-30T17:32:57.722Z"
+    }
+  ],
+  "propSample": [
+    {
+      "record_id": "373fdc65-d699-4417-b8b6-0d76ca067716",
+      "major_category_id": null,
+      "fire_arm_id": null,
+      "details": "Vehicle stolen from outside residence / public place.",
+      "phone_make": null,
+      "phone_model": null,
+      "vehicle_make": "Honda City",
+      "status": "STOLEN"
+    },
+    {
+      "record_id": "91bee34c-0cc3-4f4c-89c2-68d8028caf34",
+      "major_category_id": null,
+      "fire_arm_id": null,
+      "details": "Vehicle stolen from outside residence / public place.",
+      "phone_make": null,
+      "phone_model": null,
+      "vehicle_make": "TVS Jupiter",
+      "status": "STOLEN"
+    },
+    {
+      "record_id": "37257772-05b3-4dab-ab28-5edbaf99e312",
+      "major_category_id": null,
+      "fire_arm_id": null,
+      "details": "166 grams of contraband substance seized from accused person.",
+      "phone_make": null,
+      "phone_model": null,
+      "vehicle_make": null,
+      "status": "SEIZED"
+    },
+    {
+      "record_id": "7124ffe8-dd0c-47d5-b8f2-1e76002a1820",
+      "major_category_id": null,
+      "fire_arm_id": null,
+      "details": "Vehicle stolen from outside residence / public place.",
+      "phone_make": null,
+      "phone_model": null,
+      "vehicle_make": "TVS Jupiter",
+      "status": "STOLEN"
+    },
+    {
+      "record_id": "17ed8800-90ed-4900-90d3-5d64f4f8da43",
+      "major_category_id": null,
+      "fire_arm_id": null,
+      "details": "Vehicle stolen from outside residence / public place.",
+      "phone_make": null,
+      "phone_model": null,
+      "vehicle_make": "Honda Activa",
+      "status": "STOLEN"
+    },
+    {
+      "record_id": "74bbc5fd-d1e9-45ed-8136-e1a5ca627aac",
+      "major_category_id": null,
+      "fire_arm_id": null,
+      "details": "Vehicle stolen from outside residence / public place.",
+      "phone_make": null,
+      "phone_model": null,
+      "vehicle_make": "Honda City",
+      "status": "STOLEN"
+    },
+    {
+      "record_id": "481b2cca-e666-48c3-baaa-72b0016e194d",
+      "major_category_id": null,
+      "fire_arm_id": null,
+      "details": "130 grams of contraband substance seized from accused person.",
+      "phone_make": null,
+      "phone_model": null,
+      "vehicle_make": null,
+      "status": "SEIZED"
+    },
+    {
+      "record_id": "04a3d389-4540-4059-ab27-4865f674a45c",
+      "major_category_id": null,
+      "fire_arm_id": null,
+      "details": "Vehicle stolen from outside residence / public place.",
+      "phone_make": null,
+      "phone_model": null,
+      "vehicle_make": "Hyundai Creta",
+      "status": "STOLEN"
+    },
+    {
+      "record_id": "d87def28-4025-42e7-9609-7d7a2267c638",
+      "major_category_id": null,
+      "fire_arm_id": null,
+      "details": "Vehicle stolen from outside residence / public place.",
+      "phone_make": null,
+      "phone_model": null,
+      "vehicle_make": "TVS Jupiter",
+      "status": "STOLEN"
+    },
+    {
+      "record_id": "f7df6828-a649-454e-9ece-17ccc3c60f8f",
+      "major_category_id": null,
+      "fire_arm_id": null,
+      "details": "Vehicle stolen from outside residence / public place.",
+      "phone_make": null,
+      "phone_model": null,
+      "vehicle_make": "Hyundai Creta",
+      "status": "STOLEN"
+    }
+  ]
+}

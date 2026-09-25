@@ -1,0 +1,449 @@
+TABLE_SCHEMA	TABLE_NAME	COLUMN_NAME	DATA_TYPE	IS_NULLABLE	COLUMN_DEFAULT
+public	arrest_details	record_id	uuid	NO	null
+public	arrest_details	gd_no	character varying	YES	null
+public	arrest_details	gd_date	date	YES	null
+public	arrest_details	gd_time	time without time zone	YES	null
+public	arrest_details	case_type	character varying	YES	null
+public	arrest_details	case_status	character varying	YES	null
+public	arrest_details	fir_no	character varying	YES	null
+public	arrest_details	fir_date	date	YES	null
+public	arrest_details	is_dd_based	boolean	YES	null
+public	arrest_details	local_head_id	integer	YES	null
+public	arrest_details	beat_id	character varying	YES	null
+public	arrest_details	intimation_datetime	timestamp with time zone	YES	null
+public	arrest_details	intimated_relative_name	character varying	YES	null
+public	arrest_details	intimated_relative_relation	character varying	YES	null
+public	arrest_details	intimation_mode	character varying	YES	null
+public	arrest_details	nafis_prepared	boolean	YES	null
+public	arrest_details	dossier_prepared	boolean	YES	null
+public	arrest_details	arresting_officer_name	character varying	YES	null
+public	arrest_details	arresting_officer_mobile	character varying	YES	null
+public	arrest_details	arresting_officer_rank	character varying	YES	null
+public	arrest_details	custody_status	character varying	YES	null
+public	arrest_details	other_status_reason	character varying	YES	null
+public	arrest_details	recovery	text	YES	null
+public	arrest_details	seizure_desc	text	YES	null
+public	arrest_details	scheme_of_arrest	character varying	YES	null
+public	arrest_details	integrated_pi	boolean	YES	null
+public	arrest_details	group_patrolling	boolean	YES	null
+public	arrest_details	cycle_patrolling	boolean	YES	null
+public	arrest_details	by_antisnatching_team	boolean	YES	null
+public	arrest_details	by_prahari	boolean	YES	null
+public	arrest_details	by_eyes_ears_scheme_members	boolean	YES	null
+public	arrest_details	extra	jsonb	NO	'{}'::jsonb
+public	arrest_details	created_at	timestamp with time zone	NO	now()
+public	arrest_details	updated_at	timestamp with time zone	NO	now()
+public	arrest_details	reason_for_detention	text	YES	null
+public	arrestee_details	person_id	uuid	NO	null
+public	arrestee_details	arrest_date	date	YES	null
+public	arrestee_details	arrest_time	time without time zone	YES	null
+public	arrestee_details	arrest_location_id	uuid	YES	null
+public	arrestee_details	prev_involvement_count	integer	YES	null
+public	arrestee_details	prev_involvement	text	YES	null
+public	arrestee_details	is_po	boolean	YES	null
+public	arrestee_details	po_declared_court	character varying	YES	null
+public	arrestee_details	po_case_reference	character varying	YES	null
+public	arrestee_details	is_bc	boolean	YES	null
+public	arrestee_details	created_at	timestamp with time zone	NO	now()
+public	arrestee_details	updated_at	timestamp with time zone	NO	now()
+public	compilation_records	compilation_id	uuid	NO	null
+public	compilation_records	record_id	uuid	NO	null
+public	compilation_records	ps_id_at_compile	uuid	NO	null
+public	compilation_records	district_id_at_compile	uuid	NO	null
+public	compilation_records	added_at	timestamp with time zone	NO	now()
+public	compilations	id	uuid	NO	gen_random_uuid()
+public	compilations	source_level	character varying	NO	null
+public	compilations	target_level	character varying	NO	null
+public	compilations	route	character varying	NO	'OPS_CHAIN'::character varying
+public	compilations	period	date	NO	null
+public	compilations	source_entity_id	uuid	NO	null
+public	compilations	status	character varying	NO	'DRAFT'::character varying
+public	compilations	compiled_summary	jsonb	YES	null
+public	compilations	submitted_by	uuid	YES	null
+public	compilations	submitted_at	timestamp with time zone	YES	null
+public	compilations	created_at	timestamp with time zone	NO	now()
+public	compilations	updated_at	timestamp with time zone	NO	now()
+public	fir_details	record_id	uuid	NO	null
+public	fir_details	ps_id	uuid	NO	null
+public	fir_details	fir_no	character varying	YES	null
+public	fir_details	fir_year	smallint	YES	null
+public	fir_details	original_fir_no	character varying	YES	null
+public	fir_details	original_fir_year	smallint	YES	null
+public	fir_details	fir_date	date	YES	null
+public	fir_details	gd_no	character varying	YES	null
+public	fir_details	gd_date	date	YES	null
+public	fir_details	gd_time	time without time zone	YES	null
+public	fir_details	case_type	character varying	YES	null
+public	fir_details	source_reference	character varying	YES	null
+public	fir_details	beat_id	character varying	YES	null
+public	fir_details	is_important	boolean	NO	false
+public	fir_details	case_status	character varying	YES	null
+public	fir_details	is_worked_out	boolean	YES	null
+public	fir_details	worked_out_date	date	YES	null
+public	fir_details	local_head_id	integer	YES	null
+public	fir_details	brief_facts	text	YES	null
+public	fir_details	occurrence_location_id	uuid	YES	null
+public	fir_details	occurrence_from_datetime	timestamp with time zone	YES	null
+public	fir_details	occurrence_to_datetime	timestamp with time zone	YES	null
+public	fir_details	info_received_at_ps	timestamp with time zone	YES	null
+public	fir_details	organised_crime	boolean	YES	null
+public	fir_details	cd_uploaded_24h	boolean	YES	null
+public	fir_details	footage_collected	boolean	YES	null
+public	fir_details	rc_no	character varying	YES	null
+public	fir_details	disposal_type	character varying	YES	null
+public	fir_details	extra	jsonb	NO	'{}'::jsonb
+public	fir_details	created_at	timestamp with time zone	NO	now()
+public	fir_details	updated_at	timestamp with time zone	NO	now()
+public	fir_details	transfer_to_type	character varying	YES	null
+public	fir_details	transferred_to_ps_id	uuid	YES	null
+public	fir_details	transferred_to_agency_id	uuid	YES	null
+public	fir_details	date_of_transfer	date	YES	null
+public	fir_details	registered_on_direction	boolean	YES	false
+public	fir_details	direction_authority	character varying	YES	null
+public	fir_details	cheating_amount	numeric	YES	null
+public	fir_details	modus_operandi	character varying	YES	null
+public	fir_details	burglary_mo_cd	integer	YES	null
+public	fir_details	sent_to_court_date	date	YES	null
+public	fir_details	court_case_no	character varying	YES	null
+public	fir_details	court_name	character varying	YES	null
+public	fir_details	court_disposal_type	character varying	YES	null
+public	fir_details	court_disposal_date	date	YES	null
+public	fir_number_counters	ps_id	uuid	NO	null
+public	fir_number_counters	fir_year	smallint	NO	null
+public	fir_number_counters	last_no	integer	NO	0
+public	fir_number_counters	updated_at	timestamp with time zone	NO	now()
+public	hierarchy_nodes	id	uuid	NO	gen_random_uuid()
+public	hierarchy_nodes	node_type	character varying	NO	null
+public	hierarchy_nodes	name	character varying	NO	null
+public	hierarchy_nodes	code	character varying	NO	null
+public	hierarchy_nodes	parent_id	uuid	YES	null
+public	hierarchy_nodes	metadata	jsonb	NO	'{}'::jsonb
+public	hierarchy_nodes	is_active	boolean	NO	true
+public	hierarchy_nodes	created_at	timestamp with time zone	NO	now()
+public	hierarchy_nodes	updated_at	timestamp with time zone	NO	now()
+public	investigating_officers	id	uuid	NO	gen_random_uuid()
+public	investigating_officers	user_id	uuid	YES	null
+public	investigating_officers	name	character varying	NO	null
+public	investigating_officers	rank	character varying	YES	null
+public	investigating_officers	pis_no	character varying	YES	null
+public	investigating_officers	mobile	character varying	YES	null
+public	investigating_officers	ps_id	uuid	YES	null
+public	investigating_officers	is_active	boolean	NO	true
+public	investigating_officers	created_at	timestamp with time zone	NO	now()
+public	investigating_officers	updated_at	timestamp with time zone	NO	now()
+public	link_type_registry	id	uuid	NO	gen_random_uuid()
+public	link_type_registry	code	character varying	NO	null
+public	link_type_registry	source_record_type	character varying	YES	null
+public	link_type_registry	target_record_type	character varying	YES	null
+public	link_type_registry	label	character varying	YES	null
+public	link_type_registry	cardinality	character varying	NO	'ONE_TO_MANY'::character varying
+public	link_type_registry	is_active	boolean	NO	true
+public	link_type_registry	created_at	timestamp with time zone	NO	now()
+public	link_type_registry	updated_at	timestamp with time zone	NO	now()
+public	locations	id	uuid	NO	gen_random_uuid()
+public	locations	house_no	character varying	YES	null
+public	locations	street	character varying	YES	null
+public	locations	colony	character varying	YES	null
+public	locations	landmark	character varying	YES	null
+public	locations	city_town_village	character varying	YES	null
+public	locations	tehsil_block_mandal	character varying	YES	null
+public	locations	district	character varying	YES	null
+public	locations	state	character varying	YES	null
+public	locations	country	character varying	YES	null
+public	locations	police_station	character varying	YES	null
+public	locations	pincode	character varying	YES	null
+public	locations	latitude	numeric	YES	null
+public	locations	longitude	numeric	YES	null
+public	locations	full_address	character varying	YES	null
+public	locations	extra	jsonb	NO	'{}'::jsonb
+public	locations	created_at	timestamp with time zone	NO	now()
+public	locations	updated_at	timestamp with time zone	NO	now()
+public	missing_details	record_id	uuid	NO	null
+public	missing_details	gd_no	character varying	YES	null
+public	missing_details	gd_date	date	YES	null
+public	missing_details	missing_type	character varying	YES	null
+public	missing_details	missing_status	character varying	YES	null
+public	missing_details	operator_name	character varying	YES	null
+public	missing_details	source	character varying	YES	null
+public	missing_details	zipnet_no	character varying	YES	null
+public	missing_details	case_registered	boolean	YES	null
+public	missing_details	fir_no	character varying	YES	null
+public	missing_details	fir_date	date	YES	null
+public	missing_details	remarks	text	YES	null
+public	missing_details	extra	jsonb	NO	'{}'::jsonb
+public	missing_details	created_at	timestamp with time zone	NO	now()
+public	missing_details	updated_at	timestamp with time zone	NO	now()
+public	missing_person_details	person_id	uuid	NO	null
+public	missing_person_details	missing_date	date	YES	null
+public	missing_person_details	missing_location_id	uuid	YES	null
+public	missing_person_details	last_seen_place	text	YES	null
+public	missing_person_details	found_date	date	YES	null
+public	missing_person_details	found_location_id	uuid	YES	null
+public	missing_person_details	mp_known	boolean	YES	null
+public	missing_person_details	mental_state	character varying	YES	null
+public	missing_person_details	created_at	timestamp with time zone	NO	now()
+public	missing_person_details	updated_at	timestamp with time zone	NO	now()
+public	pcr_call_details	record_id	uuid	NO	null
+public	pcr_call_details	pcr_no	character varying	YES	null
+public	pcr_call_details	gd_no	character varying	YES	null
+public	pcr_call_details	gd_date	date	YES	null
+public	pcr_call_details	gd_time	time without time zone	YES	null
+public	pcr_call_details	call_head	character varying	YES	null
+public	pcr_call_details	call_gist	text	YES	null
+public	pcr_call_details	incident_location_id	uuid	YES	null
+public	pcr_call_details	occurrence_location_id	uuid	YES	null
+public	pcr_call_details	incident_datetime	timestamp with time zone	YES	null
+public	pcr_call_details	arrival_time	time without time zone	YES	null
+public	pcr_call_details	action_taken	text	YES	null
+public	pcr_call_details	final_call_status	character varying	YES	null
+public	pcr_call_details	extra	jsonb	NO	'{}'::jsonb
+public	pcr_call_details	created_at	timestamp with time zone	NO	now()
+public	pcr_call_details	updated_at	timestamp with time zone	NO	now()
+public	person_descriptions	person_id	uuid	NO	null
+public	person_descriptions	height	character varying	YES	null
+public	person_descriptions	built	character varying	YES	null
+public	person_descriptions	complexion	character varying	YES	null
+public	person_descriptions	face	character varying	YES	null
+public	person_descriptions	hair	character varying	YES	null
+public	person_descriptions	beard	character varying	YES	null
+public	person_descriptions	moustache	character varying	YES	null
+public	person_descriptions	upper_dress_color	character varying	YES	null
+public	person_descriptions	lower_dress_color	character varying	YES	null
+public	person_descriptions	identification_marks	text	YES	null
+public	person_descriptions	physical_description	text	YES	null
+public	person_descriptions	age_range	character varying	YES	null
+public	person_descriptions	created_at	timestamp with time zone	NO	now()
+public	person_descriptions	updated_at	timestamp with time zone	NO	now()
+public	persons	id	uuid	NO	gen_random_uuid()
+public	persons	record_id	uuid	NO	null
+public	persons	role	character varying	NO	null
+public	persons	name	character varying	YES	null
+public	persons	relative_name	character varying	YES	null
+public	persons	relation_type	character varying	YES	null
+public	persons	gender	character varying	YES	null
+public	persons	age	smallint	YES	null
+public	persons	dob	date	YES	null
+public	persons	is_minor	boolean	YES	null
+public	persons	nick_names	jsonb	NO	'[]'::jsonb
+public	persons	mobile	character varying	YES	null
+public	persons	qualification	character varying	YES	null
+public	persons	present_location_id	uuid	YES	null
+public	persons	perm_location_id	uuid	YES	null
+public	persons	perm_same_as_present	boolean	NO	false
+public	persons	relation_to_subject	character varying	YES	null
+public	persons	sort_order	integer	NO	0
+public	persons	extra	jsonb	NO	'{}'::jsonb
+public	persons	created_at	timestamp with time zone	NO	now()
+public	persons	updated_at	timestamp with time zone	NO	now()
+public	persons	social_category	character varying	YES	null
+public	persons	education	character varying	YES	null
+public	persons	financial_status	character varying	YES	null
+public	record_links	id	uuid	NO	gen_random_uuid()
+public	record_links	link_type_id	uuid	NO	null
+public	record_links	source_record_id	uuid	NO	null
+public	record_links	target_record_id	uuid	NO	null
+public	record_links	metadata	jsonb	NO	'{}'::jsonb
+public	record_links	created_by	uuid	YES	null
+public	record_links	created_at	timestamp with time zone	NO	now()
+public	record_offences	id	uuid	NO	gen_random_uuid()
+public	record_offences	record_id	uuid	NO	null
+public	record_offences	act_id	integer	YES	null
+public	record_offences	other_act_name	character varying	YES	null
+public	record_offences	section_id	text	YES	null
+public	record_offences	major_head_id	integer	YES	null
+public	record_offences	minor_head_id	integer	YES	null
+public	record_offences	is_primary	boolean	NO	false
+public	record_offences	sort_order	integer	NO	0
+public	record_offences	created_at	timestamp with time zone	NO	now()
+public	record_offences	updated_at	timestamp with time zone	NO	now()
+public	record_properties	id	uuid	NO	gen_random_uuid()
+public	record_properties	record_id	uuid	NO	null
+public	record_properties	person_id	uuid	YES	null
+public	record_properties	major_category_id	integer	YES	null
+public	record_properties	minor_category_id	integer	YES	null
+public	record_properties	status	character varying	NO	'STOLEN'::character varying
+public	record_properties	details	text	YES	null
+public	record_properties	uid	character varying	YES	null
+public	record_properties	estimated_value	numeric	YES	null
+public	record_properties	automobile_id	integer	YES	null
+public	record_properties	fire_arm_id	integer	YES	null
+public	record_properties	arms_subtype_id	integer	YES	null
+public	record_properties	arms_made_id	integer	YES	null
+public	record_properties	jewelry_type_id	integer	YES	null
+public	record_properties	currency_type_id	integer	YES	null
+public	record_properties	document_type_id	integer	YES	null
+public	record_properties	drug_type_id	integer	YES	null
+public	record_properties	electric_good_id	integer	YES	null
+public	record_properties	explosive_type_id	integer	YES	null
+public	record_properties	cultural_property_id	integer	YES	null
+public	record_properties	phone_number	character varying	YES	null
+public	record_properties	phone_make	character varying	YES	null
+public	record_properties	phone_model	character varying	YES	null
+public	record_properties	phone_imei	character varying	YES	null
+public	record_properties	phone_color	character varying	YES	null
+public	record_properties	vehicle_no	character varying	YES	null
+public	record_properties	vehicle_make	character varying	YES	null
+public	record_properties	vehicle_model	character varying	YES	null
+public	record_properties	vehicle_color	character varying	YES	null
+public	record_properties	vehicle_chassis_no	character varying	YES	null
+public	record_properties	vehicle_engine_no	character varying	YES	null
+public	record_properties	sort_order	integer	NO	0
+public	record_properties	extra	jsonb	NO	'{}'::jsonb
+public	record_properties	created_at	timestamp with time zone	NO	now()
+public	record_properties	updated_at	timestamp with time zone	NO	now()
+public	record_properties	quantity	numeric	YES	null
+public	record_properties	unit_cd	integer	YES	null
+public	record_properties	recovery_date	date	YES	null
+public	record_properties	recovery_agency	character varying	YES	null
+public	record_revisions	id	uuid	NO	gen_random_uuid()
+public	record_revisions	record_id	uuid	NO	null
+public	record_revisions	revision_number	integer	NO	null
+public	record_revisions	change_type	character varying	NO	null
+public	record_revisions	field_changes	jsonb	NO	'[]'::jsonb
+public	record_revisions	level	character varying	NO	'PS'::character varying
+public	record_revisions	changed_by	uuid	NO	null
+public	record_revisions	changed_at	timestamp with time zone	NO	now()
+public	record_revisions	comment	text	YES	null
+public	record_revisions	reason	text	YES	null
+public	record_revisions	ip_address	character varying	YES	null
+public	record_revisions	prev_hash	character	NO	null
+public	record_revisions	row_hash	character	NO	null
+public	record_revisions	hash_version	smallint	NO	1
+public	record_status_events	id	uuid	NO	gen_random_uuid()
+public	record_status_events	record_id	uuid	NO	null
+public	record_status_events	property_id	uuid	YES	null
+public	record_status_events	status_field	character varying	NO	null
+public	record_status_events	old_value	character varying	YES	null
+public	record_status_events	new_value	character varying	NO	null
+public	record_status_events	effective_date	date	NO	null
+public	record_status_events	changed_by	uuid	NO	null
+public	record_status_events	changed_at	timestamp with time zone	NO	now()
+public	record_status_events	comment	text	YES	null
+public	records	id	uuid	NO	gen_random_uuid()
+public	records	record_type	character varying	NO	null
+public	records	ps_id	uuid	NO	null
+public	records	district_id	uuid	NO	null
+public	records	sub_div_id	uuid	YES	null
+public	records	io_id	uuid	YES	null
+public	records	original_ps_id	uuid	YES	null
+public	records	current_status	character varying	NO	'DRAFT'::character varying
+public	records	current_level	character varying	NO	'PS'::character varying
+public	records	record_date	date	NO	null
+public	records	is_frozen	boolean	NO	false
+public	records	is_legacy	boolean	NO	false
+public	records	source_system	character varying	YES	null
+public	records	legacy_ref	character varying	YES	null
+public	records	imported_at	timestamp with time zone	YES	null
+public	records	imported_by	uuid	YES	null
+public	records	created_by	uuid	NO	null
+public	records	updated_by	uuid	YES	null
+public	records	created_at	timestamp with time zone	NO	now()
+public	records	updated_at	timestamp with time zone	NO	now()
+public	records	import_batch_id	uuid	YES	null
+public	records	registration_date	date	YES	null
+public	uidb_details	record_id	uuid	NO	null
+public	uidb_details	uidb_no	character varying	YES	null
+public	uidb_details	gd_no	character varying	YES	null
+public	uidb_details	gd_date	date	YES	null
+public	uidb_details	inquest_sections	character varying	YES	null
+public	uidb_details	local_head_id	integer	YES	null
+public	uidb_details	found_date	date	YES	null
+public	uidb_details	found_time	time without time zone	YES	null
+public	uidb_details	found_location_id	uuid	YES	null
+public	uidb_details	duty_officer	character varying	YES	null
+public	uidb_details	zipnet_no	character varying	YES	null
+public	uidb_details	identified	boolean	YES	null
+public	uidb_details	cause_of_death	character varying	YES	null
+public	uidb_details	deceased_relative_name	character varying	YES	null
+public	uidb_details	deceased_relation_type	character varying	YES	null
+public	uidb_details	filed_by_acp_sdm	boolean	YES	null
+public	uidb_details	filed_by_acp_sdm_date	date	YES	null
+public	uidb_details	mortuary_remarks	text	YES	null
+public	uidb_details	uidb_status	character varying	YES	null
+public	uidb_details	extra	jsonb	NO	'{}'::jsonb
+public	uidb_details	created_at	timestamp with time zone	NO	now()
+public	uidb_details	updated_at	timestamp with time zone	NO	now()
+public	users	id	uuid	NO	gen_random_uuid()
+public	users	username	character varying	NO	null
+public	users	badge_no	character varying	NO	null
+public	users	name	character varying	NO	null
+public	users	password_hash	character varying	NO	null
+public	users	role	character varying	NO	null
+public	users	ps_id	uuid	YES	null
+public	users	district_id	uuid	YES	null
+public	users	sub_div_id	uuid	YES	null
+public	users	is_active	boolean	NO	true
+public	users	last_login	timestamp with time zone	YES	null
+public	users	created_at	timestamp with time zone	NO	now()
+public	users	updated_at	timestamp with time zone	NO	now()
+public	workflow_transitions	id	uuid	NO	gen_random_uuid()
+public	workflow_transitions	record_id	uuid	NO	null
+public	workflow_transitions	from_status	character varying	YES	null
+public	workflow_transitions	to_status	character varying	NO	null
+public	workflow_transitions	from_level	character varying	YES	null
+public	workflow_transitions	to_level	character varying	YES	null
+public	workflow_transitions	action	character varying	NO	null
+public	workflow_transitions	performed_by	uuid	YES	null
+public	workflow_transitions	performed_at	timestamp with time zone	NO	now()
+public	workflow_transitions	comment	text	YES	null
+public	workflow_transitions	target_fields	jsonb	NO	'[]'::jsonb
+public	workflow_transitions_config	id	uuid	NO	gen_random_uuid()
+public	workflow_transitions_config	code	character varying	NO	null
+public	workflow_transitions_config	record_type	character varying	NO	'*'::character varying
+public	workflow_transitions_config	from_status	character varying	NO	null
+public	workflow_transitions_config	action	character varying	NO	null
+public	workflow_transitions_config	to_status	character varying	NO	null
+public	workflow_transitions_config	from_level	character varying	YES	null
+public	workflow_transitions_config	to_level	character varying	YES	null
+public	workflow_transitions_config	allowed_roles	jsonb	NO	'[]'::jsonb
+public	workflow_transitions_config	requires_comment	boolean	NO	false
+public	workflow_transitions_config	sla_hours	integer	YES	null
+public	workflow_transitions_config	is_active	boolean	NO	true
+public	workflow_transitions_config	checksum	character varying	YES	null
+public	workflow_transitions_config	created_at	timestamp with time zone	NO	now()
+public	workflow_transitions_config	updated_at	timestamp with time zone	NO	now()
+ref	acts	act_cd	integer	NO	null
+ref	acts	act_long	text	NO	null
+ref	acts	created_at	timestamp with time zone	NO	now()
+ref	acts	updated_at	timestamp with time zone	NO	now()
+ref	arms_categories	arms_category_cd	integer	NO	null
+ref	arms_categories	arms_category	character varying	NO	null
+ref	arms_categories	created_at	timestamp with time zone	NO	now()
+ref	arms_categories	updated_at	timestamp with time zone	NO	now()
+ref	automobiles	automobile_cd	integer	NO	null
+ref	automobiles	automobile	character varying	NO	null
+ref	automobiles	created_at	timestamp with time zone	NO	now()
+ref	automobiles	updated_at	timestamp with time zone	NO	now()
+ref	beats	beat_cd	character varying	NO	null
+ref	beats	beat_name	text	NO	null
+ref	beats	source_ps_cd	character varying	NO	null
+ref	beats	ps_id	uuid	YES	null
+ref	beats	created_at	timestamp with time zone	NO	now()
+ref	beats	updated_at	timestamp with time zone	NO	now()
+ref	drug_types	drug_type_cd	integer	NO	null
+ref	drug_types	drug_type	character varying	NO	null
+ref	drug_types	created_at	timestamp with time zone	NO	now()
+ref	drug_types	updated_at	timestamp with time zone	NO	now()
+ref	fire_arms	fire_arms_cd	integer	NO	null
+ref	fire_arms	arms_category_cd	integer	NO	null
+ref	fire_arms	fire_arms	character varying	NO	null
+ref	fire_arms	created_at	timestamp with time zone	NO	now()
+ref	fire_arms	updated_at	timestamp with time zone	NO	now()
+ref	local_heads	local_head_cd	integer	NO	null
+ref	local_heads	local_head	character varying	NO	null
+ref	local_heads	crime_category	character varying	NO	'OTHER'::character varying
+ref	local_heads	created_at	timestamp with time zone	NO	now()
+ref	local_heads	updated_at	timestamp with time zone	NO	now()
+ref	local_heads	canonical_code	character varying	YES	null
+ref	sections	section_code	text	NO	null
+ref	sections	section_cd	character varying	YES	null
+ref	sections	act_sec_cd	character varying	NO	null
+ref	sections	section	character varying	YES	null
+ref	sections	section_desc	text	YES	null
+ref	sections	pnsh_gt_7yrs	boolean	YES	null
+ref	sections	created_at	timestamp with time zone	NO	now()
+ref	sections	updated_at	timestamp with time zone	NO	now()
+ref	units	unit_cd	integer	NO	nextval('ref.units_unit_cd_seq'::regclass)
+ref	units	unit	character varying	NO	null
+ref	units	to_kg_factor	numeric	NO	1.0
+ref	units	created_at	timestamp with time zone	NO	now()

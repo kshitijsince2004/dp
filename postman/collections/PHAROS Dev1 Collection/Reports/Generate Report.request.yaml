@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/reports/generate"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+      "template_id": "cases-register",
+      "format": "pdf",
+      "filters": {
+        "from": "2026-06-01",
+        "to": "2026-06-30"
+      }
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+order: 2000

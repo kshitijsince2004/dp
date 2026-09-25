@@ -1,0 +1,37 @@
+{
+  "template_type": "LINKED",
+  "primary_record_type": "ARREST",
+  "link_type_code": "CASE_ARREST",
+  "direction": "target_to_source",
+  "header": {
+    "title_en": "District – List of Arrested Persons for Last 24 Hours",
+    "title_hi": "जिला – पिछले 24 घंटों में गिरफ़्तार व्यक्तियों की सूची",
+    "short_name_en": "Arrested 24Hr List"
+  },
+  "columns": [
+    { "key": "arrested_name",    "label": "Name / Nick Name",            "source": "arrest" },
+    { "key": "parents_name",     "label": "Father / Husband Name",       "source": "arrest" },
+    { "key": "arrested_address", "label": "Address",                     "source": "arrest" },
+    { "key": "age_gender",       "label": "Age",                         "source": "arrest" },
+    { "key": "fir_dd_no",        "label": "FIR / DD No.",                "source": "derived" },
+    { "key": "arrest_date",      "label": "Date of Arrest",              "source": "arrest" },
+    { "key": "sections",         "label": "Under Section (U/S)",         "source": "arrest" },
+    { "key": "ps_name",          "label": "Police Station",              "source": "hierarchy" },
+    { "key": "io_name",          "label": "Name of IO",                  "source": "arrest" },
+    { "key": "io_rank",          "label": "Rank of IO",                  "source": "arrest" },
+    { "key": "io_mobile",        "label": "Mobile No. of IO",            "source": "arrest" },
+    { "key": "status",           "label": "Remarks (Remand/Bail etc.)",  "source": "arrest" }
+  ],
+  "header_groups": [
+    { "label": "S. No.",           "span": 1 },
+    { "label": "NAME / NICK NAME", "span": 4 },
+    { "label": "FIR / DD No.",     "span": 1 },
+    { "label": "Date of Arrest",   "span": 1 },
+    { "label": "Under Section",    "span": 1 },
+    { "label": "Police Station",   "span": 1 },
+    { "label": "Name of IO",       "span": 1 },
+    { "label": "Rank of IO",       "span": 1 },
+    { "label": "Mobile No. of IO", "span": 1 },
+    { "label": "Remarks",          "span": 1 }
+  ]
+}

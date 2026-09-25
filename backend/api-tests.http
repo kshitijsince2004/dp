@@ -1,0 +1,74 @@
+@baseUrl = http://localhost:5000/api/v1
+
+### 1. Health Check
+GET {{baseUrl}}/health
+
+### =================================================================
+### AUTHENTICATION
+### =================================================================
+
+### 2. Login as System Admin (SA001)
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "badge_no": "SA001",
+  "password": "Test@1234"
+}
+
+### Save Admin Token from Login Response
+@adminToken = {{loginAdmin.response.body.data.accessToken}}
+
+
+### 3. Get Current User Profile (Me) - Admin
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{adminToken}}
+
+
+### 4. Login as SHO (SHO001)
+# @name loginSHO
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "badge_no": "SHO001",
+  "password": "Test@1234"
+}
+
+### Save SHO Token from Login Response
+@shoToken = {{loginSHO.response.body.data.accessToken}}
+
+
+### 5. Get Current User Profile (Me) - SHO
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{shoToken}}
+
+
+### =================================================================
+### DAILY DIARY MODULE
+### =================================================================
+
+### 6. Get Daily Diary Records Preview
+GET {{baseUrl}}/daily-diary/records-preview
+Authorization: Bearer {{shoToken}}
+
+
+### 7. Get All Daily Diary Data
+GET {{baseUrl}}/daily-diary/data
+Authorization: Bearer {{shoToken}}
+
+
+### 8. Get Daily Diary Data by Table Name
+### Replace 'table_name' with a valid table name in your database
+GET {{baseUrl}}/daily-diary/data/table_name
+Authorization: Bearer {{shoToken}}
+
+
+### =================================================================
+### USERS MODULE
+### =================================================================
+
+### 9. Get Users List (Admin Only)
+GET {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}

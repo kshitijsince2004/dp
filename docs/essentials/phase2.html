@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PHAROS — Phase 2 Sprint Plan</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.6;color:#1e293b;background:#f8fafc}
+.page{display:flex;min-height:100vh}
+.sidebar{width:220px;flex-shrink:0;background:#1e293b;position:sticky;top:0;height:100vh;overflow-y:auto;padding:1.25rem 0}
+.sidebar-logo{padding:0 1rem 1rem;border-bottom:1px solid #334155;margin-bottom:1rem}
+.sidebar-logo .n{font-size:1rem;font-weight:700;color:#f1f5f9}.sidebar-logo .s{font-size:0.65rem;color:#64748b;margin-top:2px}
+.nav-group{margin-bottom:0.75rem}.nav-label{font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#475569;padding:0 1rem;margin-bottom:0.2rem}
+.sidebar a{display:block;padding:0.28rem 1rem;font-size:0.78rem;color:#94a3b8;text-decoration:none;border-left:2px solid transparent;transition:all 0.1s}
+.sidebar a:hover{color:#f1f5f9;border-left-color:#3b82f6}
+.main{flex:1;padding:2rem 3rem;max-width:1180px}
+section{margin-bottom:2.75rem;scroll-margin-top:1.5rem}
+h2{font-size:1.05rem;font-weight:700;color:#0f172a;border-bottom:2px solid #e2e8f0;padding-bottom:0.45rem;margin-bottom:1.1rem;display:flex;align-items:center;gap:0.5rem}
+h3{font-size:0.88rem;font-weight:700;color:#1e293b;margin:1rem 0 0.4rem}
+h4{font-size:0.8rem;font-weight:700;color:#334155;margin:0.6rem 0 0.25rem}
+p{color:#475569;font-size:0.85rem;margin-bottom:0.7rem}
+.sn{font-size:0.65rem;font-weight:700;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;padding:0.12rem 0.4rem;border-radius:3px;font-family:monospace}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 60%,#312e81 100%);border-radius:10px;padding:1.75rem 2.25rem;margin-bottom:2.5rem;color:white}
+.hero h1{color:white;font-size:1.7rem;font-weight:800;margin-bottom:0.2rem}
+.hero .sub{color:#93c5fd;font-size:0.85rem;margin-bottom:1.25rem}
+.hero-grid{display:flex;flex-wrap:wrap;gap:0.6rem}
+.hero-badge{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:5px;padding:0.35rem 0.65rem;font-size:0.75rem;color:#e2e8f0}
+.hero-badge strong{color:white;display:block;font-size:0.8rem}
+.p1-done{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.35);border-radius:8px;padding:1rem 1.25rem;margin-top:1.25rem}
+.p1-done .lbl{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#86efac;margin-bottom:0.5rem}
+.p1-done .items{display:flex;flex-wrap:wrap;gap:0.4rem}
+.p1-done .item{background:rgba(34,197,94,0.2);border:1px solid rgba(34,197,94,0.3);border-radius:4px;padding:0.2rem 0.55rem;font-size:0.72rem;color:#bbf7d0}
+
+/* Notes */
+.note{background:#eff6ff;border-left:3px solid #3b82f6;border-radius:0 5px 5px 0;padding:0.65rem 0.9rem;font-size:0.8rem;color:#1e3a8a;margin:0.6rem 0 1rem}
+.note.warn{background:#fffbeb;border-left-color:#f59e0b;color:#78350f}
+.note.danger{background:#fef2f2;border-left-color:#ef4444;color:#7f1d1d}
+.note.ok{background:#f0fdf4;border-left-color:#22c55e;color:#14532d}
+.note.purple{background:#faf5ff;border-left-color:#8b5cf6;color:#4c1d95}
+
+/* Method badges */
+.m{display:inline-block;padding:0.12rem 0.4rem;border-radius:3px;font-size:0.62rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap}
+.mg{background:#dbeafe;color:#1d4ed8}.mp{background:#dcfce7;color:#15803d}.mu{background:#fff7ed;color:#c2410c}
+.mpa{background:#fef9c3;color:#854d0e}.md{background:#fee2e2;color:#b91c1c}
+
+/* Owner badges */
+.ow{display:inline-block;padding:0.1rem 0.38rem;border-radius:3px;font-size:0.62rem;font-weight:700}
+.o1{background:#eff6ff;color:#1d4ed8}.o2{background:#ecfdf5;color:#047857}.o3{background:#f5f3ff;color:#6d28d9}.osh{background:#fff7ed;color:#c2410c}
+
+/* Priority badges */
+.pri{display:inline-block;padding:0.1rem 0.4rem;border-radius:3px;font-size:0.62rem;font-weight:700}
+.pcrit{background:#fef2f2;color:#b91c1c}.phigh{background:#fff7ed;color:#c2410c}.pmed{background:#fef9c3;color:#854d0e}.plow{background:#f0fdf4;color:#15803d}
+
+/* Dev packages */
+.dp{border:1px solid var(--db);border-radius:8px;overflow:hidden;margin-bottom:1.75rem}
+.dp-head{background:var(--dl);border-bottom:1px solid var(--db);padding:0.75rem 1.1rem;display:flex;align-items:center;gap:0.65rem}
+.dp-av{width:30px;height:30px;border-radius:50%;background:var(--dc);color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+.dp-name{font-size:0.92rem;font-weight:700;color:var(--dc)}.dp-role{font-size:0.72rem;color:#64748b}
+.dp-body{padding:1.1rem}
+
+/* Task list */
+.tsk{list-style:none;margin:0.4rem 0 0.9rem}
+.tsk li{display:flex;gap:0.5rem;padding:0.3rem 0;border-bottom:1px solid #f8fafc;font-size:0.8rem;color:#374151;align-items:flex-start}
+.tsk li:last-child{border-bottom:none}
+.tsk li::before{content:'○';color:#cbd5e1;flex-shrink:0;margin-top:1px;font-size:0.75rem}
+.tsk li.crit::before{content:'★';color:#dc2626;font-size:0.65rem}
+.tsk li b{color:#0f172a}
+
+/* Sprint timeline */
+.sprint-grid{display:grid;grid-template-columns:100px repeat(3,1fr);border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;font-size:0.76rem;margin:0.75rem 0 1.5rem}
+.sg-head{background:#1e293b;color:#f1f5f9;padding:0.5rem 0.6rem;font-weight:700;font-size:0.72rem;text-align:center}
+.sg-wk{background:#0f172a;color:#60a5fa;padding:0.5rem 0.6rem;font-weight:700;font-size:0.72rem;text-align:center;border-right:1px solid #334155}
+.sg-dev{padding:0.4rem 0.65rem;font-weight:700;font-size:0.7rem;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;background:#fafafa}
+.sg-c{padding:0.4rem 0.6rem;border-right:1px solid #e2e8f0;border-bottom:1px solid #f1f5f9;font-size:0.72rem;color:#374151;vertical-align:top}
+.sg-c:last-child{border-right:none}
+.sg-i{padding-left:0.55rem;position:relative;margin-bottom:0.15rem}
+.sg-i::before{content:'·';position:absolute;left:0;color:#94a3b8}
+.sg-i.cr{color:#dc2626;font-weight:600}.sg-i.cr::before{content:'★';font-size:0.6rem}
+
+/* API Table */
+.at-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:7px;margin:0.6rem 0 1.25rem}
+.at{width:100%;border-collapse:collapse;font-size:0.76rem;min-width:750px}
+.at thead th{background:#f8fafc;padding:0.45rem 0.65rem;border-bottom:1px solid #e2e8f0;text-align:left;font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;white-space:nowrap}
+.at tbody td{padding:0.38rem 0.65rem;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#374151}
+.at tbody tr:last-child td{border-bottom:none}
+.at tbody tr:hover td{background:#fafafa}
+.ep{font-family:'Courier New',monospace;font-size:0.76rem;color:#0f172a}
+
+/* Feature cards */
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0.65rem;margin:0.75rem 0 1.25rem}
+.feat{background:white;border:1px solid #e2e8f0;border-radius:7px;padding:0.85rem 1rem;border-top:3px solid var(--fc)}
+.feat-tag{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--fc);margin-bottom:0.25rem}
+.feat-name{font-size:0.88rem;font-weight:700;color:#0f172a;margin-bottom:0.3rem}
+.feat-desc{font-size:0.78rem;color:#64748b;line-height:1.5}
+
+/* DB schemas */
+pre{background:#0f172a;border-radius:7px;padding:0.9rem 1.1rem;overflow-x:auto;font-family:'Courier New',monospace;font-size:0.74rem;line-height:1.65;color:#94a3b8;margin:0.6rem 0 1.1rem}
+pre .c{color:#475569}pre .k{color:#93c5fd;font-weight:600}pre .s{color:#6ee7b7}pre .t{color:#e2e8f0;font-weight:600}
+code{font-family:'Courier New',monospace;font-size:0.82em;background:#f1f5f9;border:1px solid #e2e8f0;padding:0.1em 0.35em;border-radius:3px;color:#0f172a}
+
+/* Arch principle cards */
+.arch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.65rem;margin:0.75rem 0 1.25rem}
+.arch{background:white;border:1px solid #e2e8f0;border-radius:7px;padding:0.85rem 1rem}
+.arch-num{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:0.2rem;font-family:monospace}
+.arch-name{font-size:0.9rem;font-weight:700;color:#0f172a;margin-bottom:0.3rem}
+.arch-desc{font-size:0.78rem;color:#64748b;line-height:1.5}
+
+/* Phase tracker */
+.phase-track{display:flex;gap:0;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin:0.75rem 0 1.5rem}
+.ph{flex:1;padding:0.7rem 0.9rem;border-right:1px solid #e2e8f0}
+.ph:last-child{border-right:none}
+.ph.done{background:#f0fdf4}
+.ph.active{background:#eff6ff;position:relative}
+.ph.active::after{content:'← NOW';position:absolute;top:6px;right:6px;font-size:0.55rem;font-weight:700;color:#2563eb;background:#dbeafe;padding:0.1rem 0.3rem;border-radius:3px}
+.ph-label{font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:0.2rem}
+.ph-name{font-size:0.8rem;font-weight:700;color:#0f172a;margin-bottom:0.1rem}
+.ph-time{font-size:0.7rem;color:#64748b}
+
+/* Event bus */
+.ev{background:white;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:0.65rem;overflow:hidden}
+.ev-name{background:#fef3c7;border-bottom:1px solid #fde68a;padding:0.35rem 0.75rem;font-family:'Courier New',monospace;font-size:0.8rem;font-weight:700;color:#78350f}
+.ev-meta{padding:0.5rem 0.75rem;display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:0.5rem;font-size:0.74rem}
+.ev-lbl{font-size:0.62rem;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:0.06em}
+.ev-val{font-family:'Courier New',monospace;color:#374151;font-size:0.72rem;margin-top:0.15rem}
+
+/* Migration section */
+.mig-table{width:100%;border-collapse:collapse;font-size:0.78rem;border:1px solid #e2e8f0;border-radius:7px;overflow:hidden;margin:0.6rem 0 1.1rem}
+.mig-table th{background:#f8fafc;padding:0.45rem 0.75rem;border-bottom:1px solid #e2e8f0;text-align:left;font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b}
+.mig-table td{padding:0.4rem 0.75rem;border-bottom:1px solid #f1f5f9;color:#374151;vertical-align:top}
+.mig-table tr:last-child td{border-bottom:none}
+
+/* Flexibility pillars */
+.flex-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.65rem;margin:0.75rem 0 1.5rem}
+.flex-card{background:white;border:1px solid #e2e8f0;border-left:4px solid var(--fcc);border-radius:0 7px 7px 0;padding:0.75rem 1rem}
+.flex-label{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--fcc);margin-bottom:0.2rem}
+.flex-title{font-size:0.85rem;font-weight:700;color:#0f172a;margin-bottom:0.25rem}
+.flex-desc{font-size:0.76rem;color:#64748b;line-height:1.5}
+
+/* Stack cards */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:0.6rem;margin:0.75rem 0}
+.si{background:white;border:1px solid #e2e8f0;border-radius:6px;padding:0.75rem}
+.si-layer{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:0.2rem}
+.si-choice{font-size:0.88rem;font-weight:700;color:#0f172a}
+.si-detail{font-size:0.73rem;color:#64748b;margin-top:0.1rem}
+
+/* Checklist */
+.cl{list-style:none}.cl li{display:flex;gap:0.6rem;padding:0.32rem 0;font-size:0.8rem;color:#374151;border-bottom:1px solid #f8fafc}
+.cl li:last-child{border-bottom:none}
+.cl li::before{content:'☐';font-size:0.95rem;flex-shrink:0;color:#94a3b8}
+.cl li.cat{font-weight:700;color:#0f172a;margin-top:0.5rem}.cl li.cat::before{content:'▸';color:#3b82f6}
+
+@media(max-width:900px){.sidebar{display:none}.main{padding:1.5rem}.sprint-grid{grid-template-columns:80px 1fr}}
+@media print{.sidebar{display:none}.main{padding:1rem}pre{background:#f8fafc;color:#374151}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><div class="n">PHAROS</div><div class="s">Phase 2 Sprint Plan · Dev 3 Lead</div></div>
+  <nav>
+    <div class="nav-group"><div class="nav-label">Overview</div>
+      <a href="#status">Phase 1 status</a>
+      <a href="#philosophy">Flexibility principles</a>
+      <a href="#timeline">Sprint timeline</a>
+      <a href="#newstack">Additions to stack</a>
+    </div>
+    <div class="nav-group"><div class="nav-label" style="color:#93c5fd">Dev 3 — API test + frontend</div>
+      <a href="#dev3-scope">Scope</a>
+      <a href="#api-testing">API testing guide</a>
+      <a href="#frontend-new">New frontend work</a>
+    </div>
+    <div class="nav-group"><div class="nav-label" style="color:#6ee7b7">Backend additions</div>
+      <a href="#legacy">Legacy data import</a>
+      <a href="#advanced-workflow">Extended workflow</a>
+      <a href="#filter-engine">Filter engine</a>
+      <a href="#report-engine">Report engine</a>
+      <a href="#analytics-adv">Advanced analytics</a>
+      <a href="#offline-sync">Offline sync</a>
+    </div>
+    <div class="nav-group"><div class="nav-label" style="color:#fcd34d">Admin + Security</div>
+      <a href="#admin-ui">Admin config UI</a>
+      <a href="#mfa">MFA</a>
+      <a href="#keycloak">Keycloak migration</a>
+      <a href="#rbac-expansion">RBAC expansion</a>
+    </div>
+    <div class="nav-group"><div class="nav-label">Reference</div>
+      <a href="#new-apis">New API endpoints</a>
+      <a href="#new-events">New event bus</a>
+      <a href="#new-tables">New DB tables</a>
+      <a href="#expansion">Future expansion guide</a>
+    </div>
+  </nav>
+</aside>
+
+<main class="main">
+
+<div class="hero">
+  <h1>PHAROS — Phase 2 Sprint Plan</h1>
+  <p class="sub">Police Hierarchical Automated Reporting &amp; Operations System · Phase 2 · Full-Feature Build</p>
+  <div class="hero-grid">
+    <div class="hero-badge"><strong>Dev 1</strong> Advanced auth, Keycloak, MFA, audit hardening</div>
+    <div class="hero-badge"><strong>Dev 2</strong> Backend: filters, reports, analytics, legacy import</div>
+    <div class="hero-badge"><strong>Dev 3</strong> API testing + frontend integration + new UI modules</div>
+    <div class="hero-badge"><strong>Duration</strong> 8–10 weeks (3 sprints × 3 weeks)</div>
+    <div class="hero-badge"><strong>Target</strong> 1 full district · 15–20 PS · all roles live</div>
+  </div>
+  <div class="p1-done">
+    <div class="lbl">✓ Phase 1 completed today — everything below is built and working</div>
+    <div class="items">
+      <span class="item">JWT auth + RBAC</span>
+      <span class="item">5 roles working</span>
+      <span class="item">Field registry (3 types)</span>
+      <span class="item">DynamicForm renderer</span>
+      <span class="item">Records CRUD (Arrest / PCR / Case)</span>
+      <span class="item">HC → SHO → District workflow</span>
+      <span class="item">Compilation + HQ submission</span>
+      <span class="item">Audit ledger</span>
+      <span class="item">Basic analytics (5 endpoints)</span>
+      <span class="item">Notifications (in-app)</span>
+      <span class="item">Report generation (PDF/CSV)</span>
+      <span class="item">RabbitMQ event bus (4 events)</span>
+      <span class="item">Hindi / English i18n</span>
+      <span class="item">Mock data (9 PS, 50+ records)</span>
+      <span class="item">Docker compose</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PHASE 1 STATUS ===== -->
+<section id="status">
+  <h2><span class="sn">01</span> What Phase 1 deliberately left out</h2>
+  <p>Phase 1 was a prototype demonstrating the core record lifecycle. The following were explicitly parked — Phase 2 completes them all. Every item here maps to a concrete task below.</p>
+
+  <div class="feat-grid">
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Legacy data import</div>
+      <div class="feat-desc">Existing registers (Excel / paper scans) are not in the system. Field officers must not re-enter years of records manually.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">JCP / SCP review chain</div>
+      <div class="feat-desc">Workflow goes HC → SHO → District → HQ. The full chain with JCP and SCP levels is not wired up.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Level Data Contracts</div>
+      <div class="feat-desc">Each level in the hierarchy should see only specific fields. Currently all fields flow to all levels.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Keycloak / MFA</div>
+      <div class="feat-desc">Auth runs on custom JWT. Production requires Keycloak OIDC with MFA for SHO and above.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Filter engine</div>
+      <div class="feat-desc">Records list has no advanced filtering. The architecture specifies a full AND/OR filter spec engine with presets.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Advanced analytics</div>
+      <div class="feat-desc">Only 5 basic count endpoints. Full system: crime heat maps, IO performance, PS vs PS comparison, beat-wise breakdown.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Proforma report templates</div>
+      <div class="feat-desc">Report engine exists but only 1 generic template. Need 10+ proformas: Arrest Register, PCR Log, Cases Register, etc.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Admin config UI</div>
+      <div class="feat-desc">Hierarchy, users, field registry are managed by DB script. Need full browser-based admin panel.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Offline sync (PWA)</div>
+      <div class="feat-desc">App requires internet. PS often have unreliable connectivity. Service Worker + IndexedDB offline-first is required.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Scheduled reports</div>
+      <div class="feat-desc">Reports are on-demand only. Need auto-generation: daily digest, weekly summary, monthly compilation auto-triggered.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Send-back target fields</div>
+      <div class="feat-desc">Send-back sends the full form back. Architecture specifies per-field rejection highlighting — only the bad fields light up.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Filter presets (saved)</div>
+      <div class="feat-desc">No saved search. System should ship with built-in presets: "Today's FIRs", "Pending SHO approval", "Beat 14 this week".</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Hash-sealed audit chain</div>
+      <div class="feat-desc">Audit log exists but SHA256 hash chaining and tamper detection are not implemented.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Deadline + SLA alerts</div>
+      <div class="feat-desc">No enforcement of submission deadlines. SHOs should be alerted when records sit in queue too long.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">File attachments (MinIO)</div>
+      <div class="feat-desc">File upload fields exist in schema but uploads go nowhere. Need MinIO integration for FIR scans, photos, etc.</div>
+    </div>
+    <div class="feat" style="--fc:#dc2626">
+      <div class="feat-tag">Left out</div>
+      <div class="feat-name">Record duplication check</div>
+      <div class="feat-desc">No protection against accidental duplicate arrest entries. Need FIR number / accused name dedup check on submission.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FLEXIBILITY PHILOSOPHY ===== -->
+<section id="philosophy">
+  <h2><span class="sn">02</span> Architecture flexibility — built into every decision</h2>
+  <p>Every Phase 2 feature is designed so future changes never require touching existing code. Adding a new record type, a new hierarchy level, a new report proforma, or a new analytics dimension is always a data operation — not a deployment.</p>
+
+  <div class="flex-grid">
+    <div class="flex-card" style="--fcc:#3b82f6">
+      <div class="flex-label">Principle 1</div>
+      <div class="flex-title">Config over code</div>
+      <div class="flex-desc">Record types, field definitions, hierarchy nodes, report templates, workflow routes — all rows in the DB. Zero code changes for new record types or new PS structures.</div>
+    </div>
+    <div class="flex-card" style="--fcc:#8b5cf6">
+      <div class="flex-label">Principle 2</div>
+      <div class="flex-title">Event bus isolation</div>
+      <div class="flex-desc">Every module communicates via RabbitMQ events. A new module (SMS gateway, CCTV integration, beat patrol app) plugs in by subscribing to events — zero changes to existing modules.</div>
+    </div>
+    <div class="flex-card" style="--fcc:#059669">
+      <div class="flex-label">Principle 3</div>
+      <div class="flex-title">JSONB data storage</div>
+      <div class="flex-desc">Record data is JSONB — adding 20 new fields to Arrest records is a Field Registry insert, not an ALTER TABLE. Historical records are untouched. Schema migrations never break old data.</div>
+    </div>
+    <div class="flex-card" style="--fcc:#d97706">
+      <div class="flex-label">Principle 4</div>
+      <div class="flex-title">Hierarchy as rows</div>
+      <div class="flex-desc">hierarchy_nodes is a self-referencing tree. Adding a new intermediate level (ACP Range, Division) between District and PS is UPDATE parent_id — no code change, no form changes.</div>
+    </div>
+    <div class="flex-card" style="--fcc:#dc2626">
+      <div class="flex-label">Principle 5</div>
+      <div class="flex-title">Level data contracts</div>
+      <div class="flex-desc">Each approval level sees only the fields their contract specifies. Change what HQ sees without touching PS forms. New levels inherit sensible defaults.</div>
+    </div>
+    <div class="flex-card" style="--fcc:#0891b2">
+      <div class="flex-label">Principle 6</div>
+      <div class="flex-title">Database abstraction layer</div>
+      <div class="flex-desc">All DB calls go through a repository pattern. Swapping PostgreSQL for a different DB (or adding Elasticsearch for analytics) is a repository implementation change — no service logic changes.</div>
+    </div>
+    <div class="flex-card" style="--fcc:#7c3aed">
+      <div class="flex-label">Principle 7</div>
+      <div class="flex-title">Workflow as state machine config</div>
+      <div class="flex-desc">Valid transitions are defined in a config object, not hardcoded in if/else chains. Adding a new state (COMMISSIONER_REVIEW) is adding entries to the transition table.</div>
+    </div>
+    <div class="flex-card" style="--fcc:#065f46">
+      <div class="flex-label">Principle 8</div>
+      <div class="flex-title">Legacy-compatible data model</div>
+      <div class="flex-desc">All imported legacy records carry is_legacy: true, source_system, and imported_at. They participate in all workflows, filters, reports, and analytics exactly like native records.</div>
+    </div>
+  </div>
+  <div class="note ok"><b>The test of a flexible architecture:</b> Can a non-developer admin add a new PS to the hierarchy, define 5 new fields for it, create a custom report template, and set deadlines — all from the browser, with zero backend changes? After Phase 2: yes.</div>
+</section>
+
+<!-- ===== PHASE POSITION ===== -->
+<section id="phasepos">
+  <h2><span class="sn">03</span> Where Phase 2 sits in the roadmap</h2>
+  <div class="phase-track">
+    <div class="ph done"><div class="ph-label">Phase 0 / 1</div><div class="ph-name">Foundation + Prototype</div><div class="ph-time">✓ Done today</div></div>
+    <div class="ph active"><div class="ph-label">Phase 2</div><div class="ph-name">Full-Feature Build</div><div class="ph-time">8–10 weeks</div></div>
+    <div class="ph"><div class="ph-label">Phase 3</div><div class="ph-name">Infra + Offline</div><div class="ph-time">6 weeks</div></div>
+    <div class="ph"><div class="ph-label">Phase 4</div><div class="ph-name">District Rollout</div><div class="ph-time">Ongoing</div></div>
+  </div>
+  <p>Phase 2 is the longest and most feature-dense phase. It takes the working prototype and turns it into a production-ready system for one full district. Everything left out of Phase 1 is completed here. By the end of Phase 2, the system can go live with real users at 15–20 PS stations.</p>
+</section>
+
+<!-- ===== SPRINT TIMELINE ===== -->
+<section id="timeline">
+  <h2><span class="sn">04</span> Sprint timeline — 3 × 3-week sprints</h2>
+
+  <h3>Sprint A (Weeks 1–3) — API testing, legacy import, advanced auth</h3>
+  <div class="sprint-grid">
+    <div class="sg-head"></div>
+    <div class="sg-head">Dev 1</div>
+    <div class="sg-head">Dev 2</div>
+    <div class="sg-head">Dev 3</div>
+    <div class="sg-wk">W1</div>
+    <div class="sg-c">
+      <div class="sg-i cr">Keycloak Docker setup + OIDC flow replacing custom JWT</div>
+      <div class="sg-i">MFA enforcement for SHO+</div>
+      <div class="sg-i">Update IAM middleware</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Legacy CSV/Excel parser service</div>
+      <div class="sg-i">POST /legacy/import endpoint</div>
+      <div class="sg-i">Dedup check engine</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Postman collection: all 40+ P1 endpoints</div>
+      <div class="sg-i">Happy path + error path tests</div>
+      <div class="sg-i">Auth flow testing across all 5 roles</div>
+    </div>
+    <div class="sg-wk">W2</div>
+    <div class="sg-c">
+      <div class="sg-i">Hash-seal audit chain (SHA256)</div>
+      <div class="sg-i">IP allowlist middleware</div>
+      <div class="sg-i">Rate limiting per role</div>
+      <div class="sg-i">Audit trail tamper detection endpoint</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Level Data Contracts table + API</div>
+      <div class="sg-i">JCP / SCP workflow states</div>
+      <div class="sg-i">Extended state machine config</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Integrate Keycloak auth into frontend</div>
+      <div class="sg-i">MFA screen</div>
+      <div class="sg-i">Test legacy import UI flow</div>
+      <div class="sg-i">Fix any P1 bugs from testing</div>
+    </div>
+    <div class="sg-wk">W3</div>
+    <div class="sg-c">
+      <div class="sg-i">Role hierarchy expansion (JCP, SCP roles)</div>
+      <div class="sg-i">RBAC guards for new levels</div>
+      <div class="sg-i">Swagger docs for all auth endpoints</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i">MinIO file upload integration</div>
+      <div class="sg-i">Duplicate FIR detection</div>
+      <div class="sg-i">Deadline / SLA config engine</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i">Send-back target-field highlighting (frontend)</div>
+      <div class="sg-i">File upload component (MinIO)</div>
+      <div class="sg-i">API test: workflow edge cases</div>
+    </div>
+  </div>
+
+  <h3>Sprint B (Weeks 4–6) — Filter engine, report templates, analytics</h3>
+  <div class="sprint-grid">
+    <div class="sg-head"></div>
+    <div class="sg-head">Dev 1</div>
+    <div class="sg-head">Dev 2</div>
+    <div class="sg-head">Dev 3</div>
+    <div class="sg-wk">W4</div>
+    <div class="sg-c">
+      <div class="sg-i cr">Admin config UI — hierarchy management</div>
+      <div class="sg-i">User management admin screens</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Filter engine: AND/OR spec parser → JSONB query</div>
+      <div class="sg-i">Filter presets (SYSTEM / ROLE / USER)</div>
+      <div class="sg-i">GET /filters/presets + POST /filters/apply</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Filter bar UI component</div>
+      <div class="sg-i">Preset picker + save filter flow</div>
+      <div class="sg-i">API tests: filter engine</div>
+    </div>
+    <div class="sg-wk">W5</div>
+    <div class="sg-c">
+      <div class="sg-i">Field registry admin UI</div>
+      <div class="sg-i">Level data contract admin UI</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Report templates (10 proformas seeded)</div>
+      <div class="sg-i">Puppeteer PDF renderer</div>
+      <div class="sg-i">ExcelJS XLSX renderer</div>
+      <div class="sg-i">Scheduled report jobs (cron)</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Report template UI (select + configure)</div>
+      <div class="sg-i">Report download progress UI</div>
+      <div class="sg-i">Scheduled report management screen</div>
+    </div>
+    <div class="sg-wk">W6</div>
+    <div class="sg-c">
+      <div class="sg-i">Admin audit log viewer</div>
+      <div class="sg-i">System health dashboard</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Advanced analytics: crime head breakdown</div>
+      <div class="sg-i">PS vs PS comparison API</div>
+      <div class="sg-i">Beat-wise analytics</div>
+      <div class="sg-i">IO performance metrics</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Analytics dashboard (charts + heatmap)</div>
+      <div class="sg-i">PS comparison view</div>
+      <div class="sg-i">API tests: analytics + reports</div>
+    </div>
+  </div>
+
+  <h3>Sprint C (Weeks 7–10) — Offline PWA, polish, full-district pilot</h3>
+  <div class="sprint-grid">
+    <div class="sg-head"></div>
+    <div class="sg-head">Dev 1</div>
+    <div class="sg-head">Dev 2</div>
+    <div class="sg-head">Dev 3</div>
+    <div class="sg-wk">W7–8</div>
+    <div class="sg-c">
+      <div class="sg-i cr">Security audit: pen test checklist</div>
+      <div class="sg-i">Rate limiting hardening</div>
+      <div class="sg-i">Session fixation + CSRF protection</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Offline sync: IndexedDB + sync_ops queue</div>
+      <div class="sg-i">Conflict resolution engine</div>
+      <div class="sg-i">Reconnect replay with ordering</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Service Worker: cache-first strategy</div>
+      <div class="sg-i">Offline indicator + sync status UI</div>
+      <div class="sg-i">PWA manifest + install prompt</div>
+    </div>
+    <div class="sg-wk">W9</div>
+    <div class="sg-c">
+      <div class="sg-i">Deadline alert notifications (cron jobs)</div>
+      <div class="sg-i">User session audit log</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i">Elasticsearch integration for complex filters</div>
+      <div class="sg-i">Performance testing: 250 PS load sim</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Notification center (full UI)</div>
+      <div class="sg-i">Deadline badge + alert UI</div>
+      <div class="sg-i">All API tests updated + final E2E</div>
+    </div>
+    <div class="sg-wk">W10</div>
+    <div class="sg-c">
+      <div class="sg-i">User onboarding guide</div>
+      <div class="sg-i">Runbooks: deploy, incident, rollback</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i">Full-district seed data (15–20 PS)</div>
+      <div class="sg-i">Bug fixes from pilot</div>
+    </div>
+    <div class="sg-c">
+      <div class="sg-i cr">Full E2E test: all 7 roles, all 3 record types</div>
+      <div class="sg-i">Accessibility audit (screen reader, keyboard nav)</div>
+      <div class="sg-i">Demo walkthrough recording</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== NEW STACK ADDITIONS ===== -->
+<section id="newstack">
+  <h2><span class="sn">05</span> Stack additions for Phase 2</h2>
+  <p>The Phase 1 stack is unchanged. These are additions only — nothing removed or replaced (except Keycloak replaces custom JWT logic while keeping the same middleware interface).</p>
+  <div class="stack-grid">
+    <div class="si"><div class="si-layer">Auth</div><div class="si-choice">Keycloak</div><div class="si-detail">OIDC + MFA. Docker image. Replaces custom JWT generation while keeping the same Bearer token interface to all routes.</div></div>
+    <div class="si"><div class="si-layer">Object Storage</div><div class="si-choice">MinIO</div><div class="si-detail">S3-compatible. FIR scans, photos, generated PDFs. Already in architecture, now wired up.</div></div>
+    <div class="si"><div class="si-layer">Search (opt.)</div><div class="si-choice">Elasticsearch</div><div class="si-detail">For complex filter queries and analytics aggregations. PostgreSQL JSONB handles simple filters; ES handles full-text + multi-field.</div></div>
+    <div class="si"><div class="si-layer">PDF render</div><div class="si-choice">Puppeteer</div><div class="si-detail">Headless Chrome for proforma PDFs. Already used, now extended with 10+ templates.</div></div>
+    <div class="si"><div class="si-layer">Excel render</div><div class="si-choice">ExcelJS</div><div class="si-detail">Generates .xlsx reports. New in Phase 2. Supports cell formatting, merged cells, borders for official proformas.</div></div>
+    <div class="si"><div class="si-layer">Offline</div><div class="si-choice">Workbox</div><div class="si-detail">Service Worker generation. Cache-first for static assets, network-first for API. Wraps IndexedDB sync queue.</div></div>
+    <div class="si"><div class="si-layer">Scheduler</div><div class="si-choice">node-cron</div><div class="si-detail">Scheduled report generation. Daily digest at 06:00, weekly summary on Mondays, deadline alerts.</div></div>
+    <div class="si"><div class="si-layer">Charts</div><div class="si-choice">Recharts (existing)</div><div class="si-detail">Already installed. Phase 2 adds: heat maps, grouped bar, stacked area, scatter (IO performance).</div></div>
+  </div>
+</section>
+
+<!-- ===== DEV 3 SCOPE ===== -->
+<section id="dev3-scope">
+  <h2><span class="sn">06</span> Dev 3 scope — API testing primary + frontend integration</h2>
+  <div class="dp" style="--dc:#7c3aed;--dl:#f5f3ff;--db:#ddd6fe">
+    <div class="dp-head"><div class="dp-av">D3</div><div><div class="dp-name">Dev 3 — API testing lead + Frontend integration specialist</div><div class="dp-role">Primary: Postman/Jest API tests for all P1 + P2 endpoints · Secondary: frontend integration, new UI modules, PWA</div></div></div>
+    <div class="dp-body">
+      <div class="note purple"><b>Dev 3 owns the API testing layer across the entire project.</b> Every endpoint built by Dev 1 and Dev 2 gets a test written by Dev 3 before it's considered done. This is not a "nice to have" — it is the primary deliverable. Frontend work fills the gaps where backend is ahead of schedule.</div>
+
+      <h3>Testing stack to set up (Day 1 of Phase 2)</h3>
+<pre><span class="c"># Option A — Postman (recommended for quick start)</span>
+<span class="c"># Create a collection: PHAROS Phase 2</span>
+<span class="c"># Set up environment variables:</span>
+BASE_URL=http://localhost:3000/api
+HC_TOKEN=<span class="s">""</span>    <span class="c"># populated by auth test</span>
+SHO_TOKEN=<span class="s">""</span>   <span class="c"># populated by auth test</span>
+DISTRICT_TOKEN=<span class="s">""</span>
+HQ_TOKEN=<span class="s">""</span>
+ADMIN_TOKEN=<span class="s">""</span>
+JCP_TOKEN=<span class="s">""</span>
+SCP_TOKEN=<span class="s">""</span>
+
+<span class="c"># Option B — Jest + supertest (for CI pipeline)</span>
+npm install --save-dev jest supertest @types/jest ts-jest
+<span class="c"># test files in: tests/api/{module}.test.ts</span>
+<span class="c"># run: jest --testPathPattern=tests/api</span>
+
+<span class="c"># Option C — Bruno (offline, Git-committable, recommended)</span>
+<span class="c"># bruno collections live in /tests/bruno/ and are version-controlled</span>
+<span class="c"># bru run --env local tests/bruno/</span></pre>
+
+      <h3>What to test for EVERY endpoint</h3>
+      <ul class="tsk">
+        <li class="crit"><b>Happy path</b> — valid input, correct role → expected 200/201 response with correct shape</li>
+        <li class="crit"><b>Auth guard</b> — no token → 401. Expired token → 401.</li>
+        <li class="crit"><b>RBAC guard</b> — wrong role → 403. Example: HC hitting /workflow/queue.</li>
+        <li class="crit"><b>Scope guard</b> — valid role but wrong PS/district → 403 or empty set</li>
+        <li><b>Validation errors</b> — missing required fields → 400 with descriptive message</li>
+        <li><b>Not found</b> — non-existent ID → 404</li>
+        <li><b>State violation</b> — e.g. approve a DRAFT (not PENDING_SHO) → 422</li>
+        <li><b>Pagination</b> — verify page/limit params work, meta.total is accurate</li>
+        <li><b>Response shape</b> — all fields present, correct types, no extra leakage</li>
+      </ul>
+
+      <h3>Testing priority order (match sprint pace)</h3>
+      <ul class="tsk">
+        <li class="crit"><b>Sprint A W1:</b> All auth endpoints (login, refresh, logout, /me, change-password, reset). All user CRUD. Hierarchy tree. Role-based access matrix (5 roles × every sensitive endpoint).</li>
+        <li class="crit"><b>Sprint A W2:</b> All records CRUD. Full workflow lifecycle (HC→SHO→District→HQ). Send-back with target_fields. Revision history. Audit trail chain.</li>
+        <li><b>Sprint A W3:</b> Compilation lifecycle. Field registry CRUD. Notifications. Legacy import (when ready).</li>
+        <li><b>Sprint B W4:</b> Filter engine — all operators, AND/OR nesting, preset CRUD, scope isolation.</li>
+        <li><b>Sprint B W5:</b> Report generation — all 10+ templates, PDF download, XLSX download, scheduled jobs.</li>
+        <li><b>Sprint B W6:</b> Analytics — all aggregation endpoints, date range filtering, district scoping.</li>
+        <li><b>Sprint C W9:</b> Regression full suite. Performance benchmarks. Offline sync edge cases.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== API TESTING GUIDE ===== -->
+<section id="api-testing">
+  <h2><span class="sn">07</span> API testing — critical test cases to write</h2>
+
+  <h3>Auth + RBAC matrix test (most important)</h3>
+  <p>This single test matrix catches most security bugs. Write it as a parametrized test — one test per row.</p>
+<pre><span class="c">// tests/api/rbac-matrix.test.ts</span>
+<span class="k">const</span> MATRIX = [
+  <span class="c">// [endpoint, method, role, expectedStatus]</span>
+  [<span class="s">'/records'</span>,          <span class="s">'GET'</span>,  <span class="s">'HC'</span>,              200],
+  [<span class="s">'/records'</span>,          <span class="s">'POST'</span>, <span class="s">'HC'</span>,              201],
+  [<span class="s">'/workflow/queue'</span>,   <span class="s">'GET'</span>,  <span class="s">'HC'</span>,              403],  <span class="c">// HC cannot see queue</span>
+  [<span class="s">'/workflow/queue'</span>,   <span class="s">'GET'</span>,  <span class="s">'SHO'</span>,             200],
+  [<span class="s">'/compilations'</span>,     <span class="s">'POST'</span>, <span class="s">'SHO'</span>,             403],  <span class="c">// SHO cannot compile</span>
+  [<span class="s">'/compilations'</span>,     <span class="s">'POST'</span>, <span class="s">'DISTRICT_OFFICER'</span>,201],
+  [<span class="s">'/admin/stats'</span>,      <span class="s">'GET'</span>,  <span class="s">'DISTRICT_OFFICER'</span>,403],
+  [<span class="s">'/admin/stats'</span>,      <span class="s">'GET'</span>,  <span class="s">'HQ_ADMIN'</span>,        200],
+  [<span class="s">'/fields'</span>,           <span class="s">'POST'</span>, <span class="s">'HQ_ADMIN'</span>,        403],  <span class="c">// only SYSTEM_ADMIN</span>
+  [<span class="s">'/fields'</span>,           <span class="s">'POST'</span>, <span class="s">'SYSTEM_ADMIN'</span>,    201],
+  [<span class="s">'/users'</span>,            <span class="s">'DELETE'</span>,<span class="s">'DISTRICT_OFFICER'</span>,403],
+  [<span class="s">'/users/:id'</span>,        <span class="s">'DELETE'</span>,<span class="s">'SYSTEM_ADMIN'</span>,   200],
+  <span class="c">// Add all P2 endpoints here as they are built</span>
+];</pre>
+
+  <h3>Workflow lifecycle test (critical flow)</h3>
+<pre><span class="c">// Must run sequentially — each step depends on previous</span>
+<span class="k">let</span> recordId;
+test(<span class="s">'HC creates draft'</span>, async () => {
+  <span class="k">const</span> res = await post(<span class="s">'/records'</span>, { record_type: <span class="s">'ARREST'</span>, data: {...} }, HC_TOKEN);
+  expect(res.status).toBe(201);
+  expect(res.body.data.current_status).toBe(<span class="s">'DRAFT'</span>);
+  recordId = res.body.data.id;
+});
+test(<span class="s">'HC submits → PENDING_SHO'</span>, async () => {
+  <span class="k">const</span> res = await post(<span class="s">`/records/${recordId}/submit`</span>, {}, HC_TOKEN);
+  expect(res.body.data.current_status).toBe(<span class="s">'PENDING_SHO'</span>);
+});
+test(<span class="s">'Different HC cannot submit (scope guard)'</span>, async () => {
+  <span class="k">const</span> res = await post(<span class="s">`/records/${recordId}/submit`</span>, {}, OTHER_HC_TOKEN);
+  expect(res.status).toBe(403);
+});
+test(<span class="s">'SHO from different PS cannot see record'</span>, async () => {
+  <span class="k">const</span> res = await get(<span class="s">`/records/${recordId}`</span>, OTHER_PS_SHO_TOKEN);
+  expect(res.status).toBe(403);
+});
+test(<span class="s">'SHO sends back with target_fields'</span>, async () => {
+  <span class="k">const</span> res = await post(<span class="s">`/records/${recordId}/send-back`</span>,
+    { comment: <span class="s">'Fix accused address'</span>, target_fields: [<span class="s">'accused_address'</span>] }, SHO_TOKEN);
+  expect(res.body.data.current_status).toBe(<span class="s">'SENT_BACK_HC'</span>);
+});
+test(<span class="s">'HC gets highlighted field in response'</span>, async () => {
+  <span class="k">const</span> res = await get(<span class="s">`/records/${recordId}`</span>, HC_TOKEN);
+  expect(res.body.data.highlighted_fields).toContain(<span class="s">'accused_address'</span>);
+});</pre>
+
+  <h3>Pagination + scope isolation test</h3>
+<pre><span class="c">// Verify HC from PS-A cannot see records from PS-B</span>
+test(<span class="s">'Records list is scoped to user PS'</span>, async () => {
+  <span class="k">const</span> res = await get(<span class="s">'/records?type=ARREST&amp;limit=100'</span>, HC_TOKEN_PS_A);
+  <span class="k">const</span> ids = res.body.data.map(r => r.ps_id);
+  expect(ids.every(id => id === PS_A_ID)).toBe(true);
+});
+test(<span class="s">'District officer sees all PS in their district'</span>, async () => {
+  <span class="k">const</span> res = await get(<span class="s">'/records?districtId=DISTRICT_A&amp;limit=200'</span>, DISTRICT_TOKEN);
+  <span class="k">const</span> psIds = [...<span class="k">new</span> Set(res.body.data.map(r => r.ps_id))];
+  expect(psIds.length).toBeGreaterThan(1);  <span class="c">// sees multiple PS</span>
+  expect(psIds.every(id => DISTRICT_A_PS_IDS.includes(id))).toBe(true);  <span class="c">// only their district</span>
+});
+test(<span class="s">'HQ analyst sees all districts'</span>, async () => {
+  <span class="k">const</span> res = await get(<span class="s">'/analytics/by-ps'</span>, HQ_TOKEN);
+  expect(res.body.data.length).toBeGreaterThan(2);  <span class="c">// multiple districts' PS</span>
+});</pre>
+</section>
+
+<!-- ===== FRONTEND NEW WORK ===== -->
+<section id="frontend-new">
+  <h2><span class="sn">08</span> Dev 3 — new frontend modules</h2>
+  <p>After API testing catches up with backend pace, Dev 3 builds these new screens. All integrate the existing API layer and design system.</p>
+
+  <h3>New screens / components to build</h3>
+  <div class="feat-grid">
+    <div class="feat" style="--fc:#7c3aed">
+      <div class="feat-tag">Sprint A</div>
+      <div class="feat-name">MFA screen</div>
+      <div class="feat-desc">TOTP entry after Keycloak login. Shows 6-digit input with auto-advance, resend option, fallback contact.</div>
+    </div>
+    <div class="feat" style="--fc:#7c3aed">
+      <div class="feat-tag">Sprint A</div>
+      <div class="feat-name">Legacy import UI</div>
+      <div class="feat-desc">Drag-and-drop CSV/Excel upload. Field mapping wizard. Preview table of parsed rows. Error report after import.</div>
+    </div>
+    <div class="feat" style="--fc:#7c3aed">
+      <div class="feat-tag">Sprint A</div>
+      <div class="feat-name">Send-back field highlighting</div>
+      <div class="feat-desc">When record is SENT_BACK, form re-renders with target_fields highlighted in amber, SHO comment shown as banner.</div>
+    </div>
+    <div class="feat" style="--fc:#7c3aed">
+      <div class="feat-tag">Sprint A</div>
+      <div class="feat-name">File upload (MinIO)</div>
+      <div class="feat-desc">FILE field type in DynamicForm uploads to /records/:id/attachments. Progress bar, preview thumbnail, delete.</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Sprint B</div>
+      <div class="feat-name">Advanced filter bar</div>
+      <div class="feat-desc">Add filter chip UI. Preset picker dropdown. Save filter as preset. Chips show active filters; each removable.</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Sprint B</div>
+      <div class="feat-name">Report template picker</div>
+      <div class="feat-desc">Card grid of 10+ proformas. Click to configure filters + date range + format. Progress tracker while generating.</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Sprint B</div>
+      <div class="feat-name">Analytics dashboard v2</div>
+      <div class="feat-desc">Crime head stacked bar, PS vs PS grouped bar, beat-wise heat table, IO performance scatter. Date range picker.</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Sprint B</div>
+      <div class="feat-name">Scheduled reports screen</div>
+      <div class="feat-desc">List scheduled reports, create new schedule (template + frequency + recipients). Shows last run status.</div>
+    </div>
+    <div class="feat" style="--fc:#059669">
+      <div class="feat-tag">Sprint C</div>
+      <div class="feat-name">PWA + offline indicator</div>
+      <div class="feat-desc">Service Worker registration. Offline banner. Sync queue status (N operations pending). Install PWA prompt.</div>
+    </div>
+    <div class="feat" style="--fc:#059669">
+      <div class="feat-tag">Sprint C</div>
+      <div class="feat-name">Notification center</div>
+      <div class="feat-desc">Full notification panel: grouped by type, mark-all-read, deadline alerts with countdown, deep-link to record.</div>
+    </div>
+    <div class="feat" style="--fc:#059669">
+      <div class="feat-tag">Sprint C</div>
+      <div class="feat-name">Admin config UI (Dev 3 wires)</div>
+      <div class="feat-desc">Dev 1 builds screens; Dev 3 integrates with hierarchy/user/field APIs and tests the whole admin flow.</div>
+    </div>
+    <div class="feat" style="--fc:#059669">
+      <div class="feat-tag">Sprint C</div>
+      <div class="feat-name">Audit trail viewer</div>
+      <div class="feat-desc">Timeline of field-level diffs per record. Color-coded old/new values. Badge shows who changed what at which level.</div>
+    </div>
+  </div>
+
+  <h3>DynamicForm — Phase 2 enhancements</h3>
+  <ul class="tsk">
+    <li class="crit"><b>Send-back highlighting</b> — accept <code>highlightedFields: string[]</code> prop; amber border + banner on those fields</li>
+    <li class="crit"><b>FILE field type</b> — call <code>/records/:id/attachments</code>; show upload progress; preview for images; delete button</li>
+    <li><b>Auto-save debounce</b> — 800ms debounce on onValuesChange before calling onSaveDraft (reduce API calls)</li>
+    <li><b>Read-only diff mode</b> — prop <code>showDiff: {old: data, new: data}</code>; renders color-coded old/new per field for audit view</li>
+    <li><b>Level-filtered fields</b> — accept <code>visibleFields: string[]</code> from Level Data Contract; hide non-visible fields for that role's level</li>
+    <li><b>Legacy badge</b> — if record.is_legacy, show "Imported record" banner; some fields may be locked</li>
+    <li><b>Duplicate warning</b> — on accused_name + fir_number change, hit <code>GET /records/check-duplicate</code>; show inline warning</li>
+    <li><b>Deadline countdown</b> — show urgency badge if record is approaching SLA deadline</li>
+  </ul>
+</section>
+
+<!-- ===== LEGACY DATA IMPORT ===== -->
+<section id="legacy">
+  <h2><span class="sn">09</span> Legacy data import — owned by Dev 2</h2>
+  <p>This is the most complex new feature in Phase 2. Existing paper registers are digitized into Excel/CSV by data entry operators. The import system must accept these, map columns to field registry keys, validate, deduplicate, and load as first-class records with full audit trail.</p>
+
+  <div class="note warn"><b>Critical constraint:</b> Legacy records are immutable once imported. They get status <code>LEGACY_IMPORTED</code> (not DRAFT). They are visible in all analytics, filters, and reports. They cannot be submitted through the workflow (they already happened). But corrections must go through an <code>AMENDMENT</code> sub-workflow.</div>
+
+  <h3>Import pipeline</h3>
+<pre><span class="c">// POST /legacy/import — multipart/form-data</span>
+<span class="c">// Body: {file: .xlsx/.csv, record_type, ps_id, dry_run: bool}</span>
+
+1. <span class="t">Parse</span>       → ExcelJS reads file → raw row array
+2. <span class="t">Map columns</span> → mapping config (UI-defined or default) → {field_key: value}
+3. <span class="t">Validate</span>   → required fields, date formats, enum values, phone formats
+4. <span class="t">Dedup</span>      → check fir_number OR (accused_name + date_of_arrest) against existing
+5. <span class="t">Dry run</span>    → if dry_run=true, return {valid: N, errors: [...], duplicates: [...]} — no write
+6. <span class="t">Insert</span>     → bulk INSERT into records with is_legacy=true, status='LEGACY_IMPORTED'
+7. <span class="t">Audit</span>      → publish legacy.batch_imported event → Audit Ledger writes provenance row
+8. <span class="t">Response</span>   → {imported: N, skipped: N, errors: [{row, reason}]}</pre>
+
+  <h3>New DB additions for legacy support</h3>
+<pre><span class="c">-- Add to existing records table</span>
+ALTER TABLE records ADD COLUMN is_legacy       BOOLEAN DEFAULT false;
+ALTER TABLE records ADD COLUMN source_system   VARCHAR;   <span class="c">-- 'EXCEL_IMPORT' | 'PAPER_SCAN' | 'LEGACY_DB'</span>
+ALTER TABLE records ADD COLUMN imported_at     TIMESTAMPTZ;
+ALTER TABLE records ADD COLUMN imported_by     UUID REFERENCES users(id);
+ALTER TABLE records ADD COLUMN legacy_ref      VARCHAR;   <span class="c">-- original register number / row ID from source</span>
+
+<span class="c">-- Legacy import batch tracking</span>
+CREATE TABLE legacy_import_batches (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ps_id          UUID REFERENCES hierarchy_nodes(id),
+  record_type    VARCHAR NOT NULL,
+  source_file    VARCHAR NOT NULL,        <span class="c">-- original filename</span>
+  imported_by    UUID REFERENCES users(id),
+  imported_at    TIMESTAMPTZ DEFAULT NOW(),
+  total_rows     INT NOT NULL,
+  imported_count INT DEFAULT 0,
+  skipped_count  INT DEFAULT 0,
+  error_count    INT DEFAULT 0,
+  status         VARCHAR DEFAULT 'PENDING', <span class="c">-- PENDING | PROCESSING | DONE | FAILED</span>
+  error_log      JSONB DEFAULT '[]'
+);
+
+<span class="c">-- Legacy amendments (corrections to already-imported records)</span>
+CREATE TABLE legacy_amendments (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  record_id      UUID REFERENCES records(id),
+  requested_by   UUID REFERENCES users(id),
+  approved_by    UUID REFERENCES users(id),
+  requested_at   TIMESTAMPTZ DEFAULT NOW(),
+  approved_at    TIMESTAMPTZ,
+  status         VARCHAR DEFAULT 'PENDING',  <span class="c">-- PENDING | APPROVED | REJECTED</span>
+  field_changes  JSONB NOT NULL,             <span class="c">-- [{field_key, old_value, new_value, reason}]</span>
+  reason         TEXT NOT NULL
+);</pre>
+
+  <h3>New legacy API endpoints</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Owner</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/legacy/import</td><td><span class="ow o2">Dev 2</span></td><td>Upload CSV/XLSX. Body: file + record_type + ps_id + dry_run</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/legacy/batches</td><td><span class="ow o2">Dev 2</span></td><td>List import batches. Query: ps_id, status, from, to</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/legacy/batches/:id</td><td><span class="ow o2">Dev 2</span></td><td>Single batch with error log</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/legacy/batches/:id/errors</td><td><span class="ow o2">Dev 2</span></td><td>Download error log as CSV for re-processing</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/legacy/column-map/:record_type</td><td><span class="ow o2">Dev 2</span></td><td>Default column mapping for a record type</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/legacy/amendments</td><td><span class="ow o2">Dev 2</span></td><td>Request correction to an imported record</td><td>SHO+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/legacy/amendments/:id/approve</td><td><span class="ow o2">Dev 2</span></td><td>Approve an amendment</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/legacy/amendments</td><td><span class="ow o2">Dev 2</span></td><td>List amendments. Query: status, ps_id</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/records/check-duplicate</td><td><span class="ow o2">Dev 2</span></td><td>Query: record_type, fir_number?, accused_name?, date? → {isDuplicate, existingId?}</td><td>HC+</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===== EXTENDED WORKFLOW ===== -->
+<section id="advanced-workflow">
+  <h2><span class="sn">10</span> Extended workflow — JCP / SCP chain + deadlines</h2>
+
+  <h3>Full state machine — Phase 2</h3>
+<pre><span class="t">DRAFT</span>
+  └─ [HC submits] ──────────────────────────────────── <span class="t">PENDING_SHO</span>
+                                                           │
+                                    ┌─ [SHO sends back] ──┘
+                                    ↓                      │ [SHO approves]
+                           <span class="t">SENT_BACK_HC</span>                    ↓
+                             [HC resubmits] ──────── <span class="t">DISTRICT_REVIEW</span>
+                                                           │
+                        ┌─ [District sends back] ──────────┤
+                        ↓                                  │ [District approves]
+                <span class="t">SENT_BACK_PS</span> → PENDING_SHO                 ↓
+                                                       <span class="t">COMPILED</span>
+                                                           │
+              ┌─── [route=OPS_CHAIN] ─────────────────────┤
+              │                                            └── [route=DIRECT_HQ] ──────┐
+              ↓                                                                        │
+        <span class="t">JCP_REVIEW</span>                                                               <span class="t">HQ_RECEIVED</span>
+              │ [JCP approves]                                                         │
+              ↓                                                                        │
+        <span class="t">SCP_REVIEW</span> ─────────────────────────────────────────────────────────────────┘
+              │ [SCP/HQ seals]
+              ↓
+          <span class="t">ARCHIVED</span> ■   <span class="c">(hash-sealed, immutable)</span>
+
+<span class="c">-- NEW TERMINAL STATE --</span>
+<span class="t">LEGACY_IMPORTED</span>   <span class="c">(imported records — bypasses all workflow states above)</span>
+<span class="t">AMENDMENT_PENDING</span> <span class="c">(legacy record with a correction request open)</span></pre>
+
+  <h3>Workflow config table (Phase 2 extension)</h3>
+<pre><span class="c">-- New table: workflow_transitions_config (defines all valid transitions)</span>
+CREATE TABLE workflow_transitions_config (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  record_type      VARCHAR NOT NULL,   <span class="c">-- 'ARREST' | 'PCR_CALL' | 'CASE' | '*' (all)</span>
+  from_status      VARCHAR NOT NULL,
+  to_status        VARCHAR NOT NULL,
+  action           VARCHAR NOT NULL,   <span class="c">-- 'SUBMIT' | 'APPROVE' | 'SEND_BACK' | 'SEAL'</span>
+  allowed_roles    VARCHAR[] NOT NULL,
+  requires_comment BOOLEAN DEFAULT false,
+  sla_hours        INT,                <span class="c">-- deadline to complete this step (null = no SLA)</span>
+  is_active        BOOLEAN DEFAULT true
+);
+<span class="c">-- Seed all transitions here. Adding JCP level = INSERT rows. No code change.</span></pre>
+
+  <h3>SLA / deadline system</h3>
+<pre><span class="c">-- Cron job runs every 30 minutes</span>
+<span class="c">-- Logic: find records where (status_changed_at + sla_hours) < NOW()</span>
+<span class="k">SELECT</span> r.id, r.current_status, r.ps_id, wt.sla_hours,
+       r.updated_at + (wt.sla_hours || <span class="s">' hours'</span>)::INTERVAL <span class="k">AS</span> deadline
+<span class="k">FROM</span> records r
+<span class="k">JOIN</span> workflow_transitions_config wt
+  <span class="k">ON</span> wt.from_status = r.current_status
+<span class="k">WHERE</span> wt.sla_hours <span class="k">IS NOT NULL</span>
+  <span class="k">AND</span> r.current_status <span class="k">NOT IN</span> (<span class="s">'ARCHIVED'</span>, <span class="s">'LEGACY_IMPORTED'</span>)
+  <span class="k">AND</span> r.updated_at + (wt.sla_hours || <span class="s">' hours'</span>)::INTERVAL &lt; NOW() + INTERVAL <span class="s">'2 hours'</span>;
+<span class="c">-- Publishes: deadline.approaching event → Notifications module</span></pre>
+
+  <h3>New workflow endpoints</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Owner</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/jcp-approve</td><td><span class="ow o2">Dev 2</span></td><td>JCP approves → SCP_REVIEW</td><td>JCP</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/scp-approve</td><td><span class="ow o2">Dev 2</span></td><td>SCP approves → HQ_RECEIVED</td><td>SCP</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/seal</td><td><span class="ow o2">Dev 2</span></td><td>HQ seals → ARCHIVED. Writes final hash. Body: {seal_note}</td><td>HQ_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/workflow/transitions-config</td><td><span class="ow o2">Dev 2</span></td><td>List all configured transitions (for admin UI)</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/workflow/transitions-config</td><td><span class="ow o2">Dev 2</span></td><td>Add a new transition (new level, new route)</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/workflow/sla-breaches</td><td><span class="ow o2">Dev 2</span></td><td>Records currently in SLA breach. Query: ps_id, district_id</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/workflow/sla-approaching</td><td><span class="ow o2">Dev 2</span></td><td>Records approaching deadline in next 2 hours</td><td>Any</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===== FILTER ENGINE ===== -->
+<section id="filter-engine">
+  <h2><span class="sn">11</span> Filter engine — full implementation</h2>
+  <p>The filter engine translates a JSON AND/OR spec into PostgreSQL JSONB queries (simple/fast) or Elasticsearch DSL (full-text/complex). Every new field added to the registry is automatically filterable — no code change.</p>
+
+  <h3>New filter endpoints</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Owner</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/filters/apply</td><td><span class="ow o2">Dev 2</span></td><td>Body: {record_type, filter_spec, page, limit} → filtered records</td><td>Any (scoped)</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/filters/presets</td><td><span class="ow o2">Dev 2</span></td><td>List presets. Query: scope (SYSTEM|ROLE|USER), record_type</td><td>Any</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/filters/presets</td><td><span class="ow o2">Dev 2</span></td><td>Save filter as preset: {name_en, name_hi, filter_spec, scope, record_types}</td><td>Any</td></tr>
+    <tr><td><span class="m mu">PUT</span></td><td class="ep">/filters/presets/:id</td><td><span class="ow o2">Dev 2</span></td><td>Update preset</td><td>Owner / SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m md">DELETE</span></td><td class="ep">/filters/presets/:id</td><td><span class="ow o2">Dev 2</span></td><td>Delete preset</td><td>Owner / SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/filters/field-options/:field_key</td><td><span class="ow o2">Dev 2</span></td><td>Distinct values for a field (for dropdown filter). Query: record_type, ps_id</td><td>Any (scoped)</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/filters/count</td><td><span class="ow o2">Dev 2</span></td><td>Same as /apply but returns only count (for "X results" preview)</td><td>Any (scoped)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>System preset seeds (ship with the app)</h3>
+<pre><span class="k">const</span> SYSTEM_PRESETS = [
+  { name_en: <span class="s">"Today's FIRs"</span>,       filter_spec: { logic: <span class="s">'AND'</span>, conditions: [{ field: <span class="s">'created_at'</span>, operator: <span class="s">'last_n_days'</span>, value: 1 }] } },
+  { name_en: <span class="s">"Pending SHO approval"</span>, filter_spec: { logic: <span class="s">'AND'</span>, conditions: [{ field: <span class="s">'_status'</span>, operator: <span class="s">'eq'</span>, value: <span class="s">'PENDING_SHO'</span> }] } },
+  { name_en: <span class="s">"Cases under S.302"</span>,    filter_spec: { logic: <span class="s">'AND'</span>, conditions: [{ field: <span class="s">'ipc_section'</span>, operator: <span class="s">'contains'</span>, value: <span class="s">'302'</span> }] } },
+  { name_en: <span class="s">"PCR no action taken"</span>,  filter_spec: { logic: <span class="s">'AND'</span>, conditions: [{ field: <span class="s">'action_taken'</span>, operator: <span class="s">'eq'</span>, value: <span class="s">'NONE'</span> }] } },
+  { name_en: <span class="s">"Arrests this month"</span>,   filter_spec: { logic: <span class="s">'AND'</span>, conditions: [{ field: <span class="s">'date_of_arrest'</span>, operator: <span class="s">'this_month'</span> }] } },
+  { name_en: <span class="s">"SLA breached"</span>,         filter_spec: { logic: <span class="s">'AND'</span>, conditions: [{ field: <span class="s">'_sla_breached'</span>, operator: <span class="s">'is_true'</span> }] } },
+  { name_en: <span class="s">"Sent back to me"</span>,      filter_spec: { logic: <span class="s">'AND'</span>, conditions: [{ field: <span class="s">'_status'</span>, operator: <span class="s">'eq'</span>, value: <span class="s">'SENT_BACK_HC'</span> }] } },
+  { name_en: <span class="s">"Legacy imports"</span>,       filter_spec: { logic: <span class="s">'AND'</span>, conditions: [{ field: <span class="s">'_is_legacy'</span>, operator: <span class="s">'is_true'</span> }] } },
+];</pre>
+
+  <div class="note"><b>Future proofing:</b> Fields prefixed with <code>_</code> are virtual filter fields computed at query time (status, sla_breached, is_legacy). Real data fields are keys from the registry. The filter parser distinguishes them automatically. Adding a new virtual field requires one resolver function — no schema changes.</div>
+</section>
+
+<!-- ===== REPORT ENGINE ===== -->
+<section id="report-engine">
+  <h2><span class="sn">12</span> Report engine — 10 proforma templates + scheduled reports</h2>
+
+  <h3>10 proforma templates to seed</h3>
+  <table class="mig-table">
+    <tr><th>#</th><th>Template name</th><th>Record type</th><th>Output</th><th>Schedule</th></tr>
+    <tr><td>1</td><td>Arrest Register (daily)</td><td>ARREST</td><td>PDF + XLSX</td><td>Daily 06:00</td></tr>
+    <tr><td>2</td><td>PCR Call Log</td><td>PCR_CALL</td><td>PDF + XLSX</td><td>Daily 06:00</td></tr>
+    <tr><td>3</td><td>Cases Register</td><td>CASE</td><td>PDF + XLSX</td><td>Weekly Mon</td></tr>
+    <tr><td>4</td><td>PS Daily Status Report</td><td>ALL</td><td>PDF</td><td>Daily 07:00</td></tr>
+    <tr><td>5</td><td>District Compilation Summary</td><td>ALL</td><td>PDF + XLSX</td><td>Monthly 1st</td></tr>
+    <tr><td>6</td><td>Crime Head Analysis</td><td>ARREST + CASE</td><td>PDF + XLSX</td><td>Monthly 1st</td></tr>
+    <tr><td>7</td><td>IO Performance Report</td><td>ALL</td><td>PDF</td><td>Monthly 1st</td></tr>
+    <tr><td>8</td><td>Beat-wise Crime Summary</td><td>ARREST</td><td>PDF + XLSX</td><td>Weekly Mon</td></tr>
+    <tr><td>9</td><td>Pending Approvals Report</td><td>ALL</td><td>PDF</td><td>Daily 06:00</td></tr>
+    <tr><td>10</td><td>HQ District Digest</td><td>ALL</td><td>PDF</td><td>Weekly Mon</td></tr>
+  </table>
+
+  <h3>New report API endpoints</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Owner</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/templates</td><td><span class="ow o1">Dev 1</span></td><td>List all active templates with applicable levels + formats</td><td>Any</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/reports/generate</td><td><span class="ow o1">Dev 1</span></td><td>Queue: {template_id, filter_spec, format (pdf|xlsx|csv), from, to, ps_id?}</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/status/:jobId</td><td><span class="ow o1">Dev 1</span></td><td>pending | rendering | ready | failed</td><td>Owner</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/download/:jobId</td><td><span class="ow o1">Dev 1</span></td><td>Stream file (Content-Disposition: attachment). Signed MinIO URL.</td><td>Owner</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/history</td><td><span class="ow o1">Dev 1</span></td><td>Reports generated by current user. Query: page, limit</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/reports/scheduled</td><td><span class="ow o1">Dev 1</span></td><td>List scheduled report configurations</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/reports/scheduled</td><td><span class="ow o1">Dev 1</span></td><td>Create schedule: {template_id, cron, filter_spec, recipients[], format}</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m md">DELETE</span></td><td class="ep">/reports/scheduled/:id</td><td><span class="ow o1">Dev 1</span></td><td>Cancel scheduled report</td><td>Owner / SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/reports/templates</td><td><span class="ow o1">Dev 1</span></td><td>Create new template (SYSTEM_ADMIN only — add proforma without deployment)</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mu">PUT</span></td><td class="ep">/reports/templates/:id</td><td><span class="ow o1">Dev 1</span></td><td>Update template definition</td><td>SYSTEM_ADMIN</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note ok"><b>Zero-deployment new proforma:</b> POST /reports/templates with the template_definition JSON. The report engine reads it at runtime. No code change, no restart, no deployment. A non-developer admin can add a new proforma from the Admin UI.</div>
+</section>
+
+<!-- ===== ADVANCED ANALYTICS ===== -->
+<section id="analytics-adv">
+  <h2><span class="sn">13</span> Advanced analytics — full dashboard APIs</h2>
+
+  <h3>New analytics endpoints</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Owner</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/overview</td><td><span class="ow o2">Dev 2</span></td><td>Count cards (existing). Now scoped by role level automatically.</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/by-crime-head</td><td><span class="ow o2">Dev 2</span></td><td>Breakdown by IPC section. Query: from, to, ps_id?, district_id?</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/by-ps</td><td><span class="ow o2">Dev 2</span></td><td>Per-PS breakdown for a district. Returns: [{ps_id, ps_name, counts_by_type}]</td><td>DISTRICT+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/trends</td><td><span class="ow o2">Dev 2</span></td><td>Time series. Query: metric, period (daily|weekly|monthly), from, to</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/status-breakdown</td><td><span class="ow o2">Dev 2</span></td><td>Count by workflow status</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/beat-wise</td><td><span class="ow o2">Dev 2</span></td><td>Crime counts by beat number. Query: ps_id, from, to, record_type</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/io-performance</td><td><span class="ow o2">Dev 2</span></td><td>Investigating officer stats: avg resolution time, pending count, conviction rate. Query: ps_id, from, to</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/district-comparison</td><td><span class="ow o2">Dev 2</span></td><td>Side-by-side district metrics. Query: from, to, metric[]</td><td>HQ_ADMIN+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/heatmap</td><td><span class="ow o2">Dev 2</span></td><td>Beat × hour-of-day crime frequency grid. Query: ps_id, from, to, record_type</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/submission-health</td><td><span class="ow o2">Dev 2</span></td><td>% records submitted on time, avg time-to-approve per PS, SLA breach rate</td><td>DISTRICT+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/legacy-coverage</td><td><span class="ow o2">Dev 2</span></td><td>Legacy vs native record count, coverage by month, import quality score</td><td>DISTRICT+</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===== OFFLINE SYNC ===== -->
+<section id="offline-sync">
+  <h2><span class="sn">14</span> Offline sync — Service Worker + IndexedDB</h2>
+  <p>PS connectivity can be unreliable. The app must function offline for core data-entry tasks and sync all queued operations on reconnect.</p>
+
+  <h3>What works offline vs online-only</h3>
+  <table class="mig-table">
+    <tr><th>Works offline</th><th>Requires connectivity</th></tr>
+    <tr><td>Create / edit DRAFT records</td><td>Submit record (state machine transition)</td></tr>
+    <tr><td>View locally cached PS records</td><td>Receive send-backs from SHO</td></tr>
+    <tr><td>View saved filter presets</td><td>Cross-PS or cross-district queries</td></tr>
+    <tr><td>Search cached records locally</td><td>Analytics dashboards</td></tr>
+    <tr><td>View previously downloaded reports</td><td>Report generation</td></tr>
+    <tr><td>View cached field registry</td><td>Admin config changes</td></tr>
+    <tr><td>View cached user profile + PS info</td><td>Legacy import</td></tr>
+    <tr><td>Draft auto-save (IndexedDB only)</td><td>Notifications from other users</td></tr>
+  </table>
+
+  <h3>Sync ops schema (IndexedDB)</h3>
+<pre><span class="c">// IndexedDB store: 'sync_ops'</span>
+{
+  id:          <span class="s">"uuid-local"</span>,         <span class="c">// local ID before server assigns real UUID</span>
+  created_at:  1718000000000,          <span class="c">// UNIX ms — strict ordering on replay</span>
+  method:      <span class="s">"POST"</span>,
+  endpoint:    <span class="s">"/records"</span>,
+  body:        { record_type: <span class="s">"ARREST"</span>, data: { ... } },
+  status:      <span class="s">"QUEUED"</span>,              <span class="c">// QUEUED | REPLAYING | DONE | CONFLICT</span>
+  retry_count: 0,
+  last_error:  null
+}
+
+<span class="c">// Conflict resolution rules:</span>
+<span class="c">// DRAFT records    → last-write-wins (local beats server if server version = 1)</span>
+<span class="c">// PENDING_SHO+    → server wins always. User notified: "Record advanced — local edits discarded"</span>
+<span class="c">// On reconnect: replay in created_at ASC order. Stop on first CONFLICT, notify user.</span></pre>
+
+  <h3>New sync API endpoint</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/sync/replay</td><td>Accepts array of sync_ops in order. Replays each, returns [{op_id, status, server_id?, error?}]</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/sync/pull</td><td>Pull all records newer than ?since=timestamp for current user's PS (cache refresh)</td><td>Any</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===== ADMIN UI ===== -->
+<section id="admin-ui">
+  <h2><span class="sn">15</span> Admin config UI — browser-based management</h2>
+  <p>All configuration that currently requires a DB script must be manageable from the browser. Dev 1 builds the screens; Dev 3 integrates the APIs and writes tests.</p>
+
+  <div class="feat-grid">
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Admin module</div>
+      <div class="feat-name">Hierarchy manager</div>
+      <div class="feat-desc">Tree view of HQ → Districts → PS. Add node, rename, reparent (drag-and-drop). Active/inactive toggle. Changes take effect immediately for new records.</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Admin module</div>
+      <div class="feat-name">User management</div>
+      <div class="feat-desc">CRUD for all users. Role assignment. PS assignment. Bulk import from CSV (for initial setup). Password reset. Active/inactive.</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Admin module</div>
+      <div class="feat-name">Field registry editor</div>
+      <div class="feat-desc">Add/edit/disable fields per record type. Section reordering. EN/HI label editing. Validation rules UI. Toggle visible_to_levels.</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Admin module</div>
+      <div class="feat-name">Level data contracts</div>
+      <div class="feat-desc">Per-level field visibility matrix. Checkboxes for which fields each hierarchy level sees. Effective immediately on next compilation.</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Admin module</div>
+      <div class="feat-name">Report template editor</div>
+      <div class="feat-desc">Add new proforma templates without code. JSON editor + preview. Assign to applicable levels + record types + output formats.</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Admin module</div>
+      <div class="feat-name">Workflow config</div>
+      <div class="feat-desc">View and edit valid transitions. Add new levels. Configure SLA hours per step. Enable/disable transitions (e.g. enable JCP level for specific record types).</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Admin module</div>
+      <div class="feat-name">System health</div>
+      <div class="feat-desc">Total users, PS count, records today, RabbitMQ queue depth, Redis memory, pending report jobs, last cron run timestamps.</div>
+    </div>
+    <div class="feat" style="--fc:#3b82f6">
+      <div class="feat-tag">Admin module</div>
+      <div class="feat-name">Audit log viewer</div>
+      <div class="feat-desc">Filter by user, action type, date range, module. Hash chain verification tool (scan and highlight any broken links). Export as PDF.</div>
+    </div>
+  </div>
+
+  <h3>New admin endpoints</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Owner</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/admin/stats</td><td><span class="ow o1">Dev 1</span></td><td>System health: users, PS, queues, cron, Redis, RabbitMQ</td><td>HQ_ADMIN+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/admin/audit-log</td><td><span class="ow o1">Dev 1</span></td><td>Full audit log with filters. Query: user_id, action, module, from, to, page</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/admin/audit-verify</td><td><span class="ow o1">Dev 1</span></td><td>Run hash chain verification. Returns: {valid: bool, first_broken_at?: id}</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/level-contracts</td><td><span class="ow o2">Dev 2</span></td><td>List all level data contracts</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/level-contracts</td><td><span class="ow o2">Dev 2</span></td><td>Create contract: {from_level, to_level, record_type, visible_field_keys[]}</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mu">PUT</span></td><td class="ep">/level-contracts/:id</td><td><span class="ow o2">Dev 2</span></td><td>Update visible fields</td><td>SYSTEM_ADMIN</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===== MFA + KEYCLOAK ===== -->
+<section id="mfa">
+  <h2><span class="sn">16</span> MFA + Keycloak migration — owned by Dev 1</h2>
+  <div class="dp" style="--dc:#1d4ed8;--dl:#eff6ff;--db:#bfdbfe">
+    <div class="dp-head"><div class="dp-av">D1</div><div><div class="dp-name">Dev 1 — Advanced Auth, Security, Admin UI</div><div class="dp-role">Keycloak · MFA · IP allowlist · Hash chain · SHA256 audit · Admin config screens</div></div></div>
+    <div class="dp-body">
+      <h3>Keycloak setup (Docker)</h3>
+<pre><span class="c"># docker-compose.yml addition</span>
+keycloak:
+  image: quay.io/keycloak/keycloak:24.0
+  command: start-dev
+  environment:
+    KC_DB: postgres
+    KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+    KC_DB_USERNAME: ${PG_USER}
+    KC_DB_PASSWORD: ${PG_PASSWORD}
+    KEYCLOAK_ADMIN: admin
+    KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+  ports: ["8080:8080"]
+  depends_on: [postgres]
+
+<span class="c"># Keycloak realm config (JSON export, import on startup):</span>
+<span class="c"># realm: pharos | client: pharos-api | flows: browser + OTP (TOTP, mandatory for SHO+)</span>
+<span class="c"># Roles: HC, SHO, JCP, SCP, DISTRICT_OFFICER, HQ_ADMIN, HQ_ANALYST, SYSTEM_ADMIN</span></pre>
+
+      <h3>IAM middleware migration</h3>
+<pre><span class="c">// src/middleware/auth.js — BEFORE: custom JWT verify</span>
+<span class="c">// AFTER: Keycloak token verify (same interface, zero changes to routes)</span>
+<span class="k">const</span> { Keycloak } = require(<span class="s">'keycloak-connect'</span>);
+<span class="k">const</span> kc = <span class="k">new</span> Keycloak({}, {
+  realm: <span class="s">'pharos'</span>,
+  <span class="s">'auth-server-url'</span>: process.env.KEYCLOAK_URL,
+  resource: <span class="s">'pharos-api'</span>,
+  <span class="s">'bearer-only'</span>: true
+});
+<span class="c">// kc.middleware() replaces existing auth middleware — same req.user shape</span>
+<span class="c">// All existing RBAC guards continue to work with no changes</span></pre>
+
+      <h3>SHA256 hash chain implementation</h3>
+<pre><span class="c">// On every record_revisions INSERT:</span>
+<span class="k">const</span> crypto = require(<span class="s">'crypto'</span>);
+<span class="k">function</span> computeRowHash(revision, prevHash) {
+  <span class="k">const</span> content = JSON.stringify({
+    record_id:      revision.record_id,
+    revision_number: revision.revision_number,
+    changed_by:     revision.changed_by,
+    changed_at:     revision.changed_at.toISOString(),
+    field_changes:  revision.field_changes,
+    prev_hash:      prevHash
+  });
+  <span class="k">return</span> crypto.createHash(<span class="s">'sha256'</span>).update(content).digest(<span class="s">'hex'</span>);
+}
+<span class="c">// Store both prev_hash and row_hash on the row</span>
+<span class="c">// POST /admin/audit-verify scans the chain and returns first broken row</span></pre>
+
+      <h3>New security features</h3>
+      <ul class="tsk">
+        <li class="crit"><b>MFA</b> — TOTP enforced for SHO, DISTRICT_OFFICER, JCP, SCP, HQ_ADMIN, SYSTEM_ADMIN via Keycloak OTP flow</li>
+        <li class="crit"><b>IP allowlist middleware</b> — reject any request not from the intranet CIDR (configured in .env). Nginx handles first; Express has fallback middleware.</li>
+        <li><b>Session fixation protection</b> — rotate session token on privilege escalation (Keycloak default)</li>
+        <li><b>CSRF token</b> — double-submit cookie pattern for state-changing requests</li>
+        <li><b>Per-role rate limits</b> — HC: 200 req/min, SHO: 150 req/min, HQ: 300 req/min, ADMIN: 50 req/min (tighter for admin)</li>
+        <li><b>Failed login lockout</b> — 5 attempts → 30 min lockout (Keycloak brute force protection)</li>
+        <li><b>Audit all admin actions</b> — every write to users/hierarchy/fields/contracts publishes admin.config_changed event</li>
+        <li><b>Tamper detection endpoint</b> — POST /admin/audit-verify scans hash chain, returns {valid, first_broken_at}</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== RBAC EXPANSION ===== -->
+<section id="rbac-expansion">
+  <h2><span class="sn">17</span> RBAC expansion — 7 roles in Phase 2</h2>
+  <p>Phase 1 had 5 roles. Phase 2 adds JCP and SCP as intermediate levels and splits HQ into ANALYST and ADMIN.</p>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Role</th><th>Hierarchy level</th><th>Can create records</th><th>Can approve</th><th>Can compile</th><th>Can admin</th></tr></thead>
+    <tbody>
+    <tr><td class="ep">HC</td><td>PS level</td><td>✓</td><td>✗</td><td>✗</td><td>✗</td></tr>
+    <tr><td class="ep">SHO</td><td>PS head</td><td>✗</td><td>PS → District</td><td>✗</td><td>✗</td></tr>
+    <tr><td class="ep">DISTRICT_OFFICER</td><td>District</td><td>✗</td><td>District → next</td><td>✓</td><td>✗</td></tr>
+    <tr><td class="ep">JCP</td><td>Joint Commissioner</td><td>✗</td><td>JCP → SCP</td><td>✗</td><td>✗</td></tr>
+    <tr><td class="ep">SCP</td><td>Special Commissioner</td><td>✗</td><td>SCP → HQ</td><td>✗</td><td>✗</td></tr>
+    <tr><td class="ep">HQ_ANALYST</td><td>HQ</td><td>✗</td><td>View only</td><td>✗</td><td>✗</td></tr>
+    <tr><td class="ep">HQ_ADMIN</td><td>HQ</td><td>✗</td><td>Seal → ARCHIVED</td><td>✗</td><td>Partial</td></tr>
+    <tr><td class="ep">SYSTEM_ADMIN</td><td>System-wide</td><td>✗</td><td>✗</td><td>✗</td><td>✓ Full</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><b>Future-proofing:</b> Adding a new role (e.g. DCP) is: (1) Keycloak: add role. (2) DB: add to workflow_transitions_config allowed_roles for relevant transitions. (3) Frontend: add nav items. Zero changes to existing code.</div>
+</section>
+
+<!-- ===== NEW EVENT BUS EVENTS ===== -->
+<section id="new-events">
+  <h2><span class="sn">18</span> New event bus events — Phase 2 additions</h2>
+  <p>Phase 1 had 4 events. Phase 2 adds 10 more. All events follow the same exchange/routing key pattern. New subscribers plug in without touching publishers.</p>
+  <div class="ev"><div class="ev-name">record.jcp_approved</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Workflow Engine</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Audit Ledger, Notifications</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{recordId, jcp_user_id, to_status:'SCP_REVIEW', timestamp}</div></div></div></div>
+  <div class="ev"><div class="ev-name">record.sealed</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Workflow Engine</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Audit Ledger, Reports (auto PDF)</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{recordId, sealed_by, final_hash, archive_date}</div></div></div></div>
+  <div class="ev"><div class="ev-name">deadline.approaching</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">SLA cron job</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Notifications, Admin alert</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{recordId, current_status, deadline_at, assigned_user_id, ps_id}</div></div></div></div>
+  <div class="ev"><div class="ev-name">deadline.breached</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">SLA cron job</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Notifications, Analytics, Supervisor alert</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{recordId, current_status, sla_hours_exceeded, ps_id, district_id}</div></div></div></div>
+  <div class="ev"><div class="ev-name">legacy.batch_imported</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Legacy Import service</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Audit Ledger, Analytics (reindex)</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{batch_id, ps_id, record_type, imported_count, imported_by}</div></div></div></div>
+  <div class="ev"><div class="ev-name">report.generated</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Report Engine</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Notifications (download ready)</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{job_id, template_id, requested_by, file_path, format, file_size_bytes}</div></div></div></div>
+  <div class="ev"><div class="ev-name">audit.chain_break_detected</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Audit verify job</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">CRITICAL alert to SYSTEM_ADMIN</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{broken_revision_id, record_id, detected_at, scanner_user_id}</div></div></div></div>
+  <div class="ev"><div class="ev-name">admin.config_changed</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Admin Config module</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Audit Ledger, Cache invalidation</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{entity_type, entity_id, action, changed_by, changes}</div></div></div></div>
+  <div class="ev"><div class="ev-name">sync.conflict_detected</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Sync service</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Notifications (user alert), Audit Ledger</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{record_id, local_version, server_version, conflict_rule, user_id}</div></div></div></div>
+  <div class="ev"><div class="ev-name">compilation.deadline_warning</div><div class="ev-meta"><div><div class="ev-lbl">Publisher</div><div class="ev-val">Compilation cron</div></div><div><div class="ev-lbl">Subscribers</div><div class="ev-val">Notifications (DISTRICT_OFFICER)</div></div><div><div class="ev-lbl">Payload</div><div class="ev-val">{district_id, period, due_date, pending_ps_count, total_ps_count}</div></div></div></div>
+</section>
+
+<!-- ===== NEW DB TABLES ===== -->
+<section id="new-tables">
+  <h2><span class="sn">19</span> New database tables — Phase 2</h2>
+  <p>All tables follow the same patterns as Phase 1: UUID PKs, TIMESTAMPTZ, soft deletes where appropriate. Run as separate migration files, never modify existing tables destructively.</p>
+<pre><span class="c">-- 001_p2_legacy.sql</span>
+ALTER TABLE records ADD COLUMN IF NOT EXISTS is_legacy     BOOLEAN DEFAULT false;
+ALTER TABLE records ADD COLUMN IF NOT EXISTS source_system VARCHAR;
+ALTER TABLE records ADD COLUMN IF NOT EXISTS imported_at   TIMESTAMPTZ;
+ALTER TABLE records ADD COLUMN IF NOT EXISTS imported_by   UUID REFERENCES users(id);
+ALTER TABLE records ADD COLUMN IF NOT EXISTS legacy_ref    VARCHAR;
+
+CREATE TABLE IF NOT EXISTS legacy_import_batches (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ps_id          UUID NOT NULL REFERENCES hierarchy_nodes(id),
+  record_type    VARCHAR NOT NULL,
+  source_file    VARCHAR NOT NULL,
+  imported_by    UUID REFERENCES users(id),
+  imported_at    TIMESTAMPTZ DEFAULT NOW(),
+  total_rows     INT NOT NULL DEFAULT 0,
+  imported_count INT NOT NULL DEFAULT 0,
+  skipped_count  INT NOT NULL DEFAULT 0,
+  error_count    INT NOT NULL DEFAULT 0,
+  status         VARCHAR NOT NULL DEFAULT 'PENDING',
+  error_log      JSONB NOT NULL DEFAULT '[]'
+);
+
+CREATE TABLE IF NOT EXISTS legacy_amendments (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  record_id    UUID NOT NULL REFERENCES records(id),
+  requested_by UUID NOT NULL REFERENCES users(id),
+  approved_by  UUID REFERENCES users(id),
+  requested_at TIMESTAMPTZ DEFAULT NOW(),
+  approved_at  TIMESTAMPTZ,
+  status       VARCHAR NOT NULL DEFAULT 'PENDING',
+  field_changes JSONB NOT NULL,
+  reason       TEXT NOT NULL
+);
+
+<span class="c">-- 002_p2_workflow.sql</span>
+CREATE TABLE IF NOT EXISTS workflow_transitions_config (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  record_type      VARCHAR NOT NULL DEFAULT '*',
+  from_status      VARCHAR NOT NULL,
+  to_status        VARCHAR NOT NULL,
+  action           VARCHAR NOT NULL,
+  allowed_roles    VARCHAR[] NOT NULL,
+  requires_comment BOOLEAN NOT NULL DEFAULT false,
+  sla_hours        INT,
+  is_active        BOOLEAN NOT NULL DEFAULT true
+);
+
+<span class="c">-- 003_p2_filters.sql</span>
+CREATE TABLE IF NOT EXISTS filter_presets (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name_en               VARCHAR NOT NULL,
+  name_hi               VARCHAR NOT NULL,
+  scope                 VARCHAR NOT NULL,   <span class="c">-- SYSTEM | ROLE | USER</span>
+  scope_id              UUID,               <span class="c">-- role or user id</span>
+  filter_spec           JSONB NOT NULL,
+  applicable_record_types VARCHAR[] NOT NULL DEFAULT ARRAY['ARREST','PCR_CALL','CASE'],
+  created_by            UUID REFERENCES users(id),
+  is_active             BOOLEAN NOT NULL DEFAULT true,
+  created_at            TIMESTAMPTZ DEFAULT NOW()
+);
+
+<span class="c">-- 004_p2_reports.sql</span>
+CREATE TABLE IF NOT EXISTS report_templates (
+  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name_en                 VARCHAR NOT NULL,
+  name_hi                 VARCHAR NOT NULL,
+  applicable_record_types VARCHAR[] NOT NULL,
+  applicable_levels       VARCHAR[] NOT NULL DEFAULT ARRAY['PS','DISTRICT','HQ'],
+  template_definition     JSONB NOT NULL,    <span class="c">-- sections, fields, computed cols, layout</span>
+  output_formats          VARCHAR[] NOT NULL DEFAULT ARRAY['PDF','XLSX'],
+  is_active               BOOLEAN NOT NULL DEFAULT true,
+  created_by              UUID REFERENCES users(id),
+  created_at              TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS scheduled_reports (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  template_id     UUID NOT NULL REFERENCES report_templates(id),
+  cron_expr       VARCHAR NOT NULL,           <span class="c">-- e.g. '0 6 * * *'</span>
+  filter_spec     JSONB NOT NULL DEFAULT '{}',
+  format          VARCHAR NOT NULL DEFAULT 'PDF',
+  scope_ps_id     UUID REFERENCES hierarchy_nodes(id),
+  scope_district_id UUID REFERENCES hierarchy_nodes(id),
+  recipients      UUID[] NOT NULL DEFAULT '{}',
+  created_by      UUID REFERENCES users(id),
+  is_active       BOOLEAN NOT NULL DEFAULT true,
+  last_run_at     TIMESTAMPTZ,
+  last_run_status VARCHAR,                    <span class="c">-- 'success' | 'failed' | null</span>
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+<span class="c">-- 005_p2_level_contracts.sql</span>
+CREATE TABLE IF NOT EXISTS level_data_contracts (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  from_level          VARCHAR NOT NULL,
+  to_level            VARCHAR NOT NULL,
+  route               VARCHAR NOT NULL DEFAULT 'OPS_CHAIN',
+  record_type         VARCHAR NOT NULL DEFAULT '*',
+  visible_field_keys  VARCHAR[] NOT NULL,
+  aggregate_definitions JSONB NOT NULL DEFAULT '[]',
+  is_active           BOOLEAN NOT NULL DEFAULT true,
+  updated_at          TIMESTAMPTZ DEFAULT NOW()
+);
+
+<span class="c">-- 006_p2_audit_hash.sql</span>
+ALTER TABLE record_revisions ADD COLUMN IF NOT EXISTS prev_hash VARCHAR(64);
+ALTER TABLE record_revisions ADD COLUMN IF NOT EXISTS row_hash  VARCHAR(64);
+
+<span class="c">-- 007_p2_indexes.sql (performance)</span>
+CREATE INDEX IF NOT EXISTS idx_records_is_legacy     ON records(is_legacy) WHERE is_legacy = true;
+CREATE INDEX IF NOT EXISTS idx_records_current_status ON records(current_status);
+CREATE INDEX IF NOT EXISTS idx_records_ps_district    ON records(ps_id, district_id);
+CREATE INDEX IF NOT EXISTS idx_records_created_at     ON records(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_records_data_gin       ON records USING gin(data);
+CREATE INDEX IF NOT EXISTS idx_revisions_record_id    ON record_revisions(record_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read) WHERE is_read = false;</pre>
+</section>
+
+<!-- ===== ALL NEW API ENDPOINTS ===== -->
+<section id="new-apis">
+  <h2><span class="sn">20</span> All new Phase 2 API endpoints — complete reference</h2>
+  <p>All Phase 1 endpoints remain unchanged. These are additions only.</p>
+
+  <h3>Auth + Security (Dev 1)</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/auth/mfa/enroll</td><td>Generate TOTP QR code for user</td><td>SHO+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/auth/mfa/verify</td><td>Verify TOTP code during login</td><td>Any</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/auth/mfa/disable</td><td>Admin disables MFA for a user (lost device)</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/audit/chain-verify</td><td>Verify hash chain integrity. Returns {valid, broken_at?}</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/audit/system</td><td>System-level audit log (admin actions, config changes)</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/admin/system-health</td><td>Queue depths, Redis stats, DB pool, cron status</td><td>HQ_ADMIN+</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Records + Workflow (Dev 2)</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/records/check-duplicate</td><td>Query: record_type, fir_number?, accused_name?, date? → {isDuplicate, existingId?}</td><td>HC+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/attachments</td><td>Upload file to MinIO. Returns: {attachment_id, url, size}</td><td>HC (own)</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/records/:id/attachments</td><td>List attachments for a record</td><td>Any (scoped)</td></tr>
+    <tr><td><span class="m md">DELETE</span></td><td class="ep">/records/:id/attachments/:aid</td><td>Delete attachment (DRAFT only)</td><td>HC (own)</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/jcp-approve</td><td>JCP approves → SCP_REVIEW</td><td>JCP</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/scp-approve</td><td>SCP approves → HQ_RECEIVED</td><td>SCP</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/records/:id/seal</td><td>HQ seals → ARCHIVED. Body: {seal_note}</td><td>HQ_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/workflow/sla-breaches</td><td>Records past SLA. Query: ps_id, district_id, from, to</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/workflow/sla-approaching</td><td>Records within 2h of SLA deadline for current user</td><td>Any</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Legacy import (Dev 2)</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/legacy/import</td><td>Upload CSV/XLSX. Multipart. Body: file, record_type, ps_id, dry_run</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/legacy/batches</td><td>List import batches. Query: ps_id, status, from, to, page</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/legacy/batches/:id</td><td>Single batch with error log and row-level status</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/legacy/batches/:id/errors</td><td>Download error log as CSV for re-upload after corrections</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/legacy/column-map/:record_type</td><td>Default column-to-field mapping template for a record type</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/legacy/amendments</td><td>Request a correction to an imported record</td><td>SHO+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/legacy/amendments/:id/approve</td><td>Approve amendment: applies field_changes to record.data</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/legacy/amendments/:id/reject</td><td>Reject amendment with reason</td><td>DISTRICT_OFFICER+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/legacy/amendments</td><td>List amendments. Query: status, ps_id, record_id, page</td><td>SHO+</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Filters + Presets (Dev 2)</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/filters/apply</td><td>Apply filter spec. Body: {record_type, filter_spec, page, limit}</td><td>Any (scoped)</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/filters/count</td><td>Count matching records (preview before applying)</td><td>Any (scoped)</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/filters/presets</td><td>Query: scope, record_type → [{id, name_en, name_hi, filter_spec}]</td><td>Any</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/filters/presets</td><td>Save user preset: {name_en, name_hi, filter_spec, record_types[]}</td><td>Any</td></tr>
+    <tr><td><span class="m mu">PUT</span></td><td class="ep">/filters/presets/:id</td><td>Update preset (name or spec)</td><td>Owner / SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m md">DELETE</span></td><td class="ep">/filters/presets/:id</td><td>Delete preset</td><td>Owner / SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/filters/field-options/:key</td><td>Distinct values for a filterable field (for filter dropdown). Query: record_type, ps_id?</td><td>Any (scoped)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Advanced analytics (Dev 2)</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/beat-wise</td><td>Crime count by beat no. Query: ps_id, from, to, record_type</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/io-performance</td><td>IO stats: avg close time, pending count, cases opened. Query: ps_id, from, to</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/district-comparison</td><td>Side-by-side district breakdown. Query: from, to, metric[]</td><td>HQ_ADMIN+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/heatmap</td><td>Beat × hour-of-day grid (crime frequency). Query: ps_id, from, to</td><td>SHO+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/submission-health</td><td>On-time %, avg approve time, SLA breach rate per PS. Query: district_id, from, to</td><td>DISTRICT+</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/analytics/legacy-coverage</td><td>Legacy vs native by month, import quality. Query: ps_id, district_id, from, to</td><td>DISTRICT+</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Sync (Dev 2)</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/sync/replay</td><td>Replay queued ops in order. Body: [{id, method, endpoint, body}]. Returns per-op status.</td><td>Any</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/sync/pull</td><td>Pull all records updated after ?since= for current user's PS</td><td>Any</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Admin config (Dev 1 builds, Dev 3 integrates)</h3>
+  <div class="at-wrap"><table class="at">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>RBAC</th></tr></thead>
+    <tbody>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/level-contracts</td><td>List all level data contracts</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/level-contracts</td><td>Create contract: {from_level, to_level, record_type, visible_field_keys[], aggregate_definitions[]}</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mu">PUT</span></td><td class="ep">/level-contracts/:id</td><td>Update visible_field_keys or aggregate_definitions</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/workflow/transitions-config</td><td>List all configured state machine transitions</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/workflow/transitions-config</td><td>Add transition: {record_type, from_status, to_status, action, allowed_roles[], requires_comment, sla_hours}</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mpa">PATCH</span></td><td class="ep">/workflow/transitions-config/:id/status</td><td>Enable/disable a transition</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/admin/audit-log</td><td>System audit (config changes, admin actions). Query: user_id, action, module, from, to, page</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mp">POST</span></td><td class="ep">/admin/audit-verify</td><td>Scan hash chain. Returns {valid: bool, broken_at?: revision_id}</td><td>SYSTEM_ADMIN</td></tr>
+    <tr><td><span class="m mg">GET</span></td><td class="ep">/admin/system-health</td><td>RabbitMQ queue depths, Redis memory, DB pool, cron last run, pending jobs</td><td>HQ_ADMIN+</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===== EXPANSION GUIDE ===== -->
+<section id="expansion">
+  <h2><span class="sn">21</span> Future expansion guide — how to extend PHAROS</h2>
+  <div class="note ok"><b>Design goal achieved:</b> Every item below requires zero changes to existing modules. It is either a DB insert, a new module subscribing to existing events, or a new file in an existing plugin directory.</div>
+
+  <h3>Adding a new record type (e.g. Beat Patrol Report)</h3>
+  <ul class="tsk">
+    <li><b>Step 1:</b> <code>INSERT INTO field_registry</code> — add all fields for the new type with <code>applicable_record_types = ['BEAT_PATROL']</code></li>
+    <li><b>Step 2:</b> <code>INSERT INTO workflow_transitions_config</code> — define the workflow states for the new type (or use <code>record_type = '*'</code> to inherit all existing transitions)</li>
+    <li><b>Step 3:</b> <code>INSERT INTO report_templates</code> — add report proformas for the new type</li>
+    <li><b>Step 4:</b> <code>INSERT INTO level_data_contracts</code> — define field visibility at each level</li>
+    <li><b>Step 5:</b> Frontend — DynamicForm already renders any record type from the registry. Add nav item to the record type picker.</li>
+    <li><b>Zero changes required to:</b> records CRUD, workflow engine, audit ledger, notifications, filter engine, analytics endpoints (they all accept <code>record_type</code> as a query param), report engine.</li>
+  </ul>
+
+  <h3>Adding a new hierarchy level (e.g. ACP Range between District and PS)</h3>
+  <ul class="tsk">
+    <li><b>Step 1:</b> <code>INSERT INTO hierarchy_nodes</code> — add the ACP Range nodes with <code>node_type = 'ACP_RANGE'</code> and correct parent_id chain</li>
+    <li><b>Step 2:</b> Keycloak — add <code>ACP_RANGE_OFFICER</code> role</li>
+    <li><b>Step 3:</b> <code>INSERT INTO workflow_transitions_config</code> — add transitions that include the new level</li>
+    <li><b>Step 4:</b> <code>INSERT INTO level_data_contracts</code> — define what the ACP level sees</li>
+    <li><b>Zero changes required to:</b> existing workflows, forms, reports, audit, notifications.</li>
+  </ul>
+
+  <h3>Adding a new external integration (e.g. SMS gateway for senior officers)</h3>
+  <ul class="tsk">
+    <li><b>Step 1:</b> Create <code>src/modules/sms/sms.service.js</code></li>
+    <li><b>Step 2:</b> Subscribe to existing events: <code>deadline.approaching</code>, <code>record.status_changed</code>, <code>audit.chain_break_detected</code></li>
+    <li><b>Step 3:</b> Send SMS via intranet SMS gateway for the relevant events</li>
+    <li><b>Zero changes required to:</b> every other module. SMS is just another subscriber on the event bus.</li>
+  </ul>
+
+  <h3>Adding a new analytics dimension (e.g. weather correlation)</h3>
+  <ul class="tsk">
+    <li><b>Step 1:</b> Add the new field (e.g. <code>weather_condition</code>) to field_registry for applicable record types</li>
+    <li><b>Step 2:</b> Add <code>GET /analytics/by-weather</code> endpoint that aggregates <code>records.data->>'weather_condition'</code></li>
+    <li><b>Step 3:</b> Add frontend chart for it</li>
+    <li><b>Zero changes required to:</b> existing analytics, records, workflow, anything.</li>
+  </ul>
+
+  <h3>Adding a new database backend (e.g. migrate to CockroachDB for HA)</h3>
+  <ul class="tsk">
+    <li><b>Step 1:</b> Implement the Repository interface for CockroachDB (same function signatures, new driver)</li>
+    <li><b>Step 2:</b> Update <code>db.js</code> connection string</li>
+    <li><b>Step 3:</b> Migrate data (pgdump-compatible for CockroachDB)</li>
+    <li><b>Zero changes required to:</b> services, controllers, middleware, frontend.</li>
+  </ul>
+
+  <h3>Adding Elasticsearch for full-text search</h3>
+  <ul class="tsk">
+    <li><b>Step 1:</b> Filter engine already has a routing switch: simple specs → PostgreSQL JSONB, complex specs → Elasticsearch</li>
+    <li><b>Step 2:</b> Set up Elasticsearch and create index mapping from field_registry</li>
+    <li><b>Step 3:</b> Subscribe to <code>record.created</code> + <code>record.updated</code> events → index into Elasticsearch</li>
+    <li><b>Existing queries:</b> continue to work on PostgreSQL. Complex queries automatically route to Elasticsearch once it's up.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

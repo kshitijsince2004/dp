@@ -1,0 +1,41 @@
+{
+  "template_type": "LINKED",
+  "primary_record_type": "CASE",
+  "link_type_code": "CASE_ARREST",
+  "direction": "source_to_target",
+  "header": {
+    "title_en": "Manual FIR Register",
+    "title_hi": "मैनुअल एफआईआर रजिस्टर",
+    "short_name_en": "Manual FIR"
+  },
+  "columns": [
+    { "key": "ps_name",                  "label": "Police Station (P.S.)",      "source": "hierarchy" },
+    { "key": "fir_no",                   "label": "FIR No.",                    "source": "case" },
+    { "key": "sections",                 "label": "Under Section (U/S)",        "source": "case" },
+    { "key": "complainant_name",         "label": "Name of Complainant",        "source": "case" },
+    { "key": "complainant_parent_name",  "label": "Father / Husband Name",      "source": "case" },
+    { "key": "complainant_address",      "label": "Address of Complainant",     "source": "case" },
+    { "key": "time_of_occurrence",       "label": "Time of Occurrence",         "source": "case" },
+    { "key": "occurrence_place",         "label": "Place of Occurrence",        "source": "case" },
+    { "key": "occurrence_date",          "label": "Date of Occurrence",         "source": "case" },
+    { "key": "brief_facts",              "label": "Gist",                       "source": "case" },
+    { "key": "arrested_name",            "label": "Name (Arrested)",            "source": "arrest" },
+    { "key": "parents_name",             "label": "Father / Husband Name",      "source": "arrest" },
+    { "key": "arrested_address",         "label": "Address",                    "source": "arrest" },
+    { "key": "age_gender",               "label": "Age",                        "source": "arrest" },
+    { "key": "io_name",                  "label": "Name of IO",                 "source": "case" }
+  ],
+  "header_groups": [
+    { "label": "S. No.",              "span": 1 },
+    { "label": "Police Station",      "span": 1 },
+    { "label": "FIR No.",             "span": 1 },
+    { "label": "Under Section",       "span": 1 },
+    { "label": "NAME OF COMPLAINANT", "span": 3 },
+    { "label": "Time",                "span": 1 },
+    { "label": "Place",               "span": 1 },
+    { "label": "Date",                "span": 1 },
+    { "label": "Gist",                "span": 1 },
+    { "label": "ARRESTED PERSON",     "span": 4 },
+    { "label": "Name of IO",          "span": 1 }
+  ]
+}

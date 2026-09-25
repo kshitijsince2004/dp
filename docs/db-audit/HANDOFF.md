@@ -1,0 +1,104 @@
+# PHAROS DB Restructure — HANDOFF
+
+**Purpose:** single resume-point for the full DB restructure. Read this first; it tells you what is decided, what exists, and what's next. Keep it updated at every milestone.
+**Last updated:** 2026-07-13 (engineering baseline adopted — see below).
+
+> **2026-07-13:** `docs/ENGINEERING_BASELINE.md` adopted as the BINDING conduct contract
+> for stage-5+ implementation (validation posture, frozen import template, dumb frontend,
+> jurisdiction isolation, deferred-audit priority). It re-ranks the stage-5 order: hash-chain
+> enforcement (stage 6 here) moves LAST; append-only hooks stay warm. Where sequencing in
+> this file conflicts with the baseline, the baseline wins.
+
+## Phase map
+
+| Phase | Status | Artifact |
+|---|---|---|
+| 1. Pre-design audit (old schema ground truth) | ✅ done (2026-07-06) | `DB_GROUND_TRUTH.md` + `schema.sql` + `schema-browser.html` — historical reference; mine only, never build on it |
+| 2. Architecture decisions | ✅ FINAL (2026-07-07) | `DB_REDESIGN_DECISIONS.md` (Levels 1–7) + 13 architect rulings (quoted in `DB_SCHEMA.md` §10) |
+| 3. New schema design docs | ✅ done (2026-07-07) | **`DB_SCHEMA.md`** (complete spec — the AI/dev context file) + **`ER_DIAGRAM.md`** (Mermaid source) + **`ER_DIAGRAM.drawio`** (open directly in draw.io, 8 pages, editable; regenerate via `node docs/db-audit/generate-drawio.mjs` after MD edits) |
+| 4. Implementation | 🔵 stages 1–4 DONE (2026-07-11), stage 5+ pending | See **Implementation log** below. DB + config-as-data + ref data are LIVE; app code (write path, reports, seeds for mock records) not yet adapted |
+
+## Decisions — do NOT re-litigate
+- Data is **disposable** (dev/seed only): fresh migrations + reseed, no old→new migration.
+- Supertype/subtype: `records` spine + 5 typed detail tables; one `extra jsonb` escape hatch each (also on persons/record_properties); promotion tooling with value-copy.
+- Warehouse (`rpt`), all 32 views, EAV pair, `compilations.record_ids`, in-code TRANSITIONS, in-memory report templates: **DEAD** (full kill list: `DB_SCHEMA.md` §11).
+- Scoping = denormalized ids (§9.3 lists the only 4 legal denormalizations). `ps_id` everywhere — `station_id` does not exist.
+- `ref` schema for the 21 lookups, full FK + UNIQUE discipline, English-only labels (Hindi additive later). Natural keys ⚠ verified from data before migrations.
+- Config-as-data: workflow / fields / proformas / level-contracts authored in git `config/`, synced by `npm run sync-config`; migrations schema-only forever.
+- Hash chain on `record_revisions` IMPLEMENTED (single write path, verification job, `records.is_frozen` on break).
+- Transfers first-class (`record_transfers` + `fir_number_counters` allocator + renumbering trail); compilations snapshot scope at compile time. Transfers are **type-generic** → `original_ps_id` on `records` spine; `original_fir_no/_year` stay CASE-only on `fir_details` (ruling 14, 2026-07-08).
+- IO = `investigating_officers` table (nullable user_id FK); records carries `io_id` only.
+- *(rulings 15+17, 2026-07-11)* Multi-offence model: `record_sections` replaced by a single flat `record_offences` — one row **per section citation**, each row carrying act + section + major/minor head inline (deliberate 1NF; ruling 17 dropped the intermediate `offence_sections` junction), `is_primary` on exactly one row for single-head stats; detail tables keep only `local_head_id`. New `locations` table = single home for all structured address/place blocks (occurrence, person present/perm, PCR incident, UIDB found, missing places, arrest place) — 4th storage shape `{entity:'location', slot, column}`. fir_details drops: type_of_information, complaint_no, area_of_crime, cctns_flag, zero_fir_flag, modus_operandi, cheated_amount, remarks, occurrence_time_type (derived: both occurrence datetimes NULL = Unknown).
+- Amendments included: single `record_amendments` table.
+- python_worker: `pharos_report_ro` SELECT-only role, creds via env never argv.
+- No zone/range stamping on records (verified: no consumer scopes by them); backfill path documented if that changes.
+
+## Design-phase log (session 3, 2026-07-07)
+- [x] Field catalog mined from dead `*_master` views + `rpt.fact_*` + `backend/seeds/01_fields.js` (233 seed rows, repeater entities, 34 legacy flat fields, naming-drift map).
+- [x] Review of decisions doc produced 12 schema-level issues → all resolved by architect rulings (recorded in `DB_SCHEMA.md` §10).
+- [x] `DB_SCHEMA.md` written — 37 public tables + 21 ref tables: every column/type/constraint/FK/index, storage-mapping spec (3 shapes), naming reconciliation (§9.1), derived/special-field registry (§9.4), access model (§9.5), kill list, success-criteria mapping.
+- [x] `ER_DIAGRAM.md` written — overview diagram + 7 full-column domain diagrams, draw.io import instructions at top.
+- [x] `ER_DIAGRAM.drawio` generated (2026-07-08) — native draw.io file, one page per diagram, editable table shapes + crow's-foot edges; generator checked in as `generate-drawio.mjs` (MD is the source of truth — regenerate, don't hand-edit both).
+- [x] Cross-verified: every Mermaid block renders; spec↔diagram table/column parity checked by script.
+
+## Session 4 (2026-07-11) — rulings 15 & 16
+- [x] `DB_SCHEMA.md` amended (ruling 15 recorded in §10; §2.2/2.3/2.4/2.6 detail tables, new §2.7 `record_offences`+`offence_sections`, new §3.5 `locations`, §6.1 storage shapes, §9.1/9.4/9.5 updated). `ER_DIAGRAM.md` updated in parity; `ER_DIAGRAM.drawio` regenerated. App-layer ripple applied to `ARCHITECTURE.md`/`ARCHITECTURE_DIAGRAMS.md`/`.drawio` (write-path steps, storage-shape contract, pharos_report_ro grant list).
+- [x] Ruling 16: `ref.local_heads.crime_category` (HEINOUS/NON_HEINOUS/OTHER; reports break out HEINOUS only, OTHER rolls into NON_HEINOUS) — curated overlay `config/ref-overlays/local_head_categories.json` applied by the ref loader, fail-loud on unknown codes. Also fixed ER diagrams: `ref_local_heads` had no edges on the domain page (looked missing) and was linked only to fir_details in the overview — now linked to fir/arrest/uidb on both pages.
+- [x] Ruling 17: offence storage flattened — `offence_sections` dropped, `record_offences` = one row per section citation (1NF, heads repeat within a group; all FKs enforced; delete-and-reinsert writes prevent group anomalies). All docs + both drawios updated in parity.
+- [x] Ruling 18: arrest basis — `is_dd_based` discriminates under-a-case (fir_no+fir_date required) vs standalone Kalandra (gd_no+gd_date required); arrest_details gains gd_date/gd_time; requiredness = show_when+required config re-checked at submit, never a DB CHECK (drafts save partial).
+- [x] Ruling 19: case↔arrest linking = `record_links` UUID row ONLY; FIR number is a resolution key resolved against `(ps_id, fir_year, fir_no)` (PS-scoped — cross-PS same-number collisions impossible); UUID link survives transfer renumbering; `arrest_details.fir_no/fir_date` = as-entered provenance/fallback; **`linked_fir_dd_no` DROPPED** (import routes it into fir_no/gd_no by basis, then resolves).
+- [x] Ruling 21: persons relative pair — `parent_name` → `relative_name` + new `relation_type` CHECK (FATHER/MOTHER/HUSBAND/WIFE/GUARDIAN/OTHER); S/O–D/O–W/O prefix derived at read from relation_type+gender; `relation` renamed `relation_to_subject` (informant→subject relation, distinct fact).
+- [x] Ruling 20: MISSING/UIDB cleanup — `pcr_call_flag` dropped (covered by `source`); `major_minor` → **`persons.is_minor` GENERATED ALWAYS AS (age < 18) STORED** (DB-computed, all roles; app derives age from dob at write); `last_seen_place` = narrative text, NOT a locations FK; missing person's address = their persons row's location FKs (nothing new); `uidb_details.gazette_number` dropped (re-add via extra/promotion if gazette tracking ever needed).
+
+## Implementation log (phase 4 — started 2026-07-11)
+
+**Approved plan:** stages 1–4 of the order below + must-have seeds (users/hierarchy/ref/config); stage 5+ deferred. Data disposable; all 57 old migrations deleted; app is knowingly broken against the new DB until stage 5 (nothing under `backend/src/` changes in this phase).
+
+| Step | Status | Artifacts |
+|---|---|---|
+| 0. Pre-wipe export of live-DB truth | ✅ done (2026-07-11) | `docs/db-audit/exports/*.json` (hierarchy_nodes 262 — node_type maps SCP→ZONE, JCP→RANGE, SUB_DIVISION→SUB_DIV; field_registry 397; workflow_transitions_config 8; level_data_contracts 2; report_templates 5; users 16, hashes redacted). Script: `backend/scripts/dev/export-live-db.mjs` |
+| 1. Ref natural-key verification | ✅ done (2026-07-11) | **`REF_KEY_VERIFICATION.md`** (full evidence); `DB_SCHEMA.md` §8 updated in place (⚠ cleared). Verdicts: sections PK = **section_code** (act_sec_cd is not a key); minor_heads PK = **minor_head_cd** alone; property_types + other_property_categories **merged → ref.property_categories** (items FK needs the union); beats PK = **beat_cd**, `ps_id` temporarily NULLable — **official PS-code mapping file lost** (was scratch/Untitled.xlsx), user re-supplying; major_minor_mapping loads with quarantine of ~656 source-dirty rows; ARMS 4-section parse confirmed (fire_arms 22 + subtypes 215). Heinous overlay draft: `config/ref-overlays/local_head_categories.json` (7 HEINOUS codes; terror candidates pending user review). Tool: `backend/scripts/dev/verify_ref_keys.py` |
+| 2. Fresh schema-only migrations | ✅ done (2026-07-11) | Old 57 migrations DELETED (recoverable from git history). New: `backend/migrations/20260711000001..6_*.js` (org_identity → ref_schema → locations_records_details → persons_properties → workflow_transfers_audit → links_compilation_config_reporting). Parity-verified vs spec: 38 public + 21 ref tables, 0 mismatches; `persons.is_minor` GENERATED, partial UNIQUEs on record_offences, fir business key — all confirmed; rollback tested. Helper: `npm run db:reset` (`scripts/dev/db-reset.mjs`). **Spec deltas applied during implementation** (recorded in DB_SCHEMA.md): `locations.landmark` added (live form fields occurrence/arrest_landmark had no home); ref deltas per REF_KEY_VERIFICATION.md. |
+| 3. config/ + sync-config | ✅ done (2026-07-11) | Repo-root `config/` (see `config/README.md` — the storage-shape contract): `fields/*.json` (372 fields, EVERY one with a `storage` mapping incl. the prop_arms_made→arms_subtype_id trap; 14 ruling-dropped + 32 legacy no-home keys excluded — list printed by `scripts/dev/build_fields_config.py`; the 4 `*_qualification` fields were live-DB-only — absent from the replay — and are injected by the build script, mapping to the real `persons.qualification` column added 2026-07-12), `workflow/main.json` (20 transitions: full HC→SHO→DISTRICT→JCP→SCP→HQ chain + IN_TRANSFER with `@PRIOR` restore + LEGACY/AMENDMENT specials), `proformas/` (5), `contracts/ops_chain.json` (2), `org/hierarchy.json` (262 nodes; SCP→ZONE, JCP→RANGE, SUB_DIVISION→SUB_DIV). `npm run sync-config` (`scripts/sync-config.mjs`): checksum-idempotent upsert + deactivation, validates every storage mapping against information_schema (fail-loud — proven live on the landmark column). **Field source of truth caveat:** the dev DB was BEHIND on migrations, so fields were regenerated by replaying the old git migration chain + seed into a scratch DB (not from the live export, which lacked 43 keys incl. all prop_*); both raw exports kept in `docs/db-audit/exports/`. Storage-shape extensions over §6.1's four leaf shapes: `per_type` / `$detail` dispatch, `{entity:'offence'}`, `ui_only` — documented in config/README.md. Old seeds 01_fields/02_menu_tables/03_config DELETED. |
+| 4. Ref loader + load | ✅ done (2026-07-11) | `npm run load-ref` (`scripts/load-ref.mjs`; `menu_table().js` DELETED). Loads hierarchy first, then Menu_Tables.xlsx (moved to `config/ref-data/`) in FK order, one transaction. Counts: acts 462, sections 17,207 (29 prose-junk rows excluded loudly), major 167, minor 916, mapping 1,574 (562 source-dirty rows quarantined with per-reason report), local_heads 156 (7 HEINOUS via overlay), property_categories 26, items 935, arms 2/5/22/215 (4-section parse), simple lookups all loaded, **beats 2,855 with ps_id=NULL** (deferred link). Rerun-idempotent; FK spot-checks all 0 orphans. |
+| Seeds (users) | ✅ done (2026-07-11) | `backend/seeds/01_users.js` (old 04_users.js DELETED): 11 users, one+ per new-schema role, scope FKs resolved from hierarchy codes at seed time, upsert-by-username, password Test@1234. ACP users dropped (role not in new CHECK). |
+| CLAUDE.md refresh (DB portion) | ✅ done (2026-07-11) | Top-of-file "DB RESTRUCTURE STATUS" section + §5 tables + first-time-setup sequence + pillar corrections. App-layer sections intentionally untouched (still true for the unadapted code). |
+
+**End-to-end verified from scratch:** `npm run db:reset && npm run db:migrate && npm run sync-config && npm run load-ref && npm run db:seed` — clean run 2026-07-11.
+
+**PS codes follow-up (2026-07-11, same day):** user re-supplied the official list → canonical copy `config/ref-data/PS_Codes.xlsx` (scratch/ is gitignored). `scripts/dev/build_ps_codes.py` derives `config/org/ps_codes.json` (225 entries) **and rebuilt the hierarchy's SUB_DIV layer**: the old tree's 46 sub-divisions were generic/fictional — replaced by the official 92 SDPO sub-divisions; all PS reparented; 33 genuinely-new PS inserted (Cyber PS ×dist, IITF, Kartavya Path, special-unit PS) and 8 special districts (Crime Branch, EOW, IGI, Metro, Railways, Special Cell, SPUWAC, Vigilance) added under HQ → hierarchy is now 349 nodes (23 districts / 92 sub-divs / 225 PS), every PS carrying `metadata.official_code`; existing PS kept their mnemonic codes (stable keys — spelling variants matched via aliases+fuzzy: Prasad/Parshad, Tughlak/Tuglak, "CYBER POLICE STATION X"="PS Cyber Crime", H.N. Din=Hazarat Nizamuddin …). `load-ref` now links beats (2,090/2,855) and deactivates hierarchy nodes absent from config. Users seed updated to the new sub-division codes.
+
+**Session 5 (2026-07-13) — rulings 22+23 + baseline:**
+- [x] `docs/ENGINEERING_BASELINE.md` adopted (see note at top).
+- [x] Ruling 22: **`record_status_events`** (§4.8) — typed, append-only domain-status change ledger with officer-entered `effective_date` (diary pivot; officers backdate) vs system `changed_at` (audit). Gap found while checking proforma needs: status-change history existed only in `record_revisions.field_changes` jsonb, and `pharos_report_ro` couldn't read ANY history table. Grant list (§9.5 + `ARCHITECTURE.md` §9.2) gains SELECT on `record_status_events` + `workflow_transitions`. Stage-5 notes: write path must insert the event row in-transaction on every domain-status change; UI needs a "date of change" input (default today, not-future) on domain-status edits — config field rows to be added with the wizard; import template unaffected.
+- [x] Ruling 23 (same day): **(a)** `work_out` field promoted `extra` → `fir_details.is_worked_out boolean` (config storage mapping updated); added to `record_status_events.status_field` CHECK so worked-out flips are dated diary events. **(b)** `missing_details` gains `fir_no`/`fir_date` (as-entered provenance, ruling-19 discipline; existing `case_registered` = "is FIR registered?" discriminator); 3 new MISSING config fields (`case_registered` RADIO — column existed with NO form field, `missing_fir_no` required-when-Yes, `missing_fir_date`). **(c)** async linking discipline: link resolution never in the record-write transaction — post-commit event subscriber inserts the `record_links` row (CASE_MISSING joins CASE_ARREST as registry codes) as its own idempotent action; also baseline P1.7. Stage-5 note: link-resolver subscriber + CASE_MISSING `link_type_registry` seed row to be built with the write path.
+- [x] DB rebuilt from scratch (user: data disposable, fold schema changes into base migrations — no amendment migrations while pre-launch): ruling-22 table merged into `20260711000005`, ruling-23 columns into `20260711000003`; full chain `db:reset → migrate → sync-config (375 fields) → load-ref → seed` clean 2026-07-13.
+- [x] *(2026-07-14)* Ruling 23a addendum: **`fir_details.worked_out_date date`** — officer-entered workout date as first-class column (current-value copy of the latest is_worked_out event's `effective_date`; write path stamps both in one transaction). New config field `work_out_date` (DATE, required + `show_when` work_out=Yes, sort 509). Folded into `20260711000003`; rebuild clean, 376 fields synced.
+
+**Open items:**
+(a) **71 beat-sheet ps_cd values (765 beats) are absent from the official PS list itself** (likely defunct/renamed PS — codes printed by every `load-ref` run). Those beats stay `ps_id NULL` with raw `source_ps_cd`. If Delhi Police can reconcile them: extend `ps_codes.json`, rerun `load-ref`, then consider SET NOT NULL.
+(b) Heinous overlay review — terror-related local heads (148/157/164/166/167/212) flagged in `config/ref-overlays/local_head_categories.json` `_review_notes`.
+(c) ~~`ACP`-role users existed in the old live DB — role not in the new CHECK set; decide mapping if real ACP logins are needed.~~ **RESOLVED 2026-07-14**: `ACP` re-added to the `users.role` CHECK (scope = `sub_div_id`); ACP user seeded. Workflow deliberately has no ACP transitions yet — enabling the review step later is `config/workflow/*.json` rows only, but note `records.current_level` CHECK will then need `'SUB_DIV'` added too (see `docs/new-db-integration/01-auth-rbac-workflow-refs.md` §Deferrals).
+(d) ~~`ER_DIAGRAM.md`/`.drawio` not yet regenerated for the implementation-phase spec deltas~~ **RESOLVED 2026-07-14**: both fully re-synced against the live DB (implementation deltas: property_categories merge, beats beat_cd PK + source_ps_cd + NULLable ps_id, sections section_code PK, minor_heads single-column PK, locations.landmark, missing ref_fire_arms_subtypes entity, record_properties.arms_subtype_id; plus rulings 22–23: record_status_events, is_worked_out/worked_out_date, missing fir_no/fir_date) and `.drawio` regenerated. **STANDING RULE (user, 2026-07-14): the ER diagram is the user's primary view of what's in the DB — EVERY schema change updates `ER_DIAGRAM.md` AND regenerates `ER_DIAGRAM.drawio` in the same change, never later.**
+(e) Stage-5 write-path notes: `status` AND `case_status` both map to `fir_details.case_status` (form shows one — dedupe keys in stage 5); duplicate nickname keys (`nick_name`/`arrested_nickname`) both target `persons.nick_names`; ruling-18 arrest `gd_date`/`gd_time` columns exist but have no active form fields yet (add config rows when the wizard adds them); name split fields carry `name_part: 1|2|3` composing into single `persons.name`.
+
+## Stage 5 (app-layer adaptation) — now underway
+
+Tracked separately in `docs/new-db-integration/` (index: `README.md`).
+Integration 1 (auth, RBAC, JWT, workflow engine, ref lookups, users,
+hierarchy, IO module) done 2026-07-14 —
+`docs/new-db-integration/01-auth-rbac-workflow-refs.md`. Records write path,
+import, and reports/analytics remain — see that folder's roadmap table before
+starting adjacent work.
+
+## Next phase (implementation) — suggested order
+1. Verify `ref.*` natural keys against actual sheet data (the ⚠ items in `DB_SCHEMA.md` §8) — blocks the ref migrations.
+2. Fresh migrations (schema-only): ref schema → org/identity → spine+details → persons/properties → workflow/transfer/audit → config/reporting tables.
+3. `config/` seed files (workflow, fields with storage mappings, proformas, contracts) + `sync-config` command + field-add/promotion tooling.
+4. Ref loader (menu_table successor): FK order, fail-loud on duplicate keys.
+5. Reseed mock data; rewrite form-submission path (registry-driven split into spine/detail/persons/properties), report engine catalog regen, python_worker role + sheet migration.
+6. Hash-chain write path + verification job + break runbook.
+7. Update `CLAUDE.md` (DB section is stale; bilingual pillar changes to English-only ref labels).
+
+## Resume here if context lost
+Read `DB_SCHEMA.md` (new schema truth) → `DB_REDESIGN_DECISIONS.md` (the why). Old schema questions: `DB_GROUND_TRUTH.md`. Memory: `~/.claude/projects/-home-ashmit-Projects-Crime-Diaries/memory/db_restructure_2026_07.md`.

@@ -1,0 +1,1746 @@
+[
+  {
+    "type": "Table",
+    "name": "public.records",
+    "exists": true,
+    "colCount": 22
+  },
+  {
+    "type": "Column",
+    "name": "public.records.id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.record_type",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.ps_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.district_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.sub_div_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.io_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.original_ps_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.current_status",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.current_level",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.record_date",
+    "exists": true,
+    "dataType": "date",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.is_frozen",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.is_legacy",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.source_system",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.legacy_ref",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.imported_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.imported_by",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.created_by",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.updated_by",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.created_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.updated_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.import_batch_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.records.registration_date",
+    "exists": true,
+    "dataType": "date",
+    "nullable": "YES"
+  },
+  {
+    "type": "Table",
+    "name": "public.fir_details",
+    "exists": true,
+    "colCount": 31
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.record_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.ps_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.fir_no",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.fir_year",
+    "exists": true,
+    "dataType": "smallint",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.original_fir_no",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.original_fir_year",
+    "exists": true,
+    "dataType": "smallint",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.fir_date",
+    "exists": true,
+    "dataType": "date",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.gd_no",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.gd_date",
+    "exists": true,
+    "dataType": "date",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.gd_time",
+    "exists": true,
+    "dataType": "time without time zone",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.case_type",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.source_reference",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.beat_id",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.is_important",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.case_status",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.is_worked_out",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.worked_out_date",
+    "exists": true,
+    "dataType": "date",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.local_head_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.brief_facts",
+    "exists": true,
+    "dataType": "text",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.occurrence_location_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.occurrence_from_datetime",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.occurrence_to_datetime",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.info_received_at_ps",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.organised_crime",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.cd_uploaded_24h",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.footage_collected",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.rc_no",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.disposal_type",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.extra",
+    "exists": true,
+    "dataType": "jsonb",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.created_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.fir_details.updated_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Table",
+    "name": "public.arrest_details",
+    "exists": true,
+    "colCount": 34
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.record_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.gd_no",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.gd_date",
+    "exists": true,
+    "dataType": "date",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.gd_time",
+    "exists": true,
+    "dataType": "time without time zone",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.case_type",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.case_status",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.fir_no",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.fir_date",
+    "exists": true,
+    "dataType": "date",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.is_dd_based",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.local_head_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.beat_id",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.intimation_datetime",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.intimated_relative_name",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.intimated_relative_relation",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.intimation_mode",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.nafis_prepared",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.dossier_prepared",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.arresting_officer_name",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.arresting_officer_mobile",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.arresting_officer_rank",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.custody_status",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.other_status_reason",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.recovery",
+    "exists": true,
+    "dataType": "text",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.seizure_desc",
+    "exists": true,
+    "dataType": "text",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.scheme_of_arrest",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.integrated_pi",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.group_patrolling",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.cycle_patrolling",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.by_antisnatching_team",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.by_prahari",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.by_eyes_ears_scheme_members",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.extra",
+    "exists": true,
+    "dataType": "jsonb",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.created_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.arrest_details.updated_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Table",
+    "name": "public.record_properties",
+    "exists": true,
+    "colCount": 37
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.record_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.person_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.major_category_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.minor_category_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.status",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.details",
+    "exists": true,
+    "dataType": "text",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.uid",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.estimated_value",
+    "exists": true,
+    "dataType": "numeric",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.automobile_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.fire_arm_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.arms_subtype_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.arms_made_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.jewelry_type_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.currency_type_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.document_type_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.drug_type_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.electric_good_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.explosive_type_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.cultural_property_id",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.phone_number",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.phone_make",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.phone_model",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.phone_imei",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.phone_color",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.vehicle_no",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.vehicle_make",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.vehicle_model",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.vehicle_color",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.vehicle_chassis_no",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.vehicle_engine_no",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.sort_order",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.extra",
+    "exists": true,
+    "dataType": "jsonb",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.created_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.updated_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.quantity",
+    "exists": true,
+    "dataType": "numeric",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.record_properties.unit_cd",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "YES"
+  },
+  {
+    "type": "Table",
+    "name": "public.hierarchy_nodes",
+    "exists": true,
+    "colCount": 9
+  },
+  {
+    "type": "Column",
+    "name": "public.hierarchy_nodes.id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.hierarchy_nodes.node_type",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.hierarchy_nodes.name",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.hierarchy_nodes.code",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.hierarchy_nodes.parent_id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.hierarchy_nodes.metadata",
+    "exists": true,
+    "dataType": "jsonb",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.hierarchy_nodes.is_active",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.hierarchy_nodes.created_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.hierarchy_nodes.updated_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Table",
+    "name": "public.stat_baselines",
+    "exists": true,
+    "colCount": 8
+  },
+  {
+    "type": "Column",
+    "name": "public.stat_baselines.id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.stat_baselines.year",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.stat_baselines.scope_code",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.stat_baselines.head_code",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.stat_baselines.reported_count",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.stat_baselines.solved_count",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.stat_baselines.created_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.stat_baselines.updated_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Table",
+    "name": "public.report_templates",
+    "exists": true,
+    "colCount": 12
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.id",
+    "exists": true,
+    "dataType": "uuid",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.code",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.name",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.record_types",
+    "exists": true,
+    "dataType": "jsonb",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.levels",
+    "exists": true,
+    "dataType": "jsonb",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.template_definition",
+    "exists": true,
+    "dataType": "jsonb",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.output_formats",
+    "exists": true,
+    "dataType": "jsonb",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.template_type",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.is_active",
+    "exists": true,
+    "dataType": "boolean",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.checksum",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.created_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "public.report_templates.updated_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Table",
+    "name": "ref.local_heads",
+    "exists": true,
+    "colCount": 6
+  },
+  {
+    "type": "Column",
+    "name": "ref.local_heads.local_head_cd",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.local_heads.local_head",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.local_heads.crime_category",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.local_heads.created_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.local_heads.updated_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.local_heads.canonical_code",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "YES"
+  },
+  {
+    "type": "Table",
+    "name": "ref.drug_types",
+    "exists": true,
+    "colCount": 4
+  },
+  {
+    "type": "Column",
+    "name": "ref.drug_types.drug_type_cd",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.drug_types.drug_type",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.drug_types.created_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.drug_types.updated_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Table",
+    "name": "ref.units",
+    "exists": true,
+    "colCount": 4
+  },
+  {
+    "type": "Column",
+    "name": "ref.units.unit_cd",
+    "exists": true,
+    "dataType": "integer",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.units.unit",
+    "exists": true,
+    "dataType": "character varying",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.units.to_kg_factor",
+    "exists": true,
+    "dataType": "numeric",
+    "nullable": "NO"
+  },
+  {
+    "type": "Column",
+    "name": "ref.units.created_at",
+    "exists": true,
+    "dataType": "timestamp with time zone",
+    "nullable": "NO"
+  },
+  {
+    "type": "Values",
+    "name": "ref.local_heads.canonical_code",
+    "values": [
+      "ABDUCTION",
+      "ABETMENT_OF_SUICIDE",
+      "ADULTERY",
+      "AFFRAY",
+      "ANTIQUITY_ART_TREASURE_ACT",
+      "ARMS_ACT",
+      "ARSON",
+      "ASSAULT_ON_PUBLIC_SERVANT",
+      "ATT_TO_COMMIT_SUICIDE",
+      "ATT_TO_CULPABLE_HOMICIDE_NOT_AMOUNTING_TO_MURDER",
+      "ATT_TO_MURDER",
+      "BOMBAY_PREVENTION_OF_BEGGING_ACT_1959",
+      "BURGLARY",
+      "CABLE_TELEVISION_NETWORK_REGULATION_ORDINANCE_1995",
+      "CATTLE_THEFT",
+      "CENTRAL_MOTOR_VEHICLES_RULES_1989",
+      "CHEATING",
+      "CHILD_LABOUR_ACT_1986",
+      "CHILD_MARRIAGE_RESTRAINT_ACT_1929",
+      "CHIT_FUNDS_ACT_1982",
+      "CINEMATOGRAPH_ACT_1952",
+      "CIVIL_RIGHTS_ACT",
+      "CONCEALMENT_OF_BIRTH",
+      "CONSUMER_PROTECTION_ACT_1986",
+      "COPYRIGHT_ACT",
+      "COUNTERFEITING",
+      "CRIMINAL_BREACH_OF_TRUST",
+      "CRIMINAL_INTIMADATION",
+      "CRUELTY_BY_HUSBAND",
+      "CULPABLE_HOMICIDE_NOT_AMOUNTING_TO_MURDER",
+      "CYCLE_THEFT",
+      "DACOITY",
+      "DAY_BURGLARY",
+      "DELHI_CONTROL_OF_VEHICULAR_AND_OTHER_TRAFFIC_ON_ROAD_ACT",
+      "DELHI_MOTOR_VEHICLES_RULES_1993",
+      "DELHI_POLICE_ACT_1978",
+      "DELHI_PRESERVATION_OF_TREES_ACT_1994",
+      "DELHI_PROHIBITION_OF_SMOKING_AND_NON_SMOKERS_HEALTH_ACT",
+      "DOWRY_DEATH",
+      "DOWRY_PROHIBITION_ACT_1961",
+      "DRUGGING_POISONING",
+      "DRUGS_AND_COSMETICS_ACT_1940",
+      "DRUG_CONTROL_ACT_1950",
+      "ELECTION_OFFENCES",
+      "ELECTRICITY_ACT_2003",
+      "ELECTRICITY_THEFT",
+      "ELECTRONIC_ARTICLES_THEFT",
+      "ENCROACHMENT_ON_GOVT_LAND",
+      "ENVIRONMENT_PROTECTION_ACT_1986",
+      "ESCAPE_FROM_POLICE_CUSTODY",
+      "ESSENTIAL_COMMODITIES_ACT_1955",
+      "ESSENTIAL_SERVICES_MAINTENANCE_ACT_1981",
+      "EVE_TEASING",
+      "EXCISE_ACT",
+      "EXPLOSIVE_ACT_1884",
+      "EXPLOSIVE_SUBSTANCES_ACT_1908",
+      "EXTORTION",
+      "FALSE_INFORMATION_TO_POLICE",
+      "FATAL_ACCIDENT",
+      "FIRE_INCIDENT",
+      "FLESH_TRADE",
+      "FOREIGNERS_ACT_1946",
+      "FORGERY",
+      "GAMBLING_ACT",
+      "HARBOURING_OF_OFFENDERS",
+      "HOUSE_THEFT",
+      "HURT",
+      "IDENTIFICATION_OF_PRISONERS_ACT_1920",
+      "IMMORAL_TRAFFIC_PREV_ACT_1956_SIT_ACT_RENAMED_",
+      "IMPERSONATION",
+      "IMPORTATION_OF_GIRLS",
+      "INDECENT_REPRESENTATION_OF_WOMEN_PROHIBITION_ACT",
+      "INDIAN_FOREST_ACT_1927",
+      "INDIAN_TELEGRAPH_ACT_1885",
+      "INFORMATION_TECHNOLOGY_ACT_2000",
+      "INSECTICIDES_ACT_1968",
+      "JUVENILE_JUSTICE_ACT_2006",
+      "JUVENILE_JUSTICE_ACT_2010",
+      "JUVENILE_JUSTICE_ACT_2015",
+      "KIDNAPPING",
+      "KID_FOR_RANSOM",
+      "LUGGAGE_THEFT",
+      "MAHARASHTRA_CONTROL_OF_ORGANISED_CRIME_ACT_1999",
+      "MENTAL_HEALTH_ACT_1987",
+      "MISAPPROPRIATION_OF_ISTRI_DHAN_CRUELTY_BY_INLAWS",
+      "MISCARRIAGE_ETC_",
+      "MISCHIEF",
+      "MOBILE_PHONE_THEFT",
+      "MOTOR_VEHICLE_ACT_1988",
+      "MURDER",
+      "M_O_WOMEN",
+      "M_V_ACCESSIORIES_THEFT",
+      "M_V_THEFT",
+      "NATIONAL_SECURITY_ACT_1980",
+      "NDPS_ACT",
+      "NIGHT_BURGLARY",
+      "OBSCENE_LITERATURE_ETC_",
+      "OFFENCES_RELATING_TO_RELIGION",
+      "OFFENCE_AGAINST_PUBLIC_SERVENT",
+      "OFFICIAL_SECRET_ACT_1923",
+      "OTHER_ACT",
+      "OTHER_BNS",
+      "OTHER_IPC",
+      "OTHER_THEFT",
+      "PASPORT_ACT_1967",
+      "PERSONATING_PUBLIC_SERVENT",
+      "PETROLEUM_ACT_1939",
+      "PICK_POCKETING",
+      "POCSO",
+      "POISIONS_ACT_1919",
+      "PREPARATION_TO_COMMIT_DACOITY",
+      "PREVENTION_OF_ATOCITIES_SC_ST_ACT_1989",
+      "PREVENTION_OF_CORRUPTION_ACT_1988",
+      "PREVENTION_OF_DAMAGE_OF_PUBLIC_PROPERTY_ACT_1984",
+      "PREVENTION_OF_FOOD_ADULTERATION_1954",
+      "PREVENTION_OF_INSULT_TO_NATIONAL_HONOUR_ACT_1971",
+      "PREVENTION_OF_MONEY_LAUNDERING_ACT_2002",
+      "PREVENTION_OF_TERRORISM_ACT_2002",
+      "PRE_CONCEPTION_AND_PRE_NATAL_DIAGONSTIC_PRO_",
+      "PROTECTION_OF_CIVIL_RIGHT_ACT_1995",
+      "PROTECTION_OF_HUMAN_RIGHTS_ACT_1993",
+      "PROTECTION_OF_WOMEN_DOMESTIC_VIOLENCE_ACT_2005",
+      "PUBLIC_NUISANCE",
+      "RAILWAY_ACT_1989",
+      "RAPE",
+      "RECEIVER_OF_STOLEN_PROPERTY",
+      "REGISTRATION_OF_FOREIGNER_ACT_1939",
+      "REPRESENTATION_OF_THE_PEOPLE_ACT_1951",
+      "RIGHT_TO_INFORMATION_RTI_ACT",
+      "RIOT",
+      "ROBBERY",
+      "RULES_OF_THE_ROAD_REGULATIONS_1989",
+      "SEDITION_OF_OFFENCES_AGAINST_STATE",
+      "SERVANT_THEFT",
+      "SIMPLE_ACCIDENT",
+      "SNATCHING",
+      "STEREO_THEFT",
+      "TERROR_FUNDING_AND_FAKE_CURRENCY",
+      "THEFT_IN_SHOP",
+      "THE_DELHI_PREVENTION_OF_TOUTING_AND_MALPRACTICES_AGAINST_TOURISTS_ORDINANCE_ACT_2010",
+      "TRADE_MERCHANDISE_MARKS_ACT_1958",
+      "TRANSPLANTATION_OF_HUMAN_ORGANS_ACT_1994",
+      "TRESSPASS",
+      "UNLAWFUL_ACTIVITIES_PREVENSION_ACT_1967",
+      "UNLAWFUL_ACTIVITIES_P_AMENDNENTS_ACT_2008",
+      "UNNATURAL_OFFENCES_SODOMY_",
+      "UN_NATURAL_DEATH_INQUEST_REPORT",
+      "VIOLATION_OF_ORDERS_UNDER_CR_P_C",
+      "WAGING_WAR_AGAINST_THE_COUNTRY",
+      "WILD_LIFE_PROTECTION_ACT_1972",
+      "WRONGFUL_CONFINEMENT_RESTRAINT",
+      "W_BENGAL_PREVENTION_OF_DEFACEMENT_OF_PROPERTY_ACT"
+    ]
+  },
+  {
+    "type": "Values",
+    "name": "hierarchy_nodes.district_codes",
+    "values": [
+      "DIST_CD",
+      "DIST_CRIMEBRANCH",
+      "DIST_DW",
+      "DIST_ED",
+      "DIST_EOW",
+      "DIST_IGIAIRPORT",
+      "DIST_METRO",
+      "DIST_ND",
+      "DIST_NDD",
+      "DIST_NED",
+      "DIST_NWD",
+      "DIST_OD",
+      "DIST_OND",
+      "DIST_RAILWAYS",
+      "DIST_RND",
+      "DIST_SD",
+      "DIST_SED",
+      "DIST_SHD",
+      "DIST_SPECIALCELL",
+      "DIST_SPUWAC",
+      "DIST_SWD",
+      "DIST_VIGILANCE",
+      "DIST_WD"
+    ]
+  },
+  {
+    "type": "Values",
+    "name": "stat_baselines.head_code",
+    "values": [
+      "ATTEMPT_TO_MURDER",
+      "BURGLARY",
+      "DOWRY_DEATH",
+      "MOTOR_VEHICLE_THEFT",
+      "MURDER",
+      "RAPE",
+      "ROBBERY"
+    ]
+  },
+  {
+    "type": "Values",
+    "name": "records.record_type",
+    "values": [
+      "CASE"
+    ]
+  },
+  {
+    "type": "Values",
+    "name": "records.current_status",
+    "values": [
+      "DRAFT",
+      "PENDING_SHO"
+    ]
+  },
+  {
+    "type": "Values",
+    "name": "ref.drug_types.rows",
+    "values": [
+      {
+        "drug_type_cd": 390,
+        "drug_type": "AMPHETAMINE",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 391,
+        "drug_type": "BARBITURATE",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 392,
+        "drug_type": "BHANG",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 393,
+        "drug_type": "BROWN SUGAR",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 394,
+        "drug_type": "CANNABIS PLANT",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 395,
+        "drug_type": "CHARAS",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 396,
+        "drug_type": "COCAINE",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 397,
+        "drug_type": "COCA LEAF",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 398,
+        "drug_type": "CODEINE",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 399,
+        "drug_type": "CRACK",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 400,
+        "drug_type": "DATURA",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 401,
+        "drug_type": "GANJA",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 402,
+        "drug_type": "HASHISH OIL",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 403,
+        "drug_type": "HASISH",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 404,
+        "drug_type": "HEROIN (DIACETYLMORPHINE)",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 405,
+        "drug_type": "L.S.D (LYSERGINE)",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 406,
+        "drug_type": "MANDRAX",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 407,
+        "drug_type": "METHAQUALONE",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 408,
+        "drug_type": "MORPHINE",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 409,
+        "drug_type": "OPIUM",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 410,
+        "drug_type": "OPIUM DERIVATIVES",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 411,
+        "drug_type": "PLANT POD - POPPY",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 412,
+        "drug_type": "POPPY HUSK",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 413,
+        "drug_type": "POPPY PLANT POD",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 414,
+        "drug_type": "POPPY STRAW",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 415,
+        "drug_type": "SMACK",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 793,
+        "drug_type": "LIQUOR BOTTLE",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 795,
+        "drug_type": "SIDDHI",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 799,
+        "drug_type": "LAHAN",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 855,
+        "drug_type": "TODDY",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 856,
+        "drug_type": "WASH",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 868,
+        "drug_type": "OTHERS",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 888,
+        "drug_type": "ALPREX",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 889,
+        "drug_type": "COREX",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 890,
+        "drug_type": "OTHERS",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      },
+      {
+        "drug_type_cd": 896,
+        "drug_type": "TRAMADOL",
+        "created_at": "2026-07-18T21:31:51.104Z",
+        "updated_at": "2026-07-18T21:31:51.104Z"
+      }
+    ]
+  },
+  {
+    "type": "Values",
+    "name": "ref.units.rows",
+    "values": [
+      {
+        "unit_cd": 1,
+        "unit": "kg",
+        "to_kg_factor": "1.0000000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 2,
+        "unit": "gram",
+        "to_kg_factor": "0.0010000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 3,
+        "unit": "mg",
+        "to_kg_factor": "0.0000010000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 4,
+        "unit": "litre",
+        "to_kg_factor": "1.0000000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 5,
+        "unit": "ml",
+        "to_kg_factor": "0.0010000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 6,
+        "unit": "tablet",
+        "to_kg_factor": "0.0005000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 7,
+        "unit": "capsule",
+        "to_kg_factor": "0.0005000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 8,
+        "unit": "bottle",
+        "to_kg_factor": "0.7500000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 9,
+        "unit": "packet",
+        "to_kg_factor": "0.1000000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 10,
+        "unit": "strip",
+        "to_kg_factor": "0.0050000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 11,
+        "unit": "sachet",
+        "to_kg_factor": "0.0050000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      },
+      {
+        "unit_cd": 12,
+        "unit": "piece",
+        "to_kg_factor": "0.1000000000",
+        "created_at": "2026-07-22T11:54:09.518Z"
+      }
+    ]
+  }
+]

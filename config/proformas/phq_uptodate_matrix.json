@@ -1,0 +1,60 @@
+{
+  "code": "PHQ_UPTODATE_MATRIX",
+  "name": "PHQ Upto Date Crime Matrix (23 Scopes x 3 Years)",
+  "record_types": ["CASE"],
+  "levels": ["HQ"],
+  "template_type": "PROFORMA",
+  "is_active": true,
+  "output_formats": ["PDF", "EXCEL"],
+  "template_definition": {
+    "layout_mode": "MATRIX",
+    "header": {
+      "title_en": "DELHI POLICE HQ: UPTO DATE COMPARATIVE CRIME STATEMENT",
+      "short_name_en": "Upto_Date"
+    },
+    "sections": [
+      {
+        "title_en": "Delhi-Wide Crime Matrix by Jurisdiction & Year",
+        "layout_mode": "MATRIX",
+        "rows": [
+          { "code": "MURDER", "label_en": "Murder (IPC 302 / BNS 103)", "classification": { "major_head_ids": [104], "sections": ["IPC_302"] } },
+          { "code": "ATTEMPT_TO_MURDER", "label_en": "Attempt to Murder (IPC 307 / BNS 109)", "classification": { "major_head_ids": [105], "sections": ["IPC_307"] } },
+          { "code": "ROBBERY", "label_en": "Robbery (IPC 392 / BNS 309)", "classification": { "major_head_ids": [106], "sections": ["IPC_392"] } },
+          { "code": "BURGLARY", "label_en": "Burglary (IPC 457 / BNS 331)", "classification": { "major_head_ids": [101], "sections": ["IPC_457"] } },
+          { "code": "MOTOR_VEHICLE_THEFT", "label_en": "Motor Vehicle Theft", "classification": { "major_head_ids": [107], "sections": ["IPC_379"] } },
+          { "code": "RAPE", "label_en": "Rape (IPC 376 / BNS 64)", "classification": { "major_head_ids": [102], "sections": ["IPC_376"] } }
+        ],
+        "columns": [
+          {
+            "code": "DELHI_TOTAL",
+            "label_en": "Whole Delhi Total",
+            "scope_group": "ALL_DELHI_TOTAL",
+            "period": "UPTO_DATE",
+            "year_offsets": [0, -1, -2]
+          },
+          {
+            "code": "LO_NORTH",
+            "label_en": "L&O Zone 1 (North)",
+            "scope_group": "LO_NORTH",
+            "period": "UPTO_DATE",
+            "year_offsets": [0, -1, -2]
+          },
+          {
+            "code": "LO_SOUTH",
+            "label_en": "L&O Zone 2 (South)",
+            "scope_group": "LO_SOUTH",
+            "period": "UPTO_DATE",
+            "year_offsets": [0, -1, -2]
+          },
+          {
+            "code": "SPECIAL_UNITS",
+            "label_en": "Special Units Total",
+            "scope_group": "SPECIAL_UNITS",
+            "period": "UPTO_DATE",
+            "year_offsets": [0, -1, -2]
+          }
+        ]
+      }
+    ]
+  }
+}
