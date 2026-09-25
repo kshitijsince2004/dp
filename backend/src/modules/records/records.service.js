@@ -213,6 +213,26 @@ async function insertLocation(trx, cols) {
   return id;
 }
 
+/** Unlink foreign key references to location IDs across all tables, then safely delete the locations rows.
+ * Prevents foreign key constraint violations (e.g. persons_present_location_id_fkey). */
+async function safeDeleteLocations(trx, locationIds) {
+  const ids = Array.isArray(locationIds) ? locationIds.filter(Boolean) : [locationIds].filter(Boolean);
+  if (!ids.length) return;
+  await trx('persons').whereIn('present_location_id', ids).update({ present_location_id: null });
+  await trx('persons').whereIn('perm_location_id', ids).update({ perm_location_id: null });
+  await trx('arrestee_details').whereIn('arrest_location_id', ids).update({ arrest_location_id: null });
+  await trx('missing_person_details').whereIn('missing_location_id', ids).update({ missing_location_id: null });
+  await trx('missing_person_details').whereIn('found_location_id', ids).update({ found_location_id: null });
+  await trx('fir_details').whereIn('occurrence_location_id', ids).update({ occurrence_location_id: null });
+  await trx('arrest_details').whereIn('occurrence_location_id', ids).update({ occurrence_location_id: null });
+  await trx('arrest_details').whereIn('arrest_location_id', ids).update({ arrest_location_id: null });
+  await trx('missing_details').whereIn('occurrence_location_id', ids).update({ occurrence_location_id: null });
+  await trx('uidb_details').whereIn('found_location_id', ids).update({ found_location_id: null });
+  await trx('pcr_call_details').whereIn('occurrence_location_id', ids).update({ occurrence_location_id: null });
+  await trx('pcr_call_details').whereIn('incident_location_id', ids).update({ incident_location_id: null });
+  await trx('locations').whereIn('id', ids).delete();
+}
+
 /** UPDATE in place when the owner already has a location for this slot, INSERT when new,
  * DELETE when the block was cleared — the one function both create (existingId always null)
  * and update paths share (`DB_SCHEMA.md` §3.5 ownership rule: one row per use). */
@@ -220,18 +240,7 @@ async function upsertLocation(trx, existingId, cols) {
   const hasCols = cols && Object.keys(cols).length > 0;
   if (!hasCols) {
     if (existingId) {
-      await trx('persons').where({ present_location_id: existingId }).update({ present_location_id: null });
-      await trx('persons').where({ perm_location_id: existingId }).update({ perm_location_id: null });
-      await trx('arrestee_details').where({ arrest_location_id: existingId }).update({ arrest_location_id: null });
-      await trx('missing_person_details').where({ missing_location_id: existingId }).update({ missing_location_id: null });
-      await trx('missing_person_details').where({ found_location_id: existingId }).update({ found_location_id: null });
-      await trx('fir_details').where({ occurrence_location_id: existingId }).update({ occurrence_location_id: null });
-      await trx('arrest_details').where({ occurrence_location_id: existingId }).update({ occurrence_location_id: null });
-      await trx('arrest_details').where({ arrest_location_id: existingId }).update({ arrest_location_id: null });
-      await trx('missing_details').where({ occurrence_location_id: existingId }).update({ occurrence_location_id: null });
-      await trx('uidb_details').where({ found_location_id: existingId }).update({ found_location_id: null });
-      await trx('pcr_call_details').where({ occurrence_location_id: existingId }).update({ occurrence_location_id: null });
-      await trx('locations').where({ id: existingId }).delete();
+      await safeDeleteLocations(trx, existingId);
       log.debug('upsertLocation: cleared block, unlinked and deleted locations row', { locationId: existingId });
     }
     return null;
@@ -462,7 +471,7 @@ async function upsertPersons(trx, recordId, personEntries, oldPersonRows) {
       ...Object.values(old.subtypes || {}).flatMap((s) => [s.arrest_location_id, s.missing_location_id, s.found_location_id])]
       .filter(Boolean);
     await trx('persons').where({ id: old.id }).delete(); // cascades subtype rows
-    if (locIds.length) await trx('locations').whereIn('id', locIds).delete();
+    if (locIds.length) await safeDeleteLocations(trx, locIds);
     log.debug('upsertPersons: deleted removed persons row', { recordId, personId: old.id, role: old.role, cascadedLocations: locIds.length });
   }
 
