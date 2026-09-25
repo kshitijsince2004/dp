@@ -23,30 +23,90 @@
   --ease-spring-snappy: cubic-bezier(0.19, 1, 0.22, 1);
   --ease-spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Uniform typography — one font family everywhere */
-  --font-display: 'Lato', 'Noto Sans Devanagari', sans-serif;
-  --font-serif: 'Lato', 'Noto Sans Devanagari', sans-serif;
+  /* UX4G typography — Noto Sans only (Display optical cuts unavailable → 600/700) */
+  --font-sans: 'Noto Sans', 'Noto Sans Devanagari', ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  --font-serif: var(--font-sans);
 
-  /* Unified type scale for stat cards / labels / meta text */
-  --text-xs: 0.8125rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Canonical UX4G named type scale (size + paired line-height) */
+  --text-display-l: 3.75rem;          /* 60 */
+  --text-display-l--line-height: 5rem; /* 80 */
+  --text-display-m: 3.25rem;          /* 52 */
+  --text-display-m--line-height: 4.5rem; /* 72 */
+  --text-display-s: 2.5rem;           /* 40 */
+  --text-display-s--line-height: 3.25rem; /* 52 */
+  --text-display-xs: 2.25rem;         /* 36 */
+  --text-display-xs--line-height: 2.75rem; /* 44 */
+
+  --text-heading-xxl: 2.5rem;         /* 40 */
+  --text-heading-xxl--line-height: 2.75rem; /* 44 */
+  --text-heading-xl: 2rem;            /* 32 */
+  --text-heading-xl--line-height: 2.25rem; /* 36 */
+  --text-heading-l: 1.75rem;          /* 28 */
+  --text-heading-l--line-height: 2rem; /* 32 */
+  --text-heading-m: 1.5rem;           /* 24 */
+  --text-heading-m--line-height: 1.75rem; /* 28 */
+  --text-heading-s: 1.25rem;          /* 20 */
+  --text-heading-s--line-height: 1.5rem; /* 24 */
+  --text-heading-xs: 1rem;            /* 16 */
+  --text-heading-xs--line-height: 1.25rem; /* 20 */
+  --text-heading-xxs: 0.875rem;       /* 14 */
+  --text-heading-xxs--line-height: 1rem; /* 16 */
+
+  --text-title-l: 1.5rem;             /* 24 */
+  --text-title-l--line-height: 1.75rem; /* 28 */
+  --text-title-m: 1.25rem;            /* 20 */
+  --text-title-m--line-height: 1.5rem; /* 24 */
+  --text-title-s: 1rem;               /* 16 */
+  --text-title-s--line-height: 1.25rem; /* 20 */
+
+  --text-body-l: 1.125rem;            /* 18 */
+  --text-body-l--line-height: 1.5rem; /* 24 */
+  --text-body-m: 1rem;                /* 16 */
+  --text-body-m--line-height: 1.5rem; /* 24 */
+  --text-body-s: 0.875rem;            /* 14 */
+  --text-body-s--line-height: 1.25rem; /* 20 */
+  --text-body-xs: 0.75rem;            /* 12 */
+  --text-body-xs--line-height: 1rem;  /* 16 */
+
+  --text-label-xl: 1rem;              /* 16 */
+  --text-label-xl--line-height: 1.25rem; /* 20 */
+  --text-label-l: 0.875rem;           /* 14 */
+  --text-label-l--line-height: 1.125rem; /* 18 */
+  --text-label-m: 0.75rem;            /* 12 */
+  --text-label-m--line-height: 1rem;  /* 16 */
+  --text-label-s: 0.6875rem;          /* 11 */
+  --text-label-s--line-height: 0.875rem; /* 14 */
+
+  /*
+   * Legacy Tailwind keys — metrics preserved to avoid reflow until call sites
+   * bind to named roles. Do not remap these to UX4G steps blindly.
+   */
+  --text-xs: 0.8125rem;               /* 13px — FLAGGED: between label-m/label-l */
   --text-xs--line-height: 1.35;
-  --text-sm: 0.9375rem;
+  --text-sm: 0.9375rem;               /* 15px — FLAGGED: between body-s/body-m */
   --text-sm--line-height: 1.4;
-  --text-base: 1rem;
+  --text-base: 1rem;                  /* body-m / label-xl size */
   --text-base--line-height: 1.5;
-  --text-lg: 1.125rem;
-  --text-lg--line-height: 1.45;
-  --text-xl: 1.25rem;
-  --text-xl--line-height: 1.4;
-  --text-2xl: 1.5rem;
-  --text-2xl--line-height: 1.3;
+  --text-lg: 1.125rem;                /* body-l */
+  --text-lg--line-height: 1.5;
+  --text-xl: 1.25rem;                 /* heading-s / title-m */
+  --text-xl--line-height: 1.5;
+  --text-2xl: 1.5rem;                 /* heading-m / title-l */
+  --text-2xl--line-height: 1.75rem;
+  /* Legacy semantic aliases — keep sizes; prefer text-label-* / text-body-* in new edits */
   --text-label: 0.9375rem;
   --text-label--line-height: 1.25;
   --text-value: 2rem;
   --text-value--line-height: 1.15;
   --text-meta: 1rem;
   --text-meta--line-height: 1.35;
-  --text-body: 1.0625rem;
+  --text-body: 1.0625rem;             /* 17px — FLAGGED: between body-m/body-l */
   --text-body--line-height: 1.5;
 
 
@@ -143,7 +203,7 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
 
-  --font-sans: 'Lato', 'Noto Sans Devanagari', sans-serif;
+  --font-sans: 'Noto Sans', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
 
   color-scheme: light;
 }
@@ -160,7 +220,7 @@ body {
   padding: 0;
   background-color: var(--bg-primary) !important;
   color: var(--text-primary) !important;
-  font-family: 'Lato', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-sans);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -482,8 +542,8 @@ a:focus-visible {
 
 .brand-main {
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 1.25rem;
+  font-weight: 700;
+  font-size: var(--text-heading-s);
   letter-spacing: 0.05em;
   color: var(--text-inverse);
 }
@@ -521,7 +581,7 @@ a:focus-visible {
   border-radius: var(--radius-md);
   cursor: pointer;
   font-family: var(--font-sans);
-  font-size: 1rem;
+  font-size: var(--text-body-m);
   font-weight: 700;
   text-align: left;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -535,7 +595,7 @@ a:focus-visible {
 .menu-link.active {
   background-color: var(--primary-accent);
   color: var(--text-inverse);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .menu-link-left {
@@ -1133,7 +1193,7 @@ a:focus-visible {
 }
 
 .page-header h1 {
-  font-size: 1.75rem;
+  font-size: var(--text-heading-l);
   color: var(--primary);
   margin-bottom: 0.25rem;
 }
@@ -1174,7 +1234,7 @@ a:focus-visible {
 }
 
 .toolbar-step-badge {
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   font-weight: 700;
   background-color: var(--primary-glow);
   color: var(--primary-accent);
@@ -1379,7 +1439,7 @@ textarea.form-control {
   justify-content: center;
   gap: 0.6rem;
   font-family: var(--font-sans);
-  font-size: 1rem;
+  font-size: var(--text-body-m);
   font-weight: 700;
   padding: 0.75rem 1.6rem;
   border-radius: var(--radius-control);
@@ -1460,7 +1520,7 @@ textarea.form-control {
 .ant-btn {
   height: auto !important;
   padding: 0.7rem 1.5rem !important;
-  font-size: 1rem !important;
+  font-size: var(--text-body-m) !important;
   font-weight: 700 !important;
   border-radius: var(--radius-md) !important;
   display: inline-flex !important;
@@ -1542,7 +1602,7 @@ textarea.form-control {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--text-body-m);
   color: var(--text-muted);
   box-shadow: var(--shadow-sm);
   transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
@@ -1634,7 +1694,7 @@ textarea.form-control {
 }
 
 .stat-label {
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -1642,7 +1702,7 @@ textarea.form-control {
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: var(--text-heading-m);
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
@@ -1719,13 +1779,13 @@ textarea.form-control {
   top: -20px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .chart-label {
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -1766,7 +1826,7 @@ textarea.form-control {
   align-items: center;
   padding: 0.15rem 0.5rem;
   border-radius: 10px;
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   font-weight: 600;
 }
 
@@ -1797,7 +1857,7 @@ textarea.form-control {
   left: 50%;
   transform: translate(-50%, -50%) rotate(-45deg);
   font-size: 5rem;
-  font-weight: 900;
+  font-weight: 700;
   color: rgba(6, 24, 44, 0.04);
   pointer-events: none;
   user-select: none;
@@ -1812,13 +1872,13 @@ textarea.form-control {
 }
 
 .report-emblem {
-  font-size: 2rem;
+  font-size: var(--text-heading-xl);
   margin-bottom: 0.5rem;
 }
 
 .report-title-main {
   font-family: 'Times New Roman', Times, serif;
-  font-size: 1.5rem;
+  font-size: var(--text-heading-m);
   font-weight: 700;
   letter-spacing: 0.05em;
   color: #000000;
@@ -2003,7 +2063,7 @@ textarea.form-control {
 .branding-org-name {
   font-family: var(--font-display);
   font-size: 2.1rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.05em;
   color: #ffffff;
   line-height: 1.1;
@@ -2019,14 +2079,14 @@ textarea.form-control {
 .branding-title-sub {
   font-family: var(--font-display);
   font-size: 2.75rem;
-  font-weight: 900;
+  font-weight: 700;
   color: var(--accent-gold);
   margin-bottom: 1.25rem;
   letter-spacing: 0.02em;
 }
 
 .branding-desc {
-  font-size: 1.5rem;
+  font-size: var(--text-heading-m);
   font-weight: 600;
   color: #f8fafc;
   max-width: 820px;
@@ -2047,7 +2107,7 @@ textarea.form-control {
   display: flex;
   align-items: center;
   gap: 1.35rem;
-  font-size: 1.25rem;
+  font-size: var(--text-heading-s);
   font-weight: 700;
   color: #ffffff;
   background: rgba(10, 25, 47, 0.65);
@@ -2087,7 +2147,7 @@ textarea.form-control {
 }
 
 .branding-motto {
-  font-weight: 800;
+  font-weight: 700;
   color: var(--accent-gold);
   letter-spacing: 0.08em;
 }
@@ -2112,7 +2172,7 @@ textarea.form-control {
 .login-form-panel .login-card-title {
   color: #ffffff;
   font-size: 1.85rem !important;
-  font-weight: 900 !important;
+  font-weight: 700 !important;
 }
 
 .login-form-panel .login-card-subtitle {
@@ -2134,7 +2194,7 @@ textarea.form-control {
 .login-form-panel .login-form-group label {
   color: var(--accent-gold);
   font-size: 0.95rem !important;
-  font-weight: 800 !important;
+  font-weight: 700 !important;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-bottom: 0.35rem;
@@ -2185,7 +2245,7 @@ textarea.form-control {
   color: #ffffff;
   font-family: var(--font-display);
   font-size: 1.15rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(15, 82, 186, 0.45);
@@ -2228,7 +2288,7 @@ textarea.form-control {
 .login-form-panel .quick-profiles-label {
   font-family: var(--font-display);
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent-gold);
@@ -2271,7 +2331,7 @@ textarea.form-control {
   border-radius: 50%;
   background: linear-gradient(135deg, #cca43b 0%, #d97706 100%);
   color: #0a192f;
-  font-weight: 900;
+  font-weight: 700;
   font-size: 0.85rem;
   display: flex;
   align-items: center;
@@ -2289,7 +2349,7 @@ textarea.form-control {
 .login-form-panel .quick-profile-role {
   color: #ffffff;
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.25;
 }
 
@@ -2476,7 +2536,7 @@ textarea.form-control {
 }
 
 .quick-profiles-label {
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -2528,7 +2588,7 @@ textarea.form-control {
 }
 
 .quick-profile-role {
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -2946,14 +3006,14 @@ textarea.form-control {
 .btn-lg {
   font-size: 1.1rem;
   padding: 0.9rem 2rem;
-  font-weight: 800;
+  font-weight: 700;
   border-radius: var(--radius-lg);
 }
 
 .btn-xl {
   font-size: 1.2rem;
   padding: 1.1rem 2.5rem;
-  font-weight: 800;
+  font-weight: 700;
   border-radius: var(--radius-lg);
   letter-spacing: 0.02em;
 }
@@ -3241,8 +3301,8 @@ textarea.form-control {
 
 .hologram-title {
   font-family: var(--font-display);
-  font-size: 2.25rem;
-  font-weight: 900;
+  font-size: var(--text-display-xs);
+  font-weight: 700;
   letter-spacing: 0.06em;
   line-height: 1.1;
   color: #0d2a4a; /* Fallback */
@@ -3286,7 +3346,7 @@ textarea.form-control {
 .hologram-subtitle {
   font-family: var(--font-sans);
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #cca43b; /* Crest Gold */
   letter-spacing: 0.05em;
   line-height: 1.35;
@@ -3339,7 +3399,7 @@ textarea.form-control {
 .home-card-premium h3 {
   color: #0d2a4a !important; /* Delhi Police Navy Blue */
   font-size: 1.35rem !important;
-  font-weight: 900 !important;
+  font-weight: 700 !important;
   margin-bottom: 0.5rem !important;
   letter-spacing: -0.01em !important;
 }
@@ -3515,7 +3575,7 @@ textarea.form-control {
 .login-main-title {
   font-family: var(--font-display);
   font-size: 1.85rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #0f172a;
   letter-spacing: -0.01em;
   margin-top: 1.5rem;
@@ -3551,7 +3611,7 @@ textarea.form-control {
   color: #475569;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   font-weight: 700;
   font-family: var(--font-sans);
   touch-action: manipulation;
@@ -3603,7 +3663,7 @@ textarea.form-control {
 
 .login-preview-title {
   font-size: 0.7rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #cca43b;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -3611,14 +3671,14 @@ textarea.form-control {
 
 .login-preview-name {
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #0f172a;
   margin-top: 0.15rem;
   line-height: 1.25;
 }
 
 .login-preview-subtext {
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   color: #64748b;
   margin-top: 0.15rem;
   font-weight: 500;
@@ -3635,7 +3695,7 @@ textarea.form-control {
 
 .light-form-group label {
   font-size: 0.7rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #475569;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -3672,7 +3732,7 @@ textarea.form-control {
   border-radius: 12px;
   display: flex;
   gap: 0.75rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   color: #b91c1c;
   line-height: 1.45;
   text-align: left;
@@ -3732,7 +3792,7 @@ textarea.form-control {
 
 .light-quick-label {
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -3773,8 +3833,8 @@ textarea.form-control {
 }
 
 .light-quick-role {
-  font-size: 0.75rem;
-  font-weight: 800;
+  font-size: var(--text-label-m);
+  font-weight: 700;
   color: #0f172a;
   line-height: 1.2;
 }
@@ -3818,10 +3878,10 @@ textarea.form-control {
 .helpline-badge {
   background-color: #cc0000; /* Solid red background */
   color: #ffffff;
-  font-weight: 900;
+  font-weight: 700;
   padding: 0.15rem 0.5rem;
   border-radius: 3px;
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   letter-spacing: 0.05em;
   display: inline-flex;
   align-items: center;
@@ -4119,7 +4179,7 @@ input[type=number] {
   background-color: var(--bg-primary);
   border: 1px solid var(--border-light);
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   font-weight: 700;
   color: var(--text-muted);
   cursor: pointer;
@@ -4146,7 +4206,7 @@ input[type=number] {
   background-color: var(--primary-accent);
   color: var(--text-inverse);
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 700;
   border-radius: 50%;
 }
 
@@ -4163,7 +4223,7 @@ input[type=number] {
   backdrop-filter: blur(8px);
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: var(--text-label-m);
   font-weight: 700;
   color: var(--text-muted);
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
@@ -4214,7 +4274,7 @@ input[type=number] {
   background-color: var(--primary-accent);
   color: var(--text-inverse);
   font-size: 0.55rem;
-  font-weight: 800;
+  font-weight: 700;
   border-radius: 9999px;
   box-shadow: 0 0 0 2px var(--bg-card);
 }

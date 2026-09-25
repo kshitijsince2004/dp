@@ -6,6 +6,7 @@ import { ClipboardList, Filter, Eye, ArrowRight, ShieldCheck } from 'lucide-reac
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore.js';
 import api from '../../utils/api.js';
+import { asRecordsList } from '../../utils/dataShape.js';
 import { log } from '../../utils/logger.js';
 
 import RecordTypeBadge from '../../components/common/RecordTypeBadge';
@@ -132,7 +133,7 @@ export default function Queue() {
       log.debug('data:load_start', { what: 'workflow_queue' });
       try {
         const res = await api.get('/workflow/queue');
-        const rows = res.data.data?.queue || res.data.data || [];
+        const rows = asRecordsList(res.data.data);
         log.debug('data:load_success', { what: 'workflow_queue', count: rows.length });
         return rows;
       } catch (err) {
@@ -187,7 +188,7 @@ export default function Queue() {
 
         <div className="w-full max-w-[1920px] mx-auto relative z-10 flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center gap-3 font-display">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white flex items-center gap-3 font-display">
               {t('nav.queue', 'Approval Desk')}
             </h1>
             <p className="mt-2 text-base text-white/80 max-w-xl font-semibold">
@@ -233,7 +234,7 @@ export default function Queue() {
         {selectedIds.length > 0 && (
           <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white backdrop-blur-xl border border-slate-700/80 px-6 py-4 rounded-2xl shadow-2xl flex flex-wrap items-center justify-between gap-4 min-w-[340px] max-w-[90vw] animate-in fade-in slide-in-from-bottom-5 duration-300">
             <div className="flex items-center gap-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-xs font-black text-slate-950 shadow-md">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-slate-950 shadow-md">
                 {selectedIds.length}
               </span>
               <div className="flex flex-col">
@@ -259,7 +260,7 @@ export default function Queue() {
                 type="button"
                 onClick={handleBulkDecline}
                 disabled={bulkLoading}
-                className="bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 hover:border-rose-600 px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
+                className="bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 hover:border-rose-600 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
               >
                 Send Back for Correction
               </button>
@@ -268,7 +269,7 @@ export default function Queue() {
                 type="button"
                 onClick={handleBulkApprove}
                 disabled={bulkLoading}
-                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2 cursor-pointer disabled:bg-slate-700 disabled:text-slate-500 border-none"
+                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2 cursor-pointer disabled:bg-slate-700 disabled:text-slate-500 border-none"
               >
                 Approve &amp; Forward to ACP
               </button>
@@ -392,7 +393,7 @@ export default function Queue() {
                             <div className="flex flex-col gap-0.5">
                               <span>{rec.ps_name || 'Police Station'}</span>
                               {rec.transfer_to_type === 'PS' && user?.ps_id && String(rec.transferred_to_ps_id) === String(user.ps_id) && String(rec.ps_id) !== String(user.ps_id) && (
-                                <span className="text-[11px] font-bold text-sky-600 flex items-center gap-1">
+                                <span className="text-label-s font-bold text-sky-600 flex items-center gap-1">
                                   ↙ Transferred from {rec.origin_ps_name || rec.ps_name}
                                 </span>
                               )}
@@ -417,7 +418,7 @@ export default function Queue() {
                                   {(rec.transfer_to_type === 'PS' || rec.data?.transfer_to === 'PS') && (
                                     user?.ps_id && String(rec.transferred_to_ps_id) === String(user.ps_id) && String(rec.ps_id) !== String(user.ps_id) ? (
                                       <span
-                                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 shadow-xs"
+                                        className="inline-flex items-center gap-1 text-label-s font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 shadow-xs"
                                         title={`Transferred from ${rec.ps_name || rec.origin_ps_name || 'Origin PS'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
                                       >
                                         <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
@@ -425,10 +426,10 @@ export default function Queue() {
                                       </span>
                                     ) : (
                                       <span
-                                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs"
+                                        className="inline-flex items-center gap-1 text-label-s font-bold px-2 py-0.5 rounded-full bg-[var(--ux4g-bg-primary-soft)] text-[var(--primary)] border border-[var(--border-color)] shadow-xs"
                                         title={`Transferred to ${rec.transferred_to_ps_name || rec.data?.transferred_to_ps || 'Destination PS'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
                                       >
-                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
                                         ↗ Transferred ({rec.transferred_to_ps_name || rec.data?.transferred_to_ps || 'PS'})
                                       </span>
                                     )
@@ -436,7 +437,7 @@ export default function Queue() {
                                   {/* Transfer to Agency */}
                                   {(rec.transfer_to_type === 'Agency' || rec.data?.transfer_to === 'Agency') && (
                                     <span
-                                      className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-xs"
+                                      className="inline-flex items-center gap-1 text-label-s font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-xs"
                                       title={`Investigation conducted by ${rec.transferred_to_agency_name || rec.data?.transferred_to_agency || 'Agency'} on ${rec.date_of_transfer || rec.data?.date_of_transfer || 'N/A'}`}
                                     >
                                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />

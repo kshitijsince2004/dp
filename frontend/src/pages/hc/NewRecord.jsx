@@ -260,7 +260,7 @@ export default function NewRecord() {
               <span>&gt;</span>
               <span className="text-slate-800 font-bold">Record</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-[#0d2a4a] mt-0.5 tracking-wide font-display uppercase">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--primary)] mt-0.5 tracking-wide font-display uppercase">
               {type === 'CASE' || record?.record_type === 'CASE' 
                 ? 'FIR Registration' 
                 : `${editId ? 'Edit' : 'New'} ${type || record?.record_type || ''} Registration`}
@@ -290,7 +290,7 @@ export default function NewRecord() {
           >
             <AlertTriangle className="text-rose-500 flex-shrink-0 mt-0.5" size={16} />
             <div className="space-y-1 w-full">
-              <h4 className="font-extrabold text-rose-700 uppercase tracking-wide">
+              <h4 className="font-bold text-rose-700 uppercase tracking-wide">
                 {t('actions.correctionRequired', 'Reviewer Correction Requested')}
               </h4>
               {/* B2 (2026-07-23): `performed_by` is the raw users.id UUID FK — prefer the
@@ -301,7 +301,7 @@ export default function NewRecord() {
                 "{sbDetails.comment}"
               </p>
               {sbDetails.target_fields?.length > 0 && (
-                <p className="text-[11px] text-slate-500 mt-1.5 font-semibold">
+                <p className="text-label-s text-slate-500 mt-1.5 font-semibold">
                   Fields to correct:{' '}
                   <span className="font-mono text-rose-600 bg-rose-100/60 px-2 py-0.5 rounded border border-rose-200/50">
                     {sbDetails.target_fields.join(', ')}

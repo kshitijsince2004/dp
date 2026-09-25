@@ -11,6 +11,7 @@ import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import DateInput from '../../components/ui/DateInput.jsx';
 import { log } from '../../utils/logger.js';
+import { asArray, asPivotData } from '../../utils/dataShape.js';
 
 export default function ReportBuilder() {
   const queryClient = useQueryClient();
@@ -51,11 +52,11 @@ export default function ReportBuilder() {
   });
 
   // Fetch quick access & saved reports
-  const { data: quickAccessData, refetch: refetchQuickAccess } = useQuery({
+  const { data: quickAccessData = [], refetch: refetchQuickAccess } = useQuery({
     queryKey: ['quick-access-reports'],
     queryFn: async () => {
       const res = await api.get('/reports/builder/quick-access');
-      return res.data.data;
+      return asArray(res.data.data);
     },
   });
 
@@ -73,7 +74,7 @@ export default function ReportBuilder() {
         measure,
         filters,
       });
-      return res.data.data;
+      return asPivotData(res.data.data);
     },
     enabled: !!measure && (rows.length > 0 || columns.length > 0),
   });
@@ -163,8 +164,9 @@ export default function ReportBuilder() {
   const measureMap = Object.fromEntries(measures.map((m) => [m.key, m.label]));
 
   // Heatmap intensity calculator for cells
-  const maxCellValue = pivotData?.cells
-    ? Math.max(...pivotData.cells.flatMap((r) => r), 1)
+  const safePivotCells = asArray(pivotData?.cells);
+  const maxCellValue = safePivotCells.length
+    ? Math.max(...safePivotCells.flatMap((r) => asArray(r)), 1)
     : 1;
 
   const getHeatmapClass = (val) => {
@@ -249,7 +251,7 @@ export default function ReportBuilder() {
               <BarChart3 size={26} />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight text-white font-display">
+              <h1 className="text-2xl font-bold tracking-tight text-white font-display">
                 Executive Custom Report Builder &amp; Dynamic Pivot Engine
               </h1>
               <p className="text-slate-400 text-xs mt-0.5 font-medium">
@@ -323,7 +325,7 @@ export default function ReportBuilder() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
+                <div className="flex items-center justify-between text-label-s text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
                   <span className="truncate text-[10px] font-mono">
                     {item.spec?.rows?.[0] ? dimMap[item.spec.rows[0]] || item.spec.rows[0] : 'Total'} × {item.spec?.columns?.[0] ? dimMap[item.spec.columns[0]] || item.spec.columns[0] : 'Summary'}
                   </span>
@@ -345,7 +347,7 @@ export default function ReportBuilder() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between border-b border-slate-800 pb-2">
               <span className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-extrabold">1</span>
+                <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">1</span>
                 <span>Select What to Count (Measure)</span>
               </span>
             </h3>
@@ -378,7 +380,7 @@ export default function ReportBuilder() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between border-b border-slate-800 pb-2">
               <span className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-extrabold">2</span>
+                <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold">2</span>
                 <span>Select Groupings (Dimensions)</span>
               </span>
             </h3>
@@ -616,19 +618,19 @@ export default function ReportBuilder() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800">
                 <div className="space-y-0.5">
                   <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Aggregated</span>
-                  <p className="text-base font-extrabold text-emerald-400 font-mono">
+                  <p className="text-base font-bold text-emerald-400 font-mono">
                     {grandTotalVal.toLocaleString()}
                   </p>
                 </div>
                 <div className="space-y-0.5">
                   <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Active Rows</span>
-                  <p className="text-base font-extrabold text-white font-mono">
+                  <p className="text-base font-bold text-white font-mono">
                     {pivotData.rowHeaders?.length || 0}
                   </p>
                 </div>
                 <div className="space-y-0.5">
                   <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Active Columns</span>
-                  <p className="text-base font-extrabold text-white font-mono">
+                  <p className="text-base font-bold text-white font-mono">
                     {pivotData.columnHeaders?.length || 0}
                   </p>
                 </div>
@@ -685,9 +687,9 @@ export default function ReportBuilder() {
                         <th className="p-3 bg-slate-950 border-r border-slate-800 sticky left-0 z-30 min-w-[200px]">
                           {rows.map((rk) => dimMap[rk] || rk).join(' / ') || 'Summary'}
                         </th>
-                        {pivotData.columnHeaders?.map((ch, ci) => (
+                        {asArray(pivotData.columnHeaders).map((ch, ci) => (
                           <th key={ci} className="p-3 border-r border-slate-800 text-center min-w-[110px]">
-                            {ch.values.join(' / ')}
+                            {asArray(ch.values).join(' / ')}
                           </th>
                         ))}
                         <th className="p-3 bg-slate-950 border-l border-slate-800 text-right min-w-[110px] text-emerald-400">
@@ -696,20 +698,22 @@ export default function ReportBuilder() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 font-medium">
-                      {pivotData.rowHeaders?.map((rh, ri) => (
+                      {asArray(pivotData.rowHeaders).map((rh, ri) => (
                         <tr
                           key={ri}
                           className={ri % 2 === 1 ? 'bg-slate-950/40 hover:bg-slate-800/50' : 'bg-slate-900/40 hover:bg-slate-800/50'}
                         >
                           <td className="p-3 font-semibold text-slate-200 border-r border-slate-800 sticky left-0 bg-slate-900">
-                            {rh.values.join(' / ')}
+                            {asArray(rh.values).join(' / ')}
                           </td>
-                          {pivotData.cells[ri]?.map((val, ci) => {
+                          {asArray(asArray(pivotData.cells)[ri]).map((val, ci) => {
                             const heatmapCls = getHeatmapClass(val);
+                            const rowLabel = asArray(rh.values).join(' / ');
+                            const colLabel = asArray(asArray(pivotData.columnHeaders)[ci]?.values).join(' / ');
                             return (
                               <td
                                 key={ci}
-                                onClick={() => val > 0 && setDrilldownCell({ row: rh.values.join(' / '), col: pivotData.columnHeaders[ci]?.values.join(' / '), count: val })}
+                                onClick={() => val > 0 && setDrilldownCell({ row: rowLabel, col: colLabel, count: val })}
                                 onMouseEnter={() => setHoveredCell({ rowIdx: ri, colIdx: ci })}
                                 onMouseLeave={() => setHoveredCell(null)}
                                 className={`p-3 text-center border-r border-slate-800/60 font-mono transition-colors cursor-pointer ${heatmapCls} ${
@@ -722,7 +726,7 @@ export default function ReportBuilder() {
                             );
                           })}
                           <td className="p-3 text-right font-bold text-emerald-400 bg-slate-950/80 border-l border-slate-800 font-mono">
-                            {pivotData.rowTotals[ri]?.toLocaleString()}
+                            {asArray(pivotData.rowTotals)[ri]?.toLocaleString()}
                           </td>
                         </tr>
                       ))}
@@ -732,7 +736,7 @@ export default function ReportBuilder() {
                         <td className="p-3 bg-slate-950 border-r border-slate-800 sticky left-0 z-30">
                           Grand Total
                         </td>
-                        {pivotData.grandTotals?.map((gt, ci) => (
+                        {asArray(pivotData.grandTotals).map((gt, ci) => (
                           <td key={ci} className="p-3 text-center border-r border-slate-800 text-emerald-400 font-mono">
                             {gt.toLocaleString()}
                           </td>
@@ -764,7 +768,7 @@ export default function ReportBuilder() {
               Save this custom pivot spec for instant 1-click loading anytime from your Quick Access dashboard.
             </p>
             <div>
-              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
+              <label className="text-label-s font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
                 Report Preset Name
               </label>
               <input
@@ -812,7 +816,7 @@ export default function ReportBuilder() {
               <p className="text-slate-300"><strong>Column Segment:</strong> {drilldownCell.col}</p>
               <p className="text-emerald-400 font-bold font-mono">Total Matching Records: {drilldownCell.count}</p>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-label-s text-slate-400">
               This drill-down drawer shows the aggregated count of matching PostgreSQL records for this matrix cell under your assigned role scope.
             </p>
             <div className="flex justify-end">

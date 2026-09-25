@@ -410,7 +410,7 @@ export default function Users() {
               </div>
               )}
 
-              <div className="bg-zinc-950 border border-zinc-800/80 p-2.5 rounded text-[11px] text-zinc-500 flex gap-2">
+              <div className="bg-zinc-950 border border-zinc-800/80 p-2.5 rounded text-label-s text-zinc-500 flex gap-2">
                 <ShieldAlert size={14} className="flex-shrink-0 mt-0.5 text-amber-600" />
                 <span>Creating a profile auto-binds security signatures to all submitted operations in audit logs.</span>
               </div>

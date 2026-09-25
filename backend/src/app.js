@@ -4,6 +4,9 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import supertokens from 'supertokens-node';
+import { middleware as stMiddleware, errorHandler as stErrorHandler } from 'supertokens-node/framework/express';
+import { initSuperTokens } from './config/supertokens.js';
 
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
@@ -43,7 +46,8 @@ import searchRouter from './modules/search/search.router.js';
 import recordLinksRouter from './modules/record-links/record-links.router.js';
 import ioRouter from './modules/io/io.router.js';
 
-
+// Initialise SuperTokens before any middleware/route that depends on it.
+initSuperTokens();
 
 const app = express();
 
@@ -59,8 +63,10 @@ app.use(cors({
     if (origin === env.FRONTEND_URL) return callback(null, true);
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
+  // allowedHeaders/exposedHeaders must include the SuperTokens session headers or header-based sessions break.
+  allowedHeaders: ['content-type', 'x-csrf-token', 'x-request-id', ...supertokens.getAllCORSHeaders()],
   credentials: true,
-  exposedHeaders: ['Content-Disposition'],
+  exposedHeaders: ['Content-Disposition', ...supertokens.getAllCORSHeaders()],
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -85,6 +91,11 @@ app.use(requestLoggerMiddleware);
 // decode to attach a userId when a token IS present, but never 401s on its absence.
 app.use('/api/v1/logs', logsRouter);
 app.use('/api/logs', logsRouter);
+
+// SuperTokens middleware — mounted BEFORE ipAllowlist/CSRF so its own routes
+// (POST /api/v1/auth/session/refresh and /signout) are handled here and never hit the app's
+// cookie-based CSRF check. It calls next() for every non-SuperTokens route.
+app.use(stMiddleware());
 
 app.use(ipAllowlistMiddleware);
 app.use(csrfDoubleSubmitMiddleware);
@@ -194,6 +205,10 @@ app.get('/api/health', (req, res) => {
 app.use((req, res, next) => {
   return res.status(404).json({ success: false, message: `Route not found: ${req.originalUrl}` });
 });
+
+// SuperTokens error handler — must be before the app's global handler so TRY_REFRESH_TOKEN
+// and other SuperTokens errors are translated into the correct HTTP responses the SDK expects.
+app.use(stErrorHandler());
 
 // Global Error Handler
 app.use((err, req, res, next) => {

@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Shield, Building, PhoneCall, UserX, HelpCircle, Calendar, LineChart as ChartIcon } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import useAuthStore from "../../store/authStore.js";
 import api from "../../utils/api.js";
+import { asNodesList, asRecordsList } from "../../utils/dataShape.js";
 import { Spinner } from "../../components/ui/Spinner.jsx";
 import StatCard from "../../components/ui/StatCard.jsx";
+import SafeResponsiveContainer from "../../components/common/SafeResponsiveContainer.jsx";
 import { parseDMY } from "../../utils/dateFormat.js";
 import { log } from "../../utils/logger.js";
 
@@ -65,8 +67,8 @@ export default function StationDetailView() {
         ]);
 
         const rawRecs = recordsRes.data.data;
-        setNodes(nodesRes.data.data || []);
-        setRecords(rawRecs?.cases || rawRecs?.queue || (Array.isArray(rawRecs) ? rawRecs : []));
+        setNodes(asNodesList(nodesRes.data.data));
+        setRecords(asRecordsList(rawRecs));
         log.debug('data:load_success', { what: 'station_detail', stationId: id });
         setError(null);
       } catch (err) {
@@ -246,18 +248,18 @@ export default function StationDetailView() {
               No recent volume data found for this station.
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
+            <SafeResponsiveContainer width="100%" height="100%">
               <LineChart data={calculations.trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-card-theme)" vertical={false} opacity={0.3} />
                 <XAxis dataKey="date" stroke="var(--text-main-theme)" fontSize={10} tickLine={false} axisLine={false} dy={10} opacity={0.7} />
                 <YAxis stroke="var(--text-main-theme)" fontSize={10} tickLine={false} axisLine={false} dx={-10} opacity={0.7} />
                 <Tooltip contentStyle={{ backgroundColor: "var(--bg-page-main)", borderColor: "var(--border-card-theme)", color: "var(--text-main-theme)", borderRadius: "12px", backdropFilter: "blur(8px)" }} />
-                <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px", fontWeight: "600", color: "var(--text-main-theme)" }} />
-                <Line type="monotone" dataKey="cases" name="Cases" stroke="#cca43b" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                <Legend wrapperStyle={{ fontSize: 'var(--text-label-s)', paddingTop: "10px", fontWeight: "600", color: "var(--text-main-theme)" }} />
+                <Line type="monotone" dataKey="cases" name="Cases" stroke="var(--accent-gold)" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                 <Line type="monotone" dataKey="pcr" name="PCR Calls" stroke="var(--accent-color)" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                 <Line type="monotone" dataKey="arrests" name="Arrests" stroke="#e11d48" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
-            </ResponsiveContainer>
+            </SafeResponsiveContainer>
           )}
         </div>
       </div>

@@ -4,8 +4,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster, ToastBar, toast } from 'react-hot-toast';
 import { X } from 'lucide-react';
 import './i18n/index.js';
+// Side-effect: sanitize stuck prism_debug_api_mode=error_* before any requests.
+import './utils/api.js';
 import App from './App.jsx';
 import './index.css';
+import { initSuperTokensWeb } from './config/supertokens.js';
+
+// Initialise SuperTokens before render so the axios session interceptors (utils/api.js) and any
+// Session.* call have a configured SDK.
+initSuperTokensWeb();
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,7 +40,7 @@ createRoot(document.getElementById('root')).render(
             color: '#f4f4f5',
             border: '1px solid #3f3f46',
             borderRadius: '12px',
-            fontSize: '14px',
+            fontSize: 'var(--text-body-s)',
           },
           success: { iconTheme: { primary: '#a78bfa', secondary: '#18181b' } },
           error:   { iconTheme: { primary: '#f87171', secondary: '#18181b' } },

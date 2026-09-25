@@ -165,7 +165,7 @@ function CategorizedFieldPicker({ categorizedOptions, selected, onToggle, onTogg
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-2 py-1.5 text-xs text-slate-100 outline-none focus:border-emerald-500 font-medium"
               />
             </div>
-            <div className="flex items-center justify-between text-[11px] px-1 text-slate-400">
+            <div className="flex items-center justify-between text-label-s px-1 text-slate-400">
               <span className="font-semibold text-slate-300">Form-Matched Categories</span>
               <span>{selected.size} columns active</span>
             </div>
@@ -554,7 +554,7 @@ export default function CustomExcelBuilder() {
           <Building2 size={18} className="text-emerald-400" />
           <div>
             <span className="font-bold text-white block">Hierarchical Scope Authority: <span className="text-emerald-400 uppercase font-mono">{role}</span></span>
-            <span className="text-slate-400 text-[11px]">
+            <span className="text-slate-400 text-label-s">
               {isDistrictOrHQ
                 ? 'District Authority Enabled — You can customize descriptive reports for your entire district or filter down to any specific station.'
                 : 'Police Station Authority — Descriptive reports are automatically scoped to your assigned Station.'}
@@ -617,7 +617,7 @@ export default function CustomExcelBuilder() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {/* Primary Table */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Primary Record Type</label>
+            <label className="text-label-s font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Primary Record Type</label>
             <select
               value={table}
               onChange={e => changeTable(e.target.value)}
@@ -631,7 +631,7 @@ export default function CustomExcelBuilder() {
 
           {/* Row Grain Unit */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+            <label className="text-label-s font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
               <span>Output Row Grain</span>
               <span className="text-[9px] text-emerald-400 font-bold">Total Invariant</span>
             </label>
@@ -649,7 +649,7 @@ export default function CustomExcelBuilder() {
 
           {/* Join Table */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+            <label className="text-label-s font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
               <span>Link / Sub-Table Join</span>
               <span className="text-[9px] text-slate-500 font-normal normal-case">(optional)</span>
             </label>
@@ -666,7 +666,7 @@ export default function CustomExcelBuilder() {
 
           {/* Categorized Columns Picker Dropdown */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+            <label className="text-label-s font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
               <span>Form-Matched Columns to Export</span>
               <div className="flex items-center gap-2">
                 <button
@@ -704,7 +704,7 @@ export default function CustomExcelBuilder() {
         {/* Selected Field Chips List */}
         {selectedFields.size > 0 && (
           <div className="space-y-2 pt-2 border-t border-slate-800/80">
-            <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <div className="flex items-center justify-between text-label-s text-slate-400">
               <span>Selected Export Layout ({selectedFields.size} columns)</span>
               <span className="text-[10px] text-slate-500">Click x to remove a column</span>
             </div>
@@ -714,7 +714,7 @@ export default function CustomExcelBuilder() {
                 return (
                   <span
                     key={ref}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-800/90 text-slate-200 border border-slate-700/80"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-label-s font-medium bg-slate-800/90 text-slate-200 border border-slate-700/80"
                   >
                     <span>{opt?.label || ref}</span>
                     {opt?.badge && (
@@ -744,7 +744,7 @@ export default function CustomExcelBuilder() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">From Date</label>
+            <label className="text-label-s font-bold text-slate-400 uppercase tracking-wider block mb-1.5">From Date</label>
             <DateInput
               value={dateFrom}
               onChange={val => {
@@ -758,7 +758,7 @@ export default function CustomExcelBuilder() {
           </div>
 
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">To Date</label>
+            <label className="text-label-s font-bold text-slate-400 uppercase tracking-wider block mb-1.5">To Date</label>
             <DateInput
               value={dateTo}
               onChange={val => {
@@ -773,7 +773,7 @@ export default function CustomExcelBuilder() {
 
           {stationsList.length > 0 && (
             <div>
-              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+              <label className="text-label-s font-bold text-slate-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
                 <span>Target Police Station Scope</span>
                 <span className="text-[9px] text-slate-500 font-normal normal-case">(optional)</span>
               </label>

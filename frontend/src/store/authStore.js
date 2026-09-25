@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
 import { log } from '../utils/logger.js';
+import {
+  clearStaleMockTokensInLiveMode,
+  isLiveApiMode,
+} from '../utils/authTokens.js';
 
 const RANK_BY_ROLE = {
   HC: 'Head Constable',
@@ -62,8 +66,14 @@ const useAuthStore = create(
 
         logout: () => {
           log.info('authStore:logout', { userId: get().user?.id, role: get().user?.role });
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
+          // SuperTokens Session.signOut() (called from useAuth) clears its own session tokens.
+          // Mock mode may still have leftover localStorage tokens from DebugBar.
+          try {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+          } catch {
+            /* ignore */
+          }
           set({ user: null, jurisdiction: null, isAuthenticated: false });
         },
 
@@ -83,6 +93,16 @@ const useAuthStore = create(
           jurisdiction: state.jurisdiction,
           isAuthenticated: state.isAuthenticated
         }),
+        onRehydrateStorage: () => (state) => {
+          // Live API must not keep a Mock Mode session/token around.
+          // SuperTokens owns live sessions — do not clear auth solely because
+          // localStorage has no access_token.
+          const clearedMock = clearStaleMockTokensInLiveMode();
+          if (clearedMock && state?.isAuthenticated && isLiveApiMode()) {
+            log.warn('authStore:rehydrate_cleared_stale_mock_session', {});
+            state?.logout?.();
+          }
+        },
       }
     ),
     { name: 'AuthStore' }

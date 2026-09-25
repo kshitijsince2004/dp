@@ -1,15 +1,23 @@
+import supertokens from 'supertokens-node';
+import Session from 'supertokens-node/recipe/session';
+import UserRoles from 'supertokens-node/recipe/userroles';
 import * as authService from './auth.service.js';
 import { resolveScope } from './auth.service.js';
 import { getLevelFromRole } from '../../utils/generateToken.js';
+import { canonicalRole } from './rbac.catalog.js';
 import db from '../../config/db.js';
 import bcrypt from 'bcryptjs';
 import { getLogger } from '../../utils/logger.js';
 import { redact } from '../../utils/redact.js';
 
-// Matches modules/records/records.service.js style (logging-instrumentation-2026-07-22
-// HANDOFF.md §7). Every request body logged here goes through redact() first — `password`/
-// `oldPassword`/`newPassword`/`refresh_token` keys are masked to presence/length only.
+// Auth controller on SuperTokens. login verifies badge+password (authService) then creates a
+// SuperTokens session whose access-token payload carries role + level + jurisdiction scope, so
+// the middleware can rebuild req.user without a DB hit. Token refresh is handled automatically
+// by SuperTokens at POST /api/v1/auth/session/refresh (mounted by its middleware), so there is
+// no custom /refresh here any more. logout revokes the session; changePassword revokes ALL of
+// the user's sessions so a password change forces re-login everywhere.
 const log = getLogger('auth.controller');
+const TENANT = 'public';
 
 export const login = async (req, res) => {
   const badgeNo = req.body.badgeNo || req.body.badge_no || req.body.email;
@@ -18,64 +26,39 @@ export const login = async (req, res) => {
 
   if (!badgeNo || !password) {
     log.warn('login: rejected — missing badgeNo or password', { hasBadgeNo: !!badgeNo, hasPassword: !!password });
-    return res.status(400).json({
-      status: 'error',
-      success: false,
-      code: 'BAD_REQUEST',
-      message: 'Badge number and password are required'
-    });
+    return res.status(400).json({ status: 'error', success: false, code: 'BAD_REQUEST', message: 'Badge number and password are required' });
   }
 
   try {
-    const data = await authService.loginUser(badgeNo, password);
-    log.info('login: success', { userId: data.user.id, badgeNo: data.user.badge_no, role: data.user.role });
-    return res.status(200).json({
-      status: 'success',
-      success: true,
-      data
+    const user = await authService.verifyCredentials(badgeNo, password);
+    const role = canonicalRole(user.role);
+
+    // Ensure the user's role is attached in the SuperTokens Core so the UserRole/Permission
+    // claims populate on this session. Idempotent; if the role has not been seeded yet (Core
+    // still booting on first ever run) this is best-effort and the middleware still works off
+    // the role in the access-token payload below.
+    try {
+      await UserRoles.addRoleToUser(TENANT, user.id, role);
+    } catch (e) {
+      log.warn('login: could not attach role in SuperTokens (non-fatal)', { userId: user.id, role, err: e.message });
+    }
+
+    const recipeUserId = supertokens.convertToRecipeUserId(user.id);
+    await Session.createNewSession(req, res, TENANT, recipeUserId, {
+      role,
+      level: user.level,
+      ps_id: user.ps_id,
+      district_id: user.district_id,
+      sub_div_id: user.sub_div_id,
+      badge_no: user.badge_no,
+      username: user.username,
     });
+
+    log.info('login: success', { userId: user.id, badgeNo: user.badge_no, role });
+    return res.status(200).json({ status: 'success', success: true, data: { user } });
   } catch (error) {
     log.warn('login: rejected — invalid credentials', { badgeNo, reason: error.message });
-    return res.status(401).json({
-      status: 'error',
-      success: false,
-      code: 'INVALID_CREDENTIALS',
-      message: error.message
-    });
-  }
-};
-
-export const refresh = async (req, res) => {
-  const refreshToken = req.body.refresh_token || req.body.refreshToken;
-  // NEVER log the raw token value — presence/length only.
-  log.debug('refresh: enter', { hasRefreshToken: !!refreshToken, tokenLen: refreshToken?.length || 0 });
-
-  if (!refreshToken) {
-    log.warn('refresh: rejected — no refresh token supplied');
-    return res.status(400).json({
-      status: 'error',
-      success: false,
-      code: 'BAD_REQUEST',
-      message: 'Refresh token is required'
-    });
-  }
-
-  try {
-    const data = await authService.refreshUserToken(refreshToken);
-    log.info('refresh: success', { hasAccess: !!data.access_token });
-    return res.status(200).json({
-      status: 'success',
-      success: true,
-      data
-    });
-  } catch (error) {
-    log.warn('refresh: rejected', { reason: error.message });
-    return res.status(401).json({
-      status: 'error',
-      success: false,
-      code: 'UNAUTHORIZED',
-      message: error.message
-    });
+    return res.status(401).json({ status: 'error', success: false, code: 'INVALID_CREDENTIALS', message: error.message });
   }
 };
 
@@ -83,24 +66,12 @@ export const logout = async (req, res) => {
   const userId = req.user ? (req.user.userId || req.user.id) : null;
   log.debug('logout: enter', { userId });
   try {
-    if (userId) {
-      await authService.logoutUser(userId);
-    } else {
-      log.warn('logout: no authenticated user on request, skipping token removal');
-    }
+    if (req.session) await req.session.revokeSession();
     log.info('logout: success', { userId });
-    return res.status(200).json({
-      status: 'success',
-      success: true,
-      data: { message: 'Logged out' }
-    });
+    return res.status(200).json({ status: 'success', success: true, data: { message: 'Logged out' } });
   } catch (error) {
     log.error('logout: failed', { userId, err: error });
-    return res.status(500).json({
-      status: 'error',
-      success: false,
-      message: error.message
-    });
+    return res.status(500).json({ status: 'error', success: false, message: error.message });
   }
 };
 
@@ -109,13 +80,7 @@ export const me = async (req, res) => {
   log.debug('me: enter', { userId });
   try {
     if (!userId) {
-      log.warn('me: rejected — no authenticated user on request');
-      return res.status(401).json({
-        status: 'error',
-        success: false,
-        code: 'UNAUTHORIZED',
-        message: 'Unauthorized'
-      });
+      return res.status(401).json({ status: 'error', success: false, code: 'UNAUTHORIZED', message: 'Unauthorized' });
     }
 
     const user = await db('users')
@@ -133,16 +98,9 @@ export const me = async (req, res) => {
       .first();
 
     if (!user) {
-      log.warn('me: rejected — user not found', { userId });
-      return res.status(404).json({
-        status: 'error',
-        success: false,
-        code: 'NOT_FOUND',
-        message: 'User not found'
-      });
+      return res.status(404).json({ status: 'error', success: false, code: 'NOT_FOUND', message: 'User not found' });
     }
 
-    // Backfill scope ids (and their names) when only ps_id/sub_div_id is stored
     const scope = await resolveScope(user);
     let subDivName = user.sub_div_name;
     let districtName = user.district_name;
@@ -175,86 +133,58 @@ export const me = async (req, res) => {
           ps_name: user.ps_name || null,
           ps_code: user.ps_code || null,
           sub_div_name: subDivName || null,
-          district_name: districtName || null
+          district_name: districtName || null,
         },
         jurisdiction: {
           station: scope.ps_id ? { id: scope.ps_id, name: user.ps_name, code: user.ps_code } : null,
           sub_division: scope.sub_div_id ? { id: scope.sub_div_id, name: subDivName } : null,
-          district: scope.district_id ? { id: scope.district_id, name: districtName } : null
-        }
-      }
+          district: scope.district_id ? { id: scope.district_id, name: districtName } : null,
+        },
+      },
     });
   } catch (error) {
     log.error('me: failed', { userId, err: error });
-    return res.status(500).json({
-      status: 'error',
-      success: false,
-      message: error.message
-    });
+    return res.status(500).json({ status: 'error', success: false, message: error.message });
   }
 };
 
 export const changePassword = async (req, res) => {
   const oldPassword = req.body.oldPassword || req.body.old_password;
   const newPassword = req.body.newPassword || req.body.new_password;
-  // NEVER log old/new password values — presence only (HANDOFF.md §3b redaction).
   const userId = req.user ? (req.user.userId || req.user.id) : null;
   log.debug('changePassword: enter', { userId, hasOldPassword: !!oldPassword, hasNewPassword: !!newPassword });
 
   if (!oldPassword || !newPassword) {
-    log.warn('changePassword: rejected — missing old or new password', { userId });
-    return res.status(400).json({
-      status: 'error',
-      success: false,
-      code: 'BAD_REQUEST',
-      message: 'Old and new passwords are required'
-    });
+    return res.status(400).json({ status: 'error', success: false, code: 'BAD_REQUEST', message: 'Old and new passwords are required' });
   }
 
   try {
     const user = await db('users').where({ id: userId }).first();
     if (!user) {
-      log.warn('changePassword: rejected — user not found', { userId });
-      return res.status(404).json({
-        status: 'error',
-        success: false,
-        code: 'NOT_FOUND',
-        message: 'User not found'
-      });
+      return res.status(404).json({ status: 'error', success: false, code: 'NOT_FOUND', message: 'User not found' });
     }
 
     const isMatch = await bcrypt.compare(oldPassword, user.password_hash);
-    log.debug('changePassword: old password verify', { userId, ok: isMatch });
     if (!isMatch) {
-      log.warn('changePassword: rejected — incorrect old password', { userId });
-      return res.status(400).json({
-        status: 'error',
-        success: false,
-        code: 'BAD_REQUEST',
-        message: 'Incorrect old password'
-      });
+      return res.status(400).json({ status: 'error', success: false, code: 'BAD_REQUEST', message: 'Incorrect old password' });
     }
 
     const newHash = await bcrypt.hash(newPassword, 12);
     await db('users').where({ id: userId }).update({ password_hash: newHash });
     log.info('changePassword: wrote new password_hash', { userId });
 
-    // Force re-login by deleting refresh token from Redis
-    await authService.logoutUser(userId);
+    // Force re-login everywhere: revoke all SuperTokens sessions for this user.
+    try {
+      await Session.revokeAllSessionsForUser(userId);
+    } catch (e) {
+      log.warn('changePassword: revokeAllSessionsForUser failed (non-fatal)', { userId, err: e.message });
+    }
 
     log.info('changePassword: success', { userId });
-    return res.status(200).json({
-      status: 'success',
-      success: true,
-      data: { message: 'Password updated' }
-    });
+    return res.status(200).json({ status: 'success', success: true, data: { message: 'Password updated' } });
   } catch (error) {
     log.error('changePassword: failed', { userId, err: error });
-    return res.status(500).json({
-      status: 'error',
-      success: false,
-      message: error.message
-    });
+    return res.status(500).json({ status: 'error', success: false, message: error.message });
   }
 };
 
@@ -262,23 +192,11 @@ export const getNotifications = async (req, res) => {
   const userId = req.user ? (req.user.userId || req.user.id) : null;
   log.debug('getNotifications: enter', { userId });
   try {
-    const list = await db('notifications')
-      .where({ user_id: userId })
-      .orderBy('created_at', 'desc')
-      .limit(50);
-    log.info('getNotifications: exit', { userId, count: list.length });
-    return res.status(200).json({
-      status: 'success',
-      success: true,
-      data: { notifications: list }
-    });
+    const list = await db('notifications').where({ user_id: userId }).orderBy('created_at', 'desc').limit(50);
+    return res.status(200).json({ status: 'success', success: true, data: { notifications: list } });
   } catch (error) {
     log.error('getNotifications: failed', { userId, err: error });
-    return res.status(500).json({
-      status: 'error',
-      success: false,
-      message: error.message
-    });
+    return res.status(500).json({ status: 'error', success: false, message: error.message });
   }
 };
 
@@ -287,21 +205,10 @@ export const markNotificationRead = async (req, res) => {
   const userId = req.user ? (req.user.userId || req.user.id) : null;
   log.debug('markNotificationRead: enter', { userId, notificationId: id });
   try {
-    await db('notifications')
-      .where({ id, user_id: userId })
-      .update({ is_read: true });
-    log.info('markNotificationRead: wrote notifications row', { userId, notificationId: id });
-    return res.status(200).json({
-      status: 'success',
-      success: true,
-      data: { message: 'Notification marked as read' }
-    });
+    await db('notifications').where({ id, user_id: userId }).update({ is_read: true });
+    return res.status(200).json({ status: 'success', success: true, data: { message: 'Notification marked as read' } });
   } catch (error) {
     log.error('markNotificationRead: failed', { userId, notificationId: id, err: error });
-    return res.status(500).json({
-      status: 'error',
-      success: false,
-      message: error.message
-    });
+    return res.status(500).json({ status: 'error', success: false, message: error.message });
   }
 };

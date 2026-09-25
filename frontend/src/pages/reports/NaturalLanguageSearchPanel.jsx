@@ -6,6 +6,7 @@ import {
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import RecordTypeBadge from '../../components/common/RecordTypeBadge.jsx';
+import { asArray, asSearchResults } from '../../utils/dataShape.js';
 
 export default function NaturalLanguageSearchPanel() {
   const [queryInput, setQueryInput] = useState('');
@@ -38,8 +39,12 @@ export default function NaturalLanguageSearchPanel() {
     try {
       const res = await api.post('/search/interpret', { query: queryText });
       if (res.data.success) {
-        setInterpretation(res.data.data);
-        toast.success(`Query interpreted into ${res.data.data.bindings?.length || 0} structured catalog bindings.`);
+        const data = res.data.data;
+        setInterpretation({
+          ...data,
+          bindings: asArray(data?.bindings),
+        });
+        toast.success(`Query interpreted into ${asArray(data?.bindings).length} structured catalog bindings.`);
       }
     } catch (err) {
       toast.error(err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to interpret search query.');
@@ -63,8 +68,9 @@ export default function NaturalLanguageSearchPanel() {
         limit: 20
       });
       if (res.data.success) {
-        setSearchResults(res.data.data);
-        toast.success(`Search completed. Found ${res.data.data.totals.total} matching records.`);
+        const normalized = asSearchResults(res.data.data);
+        setSearchResults(normalized);
+        toast.success(`Search completed. Found ${normalized.totals.total} matching records.`);
       }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to execute search query.');
@@ -170,7 +176,7 @@ export default function NaturalLanguageSearchPanel() {
 
           {/* Open-Ended Dynamic Binding Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {interpretation.bindings && interpretation.bindings.map((b, idx) => (
+            {interpretation.bindings && asArray(interpretation.bindings).map((b, idx) => (
               <div key={idx} className="p-3.5 bg-slate-950 border border-slate-800 hover:border-indigo-500/40 rounded-xl space-y-1.5 transition-all">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
@@ -245,7 +251,7 @@ export default function NaturalLanguageSearchPanel() {
           {/* Tier 1: Structured Matches */}
           {searchResults.results.structured_matches.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
                 <CheckCircle2 size={14} />
                 <span>Tier 1: Canonical Structured Matches ({searchResults.results.structured_matches.length})</span>
               </h4>
@@ -257,9 +263,9 @@ export default function NaturalLanguageSearchPanel() {
                       <RecordTypeBadge recordType={item.record_type} />
                     </div>
                     <p className="text-xs text-slate-300 font-semibold">{item.crime_head_name}</p>
-                    <p className="text-[11px] text-slate-400">{item.ps_name} ({item.district_name})</p>
+                    <p className="text-label-s text-slate-400">{item.ps_name} ({item.district_name})</p>
                     {item.snippet && (
-                      <p className="text-[11px] text-slate-300 italic bg-slate-900/80 p-2 rounded border border-slate-800">
+                      <p className="text-label-s text-slate-300 italic bg-slate-900/80 p-2 rounded border border-slate-800">
                         "{item.snippet}"
                       </p>
                     )}
@@ -272,7 +278,7 @@ export default function NaturalLanguageSearchPanel() {
           {/* Tier 2: Free-Text Matches */}
           {searchResults.results.free_text_matches.length > 0 && (
             <div className="space-y-3 pt-4 border-t border-slate-800">
-              <h4 className="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={14} />
                 <span>Tier 2: Description &amp; Free-Text Matches ({searchResults.results.free_text_matches.length})</span>
               </h4>
@@ -284,9 +290,9 @@ export default function NaturalLanguageSearchPanel() {
                       <RecordTypeBadge recordType={item.record_type} />
                     </div>
                     <p className="text-xs text-slate-300 font-semibold">{item.crime_head_name}</p>
-                    <p className="text-[11px] text-slate-400">{item.ps_name} ({item.district_name})</p>
+                    <p className="text-label-s text-slate-400">{item.ps_name} ({item.district_name})</p>
                     {item.snippet && (
-                      <p className="text-[11px] text-indigo-200 italic bg-indigo-950/40 p-2 rounded border border-indigo-900/50">
+                      <p className="text-label-s text-indigo-200 italic bg-indigo-950/40 p-2 rounded border border-indigo-900/50">
                         "{item.snippet}"
                       </p>
                     )}

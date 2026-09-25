@@ -40,7 +40,7 @@ function ContractRow({ contract }) {
         <span className="text-slate-400 text-xs">&rarr;</span>
         {levelBadge(contract.to_level)}
         <span className="font-bold text-slate-800 text-xs">{contract.record_type}</span>
-        <span className="text-slate-550 text-[11px] ml-auto font-semibold">
+        <span className="text-slate-550 text-label-s ml-auto font-semibold">
           {contract.route}
           {' · '}
           <span className={contract.is_active ? 'text-emerald-600' : 'text-slate-400'}>
@@ -70,7 +70,7 @@ function ContractRow({ contract }) {
             <div>
               <p className="text-slate-500 mb-1">Aggregate definitions</p>
               <ul className="list-disc list-inside space-y-0.5">
-                {contract.aggregate_definitions.map((a, i) => (
+                {(contract.aggregate_definitions || []).map((a, i) => (
                   <li key={i}>{a.label_en || a.type}{a.field ? ` (${a.field})` : ''}</li>
                 ))}
               </ul>
@@ -132,8 +132,8 @@ export default function LevelContractsPage() {
         <Settings2 size={14} className="mt-0.5 flex-shrink-0 text-blue-600" />
         <p>
           Level contracts are <strong>config-as-data</strong>: they are authored in
-          <code className="mx-1 px-1.5 py-0.5 rounded bg-white border border-blue-200 font-mono text-[11px]">config/contracts/*.json</code>
-          and applied by running <code className="mx-1 px-1.5 py-0.5 rounded bg-white border border-blue-200 font-mono text-[11px]">npm run sync-config</code>.
+          <code className="mx-1 px-1.5 py-0.5 rounded bg-white border border-blue-200 font-mono text-label-s">config/contracts/*.json</code>
+          and applied by running <code className="mx-1 px-1.5 py-0.5 rounded bg-white border border-blue-200 font-mono text-label-s">npm run sync-config</code>.
           This page is a read-only viewer — contracts can no longer be created or edited from the API or the UI.
         </p>
       </div>

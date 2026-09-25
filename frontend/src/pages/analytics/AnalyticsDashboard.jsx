@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis,
-  CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
 import {
@@ -13,10 +13,12 @@ import {
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import StatCard from '../../components/ui/StatCard.jsx';
+import SafeResponsiveContainer from '../../components/common/SafeResponsiveContainer.jsx';
 import CrimeHeadMatrixTable from '../../components/common/CrimeHeadMatrixTable.jsx';
 import CaseStatusBarChart from '../../components/common/CaseStatusBarChart.jsx';
 import CrimeHeadCategoryBarChart from '../../components/common/CrimeHeadCategoryBarChart.jsx';
 import { log } from '../../utils/logger.js';
+import { asArray, asCrimeHeadMatrix } from '../../utils/dataShape.js';
 
 // ── Shared chart tooltip style ────────────────────────────────────────────────
 const CHART_TOOLTIP = {
@@ -25,7 +27,7 @@ const CHART_TOOLTIP = {
     border: '1px solid var(--border-card-theme, #E2E8F0)',
     borderRadius: '12px',
     color: 'var(--text-main-theme, #1A202C)',
-    fontSize: '11px',
+    fontSize: 'var(--text-label-s)',
     boxShadow: '0 4px 24px var(--accent-glow, rgba(0,0,0,0.05))',
   },
   labelStyle: { color: 'var(--text-main-theme, #4A5568)', fontWeight: 600 },
@@ -113,7 +115,7 @@ export default function AnalyticsDashboard() {
     queryKey: ['analytics', 'crime-head-matrix', periodParam],
     queryFn: async () => {
       const res = await api.get('/analytics/crime-head-matrix', { params: { period: periodParam } });
-      return res.data?.data ?? { columns: [], rows: [] };
+      return asCrimeHeadMatrix(res.data?.data);
     },
     enabled: needsCrimeHeadMatrix,
   });
@@ -122,7 +124,7 @@ export default function AnalyticsDashboard() {
     queryKey: ['analytics', 'case-status-breakdown', periodParam],
     queryFn: async () => {
       const res = await api.get('/analytics/case-status-breakdown', { params: { period: periodParam } });
-      return res.data?.data?.rows ?? [];
+      return asArray(res.data?.data?.rows);
     },
     enabled: isSho,
   });
@@ -131,7 +133,7 @@ export default function AnalyticsDashboard() {
     queryKey: ['fields', 'lookup', 'local-heads'],
     queryFn: async () => {
       const res = await api.get('/fields/lookup/local-heads');
-      return Array.isArray(res.data?.data) ? res.data.data : [];
+      return asArray(res.data?.data);
     },
     enabled: isDcpOrHq,
   });
@@ -159,7 +161,7 @@ export default function AnalyticsDashboard() {
       log.debug('data:load_start', { what: 'analytics_by_crime_head' });
       try {
         const res = await api.get('/analytics/by-crime-head');
-        const rows = Array.isArray(res.data?.data) ? res.data.data : [];
+        const rows = asArray(res.data?.data);
         log.debug('data:load_success', { what: 'analytics_by_crime_head', count: rows.length });
         return rows;
       } catch (err) {
@@ -174,7 +176,7 @@ export default function AnalyticsDashboard() {
     queryKey: ['analytics', 'arrest-trend-breakdown', periodParam],
     queryFn: async () => {
       const res = await api.get('/analytics/arrest-trend-breakdown', { params: { period: periodParam } });
-      return res.data?.data?.points ?? [];
+      return asArray(res.data?.data?.points);
     },
   });
 
@@ -356,8 +358,8 @@ export default function AnalyticsDashboard() {
                 {categoryData.length === 0 ? (
                   <EmptyState icon={AlertCircle} message="No category data available" />
                 ) : (
-                  <div className="h-[280px] w-full flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="h-[280px] w-full min-w-0">
+                    <SafeResponsiveContainer>
                       <PieChart>
                         <Pie
                           data={categoryData}
@@ -376,7 +378,7 @@ export default function AnalyticsDashboard() {
                         <Tooltip {...CHART_TOOLTIP} />
                         <Legend wrapperStyle={{ fontSize: '10px', color: '#718096' }} />
                       </PieChart>
-                    </ResponsiveContainer>
+                    </SafeResponsiveContainer>
                   </div>
                 )}
               </div>
@@ -395,8 +397,8 @@ export default function AnalyticsDashboard() {
                 {trendData.length === 0 ? (
                   <EmptyState icon={TrendingUp} message="No trend data available" />
                 ) : (
-                  <div className="h-[280px] w-full pt-2">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="h-[280px] w-full min-w-0 pt-2">
+                    <SafeResponsiveContainer>
                       <LineChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                         <XAxis dataKey="name" stroke="#A0AEC0" fontSize={9} tickLine={false} />
@@ -407,7 +409,7 @@ export default function AnalyticsDashboard() {
                         <Line type="monotone" dataKey="pcr"     name="PCR Calls" stroke="var(--accent-color)" strokeWidth={2}   dot={false} activeDot={{ r: 4, fill: 'var(--accent-color)' }} />
                         <Line type="monotone" dataKey="arrests" name="Arrests"   stroke="#059669" strokeWidth={2}   dot={false} activeDot={{ r: 4, fill: '#059669' }} />
                       </LineChart>
-                    </ResponsiveContainer>
+                    </SafeResponsiveContainer>
                   </div>
                 )}
               </div>
@@ -528,8 +530,8 @@ export default function AnalyticsDashboard() {
                   {stationData.length === 0 ? (
                     <EmptyState icon={AlertCircle} message="No station data available" />
                   ) : (
-                    <div className="h-[240px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div className="h-[240px] w-full min-w-0">
+                      <SafeResponsiveContainer>
                         <BarChart data={stationData.slice(0, 8)} margin={{ top: 4, right: 4, left: -20, bottom: 30 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                           <XAxis
@@ -549,7 +551,7 @@ export default function AnalyticsDashboard() {
                           <Bar dataKey="pcr"     name="PCR"     fill="var(--accent-color)" radius={[4, 4, 0, 0]} />
                           <Bar dataKey="left_out" name="Left Out" fill="#D97706" radius={[4, 4, 0, 0]} />
                         </BarChart>
-                      </ResponsiveContainer>
+                      </SafeResponsiveContainer>
                     </div>
                   )}
                 </div>

@@ -1,166 +1,97 @@
-import jwt from 'jsonwebtoken';
-import { env } from '../config/env.js';
-import { getLogger, logger } from '../utils/logger.js';
+// Authentication middleware — now backed by SuperTokens Session (was custom JWT + optional
+// Keycloak). The public API is UNCHANGED so no router or call site had to change:
+//   - authMiddleware      : verifies the session and populates req.user in the exact legacy
+//                           shape (id/userId/role/level/ps_id/district_id/sub_div_id + camel
+//                           aliases), then chains the per-role rate limiter, exactly as before.
+//   - sseAuthMiddleware   : verifies the access token passed as ?token= (EventSource cannot set
+//                           the Authorization header), using SuperTokens' request-less verify.
+//   - requireAuth         : unchanged alias.
+//
+// Why req.user is still populated: enforceScope and verifyRecordAccess (rbac.middleware.js)
+// read jurisdiction off req.user, and dozens of controllers read req.user.id/role. Rather than
+// touch all of them, authMiddleware rebuilds req.user from the session's access-token payload
+// (role + level + scope are written there at login — see auth.controller.js).
+import Session from 'supertokens-node/recipe/session';
+import { verifySession } from 'supertokens-node/recipe/session/framework/express';
+import { getLogger } from '../utils/logger.js';
 import { setContext } from '../utils/requestContext.js';
 import { roleRateLimitMiddleware } from './security.middleware.js';
 
-// B3 scope (logging-instrumentation-2026-07-22, HANDOFF.md §3): auth is a bug hotspot —
-// token-present/verify-outcome is logged below, the token itself NEVER (only `{ hasToken }`
-// and, once decoded, `{ userId, role }`). Also wires the EXTRA TASK from the HANDOFF: once
-// `req.user` is set, `setContext({ userId, role })` enriches every downstream log line on this
-// request with who made it, not just the ambient requestId.
 const log = getLogger('auth.middleware');
 
-const isKeycloakEnabled = !!process.env.KEYCLOAK_URL;
-
-/**
- * The access token carries the canonical snake_case payload only
- * ({ sub, username, badge_no, role, level, ps_id, district_id, sub_div_id } —
- * see utils/generateToken.js). This shim adds the aliases legacy module code
- * still reads (id/userId/psId/districtId/subDivId/badgeNo). It is the ONLY
- * place aliases are produced; drain callers to snake_case, then delete it.
- */
-const normalizeAuthUser = (decoded) => ({
-  ...decoded,
-  id: decoded.sub ?? decoded.id,
-  userId: decoded.sub ?? decoded.id,
-  badgeNo: decoded.badge_no,
-  psId: decoded.ps_id ?? null,
-  districtId: decoded.district_id ?? null,
-  subDivId: decoded.sub_div_id ?? null,
+// The access-token payload -> legacy req.user shape. This is the single place the aliases are
+// produced (mirrors the previous normalizeAuthUser shim).
+const buildReqUser = (userId, payload = {}) => ({
+  sub: userId,
+  id: userId,
+  userId,
+  username: payload.username ?? null,
+  badge_no: payload.badge_no ?? null,
+  badgeNo: payload.badge_no ?? null,
+  role: payload.role ?? null,
+  level: payload.level ?? null,
+  ps_id: payload.ps_id ?? null,
+  psId: payload.ps_id ?? null,
+  district_id: payload.district_id ?? null,
+  districtId: payload.district_id ?? null,
+  sub_div_id: payload.sub_div_id ?? null,
+  subDivId: payload.sub_div_id ?? null,
 });
 
-let keycloak = null;
-if (isKeycloakEnabled) {
-  try {
-    const { default: KeycloakConnect } = await import('keycloak-connect');
-    keycloak = new KeycloakConnect({}, {
-      realm: 'pharos',
-      'auth-server-url': process.env.KEYCLOAK_URL,
-      resource: 'pharos-api',
-      'bearer-only': true
-    });
-  } catch (err) {
-    logger.warn('[Auth] Failed to initialize keycloak-connect, falling back to JWT.', err.message);
-  }
-}
+// Reused verifySession instance. On failure it calls next(err); the SuperTokens errorHandler()
+// mounted in app.js turns that into the correct 401 (and the TRY_REFRESH_TOKEN response the
+// frontend SDK needs to auto-refresh), so we must NOT hand-format that error here.
+const verify = verifySession({ sessionRequired: true });
 
 export const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  log.debug('authMiddleware: enter', { hasToken: !!(authHeader && authHeader.startsWith('Bearer ')), method: req.method, path: req.path });
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    log.warn('authMiddleware: rejected — Bearer token missing', { method: req.method, path: req.path });
-    return res.status(401).json({
-      status: 'error',
-      success: false,
-      code: 'UNAUTHORIZED',
-      message: 'Authentication required: Bearer token is missing'
-    });
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  const proceed = () => {
-    log.debug('authMiddleware: proceeding to role rate limiter', { userId: req.user?.id, role: req.user?.role });
-    roleRateLimitMiddleware(req, res, next);
-  };
-
-  // 1. Try local custom JWT verification first (fallback/test suite compatibility)
-  try {
-    const decoded = jwt.verify(token, env.JWT_SECRET);
-    req.user = normalizeAuthUser(decoded);
-    // EXTRA TASK (HANDOFF.md, B3): req.user.id / req.user.role are the canonical fields
-    // normalizeAuthUser guarantees (id aliases decoded.sub, role passes through from the
-    // token payload verbatim) — enrich the ambient request context so every log line
-    // downstream of this point carries who made the request, not just the requestId.
-    setContext({ userId: req.user.id, role: req.user.role });
-    log.info('authMiddleware: local JWT verified', { userId: req.user.id, role: req.user.role, path: req.path });
-    return proceed();
-  } catch (error) {
-    log.debug('authMiddleware: local JWT verification failed, trying Keycloak fallback', { path: req.path, keycloakEnabled: isKeycloakEnabled, err: error.message });
-    // 2. Custom JWT failed, try Keycloak if enabled
-    if (isKeycloakEnabled && keycloak) {
-      keycloak.grantManager.validateAccessToken(token)
-        .then(userToken => {
-          if (userToken) {
-            const content = userToken.content;
-            req.user = normalizeAuthUser({
-              sub: content.sub,
-              username: content.preferred_username || content.username || '',
-              badge_no: content.preferred_username || content.badgeNo || content.badge_no || '',
-              role: content.role || (content.realm_access?.roles?.find(r => ['HC','SHO','ACP','DISTRICT_OFFICER','JCP','SCP','HQ_ANALYST','HQ_ADMIN','SYSTEM_ADMIN'].includes(r))) || 'HC',
-              level: content.level || 'PS',
-              ps_id: content.psId || content.ps_id || null,
-              district_id: content.districtId || content.district_id || null,
-              sub_div_id: content.subDivId || content.sub_div_id || null,
-            });
-            setContext({ userId: req.user.id, role: req.user.role });
-            log.info('authMiddleware: Keycloak token verified', { userId: req.user.id, role: req.user.role, path: req.path });
-            return proceed();
-          } else {
-            log.warn('authMiddleware: rejected — Keycloak token invalid/expired', { path: req.path });
-            return res.status(401).json({
-              status: 'error',
-              success: false,
-              code: 'UNAUTHORIZED',
-              message: 'Invalid or expired Keycloak token'
-            });
-          }
-        })
-        .catch(err => {
-          log.error('authMiddleware: Keycloak verification failed', { path: req.path, err });
-          return res.status(401).json({
-            status: 'error',
-            success: false,
-            code: 'UNAUTHORIZED',
-            message: 'Authentication token verification failed: ' + err.message
-          });
-        });
-    } else {
-      log.warn('authMiddleware: rejected — invalid/expired token, Keycloak not enabled', { path: req.path });
-      return res.status(401).json({
-        status: 'error',
-        success: false,
-        code: 'UNAUTHORIZED',
-        message: 'Invalid or expired authentication token'
-      });
+  log.debug('authMiddleware: enter', { method: req.method, path: req.path });
+  verify(req, res, (err) => {
+    if (err) {
+      log.warn('authMiddleware: session verification failed', { path: req.path, err: err?.type || err?.message });
+      return next(err);
     }
-  }
+    try {
+      const payload = req.session.getAccessTokenPayload();
+      req.user = buildReqUser(req.session.getUserId(), payload);
+      setContext({ userId: req.user.id, role: req.user.role });
+      log.info('authMiddleware: session verified', { userId: req.user.id, role: req.user.role, path: req.path });
+      return roleRateLimitMiddleware(req, res, next);
+    } catch (e) {
+      log.error('authMiddleware: failed to build req.user from session', { path: req.path, err: e.message });
+      return next(e);
+    }
+  });
 };
 
 export const requireAuth = () => authMiddleware;
 
 /**
- * Lightweight JWT verifier for SSE connections.
- * EventSource cannot set custom headers, so the client passes
- * the access token as ?token= in the query string.
+ * SSE session verifier. EventSource cannot send the Authorization header, so the client passes
+ * the current access token (Session.getAccessToken() on the frontend) as ?token=. We verify it
+ * with SuperTokens' request-less API and populate req.user the same way.
  */
-export const sseAuthMiddleware = (req, res, next) => {
+export const sseAuthMiddleware = async (req, res, next) => {
   const token = req.query.token;
   log.debug('sseAuthMiddleware: enter', { hasToken: !!token, path: req.path });
   if (!token) {
     log.warn('sseAuthMiddleware: rejected — token query param missing', { path: req.path });
     return res.status(401).json({
-      status: 'error',
-      success: false,
-      code: 'UNAUTHORIZED',
-      message: 'Authentication required: token query param is missing'
+      status: 'error', success: false, code: 'UNAUTHORIZED',
+      message: 'Authentication required: token query param is missing',
     });
   }
-
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET);
-    req.user = normalizeAuthUser(decoded);
+    const session = await Session.getSessionWithoutRequestResponse(token, undefined, { sessionRequired: true });
+    req.session = session;
+    req.user = buildReqUser(session.getUserId(), session.getAccessTokenPayload());
     setContext({ userId: req.user.id, role: req.user.role });
     log.info('sseAuthMiddleware: SSE token verified', { userId: req.user.id, role: req.user.role, path: req.path });
     return next();
   } catch (error) {
-    log.warn('sseAuthMiddleware: rejected — invalid/expired SSE token', { path: req.path, err: error.message });
+    log.warn('sseAuthMiddleware: rejected — invalid/expired SSE token', { path: req.path, err: error?.type || error?.message });
     return res.status(401).json({
-      status: 'error',
-      success: false,
-      code: 'UNAUTHORIZED',
-      message: 'Invalid or expired SSE token'
+      status: 'error', success: false, code: 'UNAUTHORIZED',
+      message: 'Invalid or expired SSE token',
     });
   }
 };

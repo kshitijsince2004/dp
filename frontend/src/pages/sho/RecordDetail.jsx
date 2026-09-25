@@ -362,7 +362,7 @@ export default function RecordDetail() {
           </div>
           <div className="flex-1 space-y-1">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="font-extrabold text-sm uppercase tracking-wider text-indigo-950">
+              <span className="font-bold text-sm uppercase tracking-wider text-indigo-950">
                 {record.data?.transfer_to === 'Agency'
                   ? 'Case Transferred for Agency Investigation'
                   : user?.ps_id && String(user.ps_id) === String(record.data?.transferred_to_ps_id)
@@ -449,7 +449,7 @@ export default function RecordDetail() {
                     {(record.data?.worked_out_date || record.data?.work_out_date) ? ` (${record.data.worked_out_date || record.data.work_out_date})` : ''}
                   </span>
                   {isDCP ? (
-                    <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                    <span className="text-label-s font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
                       Evidence required from Station (Use Send Back)
                     </span>
                   ) : (
@@ -507,7 +507,7 @@ export default function RecordDetail() {
                         </button>
                       )
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
                         <Lock size={12} /> Requires Chargesheet
                       </span>
                     )}
@@ -672,13 +672,13 @@ export default function RecordDetail() {
                                   </span>
                                 </div>
                                 {badgeNo && badgeNo !== '—' && (
-                                  <p className="text-[11px] font-mono text-[var(--text-main-theme)] opacity-70 font-semibold mt-0.5">
+                                  <p className="text-label-s font-mono text-[var(--text-main-theme)] opacity-70 font-semibold mt-0.5">
                                     Badge #{badgeNo}
                                   </p>
                                 )}
                               </div>
                               <div className="text-right shrink-0">
-                                <span className="text-[11px] font-mono font-semibold text-[var(--text-main-theme)] opacity-75 block">
+                                <span className="text-label-s font-mono font-semibold text-[var(--text-main-theme)] opacity-75 block">
                                   {dateStr}
                                 </span>
                                 <div className="text-[10px] text-[var(--accent-color)] font-bold font-mono">
@@ -708,7 +708,7 @@ export default function RecordDetail() {
                                         <span>{ch.entity_label ? `${ch.entity_label} — ` : ''}{label}</span>
                                         {key && <span className="font-mono text-[10px] opacity-60">[{key}]</span>}
                                       </div>
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] sm:text-xs text-[var(--text-main-theme)] font-semibold">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-label-s sm:text-xs text-[var(--text-main-theme)] font-semibold">
                                         <div className="truncate border-b sm:border-b-0 sm:border-r border-[var(--border-card-theme)]/60 pb-0.5 sm:pb-0 sm:pr-1">
                                           <span className="opacity-60">Before:</span>{' '}
                                           <span className="line-through text-red-600 font-bold">{formatVal(ch.old_value)}</span>

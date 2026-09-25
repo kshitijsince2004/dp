@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ResponsiveContainer,
   ComposedChart,
   Area,
   Line,
@@ -16,6 +15,8 @@ import useAuthStore from "../../store/authStore.js";
 import StatCard from "../../components/ui/StatCard.jsx";
 import CrimeHeadMatrixTable from "../../components/common/CrimeHeadMatrixTable.jsx";
 import CaseStatusBarChart from "../../components/common/CaseStatusBarChart.jsx";
+import SafeResponsiveContainer from "../../components/common/SafeResponsiveContainer.jsx";
+import { asArray, asCrimeHeadMatrix } from "../../utils/dataShape.js";
 import {
   FileText,
   ShieldCheck,
@@ -31,7 +32,7 @@ const PERIODS = ["Day", "Week", "Month", "Year"];
 const STAT_CARD_META = [
   { key: "fir", label: "FIR", icon: FileText, accent: "green" },
   { key: "workout", label: "Workout", icon: Clock3, accent: "green" },
-  { key: "arrest_in_fir", label: "Arrest in FIR", icon: ShieldCheck, accent: "violet" },
+  { key: "arrest_in_fir", label: "Arrest in FIR", icon: ShieldCheck, accent: "primary" },
   { key: "heinous_case", label: "Heinous Case", icon: AlertTriangle, accent: "amber" },
   { key: "leftout_heinous", label: "Leftout in Heinous Case", icon: UserX, accent: "amber" },
   { key: "kalandra", label: "Kalandra", icon: Fingerprint, accent: "blue" },
@@ -40,12 +41,12 @@ const STAT_CARD_META = [
 ];
 
 const ACCENT_STYLES = {
-  green: { iconColor: "text-[#059669]" },
-  violet: { iconColor: "text-[#7C3AED]" },
-  amber: { iconColor: "text-[#D97706]" },
-  blue: { iconColor: "text-[#2563EB]" },
-  rose: { iconColor: "text-[#E11D48]" },
-  muted: { iconColor: "text-[#94A3B8]" },
+  green: { iconColor: "text-[var(--success)]" },
+  violet: { iconColor: "text-[var(--primary)]" },
+  amber: { iconColor: "text-[var(--warning)]" },
+  blue: { iconColor: "text-[var(--primary)]" },
+  rose: { iconColor: "text-[var(--danger)]" },
+  muted: { iconColor: "text-[var(--text-muted)]" },
 };
 
 const formatChange = (changePct, period) => {
@@ -60,11 +61,11 @@ const formatChange = (changePct, period) => {
 const MATRIX_COLUMNS_FALLBACK = ["FIR", "Arrest", "Worked Out"];
 
 const BREAKDOWN_CATEGORIES = [
-  { key: "FIR", color: "#0EA5E9" },
-  { key: "Kalandra", color: "#8B5CF6" },
-  { key: "PCR", color: "#F59E0B" },
-  { key: "Missing", color: "#EF4444" },
-  { key: "UIDB", color: "#14B8A6" },
+  { key: "FIR", color: "#4A2BC2" },
+  { key: "Kalandra", color: "#C26A00" },
+  { key: "PCR", color: "#AD4E00" },
+  { key: "Missing", color: "#8A1A16" },
+  { key: "UIDB", color: "#006D75" },
 ];
 
 const Dot = ({ color }) => (
@@ -83,18 +84,18 @@ function ArrestTrendTooltip({ active, payload, label, hoveredSeries }) {
     const kalandraArrests = breakdown.Kalandra ?? 0;
     const firArrests = Math.max(totalArrests - kalandraArrests, 0);
     return (
-      <div className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2.5 text-[10px] font-bold shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <div className="text-[#6B7280] mb-1.5">{label}</div>
-        <div className="flex items-center justify-between gap-4 text-[#0A1628] pb-1.5 mb-1.5 border-b border-slate-100">
-          <span className="flex items-center gap-1.5"><Dot color="#10B981" />Total Arrests</span>
+      <div className="rounded-[10px] border border-[var(--border-color)] bg-white px-3 py-2.5 text-[10px] font-bold shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="text-[var(--text-muted)] mb-1.5">{label}</div>
+        <div className="flex items-center justify-between gap-4 text-[var(--text-primary)] pb-1.5 mb-1.5 border-b border-slate-100">
+          <span className="flex items-center gap-1.5"><Dot color="#00522C" />Total Arrests</span>
           <span>{totalArrests.toLocaleString()}</span>
         </div>
         <div className="flex items-center justify-between gap-4 text-slate-500 py-0.5">
-          <span className="flex items-center gap-1.5"><Dot color="#0EA5E9" />Arrest in FIR</span>
+          <span className="flex items-center gap-1.5"><Dot color="#4A2BC2" />Arrest in FIR</span>
           <span>{firArrests.toLocaleString()}</span>
         </div>
         <div className="flex items-center justify-between gap-4 text-slate-500 py-0.5">
-          <span className="flex items-center gap-1.5"><Dot color="#8B5CF6" />Arrest in Kalandra</span>
+          <span className="flex items-center gap-1.5"><Dot color="#C26A00" />Arrest in Kalandra</span>
           <span>{kalandraArrests.toLocaleString()}</span>
         </div>
       </div>
@@ -102,10 +103,10 @@ function ArrestTrendTooltip({ active, payload, label, hoveredSeries }) {
   }
 
   return (
-    <div className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2.5 text-[10px] font-bold shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
-      <div className="text-[#6B7280] mb-1.5">{label}</div>
-      <div className="flex items-center justify-between gap-4 text-[#0A1628] pb-1.5 mb-1.5 border-b border-slate-100">
-        <span className="flex items-center gap-1.5"><Dot color="#3B82F6" />Total (all case types)</span>
+    <div className="rounded-[10px] border border-[var(--border-color)] bg-white px-3 py-2.5 text-[10px] font-bold shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <div className="text-[var(--text-muted)] mb-1.5">{label}</div>
+      <div className="flex items-center justify-between gap-4 text-[var(--text-primary)] pb-1.5 mb-1.5 border-b border-slate-100">
+        <span className="flex items-center gap-1.5"><Dot color="#4A2BC2" />Total (all case types)</span>
         <span>{(point.total_value ?? 0).toLocaleString()}</span>
       </div>
       {BREAKDOWN_CATEGORIES.map((c) => (
@@ -151,7 +152,7 @@ export default function PSDashboard() {
         log.debug('data:load_success', { what: 'ps_dashboard_summary', period: activePeriod });
         setSummary(data || null);
         setLeftOutAccused(
-          (data?.leftout_heinous_list || []).map((a) => ({
+          asArray(data?.leftout_heinous_list).map((a) => ({
             name: a.name,
             note: `Linked FIR No.-${a.fir_no || ""}`,
           }))
@@ -182,7 +183,7 @@ export default function PSDashboard() {
       .then((res) => {
         if (cancelled) return;
         log.debug('data:load_success', { what: 'arrest_trend_breakdown' });
-        setArrestTrendData(res.data?.data?.points || []);
+        setArrestTrendData(asArray(res.data?.data?.points));
       })
       .catch((err) => {
         if (cancelled) return;
@@ -196,7 +197,7 @@ export default function PSDashboard() {
       .then((res) => {
         if (cancelled) return;
         log.debug('data:load_success', { what: 'crime_head_matrix' });
-        setCrimeHeadMatrix(res.data?.data || { columns: [], rows: [] });
+        setCrimeHeadMatrix(asCrimeHeadMatrix(res.data?.data));
       })
       .catch((err) => {
         if (cancelled) return;
@@ -208,7 +209,7 @@ export default function PSDashboard() {
       .get("/analytics/case-status-breakdown", { params: { period: periodParam } })
       .then((res) => {
         if (cancelled) return;
-        setCaseStatusRows(res.data?.data?.rows || []);
+        setCaseStatusRows(asArray(res.data?.data?.rows));
       })
       .catch(() => {
         if (cancelled) return;
@@ -285,8 +286,8 @@ export default function PSDashboard() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center theme-hc-page page-bg px-8 py-8">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-[#6C4FE0]" />
-        <p className="mt-4 text-sm font-semibold text-[#6B7280]">Loading Dashboard statistics...</p>
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-[var(--primary)]" />
+        <p className="mt-4 text-sm font-semibold text-[var(--text-muted)]">Loading Dashboard statistics...</p>
       </div>
     );
   }
@@ -320,7 +321,7 @@ export default function PSDashboard() {
                   onClick={() => { log.debug('action:period_change', { period }); setActivePeriod(period); }}
                   className={`rounded-lg px-3.5 py-1 text-xs font-semibold transition-colors ${
                     activePeriod === period
-                      ? "bg-white text-[#0A1628] shadow-sm"
+                      ? "bg-white text-[var(--text-primary)] shadow-sm"
                       : "text-white/80 hover:text-white"
                   }`}
                 >
@@ -337,7 +338,7 @@ export default function PSDashboard() {
 
         {/* Key metrics strip — pulled out of the hero so 8 cards have room to breathe */}
         <div>
-          <div className="text-label font-semibold text-[#0A1628] mb-3">Key Metrics</div>
+          <div className="text-label font-semibold text-[var(--text-primary)] mb-3">Key Metrics</div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {statCards.map((card) => (
               <StatCard
@@ -358,21 +359,21 @@ export default function PSDashboard() {
           <div className="bg-white rounded-card p-4 border border-slate-200">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
-                <div className="text-label font-semibold text-[#0A1628]">Arrest &amp; Case Volume Trend</div>
+                <div className="text-label font-semibold text-[var(--text-primary)]">Arrest &amp; Case Volume Trend</div>
               </div>
               <div className="flex items-center gap-3 text-meta font-semibold text-slate-500">
                 <span className="flex items-center gap-1.5">
-                  <Dot color="#10B981" />
+                  <Dot color="#00522C" />
                   Arrest
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Dot color="#3B82F6" />
+                  <Dot color="#4A2BC2" />
                   Total (all case types)
                 </span>
               </div>
             </div>
             <div ref={arrestChartWrapRef} className="mt-2 h-[200px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+              <SafeResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={arrestTrendData}
                   margin={ARREST_CHART_MARGIN}
@@ -381,21 +382,21 @@ export default function PSDashboard() {
                 >
                   <defs>
                     <linearGradient id="arrestAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.35}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.02}/>
+                      <stop offset="5%" stopColor="#00522C" stopOpacity={0.35}/>
+                      <stop offset="95%" stopColor="#00522C" stopOpacity={0.02}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="#E2E8F0" strokeDasharray="5 5" vertical={false} />
+                  <CartesianGrid stroke="var(--border-color)" strokeDasharray="5 5" vertical={false} />
                   <XAxis
                     dataKey="label"
-                    stroke="#A0AEC0"
+                    stroke="var(--text-muted)"
                     fontSize={10}
                     tickLine={false}
                     axisLine={false}
                     dy={8}
                   />
                   <YAxis
-                    stroke="#A0AEC0"
+                    stroke="var(--text-muted)"
                     fontSize={10}
                     tickLine={false}
                     axisLine={false}
@@ -408,28 +409,28 @@ export default function PSDashboard() {
                   <Area
                     type="monotone"
                     dataKey="arrest_value"
-                    stroke="#10B981"
+                    stroke="#00522C"
                     strokeWidth={2.5}
                     fillOpacity={1}
                     fill="url(#arrestAreaGrad)"
-                    activeDot={{ r: 5, fill: "#10B981", stroke: "#A7F3D0", strokeWidth: 3 }}
+                    activeDot={{ r: 5, fill: "#00522C", stroke: "#E6F6EC", strokeWidth: 3 }}
                   />
                   <Line
                     type="monotone"
                     dataKey="total_value"
-                    stroke="#3B82F6"
+                    stroke="#4A2BC2"
                     strokeWidth={2}
                     dot={false}
-                    activeDot={{ r: 5, fill: "#3B82F6", stroke: "#BFDBFE", strokeWidth: 3 }}
+                    activeDot={{ r: 5, fill: "#4A2BC2", stroke: "#F2EFFF", strokeWidth: 3 }}
                   />
                 </ComposedChart>
-              </ResponsiveContainer>
+              </SafeResponsiveContainer>
             </div>
           </div>
 
           <div className="bg-white rounded-card p-4 border border-slate-200 flex flex-col justify-between">
             <div>
-              <div className="text-label font-semibold text-[#0A1628]">
+              <div className="text-label font-semibold text-[var(--text-primary)]">
                 Left Out Accused
               </div>
               <div className="text-meta font-semibold text-slate-400 mt-0.5">(Heinous cases only)</div>
@@ -453,7 +454,7 @@ export default function PSDashboard() {
         {/* Crime-head matrix + Case Status chart */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
           <div className="bg-white rounded-card p-4 border border-slate-200">
-            <div className="text-label font-semibold text-[#0A1628]">Crime Head Breakdown</div>
+            <div className="text-label font-semibold text-[var(--text-primary)]">Crime Head Breakdown</div>
             <div className="mt-3">
               <CrimeHeadMatrixTable
                 rows={crimeHeadMatrix.rows}
@@ -463,7 +464,7 @@ export default function PSDashboard() {
           </div>
 
           <div className="bg-white rounded-card p-4 border border-slate-200">
-            <div className="text-label font-semibold text-[#0A1628]">Case Status</div>
+            <div className="text-label font-semibold text-[var(--text-primary)]">Case Status</div>
             <div className="mt-2">
               <CaseStatusBarChart data={caseStatusRows} />
             </div>

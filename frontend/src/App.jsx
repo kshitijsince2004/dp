@@ -25,7 +25,7 @@ function DownloadLogsButton() {
         right: 12,
         zIndex: 9999,
         padding: '5px 9px',
-        fontSize: 11,
+        fontSize: 'var(--text-label-s)',
         lineHeight: 1.2,
         borderRadius: 6,
         border: '1px solid rgba(148,163,184,0.4)',

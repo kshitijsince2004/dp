@@ -288,7 +288,7 @@ export default function CustomFieldsPage() {
         <span className="text-slate-500 text-xs font-semibold">Filter:</span>
         {['ALL', ...RECORD_TYPES].map((type) => (
           <button key={type} onClick={() => setFilterType(type)}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
+            className={`px-3 py-1.5 rounded-lg text-label-s font-bold transition-all cursor-pointer border ${
               filterType === type
                 ? 'bg-[var(--accent-color)] text-white border-transparent'
                 : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50'
@@ -330,7 +330,7 @@ export default function CustomFieldsPage() {
               <tbody className="divide-y divide-slate-100 text-slate-600">
                 {filtered.map((f) => (
                   <tr key={f.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-3.5 pl-5 font-mono font-bold text-[var(--accent-color)] text-[11px]">{f.field_key}</td>
+                    <td className="p-3.5 pl-5 font-mono font-bold text-[var(--accent-color)] text-label-s">{f.field_key}</td>
                     <td className="p-3.5 font-medium text-slate-700">{f.label_en}</td>
                     <td className="p-3.5 text-slate-500 font-sans">{f.label_hi || '—'}</td>
                     <td className="p-3.5">
@@ -338,7 +338,7 @@ export default function CustomFieldsPage() {
                         {f.field_type}
                       </span>
                     </td>
-                    <td className="p-3.5 text-slate-500 text-[11px] font-medium">
+                    <td className="p-3.5 text-slate-500 text-label-s font-medium">
                       {getSectionLabel(f.section, layout, i18n.language, { label_en: f.section_label_en, label_hi: f.section_label_hi })}
                     </td>
                     <td className="p-3.5">
@@ -397,7 +397,7 @@ export default function CustomFieldsPage() {
 
               <div className="flex justify-between items-center bg-zinc-950/80 border-b border-zinc-800 px-5 py-3.5">
                 <h3 className="text-sm font-bold text-zinc-200 flex items-center gap-2">
-                  <Plus size={14} className="text-[#cca43b]" />
+                  <Plus size={14} className="text-[var(--accent-gold)]" />
                   {editTarget ? 'Edit District Field' : 'Add District Field'}
                 </h3>
                 <button onClick={closeModal} className="text-zinc-500 hover:text-zinc-200 cursor-pointer">
@@ -417,12 +417,12 @@ export default function CustomFieldsPage() {
                       value={form.field_key}
                       onChange={(e) => setForm({ ...form, field_key: e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') })}
                       placeholder="e.g. central_court_date"
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] font-mono disabled:opacity-50" />
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-mono disabled:opacity-50" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-zinc-400 font-semibold">Field Type *</label>
                     <select value={form.field_type} onChange={(e) => setForm({ ...form, field_type: e.target.value })}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] cursor-pointer">
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--accent-gold)] cursor-pointer">
                       {FIELD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
@@ -434,13 +434,13 @@ export default function CustomFieldsPage() {
                     <label className="text-zinc-400 font-semibold">English Label *</label>
                     <input type="text" required value={form.label_en}
                       onChange={(e) => setForm({ ...form, label_en: e.target.value })}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b]" />
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--accent-gold)]" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-zinc-400 font-semibold">Hindi Label</label>
                     <input type="text" value={form.label_hi}
                       onChange={(e) => setForm({ ...form, label_hi: e.target.value })}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] font-sans" />
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-sans" />
                   </div>
                 </div>
 
@@ -452,7 +452,7 @@ export default function CustomFieldsPage() {
                   <div className="flex flex-wrap gap-2">
                     {RECORD_TYPES.map((rt) => (
                       <button key={rt} type="button" onClick={() => toggleRecordType(rt)}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
+                        className={`px-3 py-1.5 rounded-lg text-label-s font-bold transition-all cursor-pointer border ${
                           form.applicable_record_types.includes(rt)
                             ? TYPE_COLORS[rt] || 'text-zinc-200 border-zinc-500 bg-zinc-700'
                             : 'bg-zinc-900 border-zinc-800 text-zinc-500'
@@ -467,7 +467,7 @@ export default function CustomFieldsPage() {
                 <div className="space-y-1.5">
                   <label className="text-zinc-400 font-semibold">Section</label>
                   {form.applicable_record_types.length === 0 ? (
-                    <div className="w-full bg-zinc-950/60 border border-zinc-800 rounded-lg p-2.5 text-zinc-600 text-[11px]">
+                    <div className="w-full bg-zinc-950/60 border border-zinc-800 rounded-lg p-2.5 text-zinc-600 text-label-s">
                       Select at least one record type above to see available sections.
                     </div>
                   ) : (
@@ -479,7 +479,7 @@ export default function CustomFieldsPage() {
                           setForm({ ...form, isNewSection: false, section: e.target.value });
                         }
                       }}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[#cca43b] cursor-pointer">
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 outline-none focus:border-[var(--accent-gold)] cursor-pointer">
                       <option value="">Choose a section</option>
                       
                       {knownSectionsGroups.core.length > 0 && (
@@ -516,26 +516,26 @@ export default function CustomFieldsPage() {
 
                 {form.isNewSection && (
                   <div className="border border-zinc-700/60 rounded-lg p-3 bg-zinc-950/40 space-y-3">
-                    <p className="text-zinc-400 font-semibold text-[11px] uppercase tracking-wide">New Section</p>
+                    <p className="text-zinc-400 font-semibold text-label-s uppercase tracking-wide">New Section</p>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1.5">
                         <label className="text-zinc-500">Key (snake_case) *</label>
                         <input type="text" required={form.isNewSection} value={form.section}
                           onChange={(e) => setForm({ ...form, section: e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') })}
                           placeholder="district_legal"
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[#cca43b] font-mono" />
+                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-mono" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-zinc-500">English Name *</label>
                         <input type="text" required={form.isNewSection} value={form.section_label_en}
                           onChange={(e) => setForm({ ...form, section_label_en: e.target.value })}
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[#cca43b]" />
+                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)]" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-zinc-500">Hindi Name</label>
                         <input type="text" value={form.section_label_hi}
                           onChange={(e) => setForm({ ...form, section_label_hi: e.target.value })}
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[#cca43b] font-sans" />
+                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-sans" />
                       </div>
                     </div>
                   </div>
@@ -547,7 +547,7 @@ export default function CustomFieldsPage() {
                     <div className="flex items-center justify-between">
                       <label className="text-zinc-400 font-semibold">Dropdown Options</label>
                       <button type="button" onClick={addOption}
-                        className="text-[11px] text-[#cca43b] hover:text-amber-500 font-bold flex items-center gap-1 cursor-pointer">
+                        className="text-label-s text-[var(--accent-gold)] hover:text-amber-500 font-bold flex items-center gap-1 cursor-pointer">
                         <Plus size={11} /> Add Option
                       </button>
                     </div>
@@ -555,13 +555,13 @@ export default function CustomFieldsPage() {
                       <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
                         <input type="text" placeholder="value" value={opt.value}
                           onChange={(e) => updateOption(i, 'value', e.target.value)}
-                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[#cca43b] font-mono" />
+                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-mono" />
                         <input type="text" placeholder="English label" value={opt.label_en}
                           onChange={(e) => updateOption(i, 'label_en', e.target.value)}
-                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[#cca43b]" />
+                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)]" />
                         <input type="text" placeholder="Hindi label" value={opt.label_hi || ''}
                           onChange={(e) => updateOption(i, 'label_hi', e.target.value)}
-                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[#cca43b] font-sans" />
+                          className="bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] font-sans" />
                         <button type="button" onClick={() => removeOption(i)}
                           className="text-zinc-600 hover:text-red-400 cursor-pointer"><X size={14} /></button>
                       </div>
@@ -574,14 +574,14 @@ export default function CustomFieldsPage() {
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={form.is_required}
                       onChange={(e) => setForm({ ...form, is_required: e.target.checked })}
-                      className="accent-[#cca43b]" />
+                      className="accent-[var(--accent-gold)]" />
                     <span className="text-zinc-400 font-semibold">Mark as required</span>
                   </label>
                   <div className="flex items-center gap-2">
                     <label className="text-zinc-500">Sort order</label>
                     <input type="number" value={form.sort_order}
                       onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })}
-                      className="w-20 bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[#cca43b] text-center" />
+                      className="w-20 bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] text-center" />
                   </div>
                 </div>
 
@@ -591,7 +591,7 @@ export default function CustomFieldsPage() {
                     Cancel
                   </button>
                   <button type="submit" disabled={isPending}
-                    className="bg-[#cca43b] hover:bg-amber-600 text-zinc-950 px-5 py-2 rounded-lg font-bold shadow-md cursor-pointer disabled:opacity-60">
+                    className="bg-[var(--accent-gold)] hover:bg-amber-600 text-zinc-950 px-5 py-2 rounded-lg font-bold shadow-md cursor-pointer disabled:opacity-60">
                     {isPending ? 'Saving…' : (editTarget ? 'Save Changes' : 'Publish Field')}
                   </button>
                 </div>

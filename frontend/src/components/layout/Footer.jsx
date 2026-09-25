@@ -12,7 +12,7 @@ export const Footer = () => (
         <div className="col-span-1 md:col-span-2 flex flex-col gap-3">
           <div className="flex items-center gap-2 mb-1">
             <img src={delhiPoliceLogo} alt="Delhi Police Logo" className="w-7 h-7 object-contain" />
-            <span className="font-bold text-lg public-footer-title tracking-wider">{APP_NAME}</span>
+            <span className="font-bold text-body-l public-footer-title tracking-wider">{APP_NAME}</span>
           </div>
           <p className="text-sm public-footer-text max-w-sm leading-relaxed">
             Police Reporting, Intelligence & Statistics Management (PRISM) is an internal secure command portal operated by the IT Division, Delhi Police.
@@ -26,10 +26,10 @@ export const Footer = () => (
         <div id="helplines">
           <h3 className="text-sm font-semibold public-footer-title mb-3 uppercase tracking-wider">Emergency Helplines</h3>
           <ul className="space-y-1.5 text-sm public-footer-text">
-            <li>National Emergency Support: <strong className="text-[#cca43b]">112</strong></li>
-            <li>Police Control Room: <strong className="text-[#cca43b]">100</strong></li>
-            <li>Women Helpline: <strong className="text-[#cca43b]">1091</strong></li>
-            <li>Special Anti-Harassment: <strong className="text-[#cca43b]">1096</strong></li>
+            <li>National Emergency Support: <strong className="text-[var(--accent-gold)]">112</strong></li>
+            <li>Police Control Room: <strong className="text-[var(--accent-gold)]">100</strong></li>
+            <li>Women Helpline: <strong className="text-[var(--accent-gold)]">1091</strong></li>
+            <li>Special Anti-Harassment: <strong className="text-[var(--accent-gold)]">1096</strong></li>
           </ul>
         </div>
 
@@ -38,17 +38,17 @@ export const Footer = () => (
           <h3 className="text-sm font-semibold public-footer-title mb-3 uppercase tracking-wider">Agency Portals</h3>
           <ul className="space-y-2 text-sm">
             <li>
-              <a href="https://delhipolice.gov.in" target="_blank" rel="noreferrer" className="public-footer-link hover:text-[#cca43b] transition-colors">
+              <a href="https://delhipolice.gov.in" target="_blank" rel="noreferrer" className="public-footer-link hover:text-[var(--accent-gold)] transition-colors">
                 Delhi Police Official
               </a>
             </li>
             <li>
-              <a href="https://mha.gov.in" target="_blank" rel="noreferrer" className="public-footer-link hover:text-[#cca43b] transition-colors">
+              <a href="https://mha.gov.in" target="_blank" rel="noreferrer" className="public-footer-link hover:text-[var(--accent-gold)] transition-colors">
                 Ministry of Home Affairs
               </a>
             </li>
             <li>
-              <a href="https://ncrb.gov.in" target="_blank" rel="noreferrer" className="public-footer-link hover:text-[#cca43b] transition-colors">
+              <a href="https://ncrb.gov.in" target="_blank" rel="noreferrer" className="public-footer-link hover:text-[var(--accent-gold)] transition-colors">
                 NCRB India Portal
               </a>
             </li>

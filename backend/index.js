@@ -7,6 +7,7 @@ import { createServer } from 'http';
 import { startWarehouseSync } from './src/modules/warehouse/warehouse.scheduler.js';
 import { startAuditVerification } from './src/modules/audit/audit.scheduler.js';
 import { runStartupAutoload } from './src/bootstrap/autoload.js';
+import { seedRbac } from './src/modules/auth/rbac.seed.js';
 import * as notifyHandler from './src/events/handlers/notifyHandler.js';
 import * as linkAuditHandler from './src/events/handlers/linkAuditHandler.js';
 import * as linkResolver from './src/events/handlers/linkResolver.js';
@@ -19,6 +20,10 @@ const start = async () => {
   try {
     // 1. Connect to PostgreSQL
     await connectDB();
+
+    // 1.2 Seed SuperTokens RBAC: sync the role + permission catalog into the Core and attach
+    // each user's role. Best-effort and idempotent (see rbac.seed.js) — never crashes startup.
+    await seedRbac();
 
     // 1.5 Smart config/ref auto-load (sync-config always, load-ref when sources changed)
     await runStartupAutoload();

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ShieldAlert, Filter, Clock, User, Database, FileEdit, LogIn, Send, AlertTriangle } from 'lucide-react';
 import api from '../../utils/api.js';
+import { asArray, asLogsList } from '../../utils/dataShape.js';
 import { log as clientLog } from '../../utils/logger.js';
 
 const ACTION_STYLES = {
@@ -32,7 +33,7 @@ export default function AuditPage() {
       clientLog.debug('data:load_start', { what: 'audit_logs', page, actionFilter });
       try {
         const res = await api.get('/audit');
-        const logs = res.data?.data?.logs || res.data?.data || [];
+        const logs = asLogsList(res.data?.data);
         clientLog.debug('data:load_success', { what: 'audit_logs', count: logs.length });
         return { logs, total: logs.length };
       } catch (err) {
@@ -44,7 +45,7 @@ export default function AuditPage() {
     retry: 1,
   });
 
-  const rawLogs = data?.logs || [];
+  const rawLogs = asArray(data?.logs);
 
   const filteredLogs = actionFilter === 'ALL'
     ? rawLogs
@@ -83,7 +84,7 @@ export default function AuditPage() {
             <button
               key={action}
               onClick={() => handleFilterChange(action)}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
+              className={`px-3 py-1.5 rounded-lg text-label-s font-bold transition-all cursor-pointer border ${
                 isActive
                   ? 'bg-[var(--accent-color)] text-white border-[var(--accent-color)] shadow-sm'
                   : 'bg-white border-slate-200 text-slate-650 hover:text-slate-900 hover:border-slate-350'
@@ -94,7 +95,7 @@ export default function AuditPage() {
           );
         })}
 
-        <span className="ml-auto text-slate-500 text-[11px] font-mono font-semibold">
+        <span className="ml-auto text-slate-500 text-label-s font-mono font-semibold">
           {filteredLogs.length} entries
         </span>
       </div>

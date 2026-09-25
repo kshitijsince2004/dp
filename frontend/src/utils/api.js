@@ -2,6 +2,8 @@ import axios from 'axios';
 import { findNodeById, POLICE_HIERARCHY } from './hierarchyData.js';
 import { formatDMY } from './dateFormat.js';
 import { log, newRequestId } from './logger.js';
+import { clearStaleMockTokensInLiveMode } from './authTokens.js';
+import Session from 'supertokens-web-js/recipe/session';
 
 // Excluded from interceptor logging by URL — see HANDOFF.md §6.2. logger.js ships its OWN batch
 // of client logs via a raw `fetch` (never through this axios instance), so this guard is
@@ -20,6 +22,9 @@ const api = axios.create({
   timeout: 120000,
 });
 
+// SuperTokens manages the auth header and automatic token refresh on this axios instance.
+Session.addAxiosInterceptors(api);
+
 // Helper to parse cookies
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -31,9 +36,16 @@ const getCookie = (name) => {
 // Request Interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Auth header + token refresh are handled by SuperTokens (Session.addAxiosInterceptors).
+    // Mock mode still uses localStorage bearer tokens set by DebugBar login.
+    const debugMode = typeof localStorage !== 'undefined'
+      ? (localStorage.getItem('prism_debug_api_mode') || 'production')
+      : 'production';
+    if (debugMode !== 'production') {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     const csrfToken = getCookie('csrfToken');
     if (csrfToken) {
@@ -57,23 +69,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor for auto-refresh
-let isRefreshing = false;
-let failedQueue = [];
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach((prom) => {
-    error ? prom.reject(error) : prom.resolve(token);
-  });
-  failedQueue = [];
-};
-
 api.interceptors.response.use(
   (response) => {
     if (!isLogsEndpoint(response.config?.url)) {
       const meta = response.config?.metadata || {};
       log.debug('api:response', {
         status: response.status,
+        method: response.config?.method,
         url: response.config?.url,
         requestId: meta.requestId,
         durationMs: meta.startTime ? Date.now() - meta.startTime : undefined,
@@ -82,61 +84,63 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
+    // Intentional DebugBar error_* simulation — log once, don't flood the console.
+    if (error?.isSimulatedDebugError) {
+      if (!simulatedErrorNoticeShown) {
+        simulatedErrorNoticeShown = true;
+        log.warn('api:debug_error_simulation_active', {
+          status: error.response?.status,
+          message:
+            'PRISM DebugBar is forcing API failures. Click "Exit error mode" (top banner) or switch to Mock/Live API.',
+        });
+      }
+      return Promise.reject(error);
+    }
+
+    // Mock engine short-circuits via Promise.reject({ isMock, response }).
+    // Those are successful mock payloads (often status 200), NOT HTTP failures —
+    // resolve them before any api:response:error logging.
+    if (error?.isMock) {
+      const response = error.response;
+      const cfg = error.config || response?.config || {};
+      if (!isLogsEndpoint(cfg.url)) {
+        const meta = cfg.metadata || {};
+        log.debug('api:response', {
+          status: response?.status ?? 200,
+          method: cfg.method,
+          url: cfg.url,
+          requestId: meta.requestId,
+          durationMs: meta.startTime ? Date.now() - meta.startTime : undefined,
+          mock: true,
+        });
+      }
+      return Promise.resolve(response);
+    }
+
+    // Genuine Axios failures only.
     if (!isLogsEndpoint(error.config?.url)) {
-      const meta = error.config?.metadata || {};
+      const cfg = error.config || {};
+      const meta = cfg.metadata || {};
       const status = error.response?.status ?? null;
       const level = status && status < 500 ? 'warn' : 'error';
       log[level]('api:response:error', {
         status,
-        url: error.config?.url,
+        method: cfg.method,
+        url: cfg.url,
         requestId: meta.requestId,
         durationMs: meta.startTime ? Date.now() - meta.startTime : undefined,
-        message: error.message,
+        message: error.message || error.response?.data?.message,
       });
     }
 
-    if (error && error.isMock) {
-      return Promise.resolve(error.response);
-    }
-    const originalRequest = error.config;
-
     // Check if we are in mock mode (bypass standard network error)
-    const debugMode = localStorage.getItem('prism_debug_api_mode') || 'production';
+    const debugMode = getApiDebugMode();
     if (debugMode !== 'production') {
       return Promise.reject(error);
     }
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        }).then((token) => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          return api(originalRequest);
-        });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const refresh = localStorage.getItem('refresh_token');
-        const res = await axios.post(`${BASE_URL}/auth/refresh`, { refresh_token: refresh });
-        const newToken = res.data.data.access_token;
-        localStorage.setItem('access_token', newToken);
-        processQueue(null, newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        localStorage.clear();
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
-    }
-
+    // Token refresh is handled automatically by SuperTokens (Session.addAxiosInterceptors).
+    // A 401 that reaches here means the session is genuinely invalid; surface it to the caller.
     return Promise.reject(error);
   }
 );
@@ -154,14 +158,56 @@ const createMockResponse = (data, status = 200) => ({
   config: {},
 });
 
-const createMockError = (message, status) => {
+const createMockError = (message, status, extras = {}) => {
   const err = new Error(message);
   err.response = {
     status,
     data: { status: 'error', message },
   };
+  Object.assign(err, extras);
   return err;
 };
+
+let simulatedErrorNoticeShown = false;
+
+/** Error simulation is opt-in via env — never on by default for normal development. */
+const API_ERROR_SIMULATION_ENABLED =
+  import.meta.env.VITE_ENABLE_API_ERROR_SIMULATION === 'true';
+
+const API_DEBUG_MODE_KEY = 'prism_debug_api_mode';
+const API_DEBUG_PREV_KEY = 'prism_debug_api_mode_prev';
+
+/**
+ * Clear stuck error_* modes unless explicitly enabled. Persisted Err 500 from the
+ * DebugBar otherwise forces every request to fail across reloads.
+ */
+function sanitizeApiDebugMode() {
+  try {
+    const raw = localStorage.getItem(API_DEBUG_MODE_KEY);
+    if (!raw || !raw.startsWith('error_')) return raw || 'production';
+    if (API_ERROR_SIMULATION_ENABLED) return raw;
+
+    const prev = localStorage.getItem(API_DEBUG_PREV_KEY);
+    const restore = prev === 'mock' ? 'mock' : 'production';
+    localStorage.setItem(API_DEBUG_MODE_KEY, restore);
+    localStorage.removeItem(API_DEBUG_PREV_KEY);
+    console.info(
+      `[PRISM] Cleared stuck API error simulation (${raw}). Restored mode: ${restore}. ` +
+        'Set VITE_ENABLE_API_ERROR_SIMULATION=true to use DebugBar Err buttons.'
+    );
+    return restore;
+  } catch {
+    return 'production';
+  }
+}
+
+function getApiDebugMode() {
+  return sanitizeApiDebugMode();
+}
+
+// Run once at module load so the first request already sees a clean mode.
+sanitizeApiDebugMode();
+clearStaleMockTokensInLiveMode();
 
 // Seed mock database inside localStorage if not present
 const initMockDB = () => {
@@ -1910,7 +1956,7 @@ const formSchemas = {
 // Interceptor helper to inject simulated API responses/errors
 api.interceptors.request.use(
   async (config) => {
-    const debugMode = localStorage.getItem('prism_debug_api_mode') || 'production';
+    const debugMode = getApiDebugMode();
     if (debugMode === 'production') {
       return config;
     }
@@ -1924,10 +1970,24 @@ api.interceptors.request.use(
     const method = config.method.toUpperCase();
     const url = config.url;
 
-    // Simulate error triggers if debug switcher requests it
+    // Simulate error triggers only when explicitly enabled via env + DebugBar.
     if (debugMode.startsWith('error_')) {
+      if (!API_ERROR_SIMULATION_ENABLED) {
+        // Defense in depth: never force failures without the opt-in flag.
+        return config;
+      }
       const code = parseInt(debugMode.split('_')[1], 10);
-      throw createMockError(`Simulated server error for code ${code}`, code);
+      if (!simulatedErrorNoticeShown) {
+        simulatedErrorNoticeShown = true;
+        log.warn('api:debug_error_simulation_active', {
+          status: code,
+          message:
+            'PRISM DebugBar is forcing API failures. Click "Exit error mode" (top banner) or switch to Mock/Live API.',
+        });
+      }
+      throw createMockError(`Simulated server error for code ${code}`, code, {
+        isSimulatedDebugError: true,
+      });
     }
 
     // Handle Mock Authentication Login
@@ -1984,6 +2044,7 @@ api.interceptors.request.use(
 
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(tokens)
       });
     }
@@ -1991,6 +2052,7 @@ api.interceptors.request.use(
     if (url.includes('/auth/logout') && method === 'POST') {
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse({ message: 'Session logged out' })
       });
     }
@@ -2025,6 +2087,7 @@ api.interceptors.request.use(
       }
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse({ user: defaultUser })
       });
     }
@@ -2055,7 +2118,59 @@ api.interceptors.request.use(
       ];
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(mockActsSections)
+      });
+    }
+
+    // Local heads lookup (analytics filters / crime-head charts)
+    if (url.includes('/fields/lookup/local-heads') && method === 'GET') {
+      const mockLocalHeads = [
+        { value: 1, label: 'Theft', crime_category: 'NON_HEINOUS' },
+        { value: 2, label: 'Robbery', crime_category: 'HEINOUS' },
+        { value: 3, label: 'Burglary', crime_category: 'NON_HEINOUS' },
+        { value: 4, label: 'Murder', crime_category: 'HEINOUS' },
+        { value: 5, label: 'Snatching', crime_category: 'NON_HEINOUS' },
+      ];
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse(mockLocalHeads),
+      });
+    }
+
+    // Filter presets
+    if (url.includes('/filters/presets') && method === 'GET') {
+      const mockPresets = [
+        {
+          id: 'sys_preset_today',
+          name: "Today's FIRs",
+          scope: 'SYSTEM',
+          filter_spec: {
+            logic: 'AND',
+            conditions: [{ field: '_record_date', operator: 'eq', value: 'today' }],
+          },
+        },
+      ];
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse(mockPresets),
+      });
+    }
+    if (url.includes('/filters/presets') && method === 'POST') {
+      const payload = typeof config.data === 'string' ? JSON.parse(config.data) : (config.data || {});
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse({ id: 'preset-' + Date.now(), ...payload }),
+      });
+    }
+    if (url.match(/\/filters\/presets\/[^/]+$/) && method === 'DELETE') {
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse({ message: 'Preset deleted' }),
       });
     }
 
@@ -2065,6 +2180,7 @@ api.interceptors.request.use(
       const schema = formSchemas[recordType] || [];
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(schema)
       });
     }
@@ -2092,6 +2208,7 @@ api.interceptors.request.use(
       });
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(allFields)
       });
     }
@@ -2101,6 +2218,7 @@ api.interceptors.request.use(
       const allRecords = JSON.parse(localStorage.getItem('prism_mock_records') || '[]');
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(allRecords)
       });
     }
@@ -2115,6 +2233,7 @@ api.interceptors.request.use(
       }
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(record)
       });
     }
@@ -2171,6 +2290,7 @@ api.interceptors.request.use(
       localStorage.setItem('prism_mock_records', JSON.stringify(allRecords));
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(newRecord)
       });
     }
@@ -2228,6 +2348,7 @@ api.interceptors.request.use(
       localStorage.setItem('prism_mock_records', JSON.stringify(allRecords));
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(record)
       });
     }
@@ -2247,6 +2368,7 @@ api.interceptors.request.use(
       localStorage.setItem('prism_mock_records', JSON.stringify(filtered));
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse({ message: 'Draft deleted successfully' })
       });
     }
@@ -2278,6 +2400,7 @@ api.interceptors.request.use(
       localStorage.setItem('prism_mock_records', JSON.stringify(allRecords));
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(record)
       });
     }
@@ -2327,6 +2450,7 @@ api.interceptors.request.use(
       localStorage.setItem('prism_mock_records', JSON.stringify(allRecords));
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(record)
       });
     }
@@ -2372,6 +2496,7 @@ api.interceptors.request.use(
       localStorage.setItem('prism_mock_records', JSON.stringify(allRecords));
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(record)
       });
     }
@@ -2399,6 +2524,7 @@ api.interceptors.request.use(
 
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(filteredQueue)
       });
     }
@@ -2424,6 +2550,7 @@ api.interceptors.request.use(
 
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse({ count })
       });
     }
@@ -2447,6 +2574,7 @@ api.interceptors.request.use(
       ];
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(comps)
       });
     }
@@ -2480,6 +2608,7 @@ api.interceptors.request.use(
 
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(newComp)
       });
     }
@@ -2489,6 +2618,7 @@ api.interceptors.request.use(
       const compId = url.match(/\/compilations\/([A-Za-z0-9-]+)\/submit$/)[1];
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse({ id: compId, status: 'SUBMITTED', submitted_at: new Date().toISOString() })
       });
     }
@@ -2504,6 +2634,7 @@ api.interceptors.request.use(
 
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse({
           arrests_today: arrests,
           pcr_today: pcrCalls,
@@ -2526,7 +2657,60 @@ api.interceptors.request.use(
       ];
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(data)
+      });
+    }
+
+    // Crime-head × case-type matrix (stable empty shape — matches live contract)
+    if (url.includes('/analytics/crime-head-matrix') && method === 'GET') {
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse({
+          period: config.params?.period || 'week',
+          columns: ['FIR', 'Arrest', 'Worked Out'],
+          rows: [],
+        }),
+      });
+    }
+
+    // Case-status breakdown (empty valid shape)
+    if (url.includes('/analytics/case-status-breakdown') && method === 'GET') {
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse({
+          period: config.params?.period || 'week',
+          rows: [],
+        }),
+      });
+    }
+
+    // Arrest trend breakdown (empty valid shape)
+    if (url.includes('/analytics/arrest-trend-breakdown') && method === 'GET') {
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse({ points: [] }),
+      });
+    }
+
+    // Analytics summary (empty valid shape)
+    if (url.includes('/analytics/summary') && method === 'GET') {
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse({ summary: {} }),
+      });
+    }
+
+    // Status breakdown used by analytics console
+    if (url.includes('/analytics/status-breakdown') && method === 'GET') {
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse([]),
       });
     }
 
@@ -2541,6 +2725,7 @@ api.interceptors.request.use(
       ];
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(data)
       });
     }
@@ -2558,6 +2743,7 @@ api.interceptors.request.use(
       ];
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(data)
       });
     }
@@ -2567,6 +2753,7 @@ api.interceptors.request.use(
       const reqId = 'rep-' + Math.random().toString(36).substring(2, 9);
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse({ reportId: reqId, status: 'GENERATING' })
       });
     }
@@ -2576,6 +2763,7 @@ api.interceptors.request.use(
       const repId = url.match(/\/reports\/status\/([A-Za-z0-9-]+)$/)[1];
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse({
           reportId: repId,
           status: 'READY',
@@ -2588,6 +2776,7 @@ api.interceptors.request.use(
     if (url.includes('/admin/hierarchy') && method === 'GET') {
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(POLICE_HIERARCHY)
       });
     }
@@ -2611,6 +2800,7 @@ api.interceptors.request.use(
       traverse(POLICE_HIERARCHY);
       return Promise.reject({
         isMock: true,
+        config,
         response: createMockResponse(list)
       });
     }
@@ -2625,7 +2815,7 @@ api.interceptors.request.use(
         { id: 'usr-4', username: 'Director Vikram Singh', badge_no: 'HQ001', badgeNo: 'HQ001', name_en: 'Director Vikram Singh', role: 'HQ_ADMIN', station_id: null, psId: null, district_id: null, districtId: null, is_active: true },
       ];
       if (!storedUsers) localStorage.setItem('prism_mock_users', JSON.stringify(mockUsers));
-      return Promise.reject({ isMock: true, response: createMockResponse(mockUsers) });
+      return Promise.reject({ isMock: true, config, response: createMockResponse(mockUsers) });
     }
 
     // Create User (POST /users or /admin/users)
@@ -2647,7 +2837,7 @@ api.interceptors.request.use(
       };
       users.push(newUser);
       localStorage.setItem('prism_mock_users', JSON.stringify(users));
-      return Promise.reject({ isMock: true, response: createMockResponse(newUser) });
+      return Promise.reject({ isMock: true, config, response: createMockResponse(newUser) });
     }
 
     // Update User (PUT /users/:id or /admin/users/:id)
@@ -2660,7 +2850,7 @@ api.interceptors.request.use(
         users[idx] = { ...users[idx], ...payload };
         localStorage.setItem('prism_mock_users', JSON.stringify(users));
       }
-      return Promise.reject({ isMock: true, response: createMockResponse(idx !== -1 ? users[idx] : { message: 'Updated' }) });
+      return Promise.reject({ isMock: true, config, response: createMockResponse(idx !== -1 ? users[idx] : { message: 'Updated' }) });
     }
 
     // Delete User (DELETE /users/:id)
@@ -2669,7 +2859,7 @@ api.interceptors.request.use(
       const users = JSON.parse(localStorage.getItem('prism_mock_users') || '[]');
       const updated = users.map(u => u.id === userId ? { ...u, is_active: false } : u);
       localStorage.setItem('prism_mock_users', JSON.stringify(updated));
-      return Promise.reject({ isMock: true, response: createMockResponse({ message: 'User deactivated' }) });
+      return Promise.reject({ isMock: true, config, response: createMockResponse({ message: 'User deactivated' }) });
     }
 
     // Audit Logs (GET /audit)
@@ -2681,28 +2871,54 @@ api.interceptors.request.use(
         { id: 'al-4', action: 'UPDATE', table_name: 'records', changed_by_role: 'SHO', changed_at: new Date(Date.now() - 1800000).toISOString(), ip_address: '10.0.0.5', field_name: 'current_status', reason: 'Sent back to HC for correction' },
         { id: 'al-5', action: 'OVERRIDE', table_name: 'records', changed_by_role: 'DISTRICT_OFFICER', changed_at: new Date(Date.now() - 900000).toISOString(), ip_address: '10.0.0.10', field_name: 'fir_no', reason: 'DCP override - FIR number corrected' },
       ];
-      return Promise.reject({ isMock: true, response: createMockResponse({ logs: mockLogs }) });
+      return Promise.reject({ isMock: true, config, response: createMockResponse({ logs: mockLogs }) });
     }
 
     // Custom Fields listing (GET /admin/custom-fields)
     if (url.includes('/admin/custom-fields') && method === 'GET') {
-      return Promise.reject({ isMock: true, response: createMockResponse({ customFields: [] }) });
+      return Promise.reject({ isMock: true, config, response: createMockResponse({ customFields: [] }) });
     }
 
     // Create Custom Field (POST /admin/custom-fields)
     if (url.includes('/admin/custom-fields') && method === 'POST') {
       const payload = typeof config.data === 'string' ? JSON.parse(config.data) : (config.data || {});
-      return Promise.reject({ isMock: true, response: createMockResponse({ id: 'cf-' + Date.now(), ...payload }) });
+      return Promise.reject({ isMock: true, config, response: createMockResponse({ id: 'cf-' + Date.now(), ...payload }) });
+    }
+
+    // Notifications REST (Mock Mode) — SSE is skipped client-side for mock tokens.
+    if (url.includes('/notifications') && method === 'GET') {
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse([]),
+      });
+    }
+    if (url.match(/\/notifications\/[^/]+\/read$/) && method === 'PATCH') {
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse({ message: 'Marked read' }),
+      });
+    }
+    if (url.includes('/notifications/read-all') && method === 'PATCH') {
+      return Promise.reject({
+        isMock: true,
+        config,
+        response: createMockResponse({ message: 'All marked read' }),
+      });
     }
 
     // If no specific mock matched, return empty success response
     return Promise.reject({
       isMock: true,
+      config,
       response: createMockResponse({ message: 'Success (Mock Fallthrough)' })
     });
   },
   (error) => {
-    // If it's our rejected mock promise, return the response data
+    // Request-interceptor chain: prior interceptor rejected a mock success.
+    // Resolve here so the HTTP adapter is skipped; response interceptor also
+    // understands isMock (defense in depth).
     if (error && error.isMock) {
       return Promise.resolve(error.response);
     }

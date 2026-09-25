@@ -99,14 +99,14 @@ export default function LoginPage() {
         </div>
         <div className="branding-org">
           <span className="branding-org-name">Delhi Police</span>
-          <h2 className="branding-title-sub" style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--accent-gold)', marginBottom: '0.25rem' }}>PRISM</h2>
+          <h2 className="branding-title-sub" style={{ fontSize: 'var(--text-display-s)', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '0.25rem' }}>PRISM</h2>
         </div>
       </div>
 
       {/* ── Left Panel: Branding ── */}
       <div className="login-branding-panel" style={{paddingTop: '120px'}}>
         <div className="branding-hero-center">
-          <p className="text-base sm:text-lg font-black text-amber-400 mb-3 tracking-widest uppercase">
+          <p className="text-base sm:text-lg font-bold text-amber-400 mb-3 tracking-widest uppercase">
             Police Reporting, Intelligence &amp; Statistics Management
           </p>
           <p className="branding-desc">
@@ -134,7 +134,7 @@ export default function LoginPage() {
 
         <div className="branding-footer">
           <span className="text-sm font-semibold tracking-wide text-slate-400">Security Level: Command Authorization Required</span>
-          <span className="branding-motto text-sm sm:text-base font-black">SHANTI · SEVA · NYAYA</span>
+          <span className="branding-motto text-sm sm:text-base font-bold">SHANTI · SEVA · NYAYA</span>
         </div>
       </div>
 

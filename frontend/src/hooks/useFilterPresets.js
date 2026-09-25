@@ -35,6 +35,11 @@ export function useFilterPresets() {
       return presets;
     },
     staleTime: 5 * 60 * 1000, // 5 min — presets change infrequently
+    retry: (failureCount, error) => {
+      const status = error?.response?.status;
+      if (status && status >= 400 && status < 500) return false;
+      return failureCount < 1;
+    },
   });
 
   const saveMutation = useMutation({

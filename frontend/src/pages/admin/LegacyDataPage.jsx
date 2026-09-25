@@ -523,7 +523,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
                 type="file"
                 accept=".xlsx"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl px-3 py-2 text-[var(--text-main-theme)] opacity-80 cursor-pointer text-[11px] shadow-sm file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--bg-page-main)]/80 file:text-[var(--accent-color)] file:font-bold file:px-2 file:py-0.5"
+                className="w-full bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] rounded-xl px-3 py-2 text-[var(--text-main-theme)] opacity-80 cursor-pointer text-label-s shadow-sm file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--bg-page-main)]/80 file:text-[var(--accent-color)] file:font-bold file:px-2 file:py-0.5"
               />
             </div>
           </div>

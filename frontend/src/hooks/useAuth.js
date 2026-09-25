@@ -6,9 +6,11 @@ import { QUERY_KEYS } from '../utils/constants.js';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { log } from '../utils/logger.js';
+import Session from 'supertokens-web-js/recipe/session';
+import { isLiveApiMode, isMockAccessToken } from '../utils/authTokens.js';
 
 export const useAuth = () => {
-  const { user, isAuthenticated, login, logout, setLoading, activeNodeId } = useAuthStore();
+  const { user, isAuthenticated, login, logout } = useAuthStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -16,12 +18,24 @@ export const useAuth = () => {
   // Keyed on the derived values themselves (not every render) so every consumer of this
   // hook doesn't spam a line per re-render — only when the auth state actually changes.
   useEffect(() => {
-    log.debug('auth:state_read', {
-      userId: user?.id ?? null,
-      role: user?.role ?? null,
-      isAuthenticated,
-      hasToken: !!localStorage.getItem('access_token'),
-    });
+    let cancelled = false;
+    (async () => {
+      let hasToken = !!localStorage.getItem('access_token');
+      try {
+        if (await Session.doesSessionExist()) hasToken = true;
+      } catch {
+        /* ignore */
+      }
+      if (!cancelled) {
+        log.debug('auth:state_read', {
+          userId: user?.id ?? null,
+          role: user?.role ?? null,
+          isAuthenticated,
+          hasToken,
+        });
+      }
+    })();
+    return () => { cancelled = true; };
   }, [user?.id, user?.role, isAuthenticated]);
 
   // Fetch current user (runs once on mount)
@@ -77,10 +91,28 @@ export const useAuth = () => {
           badgeNo: credentials.email
         };
         const res = await authApi.login(payload);
+        // SuperTokens establishes the session from the login response headers automatically
+        // (via the axios interceptors attached to this `api` instance). No manual token storage
+        // for live API. Mock mode may still return body tokens.
         const { user, access_token, refresh_token } = res.data.data;
-        if (access_token) localStorage.setItem('access_token', access_token);
-        if (refresh_token) localStorage.setItem('refresh_token', refresh_token);
-        log.info('auth:login_success', { userId: user?.id ?? null, role: user?.role ?? null, hasAccessToken: !!access_token, hasRefreshToken: !!refresh_token });
+
+        if (!isLiveApiMode()) {
+          if (access_token) localStorage.setItem('access_token', access_token);
+          if (refresh_token) localStorage.setItem('refresh_token', refresh_token);
+        } else if (isMockAccessToken(access_token)) {
+          log.error('auth:login_rejected_mock_token_in_live_mode', {});
+          throw new Error(
+            'Received a mock session token while Live API is selected. Use Mock Mode only for offline demos, or re-login on Live API.'
+          );
+        }
+
+        log.info('auth:login_success', {
+          userId: user?.id ?? null,
+          role: user?.role ?? null,
+          hasAccessToken: !!access_token,
+          hasRefreshToken: !!refresh_token,
+          mockToken: isMockAccessToken(access_token),
+        });
         return user;
       } catch (err) {
         if (!err.response) {
@@ -121,7 +153,12 @@ export const useAuth = () => {
     mutationFn: async () => {
       log.debug('auth:logout_attempt', { userId: user?.id ?? null });
       try {
-        await authApi.logout();
+        await Session.signOut(); // revokes the SuperTokens session and clears its tokens
+        try {
+          await authApi.logout();
+        } catch {
+          /* best-effort app logout after ST signOut */
+        }
         log.info('auth:logout_success', {});
       } catch (err) {
         // Suppress offline errors on logout
@@ -146,4 +183,3 @@ export const useAuth = () => {
     logoutMutation,
   };
 };
-

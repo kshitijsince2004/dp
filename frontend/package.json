@@ -33,7 +33,9 @@
     "react-i18next": "^17.0.8",
     "react-router-dom": "^7.17.0",
     "recharts": "^3.8.1",
+    "supertokens-web-js": "^0.13.0",
     "tailwindcss": "^4.3.1",
+    "ux4g-web-components": "^2.1.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },

@@ -14,7 +14,7 @@ import { log } from '../../utils/logger.js';
 const NODE_TYPE_STYLE = {
   RANGE:         'bg-blue-950/40 text-blue-400 border-blue-800/40',
   DISTRICT:      'bg-amber-950/40 text-amber-400 border-amber-800/40',
-  SUB_DIVISION:  'bg-violet-950/40 text-violet-400 border-violet-800/40',
+  SUB_DIVISION:  'bg-[var(--ux4g-bg-primary-soft)] text-[var(--primary)] border-[var(--border-color)]',
   PS:            'bg-emerald-950/40 text-emerald-400 border-emerald-800/40',
 };
 
@@ -42,7 +42,7 @@ function TreeNode({ node, nodes, depth = 0 }) {
           <span className="w-4 flex-shrink-0" />
         )}
 
-        <Folder size={13} className="text-[#cca43b] flex-shrink-0" />
+        <Folder size={13} className="text-[var(--accent-gold)] flex-shrink-0" />
         <span className="text-zinc-200 text-xs font-semibold truncate">{node.name_en || node.name || node.id}</span>
         {node.name_hi && (
           <span className="text-zinc-500 text-[10px] truncate hidden md:inline">{node.name_hi}</span>
@@ -94,7 +94,7 @@ function NodeForm({ initialData, nodes, onSave, onCancel, isSaving }) {
             value={form.name_en}
             onChange={set('name_en')}
             placeholder="e.g. Parliament Street PS"
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[#cca43b] transition-all"
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] transition-all"
             required
           />
         </div>
@@ -104,7 +104,7 @@ function NodeForm({ initialData, nodes, onSave, onCancel, isSaving }) {
             value={form.name_hi}
             onChange={set('name_hi')}
             placeholder="e.g. संसद मार्ग पुलिस स्टेशन"
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[#cca43b] transition-all"
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] transition-all"
           />
         </div>
       </div>
@@ -115,7 +115,7 @@ function NodeForm({ initialData, nodes, onSave, onCancel, isSaving }) {
           <select
             value={form.node_type}
             onChange={set('node_type')}
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[#cca43b] transition-all cursor-pointer"
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] transition-all cursor-pointer"
           >
             {['RANGE', 'DISTRICT', 'SUB_DIVISION', 'PS'].map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -127,7 +127,7 @@ function NodeForm({ initialData, nodes, onSave, onCancel, isSaving }) {
           <select
             value={form.parent_id}
             onChange={set('parent_id')}
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[#cca43b] transition-all cursor-pointer"
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] transition-all cursor-pointer"
           >
             <option value="">No parent (root)</option>
             {nodes
@@ -147,7 +147,7 @@ function NodeForm({ initialData, nodes, onSave, onCancel, isSaving }) {
           value={form.code}
           onChange={set('code')}
           placeholder="e.g. PS_NDD_PARLIAMENT"
-          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[#cca43b] transition-all font-mono"
+          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 outline-none focus:border-[var(--accent-gold)] transition-all font-mono"
         />
       </div>
 
@@ -158,7 +158,7 @@ function NodeForm({ initialData, nodes, onSave, onCancel, isSaving }) {
         <button
           type="submit"
           disabled={isSaving}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#cca43b] hover:bg-amber-600 text-zinc-950 font-bold transition-colors cursor-pointer disabled:opacity-50"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--accent-gold)] hover:bg-amber-600 text-zinc-950 font-bold transition-colors cursor-pointer disabled:opacity-50"
         >
           {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
           {isEdit ? 'Update Node' : 'Create Node'}

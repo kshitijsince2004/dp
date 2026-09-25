@@ -1,0 +1,3505 @@
+{
+  "mapping": [
+    {
+      "file": "src/index.css",
+      "old": "16px",
+      "role": "body-m",
+      "count": 1
+    },
+    {
+      "file": "src/index.css",
+      "old": "0.75rem",
+      "role": "label-m",
+      "count": 14
+    },
+    {
+      "file": "src/index.css",
+      "old": "1rem",
+      "role": "body-m",
+      "count": 4
+    },
+    {
+      "file": "src/index.css",
+      "old": "1.25rem",
+      "role": "heading-s",
+      "count": 2
+    },
+    {
+      "file": "src/index.css",
+      "old": "1.5rem",
+      "role": "heading-m",
+      "count": 3
+    },
+    {
+      "file": "src/index.css",
+      "old": "1.75rem",
+      "role": "heading-l",
+      "count": 1
+    },
+    {
+      "file": "src/index.css",
+      "old": "2rem",
+      "role": "heading-xl",
+      "count": 1
+    },
+    {
+      "file": "src/index.css",
+      "old": "2.25rem",
+      "role": "display-xs",
+      "count": 1
+    },
+    {
+      "file": "src/components/forms/ActsSectionsTable.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 8
+    },
+    {
+      "file": "src/components/forms/ActsSectionsTable.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 3
+    },
+    {
+      "file": "src/components/forms/DateTimePickerPopup.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 4
+    },
+    {
+      "file": "src/components/forms/DateTimePickerPopup.jsx",
+      "old": "text-[12px]",
+      "role": "label-m",
+      "count": 1
+    },
+    {
+      "file": "src/components/forms/DynamicForm.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 2
+    },
+    {
+      "file": "src/components/forms/DynamicForm.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 3
+    },
+    {
+      "file": "src/components/forms/FormAutosave.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 1
+    },
+    {
+      "file": "src/components/forms/FormToolbar.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 3
+    },
+    {
+      "file": "src/components/forms/SearchableSelect.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 1
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 2
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "old": "text-[12px]",
+      "role": "label-m",
+      "count": 1
+    },
+    {
+      "file": "src/components/records/StatusUpdateModal.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 6
+    },
+    {
+      "file": "src/components/records/StatusUpdateModal.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 1
+    },
+    {
+      "file": "src/features/auth/LoginPage.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 2
+    },
+    {
+      "file": "src/features/home/HomePage.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 7
+    },
+    {
+      "file": "src/pages/admin/AuditPage.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 2
+    },
+    {
+      "file": "src/pages/admin/FieldManager.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 6
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 1
+    },
+    {
+      "file": "src/pages/admin/LevelContractsPage.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 3
+    },
+    {
+      "file": "src/pages/admin/Users.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 1
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 7
+    },
+    {
+      "file": "src/pages/district/CustomFieldsPage.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 7
+    },
+    {
+      "file": "src/pages/district/Dashboard.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 1
+    },
+    {
+      "file": "src/pages/hc/MyRecords.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 4
+    },
+    {
+      "file": "src/pages/hc/MyRecords.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 6
+    },
+    {
+      "file": "src/pages/hc/NewRecord.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 1
+    },
+    {
+      "file": "src/pages/hc/NewRecord.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 2
+    },
+    {
+      "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 13
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 11
+    },
+    {
+      "file": "src/pages/reports/NaturalLanguageSearchPanel.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 4
+    },
+    {
+      "file": "src/pages/reports/NaturalLanguageSearchPanel.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 2
+    },
+    {
+      "file": "src/pages/reports/RecordTracePanel.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 1
+    },
+    {
+      "file": "src/pages/reports/RecordTracePanel.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 1
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 3
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 6
+    },
+    {
+      "file": "src/pages/sho/Queue.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 4
+    },
+    {
+      "file": "src/pages/sho/Queue.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 4
+    },
+    {
+      "file": "src/pages/sho/RecordDetail.jsx",
+      "old": "text-[11px]",
+      "role": "label-s",
+      "count": 4
+    },
+    {
+      "file": "src/pages/sho/RecordDetail.jsx",
+      "old": "font-black/extrabold",
+      "role": "font-bold(700)",
+      "count": 2
+    },
+    {
+      "file": "src/App.jsx",
+      "old": "fontSize 11",
+      "role": "label-s",
+      "count": 1
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "old": "fontSize 11",
+      "role": "label-s",
+      "count": 3
+    },
+    {
+      "file": "src/features/auth/LoginPage.jsx",
+      "old": "2.5rem",
+      "role": "display-s",
+      "count": 1
+    },
+    {
+      "file": "src/main.jsx",
+      "old": "fontSize 14",
+      "role": "body-s",
+      "count": 1
+    },
+    {
+      "file": "src/pages/analytics/AnalyticsDashboard.jsx",
+      "old": "fontSize 11",
+      "role": "label-s",
+      "count": 1
+    },
+    {
+      "file": "src/pages/hq/Dashboard.jsx",
+      "old": "fontSize 11",
+      "role": "label-s",
+      "count": 1
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "old": "fontSize 11",
+      "role": "label-s",
+      "count": 1
+    }
+  ],
+  "flagged": [
+    {
+      "file": "src/index.css",
+      "value": "0.9375rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9375rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "15px !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "15.5px !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.6rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.7rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.35rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.65rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.7rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.1rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.65rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.7rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.15rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.05rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.7rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "5rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.05rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "2.1rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "2.75rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.85rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.05rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.1rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.15rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.82rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.65rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.6rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.65rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.65rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.7rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.65rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.65rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.72rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.35rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.82rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.8rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.05rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.05rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.05rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.1rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.2rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.82rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.35rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.05rem !important",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.7rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "1.05rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.7rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.9rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.95rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.65rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.6rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.85rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.65rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/index.css",
+      "value": "0.55rem",
+      "reason": "Non-exact UX4G size; left unchanged to preserve layout",
+      "proposed": "nearest role pending approval"
+    },
+    {
+      "file": "src/components/common/CrimeHeadCategoryBarChart.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/common/FilterPresetsPanel.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/common/FilterPresetsPanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/common/FilterPresetsPanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/common/StationSummaryCards.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/forms/ActsSectionsTable.jsx",
+      "value": "text-[8px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/forms/DateTimePickerPopup.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/forms/DateTimePickerPopup.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/forms/DateTimePickerPopup.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/forms/DateTimePickerPopup.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/forms/DateTimePickerPopup.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/forms/FormSection.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/forms/FormSection.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/forms/FormSection.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/forms/FormSection.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "value": "text-[13px]",
+      "reason": "Non-exact scale step; left unchanged pending approval",
+      "proposed": "review by role"
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "value": "text-[13px]",
+      "reason": "Non-exact scale step; left unchanged pending approval",
+      "proposed": "review by role"
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "value": "text-[13px]",
+      "reason": "Non-exact scale step; left unchanged pending approval",
+      "proposed": "review by role"
+    },
+    {
+      "file": "src/components/layout/PoliceNavbar.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/records/StatusUpdateModal.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/components/records/StatusUpdateModal.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/AuditPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/AuditPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/FieldManager.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/FieldManager.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/FieldManager.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/FieldManager.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/FieldManager.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/FieldManager.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/HierarchyManager.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/HierarchyManager.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/HierarchyManager.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/HierarchyManager.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/HierarchyManager.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/HierarchyManager.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LegacyDataPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LevelContractsPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LevelContractsPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LevelContractsPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/LevelContractsPage.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/Users.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/admin/Users.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[8px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CompilationUI.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CustomFieldsPage.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CustomFieldsPage.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CustomFieldsPage.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/district/CustomFieldsPage.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/hc/Dashboard.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/hc/Dashboard.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/CustomExcelBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/NaturalLanguageSearchPanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/NaturalLanguageSearchPanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/NaturalLanguageSearchPanel.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/NaturalLanguageSearchPanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/RecordTracePanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/RecordTracePanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/RecordTracePanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/RecordTracePanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/RecordTracePanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/RecordTracePanel.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[9px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/reports/ReportBuilder.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/shared/StationDetailView.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/sho/RecordDetail.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/sho/RecordDetail.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/sho/RecordDetail.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/sho/RecordDetail.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    },
+    {
+      "file": "src/pages/sho/RecordDetail.jsx",
+      "value": "text-[10px]",
+      "reason": "Below Label/S (11px); enlarging would reflow dense UI",
+      "proposed": "label-s"
+    }
+  ],
+  "flaggedCount": 282,
+  "jsxChanged": 27,
+  "note": "Exact matches bound to tokens; sub-11px and non-exact CSS sizes FLAGGED.",
+  "inlinePassChanged": 7,
+  "remaining": {
+    "textArbitraryPx": [
+      {
+        "file": "src/components/common/CrimeHeadCategoryBarChart.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/common/FilterPresetsPanel.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/components/common/FilterPresetsPanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/common/FilterPresetsPanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/common/StationSummaryCards.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/forms/ActsSectionsTable.jsx",
+        "value": "text-[8px]",
+        "px": 8
+      },
+      {
+        "file": "src/components/forms/DateTimePickerPopup.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/forms/DateTimePickerPopup.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/forms/DateTimePickerPopup.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/forms/DateTimePickerPopup.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/components/forms/DateTimePickerPopup.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/components/forms/FormSection.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/forms/FormSection.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/forms/FormSection.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/forms/FormSection.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "text-[13px]",
+        "px": 13
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "text-[13px]",
+        "px": 13
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "text-[13px]",
+        "px": 13
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/records/StatusUpdateModal.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/components/records/StatusUpdateModal.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/AuditPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/AuditPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/FieldManager.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/admin/FieldManager.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/FieldManager.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/admin/FieldManager.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/admin/FieldManager.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/admin/FieldManager.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/admin/HierarchyManager.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/HierarchyManager.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/admin/HierarchyManager.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/admin/HierarchyManager.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/HierarchyManager.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/HierarchyManager.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LegacyDataPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LevelContractsPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LevelContractsPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LevelContractsPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/LevelContractsPage.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/Users.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/admin/Users.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[8px]",
+        "px": 8
+      },
+      {
+        "file": "src/pages/district/CompilationUI.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/district/CustomFieldsPage.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/district/CustomFieldsPage.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/district/CustomFieldsPage.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/district/CustomFieldsPage.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/hc/Dashboard.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/hc/Dashboard.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/hq/DistrictAnalyticsDashboard.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/reports/CustomExcelBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/NaturalLanguageSearchPanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/NaturalLanguageSearchPanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/NaturalLanguageSearchPanel.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/reports/NaturalLanguageSearchPanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/RecordTracePanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/RecordTracePanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/RecordTracePanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/RecordTracePanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/RecordTracePanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/RecordTracePanel.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[9px]",
+        "px": 9
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/reports/ReportBuilder.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/shared/StationDetailView.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/sho/RecordDetail.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/sho/RecordDetail.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/sho/RecordDetail.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/sho/RecordDetail.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      },
+      {
+        "file": "src/pages/sho/RecordDetail.jsx",
+        "value": "text-[10px]",
+        "px": 10
+      }
+    ],
+    "inlineFontSizeLiteral": [
+      {
+        "file": "src/components/common/CaseStatusBarChart.jsx",
+        "value": "10px"
+      },
+      {
+        "file": "src/components/common/CrimeHeadCategoryBarChart.jsx",
+        "value": "10px"
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "10px"
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "13px"
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "13px"
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "10px"
+      },
+      {
+        "file": "src/components/layout/PoliceNavbar.jsx",
+        "value": "10px"
+      },
+      {
+        "file": "src/components/layout/PoliceSidebar.jsx",
+        "value": "0.6rem"
+      },
+      {
+        "file": "src/features/auth/LoginPage.jsx",
+        "value": "1.35rem"
+      },
+      {
+        "file": "src/pages/analytics/AnalyticsDashboard.jsx",
+        "value": "10px"
+      },
+      {
+        "file": "src/pages/analytics/AnalyticsDashboard.jsx",
+        "value": "10px"
+      },
+      {
+        "file": "src/pages/analytics/AnalyticsDashboard.jsx",
+        "value": "10px"
+      },
+      {
+        "file": "src/pages/hq/Dashboard.jsx",
+        "value": "10"
+      },
+      {
+        "file": "src/pages/hq/Dashboard.jsx",
+        "value": "11"
+      },
+      {
+        "file": "src/routes/ErrorBoundary.jsx",
+        "value": "0.85rem"
+      }
+    ],
+    "cssFontSizeLiteral": [
+      {
+        "file": "src/index.css",
+        "value": "0.9375rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9375rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "15px !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "15.5px !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.6rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.7rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.35rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.65rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.7rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.1rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.65rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.7rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.15rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.05rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.7rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "5rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.05rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "2.1rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "2.75rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.85rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.05rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.1rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.15rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.82rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.65rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.6rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.65rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.65rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.7rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.65rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.65rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.72rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.35rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.82rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.8rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.05rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.05rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.05rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.1rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.2rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.82rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.35rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.05rem !important"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.7rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "1.05rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.7rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.9rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.95rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.65rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.6rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.85rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.65rem"
+      },
+      {
+        "file": "src/index.css",
+        "value": "0.55rem"
+      }
+    ],
+    "lato": []
+  },
+  "flaggedClusters": [
+    {
+      "cluster": "Sub-11px Tailwind arbitrary sizes",
+      "count": 178,
+      "proposed": "label-s (11/14)",
+      "reason": "Enlarging 8–10px chips/meta would wrap dense toolbars, badges, and matrix builders"
+    },
+    {
+      "cluster": "text-[13px] navbar stats / notifications",
+      "count": 3,
+      "proposed": "label-l (14) or keep legacy",
+      "reason": "13px sits between label-m and label-l; snap changes compact navbar metrics"
+    },
+    {
+      "cluster": "Non-exact CSS font-size in index.css",
+      "count": 101,
+      "proposed": "nearest role after visual QA",
+      "reason": "Values like 0.6–0.95rem, 1.05–1.35rem, 15px couple with 44px controls / nav density"
+    },
+    {
+      "cluster": "Recharts axis/legend ticks 8–10px",
+      "count": "see chart files",
+      "proposed": "label-s",
+      "reason": "Dense chart ticks; Recharts needs numeric fontSize; enlarging reflows plot margins"
+    },
+    {
+      "cluster": "Login card title 1.35rem",
+      "file": "src/features/auth/LoginPage.jsx",
+      "proposed": "title-m (20px) or title-l (24px)",
+      "reason": "No exact scale step; snap would shift login card header"
+    },
+    {
+      "cluster": "Sidebar brand-sub 0.6rem",
+      "file": "src/components/layout/PoliceSidebar.jsx",
+      "proposed": "label-s",
+      "reason": "Below scale minimum; enlarging reflows brand lockup"
+    },
+    {
+      "cluster": "Times New Roman report print styles",
+      "file": "src/index.css (.report-document)",
+      "proposed": "N/A — intentional print serif",
+      "reason": "Print document face is not UX4G UI type; left unchanged"
+    },
+    {
+      "cluster": "Legacy Tailwind text-xs (13px) / text-sm (15px) / text-body (17px)",
+      "proposed": "bind call sites by role; then retire aliases",
+      "reason": "Metrics preserved intentionally to avoid mass reflow; not on UX4G steps"
+    },
+    {
+      "cluster": "Display optical cuts",
+      "proposed": "Noto Sans 600/700",
+      "reason": "Google Fonts Noto Sans has no Display SemiBold/Bold optical cuts"
+    }
+  ],
+  "verification": {
+    "latoReferences": 0,
+    "textArbitraryPxRemaining": 181,
+    "cssLiteralFontSizesRemaining": 101,
+    "canonicalTokensLocation": "frontend/src/index.css (@theme)",
+    "fontLoadLocation": "frontend/index.html (Google Fonts Noto Sans 400/500/600/700 + Devanagari)",
+    "configProvider": "not introduced (decision 2B confirmed)",
+    "screenshots": "NOT RUN in this pass — verify manually at mobile/tablet/desktop/desktop-xl on light UI and dark-surface admin/report pages",
+    "a11y": "No color/focus/target-size changes; no forced reduction below prior readable sizes for bound tokens; sub-11px left unchanged (FLAGGED)",
+    "continuationPass": "inspected; zero additional safe edits; flagged left unchanged"
+  },
+  "continuation": {
+    "date": "2026-09-25",
+    "decisionsConfirmed": {
+      "configProvider": "2B — not introduced; CSS/Tailwind tokens only",
+      "flaggedClusters": "left unchanged — no snap of sub-11px, non-exact CSS, charts, login 1.35rem, sidebar 0.6rem, legacy text-xs/sm",
+      "ux4gPackage": "ignored for this pass — no ux4g-web-components import, no theme/color changes"
+    },
+    "inspection": {
+      "exactMatchRawPxRemaining": 0,
+      "latoRemaining": 0,
+      "fontBlackExtraboldRemaining": 0,
+      "fontWeight800_900Remaining": 0,
+      "additionalSafeEditsApplied": 0,
+      "reason": "All exact-scale bindings and weight/family swaps already applied. Remaining literals are FLAGGED or justified (html rem root 16px; Recharts fontSize={11} equals label-s but must stay numeric for SVG). Metric-preserving mass rename of text-base/lg/xl/2xl deferred — needs per-site role judgment without changing acceptance of intentional legacy aliases."
+    },
+    "justifiedRemainders": [
+      {
+        "value": "html { font-size: 16px }",
+        "file": "src/index.css",
+        "reason": "Root rem base, not a text style"
+      },
+      {
+        "value": "fontSize={11} / tick fontSize: 11",
+        "files": [
+          "pages/hq/Dashboard.jsx",
+          "pages/hq/DistrictAnalyticsDashboard.jsx"
+        ],
+        "reason": "Equals Label/S; Recharts SVG requires numeric fontSize — cannot use CSS var"
+      },
+      {
+        "value": "Times New Roman",
+        "file": "src/index.css .report-document",
+        "reason": "Print serif, not UI type"
+      }
+    ]
+  }
+}

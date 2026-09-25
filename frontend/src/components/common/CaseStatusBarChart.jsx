@@ -1,12 +1,13 @@
 import React from "react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import SafeResponsiveContainer from "./SafeResponsiveContainer.jsx";
 
 // Case-status distribution bar chart — shared by the PS dashboard and the SHO
 // Analytics Console (same data shape from GET /analytics/case-status-breakdown).
 export default function CaseStatusBarChart({ data = [] }) {
   return (
-    <div className="h-[230px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-[230px] w-full min-w-0">
+      <SafeResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 10, right: 10, left: -15, bottom: 55 }}>
           <defs>
             <linearGradient id="casesBarGrad" x1="0" y1="0" x2="0" y2="1">
@@ -63,7 +64,7 @@ export default function CaseStatusBarChart({ data = [] }) {
             animationDuration={1200}
           />
         </BarChart>
-      </ResponsiveContainer>
+      </SafeResponsiveContainer>
     </div>
   );
 }

@@ -22,7 +22,7 @@ export default function DateTimePickerPopup({
   onDone,
   disabled = false,
   placeholder = 'DD/MM/YYYY HH:MM',
-  inputClassName = "w-40 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-[11px] outline-none focus:border-blue-500 cursor-pointer",
+  inputClassName = "w-40 h-6 px-1.5 border border-[#7a9cc5] rounded bg-white text-label-s outline-none focus:border-blue-500 cursor-pointer",
   popupWidth = 340,
 }) {
   const [open, setOpen] = useState(false);
@@ -175,26 +175,26 @@ export default function DateTimePickerPopup({
       {/* Left: Calendar Panel */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-2">
-          <button type="button" onClick={handlePrevMonth} className="p-0.5 rounded hover:bg-slate-100 text-[#0d2a4a] cursor-pointer bg-transparent border-none">
+          <button type="button" onClick={handlePrevMonth} className="p-0.5 rounded hover:bg-slate-100 text-[var(--primary)] cursor-pointer bg-transparent border-none">
             <ChevronLeft size={16} />
           </button>
           <div className="flex items-center gap-1.5">
             <select
               value={month}
               onChange={(e) => setMonth(Number(e.target.value))}
-              className="text-[11px] font-bold text-[#0d2a4a] border border-[#7a9cc5] rounded px-1.5 py-0.5 bg-white cursor-pointer outline-none font-display"
+              className="text-label-s font-bold text-[var(--primary)] border border-[#7a9cc5] rounded px-1.5 py-0.5 bg-white cursor-pointer outline-none font-display"
             >
               {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
             </select>
             <select
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
-              className="text-[11px] font-bold text-[#0d2a4a] border border-[#7a9cc5] rounded px-1.5 py-0.5 bg-white cursor-pointer outline-none font-display"
+              className="text-label-s font-bold text-[var(--primary)] border border-[#7a9cc5] rounded px-1.5 py-0.5 bg-white cursor-pointer outline-none font-display"
             >
               {Array.from({ length: new Date().getFullYear() - 2015 + 1 }, (_, i) => 2015 + i).map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
-          <button type="button" onClick={handleNextMonth} className="p-0.5 rounded hover:bg-slate-100 text-[#0d2a4a] cursor-pointer bg-transparent border-none">
+          <button type="button" onClick={handleNextMonth} className="p-0.5 rounded hover:bg-slate-100 text-[var(--primary)] cursor-pointer bg-transparent border-none">
             <ChevronRight size={16} />
           </button>
         </div>
@@ -211,9 +211,9 @@ export default function DateTimePickerPopup({
               key={d}
               type="button"
               onClick={() => setDay(d)}
-              className={`text-[11px] py-1 rounded cursor-pointer border-none transition-colors ${
+              className={`text-label-s py-1 rounded cursor-pointer border-none transition-colors ${
                 d === day
-                  ? 'bg-[#0f52ba] text-white font-bold'
+                  ? 'bg-[var(--primary)] text-white font-bold'
                   : 'bg-transparent text-slate-700 hover:bg-blue-50'
               }`}
             >
@@ -223,7 +223,7 @@ export default function DateTimePickerPopup({
         </div>
 
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200">
-          <button type="button" onClick={handleToday} className="text-[10px] font-bold text-[#0f52ba] hover:underline cursor-pointer bg-transparent border-none">
+          <button type="button" onClick={handleToday} className="text-[10px] font-bold text-[var(--primary)] hover:underline cursor-pointer bg-transparent border-none">
             Today
           </button>
           <button type="button" onClick={commitAndClose} className="text-[10px] font-bold bg-[#ea580c] hover:bg-[#c2410c] text-white px-3 py-1 rounded cursor-pointer border-none transition-colors shadow-sm font-display">
@@ -235,7 +235,7 @@ export default function DateTimePickerPopup({
       {/* Right: Time sliders */}
       <div className="flex flex-col items-center gap-2 border-l border-slate-200 pl-3" style={{ minWidth: 80 }}>
         <div className="bg-[#f0f4f8] border border-[#7a9cc5] rounded px-2.5 py-1 text-center">
-          <span className="text-[12px] font-bold text-[#0d2a4a] font-mono">
+          <span className="text-label-m font-bold text-[var(--primary)] font-mono">
             {String(hour).padStart(2, '0')}:{String(minute).padStart(2, '0')}
           </span>
         </div>
@@ -286,7 +286,7 @@ export default function DateTimePickerPopup({
           <button
             type="button"
             onClick={togglePicker}
-            className="p-1 text-[#0f52ba] hover:text-blue-700 bg-transparent border-none cursor-pointer flex items-center justify-center flex-shrink-0"
+            className="p-1 text-[var(--primary)] hover:text-blue-700 bg-transparent border-none cursor-pointer flex items-center justify-center flex-shrink-0"
             title="Pick Date & Time"
           >
             <Search size={14} className="stroke-[2.5]" />

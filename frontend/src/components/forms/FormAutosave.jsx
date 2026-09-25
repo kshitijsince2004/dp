@@ -13,7 +13,7 @@ export default function FormAutosave({ status, lang = 'en' }) {
 
   if (status === 'idle') return null;
   return (
-    <div className={`flex items-center gap-1.5 text-[11px] font-semibold transition-all ${
+    <div className={`flex items-center gap-1.5 text-label-s font-semibold transition-all ${
       status === 'saving'   ? 'text-amber-600' :
       status === 'saved'    ? 'text-emerald-600' :
       status === 'unsaved'  ? 'text-red-500' : 'text-slate-400'

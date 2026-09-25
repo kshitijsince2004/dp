@@ -391,7 +391,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
           <div className="flex flex-col gap-3 mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl animate-in slide-in-from-top-1 duration-100">
             {/* Transfer Type Radio */}
             <div className="flex items-center gap-4">
-              <span className="text-xs font-bold text-[#0d2a4a]">
+              <span className="text-xs font-bold text-[var(--primary)]">
                 {lang === 'hi' ? 'स्थानांतरण का प्रकार:' : 'Transfer To:'}
               </span>
               <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer select-none">
@@ -405,7 +405,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
                     handleFieldChange('transferred_to_agency_id', '');
                     handleFieldChange('transferred_to_agency', '');
                   }}
-                  className="accent-[#0f52ba] cursor-pointer"
+                  className="accent-[var(--primary)] cursor-pointer"
                 />
                 <span>{lang === 'hi' ? 'पुलिस स्टेशन (PS)' : 'Police Station (PS)'}</span>
               </label>
@@ -420,7 +420,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
                     handleFieldChange('transferred_to_ps_id', '');
                     handleFieldChange('transferred_to_ps', '');
                   }}
-                  className="accent-[#0f52ba] cursor-pointer"
+                  className="accent-[var(--primary)] cursor-pointer"
                 />
                 <span>{lang === 'hi' ? 'एजेंसी (Agency)' : 'Agency'}</span>
               </label>
@@ -474,7 +474,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
 
             {/* Date of Transfer */}
             <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-[#0d2a4a] shrink-0">
+              <span className="text-xs font-bold text-[var(--primary)] shrink-0">
                 {lang === 'hi' ? 'स्थानांतरण की तिथि:' : 'Date of Transfer:'}
               </span>
               <DateField
@@ -489,7 +489,7 @@ function NicknameChipsField({ disabled, value, onChange, lang, placeholder }) {
         )}
         {isCaseStatus && (value === 'SUPPLEMENTARY CHARGESHEET' || values?.case_status === 'SUPPLEMENTARY CHARGESHEET') && (
           <div className="flex flex-col gap-1.5 mt-2 p-3 bg-blue-50/50 border border-blue-200 rounded-xl animate-in slide-in-from-top-1 duration-100">
-            <span className="text-xs font-bold text-[#0d2a4a]">
+            <span className="text-xs font-bold text-[var(--primary)]">
               {lang === 'hi' ? 'लंबित जांच विवरण (पूरक आरोप पत्र):' : 'Pending Investigation Items (Supplementary Chargesheet):'}
             </span>
             <TextAreaField

@@ -5,14 +5,16 @@ import {
   Clock3, CheckCircle2, ChevronRight, AlertCircle, MapPin, UserX
 } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from 'recharts';
 import api from '../../utils/api.js';
+import { asArray, asRecordsList } from '../../utils/dataShape.js';
 import phqImage from '../../assets/phq.jpeg';
 import useAuthStore from '../../store/authStore.js';
 import SearchableSelect from '../../components/forms/SearchableSelect.jsx';
 import RecordTypeBadge from '../../components/common/RecordTypeBadge.jsx';
 import StatCard from '../../components/ui/StatCard.jsx';
+import SafeResponsiveContainer from '../../components/common/SafeResponsiveContainer.jsx';
 import { getCrimeHeadGroup } from '../../utils/crimeHeadGroups.js';
 import { log } from '../../utils/logger.js';
 
@@ -70,7 +72,7 @@ function CrimeHeadBarChart({ rows, years }) {
   return (
     <div className={needsScroll ? 'overflow-x-auto p-6' : 'p-6'}>
       <div style={{ width: needsScroll ? rows.length * MIN_BAR_WIDTH : '100%', height: 340 }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <SafeResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 10, right: 20, left: 0, bottom: 90 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
             <XAxis
@@ -102,7 +104,7 @@ function CrimeHeadBarChart({ rows, years }) {
               );
             })}
           </BarChart>
-        </ResponsiveContainer>
+        </SafeResponsiveContainer>
       </div>
     </div>
   );
@@ -127,9 +129,9 @@ export default function HQDashboard() {
       log.debug('data:load_start', { what: 'activity_feed_records' });
       try {
         const res = await api.get('/records?limit=200');
-        const rows = res.data?.data?.cases || res.data?.data || res.data || [];
-        log.debug('data:load_success', { what: 'activity_feed_records', count: Array.isArray(rows) ? rows.length : 0 });
-        return Array.isArray(rows) ? rows : [];
+        const rows = asRecordsList(res.data?.data ?? res.data);
+        log.debug('data:load_success', { what: 'activity_feed_records', count: rows.length });
+        return rows;
       } catch (err) {
         log.error('data:load_error', { what: 'activity_feed_records', err });
         return [];
@@ -137,7 +139,7 @@ export default function HQDashboard() {
     },
   });
 
-  const records = Array.isArray(recordsData) ? recordsData : [];
+  const records = asArray(recordsData);
 
   useEffect(() => {
     log.debug('page:mount', { route: '/hq', userId: user?.id, role: user?.role });
@@ -234,8 +236,8 @@ export default function HQDashboard() {
     });
   }, [records, filterType, filterDistrict, filterLocalHead, dateFrom, dateTo]);
 
-  const years = chartResp?.years ?? [];
-  const chartRows = chartResp?.rows ?? [];
+  const years = asArray(chartResp?.years);
+  const chartRows = asArray(chartResp?.rows);
   const changeRate = chartResp?.change_rate ?? null;
 
   const heinousRows = chartRows.filter((r) => r.is_heinous);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, User } from 'lucide-react';
 import api from '../utils/api.js';
+import { asArray } from '../utils/dataShape.js';
 import toast from 'react-hot-toast';
 import { formatDate } from '../utils/formatters.js';
 import { log } from '../utils/logger.js';
@@ -31,7 +32,7 @@ export default function PersonSearchPage() {
       if (searchTerm) params.searchTerm = searchTerm;
       if (fatherName) params.fatherName = fatherName;
       const res = await api.get('/v1/record-links/person-search', { params });
-      const rows = res.data?.data || [];
+      const rows = asArray(res.data?.data);
       log.info('action:person_search_success', { count: rows.length });
       setResults(rows);
     } catch (err) {

@@ -106,7 +106,7 @@ export default function SearchableSelect({
       className={dropdownClassName || "max-h-48 overflow-y-auto border border-[#7a9cc5] rounded bg-white shadow-lg text-left"}
     >
       {filtered.length === 0 ? (
-        <div className="px-2 py-1.5 text-gray-500 italic text-[11px]">
+        <div className="px-2 py-1.5 text-gray-500 italic text-label-s">
           {lang === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
         </div>
       ) : (
@@ -133,7 +133,7 @@ export default function SearchableSelect({
                 }
               }}
               className={`px-3.5 py-2.5 cursor-pointer text-sm sm:text-base hover:bg-[#f0f4f8] transition-colors flex items-center gap-2.5 ${
-                isChecked ? 'bg-[#d0e0f8] font-bold text-[#0d2a4a]' : 'text-slate-700 font-medium'
+                isChecked ? 'bg-[#d0e0f8] font-bold text-[var(--primary)]' : 'text-slate-700 font-medium'
               }`}
             >
               {multiple && (
@@ -141,7 +141,7 @@ export default function SearchableSelect({
                   type="checkbox"
                   checked={isChecked}
                   onChange={() => {}}
-                  className="accent-[#0f52ba] h-4 w-4 rounded cursor-pointer"
+                  className="accent-[var(--primary)] h-4 w-4 rounded cursor-pointer"
                 />
               )}
               <span>{getLabel(opt)}</span>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import useAuthStore from "../../store/authStore.js";
 import api from "../../utils/api.js";
+import { asArray, asNodesList, asRecordsList } from "../../utils/dataShape.js";
 import StationFilters from "../../components/common/StationFilters.jsx";
 import StationSummaryCards from "../../components/common/StationSummaryCards.jsx";
 import StationPerformanceTable from "../../components/common/StationPerformanceTable.jsx";
@@ -59,10 +60,10 @@ export default function StationPerformanceDashboard() {
           api.get("/analytics/by-ps").catch(() => ({ data: { data: [] } })), // non-fatal
         ]);
 
-        setNodes(nodesRes.data.data || []);
-        setRecords(recordsRes.data.data?.cases || recordsRes.data.data || []);
+        setNodes(asNodesList(nodesRes.data.data));
+        setRecords(asRecordsList(recordsRes.data.data));
         // Store station-level stats from the analytics endpoint
-        setPsStats(psStatsRes.data?.data || []);
+        setPsStats(asArray(psStatsRes.data?.data));
         log.debug('data:load_success', { what: 'station_performance_data' });
         setError(null);
       } catch (err) {
@@ -193,7 +194,7 @@ export default function StationPerformanceDashboard() {
 
     // 4. Merge stations and calculated stats
     const listToProcess = scopedStations.filter((s) => {
-      if (isHq && filters.districtId && !s.parent_id.includes(filters.districtId) && !s.id.includes(filters.districtId)) {
+      if (isHq && filters.districtId && !s.parent_id?.includes(filters.districtId) && !s.id?.includes(filters.districtId)) {
         // Traverse nodes to verify parent district id match
         let isMatch = false;
         let current = s;
@@ -303,7 +304,7 @@ export default function StationPerformanceDashboard() {
       <div className={`min-h-screen ${getThemeClass()} page-bg flex items-center justify-center font-sans`}>
         <div className="flex flex-col items-center gap-5">
           <div className="relative">
-            <div className="h-20 w-20 rounded-panel bg-[#0d2a4a] flex items-center justify-center">
+            <div className="h-20 w-20 rounded-panel bg-[var(--primary)] flex items-center justify-center">
               <Shield size={34} className="text-white" />
             </div>
             {/* Spinner badge */}

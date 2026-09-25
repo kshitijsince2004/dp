@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, MapPin, FileText, CheckCircle2, Shield, Calendar, ArrowRight, CornerDownRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
+import { asTraceData } from '../../utils/dataShape.js';
 
 export default function RecordTracePanel() {
   const [searchInput, setSearchInput] = useState('');
@@ -20,7 +21,7 @@ export default function RecordTracePanel() {
 
     try {
       const res = await api.get(`/reports/trace/${encodeURIComponent(searchInput.trim())}`);
-      setTraceData(res.data.data);
+      setTraceData(asTraceData(res.data.data));
       toast.success('Record traced across report engines!');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Record not found or failed to trace');
@@ -34,7 +35,7 @@ export default function RecordTracePanel() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
-          <h2 className="text-lg font-extrabold text-white flex items-center gap-2 font-display">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2 font-display">
             <Search className="text-emerald-400" size={20} />
             <span>Real-Record Report Trace Tool</span>
           </h2>
@@ -123,7 +124,7 @@ export default function RecordTracePanel() {
                           Row {c.row}: {c.label}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-400 font-medium">{c.reason}</p>
+                      <p className="text-label-s text-slate-400 font-medium">{c.reason}</p>
                     </div>
                   </div>
                 ))}

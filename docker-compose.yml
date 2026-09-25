@@ -44,5 +44,27 @@ services:
       timeout: 5s
       retries: 5
 
+  # SuperTokens Core (self-hosted) — owns session + roles/permissions storage. Connects to the
+  # same PostgreSQL instance as the app; its tables (session_info, roles, user_roles, ...) do not
+  # collide with the app schema. Use a separate database in the URI below if you prefer isolation.
+  supertokens:
+    image: registry.supertokens.io/supertokens/supertokens-postgresql:9.3.0
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3567:3567"
+    environment:
+      POSTGRESQL_CONNECTION_URI: "postgresql://postgres:postgres@db:5432/pharos_db"
+      # Set an API key in production, then set SUPERTOKENS_API_KEY on the backend to match:
+      # API_KEYS: "replace-with-a-long-random-key"
+    healthcheck:
+      test: >
+        bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 && echo -e "GET /hello HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n" >&3 && cat <&3 | grep -q "Hello"'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   pgdata:

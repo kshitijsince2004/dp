@@ -14,7 +14,9 @@ const authLimiter = rateLimit({
 });
 
 router.post('/login', authLimiter, authController.login);
-router.post('/refresh', authLimiter, authController.refresh);
+// NOTE: token refresh is handled automatically by SuperTokens at
+// POST /api/v1/auth/session/refresh (mounted by the SuperTokens express middleware in app.js).
+// The old custom /auth/refresh route was removed.
 router.post('/logout', authMiddleware, authController.logout);
 router.get('/me', authMiddleware, authController.me);
 router.put('/change-password', authMiddleware, authController.changePassword);

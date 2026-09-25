@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
   AreaChart, Area
 } from 'recharts';
 import {
@@ -10,8 +10,10 @@ import {
   Award, Filter, Calendar, MapPin, ChevronRight, TrendingUp, AlertTriangle, X, UserX
 } from 'lucide-react';
 import api from '../../utils/api.js';
+import { asNodesList, asRecordsList } from '../../utils/dataShape.js';
 import useAuthStore from '../../store/authStore.js';
 import { Spinner } from '../../components/ui/Spinner.jsx';
+import SafeResponsiveContainer from '../../components/common/SafeResponsiveContainer.jsx';
 import { log } from '../../utils/logger.js';
 
 // Formats a Date to 'YYYY-MM-DD' using local date parts — record_date from the
@@ -44,7 +46,7 @@ export default function DistrictAnalyticsDashboard() {
       log.debug('data:load_start', { what: 'hierarchy_nodes' });
       try {
         const res = await api.get('/hierarchy/nodes');
-        const rows = res.data?.data || [];
+        const rows = asNodesList(res.data?.data);
         log.debug('data:load_success', { what: 'hierarchy_nodes', count: rows.length });
         return rows;
       } catch (err) {
@@ -60,7 +62,7 @@ export default function DistrictAnalyticsDashboard() {
       log.debug('data:load_start', { what: 'records_all' });
       try {
         const res = await api.get('/records?limit=200');
-        const rows = res.data?.data?.cases || res.data?.data || [];
+        const rows = asRecordsList(res.data?.data);
         log.debug('data:load_success', { what: 'records_all', count: rows.length });
         return rows;
       } catch (err) {
@@ -403,7 +405,7 @@ export default function DistrictAnalyticsDashboard() {
               <ShieldAlert size={18} className="text-purple-600 shrink-0" />
             </div>
             <div className="mt-4">
-              <div className="text-3xl font-extrabold text-slate-900 tabular-nums">{summaryKpis.total}</div>
+              <div className="text-3xl font-bold text-slate-900 tabular-nums">{summaryKpis.total}</div>
               <p className="mt-1 text-xs text-slate-500">({timeframe})</p>
             </div>
           </div>
@@ -420,7 +422,7 @@ export default function DistrictAnalyticsDashboard() {
               >
                 {summaryKpis.highest}
               </div>
-              <div className="text-2xl font-extrabold text-red-600 mt-1 tabular-nums">
+              <div className="text-2xl font-bold text-red-600 mt-1 tabular-nums">
                 {summaryKpis.highestCount} <span className="text-xs font-medium text-slate-500">incidents</span>
               </div>
             </div>
@@ -438,7 +440,7 @@ export default function DistrictAnalyticsDashboard() {
               >
                 {summaryKpis.lowest}
               </div>
-              <div className="text-2xl font-extrabold text-emerald-600 mt-1 tabular-nums">
+              <div className="text-2xl font-bold text-emerald-600 mt-1 tabular-nums">
                 {summaryKpis.lowestCount} <span className="text-xs font-medium text-slate-500">incidents</span>
               </div>
             </div>
@@ -450,7 +452,7 @@ export default function DistrictAnalyticsDashboard() {
               <TrendingUp size={18} className="text-indigo-600 shrink-0" />
             </div>
             <div className="mt-4">
-              <div className="text-3xl font-extrabold text-slate-900 tabular-nums">{summaryKpis.avg}</div>
+              <div className="text-3xl font-bold text-slate-900 tabular-nums">{summaryKpis.avg}</div>
               <p className="mt-1 text-xs text-slate-500">Incidents / district</p>
             </div>
           </div>
@@ -508,7 +510,7 @@ export default function DistrictAnalyticsDashboard() {
                     className="group flex items-center justify-between border border-slate-200 bg-white hover:border-purple-300 px-4 py-3 rounded-control cursor-pointer transition-colors duration-150"
                   >
                     <div className="flex items-center gap-3">
-                      <span className={`flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-black ${rankBadgeBg}`}>
+                      <span className={`flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-bold ${rankBadgeBg}`}>
                         {rank}
                       </span>
                       <div>
@@ -520,7 +522,7 @@ export default function DistrictAnalyticsDashboard() {
                     </div>
 
                     <div className="text-right">
-                      <p className="text-sm font-extrabold text-slate-900 tabular-nums">
+                      <p className="text-sm font-bold text-slate-900 tabular-nums">
                         {item[activeMetric]}
                       </p>
                       <p className="text-[10px] text-slate-400 font-semibold tabular-nums">
@@ -541,7 +543,7 @@ export default function DistrictAnalyticsDashboard() {
             </div>
 
             <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+              <SafeResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={sortedDistricts}
                   layout="vertical"
@@ -565,7 +567,7 @@ export default function DistrictAnalyticsDashboard() {
                         return (
                           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg text-xs text-slate-800">
                             <p className="font-bold text-purple-950 mb-1">{data.name}</p>
-                            <p className="font-semibold">{activeMetric.toUpperCase()}: <span className="font-extrabold text-purple-600">{data[activeMetric]}</span></p>
+                            <p className="font-semibold">{activeMetric.toUpperCase()}: <span className="font-bold text-purple-600">{data[activeMetric]}</span></p>
                             <p className="text-[10px] text-slate-400 mt-1">Cases: {data.cases} | Arrests: {data.arrests} | PCR: {data.pcr} | Missing: {data.missing}</p>
                           </div>
                         );
@@ -595,7 +597,7 @@ export default function DistrictAnalyticsDashboard() {
                     })}
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
+              </SafeResponsiveContainer>
             </div>
           </div>
 
@@ -635,11 +637,11 @@ export default function DistrictAnalyticsDashboard() {
             
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-purple-800/80 pb-6">
               <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-purple-200 border border-purple-500/30">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-200 border border-purple-500/30">
                   <TrendingUp size={10} />
                   Operational Trend
                 </span>
-                <h3 className="text-2xl font-black tracking-tight mt-2 text-white flex items-center gap-2">
+                <h3 className="text-2xl font-bold tracking-tight mt-2 text-white flex items-center gap-2">
                   {selectedDistrict.name}
                   <span className="text-sm font-normal text-purple-200">({selectedDistrict.name_hi})</span>
                 </h3>
@@ -653,7 +655,7 @@ export default function DistrictAnalyticsDashboard() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => navigate('/hq/stations', { state: { districtId: selectedDistrictId } })}
-                  className="flex items-center gap-2 rounded-xl bg-white hover:bg-purple-50 text-purple-950 font-extrabold text-xs py-3 px-5 shadow-lg transition-all cursor-pointer"
+                  className="flex items-center gap-2 rounded-xl bg-white hover:bg-purple-50 text-purple-950 font-bold text-xs py-3 px-5 shadow-lg transition-all cursor-pointer"
                 >
                   Inspect Stations in {selectedDistrict.name}
                   <ArrowRight size={14} />
@@ -686,12 +688,12 @@ export default function DistrictAnalyticsDashboard() {
                       className="flex items-center justify-between gap-2 rounded-xl border border-purple-800/60 bg-purple-900/30 px-3 py-2 cursor-pointer hover:bg-purple-800/40 hover:border-purple-600 transition-colors"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-purple-800/60 text-[10px] font-black text-purple-200">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-purple-800/60 text-[10px] font-bold text-purple-200">
                           {idx + 1}
                         </span>
                         <span className="truncate text-xs font-semibold text-white hover:underline">{s.name}</span>
                       </div>
-                      <span className="shrink-0 text-sm font-black text-purple-200 tabular-nums">{s[activeMetric]}</span>
+                      <span className="shrink-0 text-sm font-bold text-purple-200 tabular-nums">{s[activeMetric]}</span>
                     </div>
                   ))}
                 </div>
@@ -699,7 +701,7 @@ export default function DistrictAnalyticsDashboard() {
 
               {/* Right Column: Dynamic AreaChart */}
               <div className="lg:col-span-9 rounded-2xl border border-purple-800 bg-purple-950/20 p-5 h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <SafeResponsiveContainer width="100%" height="100%">
                   <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
@@ -728,7 +730,7 @@ export default function DistrictAnalyticsDashboard() {
                             <div className="rounded-xl border border-purple-700 bg-purple-950 p-3 shadow-2xl text-xs text-white">
                               <p className="font-bold mb-1 text-purple-200">{data.displayDate}</p>
                               <p className="font-semibold text-white">
-                                {activeMetric.toUpperCase()}: <span className="font-black text-purple-300">{data[activeMetric]}</span>
+                                {activeMetric.toUpperCase()}: <span className="font-bold text-purple-300">{data[activeMetric]}</span>
                               </p>
                               <p className="text-[10px] text-purple-300 mt-1 border-t border-purple-800/80 pt-1">
                                 Cases: {data.cases} | Arrests: {data.arrests} | PCR: {data.pcr} | Missing: {data.missing}
@@ -749,7 +751,7 @@ export default function DistrictAnalyticsDashboard() {
                       className="outline-none focus:outline-none"
                     />
                   </AreaChart>
-                </ResponsiveContainer>
+                </SafeResponsiveContainer>
               </div>
             </div>
           </div>

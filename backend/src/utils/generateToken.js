@@ -1,22 +1,14 @@
-import jwt from 'jsonwebtoken';
-import { env } from '../config/env.js';
-
 /**
- * THE token utility — the only place tokens are built, signed and verified.
+ * Role -> hierarchy level mapping. This is the only responsibility left in this file after the
+ * SuperTokens migration: token signing/verification now lives in SuperTokens (see
+ * config/supertokens.js and modules/auth/auth.controller.js). The old JWT sign/verify helpers
+ * were removed. ROLE_LEVELS / getLevelFromRole are still imported by levelContracts.service.js
+ * and auth.controller.js, so they stay here.
  *
- * Canonical access payload (snake_case, ids only — names/codes come from /me,
- * so a hierarchy rename never leaves stale data inside live tokens):
- *   { sub, username, badge_no, role, level, ps_id, district_id, sub_div_id }
- * Refresh payload: { sub }.
- *
- * auth.middleware.js normalizes the decoded payload onto req.user (adds the
- * legacy id/userId/psId/districtId aliases) — downstream code never re-derives.
+ * ACP is a live role (scope = sub_div_id) even though the workflow chain skips it until ACP
+ * transitions are added to config/workflow/. JCP/SCP are their own levels per the workflow
+ * config, not HQ.
  */
-
-// Single source of truth for role → hierarchy level.
-// ACP is a live role (scope = sub_div_id) even though the workflow chain skips it
-// until ACP transitions are added to config/workflow/. JCP/SCP are their own
-// levels per the workflow config (from_level/to_level values), not HQ.
 export const ROLE_LEVELS = {
   HC: 'PS',
   SHO: 'PS',
@@ -32,10 +24,10 @@ export const ROLE_LEVELS = {
 export const getLevelFromRole = (role) => ROLE_LEVELS[role] ?? null;
 
 /**
- * Build the canonical access-token payload from a users row.
+ * Builds the identity + scope object that is written into the SuperTokens session access-token
+ * payload at login. (Previously this was the JWT claim set; now it is the session payload.)
  */
 export const buildAccessPayload = (user) => ({
-  sub: user.id,
   username: user.username,
   badge_no: user.badge_no,
   role: user.role,
@@ -44,13 +36,3 @@ export const buildAccessPayload = (user) => ({
   district_id: user.district_id || null,
   sub_div_id: user.sub_div_id || null,
 });
-
-export const signAccessToken = (payload) =>
-  jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_ACCESS_EXPIRES });
-
-export const signRefreshToken = (userId) =>
-  jwt.sign({ sub: userId }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES });
-
-export const verifyAccessToken = (token) => jwt.verify(token, env.JWT_SECRET);
-
-export const verifyRefreshToken = (token) => jwt.verify(token, env.JWT_REFRESH_SECRET);

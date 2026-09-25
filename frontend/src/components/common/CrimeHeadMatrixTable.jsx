@@ -1,4 +1,5 @@
 import React from "react";
+import { asArray } from "../../utils/dataShape.js";
 
 // Crime heads apply only to FIR (CASE) and ARREST record types.
 // UIDB, Kalandra, and MISSING have no crime-head classification.
@@ -6,15 +7,17 @@ const DEFAULT_COLUMNS = ["FIR", "Arrest", "Worked Out"];
 
 // Crime-head x case-type matrix table — shared by the PS dashboard and the SHO/ACP
 // Analytics Console (same data shape from GET /analytics/crime-head-matrix).
-export default function CrimeHeadMatrixTable({ rows = [], columns = DEFAULT_COLUMNS }) {
-  const lastCol = columns[columns.length - 1];
+export default function CrimeHeadMatrixTable({ rows, columns }) {
+  const safeRows = asArray(rows);
+  const safeColumns = asArray(columns).length ? asArray(columns) : DEFAULT_COLUMNS;
+  const lastCol = safeColumns[safeColumns.length - 1];
   return (
     <div className="max-h-[360px] overflow-y-auto overflow-x-auto">
       <table className="w-full text-body border-collapse">
         <thead>
           <tr className="text-slate-400 border-b border-slate-800">
             <th className="sticky left-0 top-0 z-20 bg-slate-900 pb-2.5 pt-2 pl-2 text-left font-bold uppercase tracking-wider text-label">Crime Head</th>
-            {columns.map((col) => (
+            {safeColumns.map((col) => (
               <th
                 key={col}
                 className={`sticky top-0 z-10 bg-slate-900 pb-2.5 pt-2 text-right font-bold uppercase tracking-wider text-label ${col === lastCol ? "pr-2" : ""}`}
@@ -25,17 +28,17 @@ export default function CrimeHeadMatrixTable({ rows = [], columns = DEFAULT_COLU
           </tr>
         </thead>
         <tbody>
-          {rows.length === 0 && (
+          {safeRows.length === 0 && (
             <tr>
-              <td colSpan={columns.length + 1} className="py-6 text-center text-meta text-slate-400 font-semibold">
+              <td colSpan={safeColumns.length + 1} className="py-6 text-center text-meta text-slate-400 font-semibold">
                 No crime-head classified records in this period.
               </td>
             </tr>
           )}
-          {rows.map((row) => (
+          {safeRows.map((row) => (
             <tr key={row.crime_head} className="border-b border-slate-100/60 last:border-0">
               <td className="sticky left-0 z-[5] bg-white py-2.5 pl-2 font-semibold text-[#0A1628] whitespace-nowrap">{row.crime_head}</td>
-              {columns.map((col) => (
+              {safeColumns.map((col) => (
                 <td
                   key={col}
                   className={`py-2.5 text-right tabular-nums ${

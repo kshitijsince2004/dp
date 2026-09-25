@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Send, Calendar, CheckCircle, Database, AlertTriangle, FileText, Shield, Phone, UserX, Fingerprint, ChevronDown, Clock, ChevronRight, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
+import { asArray, asNodesList } from '../../utils/dataShape.js';
 import useAuthStore from '../../store/authStore.js';
 import DateInput from '../../components/ui/DateInput.jsx';
 import { formatDMY, parseDMY } from '../../utils/dateFormat.js';
@@ -267,7 +268,7 @@ export default function CompilationUI() {
       log.debug('data:load_start', { what: 'hierarchy_ps', userLevel });
       try {
         const res = await api.get('/hierarchy/nodes?type=PS');
-        const list = (res.data?.data?.nodes || res.data?.data || []).map(n => ({
+        const list = asNodesList(res.data?.data).map(n => ({
           id: n.id || n._id,
           name: n.name_en || n.name || n.ps_name,
           code: n.code || n.ps_code || "",
@@ -294,7 +295,7 @@ export default function CompilationUI() {
     queryKey: ['hierarchy', 'all_nodes'],
     queryFn: async () => {
       const res = await api.get('/hierarchy/nodes');
-      return res.data?.data || [];
+      return asNodesList(res.data?.data);
     }
   });
 
@@ -315,7 +316,7 @@ export default function CompilationUI() {
           setSelectedScopeNodeId(data.self_id);
           setSelectedLevel(data.level);
         }
-        setSelectedSheets(data.available_sheets);
+        setSelectedSheets(asArray(data.available_sheets));
       })
       .catch(err => {
         toast.error(err.response?.data?.message || 'Failed to fetch scope details');
@@ -410,7 +411,7 @@ export default function CompilationUI() {
       log.debug('data:load_start', { what: 'compilations' });
       try {
         const res = await api.get('/compilations');
-        const rows = res.data.data || [];
+        const rows = asArray(res.data.data);
         log.debug('data:load_success', { what: 'compilations', count: rows.length });
         return rows;
       } catch (err) {
@@ -741,7 +742,7 @@ export default function CompilationUI() {
                         ? 'PS Fortnightly Diary'
                         : diary.label}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
+                  <div className="text-label-s text-slate-500 mt-0.5">
                     {diary.key === 'PHQ_DIARY' && userLevel === 'PS'
                       ? 'Police Station consolidated comparative diary — 9 station-level comparative sheets'
                       : diary.key === 'FN_DIARY' && userLevel === 'PS'
@@ -847,7 +848,7 @@ export default function CompilationUI() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                  Select Worksheets ({selectedSheets.length}/{(selectedDiary.key === 'DISTRICT_DIARY' ? DISTRICT_REPORTS : selectedDiary.key === 'FN_DIARY' ? FN_REPORTS : (scopeDetails?.available_sheets || [])).length})
+                  Select Worksheets ({selectedSheets.length}/{(selectedDiary.key === 'DISTRICT_DIARY' ? DISTRICT_REPORTS : selectedDiary.key === 'FN_DIARY' ? FN_REPORTS : asArray(scopeDetails?.available_sheets)).length})
                 </span>
                 <button
                   type="button"
@@ -856,7 +857,7 @@ export default function CompilationUI() {
                       ? DISTRICT_REPORTS.map(r => r.tableName)
                       : selectedDiary.key === 'FN_DIARY'
                         ? FN_REPORTS.map(r => r.tableName)
-                        : (scopeDetails?.available_sheets || []);
+                        : asArray(scopeDetails?.available_sheets);
                     if (selectedSheets.length === allKeys.length) {
                       setSelectedSheets([]);
                     } else {
@@ -865,7 +866,7 @@ export default function CompilationUI() {
                   }}
                   className="text-[10px] font-bold text-[var(--accent-color)] hover:underline cursor-pointer"
                 >
-                  {selectedSheets.length === (selectedDiary.key === 'DISTRICT_DIARY' ? DISTRICT_REPORTS.length : selectedDiary.key === 'FN_DIARY' ? FN_REPORTS.length : (scopeDetails?.available_sheets || []).length) ? 'Deselect All' : 'Select All'}
+                  {selectedSheets.length === (selectedDiary.key === 'DISTRICT_DIARY' ? DISTRICT_REPORTS.length : selectedDiary.key === 'FN_DIARY' ? FN_REPORTS.length : asArray(scopeDetails?.available_sheets).length) ? 'Deselect All' : 'Select All'}
                 </button>
               </div>
 
@@ -874,7 +875,7 @@ export default function CompilationUI() {
                   ? DISTRICT_REPORTS.map(r => ({ key: r.tableName, label: r.label, desc: `Category ${r.category} Sheet` }))
                   : selectedDiary.key === 'FN_DIARY'
                     ? FN_REPORTS.map(r => ({ key: r.tableName, label: r.label, desc: `Category ${r.category} Sheet` }))
-                    : (scopeDetails?.available_sheets || []).map(s => ({ key: s, label: s.replace(/_/g, ' '), desc: SHEET_DESC[s] || 'Comparative Sheet' }))
+                    : asArray(scopeDetails?.available_sheets).map(s => ({ key: s, label: s.replace(/_/g, ' '), desc: SHEET_DESC[s] || 'Comparative Sheet' }))
                 ).map(item => {
                   const isChecked = selectedSheets.includes(item.key);
                   return (
@@ -1015,7 +1016,7 @@ export default function CompilationUI() {
                         placeholder="Search station..."
                         value={psSearch}
                         onChange={(e) => setPsSearch(e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-[11px] text-slate-800 outline-none focus:border-[var(--accent-color)] font-semibold"
+                        className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-label-s text-slate-800 outline-none focus:border-[var(--accent-color)] font-semibold"
                       />
                       <div className="flex items-center justify-between text-[10px] px-1 text-slate-500">
                         <button
@@ -1045,7 +1046,7 @@ export default function CompilationUI() {
                           return (
                             <label
                               key={ps.id}
-                              className="w-full text-left px-3 py-2 text-[11px] hover:bg-slate-50 transition-colors flex items-center gap-2 text-slate-700 cursor-pointer select-none"
+                              className="w-full text-left px-3 py-2 text-label-s hover:bg-slate-50 transition-colors flex items-center gap-2 text-slate-700 cursor-pointer select-none"
                             >
                               <input
                                 type="checkbox"
@@ -1104,7 +1105,7 @@ export default function CompilationUI() {
                       placeholder="Search report fields..."
                       value={reportSearch}
                       onChange={(e) => setReportSearch(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-[11px] text-slate-800 outline-none focus:border-[var(--accent-color)] font-semibold"
+                      className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-label-s text-slate-800 outline-none focus:border-[var(--accent-color)] font-semibold"
                     />
                     <div className="flex items-center justify-between text-[10px] px-1 text-slate-500">
                       <button
@@ -1131,7 +1132,7 @@ export default function CompilationUI() {
                         return (
                           <label
                             key={report.tableName}
-                            className="w-full text-left px-3 py-2 text-[11px] hover:bg-slate-50 transition-colors flex items-center gap-2 text-slate-700 cursor-pointer select-none"
+                            className="w-full text-left px-3 py-2 text-label-s hover:bg-slate-50 transition-colors flex items-center gap-2 text-slate-700 cursor-pointer select-none"
                           >
                             <input
                               type="checkbox"
@@ -1202,7 +1203,7 @@ export default function CompilationUI() {
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-12 text-zinc-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#cca43b] mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-gold)] mb-4"></div>
             <p>Fetching compilations register...</p>
           </div>
         ) : fetchError ? (
@@ -1253,7 +1254,7 @@ export default function CompilationUI() {
                         PCR Calls: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'pcrCalls')}</strong>
                       </span>
                       <span className="flex items-center gap-1.5">
-                        <UserX size={14} className="text-purple-400" />
+                        <UserX size={14} className="text-[var(--primary)]" />
                         Missing: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'missing')}</strong>
                       </span>
                       <span className="flex items-center gap-1">
@@ -1265,7 +1266,7 @@ export default function CompilationUI() {
                       </span>
                     </div>
                   ) : (
-                    <div className="text-zinc-600 text-[11px]">No summary data available</div>
+                    <div className="text-zinc-600 text-label-s">No summary data available</div>
                   )}
 
                   {comp.submitted_at && (
@@ -1292,7 +1293,7 @@ export default function CompilationUI() {
                     </button>
                   )}
                   {comp.status === 'SUBMITTED' && (
-                    <span className="text-zinc-500 flex items-center gap-1 text-[11px]">
+                    <span className="text-zinc-500 flex items-center gap-1 text-label-s">
                       <CheckCircle size={14} className="text-emerald-500" />
                       <span>Received by HQ</span>
                     </span>
