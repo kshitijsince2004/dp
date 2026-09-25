@@ -130,3 +130,5 @@ screenshots/
 *-screenshot.png
 page-*.png
 
+# Claude outputs
+Claude outputs/

@@ -123,13 +123,31 @@ echo [5.5/6] Launching Python report worker...
 cd /d %~dp0python_worker
 where python >nul 2>&1
 if %ERRORLEVEL% equ 0 (
-    python -m pip install -r requirements.txt --quiet >nul 2>&1
+    echo  Installing/updating Python worker dependencies...
+    python -m pip install -r requirements.txt
+    if !ERRORLEVEL! neq 0 (
+        echo.
+        echo  [WARNING] pip install failed for python_worker\requirements.txt - see errors above.
+        echo            The report worker will likely fail to start with a "ModuleNotFoundError".
+        echo            If the failing package is weasyprint, it needs the GTK3 runtime installed
+        echo            on Windows first - install it, then run start.bat again.
+        echo.
+    )
     start "PHAROS Python Worker" cmd /k "cd /d %~dp0python_worker && python main.py"
     echo  [OK] Python worker launched.
 ) else (
     where py >nul 2>&1
     if !ERRORLEVEL! equ 0 (
-        py -m pip install -r requirements.txt --quiet >nul 2>&1
+        echo  Installing/updating Python worker dependencies...
+        py -m pip install -r requirements.txt
+        if !ERRORLEVEL! neq 0 (
+            echo.
+            echo  [WARNING] pip install failed for python_worker\requirements.txt - see errors above.
+            echo            The report worker will likely fail to start with a "ModuleNotFoundError".
+            echo            If the failing package is weasyprint, it needs the GTK3 runtime installed
+            echo            on Windows first - install it, then run start.bat again.
+            echo.
+        )
         start "PHAROS Python Worker" cmd /k "cd /d %~dp0python_worker && py main.py"
         echo  [OK] Python worker launched via py launcher.
     ) else (

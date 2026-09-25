@@ -1106,7 +1106,7 @@
           "key": "victim_police_station",
           "section": "Victim Present Address",
           "label": "Victim Police Station",
-          "hint": "select (225 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
+          "hint": "select (226 options): PS Adarsh Nagar, PS Ali Pur, PS Aman Vihar, PS Amar Colony, PS Ambedkar Nagar...",
           "validation": {
             "type": "list",
             "formulae": [
@@ -4574,6 +4574,32 @@
               "\"Illiterate,School Dropout,Up to 10th,Up to 12th,Graduate,Post Graduate,Professional,Unknown\""
             ]
           }
+        },
+        {
+          "col": 52,
+          "key": "complainant_social_category",
+          "section": "Complainant Personal Details",
+          "label": "complainant_social_category",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Scheduled Caste (SC),Scheduled Tribe (ST),Other Backward Class (OBC),General,Unknown\""
+            ]
+          }
+        },
+        {
+          "col": 53,
+          "key": "complainant_financial_status",
+          "section": "Complainant Personal Details",
+          "label": "complainant_financial_status",
+          "hint": "select",
+          "validation": {
+            "type": "list",
+            "formulae": [
+              "\"Below Poverty Line (BPL),Lower,Middle,Upper,Unknown\""
+            ]
+          }
         }
       ],
       "row2Merges": [
@@ -4666,7 +4692,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$C$2:$C$226"
+              "'_Lookups'!$C$2:$C$227"
             ]
           }
         },
@@ -5441,7 +5467,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$I$2:$I$226"
+              "'_Lookups'!$I$2:$I$227"
             ]
           }
         },
@@ -5559,7 +5585,7 @@
           "validation": {
             "type": "list",
             "formulae": [
-              "'_Lookups'!$M$2:$M$226"
+              "'_Lookups'!$M$2:$M$227"
             ]
           }
         },
