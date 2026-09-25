@@ -57,7 +57,6 @@ export const getLinksForRecord = async (recordId) => {
         const firRow = await db('fir_details').where({ record_id: recordId }).first();
         if (firRow?.fir_no) {
           const firNoStr = String(firRow.fir_no).trim();
-          const matchSnippet = firNoStr.length >= 6 ? firNoStr.slice(-6) : firNoStr;
           const arrestMatches = await db('arrest_details as arr')
             .join('records as r', 'arr.record_id', 'r.id')
             .join('hierarchy_nodes as ps', 'r.ps_id', 'ps.id')
@@ -66,10 +65,7 @@ export const getLinksForRecord = async (recordId) => {
               this.on('p.record_id', '=', 'r.id').andOnVal('p.role', '=', 'ARRESTEE');
             })
             .whereNot('r.id', recordId)
-            .where((b) => {
-              b.where('arr.fir_no', firNoStr)
-                .orWhere('arr.fir_no', 'ILIKE', `%${matchSnippet}%`);
-            })
+            .whereRaw('LOWER(TRIM(arr.fir_no)) = LOWER(TRIM(?))', [firNoStr])
             .select(
               'r.id', 'r.record_type', 'r.current_status', 'r.record_date', 'r.created_at',
               'ps.name as ps_name', 'u.name as creator_name', 'arr.fir_no', 'arr.case_status',
@@ -107,17 +103,13 @@ export const getLinksForRecord = async (recordId) => {
         const arrRow = await db('arrest_details').where({ record_id: recordId }).first();
         if (arrRow?.fir_no) {
           const firNoStr = String(arrRow.fir_no).trim();
-          const matchSnippet = firNoStr.length >= 6 ? firNoStr.slice(-6) : firNoStr;
           const caseMatches = await db('fir_details as fir')
             .join('records as r', 'fir.record_id', 'r.id')
             .join('hierarchy_nodes as ps', 'r.ps_id', 'ps.id')
             .leftJoin('users as u', 'r.created_by', 'u.id')
             .leftJoin('ref.local_heads as lh', 'fir.local_head_id', 'lh.local_head_cd')
             .whereNot('r.id', recordId)
-            .where((b) => {
-              b.where('fir.fir_no', firNoStr)
-                .orWhere('fir.fir_no', 'ILIKE', `%${matchSnippet}%`);
-            })
+            .whereRaw('LOWER(TRIM(fir.fir_no)) = LOWER(TRIM(?))', [firNoStr])
             .select(
               'r.id', 'r.record_type', 'r.current_status', 'r.record_date', 'r.created_at',
               'ps.name as ps_name', 'u.name as creator_name', 'fir.fir_no', 'lh.local_head'
