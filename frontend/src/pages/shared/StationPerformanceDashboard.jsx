@@ -402,20 +402,20 @@ export default function StationPerformanceDashboard() {
             </div>
 
             {/* Hero metric tiles */}
-            <div className="flex flex-wrap gap-3 lg:flex-shrink-0 bg-transparent">
+            <div className="flex flex-wrap gap-3 lg:flex-shrink-0">
               {[
-                { label: "Stations",  value: calculatedData.summary.totalStations,  color: "text-white",        bg: "bg-white/10",           border: "border-white/20" },
-                { label: "Cases",     value: calculatedData.summary.totalCases,     color: "text-amber-300",    bg: "bg-amber-500/15",       border: "border-amber-400/30" },
-                { label: "Arrests",   value: calculatedData.summary.totalArrests,   color: "text-emerald-300",  bg: "bg-emerald-500/15",     border: "border-emerald-400/30" },
-                { label: "Left Out",  value: calculatedData.summary.totalLeftOut || 0, color: "text-amber-400", bg: "bg-amber-500/20",     border: "border-amber-400/40" },
-                { label: "PCR Calls", value: calculatedData.summary.totalPcr,       color: "text-sky-300",      bg: "bg-sky-500/15",         border: "border-sky-400/30" },
+                { label: "Stations",  value: calculatedData.summary.totalStations,  color: "text-slate-900",   bg: "bg-white",       border: "border-slate-200",    hover: "hover:bg-slate-50" },
+                { label: "Cases",     value: calculatedData.summary.totalCases,     color: "text-amber-800",   bg: "bg-amber-50",    border: "border-amber-200",     hover: "hover:bg-amber-100" },
+                { label: "Arrests",   value: calculatedData.summary.totalArrests,   color: "text-emerald-800", bg: "bg-emerald-50",  border: "border-emerald-200",   hover: "hover:bg-emerald-100" },
+                { label: "Left Out",  value: calculatedData.summary.totalLeftOut || 0, color: "text-orange-800", bg: "bg-orange-50", border: "border-orange-200",  hover: "hover:bg-orange-100" },
+                { label: "PCR Calls", value: calculatedData.summary.totalPcr,       color: "text-sky-800",     bg: "bg-sky-50",      border: "border-sky-200",       hover: "hover:bg-sky-100" },
               ].map((tile) => (
                 <div
                   key={tile.label}
-                  className={`rounded-2xl ${tile.bg} border ${tile.border} backdrop-blur-sm px-5 py-4 min-w-[96px] text-center transition-colors duration-200 hover:bg-white/20`}
+                  className={`rounded-2xl ${tile.bg} border ${tile.border} shadow-sm px-5 py-4 min-w-[96px] text-center transition-colors duration-200 ${tile.hover}`}
                 >
                   <div className={`text-3xl font-bold ${tile.color} tabular-nums`}>{tile.value}</div>
-                  <div className="text-xs text-white/50 mt-1 font-medium">{tile.label}</div>
+                  <div className="text-xs text-slate-600 mt-1 font-medium">{tile.label}</div>
                 </div>
               ))}
             </div>
@@ -426,7 +426,7 @@ export default function StationPerformanceDashboard() {
       </div>
 
       {/* ══════════════ PAGE BODY ══════════════ */}
-      <div className="mx-auto max-w-screen-xl px-6 pb-8 relative z-10 -mt-10 space-y-5">
+      <div className="mx-auto max-w-screen-xl px-6 pt-6 pb-8 space-y-5">
 
         {/* ── KPI Summary Cards ── */}
         {/* <div className="mt-8">

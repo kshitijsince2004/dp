@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Shield, PhoneCall, UserX, HelpCircle, Calendar } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import useAuthStore from "../../store/authStore.js";
@@ -192,12 +192,12 @@ export default function StationDetailView() {
   }
 
   const statCards = [
-    { title: "FIR Cases", value: calculations.casesTotal, icon: Shield, color: "text-emerald-500" },
-    { title: "Arrests", value: calculations.arrestsTotal, icon: UserX, color: "text-rose-500" },
-    { title: "PCR Calls", value: calculations.pcrTotal, icon: PhoneCall, color: "text-sky-500" },
-    { title: "Missing", value: calculations.missingTotal, icon: HelpCircle, color: "text-purple-500" },
-    { title: "Pending Deci.", value: calculations.pending, icon: Calendar, color: "text-amber-500" },
-    { title: "Approved", value: calculations.approved, icon: Shield, color: "text-indigo-500" }
+    { title: "FIR Cases", value: calculations.casesTotal },
+    { title: "Arrests", value: calculations.arrestsTotal },
+    { title: "PCR Calls", value: calculations.pcrTotal },
+    { title: "Missing", value: calculations.missingTotal },
+    { title: "Pending Deci.", value: calculations.pending },
+    { title: "Approved", value: calculations.approved }
   ];
 
   return (
@@ -229,8 +229,6 @@ export default function StationDetailView() {
             key={idx}
             label={card.title}
             value={card.value}
-            icon={card.icon}
-            iconColor={card.color}
           />
         ))}
       </div>

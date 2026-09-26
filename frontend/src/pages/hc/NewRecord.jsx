@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, BookOpen, AlertTriangle, ChevronRight, FileText, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import DynamicForm from '../../components/forms/DynamicForm.jsx';
@@ -187,8 +187,7 @@ export default function NewRecord() {
               <ArrowLeft size={16} />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2 tracking-wide font-display">
-                <BookOpen className="text-[var(--accent-color)]" size={18} />
+              <h1 className="text-lg font-bold text-slate-800 tracking-wide font-display">
                 <span>New Arrest Entry Case Type</span>
               </h1>
               <p className="text-xs text-slate-500 mt-0.5 font-semibold">
@@ -208,9 +207,6 @@ export default function NewRecord() {
               className="group cursor-pointer bg-white border border-slate-200 hover:border-[var(--accent-color)] rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1.5 flex flex-col justify-between h-72"
             >
               <div className="space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-[var(--accent-glow)] border border-[var(--accent-color)]/15 flex items-center justify-center text-[var(--accent-color)] group-hover:bg-[var(--accent-color)] group-hover:text-white transition-all duration-300">
-                  <FileText size={28} />
-                </div>
                 <div className="space-y-1.5">
                   <h3 className="text-xl font-bold text-slate-800 group-hover:text-[var(--accent-color)] transition-colors font-display">
                     Against FIR
@@ -232,9 +228,6 @@ export default function NewRecord() {
               className="group cursor-pointer bg-white border border-slate-200 hover:border-[var(--accent-color)] rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1.5 flex flex-col justify-between h-72"
             >
               <div className="space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200/50 flex items-center justify-center text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-all duration-300">
-                  <ClipboardCheck size={28} />
-                </div>
                 <div className="space-y-1.5">
                   <h3 className="text-xl font-bold text-slate-800 group-hover:text-amber-600 transition-colors font-display">
                     Kalandra / Preventive

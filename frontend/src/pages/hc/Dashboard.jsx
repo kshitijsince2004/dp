@@ -23,13 +23,7 @@ import BeatPreventiveCard from "../../components/analytics/BeatPreventiveCard.js
 import SafeResponsiveContainer from "../../components/common/SafeResponsiveContainer.jsx";
 import { asArray, asCrimeHeadMatrix } from "../../utils/dataShape.js";
 import {
-  FileText,
-  ShieldCheck,
-  AlertTriangle,
   UserX,
-  Fingerprint,
-  User,
-  Clock3,
   ExternalLink,
   ChevronRight,
 } from "lucide-react";
@@ -37,24 +31,15 @@ import {
 const PERIODS = ["Day", "Week", "Month", "Year"];
 
 const STAT_CARD_META = [
-  { key: "fir", label: "FIR", icon: FileText, accent: "green" },
-  { key: "workout", label: "Workout", icon: Clock3, accent: "green" },
-  { key: "arrest_in_fir", label: "Arrest in FIR", icon: ShieldCheck, accent: "primary" },
-  { key: "heinous_case", label: "Heinous Case", icon: AlertTriangle, accent: "amber" },
-  { key: "leftout_heinous", label: "Leftout in Heinous Case", icon: UserX, accent: "amber" },
-  { key: "kalandra", label: "Kalandra", icon: Fingerprint, accent: "blue" },
-  { key: "kalandra_male", label: "Male Arrest in Kalandra", icon: User, accent: "blue" },
-  { key: "kalandra_female", label: "Female Arrest in Kalandra", icon: User, accent: "rose" },
+  { key: "fir", label: "FIR" },
+  { key: "workout", label: "Workout" },
+  { key: "arrest_in_fir", label: "Arrest in FIR" },
+  { key: "heinous_case", label: "Heinous Case" },
+  { key: "leftout_heinous", label: "Leftout in Heinous Case" },
+  { key: "kalandra", label: "Kalandra" },
+  { key: "kalandra_male", label: "Male Arrest in Kalandra" },
+  { key: "kalandra_female", label: "Female Arrest in Kalandra" },
 ];
-
-const ACCENT_STYLES = {
-  green: { iconColor: "text-[var(--success)]" },
-  violet: { iconColor: "text-[var(--primary)]" },
-  amber: { iconColor: "text-[var(--warning)]" },
-  blue: { iconColor: "text-[var(--primary)]" },
-  rose: { iconColor: "text-[var(--danger)]" },
-  muted: { iconColor: "text-[var(--text-muted)]" },
-};
 
 const formatChange = (changePct, period) => {
   if (changePct === null || changePct === undefined) return "--";
@@ -165,7 +150,7 @@ export default function PSDashboard() {
         const sumData = resSummary.data?.data;
         setSummary(sumData || null);
         setLeftOutAccused(
-          asArray(data?.leftout_heinous_list).map((a) => ({
+          asArray(sumData?.leftout_heinous_list).map((a) => ({
             name: a.name,
             fir_no: a.fir_no,
             age: a.age,
@@ -248,15 +233,12 @@ export default function PSDashboard() {
     const count = data.count ?? 0;
     const changePct = data.change_pct ?? 0;
     const isUp = changePct >= 0;
-    const style = ACCENT_STYLES[meta.accent] || ACCENT_STYLES.muted;
 
     return {
       label: meta.label,
       value: summary ? String(count) : "--",
       change: summary ? formatChange(changePct, currentPeriod) : "--",
-      icon: meta.icon,
       isUp,
-      ...style,
     };
   });
 
@@ -320,7 +302,7 @@ export default function PSDashboard() {
             <p className="text-2xl font-semibold text-white/90 m-0 text-right">
               Welcome back, {currentLng === 'hi' ? (user?.name || user?.username) : (user?.name || user?.username || 'User')}
             </p>
-            <div className="flex items-center gap-1 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 p-0.5">
+            <div className="flex items-center gap-1 rounded-xl bg-slate-900 border border-slate-700 p-0.5">
               {PERIODS.map((period) => (
                 <button
                   key={period}
@@ -352,8 +334,6 @@ export default function PSDashboard() {
                 key={card.label}
                 label={card.label}
                 value={card.value}
-                icon={card.icon}
-                iconColor={card.iconColor}
                 trend={card.change}
                 trendDirection={card.isUp === false ? "down" : "up"}
               />

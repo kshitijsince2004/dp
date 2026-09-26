@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ClipboardList, Filter, Eye, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Filter, ArrowRight } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore.js';
@@ -375,9 +375,6 @@ export default function Queue() {
 
           ) : filteredQueue.length === 0 ? (
             <div className="theme-card rounded-card bg-white border border-[var(--border-card-theme)] p-16 text-center">
-              <div className="flex items-center justify-center mb-5">
-                <ShieldCheck size={40} className="text-emerald-600" />
-              </div>
               <p className="text-lg font-bold text-[var(--text-main-theme)] mb-1">Queue Clean &amp; Approved</p>
               <p className="text-sm text-[var(--text-main-theme)] opacity-70 max-w-sm mx-auto font-semibold">
                 There are no pending diary records in your station queue requiring action.

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, Database, ShieldAlert, ArrowRight, ClipboardCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '../../components/ui/Button.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { ROUTES } from '../../utils/constants.js';
@@ -11,22 +11,18 @@ import commissionerPhoto from '../../assets/commissioner.png';
 
 const features = [
   {
-    icon: FileText,
     title: 'Single-Point Data Entry',
     desc: 'Register cases, arrests, PCR dispatches, unidentified bodies, and missing persons under locked, pre-filled local PS configurations.'
   },
   {
-    icon: ClipboardCheck,
     title: 'District Morning Diary',
     desc: 'Compile comprehensive summaries of the previous day\'s events, crime tallies, and local dispatches automatically at the DCP tier.'
   },
   {
-    icon: Database,
     title: 'Interactive Command Filters',
     desc: 'Query global NCT data logs at the Headquarters tier by crime categories, jurisdictional ranges, status, and custom timeframes.'
   },
   {
-    icon: ShieldAlert,
     title: 'Secure Archival Control',
     desc: 'Apply secure legal seals to compiled logs, establishing immutable audit trails compliance under Section 66 of IT Act, 2000.'
   },
@@ -144,17 +140,14 @@ export default function HomePage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
-                  {features.map(({ icon: Icon, title, desc }, i) => (
+                  {features.map(({ title, desc }, i) => (
                     <motion.div
                       key={title}
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                     >
-                      <Card className="home-card-premium p-6 sm:p-7 flex gap-5 h-full items-start rounded-3xl border-2 border-slate-200 shadow-md hover:shadow-xl transition-all">
-                        <div className="p-4 rounded-2xl bg-[var(--accent-gold)]/15 border border-[var(--accent-gold)]/30 text-[var(--accent-gold)] h-fit flex-shrink-0 shadow-sm">
-                          <Icon className="w-8 h-8 animate-pulse" style={{ animationDuration: '4s' }} />
-                        </div>
+                      <Card className="home-card-premium p-6 sm:p-7 h-full items-start rounded-3xl border-2 border-slate-200 shadow-md hover:shadow-xl transition-all">
                         <div>
                           <h3 className="text-body-l sm:text-heading-s font-bold text-[var(--primary)] mb-1.5 font-display tracking-tight leading-snug">{title}</h3>
                           <p className="text-sm sm:text-body-m text-slate-600 leading-relaxed font-normal">{desc}</p>

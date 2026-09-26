@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { FileSpreadsheet, BarChart3, Search, FileText, BookOpen } from 'lucide-react';
 import useAuthStore from '../../store/authStore.js';
 import CustomExcelBuilder from './CustomExcelBuilder';
 import ReportBuilder from './ReportBuilder';
@@ -41,10 +40,7 @@ export const ReportsPage = () => {
       {/* Top Header & Subtitle */}
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-50 border border-blue-100 rounded-xl text-[#0f52ba]">
-              <FileSpreadsheet size={24} />
-            </div>
+          <div>
             <div>
               <h1 className="text-xl font-bold text-[#0d2a4a] tracking-tight">
                 Police Intelligence &amp; Executive Report Command Center
@@ -66,7 +62,6 @@ export const ReportsPage = () => {
                 : 'text-slate-600 hover:text-[#0d2a4a] hover:bg-white'
             }`}
           >
-            <BarChart3 size={14} />
             <span>1. Custom Pivot Matrix</span>
           </button>
 
@@ -78,7 +73,6 @@ export const ReportsPage = () => {
                 : 'text-slate-600 hover:text-[#0d2a4a] hover:bg-white'
             }`}
           >
-            <FileText size={14} />
             <span>2. Raw Case/Register Export</span>
           </button>
 
@@ -90,7 +84,6 @@ export const ReportsPage = () => {
                 : 'text-slate-600 hover:text-[#0d2a4a] hover:bg-white'
             }`}
           >
-            <BookOpen size={14} />
             <span>3. Official 41 FN Return</span>
           </button>
 
@@ -102,7 +95,6 @@ export const ReportsPage = () => {
                 : 'text-slate-600 hover:text-[#0d2a4a] hover:bg-white'
             }`}
           >
-            <Search size={14} />
             <span>4. Formula Trace Audit</span>
           </button>
         </div>

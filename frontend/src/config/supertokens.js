@@ -5,11 +5,9 @@
 import SuperTokens from 'supertokens-web-js';
 import Session from 'supertokens-web-js/recipe/session';
 
-// VITE_API_URL is expected to be the API base (for example http://localhost:5000/api or
-// http://localhost:5000/api/v1). SuperTokens needs the ORIGIN plus the auth base path, so we
-// strip a trailing /api or /api/v1 to get the domain and pin apiBasePath to match the backend.
-const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const apiDomain = rawBase.replace(/\/api(\/v1)?\/?$/, '') || window.location.origin;
+import { getApiOrigin } from './apiBase.js';
+
+const apiDomain = getApiOrigin();
 
 export const initSuperTokensWeb = () => {
   SuperTokens.init({

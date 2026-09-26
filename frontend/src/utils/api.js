@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { log, newRequestId } from './logger.js';
 import Session from 'supertokens-web-js/recipe/session';
+import { getApiBaseUrl } from '../config/apiBase.js';
+import useAuthStore from '../store/authStore.js';
 
 // Excluded from interceptor logging by URL — see HANDOFF.md §6.2. logger.js ships its OWN batch
 // of client logs via a raw `fetch` (never through this axios instance), so this guard is
@@ -8,7 +10,7 @@ import Session from 'supertokens-web-js/recipe/session';
 // endpoint through `api` and creating a request/response logging feedback loop.
 const isLogsEndpoint = (url) => typeof url === 'string' && url.includes('/logs/client');
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const BASE_URL = getApiBaseUrl();
 
 // Create central axios client — always talks to the real backend.
 const api = axios.create({
@@ -71,24 +73,54 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    // Genuine Axios failures only.
     if (!isLogsEndpoint(error.config?.url)) {
       const cfg = error.config || {};
       const meta = cfg.metadata || {};
       const status = error.response?.status ?? null;
-      const level = status && status < 500 ? 'warn' : 'error';
-      log[level]('api:response:error', {
+      const fields = {
         status,
         method: cfg.method,
         url: cfg.url,
         requestId: meta.requestId,
         durationMs: meta.startTime ? Date.now() - meta.startTime : undefined,
         message: error.message || error.response?.data?.message,
-      });
+      };
+
+      // A 2xx on the error channel means the HTTP call succeeded and a response
+      // handler threw (SuperTokens refresh uses this same axios instance).
+      // That is not an API failure and must not clear the session.
+      if (typeof status === 'number' && status >= 200 && status < 300) {
+        log.error('api:handler_error', fields);
+        return Promise.reject(error);
+      }
+
+      if (status == null) {
+        log.error('api:network_error', fields);
+      } else {
+        const level = status < 500 ? 'warn' : 'error';
+        log[level]('api:response:error', fields);
+      }
     }
 
-    // Token refresh is handled automatically by SuperTokens (Session.addAxiosInterceptors).
-    // A 401 that reaches here means the session is genuinely invalid; surface it to the caller.
+    // No HTTP response means the API process is unreachable. That is not an auth failure
+    // and must not clear the session or start another refresh.
+    if (!error.response) {
+      return Promise.reject(error);
+    }
+
+    const status = error.response.status;
+    if (status >= 200 && status < 300) {
+      return Promise.reject(error);
+    }
+
+    // SuperTokens already tried POST /session/refresh before a 401 reaches this interceptor.
+    // A 401 on any route other than login means that refresh did not produce a session.
+    const url = String(error.config?.url || '');
+    const isLogin = url.includes('/auth/login');
+    if (status === 401 && !isLogin) {
+      useAuthStore.getState().logout();
+    }
+
     return Promise.reject(error);
   }
 );

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, Button, Input, Select, DatePicker, message, Progress, Spin, Space, Typography, Form, Row, Col, Alert } from 'antd';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Trash, Download, Layers, Calendar, Table as TableIcon, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Plus, Trash, Download, ShieldAlert } from 'lucide-react';
 import dayjs from 'dayjs';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
@@ -207,7 +207,6 @@ export const MultiSheetReportBuilder = () => {
       <Card
         title={
           <Space>
-            <Calendar size={18} className="text-[var(--accent-gold)]" />
             <span className="text-zinc-100">Global Filters & Metadata</span>
           </Space>
         }
@@ -263,7 +262,6 @@ export const MultiSheetReportBuilder = () => {
         title={
           <Space className="w-full justify-between flex">
             <Space>
-              <Layers size={18} className="text-[var(--accent-gold)]" />
               <span className="text-zinc-100">Worksheet Configurations</span>
             </Space>
             <Button 
@@ -295,8 +293,7 @@ export const MultiSheetReportBuilder = () => {
                 </div>
                 
                 <Space direction="vertical" className="w-full" size="middle">
-                  <div className="flex items-center gap-2 border-b border-[#2d3748] pb-3">
-                    <TableIcon size={16} className="text-zinc-400" />
+                  <div className="border-b border-[#2d3748] pb-3">
                     <Text strong className="text-zinc-200">Sheet {index + 1}</Text>
                   </div>
                   

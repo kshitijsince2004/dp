@@ -446,7 +446,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
       </div>
 
       {step === 1 && (
-        <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-6 space-y-6 text-xs shadow-sm">
+        <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-2xl p-6 space-y-6 text-xs shadow-sm">
           <h3 className="font-bold text-[var(--text-main-theme)] flex items-center gap-2 text-sm font-display">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--bg-page-main)]/80 border border-[var(--border-card-theme)]/85">
               <Upload size={15} className="text-[var(--accent-color)]" />
@@ -546,7 +546,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
       )}
 
       {step === 2 && !confirmedBatchId && (
-        <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-6 space-y-6 text-xs shadow-sm">
+        <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-2xl p-6 space-y-6 text-xs shadow-sm">
           <h3 className="font-bold text-[var(--text-main-theme)] flex items-center gap-2 text-sm font-display">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--bg-page-main)]/80 border border-[var(--border-card-theme)]/85">
               <CheckCircle2 size={15} className="text-emerald-500" />
@@ -556,7 +556,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
 
           {/* Validation Metrics Grid */}
           <div className="grid grid-cols-3 gap-4">
-            <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 rounded-2xl p-4 text-center">
+            <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-2xl p-4 text-center">
               <div className="text-[var(--text-main-theme)] opacity-60 text-[10px] font-bold uppercase tracking-wider mb-1">
                 {t('import.totalRows', 'Total Rows')}
               </div>
@@ -644,7 +644,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
       )}
 
       {step === 2 && confirmedBatchId && isPolling && (
-        <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-8 space-y-5 text-xs shadow-sm text-center">
+        <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-2xl p-8 space-y-5 text-xs shadow-sm text-center">
           <Loader2 size={32} className="animate-spin mx-auto text-[var(--accent-color)]" />
           <div>
             <p className="text-[var(--text-main-theme)] font-bold text-sm">
@@ -671,7 +671,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
       )}
 
       {step === 3 && polledBatch && (
-        <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-6 space-y-6 text-xs shadow-sm font-sans">
+        <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-2xl p-6 space-y-6 text-xs shadow-sm font-sans">
           <div className="text-center py-4 space-y-2">
             <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border ${
               polledBatch.status === 'IMPORTED'
@@ -699,7 +699,7 @@ function BulkImporterPanel({ onImported, isHC, isDistrictOfficer, user }) {
 
           {/* Metrics Grid */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 rounded-2xl p-4 text-center">
+            <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-2xl p-4 text-center">
               <div className="text-[var(--text-main-theme)] opacity-60 text-[10px] font-bold uppercase tracking-wider mb-1">
                 {t('import.totalProcessed', 'Processed')}
               </div>
@@ -892,7 +892,7 @@ export default function LegacyDataPage() {
       )}
 
       {/* ── Tabs ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1 bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl p-1.5 shadow-sm border border-[var(--border-card-theme)] w-fit">
+      <div className="flex items-center gap-1 bg-[var(--bg-page-main)] rounded-2xl p-1.5 shadow-sm border border-[var(--border-card-theme)] w-fit">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -909,7 +909,7 @@ export default function LegacyDataPage() {
       </div>
 
       {/* ── Tab Content ────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl bg-[var(--bg-page-main)]/60 border border-[var(--border-card-theme)] backdrop-blur-md shadow-sm overflow-hidden transition-all duration-200">
+      <div className="rounded-2xl bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] shadow-sm overflow-hidden transition-all duration-200">
 
         {activeTab === 'batches' && !selectedBatch && (
           <BatchTable
@@ -950,7 +950,7 @@ export default function LegacyDataPage() {
                   ].map(({ label, value }) => (
                     <div
                       key={label}
-                      className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 rounded-2xl p-4 hover:border-[var(--accent-color)]/40 hover:shadow-md transition-all duration-200"
+                      className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-2xl p-4 hover:border-[var(--accent-color)]/40 hover:shadow-md transition-all duration-200"
                     >
                       <div className="text-[var(--text-main-theme)] opacity-60 text-[10px] font-bold uppercase tracking-wider mb-1">{label}</div>
                       <div className="text-[var(--text-main-theme)] font-bold text-sm">{value ?? '—'}</div>

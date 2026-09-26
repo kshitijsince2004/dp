@@ -8,11 +8,13 @@
 // Dev/prod gate (HANDOFF §3b): when LOG_ENABLED is false, every method on `log` is a cheap
 // no-op — zero console mirroring, zero IndexedDB writes, zero network traffic, zero overhead.
 
+import { getApiBaseUrl } from '../config/apiBase.js';
+
 export const LOG_ENABLED = import.meta.env.DEV || import.meta.env.VITE_DEBUG_LOGGING === 'true';
 
 const RING_CAP = 2000;
 const FLUSH_INTERVAL_MS = 5000;
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace(/\/$/, '');
+const API_BASE = getApiBaseUrl();
 const CLIENT_LOG_ENDPOINT = `${API_BASE}/logs/client`;
 
 function makeId(prefix) {

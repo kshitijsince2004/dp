@@ -6,8 +6,9 @@ import useAuthStore from '../store/authStore.js';
 import api from '../utils/api.js';
 import { renderNotification } from '../utils/notificationText.js';
 import { log } from '../utils/logger.js';
+import { getApiBaseUrl } from '../config/apiBase.js';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE_URL = getApiBaseUrl();
 const SSE_URL = `${BASE_URL}/v1/notifications/stream`;
 
 const RECONNECT_DELAY_MS = 3000;
@@ -230,7 +231,7 @@ export function useNotifications() {
     unauthorizedRef.current = false;
     const gen = ++connectionGenRef.current;
 
-    if (!isAuthenticated || !user) {
+    if (!isAuthenticated || !user?.id) {
       closeEventSource();
       clearReconnectTimer();
       return () => {

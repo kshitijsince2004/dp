@@ -1,8 +1,6 @@
 export default function StatCard({
   label,
   value,
-  icon: _Icon,
-  iconColor: _iconColor,
   trend,
   trendDirection = "up",
   subtext,

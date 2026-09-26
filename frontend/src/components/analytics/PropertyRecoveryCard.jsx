@@ -1,17 +1,8 @@
 import React from 'react';
-import { IndianRupee, ShieldCheck, TrendingUp, Car, Smartphone, Watch, Banknote, ShieldAlert } from 'lucide-react';
 
 const formatCurrency = (val) => {
   if (val === null || val === undefined) return '₹ 0';
   return `₹ ${Number(val).toLocaleString('en-IN')}`;
-};
-
-const CATEGORY_ICONS = {
-  'Motor Vehicle Theft (MVT)': Car,
-  'Gold / Jewelry / Valuables': Watch,
-  'Cash / Currency': Banknote,
-  'Electronics & Mobiles': Smartphone,
-  'Illegal Arms & Contraband': ShieldAlert,
 };
 
 export default function PropertyRecoveryCard({ data = {}, isLoading = false }) {
@@ -38,8 +29,7 @@ export default function PropertyRecoveryCard({ data = {}, isLoading = false }) {
       <div>
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
           <div>
-            <h3 className="text-sm font-bold text-[#0A1628] flex items-center gap-2">
-              <IndianRupee className="w-4 h-4 text-emerald-600" />
+            <h3 className="text-sm font-bold text-[#0A1628]">
               Property & Economic Recovery Analysis
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">Valuation of Stolen vs Recovered assets in reported crime</p>
@@ -80,13 +70,9 @@ export default function PropertyRecoveryCard({ data = {}, isLoading = false }) {
         <div className="space-y-3">
           <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">Category-Wise Asset Tracking</div>
           {categories.slice(0, 4).map((cat) => {
-            const Icon = CATEGORY_ICONS[cat.name] || ShieldCheck;
             return (
               <div key={cat.name} className="p-2.5 bg-slate-50/80 rounded-lg border border-slate-100 text-xs flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 bg-white rounded-md border border-slate-200 text-slate-700">
-                    <Icon className="w-3.5 h-3.5" />
-                  </div>
                   <div>
                     <div className="font-bold text-slate-800">{cat.name}</div>
                     <div className="text-[10px] text-slate-500">{cat.count || 0} items tracked</div>

@@ -13,28 +13,15 @@ export const useAuth = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // REDACT: only { userId, role, hasToken } ever logged here — never the token/credentials.
-  // Keyed on the derived values themselves (not every render) so every consumer of this
-  // hook doesn't spam a line per re-render — only when the auth state actually changes.
+  // Session existence is owned by probeSession() in ProtectedRoute.
+  // This hook must not call Session.doesSessionExist — that call refreshes the
+  // access token, and every consumer (navbar, login page) was starting its own refresh.
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      let hasToken = !!localStorage.getItem('access_token');
-      try {
-        if (await Session.doesSessionExist()) hasToken = true;
-      } catch {
-        /* ignore */
-      }
-      if (!cancelled) {
-        log.debug('auth:state_read', {
-          userId: user?.id ?? null,
-          role: user?.role ?? null,
-          isAuthenticated,
-          hasToken,
-        });
-      }
-    })();
-    return () => { cancelled = true; };
+    log.debug('auth:state_read', {
+      userId: user?.id ?? null,
+      role: user?.role ?? null,
+      isAuthenticated,
+    });
   }, [user?.id, user?.role, isAuthenticated]);
 
   // Fetch current user (runs once on mount)
@@ -44,13 +31,31 @@ export const useAuth = () => {
       log.debug('auth:me_fetch_start', {});
       try {
         const res = await authApi.getMe();
-        log.info('auth:me_fetch_success', { userId: res.data?.data?.user?.id ?? null, role: res.data?.data?.user?.role ?? null });
-        return res.data.data; // contains { user, jurisdiction }
+        const body = res.data?.data;
+        const profile = body?.user;
+        const userId = profile?.id || profile?.sub || null;
+        if (!userId) {
+          log.error('auth:me_contract_error', {
+            role: profile?.role ?? null,
+            level: profile?.level ?? null,
+          });
+          const contract = new Error('Profile response is missing user.id');
+          contract.code = 'AUTH_CONTRACT';
+          contract.response = res;
+          throw contract;
+        }
+        log.info('auth:me_fetch_success', {
+          userId,
+          role: profile.role ?? null,
+          level: profile.level ?? null,
+        });
+        return body;
       } catch (err) {
-        if (!err.response && isAuthenticated) {
-          // Keep current offline user if backend is offline
-          log.warn('auth:me_fetch_offline_fallback', { userId: user?.id ?? null });
-          return { user };
+        if (!err.response) {
+          log.warn('auth:me_fetch_unreachable', { userId: user?.id ?? null });
+          const unreachable = new Error('API unreachable');
+          unreachable.code = 'API_UNREACHABLE';
+          throw unreachable;
         }
         log.error('auth:me_fetch_error', { status: err?.response?.status, message: err?.message });
         throw err;
@@ -63,20 +68,26 @@ export const useAuth = () => {
 
   // Safe side-effect sync
   useEffect(() => {
-    if (userData?.user) {
-      log.debug('auth:sync_login', { userId: userData.user.id ?? null, role: userData.user.role ?? null, hasJurisdiction: !!userData.jurisdiction });
-      login(userData.user, userData.jurisdiction);
-    }
-  }, [userData]);
+    const profile = userData?.user;
+    const userId = profile?.id || profile?.sub;
+    if (!userId) return;
+    log.debug('auth:sync_login', {
+      userId,
+      role: profile.role ?? null,
+      level: profile.level ?? null,
+      hasJurisdiction: !!userData.jurisdiction,
+    });
+    login(profile, userData.jurisdiction);
+  }, [userData, login]);
 
 
   // Handle query errors
   useEffect(() => {
-    if (queryError) {
-      log.warn('auth:me_query_error_logout', { status: queryError?.response?.status });
-      logout();
-    }
-  }, [queryError]);
+    if (!queryError) return;
+    if (queryError.code === 'API_UNREACHABLE' || queryError.code === 'AUTH_CONTRACT' || !queryError.response) return;
+    log.warn('auth:me_query_error_logout', { status: queryError?.response?.status });
+    logout();
+  }, [queryError, logout]);
 
   // Login mutation
   const loginMutation = useMutation({
@@ -92,13 +103,20 @@ export const useAuth = () => {
         const res = await authApi.login(payload);
         // SuperTokens establishes the session from the login response headers automatically
         // (via the axios interceptors attached to this `api` instance). No manual token storage.
-        const { user, access_token, refresh_token } = res.data.data;
+        const user = res.data?.data?.user;
+        const userId = user?.id || user?.sub;
+        if (!userId) {
+          log.error('auth:login_contract_error', {
+            role: user?.role ?? null,
+            level: user?.level ?? null,
+          });
+          throw new Error('Login response is missing user.id');
+        }
 
         log.info('auth:login_success', {
-          userId: user?.id ?? null,
-          role: user?.role ?? null,
-          hasAccessToken: !!access_token,
-          hasRefreshToken: !!refresh_token,
+          userId,
+          role: user.role ?? null,
+          level: user.level ?? null,
         });
         return user;
       } catch (err) {
@@ -112,7 +130,11 @@ export const useAuth = () => {
     },
     onSuccess: (userData) => {
       // Intentionally not passing jurisdiction here, it will be fetched by /me immediately after
-      log.debug('auth:login_mutation_success', { userId: userData?.id ?? null, role: userData?.role ?? null });
+      log.debug('auth:login_mutation_success', {
+        userId: userData?.id ?? userData?.sub ?? null,
+        role: userData?.role ?? null,
+        level: userData?.level ?? null,
+      });
       login(userData, null);
       toast.success('Welcome back!');
       navigate('/dashboard');
@@ -133,9 +155,8 @@ export const useAuth = () => {
         log.info('auth:register_success', { hasUsername: !!userData?.username });
       } catch (err) {
         if (!err.response) {
-          console.warn("Backend offline. Simulating mock registration for:", userData.username);
-          log.warn('auth:register_mock_fallback', {});
-          return;
+          log.error('auth:register_error', { reason: 'backend_unreachable' });
+          throw new Error('Cannot reach the server. Start the backend with npm run dev.', { cause: err });
         }
         log.error('auth:register_error', { status: err?.response?.status, message: err?.message });
         throw err;

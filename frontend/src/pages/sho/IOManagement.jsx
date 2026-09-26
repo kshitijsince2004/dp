@@ -217,8 +217,7 @@ export default function IOManagement() {
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl">
             <div className="flex justify-between items-center bg-zinc-950/80 border-b border-zinc-800 px-5 py-3.5">
-              <h3 className="text-sm font-bold text-zinc-200 flex items-center gap-2">
-                <Plus size={14} className="text-[var(--accent-gold)]" />
+              <h3 className="text-sm font-bold text-zinc-200">
                 Add Investigating Officer
               </h3>
               <button onClick={() => { setModalOpen(false); resetForm(); }} className="text-zinc-500 hover:text-zinc-200 transition-colors">

@@ -2,9 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   FileSpreadsheet, Download, RefreshCw, ChevronDown, Search,
-  X, Link2, AlertTriangle, CheckCircle2, Calendar, Shield,
-  Layers, UserCheck, Package, Lock, Filter, Trash2, ArrowRight,
-  Building2, Users, FileText, ChevronUp, Tag, CheckSquare
+  X, AlertTriangle, CheckCircle2, Trash2,
+  ChevronUp, CheckSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
@@ -45,7 +44,6 @@ const QUICK_PRESETS = [
     id: 'fir_360_dossier',
     title: '360° Complete FIR Dossier',
     description: 'FIR, Complainant, Accused, Victim, Property & Occurrence (Full Multi-Entity Report)',
-    icon: Layers,
     table: 'CASE',
     join: 'CASE_ACCUSED',
     fieldKeywords: ['fir_no', 'record_date', 'ps_name', 'complainant', 'occurrence', 'accused', 'status', 'prop', 'stolen', 'recovered'],
@@ -54,7 +52,6 @@ const QUICK_PRESETS = [
     id: 'daily_fir',
     title: 'Daily FIR Master Log',
     description: 'FIR No, Registration Date, Local Head, PS Name, Status, IO Name',
-    icon: FileSpreadsheet,
     table: 'CASE',
     join: null,
     fieldKeywords: ['fir_no', 'record_date', 'local_head_id', 'ps_name', 'current_status', 'io_name', 'gd_no'],
@@ -63,7 +60,6 @@ const QUICK_PRESETS = [
     id: 'accused_register',
     title: 'Accused & Suspect Person Register',
     description: 'FIR No, Accused Name, Gender, Age, Social Category, Arrest Type, Address',
-    icon: UserCheck,
     table: 'CASE',
     join: 'CASE_ACCUSED',
     fieldKeywords: ['fir_no', 'name', 'gender', 'age', 'social_category', 'arrest_type', 'address'],
@@ -72,7 +68,6 @@ const QUICK_PRESETS = [
     id: 'property_stolen',
     title: 'Property Stolen & Recovered Detailed Register',
     description: 'FIR No, Property Category, Sub-Type, Nature, Estimated Value (₹), Property Description & Serial No / UID',
-    icon: Package,
     table: 'CASE',
     join: null,
     fieldKeywords: ['fir_no', 'fir_date', 'local_head', 'property_category', 'property_type', 'property_nature', 'estimated_value', 'property_details', 'property_uid'],
@@ -81,7 +76,6 @@ const QUICK_PRESETS = [
     id: 'arrest_master',
     title: 'Arrest Classification & Custody Master Register',
     description: 'Arrest Memo No, Date of Arrest, Arrest Type, Category, Person Name, Address, Place of Arrest, Custody Status & IO Name',
-    icon: Users,
     table: 'ARREST',
     join: 'ARREST_ARRESTED',
     fieldKeywords: ['linked_fir_dd_no', 'arrest_memo_no', 'arrest_date', 'arrest_type', 'arrest_category', 'arrested_name', 'arrested_address', 'arrest_place', 'status', 'io_name', 'dossier_prepared', 'nafis_prepared'],
@@ -90,7 +84,6 @@ const QUICK_PRESETS = [
     id: 'preventive_kalandra',
     title: 'Preventive Kalandra Register',
     description: 'Call ID, DD No, Date, PS Name, Act/Section, Bound Down Status (107/151 CrPC)',
-    icon: Shield,
     table: 'PCR_CALL',
     join: null,
     fieldKeywords: ['dd_no', 'call_id', 'record_date', 'ps_name', 'act_section', 'status', 'kalandra'],
@@ -99,7 +92,6 @@ const QUICK_PRESETS = [
     id: 'missing_persons',
     title: 'Missing Persons Search Register',
     description: 'Name, Gender, Age, Height, Clothing, Date Missing, Status (Traced/Untraced)',
-    icon: Search,
     table: 'MISSING',
     join: null,
     fieldKeywords: ['name', 'gender', 'age', 'height', 'clothing', 'record_date', 'status', 'traced'],
@@ -108,7 +100,6 @@ const QUICK_PRESETS = [
     id: 'uidb_register',
     title: 'Unidentified Bodies (UIDB) Log',
     description: 'Found Date, Found Place, Estimated Age, Corpse Description, Mortuary Name',
-    icon: FileText,
     table: 'UIDB',
     join: null,
     fieldKeywords: ['found_date', 'place', 'age', 'gender', 'description', 'mortuary', 'status'],
@@ -117,7 +108,6 @@ const QUICK_PRESETS = [
     id: 'victim_dossier',
     title: 'Victim & Crime Head Register',
     description: 'FIR No, Crime Head, Victim Name, Gender, Age, Injury Type, POCSO / SC-ST Flag',
-    icon: UserCheck,
     table: 'CASE',
     join: 'CASE_VICTIM',
     fieldKeywords: ['fir_no', 'local_head_id', 'name', 'gender', 'age', 'injury', 'pocso'],
@@ -145,14 +135,13 @@ function CategorizedFieldPicker({ categorizedOptions, selected, onToggle, onTogg
         className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 px-3.5 py-3 outline-none focus:border-[#0f52ba] transition-all cursor-pointer font-bold shadow-inner"
       >
         <span className="truncate text-left flex items-center gap-2">
-          <Tag size={13} className="text-[#0f52ba]" />
           <span>{selected.size === 0 ? 'Select Form Sections & Fields...' : `${selected.size} Columns Selected`}</span>
         </span>
         <ChevronDown size={15} className="text-slate-500 shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col max-h-96 backdrop-blur-xl">
+        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col max-h-96">
           {/* Search Header */}
           <div className="p-2.5 border-b border-slate-200 bg-slate-50 flex flex-col gap-2">
             <div className="relative">
@@ -551,7 +540,6 @@ export default function CustomExcelBuilder() {
       {/* Scope Privilege Indicator Banner */}
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2.5">
-          <Building2 size={18} className="text-[#0f52ba]" />
           <div>
             <span className="font-bold text-slate-900 block">Hierarchical Scope Authority: <span className="text-[#0f52ba] uppercase font-mono">{role}</span></span>
             <span className="text-slate-500 text-label-s">
@@ -577,7 +565,6 @@ export default function CustomExcelBuilder() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           {QUICK_PRESETS.map((preset) => {
-            const Icon = preset.icon;
             const active = table === preset.table && join === preset.join;
             return (
               <button
@@ -590,12 +577,11 @@ export default function CustomExcelBuilder() {
                     : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className={`p-1.5 rounded-lg ${active ? 'bg-blue-50 text-[#0f52ba]' : 'bg-slate-100 text-slate-500'}`}>
-                    <Icon size={16} />
-                  </span>
-                  {active && <CheckCircle2 size={14} className="text-[#0f52ba]" />}
-                </div>
+                {active && (
+                  <div className="flex items-center justify-end">
+                    <CheckCircle2 size={14} className="text-[#0f52ba]" />
+                  </div>
+                )}
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">{preset.title}</h4>
                   <p className="text-[10px] text-slate-500 line-clamp-2 mt-0.5">{preset.description}</p>
@@ -608,9 +594,8 @@ export default function CustomExcelBuilder() {
 
       {/* ── Table Selection & Categorized Column Picker ────────────────────── */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xl space-y-4">
-        <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-3">
-          <Layers size={15} className="text-[#0f52ba]" />
-          <span>Form-Matched Record Master &amp; Categorized Column Configurator</span>
+        <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">
+          Form-Matched Record Master &amp; Categorized Column Configurator
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -736,9 +721,8 @@ export default function CustomExcelBuilder() {
 
       {/* ── Scope & Filter Constraints ────────────────────────────────────── */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xl space-y-4">
-        <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-3">
-          <Filter size={15} className="text-[#0f52ba]" />
-          <span>Hierarchical Scope &amp; Date Range Filters</span>
+        <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">
+          Hierarchical Scope &amp; Date Range Filters
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

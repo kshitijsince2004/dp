@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Tree, Card, Typography, Spin, Alert, Tag, Space } from 'antd';
-import { GitBranch, Landmark } from 'lucide-react';
 import axios from 'axios';
 import { log } from '../../utils/logger.js';
 
@@ -73,7 +72,6 @@ export const HierarchyPage = () => {
         <Card
           title={
             <Space>
-              <GitBranch size={18} style={{ color: '#38bdf8' }} />
               <span>Delhi Police Organizational Hierarchy Tree</span>
             </Space>
           }

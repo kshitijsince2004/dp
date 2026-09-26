@@ -887,7 +887,7 @@ export const getQuickAccessReports = async (req, res) => {
       created_by: r.created_by,
       created_at: r.created_at,
       spec: parseJson(r.query_spec, r.spec || {}),
-      run_count: usageMap[r.name] || r.run_count || 0,
+      run_count: r.run_count || 0,
     })).sort((a, b) => b.run_count - a.run_count);
 
     return res.status(200).json({ success: true, data: enriched });

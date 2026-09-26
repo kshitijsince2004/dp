@@ -183,7 +183,7 @@ export default function PoliceNavbar({
 
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-display">Pending</span>
-              <span className="text-[13px] font-bold text-rose-500 leading-tight">{unreadCount > 0 ? unreadCount : 12}</span>
+              <span className="text-[13px] font-bold text-rose-500 leading-tight">{unreadCount}</span>
             </div>
 
             <div className="w-[1px] h-7 bg-slate-200"></div>

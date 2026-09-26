@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { Shield, BookOpen, FileCheck, PhoneCall, UserX } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../../utils/api.js';
 import { asArray } from '../../utils/dataShape.js';
@@ -39,7 +38,7 @@ const CustomTooltip = ({ active, payload, label, activeMetric }) => {
     const data = payload[0].payload;
     const meta = METRIC_META[activeMetric];
     return (
-      <div className="bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-xl p-4 min-w-[180px] transition-all">
+      <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-4 min-w-[180px] transition-all">
         <p className="text-xs font-bold text-slate-800 mb-2 font-display uppercase tracking-wider">{label}</p>
         <div className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
@@ -106,10 +105,10 @@ export default function DistrictDashboard() {
   });
 
   const cards = [
-    { label: 'Total FIR Cases Registered', value: stats.cases_today || 0, color: 'text-[var(--accent-gold)]', icon: Shield,    change: '+12%', isUp: true  },
-    { label: 'PCR Response Dispatches',     value: stats.pcr_today   || 0, color: 'text-[var(--primary)]',  icon: PhoneCall, change: '-4%',  isUp: false },
-    { label: 'Accused Arrests Filed',       value: stats.arrests_today || 0, color: 'text-[var(--success)]', icon: FileCheck, change: '+8%', isUp: true },
-    { label: 'Left Out Accused (Unarrested)', value: stats.left_out_accused || 0, color: 'text-[var(--accent-gold)]', icon: UserX, change: 'Pending Arrest', isUp: false },
+    { label: 'Total FIR Cases Registered', value: stats.cases_today || 0, change: '+12%', isUp: true  },
+    { label: 'PCR Response Dispatches',     value: stats.pcr_today   || 0, change: '-4%',  isUp: false },
+    { label: 'Accused Arrests Filed',       value: stats.arrests_today || 0, change: '+8%', isUp: true },
+    { label: 'Left Out Accused (Unarrested)', value: stats.left_out_accused || 0, change: 'Pending Arrest', isUp: false },
   ];
 
   return (
@@ -166,7 +165,6 @@ export default function DistrictDashboard() {
             onClick={() => { log.debug('action:compile_daily_logs_click', {}); navigate('/compile');}}
             className="inline-flex items-center gap-2 rounded-control bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] px-5 py-2.5 text-xs font-bold text-white transition-colors duration-200 cursor-pointer"
           >
-            <BookOpen size={13} className="text-amber-300" />
             Compile Daily Logs
           </button>
         </motion.div>
@@ -181,8 +179,6 @@ export default function DistrictDashboard() {
               <StatCard
                 label={card.label}
                 value={card.value}
-                icon={card.icon}
-                iconColor={card.color}
                 trend={card.change}
                 trendDirection={card.isUp ? 'up' : 'down'}
                 subtext="District-wide"

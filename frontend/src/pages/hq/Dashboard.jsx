@@ -1,9 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Building, ShieldAlert, FileCheck, PhoneCall, Filter, ArrowUpRight, ArrowDownRight, Layers,
-  Clock3, CheckCircle2, ChevronRight, AlertCircle, MapPin, UserX
-} from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from 'recharts';
@@ -247,10 +244,10 @@ export default function HQDashboard() {
   );
 
   const cards = [
-    { label: 'Delhi-wide FIR cases', value: (stats.cases_today || 0) , color: 'text-amber-500', icon: Building },
-    { label: 'Total PCR emergency calls', value: (stats.pcr_today || 0) , color: 'text-blue-500', icon: PhoneCall },
-    { label: 'Accused arrests processed', value: (stats.arrests_today || 0) , color: 'text-emerald-500', icon: FileCheck },
-    { label: 'Unarrested accused (Left Out)', value: (stats.left_out_accused || 0) , color: 'text-amber-500', icon: UserX },
+    { label: 'Delhi-wide FIR cases', value: (stats.cases_today || 0) },
+    { label: 'Total PCR emergency calls', value: (stats.pcr_today || 0) },
+    { label: 'Accused arrests processed', value: (stats.arrests_today || 0) },
+    { label: 'Unarrested accused (Left Out)', value: (stats.left_out_accused || 0) },
   ];
 
   const activeFilterCount = [
@@ -318,8 +315,6 @@ export default function HQDashboard() {
                 key={idx}
                 label={card.label}
                 value={card.value}
-                icon={card.icon}
-                iconColor={card.color}
                 subtext="Delhi-wide"
               />
             ))}
@@ -330,7 +325,6 @@ export default function HQDashboard() {
         <div className="mt-6 overflow-hidden rounded-card border border-slate-200 bg-white">
           {/* Panel header */}
           <div className="flex items-center gap-3 px-4 py-3">
-            <Filter size={14} className="text-slate-400" />
             <div>
               <p className="text-sm font-bold text-[var(--text-primary)]">Scope Filters</p>
             </div>
@@ -396,7 +390,6 @@ export default function HQDashboard() {
           {/* Section header */}
           <div className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-slate-200 bg-white px-4 py-3">
             <div className="flex items-center gap-3">
-              <ShieldAlert size={16} className="text-slate-400 shrink-0" />
               <div>
                 <h3 className="text-base font-bold text-[var(--text-primary)]">Real-time Jurisdiction Activity Feed</h3>
                 <p className="mt-0.5 text-xs text-[#718096]">
@@ -420,7 +413,6 @@ export default function HQDashboard() {
                     : 'border-[#FDE68A] bg-[#FFFBEB] text-[#D97706] hover:bg-[#FDE68A]/50'
                 }`}
               >
-                <Clock3 size={11} className="text-[#D97706]" />
                 <span className="text-xs font-semibold">Cases</span>
               </button>
 
@@ -433,7 +425,6 @@ export default function HQDashboard() {
                     : 'border-[#6EE7B7] bg-[#ECFDF5] text-[#059669] hover:bg-[#6EE7B7]/50'
                 }`}
               >
-                <CheckCircle2 size={11} className="text-[#059669]" />
                 <span className="text-xs font-semibold">Arrests</span>
               </button>
 
@@ -446,7 +437,6 @@ export default function HQDashboard() {
                     : 'border-[#BFDBFE] bg-[#EFF6FF] text-[#0f52ba] hover:bg-[#BFDBFE]/50'
                 }`}
               >
-                <PhoneCall size={11} className="text-[#0f52ba]" />
                 <span className="text-xs font-semibold">PCR</span>
               </button>
             </div>
@@ -507,7 +497,6 @@ export default function HQDashboard() {
                         {/* District */}
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-1.5">
-                            <MapPin size={11} className="text-[#0f52ba] flex-shrink-0" />
                             <span className="font-medium text-[#4A5568]">
                               {distName}
                             </span>
@@ -545,9 +534,6 @@ export default function HQDashboard() {
             {/* Empty state */}
             {filteredRecords.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F0F4F9] border border-[#E2E8F0]">
-                  <AlertCircle size={24} className="text-[#718096]" />
-                </div>
                 <p className="text-sm font-semibold text-[#4A5568]">No records found</p>
                 <p className="text-xs text-[#718096]">Try adjusting the scope filters above.</p>
               </div>
@@ -558,7 +544,6 @@ export default function HQDashboard() {
             {/* Heinous crime heads */}
             <div className="overflow-hidden rounded-card border border-slate-200 bg-white">
               <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-3">
-                <ShieldAlert size={16} className="text-[#DC2626] shrink-0" />
                 <p className="text-label font-semibold text-[#4A5568]">Heinous Crime Heads · {heinousRows.length}</p>
               </div>
               <CrimeHeadBarChart rows={heinousRows} years={years} />
@@ -567,7 +552,6 @@ export default function HQDashboard() {
             {/* Non-heinous crime heads */}
             <div className="overflow-hidden rounded-card border border-slate-200 bg-white">
               <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-3">
-                <Layers size={16} className="text-[var(--accent-color)] shrink-0" />
                 <p className="text-label font-semibold text-[#4A5568]">Non-Heinous Crime Heads · {nonHeinousRows.length}</p>
               </div>
               <CrimeHeadBarChart rows={nonHeinousRows} years={years} />

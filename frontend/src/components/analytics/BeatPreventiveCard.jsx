@@ -1,5 +1,4 @@
 import React from 'react';
-import { MapPin, ShieldAlert, Users2, Building2, Flame } from 'lucide-react';
 
 export default function BeatPreventiveCard({ data = {}, isLoading = false }) {
   if (isLoading) {
@@ -23,8 +22,7 @@ export default function BeatPreventiveCard({ data = {}, isLoading = false }) {
       <div>
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
           <div>
-            <h3 className="text-sm font-bold text-[#0A1628] flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-violet-600" />
+            <h3 className="text-sm font-bold text-[#0A1628]">
               Beat Hotspot Density & Preventive Action
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">Beat-level concentration and preventive Kalandra enforcement</p>
@@ -39,8 +37,7 @@ export default function BeatPreventiveCard({ data = {}, isLoading = false }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Left: Beat Rankings */}
           <div>
-            <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-rose-500" />
+            <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
               <span>Crime Concentration by Beat</span>
             </div>
             <div className="space-y-2">
@@ -62,8 +59,7 @@ export default function BeatPreventiveCard({ data = {}, isLoading = false }) {
 
           {/* Right: Preventive Actions */}
           <div>
-            <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-              <ShieldAlert className="w-3.5 h-3.5 text-violet-500" />
+            <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
               <span>Preventive Action Breakdown</span>
             </div>
             <div className="space-y-2 text-xs">

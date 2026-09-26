@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, CheckSquare, X, Send, AlertTriangle, ShieldCheck, History, Edit, FileSpreadsheet, RefreshCw, Clock, Scale, Lock } from 'lucide-react';
+import { ArrowLeft, CheckSquare, X, Send, AlertTriangle, ShieldCheck, Edit, Clock, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DynamicForm from '../../components/forms/DynamicForm.jsx';
 import useAuthStore from '../../store/authStore.js';
@@ -480,7 +480,7 @@ export default function RecordDetail() {
         {/* Right Col: Timeline history details */}
         <div className="space-y-6">
           {/* Status info box */}
-          <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-3 shadow-sm">
+          <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-xl p-5 space-y-3 shadow-sm">
             <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80">Current Status</h3>
             <div className="flex items-center gap-2">
               <span className="text-base font-bold text-[var(--text-main-theme)]">
@@ -497,10 +497,9 @@ export default function RecordDetail() {
 
           {/* Domain status update card (item 9, WS9) */}
           {canUpdateStatus && (
-            <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-3 shadow-sm">
+            <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-xl p-5 space-y-3 shadow-sm">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
-                  <RefreshCw size={14} className="text-[var(--accent-color)]" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80">
                   <span>Case Progress</span>
                 </h3>
                 <button
@@ -535,7 +534,7 @@ export default function RecordDetail() {
 
           {/* Supplementary Chargesheet Details Card */}
           {record.record_type === 'CASE' && (record.data?.supplementary_chargesheet_details || String(record.data?.case_status || '').toUpperCase() === 'SUPPLEMENTARY CHARGESHEET') && (
-            <div className="theme-card border border-amber-500/40 bg-amber-500/10 backdrop-blur-md rounded-xl p-4 space-y-2 shadow-xs">
+            <div className="theme-card border border-amber-200 bg-amber-50 rounded-xl p-4 space-y-2 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-amber-900 uppercase tracking-wider font-mono flex items-center gap-1.5">
                   <AlertTriangle size={14} className="text-amber-700" />
@@ -559,10 +558,9 @@ export default function RecordDetail() {
               const isChargesheeted = CHARGESHEET_STATUS_LIST.includes(currentStatusUpper) || !!record.data?.sent_to_court_date;
 
               return (
-                <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-3.5 shadow-sm">
+                <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-xl p-5 space-y-3.5 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
-                      <Scale size={15} className="text-[var(--accent-color)]" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80">
                       <span>Court & Judicial Status</span>
                     </h3>
                     {isChargesheeted ? (
@@ -623,9 +621,8 @@ export default function RecordDetail() {
           )}
 
           {/* Workflow logs timeline */}
-          <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-4 shadow-sm">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
-              <History size={16} className="text-[var(--accent-color)]" />
+          <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-xl p-5 space-y-4 shadow-sm">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80">
               <span>Workflow Transition History</span>
             </h3>
 
@@ -665,7 +662,7 @@ export default function RecordDetail() {
           />
 
           {/* Diffs & Revisions logs */}
-          <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-xl p-5 space-y-4 shadow-sm">
+          <div className="theme-card border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-xl p-5 space-y-4 shadow-sm">
             {(() => {
               // ── Separate initial submission from post-submission edits ──────────
               const firstSubIndex = revisions.findIndex((r) => r.change_type === 'SUBMIT' || r.change_type === 'CREATE' || r.revision_number === 1);
@@ -751,8 +748,7 @@ export default function RecordDetail() {
                 <>
                   {/* Header */}
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80 flex items-center gap-1.5">
-                      <FileSpreadsheet size={16} className="text-[var(--accent-color)]" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-main-theme)] opacity-80">
                       <span>Audit Trail &amp; Field Revision Log</span>
                     </h3>
                     <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-[var(--bg-page-main)] border border-[var(--border-card-theme)] text-[var(--accent-color)]">
@@ -767,10 +763,7 @@ export default function RecordDetail() {
                       const m = officerMeta(createRevision);
                       const intakeFields = Array.isArray(createRevision.field_changes) ? createRevision.field_changes.length : 0;
                       return (
-                        <div className="flex items-start gap-3 bg-[var(--bg-page-main)]/40 border border-dashed border-[var(--accent-color)]/40 rounded-xl p-3.5">
-                          <div className="mt-0.5 shrink-0 w-7 h-7 rounded-full bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/30 flex items-center justify-center">
-                            <FileSpreadsheet size={13} className="text-[var(--accent-color)]" />
-                          </div>
+                        <div className="bg-[var(--bg-page-main)]/40 border border-dashed border-[var(--accent-color)]/40 rounded-xl p-3.5">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-xs text-[var(--text-main-theme)]">{m.name}</span>

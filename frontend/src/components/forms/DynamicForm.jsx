@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Loader2, AlertTriangle, AlertCircle, Search, Calendar, User, Check, Database, Plus, X, Bookmark } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertTriangle, AlertCircle, Search, Calendar, User, Check, Plus, X, Bookmark } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { useFormSchema } from '../../hooks/useFormSchema.js';
@@ -426,8 +426,7 @@ export default function DynamicForm({
         {hasSearched && (
           <div className="bg-white border border-slate-200 rounded-card overflow-hidden transition-all duration-300">
             <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800 tracking-wide flex items-center gap-2 font-display">
-                <Database size={16} className="text-[var(--accent-color)]" />
+              <h3 className="text-sm font-bold text-slate-800 tracking-wide font-display">
                 <span>
                   {lang === 'hi' ? 'खोज परिणाम' : 'Search Results'} ({searchResults.length})
                 </span>

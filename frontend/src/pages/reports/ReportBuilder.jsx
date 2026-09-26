@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   X, Save, Download, CheckCircle2, Clock,
-  ChevronRight, ArrowRightLeft, RotateCcw, Info, Eye,
+  ChevronRight, ArrowRightLeft, RotateCcw, Info,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
@@ -751,8 +751,7 @@ export default function ReportBuilder() {
       {showSaveModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md w-full shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Save size={18} className="text-[#0f52ba]" />
+            <h3 className="text-base font-bold text-slate-900">
               <span>Save Report Preset</span>
             </h3>
             <p className="text-slate-500 text-xs font-medium">
@@ -794,8 +793,7 @@ export default function ReportBuilder() {
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-lg w-full shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Eye size={16} className="text-[#0f52ba]" />
+              <h3 className="text-sm font-bold text-slate-900">
                 <span>Matrix Cell Drill-Down</span>
               </h3>
               <button onClick={() => setDrilldownCell(null)} className="text-slate-500 hover:text-slate-900 cursor-pointer">

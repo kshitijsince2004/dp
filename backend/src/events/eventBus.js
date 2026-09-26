@@ -122,4 +122,8 @@ export async function subscribe(pattern, queueName, handler) {
   }
 }
 
+export function getEventBusMode() {
+  return useInMemoryBus ? 'memory' : 'rabbitmq';
+}
+
 export { connect as connectEventBus };

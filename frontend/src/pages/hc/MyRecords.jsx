@@ -3,9 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { 
-  FileText, Plus, FileEdit, Trash2, Send, Filter, Eye, 
-  AlertCircle, RefreshCw, ArrowUpRight, RotateCcw, Clock, 
-  CheckCircle2, Layers, ShieldCheck
+  FileEdit, Trash2, Send, Eye, 
+  AlertCircle, RefreshCw, CheckCircle2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -15,8 +14,7 @@ import UnifiedFilterStrip from '../../components/common/UnifiedFilterStrip.jsx';
 import FilterPresetsPanel from '../../components/common/FilterPresetsPanel.jsx';
 import useAuthStore from '../../store/authStore.js';
 import StatusUpdateModal from '../../components/records/StatusUpdateModal.jsx';
-import { formatRecordRef, formatGist } from '../../utils/recordRef.js';
-import { getStatusConfig } from '../../utils/statusConfig.js';
+import { formatRecordRef } from '../../utils/recordRef.js';
 import { log } from '../../utils/logger.js';
 import RecordTypeBadge from '../../components/common/RecordTypeBadge';
 
@@ -68,31 +66,30 @@ export default function MyRecords() {
   }, [location]);
 
   // Fetch all records without filters to calculate the hero stats accurately
-  const { data: allRecords = [] } = useQuery({
+  const statsQuery = useQuery({
     queryKey: ['all-records-stats'],
     queryFn: async () => {
       const res = await api.get('/records', { params: { limit: 'all' } });
-      const payload = res.data?.data;
-      const rows = payload?.cases || payload?.records || payload?.queue || (Array.isArray(payload) ? payload : (Array.isArray(res.data) ? res.data : []));
-      return Array.isArray(rows) ? rows : [];
+      return asRecordsList(res.data?.data ?? res.data);
     },
   });
 
-  const safeAllRecords = Array.isArray(allRecords) ? allRecords : [];
+  const safeAllRecords = statsQuery.isSuccess ? asRecordsList(statsQuery.data) : [];
+  const statsReady = statsQuery.isSuccess;
   const getRecordStatus = (r) => r.current_status || r.status || r.workflow_status || '';
 
   const isForwarded = (r) => {
     const s = getRecordStatus(r);
     return ['DISTRICT_REVIEW', 'JCP_REVIEW', 'SCP_REVIEW', 'HQ_RECEIVED', 'COMPILED', 'ARCHIVED', 'SUBMITTED', 'SHO_REVIEWED', 'ACP_REVIEW'].includes(s);
   };
+  const isSentBackStatus = (r) => {
+    const s = getRecordStatus(r);
+    return s === 'SENT_BACK' || s === 'SENT_BACK_HC';
+  };
   const isReturnedByDistrict = (r) => {
-    const s = getRecordStatus(r);
-    return (s === 'SENT_BACK' || s === 'SENT_BACK_HC') && (r.last_transition_from_level === 'DISTRICT' || r.last_transition_by_role === 'DISTRICT_OFFICER');
+    return isSentBackStatus(r) && (r.last_transition_from_level === 'DISTRICT' || r.last_transition_by_role === 'DISTRICT_OFFICER');
   };
-  const isSentBackToHc = (r) => {
-    const s = getRecordStatus(r);
-    return (s === 'SENT_BACK' || s === 'SENT_BACK_HC') && (r.last_transition_from_level === 'PS' || !r.last_transition_from_level || r.last_transition_role === 'SHO');
-  };
+  const isSentBackToHc = (r) => isSentBackStatus(r) && !isReturnedByDistrict(r);
   const isPendingSho = (r) => getRecordStatus(r) === 'PENDING_SHO';
   const isDraft = (r) => getRecordStatus(r) === 'DRAFT';
 
@@ -100,8 +97,10 @@ export default function MyRecords() {
   const forwardedCount = safeAllRecords.filter(isForwarded).length;
   const returnedByDistrictCount = safeAllRecords.filter(isReturnedByDistrict).length;
   const sentBackToHcCount = safeAllRecords.filter(isSentBackToHc).length;
+  const sentBackCount = safeAllRecords.filter(isSentBackStatus).length;
   const pendingShoCount = safeAllRecords.filter(isPendingSho).length;
   const draftCount = safeAllRecords.filter(isDraft).length;
+  const displayCount = (n) => (statsReady ? n : '—');
 
   const [filters, setFilters] = useState({
     type: 'ALL',
@@ -118,7 +117,7 @@ export default function MyRecords() {
   }, [filters]);
 
   // Fetch filtered records
-  const { data: rawRecords = [], isLoading } = useQuery({
+  const { data: rawRecords, isLoading, isError: listIsError, error: listError, refetch: refetchList } = useQuery({
     queryKey: ['records', filters],
     queryFn: async () => {
       const params = {};
@@ -145,7 +144,7 @@ export default function MyRecords() {
     },
   });
 
-  const records = asRecordsList(rawRecords);
+  const records = listIsError ? [] : asRecordsList(rawRecords);
 
   // Submit Draft to SHO mutation
   const submitMutation = useMutation({
@@ -301,26 +300,28 @@ export default function MyRecords() {
       SENT_BACK_HC: 'bg-[var(--danger)]',
       COMPILED: 'bg-[var(--success)]',
     };
+    const badgeClass = badges[status] || 'bg-slate-100 text-slate-600 border-slate-200/80';
+    const dotClass = dotColors[status] || 'bg-slate-400';
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm bg-slate-100 text-slate-600 border-slate-200/80">
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-sm ${badgeClass}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
         {t(`status.${status}`, status || 'Draft')}
       </span>
     );
   };
 
   const workflowQuickTabs = isUserSHO ? [
-    { key: 'ALL', label: t('status.ALL', 'All Station Records'), count: totalCount, icon: Layers, color: 'border-slate-400 text-white' },
-    { key: 'PENDING_SHO', label: t('status.PENDING_SHO', 'Pending SHO Review'), count: pendingShoCount, icon: Clock, color: 'border-amber-300 text-amber-100' },
-    { key: 'FORWARDED', label: t('status.FORWARDED', 'Forwarded to District'), count: forwardedCount, icon: ArrowUpRight, color: 'border-blue-400 text-blue-200' },
-    { key: 'RETURNED_DISTRICT', label: t('status.RETURNED_DISTRICT', 'Returned by District'), count: returnedByDistrictCount, icon: AlertCircle, color: 'border-rose-400 text-rose-200' },
-    { key: 'SENT_BACK_HC', label: t('status.SENT_BACK_HC', 'Sent Back to HC'), count: sentBackToHcCount, icon: RotateCcw, color: 'border-amber-400 text-amber-200' }
+    { key: 'ALL', label: t('status.ALL', 'All Station Records'), count: displayCount(totalCount) },
+    { key: 'PENDING_SHO', label: t('status.PENDING_SHO', 'Pending SHO Review'), count: displayCount(pendingShoCount) },
+    { key: 'FORWARDED', label: t('status.FORWARDED', 'Forwarded to District'), count: displayCount(forwardedCount) },
+    { key: 'RETURNED_DISTRICT', label: t('status.RETURNED_DISTRICT', 'Returned by District'), count: displayCount(returnedByDistrictCount) },
+    { key: 'SENT_BACK_HC', label: t('status.SENT_BACK_HC', 'Sent Back to HC'), count: displayCount(sentBackToHcCount) }
   ] : [
-    { key: 'ALL', label: t('status.ALL', 'All My Records'), count: totalCount, icon: Layers, color: 'border-slate-400 text-white' },
-    { key: 'DRAFT', label: t('status.DRAFT', 'Drafts'), count: draftCount, icon: FileEdit, color: 'border-sky-400 text-sky-200' },
-    { key: 'PENDING_SHO', label: t('status.PENDING_SHO', 'Submitted to SHO'), count: pendingShoCount, icon: Clock, color: 'border-amber-300 text-amber-100' },
-    { key: 'FORWARDED', label: t('status.FORWARDED', 'Forwarded to District'), count: forwardedCount, icon: ArrowUpRight, color: 'border-blue-400 text-blue-200' },
-    { key: 'SENT_BACK_HC', label: t('status.SENT_BACK_HC', 'Returned for Correction'), count: (sentBackToHcCount + returnedByDistrictCount), icon: RotateCcw, color: 'border-amber-400 text-amber-200' }
+    { key: 'ALL', label: t('status.ALL', 'All My Records'), count: displayCount(totalCount) },
+    { key: 'DRAFT', label: t('status.DRAFT', 'Drafts'), count: displayCount(draftCount) },
+    { key: 'PENDING_SHO', label: t('status.PENDING_SHO', 'Submitted to SHO'), count: displayCount(pendingShoCount) },
+    { key: 'FORWARDED', label: t('status.FORWARDED', 'Forwarded to District'), count: displayCount(forwardedCount) },
+    { key: 'SENT_BACK_HC', label: t('status.SENT_BACK_HC', 'Returned for Correction'), count: displayCount(sentBackCount) }
   ];
 
   return (
@@ -336,6 +337,15 @@ export default function MyRecords() {
             <p className="text-base text-white/80 font-medium m-0">
               {t('common.recordsSubtitle', 'Manage and submit your daily diary entries.')}
             </p>
+            {statsQuery.isError && (
+              <p className="text-sm text-red-100 font-semibold m-0">
+                {statsQuery.error?.response?.data?.message || statsQuery.error?.message || t('common.loadError', 'Could not load record counts.')}
+                {' '}
+                <button type="button" onClick={() => statsQuery.refetch()} className="underline cursor-pointer bg-transparent border-none text-white font-bold">
+                  {t('common.retry', 'Retry')}
+                </button>
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col items-end gap-3 md:flex-shrink-0 w-full md:w-auto">
@@ -344,17 +354,17 @@ export default function MyRecords() {
             </p>
             <div className="flex flex-wrap gap-3 justify-end w-full bg-transparent">
             {/* Sent Back Box */}
-            <div className="rounded-2xl bg-red-600/30 border border-red-400/50 backdrop-blur-md px-5 py-3 min-w-[110px] text-center transition-colors duration-200 hover:bg-white/20 shadow-sm">
-              <div className="text-3xl font-bold text-red-200 tabular-nums">{sentBackCount}</div>
-              <div className="text-xs text-red-100/90 mt-1 font-bold uppercase tracking-wider">
+            <div className="rounded-2xl bg-red-50 border border-red-200 px-5 py-3 min-w-[110px] text-center transition-colors duration-200 hover:bg-red-100 shadow-sm">
+              <div className="text-3xl font-bold text-red-800 tabular-nums">{displayCount(sentBackCount)}</div>
+              <div className="text-xs text-red-700 mt-1 font-bold uppercase tracking-wider">
                 {t('status.SENT_BACK_LABEL', 'Returned')}
               </div>
             </div>
 
             {/* Drafts Box */}
-            <div className="rounded-2xl bg-sky-500/20 border border-sky-400/40 backdrop-blur-md px-5 py-3 min-w-[110px] text-center transition-colors duration-200 hover:bg-white/20 shadow-sm">
-              <div className="text-3xl font-bold text-sky-300 tabular-nums">{draftCount}</div>
-              <div className="text-xs text-sky-100/90 mt-1 font-bold uppercase tracking-wider">
+            <div className="rounded-2xl bg-sky-50 border border-sky-200 px-5 py-3 min-w-[110px] text-center transition-colors duration-200 hover:bg-sky-100 shadow-sm">
+              <div className="text-3xl font-bold text-sky-800 tabular-nums">{displayCount(draftCount)}</div>
+              <div className="text-xs text-sky-700 mt-1 font-bold uppercase tracking-wider">
                 {t('status.DRAFT', 'Draft')}
               </div>
             </div>
@@ -364,26 +374,24 @@ export default function MyRecords() {
           {/* ── Interactive Lifecycle Stat Cards ── */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
             {workflowQuickTabs.map(tab => {
-              const Icon = tab.icon;
               const isActive = filters.status === tab.key;
               return (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => setFilters(prev => ({ ...prev, status: tab.key }))}
-                  className={`rounded-2xl p-3.5 text-left transition-all duration-200 cursor-pointer backdrop-blur-md border flex flex-col justify-between gap-2 shadow-sm hover:scale-[1.03] ${
+                  className={`rounded-2xl p-3.5 text-left transition-colors duration-200 cursor-pointer border flex flex-col justify-between gap-2 shadow-sm ${
                     isActive 
-                      ? 'bg-white/25 border-white shadow-lg ring-2 ring-white/60' 
-                      : 'bg-white/10 border-white/20 hover:bg-white/15'
+                      ? 'bg-white border-slate-300 shadow-md' 
+                      : 'bg-slate-100 border-slate-200 hover:bg-slate-200'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-white/90">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                       {tab.label}
                     </span>
-                    <Icon size={16} className={tab.color} />
                   </div>
-                  <div className="text-2xl sm:text-3xl font-bold text-white tabular-nums">
+                  <div className="text-2xl sm:text-3xl font-bold text-slate-900 tabular-nums">
                     {tab.count}
                   </div>
                 </button>
@@ -398,7 +406,7 @@ export default function MyRecords() {
         variants={pageVariants}
         initial="hidden"
         animate="show"
-        className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 pb-8 -mt-6 space-y-5"
+        className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 pt-6 pb-8 space-y-5"
       >
 
         {/* Unified Filter Strip */}
@@ -488,7 +496,21 @@ export default function MyRecords() {
 
         {/* Records Listing */}
         <div ref={tableRef} style={{ scrollMarginTop: '24px' }}>
-          {isLoading ? (
+          {listIsError ? (
+            <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl shadow-md border border-[var(--border-color)] text-[var(--text-muted)]">
+              <AlertCircle size={32} className="text-[var(--danger)] mb-4" />
+              <p className="text-sm font-semibold tracking-wide text-[var(--text-primary)]">
+                {listError?.response?.data?.message || listError?.message || t('common.loadError', 'Could not load records.')}
+              </p>
+              <button
+                type="button"
+                onClick={() => refetchList()}
+                className="mt-4 px-4 py-2 bg-[var(--accent-color)] text-white text-sm font-bold rounded-xl shadow hover:bg-[var(--accent-color-hover)] transition-colors cursor-pointer"
+              >
+                {t('common.retry', 'Retry')}
+              </button>
+            </div>
+          ) : isLoading ? (
             <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl shadow-md border border-[var(--border-color)] text-[var(--text-muted)]">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent-color)] mb-4"></div>
               <p className="text-sm font-semibold tracking-wide text-[var(--text-muted)]">
@@ -500,9 +522,6 @@ export default function MyRecords() {
               variants={itemVariants}
               className="bg-white rounded-3xl border border-dashed border-[var(--border-color)] p-16 text-center shadow-md"
             >
-              <div className="mx-auto w-16 h-16 rounded-2xl bg-[var(--accent-glow)] flex items-center justify-center mb-4 shadow-inner">
-                <FileText size={32} className="text-[var(--accent-color)]" />
-              </div>
               <p className="text-lg font-bold text-[var(--text-primary)]">
                 {t('common.noRecords', 'No Daily Log Entries Found')}
               </p>
@@ -618,7 +637,7 @@ export default function MyRecords() {
                           </td>
                           <td className="p-4">
                             <div className="flex flex-col gap-1.5 items-start">
-                              {renderStatusBadge(rec)}
+                              {renderStatusBadge(getRecordStatus(rec))}
                               {(rec.case_status === 'TRANSFER' || rec.data?.case_status === 'TRANSFER') && (
                                 <>
                                   {/* Transfer to PS */}

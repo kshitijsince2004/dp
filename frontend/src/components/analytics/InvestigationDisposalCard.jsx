@@ -1,5 +1,4 @@
 import React from 'react';
-import { Scale, Clock, CheckCircle2, XCircle, FileSpreadsheet, UserCheck } from 'lucide-react';
 
 export default function InvestigationDisposalCard({ data = {}, isLoading = false }) {
   if (isLoading) {
@@ -29,8 +28,7 @@ export default function InvestigationDisposalCard({ data = {}, isLoading = false
       <div>
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
           <div>
-            <h3 className="text-sm font-bold text-[#0A1628] flex items-center gap-2">
-              <Scale className="w-4 h-4 text-blue-600" />
+            <h3 className="text-sm font-bold text-[#0A1628]">
               Investigation & Court Disposal Pipeline
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">Court filing status, charge-sheeting rate & IO productivity</p>
@@ -44,29 +42,25 @@ export default function InvestigationDisposalCard({ data = {}, isLoading = false
         {/* Status Funnel Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <div className="p-3 bg-amber-50/70 border border-amber-100 rounded-xl text-center">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-amber-700">
-              <Clock className="w-3.5 h-3.5" />
+            <div className="text-[11px] font-bold text-amber-700">
               <span>Pending</span>
             </div>
             <div className="text-base font-black text-amber-900 mt-1 tabular-nums">{pending}</div>
           </div>
           <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl text-center">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-emerald-700">
-              <CheckCircle2 className="w-3.5 h-3.5" />
+            <div className="text-[11px] font-bold text-emerald-700">
               <span>Charge Sheet</span>
             </div>
             <div className="text-base font-black text-emerald-900 mt-1 tabular-nums">{chargeSheet}</div>
           </div>
           <div className="p-3 bg-purple-50/70 border border-purple-100 rounded-xl text-center">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-purple-700">
-              <FileSpreadsheet className="w-3.5 h-3.5" />
+            <div className="text-[11px] font-bold text-purple-700">
               <span>Untraced</span>
             </div>
             <div className="text-base font-black text-purple-900 mt-1 tabular-nums">{untraced}</div>
           </div>
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-600">
-              <XCircle className="w-3.5 h-3.5" />
+            <div className="text-[11px] font-bold text-slate-600">
               <span>Cancelled</span>
             </div>
             <div className="text-base font-black text-slate-800 mt-1 tabular-nums">{cancelled}</div>
@@ -85,8 +79,7 @@ export default function InvestigationDisposalCard({ data = {}, isLoading = false
             )}
             {topIos.map((io) => (
               <div key={io.name} className="flex items-center justify-between p-2 rounded-lg bg-slate-50/80 border border-slate-100 text-xs">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="w-3.5 h-3.5 text-slate-500" />
+                <div>
                   <span className="font-semibold text-slate-800">{io.name}</span>
                 </div>
                 <div className="flex items-center gap-3">

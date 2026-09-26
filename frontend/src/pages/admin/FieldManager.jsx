@@ -360,8 +360,7 @@ export default function FieldManager() {
 
               {/* Modal header */}
               <div className="flex justify-between items-center bg-zinc-950/80 border-b border-zinc-800 px-5 py-3.5">
-                <h3 className="text-sm font-bold text-zinc-200 flex items-center gap-2">
-                  <Plus size={14} className="text-[var(--accent-gold)]" />
+                <h3 className="text-sm font-bold text-zinc-200">
                   {editTarget ? 'Edit Field' : 'Add Global Field'}
                 </h3>
                 <button onClick={closeModal} className="text-zinc-500 hover:text-zinc-200 cursor-pointer">

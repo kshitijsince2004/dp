@@ -47,22 +47,38 @@ const useAuthStore = create(
         setLoading: (isLoading) => set({ isLoading }),
 
         login: (userData, jurisdictionData) => {
-          if (!userData) {
-            log.warn('authStore:login skipped — no userData');
+          const identity = userData?.id || userData?.sub;
+          if (!userData || !identity) {
+            log.warn('authStore:login skipped — missing user id', {
+              role: userData?.role ?? null,
+              level: userData?.level ?? null,
+            });
             return;
           }
 
+          const nextUser = normalizeUser(userData);
+          const nextJurisdiction = jurisdictionData || null;
+          const current = get();
+          const sameUser = current.user
+            && current.user.id === nextUser.id
+            && current.user.role === nextUser.role
+            && current.isAuthenticated;
+          const sameJurisdiction = JSON.stringify(current.jurisdiction || null) === JSON.stringify(nextJurisdiction);
+          if (sameUser && sameJurisdiction) return;
+
           // REDACT: log identifiers only, never the raw userData/jurisdiction payload.
-          log.info('authStore:login', { userId: userData.id ?? userData.sub, role: userData.role });
+          log.info('authStore:login', { userId: nextUser.id, role: nextUser.role });
           set({
-            user: normalizeUser(userData),
-            jurisdiction: jurisdictionData || null,
+            user: nextUser,
+            jurisdiction: nextJurisdiction,
             isAuthenticated: true
           });
         },
 
         logout: () => {
-          log.info('authStore:logout', { userId: get().user?.id, role: get().user?.role });
+          const current = get();
+          if (!current.isAuthenticated && !current.user) return;
+          log.info('authStore:logout', { userId: current.user?.id, role: current.user?.role });
           // SuperTokens Session.signOut() (called from useAuth) clears its own session tokens.
           // Also clear any leftover legacy localStorage bearer tokens.
           try {

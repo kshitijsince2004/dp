@@ -5,10 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
   AreaChart, Area
 } from 'recharts';
-import {
-  Building, PhoneCall, FileCheck, ArrowRight, ShieldAlert,
-  Award, Filter, Calendar, MapPin, ChevronRight, TrendingUp, AlertTriangle, X, UserX
-} from 'lucide-react';
+import { ArrowRight, X } from 'lucide-react';
 import api from '../../utils/api.js';
 import { asNodesList, asRecordsList } from '../../utils/dataShape.js';
 import useAuthStore from '../../store/authStore.js';
@@ -306,11 +303,11 @@ export default function DistrictAnalyticsDashboard() {
   };
 
   const metricTabs = [
-    { key: 'total', label: 'All Incidents', icon: ShieldAlert },
-    { key: 'cases', label: 'FIR Cases', icon: Building },
-    { key: 'pcr', label: 'PCR Calls', icon: PhoneCall },
-    { key: 'arrests', label: 'Arrests', icon: FileCheck },
-    { key: 'missing', label: 'Missing Persons', icon: UserX },
+    { key: 'total', label: 'All Incidents' },
+    { key: 'cases', label: 'FIR Cases' },
+    { key: 'pcr', label: 'PCR Calls' },
+    { key: 'arrests', label: 'Arrests' },
+    { key: 'missing', label: 'Missing Persons' },
   ];
   const METRIC_TAB_ACTIVE_CLASS = 'bg-[var(--accent-color)] border-[var(--accent-color)] text-white';
 
@@ -357,7 +354,7 @@ export default function DistrictAnalyticsDashboard() {
             </div>
 
             {/* Calendar toggle control */}
-            <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-1 backdrop-blur-md self-start lg:self-auto">
+            <div className="flex items-center gap-1 rounded-xl bg-slate-900 border border-slate-700 p-1 self-start lg:self-auto">
               {['Daily', 'Weekly', 'Monthly', 'Yearly'].map((item) => (
                 <button
                   key={item}
@@ -365,7 +362,7 @@ export default function DistrictAnalyticsDashboard() {
                   className={`rounded-lg px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-200 ${
                     timeframe === item
                       ? 'bg-white text-[#0d2a4a] shadow-md font-bold'
-                      : 'text-white/80 hover:bg-white/10 hover:text-white'
+                      : 'text-white/80 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
                   {item}
@@ -383,9 +380,8 @@ export default function DistrictAnalyticsDashboard() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           
           <div className="rounded-card border border-slate-200 bg-white p-4">
-            <div className="flex items-center justify-between">
+            <div>
               <span className="text-xs font-semibold text-slate-500">Total Aggregated Incidents</span>
-              <ShieldAlert size={18} className="text-[#0f52ba] shrink-0" />
             </div>
             <div className="mt-4">
               <div className="text-3xl font-bold text-slate-900 tabular-nums">{summaryKpis.total}</div>
@@ -394,9 +390,8 @@ export default function DistrictAnalyticsDashboard() {
           </div>
 
           <div className="rounded-card border border-slate-200 bg-white p-4">
-            <div className="flex items-center justify-between">
+            <div>
               <span className="text-xs font-semibold text-slate-500">Highest Volume District</span>
-              <AlertTriangle size={18} className="text-red-600 shrink-0" />
             </div>
             <div className="mt-4">
               <div 
@@ -412,9 +407,8 @@ export default function DistrictAnalyticsDashboard() {
           </div>
 
           <div className="rounded-card border border-slate-200 bg-white p-4">
-            <div className="flex items-center justify-between">
+            <div>
               <span className="text-xs font-semibold text-slate-500">Lowest Volume District</span>
-              <Award size={18} className="text-emerald-600 shrink-0" />
             </div>
             <div className="mt-4">
               <div 
@@ -430,9 +424,8 @@ export default function DistrictAnalyticsDashboard() {
           </div>
 
           <div className="rounded-card border border-slate-200 bg-white p-4">
-            <div className="flex items-center justify-between">
+            <div>
               <span className="text-xs font-semibold text-slate-500">District Average</span>
-              <TrendingUp size={18} className="text-[#0f52ba] shrink-0" />
             </div>
             <div className="mt-4">
               <div className="text-3xl font-bold text-slate-900 tabular-nums">{summaryKpis.avg}</div>
@@ -445,19 +438,17 @@ export default function DistrictAnalyticsDashboard() {
         {/* ── Category Filter Tabs ── */}
         <div className="mt-5 flex flex-wrap gap-2 border-b border-slate-200 pb-4">
           {metricTabs.map((tab) => {
-            const TabIcon = tab.icon;
             const isActive = activeMetric === tab.key;
             return (
               <button
                 key={tab.key}
                 onClick={() => { log.debug('action:metric_tab_change', { metric: tab.key }); setActiveMetric(tab.key); }}
-                className={`flex items-center gap-2 rounded-control border px-5 py-2.5 text-xs font-bold tracking-wide transition-colors duration-200 ${
+                className={`rounded-control border px-5 py-2.5 text-xs font-bold tracking-wide transition-colors duration-200 ${
                   isActive
                     ? METRIC_TAB_ACTIVE_CLASS
                     : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                <TabIcon size={14} className={isActive ? 'text-white' : 'text-slate-500'} />
                 {tab.label}
               </button>
             );
@@ -589,9 +580,6 @@ export default function DistrictAnalyticsDashboard() {
         {/* ── Sub-dashboard navigation trigger card ── */}
         <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="rounded-xl bg-blue-50 p-3 text-[#0f52ba] mt-0.5">
-              <MapPin size={20} />
-            </div>
             <div>
               <h4 className="text-sm font-bold text-slate-900">Looking for station performance tables?</h4>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -616,8 +604,7 @@ export default function DistrictAnalyticsDashboard() {
           >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/20 pb-6">
               <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-100 border border-white/20">
-                  <TrendingUp size={10} />
+                <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-100 border border-white/20">
                   Operational Trend
                 </span>
                 <h3 className="text-2xl font-bold tracking-tight mt-2 text-white flex items-center gap-2">

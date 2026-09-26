@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Send, Calendar, CheckCircle, Database, AlertTriangle, FileText, Shield, Phone, UserX, Fingerprint, ChevronDown, Clock, ChevronRight, Layers } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, AlertTriangle, ChevronDown, Clock, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import { asArray, asNodesList } from '../../utils/dataShape.js';
@@ -96,7 +96,6 @@ const DIARIES = [
     key: 'COMBINED_DAILY_DIARY',
     label: 'Combine Daily Diary',
     description: 'Consolidated logs compiled over a date range — 20 report sheets',
-    icon: Layers,
     status: 'active',
     levels: ['PS', 'DISTRICT', 'HQ'],
     reports: REPORTS,
@@ -105,7 +104,6 @@ const DIARIES = [
     key: 'DISTRICT_DIARY',
     label: 'District Diary',
     description: 'District-level consolidated diary — 18 jurisdiction-scoped sheets',
-    icon: Layers,
     status: 'active',
     levels: ['HQ', 'DISTRICT'],
     reports: DISTRICT_REPORTS,
@@ -114,7 +112,6 @@ const DIARIES = [
     key: 'PHQ_DIARY',
     label: 'PHQ Diary',
     description: 'Police Headquarters consolidated diary — 9 city-level comparative sheets',
-    icon: Shield,
     status: 'active',
     levels: ['HQ', 'DISTRICT', 'PS'],
     reports: PHQ_REPORTS,
@@ -123,7 +120,6 @@ const DIARIES = [
     key: 'FN_DIARY',
     label: 'Fortnightly Crime Diary',
     description: 'District-level fortnightly statistical digest — 15 sheets (select the FN End Date)',
-    icon: Calendar,
     status: 'active',
     levels: ['HQ', 'DISTRICT', 'PS'],
     reports: FN_REPORTS,
@@ -481,8 +477,6 @@ export default function CompilationUI() {
       // non-fatal
     }
 
-    const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
-
     // 2. Queue the export job
     let jobId;
     try {
@@ -674,8 +668,7 @@ export default function CompilationUI() {
           <ArrowLeft size={16} />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2 font-display">
-            <BookOpen className="text-[var(--accent-color)]" size={20} />
+          <h1 className="text-xl font-bold text-slate-800 font-display">
             <span>{workspaceTitle}</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1 font-semibold">
@@ -687,8 +680,7 @@ export default function CompilationUI() {
       {/* Step 1: Diary selector */}
       <div className="border border-slate-200 bg-white rounded-card p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5 font-display">
-            <Layers size={14} className="text-[var(--accent-color)]" />
+          <h3 className="text-sm font-bold text-slate-700 font-display">
             <span>Step 1: Select Diary</span>
           </h3>
           {selectedDiary && (
@@ -704,7 +696,6 @@ export default function CompilationUI() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {availableDiaries.map((diary) => {
-            const Icon = diary.icon;
             const isSelected = selectedDiary?.key === diary.key;
             const isDisabled = diary.status !== 'active';
             return (
@@ -721,8 +712,7 @@ export default function CompilationUI() {
                       : 'border-slate-200 bg-white hover:border-[var(--accent-color)] cursor-pointer'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <Icon size={18} className={isSelected ? 'text-[var(--accent-color)]' : 'text-slate-500'} />
+                <div className="flex items-center justify-end">
                   {isDisabled ? (
                     <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300 text-slate-500 bg-white">
                       <Clock size={9} />
@@ -758,15 +748,13 @@ export default function CompilationUI() {
 
       {!selectedDiary ? (
         <div className="border border-dashed border-slate-300 rounded-xl p-8 text-center text-slate-500 space-y-2">
-          <FileText size={28} className="mx-auto text-slate-300" />
           <p className="text-sm font-semibold text-slate-500">Select a diary above to choose its reports.</p>
         </div>
       ) : (
       <>
       {/* Step 2: Date range + Police Station + Report selection */}
       <div className="border border-slate-200 bg-white rounded-xl p-5 shadow-sm space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 font-display">
-          <Calendar size={14} className="text-[var(--accent-color)]" />
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 font-display">
           <span>Step 2 — {selectedDiary.key === 'PHQ_DIARY' && userLevel === 'PS' ? 'PS Comparative Report' : selectedDiary.key === 'FN_DIARY' && userLevel === 'PS' ? 'PS Fortnightly Diary' : selectedDiary.label}: {selectedDiary.key === 'FN_DIARY' ? 'Select FN End Date, Scope & Sheets' : selectedDiary.key === 'PHQ_DIARY' ? 'Select Scope & Sheets' : 'Select Reports & Date Range'}</span>
         </h3>
 
@@ -786,8 +774,7 @@ export default function CompilationUI() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-slate-100 pb-4">
               {/* Date Selector */}
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                  <Calendar size={10} className="text-slate-400" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                   <span>{selectedDiary.key === 'FN_DIARY' ? 'FN End Date' : 'As-Of Date'}</span>
                 </span>
                 <DateInput
@@ -799,8 +786,7 @@ export default function CompilationUI() {
 
               {/* Level Selector */}
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                  <Layers size={10} className="text-slate-400" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                   <span>Report Level</span>
                 </span>
                 <select
@@ -818,8 +804,7 @@ export default function CompilationUI() {
 
               {/* Specific Node Selector */}
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                  <Shield size={10} className="text-slate-400" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                   <span>Jurisdiction / District</span>
                 </span>
                 <select
@@ -925,7 +910,6 @@ export default function CompilationUI() {
                   </>
                 ) : (
                   <>
-                    <Database size={14} />
                     <span>Compile & Export Report</span>
                   </>
                 )}
@@ -936,8 +920,7 @@ export default function CompilationUI() {
           /* Old/Standard Reports Selector UI */
           <div className="flex flex-col sm:flex-row gap-3 items-end relative">
             <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                <Calendar size={10} className="text-slate-400" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                 <span>From Date</span>
               </span>
               <DateInput
@@ -953,8 +936,7 @@ export default function CompilationUI() {
             </div>
 
             <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                <Calendar size={10} className="text-slate-400" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                 <span>To Date</span>
               </span>
               <DateInput
@@ -971,12 +953,10 @@ export default function CompilationUI() {
 
             {userLevel === 'PS' ? (
               <div className="relative flex-1 min-w-[200px] w-full flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                  <Shield size={10} className="text-slate-400" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                   <span>Police Station</span>
                 </span>
                 <div className="w-full flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 px-3 py-2.5 font-semibold">
-                  <Shield size={14} className="text-[var(--accent-color)] shrink-0" />
                   <span className="truncate">
                     {psLoading ? 'Loading station...' : (myStation?.name || 'Your Station')}
                   </span>
@@ -984,8 +964,7 @@ export default function CompilationUI() {
               </div>
             ) : (
               <div ref={psDropRef} className="relative flex-1 min-w-[200px] w-full flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                  <Shield size={10} className="text-slate-400" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                   <span>Police Station</span>
                 </span>
                 <button
@@ -994,7 +973,6 @@ export default function CompilationUI() {
                   className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer font-semibold"
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
-                    <Shield size={14} className="text-[var(--accent-color)] shrink-0" />
                     <span className="truncate text-left">
                       {psLoading 
                         ? 'Loading stations...' 
@@ -1077,8 +1055,7 @@ export default function CompilationUI() {
             )}
 
             <div ref={reportsDropRef} className="relative flex-1 min-w-[200px] w-full flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                <FileText size={10} className="text-slate-400" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                 <span>Select Reports</span>
               </span>
               <button
@@ -1087,7 +1064,6 @@ export default function CompilationUI() {
                 className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-2.5 outline-none focus:border-[var(--accent-color)] transition-all cursor-pointer font-semibold"
               >
                 <div className="flex items-center gap-2 overflow-hidden">
-                  <FileText size={14} className="text-[var(--accent-color)] shrink-0" />
                   <span className="truncate text-left">
                     {selectedFields.size === diaryReports.length
                       ? `All Reports (${diaryReports.length}/${diaryReports.length})`
@@ -1182,7 +1158,6 @@ export default function CompilationUI() {
                   </>
                 ) : (
                   <>
-                    <Database size={14} />
                     <span>Compile Logs</span>
                   </>
                 )}
@@ -1196,8 +1171,7 @@ export default function CompilationUI() {
 
         {/* Compiled Records List */}
         <div className="space-y-4">
-          <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5 font-display">
-            <Database size={14} className="text-[var(--accent-color)]" />
+          <h3 className="text-sm font-bold text-slate-700 font-display">
             <span>Compiled {userLevel === 'HQ' ? 'HQ' : userLevel === 'DISTRICT' ? 'District' : 'Station'} Archives</span>
           </h3>
 
@@ -1213,7 +1187,6 @@ export default function CompilationUI() {
           </div>
         ) : compilations.length === 0 ? (
           <div className="border border-zinc-800 p-8 text-center text-zinc-500 rounded-xl space-y-2">
-            <Database size={32} className="mx-auto text-zinc-700" />
             <p className="font-semibold text-zinc-400">No compilations created yet.</p>
             <p className="text-xs">Select a date above and click <strong className="text-amber-400">Compile Station Logs</strong> to initialize your first compilation.</p>
           </div>
@@ -1241,24 +1214,19 @@ export default function CompilationUI() {
 
                   {comp.compiled_summary ? (
                     <div className="flex gap-4 text-zinc-400 text-xs sm:text-sm font-semibold flex-wrap pt-1">
-                      <span className="flex items-center gap-1.5">
-                        <FileText size={14} className="text-amber-500" />
+                      <span>
                         Cases: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'firs')}</strong>
                       </span>
-                      <span className="flex items-center gap-1.5">
-                        <Shield size={14} className="text-emerald-500" />
+                      <span>
                         Arrests: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'arrests')}</strong>
                       </span>
-                      <span className="flex items-center gap-1.5">
-                        <Phone size={14} className="text-blue-400" />
+                      <span>
                         PCR Calls: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'pcrCalls')}</strong>
                       </span>
-                      <span className="flex items-center gap-1.5">
-                        <UserX size={14} className="text-[var(--primary)]" />
+                      <span>
                         Missing: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'missing')}</strong>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Fingerprint size={11} className="text-rose-400" />
+                      <span>
                         UIDB: <strong className="text-zinc-200 ml-1">{getSummaryVal(comp, 'uidb')}</strong>
                       </span>
                       <span className="text-zinc-500 ml-2">

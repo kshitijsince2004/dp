@@ -52,8 +52,7 @@ export default function ReportModal({ isOpen, onClose, title, data, type }) {
         style={{ overscrollBehavior: "contain" }}
       >
         <div className="modal-header">
-          <h2 id="report-modal-title" className="flex items-center gap-2 font-display text-slate-800">
-            <ShieldCheck size={20} className="badge-icon text-amber-500" aria-hidden="true" />
+          <h2 id="report-modal-title" className="font-display text-slate-800">
             <span translate="no">Auto-Generated Official Docket</span>
           </h2>
           <button 

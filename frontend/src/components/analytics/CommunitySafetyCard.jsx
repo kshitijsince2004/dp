@@ -1,5 +1,4 @@
 import React from 'react';
-import { PhoneCall, UserCheck, HeartHandshake, ShieldCheck, Activity, Search } from 'lucide-react';
 
 export default function CommunitySafetyCard({ data = {}, isLoading = false }) {
   if (isLoading) {
@@ -24,8 +23,7 @@ export default function CommunitySafetyCard({ data = {}, isLoading = false }) {
       <div>
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
           <div>
-            <h3 className="text-sm font-bold text-[#0A1628] flex items-center gap-2">
-              <HeartHandshake className="w-4 h-4 text-rose-600" />
+            <h3 className="text-sm font-bold text-[#0A1628]">
               Citizen Safety & Emergency Response
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">PCR emergency response, Missing Persons tracing & UIDB identification</p>
@@ -38,8 +36,7 @@ export default function CommunitySafetyCard({ data = {}, isLoading = false }) {
           <div className="p-3.5 bg-amber-50/50 border border-amber-100 rounded-xl flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800">
-                  <PhoneCall className="w-3.5 h-3.5 text-amber-600" />
+                <div className="text-xs font-bold text-amber-800">
                   <span>PCR Calls</span>
                 </div>
                 <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-full">
@@ -67,8 +64,7 @@ export default function CommunitySafetyCard({ data = {}, isLoading = false }) {
           <div className="p-3.5 bg-sky-50/50 border border-sky-100 rounded-xl flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-sky-800">
-                  <Search className="w-3.5 h-3.5 text-sky-600" />
+                <div className="text-xs font-bold text-sky-800">
                   <span>Missing Persons</span>
                 </div>
                 <span className="text-[10px] font-extrabold text-sky-700 bg-sky-100/70 px-2 py-0.5 rounded-full">
@@ -92,8 +88,7 @@ export default function CommunitySafetyCard({ data = {}, isLoading = false }) {
           <div className="p-3.5 bg-teal-50/50 border border-teal-100 rounded-xl flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-teal-800">
-                  <Activity className="w-3.5 h-3.5 text-teal-600" />
+                <div className="text-xs font-bold text-teal-800">
                   <span>UIDB Inquests</span>
                 </div>
                 <span className="text-[10px] font-extrabold text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded-full">

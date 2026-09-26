@@ -5,10 +5,7 @@ import {
   CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
-import {
-  Calendar, FileText, Shield, Phone, Search,
-  Radio, UserX,
-} from 'lucide-react';
+import { Radio } from 'lucide-react';
 import api from '../../utils/api.js';
 import useAuthStore from '../../store/authStore.js';
 import StatCard from '../../components/ui/StatCard.jsx';
@@ -260,11 +257,11 @@ export default function AnalyticsDashboard() {
   });
 
   const kpiCards = [
-    { label: 'Cases (FIR)',     value: summary.CASE ?? summary.CASES ?? 0,   icon: FileText, color: 'text-amber-500',   sub: 'Submitted & above' },
-    { label: 'Arrests',         value: summary.ARREST ?? summary.ARRESTS ?? 0,  icon: Shield,   color: 'text-emerald-500', sub: 'In workflow' },
-    { label: 'PCR Calls',       value: summary.PCR_CALL ?? summary.PCR ?? summary.PCR_CALLS ?? 0, icon: Phone, color: 'text-blue-500', sub: 'In workflow' },
-    { label: 'Missing Persons', value: summary.MISSING ?? 0, icon: Search,   color: 'text-blue-500',  sub: 'In workflow' },
-    { label: 'Left Out Accused', value: summary.left_out_accused ?? summary.LEFT_OUT ?? 0, icon: UserX, color: 'text-amber-500', sub: 'Pending Arrest' },
+    { label: 'Cases (FIR)',     value: summary.CASE ?? summary.CASES ?? 0,   sub: 'Submitted & above' },
+    { label: 'Arrests',         value: summary.ARREST ?? summary.ARRESTS ?? 0,  sub: 'In workflow' },
+    { label: 'PCR Calls',       value: summary.PCR_CALL ?? summary.PCR ?? summary.PCR_CALLS ?? 0, sub: 'In workflow' },
+    { label: 'Missing Persons', value: summary.MISSING ?? 0, sub: 'In workflow' },
+    { label: 'Left Out Accused', value: summary.left_out_accused ?? summary.LEFT_OUT ?? 0, sub: 'Pending Arrest' },
   ];
 
   // ── Shared panel section label ─────────────────────────────────────────────
@@ -311,10 +308,7 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Period toggle */}
-            <div className="flex flex-shrink-0 items-center gap-1.5 self-start rounded-2xl border border-white/20 bg-white/10 p-1.5 backdrop-blur-sm lg:self-end">
-              <div className="flex items-center pl-2 pr-1">
-                <Calendar size={13} className="text-white/50" />
-              </div>
+            <div className="flex flex-shrink-0 items-center gap-1.5 self-start rounded-2xl border border-slate-700 bg-slate-900 p-1.5 lg:self-end">
               {['daily', 'weekly', 'monthly', 'yearly'].map((p) => (
                 <button
                   key={p}
@@ -322,7 +316,7 @@ export default function AnalyticsDashboard() {
                   className={`rounded-xl px-4 py-1.5 text-xs font-semibold capitalize cursor-pointer transition-all duration-150 ${
                     period === p
                       ? 'bg-white text-[var(--text-accent)] shadow-sm'
-                      : 'text-white/60 hover:text-white hover:bg-white/10'
+                      : 'text-white/60 hover:text-white hover:bg-slate-800'
                   }`}
                 >
                   {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -355,8 +349,6 @@ export default function AnalyticsDashboard() {
                   key={card.label}
                   label={card.label}
                   value={card.value ?? '—'}
-                  icon={card.icon}
-                  iconColor={card.color}
                   subtext={card.sub}
                 />
               ))}

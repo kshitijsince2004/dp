@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bookmark, Trash2, Save, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Trash2, Save, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFilterPresets } from '../../hooks/useFilterPresets.js';
 import { formatDMY } from '../../utils/dateFormat.js';
@@ -93,7 +93,7 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
   const hasActiveFilter = Object.values(currentFilters).some(Boolean);
 
   return (
-    <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)]/60 backdrop-blur-md rounded-2xl overflow-hidden text-xs shadow-sm">
+    <div className="border border-[var(--border-card-theme)] bg-[var(--bg-page-main)] rounded-2xl overflow-hidden text-xs shadow-sm">
       {/* Toggle Header */}
       <button
         type="button"
@@ -101,7 +101,6 @@ export default function FilterPresetsPanel({ currentFilters = {}, onLoadPreset }
         className="w-full flex items-center justify-between px-4 py-3 text-[var(--text-main-theme)]/80 hover:text-[var(--accent-color)] hover:bg-[var(--bg-page-main)]/80 transition-colors cursor-pointer border-none bg-transparent font-bold"
       >
         <span className="flex items-center gap-2 font-semibold">
-          <Bookmark size={13} className="text-[var(--accent-color)]" />
           {t('filters.savedPresets', 'Saved Filter Presets')}
           {presets.length > 0 && (
             <span className="bg-[var(--accent-color)] text-white text-[9px] font-bold px-2 py-0.5 rounded-full tabular-numbers shadow-sm">

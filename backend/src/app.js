@@ -194,11 +194,16 @@ app.use('/api/record-links',    recordLinksRouter);
 
 
 // Health check
+const healthBody = () => ({
+  success: true,
+  message: 'PHAROS Backend Operational API online',
+  eventBus: eventBus.getEventBusMode(),
+});
 app.get('/api/v1/health', (req, res) => {
-  return res.status(200).json({ success: true, message: 'PHAROS Backend Operational API online' });
+  return res.status(200).json(healthBody());
 });
 app.get('/api/health', (req, res) => {
-  return res.status(200).json({ success: true, message: 'PHAROS Backend Operational API online' });
+  return res.status(200).json(healthBody());
 });
 
 // 404 Route Not Found handler

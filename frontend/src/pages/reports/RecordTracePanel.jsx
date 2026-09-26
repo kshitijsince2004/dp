@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, ArrowRight, CornerDownRight } from 'lucide-react';
+import { ArrowRight, CornerDownRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api.js';
 import { asTraceData } from '../../utils/dataShape.js';
@@ -96,8 +96,7 @@ export default function RecordTracePanel() {
 
           {/* Contributions List */}
           <div>
-            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <CheckCircle2 size={15} className="text-emerald-600" />
+            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
               <span>Report Cell Contributions ({traceData.contributions.length} matched cells)</span>
             </h3>
 

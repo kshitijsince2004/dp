@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import FieldRenderer from './FieldRenderer.jsx';
+import FormAutosave from './FormAutosave.jsx';
 import SelectField from './SelectField.jsx';
 import ActsSectionsTable from './ActsSectionsTable.jsx';
 import { parseRules } from '../../utils/fieldValidation.js';
@@ -535,6 +536,7 @@ export default function FormSection({
   targetFields = [],
   lang = 'en',
   hideHeader = false,
+  saveStatus = 'idle',
   isFieldEditableForReview = () => true,
   // Repeater props (only used when section.is_repeater === true)
   entries,

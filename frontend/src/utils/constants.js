@@ -1,6 +1,8 @@
+import { getApiBaseUrl } from '../config/apiBase.js';
+
 export const APP_NAME = 'PRISM';
 export const APP_DESCRIPTION = 'Police Reporting, Intelligence & Statistics Management';
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const API_URL = getApiBaseUrl();
 
 export const ROLES = {
   USER: 'user',

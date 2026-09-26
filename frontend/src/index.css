@@ -1215,8 +1215,7 @@ a:focus-visible {
 .form-actions-toolbar {
   position: sticky;
   top: 0;
-  background-color: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
+  background-color: #ffffff;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 0.75rem 1.25rem;
@@ -2729,21 +2728,16 @@ textarea.form-control {
   --glow-blue: 0 0 20px rgba(15, 82, 186, 0.15);
 }
 
-/* Premium Card Overlay (Apple glass style) */
 .premium-glass-card {
-  background: rgba(255, 255, 255, 0.82) !important;
-  backdrop-filter: blur(20px) saturate(190%);
-  -webkit-backdrop-filter: blur(20px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.6) !important;
-  box-shadow: var(--shadow-warm) !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
   border-radius: var(--radius-lg) !important;
-  transition: transform 0.3s var(--ease-spring-smooth), box-shadow 0.3s var(--ease-spring-smooth), border-color 0.3s var(--ease-spring-smooth);
 }
 
 .premium-glass-card:hover {
-  transform: translateY(-4px);
   border-color: rgba(15, 82, 186, 0.2) !important;
-  box-shadow: 0 30px 60px -15px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 82, 186, 0.08) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
 }
 
 /* Subtle Watermark utility using public logo asset reference */
@@ -3049,16 +3043,10 @@ textarea.form-control {
   }
 }
 
-/* Home premium cards - Light theme glassmorphism */
 .home-card-premium {
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: #ffffff !important;
   border: 2px solid rgba(15, 82, 186, 0.15) !important;
-  box-shadow: 0 12px 30px -5px rgba(15, 23, 42, 0.08) !important;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
-              border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
-              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
   border-radius: 1.25rem !important;
   min-height: 160px;
   padding: 1.75rem 2rem !important;
@@ -3080,18 +3068,14 @@ textarea.form-control {
 }
 
 .home-card-premium:hover {
-  transform: translateY(-6px);
   border-color: rgba(204, 164, 59, 0.5) !important;
-  box-shadow: 0 24px 45px -10px rgba(15, 82, 186, 0.15), 
-              0 0 25px rgba(204, 164, 59, 0.2) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
 }
 
 /* Security compliance container - Light red alert */
 .security-notice-premium {
   border: 1px solid rgba(239, 68, 68, 0.2) !important;
-  background: linear-gradient(180deg, #fef2f2 0%, #fff5f5 100%) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: #fef2f2 !important;
   box-shadow: 0 10px 30px -10px rgba(239, 68, 68, 0.06);
   transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
 }
@@ -3125,9 +3109,7 @@ textarea.form-control {
 
 /* Public Layout Light Navbar & Footer Styles */
 .public-navbar-container {
-  background-color: rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background-color: #ffffff !important;
   border-bottom: 1px solid rgba(15, 82, 186, 0.08) !important;
   box-shadow: 0 2px 12px rgba(15, 82, 186, 0.03);
 }
@@ -3675,8 +3657,7 @@ input[type=number] {
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.85rem;
-  background-color: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
+  background-color: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 9999px;
   font-size: var(--text-label-m);
