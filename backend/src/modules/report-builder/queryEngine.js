@@ -351,7 +351,9 @@ function validateFilterNode(node, allAccessibleFields, errors, validatedFieldMap
  */
 export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole) {
   const { table, fields, filters, sort, page = 1, pageSize = 50 } = spec;
-  const limit = Math.min(parseInt(pageSize, 10) || 50, 500);
+  const MAX_EXPORT_ROWS = parseInt(process.env.REPORT_EXPORT_MAX_ROWS || '100000', 10);
+  const requested = parseInt(pageSize, 10) || 50;
+  const limit = spec.export ? Math.min(requested, MAX_EXPORT_ROWS) : Math.min(requested, 500);
   const offset = (Math.max(parseInt(page, 10) || 1, 1) - 1) * limit;
 
   const { ok, errors, validatedFieldMap } = validateQuerySpec(spec, userRole);
@@ -473,7 +475,7 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
       query = query.orderBy('records.created_at', 'desc');
     }
 
-    const rows = await query.limit(Math.max(limit * 5, 100));
+    const rows = await query.limit(spec.export ? Math.max(limit, 100) : Math.max(limit * 5, 100));
 
     const nonDbFilters = (filters?.conditions || []).filter(c => {
       const tableKey = c.table || table;
@@ -681,7 +683,9 @@ export async function executeSingleTableQuery(spec, jurisdictionQuery, userRole)
  */
 export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
   const { table, join, fields, filters, sort, page = 1, pageSize = 50 } = spec;
-  const limit = Math.min(parseInt(pageSize, 10) || 50, 500);
+  const MAX_EXPORT_ROWS = parseInt(process.env.REPORT_EXPORT_MAX_ROWS || '100000', 10);
+  const requested = parseInt(pageSize, 10) || 50;
+  const limit = spec.export ? Math.min(requested, MAX_EXPORT_ROWS) : Math.min(requested, 500);
   const offset = (Math.max(parseInt(page, 10) || 1, 1) - 1) * limit;
 
   const { ok, errors, validatedFieldMap, joinDef } = validateQuerySpec(spec, userRole);
@@ -829,9 +833,22 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
       }
     }
 
-    if (leftFilters.conditions.length > 0) {
+    // Push only is_db_col left filters to SQL (content fields must not reference L.data)
+    const leftDbFilters = {
+      logic: leftFilters.logic,
+      conditions: leftFilters.conditions.filter(c => {
+        const def = validatedFieldMap.get(`${(c.table || leftTable)}.${c.field}`);
+        return def && def.is_db_col;
+      }),
+    };
+    const leftContentFilters = leftFilters.conditions.filter(c => {
+      const def = validatedFieldMap.get(`${(c.table || leftTable)}.${c.field}`);
+      return !def || !def.is_db_col;
+    });
+
+    if (leftDbFilters.conditions.length > 0) {
       leftQ = leftQ.where(function () {
-        applyFilterSpec(this, leftFilters, leftTable, validatedFieldMap, 'L');
+        applyFilterSpec(this, leftDbFilters, leftTable, validatedFieldMap, 'L');
       });
     }
 
@@ -839,6 +856,19 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
 
     const leftReg  = await loadRegistry(db, leftTable);
     const rightReg = await loadRegistry(db, rightTable);
+
+    const passesInMemoryFilter = (rawData, conditions) => {
+      for (const cond of conditions) {
+        const val = rawData[cond.field];
+        const op = (cond.operator || 'EQ').toUpperCase();
+        if (op === 'EQ' && String(val || '') !== String(cond.value || '')) return false;
+        if (op === 'NOT_EQ' && String(val || '') === String(cond.value || '')) return false;
+        if (op === 'CONTAINS' && !String(val || '').toLowerCase().includes(String(cond.value || '').toLowerCase())) return false;
+        if (op === 'IS_NOT_EMPTY' && (val === null || val === undefined || val === '')) return false;
+        if (op === 'IS_EMPTY' && (val !== null && val !== undefined && val !== '')) return false;
+      }
+      return true;
+    };
 
     const rightMap = new Map();
     for (const rRow of rightRows) {
@@ -850,6 +880,10 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
           rData = recomposed?.data || {};
         }
       } catch (_) {}
+
+      if (rightFilters.conditions.length > 0 && !passesInMemoryFilter(rData, rightFilters.conditions)) {
+        continue;
+      }
 
       const keyVal = rData[rightField];
       if (keyVal) {
@@ -869,10 +903,16 @@ export async function executeJoinedQuery(spec, jurisdictionQuery, userRole) {
         }
       } catch (_) {}
 
+      if (leftContentFilters.length > 0 && !passesInMemoryFilter(lData, leftContentFilters)) {
+        continue;
+      }
+
       const keyVal = lData[leftField];
       const matching = keyVal ? (rightMap.get(keyVal) || []) : [];
 
       if (matching.length === 0) {
+        // If right filters were specified, skip left-only rows (no matching right)
+        if (rightFilters.conditions.length > 0) continue;
         joinedRows.push({ left: { ...lRow, L_data: lData }, right: null });
       } else {
         for (const rRow of matching) {
@@ -1154,16 +1194,16 @@ export async function executeMissingUidbCrossMatch(params, jurisdictionQuery) {
     return { rows: matches.slice(0, limit), total: matches.length };
 
   } else {
-    // FALLBACK: Query live operational JSONB records fuzzy search
+    // LIVE fallback: recompose from normalized detail/person tables (records.data is dead)
     let missingQ = db('records as M')
-      .select('M.id', 'M.record_date', 'M.ps_id', 'M.district_id', 'M.data',
+      .select('M.id', 'M.record_date', 'M.ps_id', 'M.district_id',
               'ps.name as ps_name', 'dist.name as district_name')
       .leftJoin('hierarchy_nodes as ps', 'M.ps_id', 'ps.id')
       .leftJoin('hierarchy_nodes as dist', 'M.district_id', 'dist.id')
       .where('M.record_type', 'MISSING');
 
     let uidbQ = db('records as U')
-      .select('U.id', 'U.record_date', 'U.ps_id', 'U.district_id', 'U.data',
+      .select('U.id', 'U.record_date', 'U.ps_id', 'U.district_id',
               'ps.name as ps_name', 'dist.name as district_name')
       .leftJoin('hierarchy_nodes as ps', 'U.ps_id', 'ps.id')
       .leftJoin('hierarchy_nodes as dist', 'U.district_id', 'dist.id')
@@ -1178,50 +1218,56 @@ export async function executeMissingUidbCrossMatch(params, jurisdictionQuery) {
       uidbQ    = uidbQ.where('U.district_id', jurisdictionQuery.district_id);
     }
 
-    if (gender) {
-      const pg = isPostgres();
-      const genderExprM = pg ? `M.data->>'gender'` : `json_extract(M.data, '$.gender')`;
-      const genderExprU = pg ? `U.data->>'gender'` : `json_extract(U.data, '$.gender')`;
-      missingQ = missingQ.whereRaw(`${genderExprM} = ?`, [gender]);
-      uidbQ    = uidbQ.whereRaw(`${genderExprU} = ?`, [gender]);
-    }
-
-    if (description_keywords && description_keywords.length > 0) {
-      const keywords = Array.isArray(description_keywords) ? description_keywords : [description_keywords];
-      const pg = isPostgres();
-      for (const kw of keywords.slice(0, 5)) {
-        const missingDescExpr = pg ? `M.data->>'physical_description'` : `json_extract(M.data, '$.physical_description')`;
-        const uidbDescExpr    = pg ? `U.data->>'description'` : `json_extract(U.data, '$.description')`;
-        missingQ = missingQ.whereRaw(`${missingDescExpr} LIKE ?`, [`%${kw}%`]);
-        uidbQ    = uidbQ.whereRaw(`${uidbDescExpr} LIKE ?`, [`%${kw}%`]);
-      }
-    }
-
     const [missingRows, uidbRows] = await Promise.all([missingQ, uidbQ]);
 
-    const missingParsed = missingRows.map(r => ({
-      ...r,
-      data: typeof r.data === 'string' ? JSON.parse(r.data || '{}') : (r.data || {})
-    }));
-    const uidbParsed = uidbRows.map(r => ({
-      ...r,
-      data: typeof r.data === 'string' ? JSON.parse(r.data || '{}') : (r.data || {})
-    }));
+    const missingReg = await loadRegistry(db, 'MISSING');
+    const uidbReg = await loadRegistry(db, 'UIDB');
+
+    const recomposeOne = async (row, registry, recordType) => {
+      let data = {};
+      try {
+        const full = await fetchRecordFull(db, row.id);
+        if (full) {
+          const recomposed = await recomposeRecord(db, registry, recordType, full);
+          data = recomposed?.data || {};
+        }
+      } catch (_) {}
+      return { ...row, data };
+    };
+
+    const missingParsed = await Promise.all(missingRows.map(r => recomposeOne(r, missingReg, 'MISSING')));
+    const uidbParsed = await Promise.all(uidbRows.map(r => recomposeOne(r, uidbReg, 'UIDB')));
+
+    const keywordList = description_keywords
+      ? (Array.isArray(description_keywords) ? description_keywords : [description_keywords]).slice(0, 5)
+      : [];
 
     const matches = [];
     for (const mp of missingParsed) {
+      if (gender && String(mp.data.gender || '').toLowerCase() !== String(gender).toLowerCase()) continue;
+      const mpDesc = String(mp.data.physical_description || mp.data.description || '');
+      if (keywordList.length > 0 && !keywordList.every(kw => mpDesc.toLowerCase().includes(String(kw).toLowerCase()))) {
+        continue;
+      }
+
       const mpAge = parseInt(mp.data.age, 10);
       const minAge = age_min !== undefined ? parseInt(age_min, 10) : (isNaN(mpAge) ? 0 : mpAge - 5);
       const maxAge = age_max !== undefined ? parseInt(age_max, 10) : (isNaN(mpAge) ? 999 : mpAge + 5);
 
       for (const ub of uidbParsed) {
-        const uidbAge = parseInt(ub.data.approx_age, 10);
+        if (gender && String(ub.data.gender || '').toLowerCase() !== String(gender).toLowerCase()) continue;
+        const ubDesc = String(ub.data.description || ub.data.physical_description || '');
+        if (keywordList.length > 0 && !keywordList.every(kw => ubDesc.toLowerCase().includes(String(kw).toLowerCase()))) {
+          continue;
+        }
+
+        const uidbAge = parseInt(ub.data.approx_age ?? ub.data.age, 10);
         if (!isNaN(uidbAge) && !isNaN(minAge) && !isNaN(maxAge)) {
           if (uidbAge < minAge || uidbAge > maxAge) continue;
         }
 
         let score = 0;
-        if (mp.data.gender && ub.data.gender && mp.data.gender.toLowerCase() === ub.data.gender.toLowerCase()) score += 3;
+        if (mp.data.gender && ub.data.gender && String(mp.data.gender).toLowerCase() === String(ub.data.gender).toLowerCase()) score += 3;
         if (!isNaN(mpAge) && !isNaN(uidbAge) && Math.abs(mpAge - uidbAge) <= 3) score += 2;
 
         matches.push({
@@ -1229,7 +1275,7 @@ export async function executeMissingUidbCrossMatch(params, jurisdictionQuery) {
           missing_record_date: mp.record_date,
           missing_ps_name: mp.ps_name,
           missing_district_name: mp.district_name,
-          missing_name: mp.data.missing_name || '',
+          missing_name: mp.data.missing_name || mp.data.name || '',
           missing_age: mp.data.age,
           missing_gender: mp.data.gender,
           missing_date: mp.data.missing_date,
@@ -1238,7 +1284,7 @@ export async function executeMissingUidbCrossMatch(params, jurisdictionQuery) {
           uidb_record_date: ub.record_date,
           uidb_ps_name: ub.ps_name,
           uidb_district_name: ub.district_name,
-          uidb_approx_age: ub.data.approx_age,
+          uidb_approx_age: ub.data.approx_age ?? ub.data.age,
           uidb_gender: ub.data.gender,
           uidb_found_date: ub.data.found_date,
           uidb_found_place: ub.data.found_place,

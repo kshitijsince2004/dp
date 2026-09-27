@@ -28,6 +28,7 @@ import {
 } from './queryEngine.js';
 import { runPivotReport } from '../warehouse/pivot-engine.js';
 import { resolveUserScope } from '../warehouse/warehouse.controller.js';
+import { env } from '../../config/env.js';
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -43,6 +44,15 @@ const parseJson = (val, fallback) => {
 const userId = (req) => req.user?.userId || req.user?.id || null;
 const userRole = (req) => req.user?.role || 'HC';
 
+/** Accept pivot specs (rows/columns/measure) or table/field query specs when saving presets. */
+export function validateSavedSpec(spec, role) {
+  if (spec && (Array.isArray(spec.rows) || Array.isArray(spec.columns) || spec.measure)) {
+    if (!spec.measure) return { ok: false, errors: ['pivot spec requires a measure'] };
+    return { ok: true, errors: [] };
+  }
+  return validateQuerySpec(spec, role);
+}
+
 /**
  * Write a row to report_builder_audit.
  * Non-blocking — errors are logged but not thrown to the caller.
@@ -56,10 +66,8 @@ async function writeAuditLog(entry) {
       const u = await db('users').where({ id: userIdVal }).first();
       if (u) validUser = true;
     }
-    if (!validUser) {
-      const fallback = await db('users').select('id').first();
-      userIdVal = fallback ? fallback.id : null;
-    }
+    // Never substitute another user — write null when id is invalid
+    if (!validUser) userIdVal = null;
 
     let validJobId = null;
     if (entry.job_id && typeof entry.job_id === 'string' && UUID_RE.test(entry.job_id)) {
@@ -215,6 +223,11 @@ export const startExport = async (req, res) => {
     const uid = userId(req);
     const ip = req.ip || req.headers?.['x-forwarded-for'] || null;
 
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uid || !UUID_RE.test(uid)) {
+      return res.status(401).json({ success: false, message: 'Authenticated user id required' });
+    }
+
     if (!['csv', 'xlsx', 'pdf'].includes(format)) {
       return res.status(400).json({ success: false, message: 'format must be csv, xlsx, or pdf' });
     }
@@ -226,7 +239,7 @@ export const startExport = async (req, res) => {
     }
 
     const jobId = uuidv4();
-    const reportsDir = process.env.REPORTS_DIR || './generated-reports';
+    const reportsDir = env.REPORTS_DIR;
     if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
 
     const ext = format === 'xlsx' ? 'xlsx' : format;
@@ -250,27 +263,26 @@ export const startExport = async (req, res) => {
       template = { id: newId };
     }
 
-    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    let creatorId = uid;
-    let validCreator = false;
-    if (creatorId && typeof creatorId === 'string' && UUID_RE.test(creatorId)) {
-      const u = await db('users').where({ id: creatorId }).first();
-      if (u) validCreator = true;
-    }
-    if (!validCreator) {
-      const fallbackUser = await db('users').select('id').first();
-      creatorId = fallbackUser ? fallbackUser.id : null;
-    }
+    // Store date fields at top level so download filenames can use them
+    const filterMeta = {
+      spec,
+      dateFrom: spec.filters?.dateFrom || spec.dateFrom || null,
+      dateTo: spec.filters?.dateTo || spec.dateTo || null,
+      date: spec.filters?.date || spec.date || null,
+      fromDate: spec.filters?.fromDate || spec.fromDate || null,
+      toDate: spec.filters?.toDate || spec.toDate || null,
+      ps_id: spec.ps_id || spec.filters?.ps_id || null,
+      district_id: spec.district_id || spec.filters?.district_id || null,
+    };
 
-    // Insert job record (reuse existing report_jobs table with valid UUIDs)
     await db('report_jobs').insert({
       id: jobId,
       template_id: template.id,
-      filters: JSON.stringify({ spec }),
+      filters: JSON.stringify(filterMeta),
       format: format.toUpperCase(),
       status: 'PENDING',
       file_path: filePath,
-      created_by: creatorId,
+      created_by: uid,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
@@ -426,7 +438,7 @@ function formatSectionCell(row, groupDef, rowGrain = 'per_fir') {
 }
 
 async function runExportJob(jobId, spec, jurisdictionQuery, role, format, filePath, uid, ip) {
-  const exportSpec = { ...spec, page: 1, pageSize: 50000 };
+  const exportSpec = { ...spec, page: 1, pageSize: 100000, export: true };
 
   let result;
   if (spec.join) {
@@ -445,7 +457,7 @@ async function runExportJob(jobId, spec, jurisdictionQuery, role, format, filePa
   } else if (format === 'xlsx') {
     await generateXlsx(rows, sectionHeaders, spec, filePath, rowGrain);
   } else if (format === 'pdf') {
-    await generatePdf(rows, sectionHeaders, spec, filePath);
+    await generatePdf(rows, sectionHeaders, spec, filePath, rowGrain);
   }
 
   await db('report_jobs').where({ id: jobId }).update({
@@ -464,13 +476,15 @@ async function runExportJob(jobId, spec, jurisdictionQuery, role, format, filePa
 }
 
 async function generateCsv(rows, sectionHeaders, filePath, rowGrain = 'per_fir') {
+  const csvSafe = (v) => {
+    let s = v == null ? '' : String(v);
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    return `"${s.replace(/"/g, '""')}"`;
+  };
   const colLabels = sectionHeaders.map(h => h.label);
-  const lines = [colLabels.map(l => `"${String(l).replace(/"/g, '""')}"`).join(',')];
+  const lines = [colLabels.map(csvSafe).join(',')];
   for (const row of rows) {
-    const cells = sectionHeaders.map(groupDef => {
-      const formatted = formatSectionCell(row, groupDef, rowGrain);
-      return `"${formatted.replace(/"/g, '""')}"`;
-    });
+    const cells = sectionHeaders.map(groupDef => csvSafe(formatSectionCell(row, groupDef, rowGrain)));
     lines.push(cells.join(','));
   }
   fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
@@ -553,11 +567,16 @@ async function generateXlsx(rows, sectionHeaders, spec, filePath, rowGrain = 'pe
   await wb.xlsx.writeFile(filePath);
 }
 
-async function generatePdf(rows, headers, spec, filePath) {
+async function generatePdf(rows, sectionHeaders, spec, filePath, rowGrain = 'per_fir') {
+  const esc = (s) => String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
   const tableRows = rows.slice(0, 5000); // PDF limit
-  const thead = headers.map(h => `<th>${h.label}</th>`).join('');
+  const thead = sectionHeaders.map(h => `<th>${esc(h.label)}</th>`).join('');
   const tbody = tableRows.map(row =>
-    `<tr>${headers.map(h => `<td>${row[h.key] ?? ''}</td>`).join('')}</tr>`
+    `<tr>${sectionHeaders.map(h => `<td>${esc(formatSectionCell(row, h, rowGrain)).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`
   ).join('');
 
   const html = `<!DOCTYPE html>
@@ -576,10 +595,10 @@ async function generatePdf(rows, headers, spec, filePath) {
 </style>
 </head>
 <body>
-<h1>PHAROS CUSTOM REPORT — ${spec.table}${spec.join ? ` + ${spec.join}` : ''}</h1>
+<h1>PHAROS CUSTOM REPORT — ${esc(spec.table)}${spec.join ? ` + ${esc(spec.join)}` : ''}</h1>
 <div class="meta">
-  <p>Generated: ${new Date().toLocaleString()} | Total rows: ${rows.length}${tableRows.length < rows.length ? ` (showing first ${tableRows.length})` : ''}</p>
-  <p>Filters: ${spec.filters ? JSON.stringify(spec.filters) : 'None'}</p>
+  <p>Generated: ${esc(new Date().toLocaleString())} | Total rows: ${rows.length}${tableRows.length < rows.length ? ` (showing first ${tableRows.length})` : ''}</p>
+  <p>Filters: ${esc(spec.filters ? JSON.stringify(spec.filters) : 'None')}</p>
 </div>
 <table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>
 </body></html>`;
@@ -596,12 +615,20 @@ async function generatePdf(rows, headers, spec, filePath) {
 // GET /api/reports/builder/export/:jobId
 // Poll status or download a completed export.
 // ─────────────────────────────────────────────────────────────────────────────
+const GLOBAL_DOWNLOAD_ROLES = ['JCP', 'SCP', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'];
+
 export const getExportStatus = async (req, res) => {
   try {
     const { jobId } = req.params;
     const job = await db('report_jobs').where({ id: jobId }).first();
     if (!job) {
       return res.status(404).json({ success: false, message: 'Export job not found' });
+    }
+
+    const uid = userId(req);
+    const role = userRole(req);
+    if (job.created_by !== uid && !GLOBAL_DOWNLOAD_ROLES.includes(role)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to download this export' });
     }
 
     const status = job.status?.toUpperCase();
@@ -619,12 +646,8 @@ export const getExportStatus = async (req, res) => {
     }
 
     const ext = (job.format || 'CSV').toLowerCase();
-    const mimeMap = { csv: 'text/csv', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', pdf: 'application/pdf' };
-    const mime = mimeMap[ext] || 'application/octet-stream';
     const filename = `PHAROS_Report_${jobId}.${ext === 'xlsx' ? 'xlsx' : ext}`;
 
-    res.setHeader('Content-Type', mime);
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     return res.download(job.file_path, filename);
   } catch (err) {
     logger.error(`[ReportBuilder] getExportStatus error: ${err.message}`);
@@ -690,8 +713,8 @@ export const createSavedReport = async (req, res) => {
       return res.status(400).json({ success: false, message: 'name and query_spec are required' });
     }
 
-    // Validate the query spec
-    const { ok, errors } = validateQuerySpec(query_spec, role);
+    // Validate the query spec (pivot or table/field)
+    const { ok, errors } = validateSavedSpec(query_spec, role);
     if (!ok) {
       return res.status(400).json({ success: false, message: `Invalid query spec: ${errors.join('; ')}`, errors });
     }
@@ -738,7 +761,7 @@ export const updateSavedReport = async (req, res) => {
     if (req.body.description !== undefined) updates.description = req.body.description;
     if (req.body.is_shared !== undefined) updates.is_shared = req.body.is_shared ? 1 : 0;
     if (req.body.query_spec) {
-      const { ok, errors } = validateQuerySpec(req.body.query_spec, role);
+      const { ok, errors } = validateSavedSpec(req.body.query_spec, role);
       if (!ok) return res.status(400).json({ success: false, message: errors.join('; '), errors });
       updates.query_spec = JSON.stringify(req.body.query_spec);
     }
@@ -873,7 +896,7 @@ export const getQuickAccessReports = async (req, res) => {
         measure: 'case_count',
         filters: { recordType: 'CASE', caseStatus: '' }
       },
-      run_count: 99
+      run_count: 0
     };
     if (!uniqueList.some(r => r.name.includes('Left Out') || r.name.includes('Unarrested'))) {
       uniqueList.unshift(leftOutPreset);
@@ -886,9 +909,13 @@ export const getQuickAccessReports = async (req, res) => {
       is_system_preset: !!r.is_system_preset,
       created_by: r.created_by,
       created_at: r.created_at,
+      updated_at: r.updated_at,
       spec: parseJson(r.query_spec, r.spec || {}),
-      run_count: r.run_count || 0,
-    })).sort((a, b) => b.run_count - a.run_count);
+    })).sort((a, b) => {
+      const ta = new Date(a.updated_at || a.created_at || 0).getTime();
+      const tb = new Date(b.updated_at || b.created_at || 0).getTime();
+      return tb - ta;
+    });
 
     return res.status(200).json({ success: true, data: enriched });
   } catch (err) {

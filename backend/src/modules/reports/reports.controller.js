@@ -9,6 +9,7 @@ import ExcelJS from 'exceljs';
 import { publish } from '../../events/eventBus.js';
 import { getLogger } from '../../utils/logger.js';
 import { toISO, toDMY } from '../../utils/dateFormat.js';
+import { env } from '../../config/env.js';
 
 const log = getLogger('reports.controller');
 
@@ -174,7 +175,7 @@ const getRecordsForReport = async (templateId, filters) => {
 
   let query = db('records as r')
     .select(
-      'r.id', 'r.uid', 'r.record_type', 'r.record_date', 'r.registration_date', 'r.current_status', 'r.current_level', 'r.ps_id', 'r.district_id', 'r.data as raw_data',
+      'r.id', 'r.uid', 'r.record_type', 'r.record_date', 'r.registration_date', 'r.current_status', 'r.current_level', 'r.ps_id', 'r.district_id',
       'ps.name as ps_name', 'dist.name as district_name', 'io.name as io_name',
       'fd.fir_no as fd_fir_no', 'fd.fir_date as fd_fir_date', 'fd.brief_facts as fd_brief_facts', 'lh_f.local_head as fd_local_head',
       'ad.fir_no as ad_fir_no', 'ad.gd_no as ad_gd_no', 'ad.arresting_officer_name', 'ad.case_status as ad_custody_status', 'lh_a.local_head as ad_local_head',
@@ -266,22 +267,22 @@ const getRecordsForReport = async (templateId, filters) => {
 
   log.info('getRecordsForReport: exit', { templateId, recordType, count: results.length });
   return results.map(r => {
-    const parsedData = parseJsonField(r.raw_data) || {};
-    const name = personMap[r.id] || r.ad_accused_name || r.md_name || parsedData.arrested_name || parsedData.name || '—';
+    const parsedData = {}; // detail comes from joined detail tables + persons below
+    const name = personMap[r.id] || r.ad_accused_name || r.md_name || '—';
     return {
       ...r,
       record_date: r.registration_date || r.fd_fir_date || r.record_date,
       data: {
         ...parsedData,
-        uid: r.uid || parsedData.uid || String(r.id).substring(0, 8),
-        fir_no: r.fd_fir_no || r.ad_fir_no || r.ud_uidb_no || r.pd_pcr_no || parsedData.fir_no || '',
+        uid: r.uid || String(r.id).substring(0, 8),
+        fir_no: r.fd_fir_no || r.ad_fir_no || r.ud_uidb_no || r.pd_pcr_no || '',
         fir_date: r.fd_fir_date || r.record_date,
         arrested_name: name,
         complainant_name: name,
         name: name,
-        local_head: r.fd_local_head || r.ad_local_head || r.pd_call_head || parsedData.local_head || r.record_type,
-        brief_facts: r.fd_brief_facts || r.pd_action || parsedData.brief_facts || '',
-        io_name: r.io_name || r.arresting_officer_name || parsedData.io_name || '',
+        local_head: r.fd_local_head || r.ad_local_head || r.pd_call_head || r.record_type,
+        brief_facts: r.fd_brief_facts || r.pd_action || '',
+        io_name: r.io_name || r.arresting_officer_name || '',
         status: r.ad_custody_status || r.md_status || r.ud_status || r.current_status || ''
       }
     };
@@ -484,7 +485,7 @@ const validateCustomDefinition = async (custom_definition) => {
     }
 
     // Validate record_type enum
-    const validTypes = ['ARREST', 'PCR_CALL', 'CASE'];
+    const validTypes = ['ARREST', 'PCR_CALL', 'CASE', 'MISSING', 'UIDB'];
     if (!validTypes.includes(record_type)) {
       log.warn('validateCustomDefinition: rejected — invalid record_type', { record_type, validTypes });
       throw new Error(`Invalid record type '${record_type}'. Allowed types: ${validTypes.join(', ')}`);
@@ -512,6 +513,17 @@ export const generateReport = async (req, res) => {
   log.debug('generateReport: enter', {
     userId, role: req.user?.role, template_id, hasCustomDefinition: !!custom_definition, format,
   });
+
+  const UUID_RE_AUTH = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!userId || !UUID_RE_AUTH.test(userId)) {
+    log.warn('generateReport: rejected — authenticated user id required');
+    return res.status(401).json({
+      status: 'error',
+      success: false,
+      code: 'UNAUTHORIZED',
+      message: 'Authenticated user id required'
+    });
+  }
 
   if (!template_id && !custom_definition) {
     log.warn('generateReport: rejected — neither template_id nor custom_definition provided', { userId });
@@ -628,7 +640,7 @@ export const generateReport = async (req, res) => {
 
   try {
     const jobId = uuidv4();
-    const reportsDir = process.env.REPORTS_DIR || './generated-reports';
+    const reportsDir = env.REPORTS_DIR;
     if (!fs.existsSync(reportsDir)) {
       fs.mkdirSync(reportsDir, { recursive: true });
       log.debug('generateReport: created reports directory', { reportsDir });
@@ -640,8 +652,6 @@ export const generateReport = async (req, res) => {
       ? selectedTemplate.id
       : (UUID_RE.test(template_id) ? template_id : null);
 
-    const effectiveUserId = userId || req.user?.id || 'bf5af8de-2e04-40ed-928e-6a0b02916fc2';
-
     await db('report_jobs').insert({
       id: jobId,
       template_id: dbTemplateId,
@@ -652,7 +662,7 @@ export const generateReport = async (req, res) => {
       format: fmt,
       status: 'PENDING',
       file_path: filePath,
-      created_by: effectiveUserId,
+      created_by: userId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
@@ -1161,6 +1171,24 @@ export const getJobStatus = async (req, res) => {
   }
 };
 
+const GLOBAL_DOWNLOAD_ROLES = ['JCP', 'SCP', 'HQ_ANALYST', 'HQ_ADMIN', 'SYSTEM_ADMIN'];
+
+export function canAccessReportJob(req, job) {
+  const uid = req.user?.userId || req.user?.id;
+  const role = req.user?.role;
+  const isOwner = job.created_by && uid && job.created_by === uid;
+  if (isOwner || GLOBAL_DOWNLOAD_ROLES.includes(role)) return true;
+
+  let filterObj = {};
+  try { filterObj = JSON.parse(job.filters || '{}'); } catch { filterObj = {}; }
+  const spec = filterObj.spec || filterObj;
+  const scopePs = spec.ps_id || spec.psId || spec.station_id;
+  const scopeDist = spec.district_id || spec.districtId;
+  const okPs = req.user?.ps_id && scopePs && req.user.ps_id === scopePs;
+  const okDist = req.user?.district_id && scopeDist && req.user.district_id === scopeDist;
+  return !!(okPs || okDist);
+}
+
 export const downloadReport = async (req, res) => {
   const { id } = req.params;
   log.debug('downloadReport: enter', { jobId: id });
@@ -1174,6 +1202,16 @@ export const downloadReport = async (req, res) => {
         success: false,
         code: 'NOT_FOUND',
         message: 'Report file is not ready or does not exist'
+      });
+    }
+
+    if (!canAccessReportJob(req, job)) {
+      log.warn('downloadReport: rejected — not authorized', { jobId: id, userId: req.user?.userId || req.user?.id });
+      return res.status(403).json({
+        status: 'error',
+        success: false,
+        code: 'FORBIDDEN',
+        message: 'Not authorized to download this report'
       });
     }
 
@@ -1450,7 +1488,7 @@ export const runScheduleNow = async (req, res) => {
     }
 
     const jobId = uuidv4();
-    const reportsDir = process.env.REPORTS_DIR || './generated-reports';
+    const reportsDir = env.REPORTS_DIR;
     const fileName = `${jobId}.${schedule.format.toLowerCase() === 'excel' ? 'xlsx' : schedule.format.toLowerCase()}`;
     const filePath = path.join(reportsDir, fileName);
 
