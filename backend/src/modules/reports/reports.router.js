@@ -15,7 +15,7 @@ router.use('/builder', reportBuilderRouter);
 router.get('/templates', authMiddleware, reportsController.getTemplates);
 router.post('/generate', authMiddleware, reportsController.generateReport);
 router.get('/status/:id', authMiddleware, reportsController.getJobStatus);
-router.get('/download/:id/:filename?', reportsController.downloadReport);
+router.get('/download/:id/:filename?', authMiddleware, reportsController.downloadReport);
 router.get('/history', authMiddleware, reportsController.getReportsHistory);
 router.get('/trace/:recordId', authMiddleware, reportsController.traceRecord);
 

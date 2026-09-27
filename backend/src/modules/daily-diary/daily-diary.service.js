@@ -8,6 +8,7 @@ import db from '../../config/db.js';
 import { publish } from '../../events/eventBus.js';
 import { logger } from '../../utils/logger.js';
 import { toDMY } from '../../utils/dateFormat.js';
+import { env } from '../../config/env.js';
 
 const execFileAsync = util.promisify(execFile);
 
@@ -916,7 +917,7 @@ export const processExportJobAsync = async (jobId, date, dateTo, psId, districtI
 // ─── Queue Export Job ──────────────────────────────────────────────────────────
 export const queueDailyDiaryExport = async (user, date, psId, districtId, subDivId, tableNamesFilter = null, dateTo = null) => {
   const jobId = uuidv4();
-  const reportsDir = path.resolve(process.env.REPORTS_DIR || './generated-reports');
+  const reportsDir = path.resolve(env.REPORTS_DIR);
   if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
   const filePath = path.join(reportsDir, jobId + '.xlsx');
   const rawUserId = user?.userId || user?.id || null;

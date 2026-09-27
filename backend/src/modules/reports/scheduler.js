@@ -3,6 +3,9 @@ import db from '../../config/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { generateReportInternal } from './reports.controller.js';
 import { getLogger } from '../../utils/logger.js';
+import { env } from '../../config/env.js';
+import path from 'path';
+import fs from 'fs';
 
 // Logging-instrumentation-2026-07-22 (B5): matches records.service.js style. Replaces the
 // pre-existing unbound `logger.info(\`[Scheduler] ...\`)` string-concat calls with the bound
@@ -44,8 +47,6 @@ export const initScheduler = async () => {
   // Hourly cron to clean up expired bulk import temp files
   cron.schedule('0 * * * *', async () => {
     log.debug('initScheduler: expired import temp files cleanup cron fired');
-    const path = await import('path');
-    const fs = await import('fs');
     try {
       const cutoff = new Date();
       cutoff.setHours(cutoff.getHours() - 24);
@@ -77,6 +78,48 @@ export const initScheduler = async () => {
     }
   });
   log.info('initScheduler: exit — import temp files cleanup scheduled (hourly)');
+
+  // Daily retention sweep for generated report files (default 30 days)
+  cron.schedule('30 3 * * *', async () => {
+    log.debug('initScheduler: report retention sweep cron fired');
+    try {
+      const retentionDays = env.REPORTS_RETENTION_DAYS || 30;
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - retentionDays);
+      const cutoffIso = cutoff.toISOString();
+      const reportsDir = path.resolve(env.REPORTS_DIR);
+
+      const oldJobs = await db('report_jobs')
+        .where('created_at', '<', cutoffIso)
+        .whereNotIn('status', ['EXPIRED']);
+
+      let deletedFiles = 0;
+      for (const job of oldJobs) {
+        if (job.file_path && fs.existsSync(job.file_path)) {
+          try {
+            // Only delete files under reportsDir
+            const resolved = path.resolve(job.file_path);
+            if (resolved.startsWith(reportsDir) && fs.statSync(resolved).isFile()) {
+              fs.unlinkSync(resolved);
+              deletedFiles += 1;
+            }
+          } catch (fileErr) {
+            log.error('initScheduler: error deleting report file', { jobId: job.id, filePath: job.file_path, err: fileErr });
+          }
+        }
+        await db('report_jobs').where({ id: job.id }).update({
+          status: 'EXPIRED',
+          updated_at: new Date().toISOString(),
+        });
+      }
+      log.info('initScheduler: report retention sweep complete', {
+        retentionDays, cutoff: cutoffIso, jobsExpired: oldJobs.length, deletedFiles,
+      });
+    } catch (err) {
+      log.error('initScheduler: report retention sweep failed', { err });
+    }
+  });
+  log.info('initScheduler: report retention sweep scheduled (daily 03:30)', { retentionDays: env.REPORTS_RETENTION_DAYS });
 };
 
 
@@ -94,9 +137,8 @@ export const startScheduledJob = async (schedule) => {
     const job = cron.schedule(cron_expr, async () => {
       log.info('startScheduledJob: cron fired — triggered scheduled report execution', { scheduleId: id, template_id });
       const jobId = uuidv4();
-      const reportsDir = process.env.REPORTS_DIR || './generated-reports';
+      const reportsDir = env.REPORTS_DIR;
       const fileName = `${jobId}.${format.toLowerCase()}`;
-      const path = await import('path');
       const filePath = path.join(reportsDir, fileName);
 
       try {
