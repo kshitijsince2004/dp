@@ -485,7 +485,7 @@ export default function CustomExcelBuilder() {
     const jobId = idToDownload || jobState.jobId;
     if (!jobId) return;
     try {
-      const res = await api.get(`/reports/builder/export/${jobId}`, { responseType: 'blob' });
+      const res = await api.get(`/reports/download/${jobId}`, { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([res.data], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       }));
@@ -777,8 +777,7 @@ export default function CustomExcelBuilder() {
 
       {/* ── Export Action Bar ────────────────────────────────────────────── */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handleExport}
@@ -798,10 +797,6 @@ export default function CustomExcelBuilder() {
               <span>Select at least 1 column to enable export.</span>
             </p>
           )}
-          </div>
-          <p className="text-[10px] text-slate-500">
-            Exports are capped at 100,000 rows. Narrow the date range if your result set may be larger.
-          </p>
         </div>
 
         {/* Download Box */}

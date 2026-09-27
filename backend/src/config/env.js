@@ -53,7 +53,5 @@ export const env = {
 
   STARTUP_AUTOLOAD: getEnv('STARTUP_AUTOLOAD', 'true'),
   FRONTEND_URL: getEnv('FRONTEND_URL', 'http://localhost:5173'),
-  // Prefer REPORTS_DIR; alias REPORTS_OUTPUT_DIR for operators who set the old name
-  REPORTS_DIR: getEnv('REPORTS_DIR', getEnv('REPORTS_OUTPUT_DIR', './generated-reports')),
-  REPORTS_RETENTION_DAYS: parseInt(getEnv('REPORTS_RETENTION_DAYS', '30'), 10) || 30,
+  REPORTS_OUTPUT_DIR: getEnv('REPORTS_OUTPUT_DIR', './reports/output'),
 };
